@@ -42,4 +42,4 @@ jobs:
     - name: Test
       env:
         RUST_BACKTRACE: 1
-      run: cargo test --all --features "pg${{ matrix.version }} pg_test" -- --nocapture
+      run: cargo test --all --no-default-features --features "pg${{ matrix.version }} pg_test" -- --nocapture
