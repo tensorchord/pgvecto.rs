@@ -24,13 +24,17 @@ jobs:
       run: cargo fmt --check
       
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [13]
+        os: ["ubuntu-latest"]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
     - name: Set up pgrx
       run: |
         cargo install cargo-pgrx
-        cargo pgrx init
+        cargo pgrx init --pg${{ matrix.version }}=`which pg_config`
     - name: Build
       run: cargo build --verbose
     - name: Semantic check
@@ -38,4 +42,4 @@ jobs:
     - name: Test
       env:
         RUST_BACKTRACE: 1
-      run: cargo test --all --features "pg_test" -- --nocapture
+      run: cargo test --all --features "pg${{ matrix.version }} pg_test" -- --nocapture
