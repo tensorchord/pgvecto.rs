@@ -34,7 +34,7 @@ jobs:
     - name: Set up pgrx
       run: |
         cargo install cargo-pgrx
-        cargo pgrx init --pg${{ matrix.version }}
+        cargo pgrx init --pg${{ matrix.version }}=download
     - name: Build
       run: cargo build --verbose
     - name: Semantic check
