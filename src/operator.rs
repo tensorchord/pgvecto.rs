@@ -2,7 +2,7 @@ use core::f32;
 
 use pgrx::prelude::*;
 
-#[pg_operator]
+#[pg_operator(immutable, parallel_safe)]
 #[opname(<->)]
 fn square_euclidean_distance(left: Vec<f32>, right: Vec<f32>) -> f32 {
     if left.len() != right.len() {
@@ -18,7 +18,7 @@ fn square_euclidean_distance(left: Vec<f32>, right: Vec<f32>) -> f32 {
         .sum()
 }
 
-#[pg_operator]
+#[pg_operator(immutable, parallel_safe)]
 #[opname(<#>)]
 fn dot_product_distance(left: Vec<f32>, right: Vec<f32>) -> f32 {
     if left.len() != right.len() {
@@ -31,7 +31,7 @@ fn dot_product_distance(left: Vec<f32>, right: Vec<f32>) -> f32 {
     left.iter().zip(right.iter()).map(|(x, y)| x * y).sum()
 }
 
-#[pg_operator]
+#[pg_operator(immutable, parallel_safe)]
 #[opname(<=>)]
 fn cosine_distance(left: Vec<f32>, right: Vec<f32>) -> f32 {
     if left.len() != right.len() {
