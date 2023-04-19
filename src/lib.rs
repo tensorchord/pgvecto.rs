@@ -1,6 +1,6 @@
 use pgrx::prelude::*;
 
-mod vector;
+mod operator;
 
 pgrx::pg_module_magic!();
 
