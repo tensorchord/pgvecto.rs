@@ -3,8 +3,16 @@ name: Rust check
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
   merge_group:
   workflow_dispatch:
 
