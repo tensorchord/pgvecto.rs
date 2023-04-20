@@ -1,0 +1,27 @@
+{
+  "projectName": "pgvecto.rs",
+  "projectOwner": "tensorchord",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 70,
+  "commit": true,
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "gaocegege",
+      "name": "Ce Gao",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5100735?v=4",
+      "profile": "https://github.com/gaocegege",
+      "contributions": [
+        "business",
+        "content",
+        "doc"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "linkToUsage": true
+}
