@@ -20,6 +20,19 @@
         "content",
         "doc"
       ]
+    },
+    {
+      "login": "kemingy",
+      "name": "Keming",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12974685?v=4",
+      "profile": "https://blog.mapotofu.org/",
+      "contributions": [
+        "bug",
+        "code",
+        "doc",
+        "ideas",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
