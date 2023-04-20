@@ -20,6 +20,7 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 
 ```sh
 cargo install cargo-pgrx
+cargo pgrx init
 cargo pgrx run
 ```
 
