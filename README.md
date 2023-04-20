@@ -44,6 +44,12 @@ SELECT array[1, 2, 3] <=> array[3, 2, 1];
 
 -- create table
 CREATE TABLE items (id bigserial PRIMARY KEY, emb numeric[]);
+-- insert values
+INSERT INTO items (emb) VALUES (ARRAY[1,2,3]), (ARRAY[4,5,6]);
+-- query the similar embeddings
+SELECT * FROM items ORDER BY emb <-> ARRAY[3,2,1] LIMIT 5;
+-- query the neighbors within a certain distance
+SELECT * FROM items WHERE emb <-> ARRAY[3,2,1] < 5;
 ```
 
 ## Roadmap
