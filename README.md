@@ -8,20 +8,22 @@
 <a href="https://github.com/tensorchord/pgvecto.rs#contributors-"><img alt="all-contributors" src="https://img.shields.io/github/all-contributors/tensorchord/pgvecto.rs/main"></a>
 </p>
 
-Postgres vector similarity search extension.
+pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx).
 
-## 
+## Features
 
-## Development
+- [x] cosine_distance: cosine distance
+- [x] dot_product_distance: dot product distance
+- [x] square_euclidean_distance: square Euclidean distance
 
-- [rust](https://www.rust-lang.org/)
-- [pgrx](https://github.com/tcdi/pgrx)
-
-## Usage
+## Build from source
 
 ```sh
+cargo install cargo-pgrx
 cargo pgrx run
 ```
+
+## Getting Started
 
 ```sql
 -- install the extension
@@ -38,7 +40,14 @@ SELECT array[1, 2, 3] <-> array[3, 2, 1];
 SELECT array[1, 2, 3] <#> array[3, 2, 1];
 -- cosine distance
 SELECT array[1, 2, 3] <=> array[3, 2, 1];
+
+-- create table
+CREATE TABLE items (id bigserial PRIMARY KEY, emb numeric[]);
 ```
+
+## Roadmap
+
+See the [open issues](https://github.com/tensorchord/pgvecto.rs/issues/5)
 
 ## Contributors ✨
 
@@ -72,3 +81,10 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
+## Acknowledgements
+
+Thanks to the following projects:
+
+- [pgrx](https://github.com/tcdi/pgrx) - Postgres extension framework in Rust
+- [pgvector](https://github.com/pgvector/pgvector) - Postgres extension for vector similarity search written in C
