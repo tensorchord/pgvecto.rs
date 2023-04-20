@@ -33,6 +33,17 @@
         "ideas",
         "infra"
       ]
+    },
+    {
+      "login": "VoVAllen",
+      "name": "Jinjing Zhou",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8686776?v=4",
+      "profile": "https://github.com/VoVAllen",
+      "contributions": [
+        "design",
+        "ideas",
+        "projectManagement"
+      ]
     }
   ],
   "contributorsPerLine": 7,
