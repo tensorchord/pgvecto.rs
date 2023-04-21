@@ -1,0 +1,51 @@
+{
+  "projectName": "pgvecto.rs",
+  "projectOwner": "tensorchord",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 70,
+  "commit": true,
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "gaocegege",
+      "name": "Ce Gao",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5100735?v=4",
+      "profile": "https://github.com/gaocegege",
+      "contributions": [
+        "business",
+        "content",
+        "doc"
+      ]
+    },
+    {
+      "login": "kemingy",
+      "name": "Keming",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12974685?v=4",
+      "profile": "https://blog.mapotofu.org/",
+      "contributions": [
+        "bug",
+        "code",
+        "doc",
+        "ideas",
+        "infra"
+      ]
+    },
+    {
+      "login": "VoVAllen",
+      "name": "Jinjing Zhou",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8686776?v=4",
+      "profile": "https://github.com/VoVAllen",
+      "contributions": [
+        "design",
+        "ideas",
+        "projectManagement"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "linkToUsage": true
+}
