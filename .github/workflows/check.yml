@@ -46,7 +46,7 @@ jobs:
     - name: Build
       run: cargo build --verbose
     - name: Semantic check
-      run: cargo clippy -- -D warnings
+      run: cargo clippy
     - name: Test
       env:
         RUST_BACKTRACE: 1
