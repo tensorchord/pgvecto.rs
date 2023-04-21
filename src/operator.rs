@@ -1,7 +1,6 @@
-use core::f32;
-
 use pgrx::prelude::*;
 
+/// Square Euclidean distance. Try this one if you don't have any special requirements.
 #[pg_operator(immutable, parallel_safe)]
 #[opname(<->)]
 fn square_euclidean_distance(left: Vec<f32>, right: Vec<f32>) -> f32 {
@@ -18,6 +17,7 @@ fn square_euclidean_distance(left: Vec<f32>, right: Vec<f32>) -> f32 {
         .sum()
 }
 
+/// Dot product distance.
 #[pg_operator(immutable, parallel_safe)]
 #[opname(<#>)]
 fn dot_product_distance(left: Vec<f32>, right: Vec<f32>) -> f32 {
@@ -31,6 +31,8 @@ fn dot_product_distance(left: Vec<f32>, right: Vec<f32>) -> f32 {
     left.iter().zip(right.iter()).map(|(x, y)| x * y).sum()
 }
 
+/// Cosine distance. Similar to Euclidean distance but with a normalization.
+/// Use this if your vectors are not normalized.
 #[pg_operator(immutable, parallel_safe)]
 #[opname(<=>)]
 fn cosine_distance(left: Vec<f32>, right: Vec<f32>) -> f32 {

@@ -1,5 +1,10 @@
+//! Postgres vector extension.
+//!
+//! Provides an easy-to-use extension for vector similarity search.
+
 use pgrx::prelude::*;
 
+mod index;
 mod operator;
 
 pgrx::pg_module_magic!();
