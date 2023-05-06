@@ -29,14 +29,6 @@ pub(crate) extern "C" fn am_get_tuple(
 }
 
 #[pg_guard]
-pub(crate) extern "C" fn am_get_bitmap(
-    scan: pg_sys::IndexScanDesc,
-    tbm: *mut pg_sys::TIDBitmap,
-) -> int64 {
-    unimplemented!()
-}
-
-#[pg_guard]
 pub(crate) extern "C" fn am_end_scan(scan: pg_sys::IndexScanDesc) {
     unimplemented!()
 }

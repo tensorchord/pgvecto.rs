@@ -4,9 +4,16 @@ use pgrx::prelude::*;
 
 mod build;
 mod cost_estimate;
+mod manager;
 mod options;
 mod scan;
 mod vacuum;
+
+#[allow(non_snake_case)]
+#[pg_guard]
+pub unsafe extern "C" fn _PG_init() {
+    options::init();
+}
 
 /// Postgres Index AM Router
 /// Refer to https://www.postgresql.org/docs/current/index-api.html
@@ -18,23 +25,21 @@ fn am_handler(_fc_info: pg_sys::FunctionCallInfo) -> PgBox<pg_sys::IndexAmRoutin
     let mut am_routine =
         unsafe { PgBox::<pg_sys::IndexAmRoutine>::alloc_node(pg_sys::NodeTag_T_IndexAmRoutine) };
 
-    am_routine.amstrategies = 3;
-    am_routine.amsupport = 1;
-    am_routine.amoptsprocnum = 0;
+    am_routine.amstrategies = 0;
+    am_routine.amsupport = 4;
 
     am_routine.amcanorder = false;
     am_routine.amcanorderbyop = true;
     am_routine.amcanbackward = false;
     am_routine.amcanunique = false;
     am_routine.amcanmulticol = false;
-    am_routine.amoptionalkey = false;
-    am_routine.amsearcharray = true;
+    am_routine.amoptionalkey = true;
+    am_routine.amsearcharray = false;
     am_routine.amsearchnulls = false;
-    am_routine.amstorage = true;
+    am_routine.amstorage = false;
     am_routine.amclusterable = false;
-    am_routine.ampredlocks = true;
+    am_routine.ampredlocks = false;
     am_routine.amcaninclude = false;
-    am_routine.amusemaintenanceworkmem = false;
     am_routine.amkeytype = pgrx::pg_sys::InvalidOid;
 
     am_routine.amvalidate = Some(am_validate);
@@ -48,7 +53,7 @@ fn am_handler(_fc_info: pg_sys::FunctionCallInfo) -> PgBox<pg_sys::IndexAmRoutin
     am_routine.ambeginscan = Some(scan::am_begin_scan);
     am_routine.amrescan = Some(scan::am_re_scan);
     am_routine.amgettuple = Some(scan::am_get_tuple);
-    am_routine.amgetbitmap = Some(scan::am_get_bitmap);
+    am_routine.amgetbitmap = None;
     am_routine.amendscan = Some(scan::am_end_scan);
 
     am_routine.into_pg_boxed()
