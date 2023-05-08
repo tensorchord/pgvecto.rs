@@ -17,6 +17,7 @@ struct BuildState<'a> {
     index_tuples: f64,
 
     centers: Vec<Vector>,
+    item_num: Vec<usize>,
     collation: pg_sys::Oid,
 }
 
@@ -46,7 +47,8 @@ impl<'a> BuildState<'a> {
             dim: type_mod as usize,
             heap_tuples: 0f64,
             index_tuples: 0f64,
-            centers: Vec::new(),
+            centers: Vec::with_capacity(cluster),
+            item_num: vec![0; cluster],
             collation: unsafe { *index.rd_indcollation },
         }
     }
@@ -95,18 +97,28 @@ fn get_index_tuple_desc(index: &PgRelation) -> PgTupleDesc<'static> {
 #[pg_guard]
 unsafe extern "C" fn build_callback(
     _index: pg_sys::Relation,
-    ctid: pg_sys::ItemPointer,
+    _ctid: pg_sys::ItemPointer,
     values: *mut pg_sys::Datum,
-    _is_null: *mut bool,
+    is_null: *mut bool,
     _tuple_is_alive: bool,
     state: *mut std::os::raw::c_void,
 ) {
-    build_callback_internal(*ctid, values, state)
+    if *is_null {
+        return;
+    }
+    build_callback_internal(values, state)
+}
+
+#[inline(always)]
+fn square_euclidean_distance_ref(left: &Vector, right: &Vector) -> f64 {
+    left.iter()
+        .zip(right.iter())
+        .map(|(x, y)| (x - y).powi(2) as f64)
+        .sum()
 }
 
 #[inline(always)]
 unsafe extern "C" fn build_callback_internal(
-    ctid: pg_sys::ItemPointerData,
     values: *mut pg_sys::Datum,
     state: *mut std::os::raw::c_void,
 ) {
@@ -117,7 +129,36 @@ unsafe extern "C" fn build_callback_internal(
     let mut old_context = state.mem_context.set_as_current();
 
     // TODO
-    let val = std::slice::from_raw_parts(values, 1);
+    let val = std::ptr::read(values.read().cast_mut_ptr::<Vector>());
+    if state.centers.len() < state.cluster {
+        state.centers.push(val);
+        state.item_num[state.centers.len() - 1] += 1;
+    } else {
+        let distances: Vec<f64> = state
+            .centers
+            .iter()
+            .map(|vec| square_euclidean_distance_ref(vec, &val))
+            .collect();
+        let min_index = distances
+            .iter()
+            .enumerate()
+            .max_by(|(_, x), (_, y)| x.partial_cmp(y).unwrap_or(std::cmp::Ordering::Equal))
+            .map(|(index, _)| index);
+        match min_index {
+            Some(index) => {
+                let num = state.item_num[index];
+                state.centers[index] = state.centers[index]
+                    .iter()
+                    .zip(&val)
+                    .map(|(x, y)| x * (num as f32 / (num + 1) as f32) + y / (num + 1) as f32)
+                    .collect();
+                state.item_num[index] += 1;
+            }
+            None => {
+                error!("cannot find the min distance due to NaN");
+            }
+        }
+    }
 
     old_context.set_as_current();
     state.mem_context.reset();
