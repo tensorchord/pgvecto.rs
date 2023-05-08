@@ -1,0 +1,24 @@
+# syntax=v1
+
+envdlib = include("https://github.com/tensorchord/envdlib")
+
+def build():
+    base(dev=True)
+    install.apt_packages(name=[
+        "clang",
+        "libreadline-dev",
+        "zlib1g-dev",
+        "flex",
+        "bison",
+        "libxslt-dev",
+        "libssl-dev",
+        "libxml2-utils",
+        "xsltproc",
+        "ccache",
+        "pkg-config",
+    ])
+    envdlib.rust()
+    run(commands=[
+        "cargo install cargo-pgrx --version 0.8.0",
+        "cargo pgrx init",
+    ])
