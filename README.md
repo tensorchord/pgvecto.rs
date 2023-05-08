@@ -16,6 +16,13 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 - [x] dot_product_distance: dot product distance
 - [x] square_euclidean_distance: square Euclidean distance
 
+## Prepare the dev env
+
+```sh
+pip install envd
+envd up
+```
+
 ## Build from source
 
 ```sh
