@@ -9,6 +9,7 @@
   "imageSize": 70,
   "commit": true,
   "commitConvention": "angular",
+  "contributorsSortAlphabetically": true,
   "contributors": [
     {
       "login": "gaocegege",
