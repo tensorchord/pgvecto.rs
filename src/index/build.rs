@@ -1,3 +1,4 @@
+use rand::prelude::*;
 use pgrx::{prelude::*, PgMemoryContexts, PgRelation, PgTupleDesc};
 
 use crate::index::manager::Vector;
@@ -17,6 +18,12 @@ struct BuildState<'a> {
     index_tuples: f64,
 
     centers: Vec<Vector>,
+    centers_count: usize,
+    samples: Vec<Vector>,
+    // expected number for samples
+    sample_num: usize,
+    // actual number for samples
+    sample_count: usize,
     item_num: Vec<usize>,
     collation: pg_sys::Oid,
 }
@@ -38,6 +45,10 @@ impl<'a> BuildState<'a> {
         if type_mod < 0 {
             error!("column doesn't have dimensions: {}", type_mod)
         }
+        let mut sample_num = std::cmp::max(10000, cluster * 50);
+        if heap.is_null() {
+            sample_num = 1;
+        }
 
         BuildState {
             mem_context: PgMemoryContexts::new("vectors build context"),
@@ -48,6 +59,10 @@ impl<'a> BuildState<'a> {
             heap_tuples: 0f64,
             index_tuples: 0f64,
             centers: Vec::with_capacity(cluster),
+            centers_count: 0,
+            samples: Vec::with_capacity(sample_num),
+            sample_num,
+            sample_count: 0,
             item_num: vec![0; cluster],
             collation: unsafe { *index.rd_indcollation },
         }
@@ -128,40 +143,129 @@ unsafe extern "C" fn build_callback_internal(
 
     let mut old_context = state.mem_context.set_as_current();
 
-    // TODO
+    // reservoir sampling
     let val = std::ptr::read(values.read().cast_mut_ptr::<Vector>());
-    if state.centers.len() < state.cluster {
-        state.centers.push(val);
-        state.item_num[state.centers.len() - 1] += 1;
+    state.sample_count += 1;
+    if state.samples.len() < state.sample_num {
+        state.samples.push(val);
     } else {
-        let distances: Vec<f64> = state
-            .centers
-            .iter()
-            .map(|vec| square_euclidean_distance_ref(vec, &val))
-            .collect();
-        let min_index = distances
-            .iter()
-            .enumerate()
-            .max_by(|(_, x), (_, y)| x.partial_cmp(y).unwrap_or(std::cmp::Ordering::Equal))
-            .map(|(index, _)| index);
-        match min_index {
-            Some(index) => {
-                let num = state.item_num[index];
-                state.centers[index] = state.centers[index]
-                    .iter()
-                    .zip(&val)
-                    .map(|(x, y)| x * (num as f32 / (num + 1) as f32) + y / (num + 1) as f32)
-                    .collect();
-                state.item_num[index] += 1;
-            }
-            None => {
-                error!("cannot find the min distance due to NaN");
-            }
+        let mut rng = rand::thread_rng();
+        let index = rng.gen_range(1..=state.sample_count);
+        if index < state.sample_num {
+            state.samples[index] = val;
         }
     }
 
     old_context.set_as_current();
     state.mem_context.reset();
+}
+
+// kmeans++ initialization
+fn init_cluster_centers(state: &mut BuildState) {
+    let mut rng = rand::thread_rng();
+    let mut weights = vec![f64::MAX; state.samples.len()];
+
+    state.centers[0] = state.samples[rng.gen_range(0..state.samples.len())].clone();
+    state.centers_count += 1;
+    for i in 0..state.centers.len() {
+        check_for_interrupts!();
+
+        let mut sum = 0f64;
+        for j in 0..state.samples.len() {
+            let dist = square_euclidean_distance_ref(&state.centers[i], &state.samples[j]);
+            if dist < weights[j] {
+                weights[j] = dist.powi(2);
+            }
+            sum += weights[j];
+        }
+
+        if i + 1 == state.centers.len() {
+            break;
+        }
+
+        let mut choice = sum * rng.gen::<f64>();
+        let mut index = 0;
+        for j in 0..(state.samples.len()-1) {
+            choice -= weights[j];
+            index = j;
+            if choice <= 0f64 {
+                break;
+            }
+        }
+        state.centers[i + 1] = state.samples[index].clone();
+        state.centers_count += 1;
+    }
+}
+
+fn kmeans_clustering(state: &mut BuildState) {
+    init_cluster_centers(state);
+
+    let mut cluster_elements = vec![Vec::<usize>::new(); state.cluster];
+    let mut sample_cluster = vec![0usize; state.samples.len()];
+    
+    // assign each sample to the nearest cluster
+    for i in 0..state.samples.len() {
+        let mut min_dist = f64::MAX;
+        let mut min_index = 0;
+        for j in 0..state.centers.len() {
+            let dist = square_euclidean_distance_ref(&state.centers[j], &state.samples[i]);
+            if dist < min_dist {
+                min_dist = dist;
+                min_index = j;
+            }
+        }
+        cluster_elements[min_index].push(i);
+        sample_cluster[i] = min_index;
+    }
+
+    for _ in 0..500 {
+        check_for_interrupts!();
+
+        let mut changed = 0;
+
+        // compute the centers
+        for i in 0..state.centers.len() {
+            let mut new_center = vec![0f32; state.dim];
+            for j in 0..cluster_elements[i].len() {
+                let index = cluster_elements[i][j];
+                for k in 0..state.dim {
+                    new_center[k] += state.samples[index][k];
+                }
+            }
+            for k in 0..state.dim {
+                new_center[k] /= cluster_elements[i].len() as f32;
+            }
+            if new_center != state.centers[i] {
+                state.centers[i] = new_center;
+            }
+        }
+
+        for i in 0..cluster_elements.len() {
+            cluster_elements[i].clear();
+        }
+
+        // assign samples to the nearest cluster
+        for i in 0..state.samples.len() {
+            let mut min_dist = f64::MAX;
+            let mut min_index = 0;
+            for j in 0..state.centers.len() {
+                let dist = square_euclidean_distance_ref(&state.centers[j], &state.samples[i]);
+                if dist < min_dist {
+                    min_dist = dist;
+                    min_index = j;
+                }
+            }
+            if min_index != sample_cluster[i] {
+                changed += 1;
+            }
+            cluster_elements[min_index].push(i);
+            sample_cluster[i] = min_index;
+        }
+
+        if changed == 0 {
+            break;
+        }
+    }
 }
 
 fn build_index(
@@ -170,6 +274,7 @@ fn build_index(
     index: &PgRelation,
     state: &mut BuildState,
 ) {
+    // scan the heap to sample the vectors
     unsafe {
         pg_sys::IndexBuildHeapScan(
             heap.as_ptr(),
@@ -179,7 +284,7 @@ fn build_index(
             state,
         );
     }
-
+    kmeans_clustering(state);
     // TODO
 }
 

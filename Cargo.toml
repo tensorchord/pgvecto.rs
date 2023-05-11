@@ -19,6 +19,7 @@ pg_test = []
 memoffset = "0.8.0"
 once_cell = "1.17.1"
 pgrx = "=0.8.0"
+rand = "0.8.5"
 
 [dev-dependencies]
 pgrx-tests = "=0.8.0"
