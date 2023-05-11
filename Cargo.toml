@@ -21,6 +21,9 @@ openai_api_rust = "0.1.8"
 
 [dev-dependencies]
 pgrx-tests = "=0.8.3"
+httpmock = "0.6"
+serde_json = "1"
+mockall = "0.11.4"
 
 [profile.dev]
 panic = "unwind"
