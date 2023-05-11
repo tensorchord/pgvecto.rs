@@ -4,10 +4,19 @@
 
 use pgrx::prelude::*;
 
+mod embedding;
+mod gucs;
 mod index;
 mod operator;
+mod udf;
 
 pgrx::pg_module_magic!();
+
+#[allow(non_snake_case)]
+#[pg_guard]
+pub unsafe extern "C" fn _PG_init() {
+    gucs::init();
+}
 
 /// This module is required by `cargo pgrx test` invocations.
 /// It must be visible at the root of your extension crate.
