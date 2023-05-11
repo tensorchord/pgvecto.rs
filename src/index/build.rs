@@ -1,8 +1,11 @@
-use rand::prelude::*;
+use pgrx::pg_sys::RelationData;
 use pgrx::{prelude::*, PgMemoryContexts, PgRelation, PgTupleDesc};
+use rand::prelude::*;
 
 use crate::index::manager::Vector;
 use crate::index::options::{VectorsOptions, DEFAULT_CLUSTER_SIZE};
+
+const XLOG_FULL_IMAGE: u8 = 1;
 
 struct BuildState<'a> {
     // tuple_desc: &'a PgTupleDesc<'a>,
@@ -77,10 +80,15 @@ pub(crate) extern "C" fn am_build(
 ) -> *mut pg_sys::IndexBuildResult {
     let heap = unsafe { PgRelation::from_pg(heap_relation) };
     let index = unsafe { PgRelation::from_pg(index_relation) };
-    // let tuple_desc = get_index_tuple_desc(&index);
     let mut state = BuildState::new(&index, &heap);
 
-    build_index(index_info, &heap, &index, &mut state);
+    build_index(
+        index_info,
+        &heap,
+        &index,
+        &mut state,
+        pg_sys::ForkNumber_MAIN_FORKNUM,
+    );
 
     let mut result = unsafe { PgBox::<pg_sys::IndexBuildResult>::alloc0() };
     result.heap_tuples = state.heap_tuples;
@@ -185,7 +193,7 @@ fn init_cluster_centers(state: &mut BuildState) {
 
         let mut choice = sum * rng.gen::<f64>();
         let mut index = 0;
-        for j in 0..(state.samples.len()-1) {
+        for j in 0..(state.samples.len() - 1) {
             choice -= weights[j];
             index = j;
             if choice <= 0f64 {
@@ -202,7 +210,7 @@ fn kmeans_clustering(state: &mut BuildState) {
 
     let mut cluster_elements = vec![Vec::<usize>::new(); state.cluster];
     let mut sample_cluster = vec![0usize; state.samples.len()];
-    
+
     // assign each sample to the nearest cluster
     for i in 0..state.samples.len() {
         let mut min_dist = f64::MAX;
@@ -273,6 +281,7 @@ fn build_index(
     heap: &PgRelation,
     index: &PgRelation,
     state: &mut BuildState,
+    fork_num: pg_sys::ForkNumber,
 ) {
     // scan the heap to sample the vectors
     unsafe {
@@ -285,7 +294,30 @@ fn build_index(
         );
     }
     kmeans_clustering(state);
+
     // TODO
+    unsafe {
+        create_meta_page(index.as_ptr(), state.dim, state.cluster, fork_num);
+    }
+}
+
+unsafe fn create_meta_page(
+    index: *mut RelationData,
+    dim: usize,
+    cluster: usize,
+    fork_num: pg_sys::ForkNumber,
+) {
+    let buf = pg_sys::ReadBufferExtended(
+        index,
+        fork_num,
+        pg_sys::InvalidBlockNumber,
+        pg_sys::ReadBufferMode_RBM_NORMAL,
+        std::ptr::null_mut(),
+    );
+    pg_sys::LockBuffer(buf, pg_sys::BUFFER_LOCK_EXCLUSIVE as i32);
+
+    // TODO: waiting for exposing related functions in pgrx
+    pg_sys::XLogRegisterBuffer(0, buf, XLOG_FULL_IMAGE);
 }
 
 #[pg_guard]
