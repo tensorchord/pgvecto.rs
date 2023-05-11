@@ -54,6 +54,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "odysa",
+      "name": "odysa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22908409?v=4",
+      "profile": "https://github.com/odysa",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
