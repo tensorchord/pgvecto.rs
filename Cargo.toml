@@ -8,16 +8,17 @@ crate-type = ["cdylib"]
 
 [features]
 default = ["pg13"]
-pg11 = ["pgrx/pg11", "pgrx-tests/pg11" ]
-pg12 = ["pgrx/pg12", "pgrx-tests/pg12" ]
-pg13 = ["pgrx/pg13", "pgrx-tests/pg13" ]
-pg14 = ["pgrx/pg14", "pgrx-tests/pg14" ]
-pg15 = ["pgrx/pg15", "pgrx-tests/pg15" ]
+pg11 = ["pgrx/pg11", "pgrx-tests/pg11"]
+pg12 = ["pgrx/pg12", "pgrx-tests/pg12"]
+pg13 = ["pgrx/pg13", "pgrx-tests/pg13"]
+pg14 = ["pgrx/pg14", "pgrx-tests/pg14"]
+pg15 = ["pgrx/pg15", "pgrx-tests/pg15"]
 pg_test = []
 
 [dependencies]
 pgrx = "=0.8.3"
 openai_api_rust = "0.1.8"
+static_assertions = "1.1.0"
 
 [dev-dependencies]
 pgrx-tests = "=0.8.3"

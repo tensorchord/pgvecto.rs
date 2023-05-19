@@ -1,6 +1,7 @@
 //! Postgres vector extension.
 //!
 //! Provides an easy-to-use extension for vector similarity search.
+#![feature(allocator_api)]
 
 use pgrx::prelude::*;
 
@@ -9,6 +10,7 @@ mod gucs;
 mod index;
 mod operator;
 mod udf;
+mod datatype;
 
 pgrx::pg_module_magic!();
 
@@ -17,6 +19,9 @@ pgrx::pg_module_magic!();
 pub unsafe extern "C" fn _PG_init() {
     gucs::init();
 }
+
+pgrx::extension_sql_file!("./sql/bootstrap.sql", bootstrap);
+pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
 
 /// This module is required by `cargo pgrx test` invocations.
 /// It must be visible at the root of your extension crate.
