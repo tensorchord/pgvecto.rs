@@ -1,9 +1,7 @@
-use super::table::BuildTable;
-use super::table::RegularTable;
-use crate::datatype::Scalar;
 use crate::datatype::Vector;
-use crate::hnsw::BuildAlgo;
-use crate::hnsw::RegularAlgo;
+use crate::hnsw::search;
+use crate::hnsw::vacuum;
+use crate::hnsw::Build;
 use crate::postgres::table::HeapPointer;
 use pg_sys::Datum;
 use pgrx::prelude::*;
@@ -65,9 +63,7 @@ fn pgvectors_hnsw_amhandler(
 }
 
 struct ScanState {
-    algo: Option<RegularAlgo>,
     data: Option<Vec<HeapPointer>>,
-    vector: Option<Vec<Scalar>>,
 }
 
 #[pg_guard]
@@ -113,10 +109,10 @@ unsafe extern "C" fn ambuild(
     index_info: *mut pg_sys::IndexInfo,
 ) -> *mut pg_sys::IndexBuildResult {
     struct BuildState {
-        algo: BuildAlgo,
+        algo: Build,
     }
     let mut state = BuildState {
-        algo: BuildAlgo::new(BuildTable::new(index_relation)),
+        algo: Build::new(index_relation),
     };
     state.algo.build();
     #[pg_guard]
@@ -159,10 +155,10 @@ unsafe extern "C" fn ambuild(
 #[pg_guard]
 unsafe extern "C" fn ambuildempty(index_relation: pg_sys::Relation) {
     struct BuildState {
-        algo: BuildAlgo,
+        algo: Build,
     }
     let mut state = BuildState {
-        algo: BuildAlgo::new(BuildTable::new(index_relation)),
+        algo: Build::new(index_relation),
     };
     state.algo.build();
 }
@@ -179,8 +175,7 @@ unsafe extern "C" fn aminsert(
     _index_info: *mut pg_sys::IndexInfo,
 ) -> bool {
     let pgvector = <&Vector>::from_datum(*values.add(0), *is_null.add(0)).unwrap();
-    let mut algo = RegularAlgo::new(RegularTable::new(index_relation));
-    algo.insert(pgvector, HeapPointer::from_sys(*heap_tid));
+    crate::hnsw::insert(index_relation, pgvector, HeapPointer::from_sys(*heap_tid));
 
     true
 }
@@ -199,11 +194,7 @@ extern "C" fn ambeginscan(
         ))
     };
 
-    let state = ScanState {
-        algo: None,
-        data: None,
-        vector: None,
-    };
+    let state = ScanState { data: None };
 
     scan.opaque = pgrx::PgMemoryContexts::CurrentMemoryContext.leak_and_drop_on_delete(state)
         as pgrx::void_mut_ptr;
@@ -220,7 +211,7 @@ unsafe extern "C" fn amrescan(
 ) {
     debug_assert!(!orderbys.is_null());
     debug_assert!(!(*scan).orderByData.is_null());
-    let relation = (*scan).indexRelation;
+    let index_relation = (*scan).indexRelation;
     let state = &mut *((*scan).opaque as *mut ScanState);
     let orderbys = std::slice::from_raw_parts_mut(orderbys, n_orderbys as usize);
     assert!(orderbys.len() == 1, "Not supported.");
@@ -228,7 +219,6 @@ unsafe extern "C" fn amrescan(
     std::ptr::copy(orderbys.as_ptr(), (*scan).orderByData, orderbys.len());
     let value = orderbys[0].sk_argument;
     let vector = <&Vector>::from_datum(value, false).unwrap();
-    let algo = RegularAlgo::new(RegularTable::new(relation));
     if n_keys > 0 {
         let keys = std::slice::from_raw_parts_mut(keys, n_keys as usize);
         std::ptr::copy(keys.as_ptr(), (*scan).keyData, keys.len());
@@ -246,8 +236,9 @@ unsafe extern "C" fn amrescan(
                 .write_bytes(1, (*scan).numberOfOrderBys as usize);
         }
     }
-    state.algo = Some(algo);
-    state.vector = Some(vector.to_vec());
+    let mut data = search(index_relation, vector, PROBES);
+    data.reverse();
+    state.data = Some(data);
 }
 
 #[pg_guard]
@@ -258,12 +249,6 @@ unsafe extern "C" fn amgettuple(
     (*scan).xs_recheck = false;
     (*scan).xs_recheckorderby = false;
     let state = &mut *((*scan).opaque as *mut ScanState);
-    if state.data.is_none() {
-        let vector = state.vector.as_ref().unwrap();
-        let mut data = state.algo.as_mut().unwrap().search(vector, PROBES);
-        data.reverse();
-        state.data = Some(data);
-    }
     if let Some(x) = state.data.as_mut().unwrap().pop() {
         (*scan).xs_heaptid = x.into_sys();
         true
@@ -282,8 +267,9 @@ unsafe extern "C" fn ambulkdelete(
     callback: pg_sys::IndexBulkDeleteCallback,
     callback_state: *mut std::os::raw::c_void,
 ) -> *mut pg_sys::IndexBulkDeleteResult {
-    let mut algo = RegularAlgo::new(RegularTable::new((*info).index));
-    algo.vacuum(|heap_pointer| (callback.unwrap())(&mut heap_pointer.into_sys(), callback_state));
+    vacuum((*info).index, |heap_pointer| {
+        (callback.unwrap())(&mut heap_pointer.into_sys(), callback_state)
+    });
     null_mut()
 }
 

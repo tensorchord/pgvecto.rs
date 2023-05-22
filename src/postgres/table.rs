@@ -1,9 +1,6 @@
-use std::ops::Deref;
-use std::ops::DerefMut;
+use std::collections::HashMap;
 
-const PG_PAGE_ALIGN: usize = 128;
 const PG_PAGE_SIZE: usize = 8192;
-const PG_PAGE_HEADER_ALIGN: usize = 8;
 const PG_PAGE_HEADER_SIZE: usize = 24;
 const PG_PAGE_TUPLE_ALIGN: usize = 8;
 const PG_PAGE_SPECIAL_ALIGN: usize = 8;
@@ -88,7 +85,6 @@ pub struct PageHeader {
     pub prune_xid: i32,
 }
 
-static_assertions::const_assert_eq!(std::mem::align_of::<PageHeader>(), PG_PAGE_HEADER_ALIGN);
 static_assertions::const_assert_eq!(std::mem::size_of::<PageHeader>(), PG_PAGE_HEADER_SIZE);
 
 #[repr(C, align(128))]
@@ -98,7 +94,6 @@ pub struct Page {
     pub content: [u8; 8168],
 }
 
-static_assertions::const_assert_eq!(std::mem::align_of::<Page>(), PG_PAGE_ALIGN);
 static_assertions::const_assert_eq!(std::mem::size_of::<Page>(), PG_PAGE_SIZE);
 
 impl Page {
@@ -111,14 +106,7 @@ impl Page {
         assert!((*self).header.upper as usize % PG_PAGE_TUPLE_ALIGN == 0);
         assert!((*self).header.special as usize % PG_PAGE_SPECIAL_ALIGN == 0);
     }
-    unsafe fn get_line_pointer(self: *mut Self, i: u16) -> LinePointer {
-        assert!(i < self.len());
-        let offset = PG_PAGE_HEADER_SIZE + i as usize * std::mem::size_of::<LinePointer>();
-        let ptr = (self as *mut u8).add(offset);
-        let line_pointer = (ptr as *mut LinePointer).read();
-        line_pointer
-    }
-    unsafe fn try_to_get_line_pointer(self: *mut Self, i: u16) -> Option<LinePointer> {
+    unsafe fn get_line_pointer(self: *mut Self, i: u16) -> Option<LinePointer> {
         if i >= self.len() {
             return None;
         }
@@ -143,9 +131,11 @@ impl Page {
         (*self).header.lsn.0 = (lsn >> 32) as u32;
         (*self).header.lsn.1 = (lsn >> 0) as u32;
     }
+    #[allow(dead_code)]
     pub unsafe fn lsn_get(self: *mut Self) -> u64 {
         (((*self).header.lsn.0 as u64) << 32) | (*self).header.lsn.1 as u64
     }
+    #[allow(dead_code)]
     pub unsafe fn special(self: *mut Self) -> *mut [u8] {
         self.check();
         let offset = (*self).header.special;
@@ -158,27 +148,15 @@ impl Page {
             / std::mem::size_of::<LinePointer>();
         n as u16
     }
-    pub unsafe fn tuples_get<'a>(self: *mut Self, i: u16) -> &'a [u8] {
+    pub unsafe fn tuples_get<'a>(self: *mut Self, i: u16) -> Option<&'a [u8]> {
         self.check();
-        let line_pointer = self.get_line_pointer(i);
-        let ptr = (self as *mut u8).add(line_pointer.offset());
-        std::slice::from_raw_parts(ptr, line_pointer.size())
-    }
-    pub unsafe fn tuples_try_to_get<'a>(self: *mut Self, i: u16) -> Option<&'a [u8]> {
-        self.check();
-        let line_pointer = self.get_line_pointer(i);
+        let line_pointer = self.get_line_pointer(i)?;
         let ptr = (self as *mut u8).add(line_pointer.offset());
         Some(std::slice::from_raw_parts(ptr, line_pointer.size()))
     }
-    pub unsafe fn tuples_get_mut<'a>(self: *mut Self, i: u16) -> &'a mut [u8] {
+    pub unsafe fn tuples_get_mut<'a>(self: *mut Self, i: u16) -> Option<&'a mut [u8]> {
         self.check();
-        let line_pointer = self.get_line_pointer(i);
-        let ptr = (self as *mut u8).add(line_pointer.offset());
-        std::slice::from_raw_parts_mut(ptr, line_pointer.size())
-    }
-    pub unsafe fn tuples_try_to_get_mut<'a>(self: *mut Self, i: u16) -> Option<&'a mut [u8]> {
-        self.check();
-        let line_pointer = self.get_line_pointer(i);
+        let line_pointer = self.get_line_pointer(i)?;
         let ptr = (self as *mut u8).add(line_pointer.offset());
         Some(std::slice::from_raw_parts_mut(ptr, line_pointer.size()))
     }
@@ -210,221 +188,43 @@ impl Page {
     }
 }
 
-pub struct RegularReadGuard<'a> {
-    pointer: Pointer,
-    buffer: i32,
-    data: &'a [u8],
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum GrandLocking {
+    Exclusive,
+    Shared,
 }
 
-impl<'a> RegularReadGuard<'a> {
-    pub fn pointer(&self) -> Pointer {
-        self.pointer
-    }
-    pub fn cast<T>(&self) -> *const T {
-        self.data.as_ptr() as _
-    }
-}
-
-impl<'a> Deref for RegularReadGuard<'a> {
-    type Target = [u8];
-
-    fn deref(&self) -> &[u8] {
-        self.data
-    }
-}
-
-impl<'a> Drop for RegularReadGuard<'a> {
-    fn drop(&mut self) {
-        unsafe {
-            pgrx::pg_sys::UnlockReleaseBuffer(self.buffer);
-        }
-    }
-}
-
-pub struct BuildReadGuard<'a> {
-    pointer: Pointer,
-    buffer: i32,
-    data: &'a [u8],
-}
-
-impl<'a> BuildReadGuard<'a> {
-    pub fn pointer(&self) -> Pointer {
-        self.pointer
-    }
-    pub fn cast<T>(&self) -> *const T {
-        self.data.as_ptr() as _
-    }
-}
-
-impl<'a> Deref for BuildReadGuard<'a> {
-    type Target = [u8];
-
-    fn deref(&self) -> &[u8] {
-        self.data
-    }
-}
-
-impl<'a> Drop for BuildReadGuard<'a> {
-    fn drop(&mut self) {
-        unsafe {
-            pgrx::pg_sys::UnlockReleaseBuffer(self.buffer);
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-enum FlushType {
-    Maximum,
-    Append,
-    Write,
-}
-
-pub struct RegularWriteGuard<'a> {
+pub struct Table {
     relation: pgrx::pg_sys::Relation,
-    pointer: Pointer,
-    buffer: i32,
-    flush: FlushType,
-    data: &'a mut [u8],
+    locking: GrandLocking,
+    needs_wal: bool,
+    buffers: HashMap<u32, (pgrx::pg_sys::Buffer, bool)>,
 }
 
-impl<'a> RegularWriteGuard<'a> {
-    pub fn pointer(&self) -> Pointer {
-        self.pointer
-    }
-    pub fn cast<T>(&self) -> *const T {
-        self.data.as_ptr() as _
-    }
-    pub fn cast_mut<T>(&mut self) -> *mut T {
-        self.data.as_ptr() as _
-    }
-}
-
-impl<'a> Deref for RegularWriteGuard<'a> {
-    type Target = [u8];
-
-    fn deref(&self) -> &[u8] {
-        &self.data
-    }
-}
-
-impl<'a> DerefMut for RegularWriteGuard<'a> {
-    fn deref_mut(&mut self) -> &mut [u8] {
-        &mut self.data
-    }
-}
-
-impl<'a> Drop for RegularWriteGuard<'a> {
-    fn drop(&mut self) {
-        if std::thread::panicking() {
-            pgrx::PANIC!("Dropping while a write guard is held.");
-        }
-        let buffer = self.buffer;
-        let flush = self.flush;
-        let tdata = unsafe { &*(fetch(buffer) as *const [u8; PG_PAGE_SIZE]) };
-        let wal_offset = unsafe { self.data.as_ptr().offset_from(fetch(buffer) as _) as usize };
-        let wal_len = self.data.len();
-        let wal_offset_2 =
-            PG_PAGE_HEADER_SIZE + self.pointer.id as usize * std::mem::size_of::<LinePointer>();
-        let wal_len_2 = std::mem::size_of::<LinePointer>();
-        if let Err(_panic) = std::panic::catch_unwind(move || unsafe {
-            use FlushType::*;
-            // todo: register an id for pgvecto.rs
-            const RM_GENERIC_ID: pgrx::pg_sys::RmgrId = 20;
-            pgrx::pg_sys::XLogBeginInsert();
-            let lsn;
-            match flush {
-                Maximum => {
-                    let flags = pgrx::pg_sys::REGBUF_FORCE_IMAGE as u8
-                        | pgrx::pg_sys::REGBUF_STANDARD as u8;
-                    pgrx::pg_sys::XLogRegisterBuffer(0, buffer, flags);
-                    lsn = pgrx::pg_sys::XLogInsert(RM_GENERIC_ID, 0);
-                }
-                Append => {
-                    let flags = pgrx::pg_sys::REGBUF_STANDARD as u8;
-                    pgrx::pg_sys::XLogRegisterBuffer(0, buffer, flags);
-                    let mut data = vec![0u8; 0];
-                    data.extend_from_slice(&(wal_offset as u16).to_le_bytes());
-                    data.extend_from_slice(&(wal_len as u16).to_le_bytes());
-                    data.extend_from_slice(&tdata[wal_offset..wal_offset + wal_len]);
-                    data.extend_from_slice(&(wal_offset_2 as u16).to_le_bytes());
-                    data.extend_from_slice(&(wal_len_2 as u16).to_le_bytes());
-                    data.extend_from_slice(&tdata[wal_offset_2..wal_offset + wal_len_2]);
-                    lsn = pgrx::pg_sys::XLogInsert(RM_GENERIC_ID, 0);
-                }
-                Write => {
-                    let flags = pgrx::pg_sys::REGBUF_STANDARD as u8;
-                    pgrx::pg_sys::XLogRegisterBuffer(0, buffer, flags);
-                    let mut data = vec![0u8; 0];
-                    data.extend_from_slice(&(wal_offset as u16).to_le_bytes());
-                    data.extend_from_slice(&(wal_len as u16).to_le_bytes());
-                    data.extend_from_slice(&tdata[wal_offset..wal_offset + wal_len]);
-                    pgrx::pg_sys::XLogRegisterBufData(0, data.as_mut_ptr() as _, data.len() as _);
-                    lsn = pgrx::pg_sys::XLogInsert(RM_GENERIC_ID, 0);
-                }
+impl Table {
+    pub unsafe fn new(relation: pgrx::pg_sys::Relation, locking: GrandLocking) -> Self {
+        use GrandLocking::*;
+        let needs_wal = (*(*relation).rd_rel).relpersistence
+            == pgrx::pg_sys::RELPERSISTENCE_PERMANENT as i8
+            && (pgrx::pg_sys::wal_level > pgrx::pg_sys::WalLevel_WAL_LEVEL_MINIMAL as _
+                || ((*relation).rd_createSubid == 0 && (*relation).rd_firstRelfilenodeSubid == 0));
+        match locking {
+            Exclusive => {
+                pgrx::pg_sys::LockRelationForExtension(relation, pgrx::pg_sys::ExclusiveLock as _);
             }
-            fetch(buffer).lsn_set(lsn);
-            pgrx::pg_sys::MarkBufferDirty(buffer);
-            pgrx::pg_sys::UnlockReleaseBuffer(buffer);
-        }) {
-            pgrx::PANIC!("Error while write xlog.");
+            Shared => {
+                pgrx::pg_sys::LockRelationForExtension(
+                    relation,
+                    pgrx::pg_sys::AccessShareLock as _,
+                );
+            }
         }
-    }
-}
-
-pub struct BuildWriteGuard<'a> {
-    relation: pgrx::pg_sys::Relation,
-    pointer: Pointer,
-    buffer: i32,
-    data: &'a mut [u8],
-}
-
-impl<'a> BuildWriteGuard<'a> {
-    pub fn pointer(&self) -> Pointer {
-        self.pointer
-    }
-    pub fn cast<T>(&self) -> *const T {
-        self.data.as_ptr() as _
-    }
-    pub fn cast_mut<T>(&mut self) -> *mut T {
-        self.data.as_ptr() as _
-    }
-}
-
-impl<'a> Deref for BuildWriteGuard<'a> {
-    type Target = [u8];
-
-    fn deref(&self) -> &[u8] {
-        &self.data
-    }
-}
-
-impl<'a> DerefMut for BuildWriteGuard<'a> {
-    fn deref_mut(&mut self) -> &mut [u8] {
-        &mut self.data
-    }
-}
-
-impl<'a> Drop for BuildWriteGuard<'a> {
-    fn drop(&mut self) {
-        unsafe {
-            pgrx::pg_sys::MarkBufferDirty(self.buffer);
-            pgrx::pg_sys::UnlockReleaseBuffer(self.buffer);
+        Self {
+            relation,
+            locking,
+            needs_wal,
+            buffers: HashMap::new(),
         }
-    }
-}
-
-pub struct RegularTable {
-    relation: pgrx::pg_sys::Relation,
-}
-
-impl RegularTable {
-    pub unsafe fn new(relation: pgrx::pg_sys::Relation) -> Self {
-        if (*(*relation).rd_rel).relpersistence != pgrx::pg_sys::RELPERSISTENCE_PERMANENT as i8 {
-            panic!("Temporary tables are not supported yet.");
-        }
-        assert!((*relation).rd_createSubid == 0);
-        assert!((*relation).rd_firstRelfilenodeSubid == 0);
-        Self { relation }
     }
     pub fn pages(&mut self) -> u32 {
         unsafe {
@@ -434,166 +234,119 @@ impl RegularTable {
             )
         }
     }
-    pub fn read(&mut self, pointer: Pointer) -> Option<RegularReadGuard<'_>> {
+    pub fn read(&mut self, pointer: Pointer) -> Option<&[u8]> {
         unsafe {
-            let buffer = pgrx::pg_sys::ReadBuffer(self.relation, pointer.page);
-            pgrx::pg_sys::LockBuffer(buffer, pgrx::pg_sys::BUFFER_LOCK_SHARE as _);
-            let data = fetch(buffer).tuples_try_to_get(pointer.id)?;
-            Some(RegularReadGuard {
-                pointer,
-                buffer,
-                data,
-            })
+            if let Some((buffer, _dirty)) = self.buffers.get_mut(&pointer.page) {
+                fetch(*buffer).tuples_get(pointer.id)
+            } else {
+                let buffer = pgrx::pg_sys::ReadBuffer(self.relation, pointer.page);
+                pgrx::pg_sys::LockBuffer(buffer, pgrx::pg_sys::BUFFER_LOCK_SHARE as _);
+                self.buffers.insert(pointer.page, (buffer, false));
+                fetch(buffer).tuples_get(pointer.id)
+            }
         }
     }
-    pub fn write(&mut self, pointer: Pointer) -> Option<RegularWriteGuard<'_>> {
+    pub fn write(&mut self, pointer: Pointer) -> Option<&mut [u8]> {
         unsafe {
-            let buffer = pgrx::pg_sys::ReadBuffer(self.relation, pointer.page);
-            pgrx::pg_sys::LockBuffer(buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
-            let data = fetch(buffer).tuples_try_to_get_mut(pointer.id)?;
-            Some(RegularWriteGuard {
-                pointer,
-                buffer,
-                data,
-                flush: FlushType::Write,
-                relation: self.relation,
-            })
+            if let Some((buffer, dirty)) = self.buffers.get_mut(&pointer.page) {
+                if *dirty != true {
+                    pgrx::pg_sys::LockBuffer(*buffer, pgrx::pg_sys::BUFFER_LOCK_UNLOCK as _);
+                    pgrx::pg_sys::LockBuffer(*buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
+                    *dirty = true;
+                }
+                fetch(*buffer).tuples_get_mut(pointer.id)
+            } else {
+                let buffer = pgrx::pg_sys::ReadBuffer(self.relation, pointer.page);
+                pgrx::pg_sys::LockBuffer(buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
+                self.buffers.insert(pointer.page, (buffer, true));
+                fetch(buffer).tuples_get_mut(pointer.id)
+            }
         }
     }
-    pub fn append(&mut self, size: u16) -> RegularWriteGuard<'_> {
-        assert!(size as usize <= PG_PAGE_SPECIAL_MAXSIZE);
+    pub fn append(&mut self, data: &[u8]) -> Pointer {
+        assert_eq!(self.locking, GrandLocking::Exclusive);
+        assert!(data.len() as usize <= PG_PAGE_SPECIAL_MAXSIZE);
         unsafe {
-            pgrx::pg_sys::LockRelationForExtension(self.relation, pgrx::pg_sys::ExclusiveLock as _);
             let n = pgrx::pg_sys::RelationGetNumberOfBlocksInFork(
                 self.relation,
                 pgrx::pg_sys::ForkNumber_MAIN_FORKNUM,
             );
             if n >= 1 {
-                let buffer = pgrx::pg_sys::ReadBuffer(self.relation, n - 1);
-                pgrx::pg_sys::LockBuffer(buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
-                if let Some((id, data)) = fetch(buffer).tuples_push(size) {
-                    pgrx::pg_sys::UnlockRelationForExtension(
-                        self.relation,
-                        pgrx::pg_sys::ExclusiveLock as _,
-                    );
-                    let pointer = Pointer { page: n - 1, id };
-                    return RegularWriteGuard {
-                        pointer,
-                        buffer,
-                        relation: self.relation,
-                        flush: FlushType::Maximum,
-                        data,
-                    };
+                let page = n - 1;
+                let page = if let Some((buffer, dirty)) = self.buffers.get_mut(&page) {
+                    if *dirty != true {
+                        pgrx::pg_sys::LockBuffer(*buffer, pgrx::pg_sys::BUFFER_LOCK_UNLOCK as _);
+                        pgrx::pg_sys::LockBuffer(*buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
+                        *dirty = true;
+                    }
+                    fetch(*buffer)
+                } else {
+                    let buffer = pgrx::pg_sys::ReadBuffer(self.relation, page);
+                    pgrx::pg_sys::LockBuffer(buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
+                    self.buffers.insert(page, (buffer, true));
+                    fetch(buffer)
+                };
+                if let Some((id, raw)) = page.tuples_push(data.len() as _) {
+                    let pointer = Pointer::new(n - 1, id);
+                    raw.copy_from_slice(data);
+                    return pointer;
                 }
-                pgrx::pg_sys::UnlockReleaseBuffer(buffer);
             }
             let buffer = pgrx::pg_sys::ReadBuffer(self.relation, pgrx::pg_sys::InvalidBlockNumber);
             pgrx::pg_sys::LockBuffer(buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
+            self.buffers.insert(n, (buffer, true));
             let page = fetch(buffer);
             page.initialize(0);
-            let (id, data) = page.tuples_push(size).unwrap();
-            pgrx::pg_sys::UnlockRelationForExtension(
-                self.relation,
-                pgrx::pg_sys::ExclusiveLock as _,
-            );
-            let pointer = Pointer { page: n, id };
-            RegularWriteGuard {
-                pointer,
-                relation: self.relation,
-                buffer,
-                flush: FlushType::Append,
-                data,
-            }
+            let (id, raw) = page.tuples_push(data.len() as _).unwrap();
+            let pointer = Pointer::new(n, id);
+            raw.copy_from_slice(data);
+            pointer
         }
     }
 }
 
-pub struct BuildTable {
-    relation: pgrx::pg_sys::Relation,
-}
-
-impl BuildTable {
-    pub unsafe fn new(relation: pgrx::pg_sys::Relation) -> Self {
-        if (*(*relation).rd_rel).relpersistence != pgrx::pg_sys::RELPERSISTENCE_PERMANENT as i8 {
-            panic!("Temporary tables are not supported yet.");
-        }
-        assert!((*relation).rd_createSubid != 0 || (*relation).rd_firstRelfilenodeSubid != 0);
-        Self { relation }
-    }
-    pub fn pages(&mut self) -> u32 {
+impl Drop for Table {
+    fn drop(&mut self) {
         unsafe {
-            pgrx::pg_sys::RelationGetNumberOfBlocksInFork(
-                self.relation,
-                pgrx::pg_sys::ForkNumber_MAIN_FORKNUM,
-            )
-        }
-    }
-    pub fn read(&mut self, pointer: Pointer) -> Option<BuildReadGuard<'_>> {
-        unsafe {
-            let buffer = pgrx::pg_sys::ReadBuffer(self.relation, pointer.page);
-            pgrx::pg_sys::LockBuffer(buffer, pgrx::pg_sys::BUFFER_LOCK_SHARE as _);
-            let data = fetch(buffer).tuples_try_to_get(pointer.id)?;
-            Some(BuildReadGuard {
-                pointer,
-                buffer,
-                data,
-            })
-        }
-    }
-    pub fn write(&mut self, pointer: Pointer) -> Option<BuildWriteGuard<'_>> {
-        unsafe {
-            let buffer = pgrx::pg_sys::ReadBuffer(self.relation, pointer.page);
-            pgrx::pg_sys::LockBuffer(buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
-            let data = fetch(buffer).tuples_try_to_get_mut(pointer.id)?;
-            Some(BuildWriteGuard {
-                pointer,
-                buffer,
-                data,
-                relation: self.relation,
-            })
-        }
-    }
-    pub fn append(&mut self, size: u16) -> BuildWriteGuard<'_> {
-        assert!(size as usize <= PG_PAGE_SPECIAL_MAXSIZE);
-        unsafe {
-            pgrx::pg_sys::LockRelationForExtension(self.relation, pgrx::pg_sys::ExclusiveLock as _);
-            let n = pgrx::pg_sys::RelationGetNumberOfBlocksInFork(
-                self.relation,
-                pgrx::pg_sys::ForkNumber_MAIN_FORKNUM,
-            );
-            if n >= 1 {
-                let buffer = pgrx::pg_sys::ReadBuffer(self.relation, n - 1);
-                pgrx::pg_sys::LockBuffer(buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
-                if let Some((id, data)) = fetch(buffer).tuples_push(size) {
+            let buffers = self.buffers.clone();
+            let count = buffers.values().filter(|(_, d)| *d).count();
+            if self.needs_wal && count > 0 {
+                if let Err(_panic) = std::panic::catch_unwind(move || {
+                    const RM_GENERIC_ID: pgrx::pg_sys::RmgrId = 20;
+                    pgrx::pg_sys::XLogEnsureRecordSpace(count as _, 20);
+                    pgrx::pg_sys::XLogBeginInsert();
+                    for (i, (buffer, _)) in buffers.values().filter(|(_, d)| *d).enumerate() {
+                        let flags = pgrx::pg_sys::REGBUF_FORCE_IMAGE as u8
+                            | pgrx::pg_sys::REGBUF_STANDARD as u8;
+                        pgrx::pg_sys::XLogRegisterBuffer(i as _, *buffer, flags);
+                    }
+                    let lsn = pgrx::pg_sys::XLogInsert(RM_GENERIC_ID, 0);
+                    for (buffer, _) in buffers.values().filter(|(_, d)| *d) {
+                        fetch(*buffer).lsn_set(lsn);
+                        pgrx::pg_sys::MarkBufferDirty(*buffer);
+                        pgrx::pg_sys::UnlockReleaseBuffer(*buffer);
+                    }
+                }) {
+                    pgrx::PANIC!("Error while writing xlog.");
+                }
+            }
+            for (buffer, _) in self.buffers.values().filter(|(_, d)| !*d) {
+                pgrx::pg_sys::UnlockReleaseBuffer(*buffer);
+            }
+            use GrandLocking::*;
+            match self.locking {
+                Exclusive => {
                     pgrx::pg_sys::UnlockRelationForExtension(
                         self.relation,
                         pgrx::pg_sys::ExclusiveLock as _,
                     );
-                    let pointer = Pointer { page: n - 1, id };
-                    return BuildWriteGuard {
-                        pointer,
-                        buffer,
-                        relation: self.relation,
-                        data,
-                    };
                 }
-                pgrx::pg_sys::UnlockReleaseBuffer(buffer);
-            }
-            let buffer = pgrx::pg_sys::ReadBuffer(self.relation, pgrx::pg_sys::InvalidBlockNumber);
-            pgrx::pg_sys::LockBuffer(buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
-            let page = fetch(buffer);
-            page.initialize(0);
-            let (id, data) = page.tuples_push(size).unwrap();
-            pgrx::pg_sys::UnlockRelationForExtension(
-                self.relation,
-                pgrx::pg_sys::ExclusiveLock as _,
-            );
-            let pointer = Pointer { page: n, id };
-            BuildWriteGuard {
-                pointer,
-                relation: self.relation,
-                buffer,
-                data,
+                Shared => {
+                    pgrx::pg_sys::UnlockRelationForExtension(
+                        self.relation,
+                        pgrx::pg_sys::AccessShareLock as _,
+                    );
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 use crate::datatype::Scalar;
-use crate::postgres::table::{BuildTable, HeapPointer, Pointer, RegularTable};
+use crate::postgres::table::{GrandLocking, HeapPointer, Pointer, Table};
+use std::alloc::{Allocator, Layout};
 use std::cmp::Ordering;
 use std::collections::{BTreeSet, HashSet};
 use std::hash::{Hash, Hasher};
@@ -9,226 +10,37 @@ const MAKE_CONNECTIONS: usize = 256;
 
 const META_TUPLE: Pointer = Pointer { page: 0, id: 0 };
 
-pub struct BuildAlgo {
-    table: BuildTable,
+pub struct Build {
+    relation: pgrx::pg_sys::Relation,
 }
 
-impl BuildAlgo {
-    pub unsafe fn new(table: BuildTable) -> Self {
-        Self { table }
+impl Build {
+    pub unsafe fn new(relation: pgrx::pg_sys::Relation) -> Self {
+        Self { relation }
     }
     pub fn build(&mut self) {
-        assert_eq!(self.table.pages(), 0);
-        let size = MetadataTuple::size();
-        let mut guard = self.table.append(size as u16);
-        unsafe {
-            (*guard.cast_mut::<MetadataTuple>()).pointer = Pointer::NULL;
-            (*guard.cast_mut::<MetadataTuple>()).level = 0;
-        }
+        let mut table = unsafe { Table::new(self.relation, GrandLocking::Exclusive) };
+        assert_eq!(table.pages(), 0);
+        table.append(
+            MetadataTuple {
+                pointer: Pointer::NULL,
+                level: 0,
+            }
+            .to_bytes(),
+        );
     }
     pub fn build_insert(&mut self, vector: &[Scalar], heap_pointer: HeapPointer) {
-        assert_ne!(self.table.pages(), 0);
-        let level = rand::random::<u32>().trailing_zeros() as u8;
-        let mut layers = vec![Vec::<Pointer>::new(); 1 + level as usize];
-        let start_points;
-        let start_level;
-        if let Some((entry, top)) = self.read_metadata() {
-            if top >= level {
-                let mut entry = entry;
-                for i in (level + 1..=top).rev() {
-                    entry = self.search_in_layer(i, &[entry], &vector, 1)[0];
-                }
-                start_points = vec![entry];
-                start_level = level;
-            } else {
-                start_points = vec![entry];
-                start_level = top;
-            }
-        } else {
-            let pointer = self.append(heap_pointer, vector, &layers);
-            self.try_to_write_metadata(Some((pointer, level)));
-            return;
-        }
-        for i in (0..=start_level).rev() {
-            layers[i as usize] = self.search_in_layer(
-                i,
-                if i == start_level {
-                    &start_points
-                } else {
-                    &layers[i as usize + 1]
-                },
-                &vector,
-                MAKE_CONNECTIONS,
-            );
-            layers[i as usize].truncate(MAX_CONNECTIONS);
-        }
-        let pointer = self.append(heap_pointer, vector, &layers);
-        for i in (0..=start_level).rev() {
-            for &neighbour in layers[i as usize].iter() {
-                let mut layer = self.read_layer(neighbour, i);
-                layer.push(pointer);
-                self.push(&mut layer, neighbour);
-                layer.truncate(MAX_CONNECTIONS);
-                self.write_layer(neighbour, i, &layer);
-            }
-        }
-        self.try_to_write_metadata(Some((pointer, level)));
-    }
-    fn push(&mut self, source: &mut [Pointer], target: Pointer) {
-        if source.len() == 0 {
-            return;
-        }
-        let vector = self.read_vector(target);
-        let mut index = source.len() - 1;
-        while index != 0
-            && distance(&vector, &self.read_vector(source[index]))
-                < distance(&vector, &self.read_vector(source[(index - 1) / 2]))
-        {
-            source.swap(index, (index - 1) / 2);
-            index = (index - 1) / 2;
-        }
-    }
-    fn search_in_layer(
-        &mut self,
-        level: u8,
-        source: &[Pointer],
-        target: &[Scalar],
-        k: usize,
-    ) -> Vec<Pointer> {
-        assert_ne!(source.len(), 0);
-        let mut visited: HashSet<Pointer> = source.iter().copied().collect();
-        let mut candidates: BTreeSet<(F64, Pointer)> = source
-            .iter()
-            .map(|&x| (distance(&self.read_vector(x), target).into(), x))
-            .collect();
-        let mut result = candidates.clone();
-        while result.len() > k {
-            result.pop_last();
-        }
-        while let Some((c_dis, c)) = candidates.pop_first() {
-            let (f_dis, _) = result.last().copied().unwrap();
-            if c_dis > f_dis.into() {
-                break;
-            }
-            for e in self.read_layer(c, level).into_iter() {
-                if visited.contains(&e) {
-                    continue;
-                }
-                visited.insert(e);
-                let e_dis = distance(&self.read_vector(e), target);
-                let (f_dis, _) = result.last().copied().unwrap();
-                if e_dis < f_dis.into() || result.len() < k {
-                    candidates.insert((e_dis.into(), e));
-                    result.insert((e_dis.into(), e));
-                    if result.len() > k {
-                        result.pop_last();
-                    }
-                }
-            }
-        }
-        result.into_iter().map(|(_, pointer)| pointer).collect()
-    }
-    fn read_metadata(&mut self) -> Option<(Pointer, u8)> {
-        unsafe {
-            let guard = self.table.write(META_TUPLE).unwrap();
-            let tuple = guard.cast::<MetadataTuple>();
-            tuple.get()
-        }
-    }
-    fn try_to_write_metadata(&mut self, metadata: Option<(Pointer, u8)>) {
-        unsafe {
-            let mut guard = self.table.write(META_TUPLE).unwrap();
-            let tuple = guard.cast_mut::<MetadataTuple>();
-            if (*tuple).pointer.is_null() || (*tuple).level < metadata.unwrap().1 {
-                tuple.set(metadata)
-            }
-        }
-    }
-    fn append(
-        &mut self,
-        heap_pointer: HeapPointer,
-        vector: &[Scalar],
-        layers: &[Vec<Pointer>],
-    ) -> Pointer {
-        let level = layers.len() - 1;
-        let size = DataTuple::size(vector.len() as _, level as _);
-        let mut guard = self.table.append(size as u16);
-        unsafe {
-            let tuple = guard.cast_mut::<DataTuple>();
-            (*tuple).deleted = false;
-            (*tuple).heap_pointer = heap_pointer;
-            (*tuple).size_layers = level as _;
-            (*tuple).size_vector = vector.len() as _;
-            tuple.vector_mut().copy_from_slice(vector);
-            for i in 0..=level {
-                tuple.layer_set(level as _, &layers[i as usize]);
-            }
-        }
-        guard.pointer()
-    }
-    fn read_layer(&mut self, pointer: Pointer, level: u8) -> Vec<Pointer> {
-        unsafe {
-            let guard = self.table.read(pointer).unwrap();
-            let tuple = guard.cast::<DataTuple>();
-            tuple.layer_get(level)
-        }
-    }
-    fn read_vector(&mut self, pointer: Pointer) -> Vec<Scalar> {
-        unsafe {
-            let guard = self.table.read(pointer).unwrap();
-            let tuple = guard.cast::<DataTuple>();
-            tuple.vector().to_vec()
-        }
-    }
-    fn write_layer(&mut self, pointer: Pointer, level: u8, layer: &[Pointer]) {
-        unsafe {
-            let mut guard = self.table.write(pointer).unwrap();
-            let tuple = guard.cast_mut::<DataTuple>();
-            tuple.layer_set(level, layer)
-        }
-    }
-}
-
-pub struct RegularAlgo {
-    table: RegularTable,
-}
-
-impl RegularAlgo {
-    pub unsafe fn new(table: RegularTable) -> Self {
-        Self { table }
-    }
-    pub fn search(&mut self, vector: &[Scalar], k: usize) -> Vec<HeapPointer> {
-        if let Some((entry, top)) = self.read_metadata() {
-            let mut e = entry;
-            for i in (1..=top).rev() {
-                e = self.search_in_layer(i, &[e], vector, 1)[0];
-            }
-            let result = self.search_in_layer(0, &[e], vector, k);
-            result
-                .into_iter()
-                .filter_map(|p| unsafe {
-                    let guard = self.table.read(p).unwrap();
-                    if !(*guard.cast::<DataTuple>()).deleted {
-                        Some((*guard.cast::<DataTuple>()).heap_pointer)
-                    } else {
-                        None
-                    }
-                })
-                .collect()
-        } else {
-            Vec::new()
-        }
-    }
-    pub fn insert(&mut self, vector: &[Scalar], heap_pointer: HeapPointer) {
+        let mut table = unsafe { Table::new(self.relation, GrandLocking::Exclusive) };
+        assert_ne!(table.pages(), 0);
         let level = rand::random::<u32>().trailing_zeros() as u8;
         let mut layers = vec![Vec::<Pointer>::new(); 1 + level as usize];
         let start_vectors;
         let start_level;
-        if let Some((entry, top)) = self.read_metadata() {
+        if let Some((entry, top)) = read_metadata(&mut table) {
             if top >= level {
                 let mut entry = entry;
                 for i in (level + 1..=top).rev() {
-                    entry = self.search_in_layer(i, &[entry], &vector, 1)[0];
+                    entry = search_in_layer(&mut table, i, &[entry], &vector, 1)[0];
                 }
                 start_vectors = vec![entry];
                 start_level = level;
@@ -237,12 +49,13 @@ impl RegularAlgo {
                 start_level = top;
             }
         } else {
-            let pointer = self.append(heap_pointer, vector, &layers);
-            self.try_to_write_metadata(Some((pointer, level)));
+            let pointer = append(&mut table, heap_pointer, vector, &layers);
+            try_to_write_metadata(&mut table, Some((pointer, level)));
             return;
         }
         for i in (0..=start_level).rev() {
-            layers[i as usize] = self.search_in_layer(
+            layers[i as usize] = search_in_layer(
+                &mut table,
                 i,
                 if i == start_level {
                     &start_vectors
@@ -254,154 +67,231 @@ impl RegularAlgo {
             );
             layers[i as usize].truncate(MAX_CONNECTIONS);
         }
-        let pointer = self.append(heap_pointer, vector, &layers);
-        for i in (0..=start_level).rev() {
+        let pointer = append(&mut table, heap_pointer, vector, &layers);
+        for i in 0..=level {
             for &neighbour in layers[i as usize].iter() {
-                let mut layer = self.read_layer(neighbour, i);
+                let mut layer = read_layer(&mut table, neighbour, i);
                 layer.push(pointer);
-                self.push(&mut layer, neighbour);
+                push(&mut table, &mut layer, neighbour);
                 layer.truncate(MAX_CONNECTIONS);
-                self.write_layer(neighbour, i, &layer);
+                write_layer(&mut table, neighbour, i, &layer);
             }
         }
-        self.try_to_write_metadata(Some((pointer, level)));
-    }
-    fn push(&mut self, source: &mut [Pointer], target: Pointer) {
-        if source.len() == 0 {
-            return;
-        }
-        let vector = self.read_vector(target);
-        let mut index = source.len() - 1;
-        while index != 0
-            && distance(&vector, &self.read_vector(source[index]))
-                < distance(&vector, &self.read_vector(source[(index - 1) / 2]))
-        {
-            source.swap(index, (index - 1) / 2);
-            index = (index - 1) / 2;
+        if start_level <= level {
+            try_to_write_metadata(&mut table, Some((pointer, level)));
         }
     }
-    pub fn vacuum<F>(&mut self, mut f: F)
-    where
-        F: FnMut(HeapPointer) -> bool,
-    {
-        let n = self.table.pages();
-        for page in 0..n {
-            for id in 0..=u16::MAX {
-                let pointer = Pointer::new(page, id);
-                if pointer == META_TUPLE {
-                    continue;
+}
+
+pub fn search(relation: pgrx::pg_sys::Relation, vector: &[Scalar], k: usize) -> Vec<HeapPointer> {
+    let mut table = unsafe { Table::new(relation, GrandLocking::Shared) };
+    if let Some((entry, top)) = read_metadata(&mut table) {
+        let mut e = entry;
+        for i in (1..=top).rev() {
+            e = search_in_layer(&mut table, i, &[e], vector, 1)[0];
+        }
+        let result = search_in_layer(&mut table, 0, &[e], vector, k);
+        result
+            .into_iter()
+            .filter_map(|p| unsafe {
+                let tuple = force(table.read(p));
+                if !(*tuple).deleted {
+                    Some((*tuple).heap_pointer)
+                } else {
+                    None
                 }
-                let Some(mut guard) = self.table.write(pointer) else { break };
-                let tuple = guard.cast_mut::<DataTuple>();
-                unsafe {
-                    if !(*tuple).deleted {
-                        if f((*tuple).heap_pointer) {
-                            (*tuple).deleted = true;
-                        }
+            })
+            .collect()
+    } else {
+        Vec::new()
+    }
+}
+
+pub fn insert(relation: pgrx::pg_sys::Relation, vector: &[Scalar], heap_pointer: HeapPointer) {
+    let mut table = unsafe { Table::new(relation, GrandLocking::Exclusive) };
+    let level = rand::random::<u32>().trailing_zeros() as u8;
+    let mut layers = vec![Vec::<Pointer>::new(); 1 + level as usize];
+    let start_vectors;
+    let start_level;
+    if let Some((entry, top)) = read_metadata(&mut table) {
+        if top >= level {
+            let mut entry = entry;
+            for i in (level + 1..=top).rev() {
+                entry = search_in_layer(&mut table, i, &[entry], &vector, 1)[0];
+            }
+            start_vectors = vec![entry];
+            start_level = level;
+        } else {
+            start_vectors = vec![entry];
+            start_level = top;
+        }
+    } else {
+        let pointer = append(&mut table, heap_pointer, vector, &layers);
+        try_to_write_metadata(&mut table, Some((pointer, level)));
+        return;
+    }
+    for i in (0..=start_level).rev() {
+        layers[i as usize] = search_in_layer(
+            &mut table,
+            i,
+            if i == start_level {
+                &start_vectors
+            } else {
+                &layers[i as usize + 1]
+            },
+            &vector,
+            MAKE_CONNECTIONS,
+        );
+        layers[i as usize].truncate(MAX_CONNECTIONS);
+    }
+    let pointer = append(&mut table, heap_pointer, vector, &layers);
+    for i in 0..=level {
+        for &neighbour in layers[i as usize].iter() {
+            let mut layer = read_layer(&mut table, neighbour, i);
+            layer.push(pointer);
+            push(&mut table, &mut layer, neighbour);
+            layer.truncate(MAX_CONNECTIONS);
+            write_layer(&mut table, neighbour, i, &layer);
+        }
+    }
+    if start_level <= level {
+        try_to_write_metadata(&mut table, Some((pointer, level)));
+    }
+}
+
+pub fn vacuum<F>(relation: pgrx::pg_sys::Relation, mut f: F)
+where
+    F: FnMut(HeapPointer) -> bool,
+{
+    let n = {
+        let mut table = unsafe { Table::new(relation, GrandLocking::Shared) };
+        table.pages()
+    };
+    for page in 0..n {
+        let mut table = unsafe { Table::new(relation, GrandLocking::Shared) };
+        for id in 0..=u16::MAX {
+            let pointer = Pointer::new(page, id);
+            if pointer == META_TUPLE {
+                continue;
+            }
+            let Some(tuple) = table.write(pointer) else { break };
+            unsafe {
+                let tuple = force_mut(Some(tuple));
+                if !(*tuple).deleted {
+                    if f((*tuple).heap_pointer) {
+                        (*tuple).deleted = true;
                     }
                 }
             }
         }
     }
-    fn search_in_layer(
-        &mut self,
-        level: u8,
-        source: &[Pointer],
-        target: &[Scalar],
-        k: usize,
-    ) -> Vec<Pointer> {
-        assert_ne!(source.len(), 0);
-        let mut visited: HashSet<Pointer> = source.iter().copied().collect();
-        let mut candidates: BTreeSet<(F64, Pointer)> = source
-            .iter()
-            .map(|&x| (distance(&self.read_vector(x), target).into(), x))
-            .collect();
-        let mut result = candidates.clone();
-        while result.len() > k {
-            result.pop_last();
+}
+
+fn search_in_layer(
+    table: &mut Table,
+    level: u8,
+    source: &[Pointer],
+    target: &[Scalar],
+    k: usize,
+) -> Vec<Pointer> {
+    assert_ne!(source.len(), 0);
+    let mut visited: HashSet<Pointer> = source.iter().copied().collect();
+    let mut candidates: BTreeSet<(F64, Pointer)> = source
+        .iter()
+        .map(|&x| (distance(&read_vector(table, x), target).into(), x))
+        .collect();
+    let mut result = candidates.clone();
+    while result.len() > k {
+        result.pop_last();
+    }
+    while let Some((c_dis, c)) = candidates.pop_first() {
+        let (f_dis, _) = result.last().copied().unwrap();
+        if c_dis > f_dis.into() {
+            break;
         }
-        while let Some((c_dis, c)) = candidates.pop_first() {
+        for e in read_layer(table, c, level).into_iter() {
+            if visited.contains(&e) {
+                continue;
+            }
+            visited.insert(e);
+            let e_dis = distance(&read_vector(table, e), target);
             let (f_dis, _) = result.last().copied().unwrap();
-            if c_dis > f_dis.into() {
-                break;
-            }
-            for e in self.read_layer(c, level).into_iter() {
-                if visited.contains(&e) {
-                    continue;
-                }
-                visited.insert(e);
-                let e_dis = distance(&self.read_vector(e), target);
-                let (f_dis, _) = result.last().copied().unwrap();
-                if e_dis < f_dis.into() || result.len() < k {
-                    candidates.insert((e_dis.into(), e));
-                    result.insert((e_dis.into(), e));
-                    if result.len() > k {
-                        result.pop_last();
-                    }
+            if e_dis < f_dis.into() || result.len() < k {
+                candidates.insert((e_dis.into(), e));
+                result.insert((e_dis.into(), e));
+                if result.len() > k {
+                    result.pop_last();
                 }
             }
         }
-        result.into_iter().map(|(_, pointer)| pointer).collect()
     }
-    fn read_metadata(&mut self) -> Option<(Pointer, u8)> {
-        unsafe {
-            let guard = self.table.write(META_TUPLE).unwrap();
-            let tuple = guard.cast::<MetadataTuple>();
-            tuple.get()
+    result.into_iter().map(|(_, pointer)| pointer).collect()
+}
+
+fn push(table: &mut Table, source: &mut [Pointer], target: Pointer) {
+    if source.len() == 0 {
+        return;
+    }
+    let vector = read_vector(table, target);
+    let mut index = source.len() - 1;
+    while index != 0
+        && distance(&vector, &read_vector(table, source[index]))
+            < distance(&vector, &read_vector(table, source[(index - 1) / 2]))
+    {
+        source.swap(index, (index - 1) / 2);
+        index = (index - 1) / 2;
+    }
+}
+
+fn read_metadata(table: &mut Table) -> Option<(Pointer, u8)> {
+    unsafe { force_metadata(table.read(META_TUPLE)).get() }
+}
+
+fn try_to_write_metadata(table: &mut Table, metadata: Option<(Pointer, u8)>) {
+    unsafe {
+        let tuple = force_metadata_mut(table.write(META_TUPLE));
+        if (*tuple).pointer.is_null() || (*tuple).level < metadata.unwrap().1 {
+            tuple.set(metadata)
         }
     }
-    fn try_to_write_metadata(&mut self, metadata: Option<(Pointer, u8)>) {
-        unsafe {
-            let mut guard = self.table.write(META_TUPLE).unwrap();
-            let tuple = guard.cast_mut::<MetadataTuple>();
-            if (*tuple).pointer.is_null() || (*tuple).level < metadata.unwrap().1 {
-                tuple.set(metadata)
-            }
-        }
-    }
-    fn append(
-        &mut self,
-        heap_pointer: HeapPointer,
-        vector: &[Scalar],
-        layers: &[Vec<Pointer>],
-    ) -> Pointer {
+}
+
+fn append(
+    table: &mut Table,
+    heap_pointer: HeapPointer,
+    vector: &[Scalar],
+    layers: &[Vec<Pointer>],
+) -> Pointer {
+    unsafe {
         let level = layers.len() - 1;
         let size = DataTuple::size(vector.len() as _, level as _);
-        let mut guard = self.table.append(size as u16);
-        unsafe {
-            let tuple = guard.cast_mut::<DataTuple>();
-            (*tuple).deleted = false;
-            (*tuple).heap_pointer = heap_pointer;
-            (*tuple).size_layers = level as _;
-            (*tuple).size_vector = vector.len() as _;
-            tuple.vector_mut().copy_from_slice(vector);
-            for i in 0..=level {
-                tuple.layer_set(level as _, &layers[i as usize]);
-            }
+        let layout = Layout::from_size_align(size, 8).unwrap().pad_to_align();
+        let ptr = std::alloc::Global.allocate_zeroed(layout).unwrap();
+        let raw = ptr.as_ptr() as *mut DataTuple;
+        (*raw).deleted = false;
+        (*raw).heap_pointer = heap_pointer;
+        (*raw).size_layers = level as _;
+        (*raw).size_vector = vector.len() as _;
+        raw.vector_mut().copy_from_slice(vector);
+        for i in 0..=level {
+            raw.layer_set(i as _, &layers[i as usize]);
         }
-        guard.pointer()
+        let pointer = table.append(ptr.as_ref());
+        std::alloc::Global.deallocate(ptr.cast(), layout);
+        pointer
     }
-    fn read_layer(&mut self, pointer: Pointer, level: u8) -> Vec<Pointer> {
-        unsafe {
-            let guard = self.table.read(pointer).unwrap();
-            let tuple = guard.cast::<DataTuple>();
-            tuple.layer_get(level)
-        }
-    }
-    fn read_vector(&mut self, pointer: Pointer) -> Vec<Scalar> {
-        unsafe {
-            let guard = self.table.read(pointer).unwrap();
-            let tuple = guard.cast::<DataTuple>();
-            tuple.vector().to_vec()
-        }
-    }
-    fn write_layer(&mut self, pointer: Pointer, level: u8, layer: &[Pointer]) {
-        unsafe {
-            let mut guard = self.table.write(pointer).unwrap();
-            let tuple = guard.cast_mut::<DataTuple>();
-            tuple.layer_set(level, layer)
-        }
-    }
+}
+
+fn read_layer(table: &mut Table, pointer: Pointer, level: u8) -> Vec<Pointer> {
+    unsafe { force(table.read(pointer)).layer_get(level) }
+}
+
+fn read_vector(table: &mut Table, pointer: Pointer) -> Vec<Scalar> {
+    unsafe { force(table.read(pointer)).vector().to_vec() }
+}
+
+fn write_layer(table: &mut Table, pointer: Pointer, level: u8, layer: &[Pointer]) {
+    unsafe { force_mut(table.write(pointer)).layer_set(level, layer) }
 }
 
 fn distance(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
@@ -464,9 +354,6 @@ struct MetadataTuple {
 }
 
 impl MetadataTuple {
-    fn size() -> usize {
-        std::mem::size_of::<Self>()
-    }
     unsafe fn get(self: *const Self) -> Option<(Pointer, u8)> {
         if (*self).pointer.is_null() {
             None
@@ -480,6 +367,11 @@ impl MetadataTuple {
             (*self).level = level;
         } else {
             (*self).pointer = Pointer::NULL;
+        }
+    }
+    fn to_bytes(&self) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(self as *const _ as *const u8, std::mem::size_of::<Self>())
         }
     }
 }
@@ -499,8 +391,7 @@ impl DataTuple {
     fn size(size_vector: u16, size_layers: u8) -> usize {
         std::mem::size_of::<Self>()
             + std::mem::size_of::<Scalar>() * size_vector as usize
-            + (std::mem::size_of::<u64>() + std::mem::size_of::<Pointer>() * MAX_CONNECTIONS)
-                * (1 + size_layers) as usize
+            + std::mem::size_of::<(u64, [Pointer; MAX_CONNECTIONS])>() * (1 + size_layers) as usize
     }
     unsafe fn vector<'a>(self: *const Self) -> &'a [Scalar] {
         let offset = std::mem::size_of::<Self>();
@@ -513,13 +404,8 @@ impl DataTuple {
         std::slice::from_raw_parts_mut(ptr as _, (*self).size_vector as usize)
     }
     unsafe fn layer_get(self: *const Self, level: u8) -> Vec<Pointer> {
-        if level > (*self).size_layers {
-            unsafe {
-                std::intrinsics::breakpoint();
-            }
-        }
         assert!(level <= (*self).size_layers);
-        let offset = std::mem::size_of::<DataTuple>()
+        let offset = std::mem::size_of::<Self>()
             + std::mem::size_of::<Scalar>() * (*self).size_vector as usize
             + std::mem::size_of::<(u64, [Pointer; MAX_CONNECTIONS])>() * level as usize;
         let ptr = (self as *mut u8).add(offset);
@@ -528,7 +414,7 @@ impl DataTuple {
     }
     unsafe fn layer_set(self: *mut Self, level: u8, data: &[Pointer]) {
         assert!(level <= (*self).size_layers);
-        let offset = std::mem::size_of::<DataTuple>()
+        let offset = std::mem::size_of::<Self>()
             + std::mem::size_of::<Scalar>() * (*self).size_vector as usize
             + std::mem::size_of::<(u64, [Pointer; MAX_CONNECTIONS])>() * level as usize;
         let ptr = (self as *mut u8).add(offset);
@@ -537,4 +423,20 @@ impl DataTuple {
         array[..len].copy_from_slice(&data[..len]);
         (ptr as *mut (u64, [Pointer; MAX_CONNECTIONS])).write((len as u64, array));
     }
+}
+
+fn force(data: Option<&[u8]>) -> *const DataTuple {
+    data.unwrap().as_ptr() as _
+}
+
+fn force_mut(data: Option<&mut [u8]>) -> *mut DataTuple {
+    data.unwrap().as_ptr() as _
+}
+
+fn force_metadata(data: Option<&[u8]>) -> *const MetadataTuple {
+    data.unwrap().as_ptr() as _
+}
+
+fn force_metadata_mut(data: Option<&mut [u8]>) -> *mut MetadataTuple {
+    data.unwrap().as_ptr() as _
 }
