@@ -260,16 +260,6 @@ impl FromDatum for &Vector {
     }
 }
 
-impl FromDatum for &mut Vector {
-    unsafe fn from_polymorphic_datum(datum: Datum, is_null: bool, _typoid: Oid) -> Option<Self> {
-        if is_null {
-            None
-        } else {
-            Some(&mut *datum.cast_mut_ptr())
-        }
-    }
-}
-
 impl FromDatum for PgVector {
     unsafe fn from_polymorphic_datum(datum: Datum, is_null: bool, _typoid: Oid) -> Option<Self> {
         if is_null {
@@ -290,16 +280,6 @@ impl IntoDatum for &Vector {
     }
 }
 
-impl IntoDatum for &mut Vector {
-    fn into_datum(self) -> Option<Datum> {
-        Some(Datum::from(self as *const _ as *const ()))
-    }
-
-    fn type_oid() -> Oid {
-        pgrx::wrappers::regtypein("vector")
-    }
-}
-
 impl IntoDatum for PgVector {
     fn into_datum(self) -> Option<Datum> {
         Some(Datum::from(self.into_raw() as *mut ()))
@@ -311,15 +291,6 @@ impl IntoDatum for PgVector {
 }
 
 unsafe impl SqlTranslatable for &Vector {
-    fn argument_sql() -> Result<SqlMapping, ArgumentError> {
-        Ok(SqlMapping::As(String::from("vector")))
-    }
-    fn return_sql() -> Result<Returns, ReturnsError> {
-        Ok(Returns::One(SqlMapping::As(String::from("vector"))))
-    }
-}
-
-unsafe impl SqlTranslatable for &mut Vector {
     fn argument_sql() -> Result<SqlMapping, ArgumentError> {
         Ok(SqlMapping::As(String::from("vector")))
     }
@@ -546,5 +517,5 @@ fn operator_l2_distance(lhs: &Vector, rhs: &Vector) -> Scalar {
     for i in 0..n {
         alpha += (lhs[i] - rhs[i]) * (lhs[i] - rhs[i]);
     }
-    alpha.sqrt()
+    alpha
 }
