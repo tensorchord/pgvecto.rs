@@ -1,3 +1,5 @@
+use pgrx::pg_sys::Datum;
+use pgrx::pg_sys::Oid;
 use pgrx::pgrx_sql_entity_graph::metadata::ArgumentError;
 use pgrx::pgrx_sql_entity_graph::metadata::Returns;
 use pgrx::pgrx_sql_entity_graph::metadata::ReturnsError;
@@ -6,8 +8,6 @@ use pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
 use pgrx::Array;
 use pgrx::FromDatum;
 use pgrx::IntoDatum;
-use pgrx::pg_sys::Datum;
-use pgrx::pg_sys::Oid;
 use std::alloc::Allocator;
 use std::alloc::Layout;
 use std::cmp::Ordering;

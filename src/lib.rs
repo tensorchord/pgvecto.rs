@@ -4,8 +4,6 @@
 #![feature(core_intrinsics)]
 #![feature(allocator_api)]
 #![feature(arbitrary_self_types)]
-#![feature(let_chains)]
-#![feature(lazy_cell)]
 
 use pgrx::prelude::*;
 
