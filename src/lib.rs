@@ -4,6 +4,9 @@
 #![feature(core_intrinsics)]
 #![feature(allocator_api)]
 #![feature(arbitrary_self_types)]
+#![feature(panic_info_message)]
+#![feature(panic_update_hook)]
+#![feature(ptr_metadata)]
 
 use pgrx::prelude::*;
 
@@ -20,6 +23,12 @@ pgrx::pg_module_magic!();
 #[allow(non_snake_case)]
 #[pg_guard]
 pub unsafe extern "C" fn _PG_init() {
+    std::panic::update_hook(|prev, info| {
+        pgrx::warning!("RUST PANIC. {}", info);
+        #[cfg(debug_assertions)]
+        std::intrinsics::breakpoint();
+        prev(info);
+    });
     gucs::init();
 }
 

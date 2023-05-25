@@ -1,4 +1,5 @@
 use crate::datatype::Vector;
+use crate::hnsw::insert;
 use crate::hnsw::search;
 use crate::hnsw::vacuum;
 use crate::hnsw::Build;
@@ -175,7 +176,7 @@ unsafe extern "C" fn aminsert(
     _index_info: *mut pg_sys::IndexInfo,
 ) -> bool {
     let pgvector = <&Vector>::from_datum(*values.add(0), *is_null.add(0)).unwrap();
-    crate::hnsw::insert(index_relation, pgvector, HeapPointer::from_sys(*heap_tid));
+    insert(index_relation, pgvector, HeapPointer::from_sys(*heap_tid));
 
     true
 }
