@@ -2,7 +2,7 @@ use pgrx::prelude::*;
 
 use crate::{
     embedding::{Embedding, EmbeddingCreator, OpenAIEmbedding},
-    gucs::OPENAI_API_KEY_GUC,
+    postgres::gucs::OPENAI_API_KEY_GUC,
 };
 
 #[pg_extern]

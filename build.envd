@@ -19,6 +19,6 @@ def build():
     ])
     envdlib.rust()
     run(commands=[
-        "cargo install cargo-pgrx --version 0.8.0",
+        "cargo install cargo-pgrx --version 0.9.3",
         "cargo pgrx init",
     ])
