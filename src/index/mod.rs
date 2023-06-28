@@ -20,7 +20,6 @@ fn am_handler(_fc_info: pg_sys::FunctionCallInfo) -> PgBox<pg_sys::IndexAmRoutin
 
     am_routine.amstrategies = 3;
     am_routine.amsupport = 1;
-    am_routine.amoptsprocnum = 0;
 
     am_routine.amcanorder = false;
     am_routine.amcanorderbyop = true;
@@ -34,7 +33,11 @@ fn am_handler(_fc_info: pg_sys::FunctionCallInfo) -> PgBox<pg_sys::IndexAmRoutin
     am_routine.amclusterable = false;
     am_routine.ampredlocks = true;
     am_routine.amcaninclude = false;
-    am_routine.amusemaintenanceworkmem = false;
+    #[cfg(any(feature = "pg13", feature = "pg14", feature = "pg15"))]
+    {
+        am_routine.amoptsprocnum = 0;
+        am_routine.amusemaintenanceworkmem = false;
+    }
     am_routine.amkeytype = pgrx::pg_sys::InvalidOid;
 
     am_routine.amvalidate = Some(am_validate);
