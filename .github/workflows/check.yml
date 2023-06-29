@@ -34,7 +34,7 @@ jobs:
   build:
     strategy:
       matrix:
-        version: [13]
+        version: [12, 13]
         os: ["ubuntu-latest"]
     runs-on: ${{ matrix.os }}
     steps:
@@ -44,10 +44,11 @@ jobs:
         cargo install cargo-pgrx --version "0.8.0"
         cargo pgrx init --pg${{ matrix.version }}=download
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --no-default-features --features "pg${{ matrix.version }}" --verbose
     - name: Semantic check
-      run: cargo clippy
+      run: cargo clippy --no-default-features --features "pg${{ matrix.version }}" 
     - name: Test
       env:
         RUST_BACKTRACE: 1
       run: cargo test --all --no-default-features --features "pg${{ matrix.version }} pg_test" -- --nocapture
+ 
