@@ -27,7 +27,7 @@ Why not just use Postgres to do the vector similarity search? This is the reason
 UPDATE documents SET embedding = ai_embedding_vector(content) WHERE length(embedding) = 0;
 
 -- Create an index on the embedding column
-CREATE INDEX ON documents USING ivfflat (embedding vector_l2_ops) WITH (lists = 100);
+CREATE INDEX ON documents USING vectors (embedding l2_ops) WITH (algorithm = "HNSW");
 
 -- Query the similar embeddings
 SELECT * FROM documents ORDER BY embedding <-> ai_embedding_vector('hello world') LIMIT 5;
@@ -58,6 +58,14 @@ cargo pgrx run
 
 ### Installation
 
+Please modify your postgresql.conf file to include the following content:
+
+```
+shared_preload_libraries = 'vectors.so'
+```
+
+You need restart your PostgreSQL server for the changes to take effect.
+
 ```sql
 -- install the extension
 DROP EXTENSION IF EXISTS vectors;
@@ -71,19 +79,21 @@ CREATE EXTENSION vectors;
 We support three operators to calculate the distance between two vectors:
 
 - `<->`: square Euclidean distance
-- `<#>`: dot product distance
-- `<=>`: cosine distance
+- `<#>`: negative dot product distance
+- `<=>`: negative square cosine distance
 
 ```sql
 -- call the distance function through operators
 
 -- square Euclidean distance
-SELECT array[1, 2, 3] <-> array[3, 2, 1];
+SELECT '[1, 2, 3]' <-> '[3, 2, 1]';
 -- dot product distance
-SELECT array[1, 2, 3] <#> array[3, 2, 1];
+SELECT '[1, 2, 3]' <#> '[3, 2, 1]';
 -- cosine distance
-SELECT array[1, 2, 3] <=> array[3, 2, 1];
+SELECT '[1, 2, 3]' <=> '[3, 2, 1]';
 ```
+
+Note that, "square Euclidean distance" is defined as $ \Sigma (x_i - y_i) ^ 2 $, "negative dot product distance" is defined as $ - \Sigma x_iy_i $, and "negative square cosine distance" is defined as $ - \frac{(\Sigma x_iy_i)^2}{\Sigma x_i^2 \Sigma y_i^2} $, so that you can use `ORDER BY` to perform a KNN search directly without a `DESC` keyword.
 
 ### Create a table
 
@@ -91,22 +101,60 @@ You could use the `CREATE TABLE` statement to create a table with a vector colum
 
 ```sql
 -- create table
-CREATE TABLE items (id bigserial PRIMARY KEY, emb numeric[]);
+CREATE TABLE items (id bigserial PRIMARY KEY, emb vector(3));
 -- insert values
-INSERT INTO items (emb) VALUES (ARRAY[1,2,3]), (ARRAY[4,5,6]);
+INSERT INTO items (emb) VALUES ('[1,2,3]'), ('[4,5,6]');
 -- query the similar embeddings
-SELECT * FROM items ORDER BY emb <-> ARRAY[3,2,1]::real[] LIMIT 5;
+SELECT * FROM items ORDER BY emb <-> '[3,2,1]' LIMIT 5;
 -- query the neighbors within a certain distance
-SELECT * FROM items WHERE emb <-> ARRAY[3,2,1]::real[] < 5;
+SELECT * FROM items WHERE emb <-> '[3,2,1]' < 5;
 ```
 
 ### Create an index
 
-We planning to support the following index types ([issue here](https://github.com/tensorchord/pgvecto.rs/issues/17)):
+You can create an index, using HNSW algorithm and square Euclidean distance with the following SQL.
 
-- IVF
-- HNSW
-- ScaNN
+```sql
+CREATE INDEX ON train USING vectors (emb l2_ops)
+WITH (options = $$
+capacity = 2097152
+size_ram = 4294967296
+storage_vectors = "ram"
+[algorithm.hnsw]
+storage = "ram"
+m = 32
+ef = 256
+$$);
+```
+
+Or using IVFFlat algorithm.
+
+```sql
+CREATE INDEX ON train USING vectors (emb l2_ops)
+WITH (options = $$
+capacity = 2097152
+size_ram = 2147483648
+storage_vectors = "ram"
+[algorithm.ivf]
+storage = "ram"
+nlist = 1000
+nprobe = 10
+$$);
+```
+
+The index must be built on a vector column. Failure to match the actual vector dimension with the dimension type modifier may result in an unsuccessful index building.
+
+The operator class determines the type of distance measurement to be used. At present, `l2_ops`, `dot_ops`, and `cosine_ops` are supported.
+
+You can specify the indexing and the vectors to be stored in the disk by setting `storage_vectors = "disk"`, and `storage = "disk"`. On this condition, `size_disk` must be specified.
+
+Now you can perform a KNN search with the following SQL simply.
+
+```SQL
+SELECT *, emb <-> '[0, 0, 0, 0]' AS score FROM items ORDER BY embedding <-> '[0, 0, 0, 0]' LIMIT 10;
+```
+
+We planning to support more index types ([issue here](https://github.com/tensorchord/pgvecto.rs/issues/17)).
 
 Welcome to contribute if you are also interested!
 
