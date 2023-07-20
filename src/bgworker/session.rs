@@ -438,6 +438,7 @@ pub struct ClientBuild<'a> {
 }
 
 impl<'a> ClientBuild<'a> {
+    #[allow(clippy::never_loop)]
     fn _process(&mut self) -> anyhow::Result<()> {
         if self.last.elapsed() > Duration::from_millis(200) {
             while self.client._test()? {

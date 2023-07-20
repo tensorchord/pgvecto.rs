@@ -104,6 +104,7 @@ impl Vectors {
     }
 }
 
+#[allow(clippy::mut_from_ref)]
 unsafe fn assume_mutable<T>(slice: &[UnsafeCell<T>]) -> &mut [T] {
     let p = slice.as_ptr().cast::<UnsafeCell<T>>() as *mut T;
     std::slice::from_raw_parts_mut(p, slice.len())
