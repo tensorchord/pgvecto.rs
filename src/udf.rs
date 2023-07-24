@@ -2,13 +2,16 @@ use pgrx::prelude::*;
 
 use crate::{
     embedding::{Embedding, EmbeddingCreator, OpenAIEmbedding},
-    gucs::OPENAI_API_KEY_GUC,
+    postgres::OPENAI_API_KEY_GUC,
 };
 
 #[pg_extern]
 fn ai_embedding_vector(input: String) -> Embedding {
     let api_key = match OPENAI_API_KEY_GUC.get() {
-        Some(key) => key,
+        Some(key) => key
+            .to_str()
+            .expect("openai_api_key is not valid")
+            .to_string(),
         None => {
             error!("openai_api_key is not set");
         }
