@@ -8,7 +8,7 @@
 <a href="https://github.com/tensorchord/pgvecto.rs#contributors-"><img alt="all-contributors" src="https://img.shields.io/github/all-contributors/tensorchord/pgvecto.rs/main"></a>
 </p>
 
-pgvecto.rs is a (🚧 working in progress) Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx).
+pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx). It is currently ⚠️**under heavy development**⚠️, please take care when using it in production.
 
 ## Why use pgvecto.rs
 
@@ -16,55 +16,31 @@ pgvecto.rs is a (🚧 working in progress) Postgres extension that provides vect
 - 🦀 **Rewrite in Rust**: Rewriting in Rust offers benefits such as improved memory safety, better performance, and reduced **maintenance costs** over time.
 - 🙋 **Community**: People loves Rust We are happy to help you with any questions you may have. You could join our [Discord](https://discord.gg/KqswhpVgdU) to get in touch with us.
 
-## Why not a specialty vector database?
+## Installation from Source
 
-Imagine this, your existing data is stored in a Postgres database, and you want to use a vector database to do some vector similarity search. You have to move your data from Postgres to the vector database, and you have to maintain two databases at the same time. This is not a good idea.
+We're working on binary release with deb package. Currently, you need to build from source.
 
-Why not just use Postgres to do the vector similarity search? This is the reason why we build pgvecto.rs. The user journey is like this:
-
-```sql
--- Update the embedding column for the documents table
-UPDATE documents SET embedding = ai_embedding_vector(content) WHERE length(embedding) = 0;
-
--- Create an index on the embedding column
-CREATE INDEX ON documents USING vectors (embedding l2_ops) WITH (algorithm = "HNSW");
-
--- Query the similar embeddings
-SELECT * FROM documents ORDER BY embedding <-> ai_embedding_vector('hello world') LIMIT 5;
-```
-
-From [SingleStore DB Blog](https://www.singlestore.com/blog/why-your-vector-database-should-not-be-a-vector-database/):
-
-> Vectors and vector search are a data type and query processing approach, not a foundation for a new way of processing data. Using a specialty vector database (SVDB) will lead to the usual problems we see (and solve) again and again with our customers who use multiple specialty systems: redundant data, excessive data movement, lack of agreement on data values among distributed components, extra labor expense for specialized skills, extra licensing costs, limited query language power, programmability and extensibility, limited tool integration, and poor data integrity and availability compared with a true DBMS.
-
-## Setting up the development environment
-
-You could use [envd](https://github.com/tensorchord/envd) to set up the development environment with one command. It will create a docker container and install all the dependencies for you.
+### Install Rust and base dependency
 
 ```sh
-pip install envd
-envd up
+apt install -y build-essential libpq-dev libssl-dev pkg-config gcc libreadline-dev flex bison libxml2-dev libxslt-dev libxml2-utils xsltproc zlib1g-dev ccache clang
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-## Build from source
-
+### Install pgrx (tensorchord's fork)
 ```sh
-cargo install cargo-pgrx
+cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
 cargo pgrx init
-cargo pgrx run
 ```
 
-## Getting Started
-
-### Installation
-
-Please modify your postgresql.conf file to include the following content:
-
+### Build the extension and config postgres
+```sh
+cargo pgrx install --release
+psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors"'
 ```
-shared_preload_libraries = 'vectors.so'
-```
+You need restart your PostgreSQL server for the changes to take effect, like `systemctl restart postgresql.service`.
 
-You need restart your PostgreSQL server for the changes to take effect.
+### Install the extension in postgres
 
 ```sql
 -- install the extension
@@ -74,7 +50,7 @@ CREATE EXTENSION vectors;
 \df+
 ```
 
-### Calculate the distance
+## Get started with pgvecto.rs
 
 We support three operators to calculate the distance between two vectors:
 
@@ -157,6 +133,38 @@ SELECT *, emb <-> '[0, 0, 0, 0]' AS score FROM items ORDER BY embedding <-> '[0,
 We planning to support more index types ([issue here](https://github.com/tensorchord/pgvecto.rs/issues/17)).
 
 Welcome to contribute if you are also interested!
+
+
+## Why not a specialty vector database?
+
+Imagine this, your existing data is stored in a Postgres database, and you want to use a vector database to do some vector similarity search. You have to move your data from Postgres to the vector database, and you have to maintain two databases at the same time. This is not a good idea.
+
+Why not just use Postgres to do the vector similarity search? This is the reason why we build pgvecto.rs. The user journey is like this:
+
+```sql
+-- Update the embedding column for the documents table
+UPDATE documents SET embedding = ai_embedding_vector(content) WHERE length(embedding) = 0;
+
+-- Create an index on the embedding column
+CREATE INDEX ON documents USING vectors (embedding l2_ops) WITH (algorithm = "HNSW");
+
+-- Query the similar embeddings
+SELECT * FROM documents ORDER BY embedding <-> ai_embedding_vector('hello world') LIMIT 5;
+```
+
+From [SingleStore DB Blog](https://www.singlestore.com/blog/why-your-vector-database-should-not-be-a-vector-database/):
+
+> Vectors and vector search are a data type and query processing approach, not a foundation for a new way of processing data. Using a specialty vector database (SVDB) will lead to the usual problems we see (and solve) again and again with our customers who use multiple specialty systems: redundant data, excessive data movement, lack of agreement on data values among distributed components, extra labor expense for specialized skills, extra licensing costs, limited query language power, programmability and extensibility, limited tool integration, and poor data integrity and availability compared with a true DBMS.
+
+
+## Setting up the development environment
+
+You could use [envd](https://github.com/tensorchord/envd) to set up the development environment with one command. It will create a docker container and install all the dependencies for you.
+
+```sh
+pip install envd
+envd up
+```
 
 ## Contributing
 
