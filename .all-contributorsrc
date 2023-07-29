@@ -64,8 +64,19 @@
         "doc",
         "code"
       ]
+    },
+    {
+      "login": "usamoi",
+      "name": "Usamoi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/79277854?v=4",
+      "profile": "https://usamoi.com",
+      "contributions": [
+        "code",
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
-  "linkToUsage": true
+  "linkToUsage": true,
+  "commitType": "docs"
 }
