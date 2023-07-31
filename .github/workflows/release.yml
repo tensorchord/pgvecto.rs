@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  schedule:
+    # 00:00 UTC+8 -> 16:00
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Sets
+        id: sets
+        env:
+          TZ: Asia/Shanghai
+        run: |
+          commit_date=$(git log -1 --since="24 hours ago" --pretty=format:"%cI")
+          if [[ -n "$commit_date" ]];
+          then echo "recent=true" >> $GITHUB_OUTPUT;
+          else echo "recent=false" >> $GITHUB_OUTPUT;
+          fi
+          echo "now=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT;
+        shell: bash
+    outputs:
+      recent: ${{ steps.sets.outputs.recent }}
+      now: ${{ steps.sets.outputs.now }}
+  release:
+    permissions:
+      contents: write
+      pull-requests: read
+    strategy:
+      matrix:
+        version: [15]
+    needs: setup
+    runs-on: ubuntu-latest
+    if: ${{ needs.setup.outputs.recent == 'true' }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Prepare
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update
+          sudo apt-get -y install libpq-dev postgresql-${{ matrix.version }} postgresql-server-dev-${{ matrix.version }}
+          cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
+          cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
+      - name: Build Release
+        id: build_release
+        run: |
+          cargo pgrx package
+          # deb
+          mkdir ./target/vectors_0.0-0_amd64
+          mkdir ./target/vectors_0.0-0_amd64/DEBIAN
+          touch ./target/vectors_0.0-0_amd64/DEBIAN/control
+          touch ./target/vectors_0.0-0_amd64/DEBIAN/postinst
+          chmod +x ./target/vectors_0.0-0_amd64/DEBIAN/postinst
+          echo "Package: vectors" >> ./target/vectors_0.0-0_amd64/DEBIAN/control
+          echo "Version: 0.0" >> ./target/vectors_0.0-0_amd64/DEBIAN/control
+          echo "Architecture: amd64" >> ./target/vectors_0.0-0_amd64/DEBIAN/control
+          echo "Maintainer: example@example.com" >> ./target/vectors_0.0-0_amd64/DEBIAN/control
+          echo "Description: No descrption." >> ./target/vectors_0.0-0_amd64/DEBIAN/control
+          echo "su postgres -c \"psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = \"vectors\"'\"" >> ./target/vectors_0.0-0_amd64/DEBIAN/postinst
+          mv ./target/release/vectors-pg$(psql --version | awk -F"[ ,.]" '{print $3}')/usr ./target/vectors_0.0-0_amd64/usr
+          dpkg-deb --build --root-owner-group ./target/vectors_0.0-0_amd64
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: nightly-${{ needs.setup.outputs.now }}
+          release_name: Nightly release ${{ needs.setup.outputs.now }}
+          draft: false
+          prerelease: true
+      - name: Upload Release
+        id: upload_release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/vectors_0.0-0_amd64.deb
+          asset_name: vectors_0.0-0_amd64.deb
+          asset_content_type: application/vnd.debian.binary-package
