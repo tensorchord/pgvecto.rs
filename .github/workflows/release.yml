@@ -1,0 +1,195 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  schedule:
+    # 00:00 UTC+8 -> 16:00
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: The version to be released.
+        required: true
+      ref:
+        type: string
+        description: |
+          Ref to checkout.
+          For tags, use the prefix "refs/tags/".
+          For branchs, use the prefix "refs/heads/".
+        required: true
+        default: refs/heads/main
+      prerelease:
+        type: boolean
+        description: Prerelease or not.
+        required: true
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Check recents
+        id: check-recents
+        run: |
+          commit_date=$(git log -1 --since="24 hours ago" --pretty=format:"%cI")
+          if [[ -n "$commit_date" ]];
+          then echo "recents=true" >> $GITHUB_OUTPUT;
+          else echo "recents=false" >> $GITHUB_OUTPUT;
+          fi
+        shell: bash
+      - name: Set version, recheck, ref, prerelease
+        id: sets
+        uses: actions/github-script@v6
+        with:
+          script: |
+            if ("${{ github.event_name }}" == 'push') {
+              if (context.ref.startsWith("refs/tags/")) {
+                let version = context.ref.substring("refs/tags/".length);
+                core.setOutput('version', version);
+                core.setOutput('recheck', 'true');
+                core.setOutput('ref', context.ref);
+                core.setOutput('prerelease', false);
+              } else {
+                throw new Error("unreachable");
+              }
+            } else if ("${{ github.event_name }}" == 'schedule') {
+              let date = new Date();
+              date.setHours(date.getHours() + 8);
+              var yyyy = date.getUTCFullYear();
+              var mm = String(1 + date.getUTCMonth()).padStart(2, '0');
+              var dd = String(0 + date.getUTCDate()).padStart(2, '0');
+              let version = `v0.0.0-nightly.${yyyy}${mm}${dd}`;
+              core.setOutput('version', version);
+              if ("${{ steps.check-recents.outputs.recents }}" == "true") {
+                core.setOutput('recheck', 'true');
+              } else {
+                core.setOutput('recheck', 'false');
+              }
+              core.setOutput('ref', 'refs/heads/main');
+              core.setOutput('prerelease', true);
+            } else if ("${{ github.event_name }}" == 'workflow_dispatch') {
+              let version = "${{ github.event.inputs.version }}";
+              let ref = "${{ github.event.inputs.ref }}";
+              let prerelease = "${{ github.event.inputs.prerelease }}";
+              core.setOutput('version', version);
+              core.setOutput('recheck', 'true');
+              core.setOutput('ref', ref);
+              core.setOutput('prerelease', prerelease);
+            } else {
+              throw new Error("unreachable");
+            }
+    outputs:
+      version: ${{ steps.sets.outputs.version }}
+      recheck: ${{ steps.sets.outputs.recheck }}
+      ref: ${{ steps.sets.outputs.ref }}
+      prerelease: ${{ steps.sets.outputs.prerelease }}
+  release:
+    strategy:
+      matrix:
+        version: [15]
+    needs: setup
+    runs-on: ubuntu-latest
+    if: ${{ needs.setup.outputs.recheck == 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.setup.outputs.ref }}
+      - name: Prepare
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update
+          sudo apt-get -y install libpq-dev postgresql-${{ matrix.version }} postgresql-server-dev-${{ matrix.version }}
+          cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
+          cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
+      - name: Build Release
+        id: build_release
+        run: |
+          sudo apt-get install ruby-dev libarchive-tools
+          sudo gem install --no-document fpm
+          cargo pgrx package
+          mkdir ./artifacts
+          mv ./target/release/vectors-pg${{ matrix.version }}/usr ./artifacts/usr
+          fpm \
+            --input-type dir \
+            --output-type deb \
+            --name vectors-pg${{ matrix.version }} \
+            --version ${{ needs.setup.outputs.version }} \
+            --license apache2 \
+            --deb-no-default-config-files \
+            --package ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64-unknown-linux-gnu.deb \
+            --architecture amd64 \
+            ./artifacts
+          fpm \
+            --input-type dir \
+            --output-type rpm \
+            --name vectors-pg${{ matrix.version }} \
+            --version ${{ needs.setup.outputs.version }} \
+            --license apache2 \
+            --deb-no-default-config-files \
+            --package ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-x86_64-unknown-linux-gnu.rpm \
+            --architecture x86_64 \
+            ./artifacts
+          fpm \
+            --input-type dir \
+            --output-type pacman \
+            --name vectors-pg${{ matrix.version }} \
+            --version ${{ needs.setup.outputs.version }} \
+            --license apache2 \
+            --deb-no-default-config-files \
+            --package ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-x86_64-unknown-linux-gnu.tar.zst \
+            --architecture x86_64 \
+            ./artifacts
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.setup.outputs.version }}
+          release_name: ${{ needs.setup.outputs.version }}
+          draft: false
+          prerelease: ${{ needs.setup.outputs.prerelease }}
+      - name: Upload Release / DEB
+        id: upload_release_deb
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64-unknown-linux-gnu.deb
+          asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64-unknown-linux-gnu.deb
+          asset_content_type: application/vnd.debian.binary-package
+      - name: Upload Release / RPM
+        id: upload_release_rpm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-x86_64-unknown-linux-gnu.rpm
+          asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-x86_64-unknown-linux-gnu.rpm
+          asset_content_type: application/x-rpm
+      - name: Upload Release / PACMAN
+        id: upload_release_pacman
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-x86_64-unknown-linux-gnu.tar.zst
+          asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-x86_64-unknown-linux-gnu.tar.zst
+          asset_content_type: application/octet-stream
