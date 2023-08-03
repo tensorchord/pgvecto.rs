@@ -8,7 +8,7 @@
 <a href="https://github.com/tensorchord/pgvecto.rs#contributors-"><img alt="all-contributors" src="https://img.shields.io/github/all-contributors/tensorchord/pgvecto.rs/main"></a>
 </p>
 
-pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx). It is currently ⚠️**under heavy development**⚠️, please take care when using it in production.
+pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx). It is currently ⚠️**under heavy development**⚠️, please take care when using it in production. Read more at [📝our launch blog](https://modelz.ai/blog/pgvecto-rs).
 
 ## Why use pgvecto.rs
 
