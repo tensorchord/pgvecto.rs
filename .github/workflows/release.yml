@@ -36,7 +36,7 @@ env:
 
 jobs:
   setup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -100,7 +100,7 @@ jobs:
       matrix:
         version: [15]
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: ${{ needs.setup.outputs.recheck == 'true' }}
     steps:
       - name: Checkout
@@ -123,6 +123,7 @@ jobs:
           cargo pgrx package
           mkdir ./artifacts
           mv ./target/release/vectors-pg${{ matrix.version }}/usr ./artifacts/usr
+          cd artifacts
           fpm \
             --input-type dir \
             --output-type deb \
@@ -130,29 +131,10 @@ jobs:
             --version ${{ needs.setup.outputs.version }} \
             --license apache2 \
             --deb-no-default-config-files \
-            --package ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64-unknown-linux-gnu.deb \
+            --package ../vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64-unknown-linux-gnu.deb \
             --architecture amd64 \
-            ./artifacts
-          fpm \
-            --input-type dir \
-            --output-type rpm \
-            --name vectors-pg${{ matrix.version }} \
-            --version ${{ needs.setup.outputs.version }} \
-            --license apache2 \
-            --deb-no-default-config-files \
-            --package ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-x86_64-unknown-linux-gnu.rpm \
-            --architecture x86_64 \
-            ./artifacts
-          fpm \
-            --input-type dir \
-            --output-type pacman \
-            --name vectors-pg${{ matrix.version }} \
-            --version ${{ needs.setup.outputs.version }} \
-            --license apache2 \
-            --deb-no-default-config-files \
-            --package ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-x86_64-unknown-linux-gnu.tar.zst \
-            --architecture x86_64 \
-            ./artifacts
+            .
+          cd ..
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -173,23 +155,3 @@ jobs:
           asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64-unknown-linux-gnu.deb
           asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64-unknown-linux-gnu.deb
           asset_content_type: application/vnd.debian.binary-package
-      - name: Upload Release / RPM
-        id: upload_release_rpm
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-x86_64-unknown-linux-gnu.rpm
-          asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-x86_64-unknown-linux-gnu.rpm
-          asset_content_type: application/x-rpm
-      - name: Upload Release / PACMAN
-        id: upload_release_pacman
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-x86_64-unknown-linux-gnu.tar.zst
-          asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-x86_64-unknown-linux-gnu.tar.zst
-          asset_content_type: application/octet-stream
