@@ -18,10 +18,10 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 
 ## Installation from Source
 
-We're working on binary release with deb package. Currently, you need to build from source.
+<details>
+  <summary>Build from Source</summary>
 
 ### Install Rust and base dependency
-
 ```sh
 apt install -y build-essential libpq-dev libssl-dev pkg-config gcc libreadline-dev flex bison libxml2-dev libxslt-dev libxml2-utils xsltproc zlib1g-dev ccache clang
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -39,8 +39,10 @@ cargo pgrx install --release
 psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors"'
 ```
 You need restart your PostgreSQL server for the changes to take effect, like `systemctl restart postgresql.service`.
+</details>
 
-### Install the extension in postgres
+
+## Install the extension in postgres
 
 ```sql
 -- install the extension
