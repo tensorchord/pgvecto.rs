@@ -1,24 +1,8 @@
-# syntax=v1
-
-envdlib = include("https://github.com/tensorchord/envdlib")
-
 def build():
-    base(dev=True)
-    install.apt_packages(name=[
-        "clang",
-        "libreadline-dev",
-        "zlib1g-dev",
-        "flex",
-        "bison",
-        "libxslt-dev",
-        "libssl-dev",
-        "libxml2-utils",
-        "xsltproc",
-        "ccache",
-        "pkg-config",
-    ])
-    envdlib.rust()
-    run(commands=[
-        "cargo install cargo-pgrx --version 0.10.0-beta.1",
-        "cargo pgrx init",
-    ])
+    config.repo(url="https://github.com/tensorchord/pgvecto.rs")
+    base(os="ubuntu20.04", language="python3")
+    shell("zsh")
+    io.copy("./envd.sh", "/tmp/build/envd.sh")
+    io.copy("./rust-toolchain.toml", "/tmp/build/rust-toolchain.toml")
+    io.copy("./Cargo.toml", "/tmp/build/Cargo.toml")
+    run(commands=["cd /tmp/build", "sudo -u envd ./envd.sh"])
