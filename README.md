@@ -16,84 +16,130 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 - 🦀 **Rewrite in Rust**: Rewriting in Rust offers benefits such as improved memory safety, better performance, and reduced **maintenance costs** over time.
 - 🙋 **Community**: People loves Rust We are happy to help you with any questions you may have. You could join our [Discord](https://discord.gg/KqswhpVgdU) to get in touch with us.
 
-## Installation from Source
+## Installation
 
 <details>
-  <summary>Build from Source</summary>
+  <summary>Build from source</summary>
 
 ### Install Rust and base dependency
+
 ```sh
-apt install -y build-essential libpq-dev libssl-dev pkg-config gcc libreadline-dev flex bison libxml2-dev libxslt-dev libxml2-utils xsltproc zlib1g-dev ccache clang
+sudo apt install -y build-essential libpq-dev libssl-dev pkg-config gcc libreadline-dev flex bison libxml2-dev libxslt-dev libxml2-utils xsltproc zlib1g-dev ccache clang git
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-### Install pgrx (tensorchord's fork)
+### Clone the Repository
+
 ```sh
-cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
-cargo pgrx init
+git clone https://github.com/tensorchord/pgvecto.rs.git
+cd pgvecto.rs
 ```
 
-### Build the extension and config postgres
+### Install Postgresql and pgrx
+
+```sh
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+sudo apt-get update
+sudo apt-get -y install libpq-dev postgresql-15 postgresql-server-dev-15
+cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
+cargo pgrx init --pg15=/usr/lib/postgresql/15/bin/pg_config
+```
+
+### Install pgvecto.rs
+
 ```sh
 cargo pgrx install --release
-psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors"'
 ```
+
 You need restart your PostgreSQL server for the changes to take effect, like `systemctl restart postgresql.service`.
+
 </details>
 
+<details>
+  <summary>Install from release</summary>
 
-## Install the extension in postgres
+Download the deb package in the release page, and type `sudo apt install vectors-pg15-*.deb` to install the deb package.
 
-```sql
--- install the extension
-DROP EXTENSION IF EXISTS vectors;
-CREATE EXTENSION vectors;
--- check the extension related functions
-\df+
+</details>
+
+Configure your PostgreSQL by modifying the `shared_preload_libraries` to include `vectors.so`.
+
+```sh
+psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
 ```
 
-## Get started with pgvecto.rs
+You need restart the PostgreSQL cluster.
 
-We support three operators to calculate the distance between two vectors:
+```
+sudo systemctl restart postgresql.service
+```
 
-- `<->`: square Euclidean distance
-- `<#>`: negative dot product distance
-- `<=>`: negative square cosine distance
+Connect to the database and enable the extension.
+
+```sql
+DROP EXTENSION IF EXISTS vectors;
+CREATE EXTENSION vectors;
+```
+
+## Get started
+
+pgvecto.rs allows columns of a table to be defined as vectors.
+
+The data type `vector(n)` denotes an n-dimensional vector. The `n` within the brackets signifies the dimensions of the vector. For instance, `vector(1000)` would represent a vector with 1000 dimensions, so you could create a table like this.
+
+```sql
+-- create table with a vector column
+
+CREATE TABLE items (
+  id bigserial PRIMARY KEY,
+  embedding vector(3) NOT NULL
+);
+```
+
+You can then populate the table with vector data as follows.
+
+```sql
+-- insert values
+
+INSERT INTO items (embedding)
+VALUES ('[1,2,3]'), ('[4,5,6]');
+```
+
+We support three operators to calculate the distance between two vectors.
+
+- `<->`: squared Euclidean distance, defined as $\Sigma (x_i - y_i) ^ 2$.
+- `<#>`: negative dot product distance, defined as $- \Sigma x_iy_i$.
+- `<=>`: negative squared cosine distance, defined as $- \frac{(\Sigma x_iy_i)^2}{\Sigma x_i^2 \Sigma y_i^2}$.
 
 ```sql
 -- call the distance function through operators
 
--- square Euclidean distance
+-- squared Euclidean distance
 SELECT '[1, 2, 3]' <-> '[3, 2, 1]';
--- dot product distance
+-- negative dot product distance
 SELECT '[1, 2, 3]' <#> '[3, 2, 1]';
--- cosine distance
+-- negative square cosine distance
 SELECT '[1, 2, 3]' <=> '[3, 2, 1]';
 ```
 
-Note that, "square Euclidean distance" is defined as $ \Sigma (x_i - y_i) ^ 2 $, "negative dot product distance" is defined as $ - \Sigma x_iy_i $, and "negative square cosine distance" is defined as $ - \frac{(\Sigma x_iy_i)^2}{\Sigma x_i^2 \Sigma y_i^2} $, so that you can use `ORDER BY` to perform a KNN search directly without a `DESC` keyword.
-
-### Create a table
-
-You could use the `CREATE TABLE` statement to create a table with a vector column.
+You can search for a vector simply like this.
 
 ```sql
--- create table
-CREATE TABLE items (id bigserial PRIMARY KEY, emb vector(3));
--- insert values
-INSERT INTO items (emb) VALUES ('[1,2,3]'), ('[4,5,6]');
 -- query the similar embeddings
-SELECT * FROM items ORDER BY emb <-> '[3,2,1]' LIMIT 5;
+SELECT * FROM items ORDER BY embedding <-> '[3,2,1]' LIMIT 5;
 -- query the neighbors within a certain distance
-SELECT * FROM items WHERE emb <-> '[3,2,1]' < 5;
+SELECT * FROM items WHERE embedding <-> '[3,2,1]' < 5;
 ```
 
-### Create an index
+### Indexing
 
-You can create an index, using HNSW algorithm and square Euclidean distance with the following SQL.
+You can create an index, using squared Euclidean distance with the following SQL.
 
 ```sql
-CREATE INDEX ON train USING vectors (emb l2_ops)
+-- Using HNSW algorithm.
+
+CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
 capacity = 2097152
 size_ram = 4294967296
@@ -103,12 +149,10 @@ storage = "ram"
 m = 32
 ef = 256
 $$);
-```
 
-Or using IVFFlat algorithm.
+--- Or using IVFFlat algorithm.
 
-```sql
-CREATE INDEX ON train USING vectors (emb l2_ops)
+CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
 capacity = 2097152
 size_ram = 2147483648
@@ -120,22 +164,56 @@ nprobe = 10
 $$);
 ```
 
-The index must be built on a vector column. Failure to match the actual vector dimension with the dimension type modifier may result in an unsuccessful index building.
-
-The operator class determines the type of distance measurement to be used. At present, `l2_ops`, `dot_ops`, and `cosine_ops` are supported.
-
-You can specify the indexing and the vectors to be stored in the disk by setting `storage_vectors = "disk"`, and `storage = "disk"`. On this condition, `size_disk` must be specified.
-
 Now you can perform a KNN search with the following SQL simply.
 
-```SQL
-SELECT *, emb <-> '[0, 0, 0, 0]' AS score FROM items ORDER BY embedding <-> '[0, 0, 0, 0]' LIMIT 10;
+```sql
+SELECT *, emb <-> '[0, 0, 0]' AS score
+FROM items
+ORDER BY embedding <-> '[0, 0, 0]' LIMIT 10;
+```
+
+Please note, vector indexes are not loaded by default when PostgreSQL restarts. To load or unload the index, you can use `vectors_load` and `vectors_unload`.
+
+```sql
+--- get the index name
+\d items
+
+-- load the index
+SELECT vectors_load('items_embedding_idx'::regclass);
 ```
 
 We planning to support more index types ([issue here](https://github.com/tensorchord/pgvecto.rs/issues/17)).
 
 Welcome to contribute if you are also interested!
 
+## Reference
+
+### `vector` type
+
+`vector` and `vector(n)` are all legal data types, where `n` denotes dimensions of a vector.
+
+The current implementation ignores dimensions of a vector, i.e., the behavior is the same as for vectors of unspecified dimensions.
+
+There is only one exception: indexes cannot be created on columns without specified dimensions.
+
+### Indexing
+
+We utilize TOML syntax to express the index's configuration. Here's what each key in the configuration signifies:
+
+| Key                    | Type    | Description                                                                                                           |
+| ---------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| capacity               | integer | The index's capacity. The value should be greater than the number of rows in your table.                              |
+| size_ram               | integer | (Optional) The maximum amount of memory the persisent part of index can occupy.                                       |
+| size_disk              | integer | (Optional) The maximum amount of disk-backed memory-mapped file size the persisent part of index can occupy.          |
+| storage_vectors        | string  | `ram` ensures that the vectors always stays in memory while `disk` suggests otherwise.                                |
+| algorithm.ivf          | table   | If this table is set, the IVF algorithm will be used for the index.                                                   |
+| algorithm.ivf.storage  | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
+| algorithm.ivf.nlist    | integer | (Optional) Number of cluster units.                                                                                   |
+| algorithm.ivf.nprobe   | integer | (Optional) Number of units to query.                                                                                  |
+| algorithm.hnsw         | table   | If this table is set, the HNSW algorithm will be used for the index.                                                  |
+| algorithm.hnsw.storage | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
+| algorithm.hnsw.m       | integer | (Optional) Maximum degree of the node.                                                                                |
+| algorithm.hnsw.ef      | integer | (Optional) Search scope in building.                                                                                  |
 
 ## Why not a specialty vector database?
 
@@ -148,7 +226,16 @@ Why not just use Postgres to do the vector similarity search? This is the reason
 UPDATE documents SET embedding = ai_embedding_vector(content) WHERE length(embedding) = 0;
 
 -- Create an index on the embedding column
-CREATE INDEX ON documents USING vectors (embedding l2_ops) WITH (algorithm = "HNSW");
+CREATE INDEX ON documents USING vectors (embedding l2_ops)
+WITH (options = $$
+capacity = 2097152
+size_ram = 4294967296
+storage_vectors = "ram"
+[algorithm.hnsw]
+storage = "ram"
+m = 32
+ef = 256
+$$);
 
 -- Query the similar embeddings
 SELECT * FROM documents ORDER BY embedding <-> ai_embedding_vector('hello world') LIMIT 5;
