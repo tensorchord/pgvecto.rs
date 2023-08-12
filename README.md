@@ -167,7 +167,7 @@ $$);
 Now you can perform a KNN search with the following SQL simply.
 
 ```sql
-SELECT *, emb <-> '[0, 0, 0]' AS score
+SELECT *, embedding <-> '[0, 0, 0]' AS score
 FROM items
 ORDER BY embedding <-> '[0, 0, 0]' LIMIT 10;
 ```
