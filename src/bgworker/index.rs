@@ -1,292 +1,242 @@
-use super::wal::WalSync;
+use super::filter_delete::FilterDelete;
+use super::storage::Storage;
+use super::storage::StoragePreallocator;
+use super::vectors::Vectors;
+use super::wal::Wal;
 use super::wal::WalWriter;
-use crate::algorithms::DynAlgorithm;
-use crate::algorithms::Vectors;
-use crate::memory::given;
-use crate::memory::Address;
-use crate::memory::Context;
-use crate::memory::ContextOptions;
+use crate::algorithms::Algorithm;
+use crate::algorithms::AlgorithmError;
+use crate::algorithms::AlgorithmOptions;
+use crate::bgworker::vectors::VectorsOptions;
+use crate::ipc::server::Build;
+use crate::ipc::server::Search;
+use crate::ipc::ServerIpcError;
 use crate::prelude::*;
-use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
+use std::io::ErrorKind;
 use std::path::Path;
-use std::ptr::NonNull;
 use std::sync::Arc;
-use tokio::io::ErrorKind;
-use tokio_stream::StreamExt;
+use thiserror::Error;
+use validator::Validate;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Error)]
+pub enum IndexError {
+    #[error("Algorithm {0}")]
+    Algorithm(#[from] AlgorithmError),
+    #[error("Ipc {0}")]
+    Ipc(#[from] ServerIpcError),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct IndexOptions {
+    #[validate(range(min = 1))]
+    pub dims: u16,
+    pub distance: Distance,
+    #[validate(range(min = 1))]
+    pub capacity: usize,
+    pub vectors: VectorsOptions,
+    pub algorithm: AlgorithmOptions,
+}
 
 pub struct Index {
     #[allow(dead_code)]
     id: Id,
     #[allow(dead_code)]
-    options: Options,
+    options: IndexOptions,
     vectors: Arc<Vectors>,
-    algo: DynAlgorithm,
-    version: IndexVersion,
+    algo: Algorithm,
+    filter_delete: FilterDelete,
     wal: WalWriter,
     #[allow(dead_code)]
-    context: Arc<Context>,
+    storage: Storage,
 }
 
 impl Index {
-    pub async fn drop(id: Id) -> anyhow::Result<()> {
-        use tokio_stream::wrappers::ReadDirStream;
-        let mut stream = ReadDirStream::new(tokio::fs::read_dir(".").await?);
-        while let Some(f) = stream.next().await {
-            let filename = f?
-                .file_name()
-                .into_string()
-                .map_err(|_| anyhow::anyhow!("Bad filename."))?;
-            if filename.starts_with(&format!("{}_", id.as_u32())) {
-                remove_file_if_exists(filename).await?;
-            }
-        }
-        Ok(())
-    }
-    pub async fn build(
-        id: Id,
-        options: Options,
-        data: async_channel::Receiver<(Box<[Scalar]>, Pointer)>,
-    ) -> anyhow::Result<Self> {
-        Self::drop(id).await?;
-        tokio::task::block_in_place(|| -> anyhow::Result<_> {
-            let context = Context::build(ContextOptions {
-                block_ram: (options.size_ram, format!("{}_data_ram", id.as_u32())),
-                block_disk: (options.size_disk, format!("{}_data_disk", id.as_u32())),
-            })?;
-            let _given = unsafe { given(NonNull::new_unchecked(Arc::as_ptr(&context).cast_mut())) };
-            let vectors = Arc::new(Vectors::build(options.clone())?);
-            while let Ok((vector, p)) = data.recv_blocking() {
-                let data = p.as_u48() << 16;
-                vectors.put(data, &vector)?;
-            }
-            let algo = DynAlgorithm::build(options.clone(), vectors.clone(), vectors.len())?;
-            context.persist()?;
-            let version = IndexVersion::new();
-            let wal = {
-                let path_wal = format!("{}_wal", id.as_u32());
-                let mut wal = WalSync::create(path_wal)?;
-                let log = LogMeta {
-                    options: options.clone(),
-                    address_algorithm: algo.address(),
-                    address_vectors: vectors.address(),
-                };
-                wal.write(&log.bincode()?)?;
-                WalWriter::spawn(wal.into_async())?
-            };
-            Ok(Self {
-                id,
-                options,
-                vectors,
-                algo,
-                version,
-                wal,
-                context,
-            })
-        })
-    }
-
-    pub async fn load(id: Id) -> anyhow::Result<Self> {
-        tokio::task::block_in_place(|| {
-            let mut wal = WalSync::open(format!("{}_wal", id.as_u32()))?;
-            let LogMeta {
-                options,
-                address_vectors,
-                address_algorithm,
-            } = wal
-                .read()?
-                .ok_or(anyhow::anyhow!("The index is broken."))?
-                .deserialize::<LogMeta>()?;
-            let context = Context::load(ContextOptions {
-                block_ram: (options.size_ram, format!("{}_data_ram", id.as_u32())),
-                block_disk: (options.size_disk, format!("{}_data_disk", id.as_u32())),
-            })?;
-            let _given = unsafe { given(NonNull::new_unchecked(Arc::as_ptr(&context).cast_mut())) };
-            let vectors = Arc::new(Vectors::load(options.clone(), address_vectors)?);
-            let algo = DynAlgorithm::load(options.clone(), vectors.clone(), address_algorithm)?;
-            let version = IndexVersion::new();
-            loop {
-                let Some(replay) = wal.read()? else { break };
-                match replay.deserialize::<LogReplay>()? {
-                    LogReplay::Insert { vector, p } => {
-                        let data = version.insert(p);
-                        let index = vectors.put(data, &vector)?;
-                        algo.insert(index)?;
-                    }
-                    LogReplay::Delete { p } => {
-                        version.remove(p);
-                    }
+    pub fn clean(id: Id) {
+        for f in std::fs::read_dir(".").expect("Failed to clean.") {
+            let f = f.unwrap();
+            if let Some(filename) = f.file_name().to_str() {
+                if filename.starts_with(&format!("{}_", id.as_u32())) {
+                    remove_file_if_exists(filename).expect("Failed to delete.");
                 }
             }
-            wal.truncate()?;
-            wal.flush()?;
-            let wal = WalWriter::spawn(wal.into_async())?;
-            Ok(Self {
-                id,
-                options,
-                algo,
-                version,
-                wal,
-                vectors,
-                context,
-            })
+        }
+    }
+    pub fn prebuild(options: IndexOptions) -> Result<StoragePreallocator, IndexError> {
+        let mut storage = StoragePreallocator::new();
+        Vectors::prebuild(&mut storage, options.clone());
+        Algorithm::prebuild(&mut storage, options.clone())?;
+        Ok(storage)
+    }
+    pub fn build(
+        id: Id,
+        options: IndexOptions,
+        server_build: &mut Build,
+    ) -> Result<Self, IndexError> {
+        Self::clean(id);
+        let storage_preallocator = Self::prebuild(options.clone())?;
+        let mut storage = Storage::build(id, storage_preallocator);
+        let vectors = Arc::new(Vectors::build(&mut storage, options.clone()));
+        while let Some((vector, p)) = server_build.next().expect("IPC error.") {
+            let data = p.as_u48() << 16;
+            vectors.put(data, &vector);
+        }
+        let algo = Algorithm::build(
+            &mut storage,
+            options.clone(),
+            vectors.clone(),
+            vectors.len(),
+        )?;
+        storage.persist();
+        let filter_delete = FilterDelete::new();
+        let wal = {
+            let path_wal = format!("{}_wal", id.as_u32());
+            let mut wal = Wal::create(path_wal);
+            let log = LogFirst {
+                options: options.clone(),
+                save_algorithm: algo.save(),
+            };
+            wal.write(&log.bincode());
+            wal
+        };
+        Ok(Self {
+            id,
+            options,
+            vectors,
+            algo,
+            filter_delete,
+            wal: WalWriter::spawn(wal),
+            storage,
         })
     }
 
-    pub async fn insert(&self, (vector, p): (Box<[Scalar]>, Pointer)) -> anyhow::Result<()> {
-        tokio::task::block_in_place(|| -> anyhow::Result<()> {
-            let _given = unsafe {
-                given(NonNull::new_unchecked(
-                    Arc::as_ptr(&self.context).cast_mut(),
-                ))
-            };
-            let data = self.version.insert(p);
-            let index = self.vectors.put(data, &vector)?;
-            self.algo.insert(index)?;
-            anyhow::Result::Ok(())
-        })?;
-        let bytes = LogReplay::Insert { vector, p }.bincode()?;
-        self.wal.write(bytes).await?;
+    pub fn load(id: Id) -> Self {
+        let mut storage = Storage::load(id);
+        let mut wal = Wal::open(format!("{}_wal", id.as_u32()));
+        let LogFirst {
+            options,
+            save_algorithm,
+        } = wal
+            .read()
+            .expect("The index is broken.")
+            .deserialize::<LogFirst>();
+        let vectors = Arc::new(Vectors::load(&mut storage, options.clone()));
+        let algo = Algorithm::load(
+            &mut storage,
+            options.clone(),
+            vectors.clone(),
+            save_algorithm,
+        )
+        .expect("Failed to load the algorithm.");
+        let filter_delete = FilterDelete::new();
+        loop {
+            let Some(replay) = wal.read() else { break };
+            match replay.deserialize::<LogFollowing>() {
+                LogFollowing::Insert { vector, p } => {
+                    let data = filter_delete.on_inserting(p);
+                    let index = vectors.put(data, &vector);
+                    algo.insert(index).expect("Failed to reinsert.");
+                }
+                LogFollowing::Delete { p } => {
+                    filter_delete.on_deleting(p);
+                }
+            }
+        }
+        wal.truncate();
+        wal.flush();
+        Self {
+            id,
+            options,
+            algo,
+            filter_delete,
+            wal: WalWriter::spawn(wal),
+            vectors,
+            storage,
+        }
+    }
+
+    pub fn insert(&self, (vector, p): (Box<[Scalar]>, Pointer)) -> Result<(), IndexError> {
+        let data = self.filter_delete.on_inserting(p);
+        let index = self.vectors.put(data, &vector);
+        self.algo.insert(index)?;
+        let bytes = LogFollowing::Insert { vector, p }.bincode();
+        self.wal.write(bytes);
         Ok(())
     }
 
-    pub async fn delete(&self, delete: Pointer) -> anyhow::Result<()> {
-        self.version.remove(delete);
-        let bytes = LogReplay::Delete { p: delete }.bincode()?;
-        self.wal.write(bytes).await?;
+    pub fn delete(&self, delete: Pointer) -> Result<(), IndexError> {
+        self.filter_delete.on_deleting(delete);
+        let bytes = LogFollowing::Delete { p: delete }.bincode();
+        self.wal.write(bytes);
         Ok(())
     }
 
-    pub async fn search(&self, search: (Box<[Scalar]>, usize)) -> anyhow::Result<Vec<Pointer>> {
-        let result = tokio::task::block_in_place(|| -> anyhow::Result<_> {
-            let _given = unsafe {
-                given(NonNull::new_unchecked(
-                    Arc::as_ptr(&self.context).cast_mut(),
-                ))
-            };
-            let result = self.algo.search(search)?;
-            let result = result
-                .into_iter()
-                .filter_map(|(_, x)| self.version.filter(x))
-                .collect();
-            Ok(result)
-        })?;
+    pub fn search(
+        &self,
+        target: Box<[Scalar]>,
+        k: usize,
+        server_search: &mut Search,
+    ) -> Result<Vec<Pointer>, IndexError> {
+        let filter = |p| {
+            if let Some(p) = self.filter_delete.filter(p) {
+                server_search.check(p).expect("IPC error.")
+            } else {
+                false
+            }
+        };
+        let result = self.algo.search(target, k, filter)?;
+        let result = result
+            .into_iter()
+            .filter_map(|(_, x)| self.filter_delete.filter(x))
+            .collect();
         Ok(result)
     }
 
-    pub async fn flush(&self) -> anyhow::Result<()> {
-        self.wal.flush().await?;
-        Ok(())
+    pub fn flush(&self) {
+        self.wal.flush();
     }
 
-    pub async fn shutdown(self) -> anyhow::Result<()> {
-        self.wal.shutdown().await?;
-        Ok(())
-    }
-}
-
-struct IndexVersion {
-    data: DashMap<Pointer, (u16, bool)>,
-}
-
-impl IndexVersion {
-    pub fn new() -> Self {
-        Self {
-            data: DashMap::new(),
-        }
-    }
-    pub fn filter(&self, x: u64) -> Option<Pointer> {
-        let p = Pointer::from_u48(x >> 16);
-        let v = x as u16;
-        if let Some(guard) = self.data.get(&p) {
-            let (cv, cve) = guard.value();
-            debug_assert!(v < *cv || (v == *cv && *cve));
-            if v == *cv {
-                Some(p)
-            } else {
-                None
-            }
-        } else {
-            debug_assert!(v == 0);
-            Some(p)
-        }
-    }
-    pub fn insert(&self, p: Pointer) -> u64 {
-        if let Some(mut guard) = self.data.get_mut(&p) {
-            let (cv, cve) = guard.value_mut();
-            debug_assert!(*cve == false);
-            *cve = true;
-            p.as_u48() << 16 | *cv as u64
-        } else {
-            self.data.insert(p, (0, true));
-            p.as_u48() << 16 | 0
-        }
-    }
-    pub fn remove(&self, p: Pointer) {
-        if let Some(mut guard) = self.data.get_mut(&p) {
-            let (cv, cve) = guard.value_mut();
-            if *cve == true {
-                *cv = *cv + 1;
-                *cve = false;
-            }
-        } else {
-            self.data.insert(p, (1, false));
-        }
+    pub fn shutdown(&mut self) {
+        self.wal.shutdown();
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-struct LogMeta {
-    options: Options,
-    address_vectors: Address,
-    address_algorithm: Address,
+struct LogFirst {
+    options: IndexOptions,
+    save_algorithm: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-enum LogReplay {
+enum LogFollowing {
     Insert { vector: Box<[Scalar]>, p: Pointer },
     Delete { p: Pointer },
 }
 
-pub struct Load<T> {
-    inner: Option<T>,
-}
-
-impl<T> Load<T> {
-    pub fn new() -> Self {
-        Self { inner: None }
-    }
-    pub fn get(&self) -> anyhow::Result<&T> {
-        self.inner
-            .as_ref()
-            .ok_or(anyhow::anyhow!("The index is not loaded."))
-    }
-    #[allow(dead_code)]
-    pub fn get_mut(&mut self) -> anyhow::Result<&mut T> {
-        self.inner
-            .as_mut()
-            .ok_or(anyhow::anyhow!("The index is not loaded."))
-    }
-    pub fn load(&mut self, x: T) {
-        assert!(self.inner.is_none());
-        self.inner = Some(x);
-    }
-    pub fn unload(&mut self) -> T {
-        assert!(self.inner.is_some());
-        self.inner.take().unwrap()
-    }
-    pub fn is_loaded(&self) -> bool {
-        self.inner.is_some()
-    }
-    pub fn is_unloaded(&self) -> bool {
-        self.inner.is_none()
-    }
-}
-
-async fn remove_file_if_exists(path: impl AsRef<Path>) -> std::io::Result<()> {
-    match tokio::fs::remove_file(path).await {
+fn remove_file_if_exists(path: impl AsRef<Path>) -> std::io::Result<()> {
+    match std::fs::remove_file(path) {
         Ok(()) => Ok(()),
         Err(e) if e.kind() == ErrorKind::NotFound => Ok(()),
         Err(e) => Err(e),
+    }
+}
+
+trait BincodeDeserialize {
+    fn deserialize<'a, T: Deserialize<'a>>(&'a self) -> T;
+}
+
+impl BincodeDeserialize for [u8] {
+    fn deserialize<'a, T: Deserialize<'a>>(&'a self) -> T {
+        bincode::deserialize::<T>(self).expect("Failed to deserialize.")
+    }
+}
+
+trait Bincode: Sized {
+    fn bincode(&self) -> Vec<u8>;
+}
+
+impl<T: Serialize> Bincode for T {
+    fn bincode(&self) -> Vec<u8> {
+        bincode::serialize(self).expect("Failed to serialize.")
     }
 }

@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Vec2 {
     dims: u16,
     v: Box<[Scalar]>,
@@ -14,7 +14,6 @@ impl Vec2 {
             v: unsafe { Box::new_zeroed_slice(dims as usize * n).assume_init() },
         }
     }
-    #[allow(dead_code)]
     pub fn dims(&self) -> u16 {
         self.dims
     }
@@ -30,11 +29,6 @@ impl Vec2 {
                 std::ptr::copy_nonoverlapping(src, dst, self.dims as usize);
             }
         }
-    }
-    #[allow(dead_code)]
-    pub fn iter(&self) -> impl Iterator<Item = &[Scalar]> {
-        let n = self.len();
-        (0..n).map(|i| self.index(i))
     }
 }
 

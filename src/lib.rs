@@ -8,16 +8,17 @@
 #![feature(negative_impls)]
 #![feature(ptr_metadata)]
 #![feature(new_uninit)]
-#![feature(maybe_uninit_slice)]
+#![feature(int_roundings)]
+#![feature(never_type)]
+#![allow(clippy::complexity)]
+#![allow(clippy::style)]
 
 mod algorithms;
 mod bgworker;
 mod embedding;
-mod memory;
+mod ipc;
 mod postgres;
 mod prelude;
-mod udf;
-mod utils;
 
 pgrx::pg_module_magic!();
 
@@ -38,9 +39,8 @@ pub unsafe extern "C" fn _PG_init() {
         .set_function("vectors_main")
         .set_library("vectors")
         .set_argument(None)
-        .set_start_time(BgWorkerStartTime::ConsistentState)
-        .enable_spi_access()
         .enable_shmem_access(None)
+        .set_start_time(BgWorkerStartTime::PostmasterStart)
         .load();
     self::postgres::init();
 }

@@ -1,45 +1,53 @@
-use super::kmeans::Kmeans;
-use crate::algorithms::Vectors;
-use crate::memory::Address;
-use crate::memory::PBox;
-use crate::memory::Persistent;
-use crate::memory::Ptr;
+use super::elkan_k_means::ElkanKMeans;
+use crate::algorithms::ivf::IvfError;
+use crate::algorithms::utils::filtered_fixed_heap::FilteredFixedHeap;
+use crate::algorithms::utils::fixed_heap::FixedHeap;
+use crate::algorithms::utils::mmap_vec2::MmapVec2;
+use crate::algorithms::utils::vec2::Vec2;
+use crate::bgworker::storage::{Storage, StoragePreallocator};
+use crate::bgworker::storage_mmap::MmapBox;
+use crate::bgworker::vectors::Vectors;
 use crate::prelude::*;
-use crate::utils::fixed_heap::FixedHeap;
-use crate::utils::unsafe_once::UnsafeOnce;
-use crate::utils::vec2::Vec2;
 use crossbeam::atomic::AtomicCell;
 use rand::seq::index::sample;
 use rand::thread_rng;
+use std::cell::UnsafeCell;
+use std::marker::PhantomData;
 use std::sync::Arc;
-
-struct List {
-    centroid: PBox<[Scalar]>,
-    head: AtomicCell<Option<usize>>,
-}
 
 type Vertex = Option<usize>;
 
-pub struct Root {
-    lists: PBox<[List]>,
-    vertexs: PBox<[UnsafeOnce<Vertex>]>,
-}
-
-static_assertions::assert_impl_all!(Root: Persistent);
-
-pub struct IvfImpl {
-    pub address: Address,
-    root: &'static Root,
+pub struct IvfImpl<D: DistanceFamily> {
+    centroids: MmapVec2,
+    heads: MmapBox<[AtomicCell<Option<usize>>]>,
+    vertexs: MmapBox<[UnsafeCell<Vertex>]>,
+    //
     vectors: Arc<Vectors>,
-    distance: Distance,
     nprobe: usize,
+    nlist: usize,
+    _maker: PhantomData<D>,
 }
 
-impl IvfImpl {
+unsafe impl<D: DistanceFamily> Send for IvfImpl<D> {}
+unsafe impl<D: DistanceFamily> Sync for IvfImpl<D> {}
+
+impl<D: DistanceFamily> IvfImpl<D> {
+    pub fn prebuild(
+        storage: &mut StoragePreallocator,
+        dims: u16,
+        nlist: usize,
+        capacity: usize,
+        memmap: Memmap,
+    ) -> Result<(), IvfError> {
+        MmapVec2::prebuild(storage, dims, nlist);
+        storage.palloc_mmap_slice::<AtomicCell<Option<usize>>>(memmap, nlist);
+        storage.palloc_mmap_slice::<UnsafeCell<Vertex>>(memmap, capacity);
+        Ok(())
+    }
     pub fn new(
+        storage: &mut Storage,
         vectors: Arc<Vectors>,
         dims: u16,
-        distance: Distance,
         n: usize,
         nlist: usize,
         nsample: usize,
@@ -47,115 +55,127 @@ impl IvfImpl {
         least_iterations: usize,
         iterations: usize,
         capacity: usize,
-        storage: Storage,
-    ) -> anyhow::Result<Self> {
+        memmap: Memmap,
+    ) -> Result<Self, IvfError> {
         let m = std::cmp::min(nsample, n);
         let f = sample(&mut thread_rng(), n, m).into_vec();
         let mut samples = Vec2::new(dims, m);
         for i in 0..m {
             samples[i].copy_from_slice(vectors.get_vector(f[i]));
-            distance.kmeans_normalize(&mut samples[i]);
+            D::elkan_k_means_normalize(&mut samples[i]);
         }
-        let mut kmeans = Kmeans::new(distance, dims, nlist, samples);
+        let mut k_means = ElkanKMeans::<D>::new(nlist, samples);
         for _ in 0..least_iterations {
-            kmeans.iterate();
+            k_means.iterate();
         }
         for _ in least_iterations..iterations {
-            if kmeans.iterate() {
+            if k_means.iterate() {
                 break;
             }
         }
-        let centroids = kmeans.finish();
-        let ptr = PBox::new(
-            Root {
-                lists: {
-                    let mut lists = PBox::new_zeroed_slice(nlist, storage)?;
-                    for i in 0..nlist {
-                        lists[i].write(List {
-                            centroid: {
-                                let mut centroid = unsafe {
-                                    PBox::new_zeroed_slice(dims as _, storage)?.assume_init()
-                                };
-                                centroid.copy_from_slice(&centroids[i]);
-                                centroid
-                            },
-                            head: AtomicCell::new(None),
-                        });
-                    }
-                    unsafe { lists.assume_init() }
-                },
-                vertexs: {
-                    let vertexs = PBox::new_zeroed_slice(capacity, storage)?;
-                    unsafe { vertexs.assume_init() }
-                },
-            },
-            storage,
-        )?
-        .into_raw();
+        let k_means = k_means.finish();
+        let centroids = {
+            let mut centroids = MmapVec2::build(storage, dims, nlist);
+            for i in 0..nlist {
+                centroids[i].copy_from_slice(&k_means[i]);
+            }
+            centroids
+        };
+        let heads = {
+            let mut heads = storage.alloc_mmap_slice(memmap, nlist);
+            for i in 0..nlist {
+                heads[i].write(AtomicCell::new(None));
+            }
+            unsafe { heads.assume_init() }
+        };
+        let vertexs = {
+            let mut vertexs = storage.alloc_mmap_slice(memmap, capacity);
+            for i in 0..capacity {
+                vertexs[i].write(UnsafeCell::new(None));
+            }
+            unsafe { vertexs.assume_init() }
+        };
         Ok(Self {
-            address: ptr.address(),
-            root: unsafe { ptr.as_ref() },
+            centroids,
+            heads,
+            vertexs,
+            //
             vectors,
-            distance,
             nprobe,
+            nlist,
+            _maker: PhantomData,
         })
     }
     pub fn load(
+        storage: &mut Storage,
+        dims: u16,
         vectors: Arc<Vectors>,
-        distance: Distance,
-        address: Address,
+        nlist: usize,
         nprobe: usize,
-    ) -> anyhow::Result<Self> {
+        capacity: usize,
+        memmap: Memmap,
+    ) -> Result<Self, IvfError> {
         Ok(Self {
-            address,
-            root: unsafe { Ptr::new(address, ()).as_ref() },
+            centroids: MmapVec2::load(storage, dims, nlist),
+            heads: unsafe { storage.alloc_mmap_slice(memmap, nlist).assume_init() },
+            vertexs: unsafe { storage.alloc_mmap_slice(memmap, capacity).assume_init() },
             vectors,
-            distance,
             nprobe,
+            nlist,
+            _maker: PhantomData,
         })
     }
-    pub fn search(
+    pub fn search<F>(
         &self,
-        (mut x_vector, k): (Box<[Scalar]>, usize),
-    ) -> anyhow::Result<Vec<(Scalar, u64)>> {
+        mut target: Box<[Scalar]>,
+        k: usize,
+        filter: F,
+    ) -> Result<Vec<(Scalar, u64)>, IvfError>
+    where
+        F: FnMut(u64) -> bool,
+    {
         let vectors = self.vectors.as_ref();
-        self.distance.kmeans_normalize(&mut x_vector);
+        D::elkan_k_means_normalize(&mut target);
         let mut lists = FixedHeap::new(self.nprobe);
-        for (i, list) in self.root.lists.iter().enumerate() {
-            let dis = self.distance.kmeans_distance(&x_vector, &list.centroid);
+        for i in 0..self.nlist {
+            let centroid = &self.centroids[i];
+            let dis = D::elkan_k_means_distance(&target, centroid);
             lists.push((dis, i));
         }
-        let mut result = FixedHeap::new(k);
+        let mut result = FilteredFixedHeap::new(k, filter);
         for (_, i) in lists.into_vec().into_iter() {
-            let mut cursor = self.root.lists[i].head.load();
+            let mut cursor = self.heads[i].load();
             while let Some(u) = cursor {
                 let u_vector = vectors.get_vector(u);
                 let u_data = vectors.get_data(u);
-                let u_dis = self.distance.distance(&x_vector, u_vector);
+                let u_dis = D::distance(&target, u_vector);
                 result.push((u_dis, u_data));
-                cursor = *self.root.vertexs[u];
+                cursor = unsafe { *self.vertexs[u].get() };
             }
         }
         Ok(result.into_sorted_vec())
     }
-    pub fn insert(&self, x: usize) -> anyhow::Result<()> {
+    pub fn insert(&self, x: usize) -> Result<(), IvfError> {
         self._insert(x)?;
         Ok(())
     }
-    pub fn _insert(&self, x: usize) -> anyhow::Result<()> {
-        let vertexs = self.root.vertexs.as_ref();
-        let mut x_vector = self.vectors.get_vector(x).to_vec();
-        self.distance.kmeans_normalize(&mut x_vector);
+    pub fn _insert(&self, x: usize) -> Result<(), IvfError> {
+        let vertexs = self.vertexs.as_ref();
+        let mut target = self.vectors.get_vector(x).to_vec();
+        D::elkan_k_means_normalize(&mut target);
         let mut result = (Scalar::INFINITY, 0);
-        for (i, list) in self.root.lists.iter().enumerate() {
-            let dis = self.distance.kmeans_distance(&x_vector, &list.centroid);
+        for i in 0..self.nlist {
+            let centroid = &self.centroids[i];
+            let dis = D::elkan_k_means_distance(&target, centroid);
             result = std::cmp::min(result, (dis, i));
         }
         loop {
-            let next = self.root.lists[result.1].head.load();
-            vertexs[x].set(next);
-            let list = &self.root.lists[result.1];
-            if list.head.compare_exchange(next, Some(x)).is_ok() {
+            let next = self.heads[result.1].load();
+            unsafe {
+                vertexs[x].get().write(next);
+            }
+            let head = &self.heads[result.1];
+            if head.compare_exchange(next, Some(x)).is_ok() {
                 break;
             }
         }

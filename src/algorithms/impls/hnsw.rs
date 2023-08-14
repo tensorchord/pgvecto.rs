@@ -1,68 +1,130 @@
-use crate::algorithms::Vectors;
-use crate::memory::Address;
-use crate::memory::PBox;
-use crate::memory::Persistent;
-use crate::memory::Ptr;
+use crate::algorithms::hnsw::HnswError;
+use crate::bgworker::storage::Storage;
+use crate::bgworker::storage::StoragePreallocator;
+use crate::bgworker::storage_mmap::MmapBox;
+use crate::bgworker::vectors::Vectors;
 use crate::prelude::*;
-use crate::utils::parray::PArray;
-use crate::utils::semaphore::Semaphore;
-use crate::utils::unsafe_once::UnsafeOnce;
+
+use crate::algorithms::utils::filtered_fixed_heap::FilteredFixedHeap;
+use crate::algorithms::utils::semaphore::Semaphore;
 use parking_lot::RwLock;
+use parking_lot::RwLockReadGuard;
+use parking_lot::RwLockWriteGuard;
 use rand::Rng;
+use std::cell::UnsafeCell;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
+use std::marker::PhantomData;
 use std::ops::RangeInclusive;
 use std::sync::Arc;
 
-type Vertex = PBox<[RwLock<PArray<(Scalar, usize)>>]>;
-
-pub struct Root {
-    vertexs: PBox<[UnsafeOnce<Vertex>]>,
-    entry: RwLock<Option<usize>>,
+#[derive(Debug, Clone, Copy)]
+struct VertexIndexer {
+    offset: usize,
+    capacity: usize,
 }
 
-static_assertions::assert_impl_all!(Root: Persistent);
+#[derive(Debug, Clone, Copy)]
+struct EdgesIndexer {
+    offset: usize,
+    capacity: usize,
+    len: usize,
+}
 
-pub struct HnswImpl {
-    pub address: Address,
-    root: &'static Root,
+pub struct HnswImpl<D: DistanceFamily> {
+    indexers: MmapBox<[VertexIndexer]>,
+    vertexs: MmapBox<[RwLock<EdgesIndexer>]>,
+    edges: MmapBox<[UnsafeCell<(Scalar, usize)>]>,
+    entry: MmapBox<RwLock<Option<usize>>>,
     vectors: Arc<Vectors>,
-    distance: Distance,
     dims: u16,
     m: usize,
     ef_construction: usize,
     visited: Semaphore<Visited>,
-    storage: Storage,
+    _maker: PhantomData<D>,
 }
 
-unsafe impl Send for HnswImpl {}
-unsafe impl Sync for HnswImpl {}
+unsafe impl<D: DistanceFamily> Send for HnswImpl<D> {}
+unsafe impl<D: DistanceFamily> Sync for HnswImpl<D> {}
 
-impl HnswImpl {
+impl<D: DistanceFamily> HnswImpl<D> {
+    pub fn prebuild(
+        storage: &mut StoragePreallocator,
+        capacity: usize,
+        m: usize,
+        memmap: Memmap,
+    ) -> Result<(), HnswError> {
+        let len_indexers = capacity;
+        let len_vertexs = capacity * 2;
+        let len_edges = capacity * 2 * (2 * m);
+        storage.palloc_mmap_slice::<VertexIndexer>(memmap, len_indexers);
+        storage.palloc_mmap_slice::<RwLock<EdgesIndexer>>(memmap, len_vertexs);
+        storage.palloc_mmap_slice::<UnsafeCell<(Scalar, usize)>>(memmap, len_edges);
+        storage.palloc_mmap::<RwLock<Option<usize>>>(memmap);
+        Ok(())
+    }
     pub fn new(
+        storage: &mut Storage,
         vectors: Arc<Vectors>,
         dims: u16,
-        distance: Distance,
         capacity: usize,
         max_threads: usize,
         m: usize,
         ef_construction: usize,
-        storage: Storage,
-    ) -> anyhow::Result<Self> {
-        let ptr = PBox::new(
-            Root {
-                vertexs: unsafe { PBox::new_zeroed_slice(capacity, storage)?.assume_init() },
-                entry: RwLock::new(None),
-            },
-            storage,
-        )?
-        .into_raw();
+        memmap: Memmap,
+    ) -> Result<Self, HnswError> {
+        let len_indexers = capacity;
+        let len_vertexs = capacity * 2;
+        let len_edges = capacity * 2 * (2 * m);
+        let mut indexers = unsafe {
+            storage
+                .alloc_mmap_slice::<VertexIndexer>(memmap, len_indexers)
+                .assume_init()
+        };
+        let mut vertexs = unsafe {
+            storage
+                .alloc_mmap_slice::<RwLock<EdgesIndexer>>(memmap, len_vertexs)
+                .assume_init()
+        };
+        let edges = unsafe {
+            storage
+                .alloc_mmap_slice::<UnsafeCell<(Scalar, usize)>>(memmap, len_edges)
+                .assume_init()
+        };
+        let entry = unsafe {
+            let mut entry = storage.alloc_mmap::<RwLock<Option<usize>>>(memmap);
+            entry.write(RwLock::new(None));
+            entry.assume_init()
+        };
+        {
+            let mut offset_vertexs = 0usize;
+            let mut offset_edges = 0usize;
+            for i in 0..capacity {
+                let levels = generate_random_levels(m, 63);
+                let capacity_vertexs = levels as usize + 1;
+                for j in 0..=levels {
+                    let capacity_edges = size_of_a_layer(m, j);
+                    vertexs[offset_vertexs + j as usize] = RwLock::new(EdgesIndexer {
+                        offset: offset_edges,
+                        capacity: capacity_edges,
+                        len: 0,
+                    });
+                    offset_edges += capacity_edges;
+                }
+                indexers[i] = VertexIndexer {
+                    offset: offset_vertexs,
+                    capacity: capacity_vertexs,
+                };
+                offset_vertexs += capacity_vertexs;
+            }
+        }
         Ok(Self {
-            address: ptr.address(),
-            root: unsafe { ptr.as_ref() },
+            indexers,
+            vertexs,
+            edges,
+            entry,
             vectors,
             dims,
-            distance,
             visited: {
                 let semaphore = Semaphore::<Visited>::new();
                 for _ in 0..max_threads {
@@ -72,25 +134,28 @@ impl HnswImpl {
             },
             m,
             ef_construction,
-            storage,
+            _maker: PhantomData,
         })
     }
     pub fn load(
+        storage: &mut Storage,
         vectors: Arc<Vectors>,
-        distance: Distance,
         dims: u16,
         capacity: usize,
         max_threads: usize,
         m: usize,
         ef_construction: usize,
-        address: Address,
-        storage: Storage,
-    ) -> anyhow::Result<Self> {
+        memmap: Memmap,
+    ) -> Result<Self, HnswError> {
+        let len_indexers = capacity;
+        let len_vertexs = capacity * 2;
+        let len_edges = capacity * 2 * (2 * m);
         Ok(Self {
-            address,
-            root: unsafe { Ptr::new(address, ()).as_ref() },
+            indexers: unsafe { storage.alloc_mmap_slice(memmap, len_indexers).assume_init() },
+            vertexs: unsafe { storage.alloc_mmap_slice(memmap, len_vertexs).assume_init() },
+            edges: unsafe { storage.alloc_mmap_slice(memmap, len_edges).assume_init() },
+            entry: unsafe { storage.alloc_mmap(memmap).assume_init() },
             vectors,
-            distance,
             dims,
             m,
             ef_construction,
@@ -101,48 +166,74 @@ impl HnswImpl {
                 }
                 semaphore
             },
-            storage,
+            _maker: PhantomData,
         })
     }
-    pub fn search(
+    pub fn search<F>(
         &self,
-        (x_vector, k): (Box<[Scalar]>, usize),
-    ) -> anyhow::Result<Vec<(Scalar, u64)>> {
-        anyhow::ensure!(x_vector.len() == self.dims as usize);
-        let entry = *self.root.entry.read();
-        let Some(u) = entry else { return Ok(Vec::new()) };
+        target: Box<[Scalar]>,
+        k: usize,
+        filter: F,
+    ) -> Result<Vec<(Scalar, u64)>, HnswError>
+    where
+        F: FnMut(u64) -> bool,
+    {
+        assert!(target.len() == self.dims as usize);
+        let entry = *self.entry.read();
+        let Some(u) = entry else {
+            return Ok(Vec::new());
+        };
         let top = self._levels(u);
-        let u = self._go(1..=top, u, &x_vector);
+        let u = self._go(1..=top, u, &target);
         let mut visited = self.visited.acquire();
-        let mut result = self._search(&mut visited, &x_vector, u, k, 0);
-        result.sort();
-        Ok(result
-            .iter()
-            .map(|&(score, u)| (score, self.vectors.get_data(u)))
-            .collect::<Vec<_>>())
+        let result = self._filtered_search(&mut visited, &target, u, k, 0, filter);
+        Ok(result)
     }
-    pub fn insert(&self, x: usize) -> anyhow::Result<()> {
+    pub fn insert(&self, x: usize) -> Result<(), HnswError> {
         let mut visited = self.visited.acquire();
         self._insert(&mut visited, x)
     }
+    fn _vertex(&self, i: usize) -> &[RwLock<EdgesIndexer>] {
+        let VertexIndexer { offset, capacity } = self.indexers[i];
+        &self.vertexs[offset..][..capacity]
+    }
+    fn _edges<'a>(&self, guard: &'a RwLockReadGuard<EdgesIndexer>) -> &'a [(Scalar, usize)] {
+        unsafe {
+            let raw = self.edges[guard.offset..][..guard.len].as_ptr();
+            std::slice::from_raw_parts(raw.cast(), guard.len)
+        }
+    }
+    #[allow(clippy::needless_pass_by_ref_mut)]
+    fn _edges_mut<'a>(
+        &self,
+        guard: &'a mut RwLockWriteGuard<EdgesIndexer>,
+    ) -> &'a mut [(Scalar, usize)] {
+        unsafe {
+            let raw = self.edges[guard.offset..][..guard.len].as_ptr();
+            std::slice::from_raw_parts_mut(raw.cast_mut().cast(), guard.len)
+        }
+    }
+    fn _edges_clear(&self, guard: &mut RwLockWriteGuard<EdgesIndexer>) {
+        guard.len = 0;
+    }
+    fn _edges_append(&self, guard: &mut RwLockWriteGuard<EdgesIndexer>, data: (Scalar, usize)) {
+        if guard.capacity == guard.len {
+            panic!("Array is full. The capacity is {}.", guard.capacity);
+        }
+        unsafe {
+            self.edges[guard.offset + guard.len].get().write(data);
+        }
+        guard.len += 1;
+    }
     fn _go(&self, levels: RangeInclusive<u8>, u: usize, target: &[Scalar]) -> usize {
         let mut u = u;
-        unsafe {
-            std::intrinsics::prefetch_read_data(target.as_ptr(), 3);
-        }
         let mut u_dis = self._dist0(u, target);
         for i in levels.rev() {
             let mut changed = true;
             while changed {
                 changed = false;
-                unsafe {
-                    std::intrinsics::prefetch_read_data(
-                        self.vectors.get_vector(u).as_ref().as_ptr(),
-                        3,
-                    );
-                }
-                let guard = self.root.vertexs[u][i as usize].read();
-                for (_, v) in guard.iter().copied() {
+                let guard = self._vertex(u)[i as usize].read();
+                for &(_, v) in self._edges(&guard).iter() {
                     let v_dis = self._dist0(v, target);
                     if v_dis < u_dis {
                         u = v;
@@ -154,10 +245,9 @@ impl HnswImpl {
         }
         u
     }
-    fn _insert(&self, visited: &mut Visited, insert: usize) -> anyhow::Result<()> {
-        let vertexs = self.root.vertexs.as_ref();
-        let vector = self.vectors.get_vector(insert);
-        let levels = generate_random_levels(self.m, 63);
+    fn _insert(&self, visited: &mut Visited, id: usize) -> Result<(), HnswError> {
+        let target = self.vectors.get_vector(id);
+        let levels = self._levels(id);
         let entry;
         let lock = {
             let cond = move |global: Option<usize>| {
@@ -167,10 +257,10 @@ impl HnswImpl {
                     true
                 }
             };
-            let lock = self.root.entry.read();
+            let lock = self.entry.read();
             if cond(*lock) {
                 drop(lock);
-                let lock = self.root.entry.write();
+                let lock = self.entry.write();
                 entry = *lock;
                 if cond(*lock) {
                     Some(lock)
@@ -183,115 +273,76 @@ impl HnswImpl {
             }
         };
         let Some(mut u) = entry else {
-            let vertex = {
-                let mut vertex = PBox::new_uninit_slice(1 + levels as usize, self.storage)?;
-                for i in 0..=levels {
-                    let array = PArray::new(1 + size_of_a_layer(self.m, i), self.storage)?;
-                    vertex[i as usize].write(RwLock::new(array));
-                }
-                unsafe { vertex.assume_init() }
-            };
-            vertexs[insert].set(vertex);
-            *lock.unwrap() = Some(insert);
+            if let Some(mut lock) = lock {
+                *lock = Some(id);
+            }
             return Ok(());
         };
         let top = self._levels(u);
         if top > levels {
-            u = self._go(levels + 1..=top, u, vector);
+            u = self._go(levels + 1..=top, u, target);
         }
         let mut layers = Vec::with_capacity(1 + levels as usize);
         for i in (0..=std::cmp::min(levels, top)).rev() {
-            let mut layer = self._search(visited, vector, u, self.ef_construction, i);
-            layer.sort();
-            self._select0(&mut layer, size_of_a_layer(self.m, i))?;
-            u = layer.first().unwrap().1;
-            layers.push(layer);
+            let mut edges = self._search(visited, target, u, self.ef_construction, i);
+            edges.sort();
+            edges = self._select(edges, size_of_a_layer(self.m, i))?;
+            u = edges.first().unwrap().1;
+            layers.push(edges);
         }
         layers.reverse();
         layers.resize_with(1 + levels as usize, Vec::new);
         let backup = layers.iter().map(|x| x.to_vec()).collect::<Vec<_>>();
-        let vertex = {
-            let mut vertex = PBox::new_uninit_slice(1 + levels as usize, self.storage)?;
-            for i in 0..=levels {
-                let mut array = PArray::new(1 + size_of_a_layer(self.m, i), self.storage)?;
-                for &x in layers[i as usize].iter() {
-                    array.push(x)?;
-                }
-                vertex[i as usize].write(RwLock::new(array));
+        for i in 0..=levels {
+            let mut guard = self._vertex(id)[i as usize].write();
+            let edges = layers[i as usize].as_slice();
+            self._edges_clear(&mut guard);
+            for &edge in edges {
+                self._edges_append(&mut guard, edge);
             }
-            unsafe { vertex.assume_init() }
-        };
-        vertexs[insert].set(vertex);
+        }
         for (i, layer) in backup.into_iter().enumerate() {
             let i = i as u8;
             for (n_dis, n) in layer.iter().copied() {
-                let mut guard = vertexs[n][i as usize].write();
-                orderedly_insert(&mut guard, (n_dis, insert))?;
-                self._select1(&mut guard, size_of_a_layer(self.m, i))?;
+                let mut guard = self._vertex(n)[i as usize].write();
+                let element = (n_dis, id);
+                let mut edges = self._edges_mut(&mut guard).to_vec();
+                let (Ok(index) | Err(index)) = edges.binary_search(&element);
+                edges.insert(index, element);
+                edges = self._select(edges, size_of_a_layer(self.m, i))?;
+                self._edges_clear(&mut guard);
+                for &edge in edges.iter() {
+                    self._edges_append(&mut guard, edge);
+                }
             }
         }
         if let Some(mut lock) = lock {
-            *lock = Some(insert);
+            *lock = Some(id);
         }
         Ok(())
     }
-    fn _select0(&self, v: &mut Vec<(Scalar, usize)>, size: usize) -> anyhow::Result<()> {
-        unsafe {
-            std::intrinsics::prefetch_read_data(v.as_ptr(), 3);
+    fn _select(
+        &self,
+        input: Vec<(Scalar, usize)>,
+        size: usize,
+    ) -> Result<Vec<(Scalar, usize)>, HnswError> {
+        if input.len() <= size {
+            return Ok(input);
         }
-        if v.len() <= size {
-            return Ok(());
-        }
-        let cloned = v.to_vec();
-        v.clear();
-        for (u_dis, u) in cloned.iter().copied() {
-            if v.len() == size {
+        let mut res = Vec::new();
+        for (u_dis, u) in input.iter().copied() {
+            if res.len() == size {
                 break;
             }
-            unsafe {
-                std::intrinsics::prefetch_read_data(
-                    self.vectors.get_vector(u).as_ref().as_ptr(),
-                    3,
-                );
-            }
-            let check = v
+            let check = res
                 .iter()
                 .map(|&(_, v)| self._dist1(u, v))
                 .all(|dist| dist > u_dis);
             if check {
-                v.push((u_dis, u));
+                res.push((u_dis, u));
             }
         }
-        Ok(())
-    }
-    fn _select1(&self, v: &mut PArray<(Scalar, usize)>, size: usize) -> anyhow::Result<()> {
-        unsafe {
-            std::intrinsics::prefetch_read_data(v.as_ptr(), 3);
-        }
-        if v.len() <= size {
-            return Ok(());
-        }
-        let cloned = v.to_vec();
-        v.clear();
-        for (u_dis, u) in cloned.iter().copied() {
-            if v.len() == size {
-                break;
-            }
-            unsafe {
-                std::intrinsics::prefetch_read_data(
-                    self.vectors.get_vector(u).as_ref().as_ptr(),
-                    3,
-                );
-            }
-            let check = v
-                .iter()
-                .map(|&(_, v)| self._dist1(u, v))
-                .all(|dist| dist > u_dis);
-            if check {
-                v.push((u_dis, u)).unwrap();
-            }
-        }
-        Ok(())
+        Ok(res)
     }
     fn _search(
         &self,
@@ -302,9 +353,6 @@ impl HnswImpl {
         i: u8,
     ) -> Vec<(Scalar, usize)> {
         assert!(k > 0);
-        unsafe {
-            std::intrinsics::prefetch_read_data(target.as_ptr(), 3);
-        }
         let mut bound = Scalar::INFINITY;
         let mut visited = visited.new_version();
         let mut candidates = BinaryHeap::<Reverse<(Scalar, usize)>>::new();
@@ -323,18 +371,12 @@ impl HnswImpl {
             if u_dis > bound {
                 break;
             }
-            let guard = self.root.vertexs[u][i as usize].read();
-            for (_, v) in guard.iter().copied() {
+            let guard = self._vertex(u)[i as usize].read();
+            for &(_, v) in self._edges(&guard).iter() {
                 if visited.test(v) {
                     continue;
                 }
                 visited.set(v);
-                unsafe {
-                    std::intrinsics::prefetch_read_data(
-                        self.vectors.get_vector(v).as_ref().as_ptr(),
-                        3,
-                    );
-                }
                 let v_dis = self._dist0(v, target);
                 if v_dis > bound {
                     continue;
@@ -351,17 +393,57 @@ impl HnswImpl {
         }
         results.into_vec()
     }
+    fn _filtered_search<F>(
+        &self,
+        visited: &mut Visited,
+        target: &[Scalar],
+        s: usize,
+        k: usize,
+        i: u8,
+        filter: F,
+    ) -> Vec<(Scalar, u64)>
+    where
+        F: FnMut(u64) -> bool,
+    {
+        assert!(k > 0);
+        let mut visited = visited.new_version();
+        let mut candidates = BinaryHeap::<Reverse<(Scalar, usize)>>::new();
+        let mut results = FilteredFixedHeap::new(k, filter);
+        let s_dis = self._dist0(s, target);
+        visited.set(s);
+        candidates.push(Reverse((s_dis, s)));
+        results.push((s_dis, self.vectors.get_data(s)));
+        while let Some(Reverse((u_dis, u))) = candidates.pop() {
+            if u_dis > results.bound() {
+                break;
+            }
+            let guard = self._vertex(u)[i as usize].read();
+            for &(_, v) in self._edges(&guard).iter() {
+                if visited.test(v) {
+                    continue;
+                }
+                visited.set(v);
+                let v_dis = self._dist0(v, target);
+                if v_dis > results.bound() {
+                    continue;
+                }
+                candidates.push(Reverse((v_dis, v)));
+                results.push((v_dis, self.vectors.get_data(v)));
+            }
+        }
+        results.into_sorted_vec()
+    }
     fn _dist0(&self, u: usize, target: &[Scalar]) -> Scalar {
         let u = self.vectors.get_vector(u);
-        self.distance.distance(u, target)
+        D::distance(u, target)
     }
     fn _dist1(&self, u: usize, v: usize) -> Scalar {
         let u = self.vectors.get_vector(u);
         let v = self.vectors.get_vector(v);
-        self.distance.distance(u, v)
+        D::distance(u, v)
     }
     fn _levels(&self, u: usize) -> u8 {
-        self.root.vertexs[u].len() as u8 - 1
+        self._vertex(u).len() as u8 - 1
     }
 }
 
@@ -378,12 +460,6 @@ fn size_of_a_layer(m: usize, i: u8) -> usize {
     } else {
         m
     }
-}
-
-pub fn orderedly_insert<T: Ord>(a: &mut PArray<T>, element: T) -> anyhow::Result<usize> {
-    let (Ok(index) | Err(index)) = a.binary_search(&element);
-    a.insert(index, element)?;
-    Ok(index)
 }
 
 pub struct Visited {

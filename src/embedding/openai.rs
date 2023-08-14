@@ -3,11 +3,11 @@ use openai_api_rust::{
     Auth, OpenAI,
 };
 
-pub(crate) type Embedding = Vec<f64>;
-pub(crate) type Embeddings = Vec<Embedding>;
+use super::Embeddings;
 
 #[cfg(test)]
 use mockall::automock;
+
 #[cfg_attr(test, automock)]
 pub(crate) trait EmbeddingCreator {
     fn create_embeddings(&self, input: Vec<String>) -> Result<Embeddings, String>;
