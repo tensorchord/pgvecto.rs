@@ -51,8 +51,8 @@ fn ai_embedding_vector_inner(
 
 #[cfg(test)]
 mod tests {
-    use crate::embedding::MockEmbeddingCreator;
-    use crate::udf::ai_embedding_vector_inner;
+    use crate::embedding::openai::MockEmbeddingCreator;
+    use crate::embedding::udf::ai_embedding_vector_inner;
     use mockall::predicate::eq;
 
     // We need to mock embedding since it requires an API key.

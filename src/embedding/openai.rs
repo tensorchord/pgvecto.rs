@@ -77,12 +77,10 @@ impl EmbeddingCreator for OpenAIEmbedding {
 }
 #[cfg(test)]
 mod tests {
+    use crate::embedding::openai::{EmbeddingCreator, EmbeddingModel, OpenAIEmbedding};
+    use crate::embedding::Embedding;
     use httpmock::MockServer;
     use serde_json::json;
-
-    use crate::embedding::{Embedding, EmbeddingCreator};
-
-    use super::OpenAIEmbedding;
 
     #[test]
     fn test_create_embeddings() {
@@ -97,7 +95,7 @@ mod tests {
 
         let client = OpenAIEmbedding::new(
             "".to_string(),
-            crate::embedding::EmbeddingModel::Ada002,
+            EmbeddingModel::Ada002,
             server.base_url() + "/",
         );
 
