@@ -104,13 +104,18 @@ You can then populate the table with vector data as follows.
 
 INSERT INTO items (embedding)
 VALUES ('[1,2,3]'), ('[4,5,6]');
+
+-- or insert values using a casting from array to vector
+
+INSERT INTO items (embedding)
+VALUES (ARRAY[1, 2, 3]::real[]), (ARRAY[4, 5, 6]::real[]);
 ```
 
 We support three operators to calculate the distance between two vectors.
 
 - `<->`: squared Euclidean distance, defined as $\Sigma (x_i - y_i) ^ 2$.
 - `<#>`: negative dot product distance, defined as $- \Sigma x_iy_i$.
-- `<=>`: negative squared cosine distance, defined as $- \frac{(\Sigma x_iy_i)^2}{\Sigma x_i^2 \Sigma y_i^2}$.
+- `<=>`: negative cosine distance, defined as $- \frac{\Sigma x_iy_i}{\sqrt{\Sigma x_i^2 \Sigma y_i^2}}$.
 
 ```sql
 -- call the distance function through operators
