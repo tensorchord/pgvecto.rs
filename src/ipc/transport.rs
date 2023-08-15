@@ -1,6 +1,5 @@
 use crate::ipc::ClientIpcError;
 use crate::ipc::ServerIpcError;
-use crate::postgres::gucs::PORT;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 use std::io::ErrorKind;
@@ -38,7 +37,7 @@ pub(super) struct Listener {
 
 impl Listener {
     pub fn new() -> Self {
-        let path = format!("/tmp/vectors_{}", PORT.get());
+        let path = "./_socket";
         remove_file_if_exists(&path).expect("Failed to bind.");
         let listener = UnixListener::bind(&path).expect("Failed to bind.");
         Self { listener }
@@ -57,7 +56,7 @@ pub(super) struct Socket {
 
 impl Socket {
     pub fn new() -> Self {
-        let path = format!("/tmp/vectors_{}", PORT.get());
+        let path = "./pg_vectors/_socket";
         let stream = UnixStream::connect(path).expect("Failed to bind.");
         Socket {
             stream: Some(stream),
