@@ -1,12 +1,14 @@
+use super::openai::{EmbeddingCreator, OpenAIEmbedding};
+use super::Embedding;
+use crate::postgres::datatype::Vector;
+use crate::postgres::datatype::VectorOutput;
+use crate::postgres::gucs::OPENAI_API_KEY_GUC;
+use crate::prelude::Float;
+use crate::prelude::Scalar;
 use pgrx::prelude::*;
 
-use crate::{
-    embedding::{Embedding, EmbeddingCreator, OpenAIEmbedding},
-    postgres::OPENAI_API_KEY_GUC,
-};
-
 #[pg_extern]
-fn ai_embedding_vector(input: String) -> Embedding {
+fn ai_embedding_vector(input: String) -> VectorOutput {
     let api_key = match OPENAI_API_KEY_GUC.get() {
         Some(key) => key
             .to_str()
@@ -21,7 +23,13 @@ fn ai_embedding_vector(input: String) -> Embedding {
     let openai_embedding = OpenAIEmbedding::new_ada002(api_key);
 
     match ai_embedding_vector_inner(input, openai_embedding) {
-        Ok(embedding) => embedding,
+        Ok(embedding) => {
+            let embedding = embedding
+                .into_iter()
+                .map(|x| Scalar(x as Float))
+                .collect::<Vec<_>>();
+            Vector::new_in_postgres(&embedding)
+        }
         Err(e) => {
             error!("{}", e)
         }
@@ -43,8 +51,8 @@ fn ai_embedding_vector_inner(
 
 #[cfg(test)]
 mod tests {
-    use crate::embedding::MockEmbeddingCreator;
-    use crate::udf::ai_embedding_vector_inner;
+    use crate::embedding::openai::MockEmbeddingCreator;
+    use crate::embedding::udf::ai_embedding_vector_inner;
     use mockall::predicate::eq;
 
     // We need to mock embedding since it requires an API key.

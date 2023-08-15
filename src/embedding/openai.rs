@@ -3,11 +3,11 @@ use openai_api_rust::{
     Auth, OpenAI,
 };
 
-pub(crate) type Embedding = Vec<f64>;
-pub(crate) type Embeddings = Vec<Embedding>;
+use super::Embeddings;
 
 #[cfg(test)]
 use mockall::automock;
+
 #[cfg_attr(test, automock)]
 pub(crate) trait EmbeddingCreator {
     fn create_embeddings(&self, input: Vec<String>) -> Result<Embeddings, String>;
@@ -77,12 +77,10 @@ impl EmbeddingCreator for OpenAIEmbedding {
 }
 #[cfg(test)]
 mod tests {
+    use crate::embedding::openai::{EmbeddingCreator, EmbeddingModel, OpenAIEmbedding};
+    use crate::embedding::Embedding;
     use httpmock::MockServer;
     use serde_json::json;
-
-    use crate::embedding::{Embedding, EmbeddingCreator};
-
-    use super::OpenAIEmbedding;
 
     #[test]
     fn test_create_embeddings() {
@@ -97,7 +95,7 @@ mod tests {
 
         let client = OpenAIEmbedding::new(
             "".to_string(),
-            crate::embedding::EmbeddingModel::Ada002,
+            EmbeddingModel::Ada002,
             server.base_url() + "/",
         );
 

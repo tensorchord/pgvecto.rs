@@ -1,5 +1,6 @@
 use std::collections::BinaryHeap;
 
+#[derive(Debug, Clone)]
 pub struct FixedHeap<T> {
     size: usize,
     heap: BinaryHeap<T>,
@@ -20,10 +21,5 @@ impl<T: Ord> FixedHeap<T> {
     }
     pub fn into_vec(self) -> Vec<T> {
         self.heap.into_vec()
-    }
-    pub fn into_sorted_vec(self) -> Vec<T> {
-        let mut vec = self.heap.into_vec();
-        vec.sort();
-        vec
     }
 }

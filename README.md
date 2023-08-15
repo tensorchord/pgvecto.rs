@@ -104,13 +104,18 @@ You can then populate the table with vector data as follows.
 
 INSERT INTO items (embedding)
 VALUES ('[1,2,3]'), ('[4,5,6]');
+
+-- or insert values using a casting from array to vector
+
+INSERT INTO items (embedding)
+VALUES (ARRAY[1, 2, 3]::real[]), (ARRAY[4, 5, 6]::real[]);
 ```
 
 We support three operators to calculate the distance between two vectors.
 
 - `<->`: squared Euclidean distance, defined as $\Sigma (x_i - y_i) ^ 2$.
 - `<#>`: negative dot product distance, defined as $- \Sigma x_iy_i$.
-- `<=>`: negative squared cosine distance, defined as $- \frac{(\Sigma x_iy_i)^2}{\Sigma x_i^2 \Sigma y_i^2}$.
+- `<=>`: negative cosine distance, defined as $- \frac{\Sigma x_iy_i}{\sqrt{\Sigma x_i^2 \Sigma y_i^2}}$.
 
 ```sql
 -- call the distance function through operators
@@ -142,12 +147,10 @@ You can create an index, using squared Euclidean distance with the following SQL
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
 capacity = 2097152
-size_ram = 4294967296
-storage_vectors = "ram"
+[vectors]
+memmap = "ram"
 [algorithm.hnsw]
-storage = "ram"
-m = 32
-ef = 256
+memmap = "ram"
 $$);
 
 --- Or using IVFFlat algorithm.
@@ -155,10 +158,10 @@ $$);
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
 capacity = 2097152
-size_ram = 2147483648
-storage_vectors = "ram"
+[vectors]
+memmap = "ram"
 [algorithm.ivf]
-storage = "ram"
+memmap = "ram"
 nlist = 1000
 nprobe = 10
 $$);
@@ -203,15 +206,14 @@ We utilize TOML syntax to express the index's configuration. Here's what each ke
 | Key                    | Type    | Description                                                                                                           |
 | ---------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
 | capacity               | integer | The index's capacity. The value should be greater than the number of rows in your table.                              |
-| size_ram               | integer | (Optional) The maximum amount of memory the persisent part of index can occupy.                                       |
-| size_disk              | integer | (Optional) The maximum amount of disk-backed memory-mapped file size the persisent part of index can occupy.          |
-| storage_vectors        | string  | `ram` ensures that the vectors always stays in memory while `disk` suggests otherwise.                                |
+| vectors                | table   | Configuration of background process vector storage.                                                                   |
+| vectors.memmap         | string  | (Optional) `ram` ensures that the vectors always stays in memory while `disk` suggests otherwise.                     |
 | algorithm.ivf          | table   | If this table is set, the IVF algorithm will be used for the index.                                                   |
-| algorithm.ivf.storage  | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
-| algorithm.ivf.nlist    | integer | (Optional) Number of cluster units.                                                                                   |
-| algorithm.ivf.nprobe   | integer | (Optional) Number of units to query.                                                                                  |
+| algorithm.ivf.memmap   | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
+| algorithm.ivf.nlist    | integer | Number of cluster units.                                                                                              |
+| algorithm.ivf.nprobe   | integer | Number of units to query.                                                                                             |
 | algorithm.hnsw         | table   | If this table is set, the HNSW algorithm will be used for the index.                                                  |
-| algorithm.hnsw.storage | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
+| algorithm.hnsw.memmap  | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
 | algorithm.hnsw.m       | integer | (Optional) Maximum degree of the node.                                                                                |
 | algorithm.hnsw.ef      | integer | (Optional) Search scope in building.                                                                                  |
 
@@ -229,10 +231,10 @@ UPDATE documents SET embedding = ai_embedding_vector(content) WHERE length(embed
 CREATE INDEX ON documents USING vectors (embedding l2_ops)
 WITH (options = $$
 capacity = 2097152
-size_ram = 4294967296
-storage_vectors = "ram"
+[vectors]
+memmap = "ram"
 [algorithm.hnsw]
-storage = "ram"
+memmap = "ram"
 m = 32
 ef = 256
 $$);

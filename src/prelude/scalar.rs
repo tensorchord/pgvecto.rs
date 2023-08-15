@@ -20,6 +20,7 @@ pub struct Scalar(pub Float);
 
 impl Scalar {
     pub const INFINITY: Self = Self(Float::INFINITY);
+    pub const NEG_INFINITY: Self = Self(Float::NEG_INFINITY);
     pub const NAN: Self = Self(Float::NAN);
     pub const Z: Self = Self(0.0);
 
@@ -69,7 +70,7 @@ impl Eq for Scalar {}
 impl PartialOrd for Scalar {
     #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.0.total_cmp(&other.0))
+        Some(Ord::cmp(self, other))
     }
 }
 

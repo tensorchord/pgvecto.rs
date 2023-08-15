@@ -1,3 +1,4 @@
+pub mod elkan_k_means;
 pub mod hnsw;
 pub mod ivf;
-pub mod kmeans;
+pub mod quantization;

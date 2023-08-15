@@ -1,26 +1,29 @@
 use crate::prelude::*;
-use crate::utils::vec2::Vec2;
+
+use crate::algorithms::utils::vec2::Vec2;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use std::marker::PhantomData;
 use std::ops::{Index, IndexMut};
 
-pub struct Kmeans {
-    distance: Distance,
+pub struct ElkanKMeans<D: DistanceFamily> {
     dims: u16,
     c: usize,
-    centroids: Vec2,
+    pub centroids: Vec2,
     lowerbound: Square,
     upperbound: Vec<Scalar>,
     assign: Vec<usize>,
     rand: StdRng,
     samples: Vec2,
+    _maker: PhantomData<D>,
 }
 
 const DELTA: f32 = 1.0 / 1024.0;
 
-impl Kmeans {
-    pub fn new(distance: Distance, dims: u16, c: usize, samples: Vec2) -> Self {
+impl<D: DistanceFamily> ElkanKMeans<D> {
+    pub fn new(c: usize, samples: Vec2) -> Self {
         let n = samples.len();
+        let dims = samples.dims();
 
         let mut rand = StdRng::from_entropy();
         let mut centroids = Vec2::new(dims, c);
@@ -34,7 +37,7 @@ impl Kmeans {
         for i in 0..c {
             let mut sum = Scalar::Z;
             for j in 0..n {
-                let dis = distance.kmeans_distance(&samples[j], &centroids[i]);
+                let dis = D::elkan_k_means_distance(&samples[j], &centroids[i]);
                 lowerbound[(j, i)] = dis;
                 if dis * dis < weight[j] {
                     weight[j] = dis * dis;
@@ -72,7 +75,6 @@ impl Kmeans {
         }
 
         Self {
-            distance,
             dims,
             c,
             centroids,
@@ -81,12 +83,13 @@ impl Kmeans {
             assign,
             rand,
             samples,
+            _maker: PhantomData,
         }
     }
 
     pub fn iterate(&mut self) -> bool {
         let c = self.c;
-        let f = |lhs: &[Scalar], rhs: &[Scalar]| self.distance.kmeans_distance(lhs, rhs);
+        let f = |lhs: &[Scalar], rhs: &[Scalar]| D::elkan_k_means_distance(lhs, rhs);
         let dims = self.dims;
         let samples = &self.samples;
         let rand = &mut self.rand;
@@ -154,7 +157,7 @@ impl Kmeans {
         }
 
         // Step 4, 7
-        let old = std::mem::replace(centroids, Vec2::new(dims, n));
+        let old = std::mem::replace(centroids, Vec2::new(dims, c));
         let mut count = vec![Scalar::Z; c];
         centroids.fill(Scalar::Z);
         for i in 0..n {
@@ -171,18 +174,6 @@ impl Kmeans {
                 centroids[i][dim] /= count[i];
             }
         }
-        /*
-        let mut sum = 0.0;
-        for i in 0..c {
-            sum += count[i].0 as f32;
-        }
-        let average = sum / c as f32;
-        let mut cov = 0.0;
-        for i in 0..c {
-            cov += (count[i].0 as f32 - average) * (count[i].0 as f32 - average);
-        }
-        log::error!("COV = {}", cov);
-        */
         for i in 0..c {
             if count[i] != Scalar::Z {
                 continue;
@@ -210,7 +201,7 @@ impl Kmeans {
             count[o] = count[o] - count[i];
         }
         for i in 0..c {
-            self.distance.kmeans_normalize(&mut centroids[i]);
+            D::elkan_k_means_normalize(&mut centroids[i]);
         }
 
         // Step 5, 6
