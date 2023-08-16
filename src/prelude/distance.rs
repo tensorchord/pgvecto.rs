@@ -1,8 +1,8 @@
 use crate::prelude::*;
-use std::simd::f32x4;
-use std::simd::SimdFloat;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
+use std::simd::f32x4;
+use std::simd::SimdFloat;
 
 const IS_VECTORIZARION_ENABLED: bool = is_vectorization_enabled();
 
@@ -198,19 +198,25 @@ impl DistanceFamily for Dot {
 #[allow(unreachable_code)]
 #[inline(always)]
 const fn is_vectorization_enabled() -> bool {
-    #[cfg(all(any(target_arch = "x86", target_arch = "x86_64"),
-                     any(target_feature = "sse",
-                         target_feature = "sse2",
-                         target_feature = "sse3",
-                         target_feature = "ssse3",
-                         target_feature = "sse4.1",
-                         target_feature = "sse4.2",
-                         target_feature = "sse4a")))] 
+    #[cfg(all(
+        any(target_arch = "x86", target_arch = "x86_64"),
+        any(
+            target_feature = "sse",
+            target_feature = "sse2",
+            target_feature = "sse3",
+            target_feature = "ssse3",
+            target_feature = "sse4.1",
+            target_feature = "sse4.2",
+            target_feature = "sse4a"
+        )
+    ))]
     {
         return true;
     }
-    #[cfg(all(any(target_arch = "arm", target_arch = "aarch64"),
-                            target_feature = "neon"))] 
+    #[cfg(all(
+        any(target_arch = "arm", target_arch = "aarch64"),
+        target_feature = "neon"
+    ))]
     {
         return true;
     }
@@ -334,7 +340,7 @@ fn distance_cosine_vec(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
     let x2 = x2.reduce_sum();
     let y2 = y2.reduce_sum();
 
-    Scalar(dot/(x2 * y2).sqrt())
+    Scalar(dot / (x2 * y2).sqrt())
 }
 
 #[inline(always)]
@@ -503,14 +509,14 @@ fn l2_normalize(vector: &mut [Scalar]) {
 
 #[cfg(test)]
 mod distance_tests {
-    use rand::Rng;
     use super::*;
+    use rand::Rng;
 
     #[test]
     fn test_distance_dot_vec() {
         let mut rng = rand::thread_rng();
         if IS_VECTORIZARION_ENABLED {
-            for _ in 0..100{
+            for _ in 0..100 {
                 let array_length = rng.gen_range(1..=10);
                 let mut x = Vec::new();
                 let mut y = Vec::new();
@@ -524,7 +530,7 @@ mod distance_tests {
 
                 let x: &[Scalar] = &x;
                 let y: &[Scalar] = &y;
-                assert!((distance_dot_scalar(x,y)-distance_dot_vec(x,y)).0.abs() <= 1e-5);
+                assert!((distance_dot_scalar(x, y) - distance_dot_vec(x, y)).0.abs() <= 1e-5);
             }
         }
     }
@@ -533,7 +539,7 @@ mod distance_tests {
     fn test_distance_cosine_vec() {
         let mut rng = rand::thread_rng();
         if IS_VECTORIZARION_ENABLED {
-            for _ in 0..100{
+            for _ in 0..100 {
                 let array_length = rng.gen_range(1..=10);
                 let mut x = Vec::new();
                 let mut y = Vec::new();
@@ -547,7 +553,12 @@ mod distance_tests {
 
                 let x: &[Scalar] = &x;
                 let y: &[Scalar] = &y;
-                assert!((distance_cosine_scalar(x,y)-distance_cosine_vec(x,y)).0.abs() <= 1e-5);
+                assert!(
+                    (distance_cosine_scalar(x, y) - distance_cosine_vec(x, y))
+                        .0
+                        .abs()
+                        <= 1e-5
+                );
             }
         }
     }
@@ -556,7 +567,7 @@ mod distance_tests {
     fn test_distance_squared_l2_vec() {
         let mut rng = rand::thread_rng();
         if IS_VECTORIZARION_ENABLED {
-            for _ in 0..100{
+            for _ in 0..100 {
                 let array_length = rng.gen_range(1..=10);
                 let mut x = Vec::new();
                 let mut y = Vec::new();
@@ -570,7 +581,12 @@ mod distance_tests {
 
                 let x: &[Scalar] = &x;
                 let y: &[Scalar] = &y;
-                assert!((distance_squared_l2_scalar(x,y)-distance_squared_l2_vec(x,y)).0.abs() <= 1e-5);
+                assert!(
+                    (distance_squared_l2_scalar(x, y) - distance_squared_l2_vec(x, y))
+                        .0
+                        .abs()
+                        <= 1e-5
+                );
             }
         }
     }
@@ -579,7 +595,7 @@ mod distance_tests {
     fn test_length_vec() {
         let mut rng = rand::thread_rng();
         if IS_VECTORIZARION_ENABLED {
-            for _ in 0..100{
+            for _ in 0..100 {
                 let array_length = rng.gen_range(1..=10);
                 let mut x = Vec::new();
 
@@ -589,7 +605,7 @@ mod distance_tests {
                 }
 
                 let x: &[Scalar] = &x;
-                assert!((length_scalar(x)-length_vec(x)).0.abs() <= 1e-5);
+                assert!((length_scalar(x) - length_vec(x)).0.abs() <= 1e-5);
             }
         }
     }
