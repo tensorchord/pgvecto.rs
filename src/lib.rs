@@ -12,6 +12,9 @@
 #![feature(never_type)]
 #![allow(clippy::complexity)]
 #![allow(clippy::style)]
+#![feature(array_chunks)]
+#![feature(slice_as_chunks)]
+#![feature(portable_simd)]
 
 mod algorithms;
 mod bgworker;
