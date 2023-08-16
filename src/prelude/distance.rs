@@ -197,7 +197,7 @@ impl DistanceFamily for Dot {
 
 #[allow(unreachable_code)]
 #[inline(always)]
-fn is_vectorization_enabled() -> bool {
+const fn is_vectorization_enabled() -> bool {
     #[cfg(all(any(target_arch = "x86", target_arch = "x86_64"),
                      any(target_feature = "sse",
                          target_feature = "sse2",
@@ -217,13 +217,6 @@ fn is_vectorization_enabled() -> bool {
     false
 }
 
-fn scalar_slice_to_f32_chunks(vector: &[Scalar]) -> (&[f32], &[[f32; 4]]){
-    let vector_f32: Vec<f32> = vector.iter().map(|&item| f32::from(item)).collect();
-    let vector_f32_slice: &[f32] = &vector_f32;
-
-    vector_f32_slice.as_rchunks()
-}
-
 #[inline(always)]
 fn distance_squared_l2(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
     if lhs.len() != rhs.len() {
@@ -234,7 +227,7 @@ fn distance_squared_l2(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
         );
     }
     if IS_VECTORIZARION_ENABLED {
-        distance_squared_l2_vec(lhs, rhs)
+        return distance_squared_l2_vec(lhs, rhs);
     }
     distance_squared_l2_scalar(lhs, rhs)
 }
@@ -252,8 +245,13 @@ fn distance_squared_l2_scalar(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
 
 #[inline(always)]
 fn distance_squared_l2_vec(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
-    let (lhs_extra, lhs_chunks) = scalar_slice_to_f32_chunks(lhs);
-    let (rhs_extra, rhs_chunks) = scalar_slice_to_f32_chunks(rhs);
+    let lhs_f32: Vec<f32> = lhs.iter().map(|&item| f32::from(item)).collect();
+    let lhs_f32_slice: &[f32] = &lhs_f32;
+    let (lhs_extra, lhs_chunks) = lhs_f32_slice.as_rchunks();
+
+    let rhs_f32: Vec<f32> = rhs.iter().map(|&item| f32::from(item)).collect();
+    let rhs_f32_slice: &[f32] = &rhs_f32;
+    let (rhs_extra, rhs_chunks) = rhs_f32_slice.as_rchunks();
 
     let mut sums = [0.0; 4];
     for ((x, y), d) in std::iter::zip(lhs_extra, rhs_extra).zip(&mut sums) {
@@ -280,7 +278,7 @@ fn distance_cosine(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
         );
     }
     if IS_VECTORIZARION_ENABLED {
-        distance_cosine_vec(lhs, rhs)
+        return distance_cosine_vec(lhs, rhs);
     }
     distance_cosine_scalar(lhs, rhs)
 }
@@ -301,8 +299,13 @@ fn distance_cosine_scalar(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
 
 #[inline(always)]
 fn distance_cosine_vec(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
-    let (lhs_extra, lhs_chunks) = scalar_slice_to_f32_chunks(lhs);
-    let (rhs_extra, rhs_chunks) = scalar_slice_to_f32_chunks(rhs);
+    let lhs_f32: Vec<f32> = lhs.iter().map(|&item| f32::from(item)).collect();
+    let lhs_f32_slice: &[f32] = &lhs_f32;
+    let (lhs_extra, lhs_chunks) = lhs_f32_slice.as_rchunks();
+
+    let rhs_f32: Vec<f32> = rhs.iter().map(|&item| f32::from(item)).collect();
+    let rhs_f32_slice: &[f32] = &rhs_f32;
+    let (rhs_extra, rhs_chunks) = rhs_f32_slice.as_rchunks();
 
     let mut dot = [0.0; 4];
     let mut x2 = [0.0; 4];
@@ -344,7 +347,7 @@ fn distance_dot(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
         );
     }
     if IS_VECTORIZARION_ENABLED {
-        distance_dot_vec(lhs, rhs)
+        return distance_dot_vec(lhs, rhs);
     }
     distance_dot_scalar(lhs, rhs)
 }
@@ -361,8 +364,13 @@ fn distance_dot_scalar(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
 
 #[inline(always)]
 fn distance_dot_vec(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
-    let (lhs_extra, lhs_chunks) = scalar_slice_to_f32_chunks(lhs);
-    let (rhs_extra, rhs_chunks) = scalar_slice_to_f32_chunks(rhs);
+    let lhs_f32: Vec<f32> = lhs.iter().map(|&item| f32::from(item)).collect();
+    let lhs_f32_slice: &[f32] = &lhs_f32;
+    let (lhs_extra, lhs_chunks) = lhs_f32_slice.as_rchunks();
+
+    let rhs_f32: Vec<f32> = rhs.iter().map(|&item| f32::from(item)).collect();
+    let rhs_f32_slice: &[f32] = &rhs_f32;
+    let (rhs_extra, rhs_chunks) = rhs_f32_slice.as_rchunks();
 
     let mut sums = [0.0; 4];
     for ((x, y), d) in std::iter::zip(lhs_extra, rhs_extra).zip(&mut sums) {
@@ -387,7 +395,7 @@ fn xy_x2_y2(lhs: &[Scalar], rhs: &[Scalar]) -> (Scalar, Scalar, Scalar) {
         );
     }
     if IS_VECTORIZARION_ENABLED {
-        xy_x2_y2_vec(lhs, rhs)
+        return xy_x2_y2_vec(lhs, rhs);
     }
     xy_x2_y2_scalar(lhs, rhs)
 }
@@ -408,8 +416,13 @@ fn xy_x2_y2_scalar(lhs: &[Scalar], rhs: &[Scalar]) -> (Scalar, Scalar, Scalar) {
 
 #[inline(always)]
 fn xy_x2_y2_vec(lhs: &[Scalar], rhs: &[Scalar]) -> (Scalar, Scalar, Scalar) {
-    let (lhs_extra, lhs_chunks) = scalar_slice_to_f32_chunks(lhs);
-    let (rhs_extra, rhs_chunks) = scalar_slice_to_f32_chunks(rhs);
+    let lhs_f32: Vec<f32> = lhs.iter().map(|&item| f32::from(item)).collect();
+    let lhs_f32_slice: &[f32] = &lhs_f32;
+    let (lhs_extra, lhs_chunks) = lhs_f32_slice.as_rchunks();
+
+    let rhs_f32: Vec<f32> = rhs.iter().map(|&item| f32::from(item)).collect();
+    let rhs_f32_slice: &[f32] = &rhs_f32;
+    let (rhs_extra, rhs_chunks) = rhs_f32_slice.as_rchunks();
 
     let mut dot = [0.0; 4];
     let mut x2 = [0.0; 4];
@@ -444,7 +457,7 @@ fn xy_x2_y2_vec(lhs: &[Scalar], rhs: &[Scalar]) -> (Scalar, Scalar, Scalar) {
 #[inline(always)]
 fn length(vector: &[Scalar]) -> Scalar {
     if IS_VECTORIZARION_ENABLED {
-        length_vec(vector)
+        return length_vec(vector);
     }
     length_scalar(vector)
 }
@@ -461,7 +474,9 @@ fn length_scalar(vector: &[Scalar]) -> Scalar {
 
 #[inline(always)]
 fn length_vec(vector: &[Scalar]) -> Scalar {
-    let (extra, chunks) = scalar_slice_to_f32_chunks(vector);
+    let vec_f32: Vec<f32> = vector.iter().map(|&item| f32::from(item)).collect();
+    let vec_f32_slice: &[f32] = &vec_f32;
+    let (extra, chunks) = vec_f32_slice.as_rchunks();
 
     let mut sums = [0.0; 4];
     for (x, d) in std::iter::zip(extra, &mut sums) {
@@ -532,7 +547,7 @@ mod distance_tests {
 
                 let x: &[Scalar] = &x;
                 let y: &[Scalar] = &y;
-                assert!((distance_cosine_scalar(x,y)-distance_squared_cosine_vec(x,y)).0.abs() <= 1e-5);
+                assert!((distance_cosine_scalar(x,y)-distance_cosine_vec(x,y)).0.abs() <= 1e-5);
             }
         }
     }
