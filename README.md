@@ -52,7 +52,17 @@ cargo pgrx init --pg15=/usr/lib/postgresql/15/bin/pg_config
 cargo pgrx install --release
 ```
 
-You need restart your PostgreSQL server for the changes to take effect, like `systemctl restart postgresql.service`.
+Configure your PostgreSQL by modifying the `shared_preload_libraries` to include `vectors.so`.
+
+```sh
+psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
+```
+
+You need restart the PostgreSQL cluster.
+
+```sh
+sudo systemctl restart postgresql.service
+```
 
 </details>
 
@@ -60,8 +70,6 @@ You need restart your PostgreSQL server for the changes to take effect, like `sy
   <summary>Install from release</summary>
 
 Download the deb package in the release page, and type `sudo apt install vectors-pg15-*.deb` to install the deb package.
-
-</details>
 
 Configure your PostgreSQL by modifying the `shared_preload_libraries` to include `vectors.so`.
 
@@ -71,9 +79,36 @@ psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
 
 You need restart the PostgreSQL cluster.
 
-```
+```sh
 sudo systemctl restart postgresql.service
 ```
+
+</details>
+
+<details>
+  <summary>Install with docker</summary>
+
+By default, you will build the latest release.
+
+```sh
+docker buildx build https://github.com/tensorchord/pgvecto.rs.git --tag vectors:latest
+```
+
+Or build with a specified tag.
+
+```sh
+docker buildx build https://github.com/tensorchord/pgvecto.rs.git --tag vectors:tag --build-arg TAG=v0.0.0-nightly.20230818
+```
+
+Now you can run the image.
+
+```
+docker run --name vectors-example -e POSTGRES_PASSWORD=a -e POSTGRES_DB=a -e POSTGRES_USER=a -p 9999:5432 -d vectors:latest
+```
+
+Reference: https://hub.docker.com/_/postgres/.
+
+</details>
 
 Connect to the database and enable the extension.
 
