@@ -170,11 +170,11 @@ jobs:
           context: .
           push: true
           file: ./docker/binary_release.Dockerfile
-          tags: tensorchord/pgvecto-rs-binary:latest, tensorchord/pgvecto-rs-binary:${{ needs.setup.outputs.version }}-pg${{ matrix.version }}-amd64
+          tags: tensorchord/pgvecto-rs-binary:latest, tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64
       - name: Push postgres with pgvecto.rs to Docker Registry        
         uses: docker/build-push-action@v4
         with:
           context: .          
           push: true
           file: ./docker/pgvecto-rs.Dockerfile
-          tags: tensorchord/pgvecto-rs:latest, tensorchord/pgvecto-rs:${{ needs.setup.outputs.version }}-pg${{ matrix.version }}-amd64
+          tags: tensorchord/pgvecto-rs:latest, tensorchord/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64
