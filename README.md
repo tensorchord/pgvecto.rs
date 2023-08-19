@@ -18,6 +18,18 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 
 ## Installation
 
+### Try with docker 
+
+We have prebuild image at [tensorchord/pgvecto-rs](https://hub.docker.com/r/tensorchord/pgvecto-rs). You can try it with
+
+```
+docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:latest
+```
+
+To acheive full performance, please mount the volume to pg data directory by adding the option like `-v $PWD/pgdata:/var/lib/postgresql/data`
+
+Reference: https://hub.docker.com/_/postgres/.
+
 <details>
   <summary>Build from source</summary>
 
@@ -85,30 +97,6 @@ sudo systemctl restart postgresql.service
 
 </details>
 
-<details>
-  <summary>Install with docker</summary>
-
-By default, you will build the latest release.
-
-```sh
-docker buildx build https://github.com/tensorchord/pgvecto.rs.git --tag vectors:latest
-```
-
-Or build with a specified tag.
-
-```sh
-docker buildx build https://github.com/tensorchord/pgvecto.rs.git --tag vectors:tag --build-arg TAG=v0.0.0-nightly.20230818
-```
-
-Now you can run the image.
-
-```
-docker run --name vectors-example -e POSTGRES_PASSWORD=a -e POSTGRES_DB=a -e POSTGRES_USER=a -p 9999:5432 -d vectors:latest
-```
-
-Reference: https://hub.docker.com/_/postgres/.
-
-</details>
 
 Connect to the database and enable the extension.
 
@@ -118,6 +106,14 @@ CREATE EXTENSION vectors;
 ```
 
 ## Get started
+
+
+Run the following SQL to ensure the extension is enabled
+
+```sql
+DROP EXTENSION IF EXISTS vectors;
+CREATE EXTENSION vectors;
+```
 
 pgvecto.rs allows columns of a table to be defined as vectors.
 
