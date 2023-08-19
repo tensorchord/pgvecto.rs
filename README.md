@@ -13,8 +13,11 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 ## Why use pgvecto.rs
 
 - 💃 **Easy to use**: pgvecto.rs is a Postgres extension, which means that you can use it directly within your existing database. This makes it easy to integrate into your existing workflows and applications.
-- 🦀 **Rewrite in Rust**: Rewriting in Rust offers benefits such as improved memory safety, better performance, and reduced **maintenance costs** over time.
-- 🙋 **Community**: People loves Rust We are happy to help you with any questions you may have. You could join our [Discord](https://discord.gg/KqswhpVgdU) to get in touch with us.
+- 🥅 **Filtering**: pgvecto.rs supports filtering. You can set conditions when searching or retrieving points. This is the missing feature of other postgres extensions.
+- 🚀 **High Performance**: pgvecto.rs is designed to provide significant improvements compared to existing Postgres extensions. Benchmarks have shown that its HNSW index can deliver search performance up to 20 times faster than other indexes like ivfflat.
+- 🔧 **Extensible**: pgvecto.rs is designed to be extensible. It is easy to add new index structures and search algorithms. This flexibility ensures that pgvecto.rs can adapt to emerging vector search algorithms and meet diverse performance needs.
+- 🦀 **Rewrite in Rust**:  Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
+- 🙋 **Community Driven**: We encourage community involvement and contributions, fostering innovation and continuous improvement.
 
 ## Installation
 
