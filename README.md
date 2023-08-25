@@ -8,7 +8,7 @@
 <a href="https://github.com/tensorchord/pgvecto.rs#contributors-"><img alt="all-contributors" src="https://img.shields.io/github/all-contributors/tensorchord/pgvecto.rs/main"></a>
 </p>
 
-pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx). It is currently ⚠️**under heavy development**⚠️, please take care when using it in production. Read more at [📝our launch blog](https://modelz.ai/blog/pgvecto-rs).
+pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx). It is currently in the beta status, we invite you to try it out in production and provide us with feedback. Read more at [📝our launch blog](https://modelz.ai/blog/pgvecto-rs).
 
 ## Why use pgvecto.rs
 
@@ -250,6 +250,11 @@ We utilize TOML syntax to express the index's configuration. Here's what each ke
 | algorithm.hnsw.memmap  | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
 | algorithm.hnsw.m       | integer | (Optional) Maximum degree of the node.                                                                                |
 | algorithm.hnsw.ef      | integer | (Optional) Search scope in building.                                                                                  |
+
+## Limitations
+- The index is constructed and persisted using a memory map file (mmap) instead of PostgreSQL's shared buffer. As a result, physical replication or logical replication may not function correctly. Additionally, vector indexes are not automatically loaded when PostgreSQL restarts. To load or unload the index, you can utilize the `vectors_load` and `vectors_unload` commands.
+- The filtering process is not yet optimized. To achieve optimal performance, you may need to manually experiment with different strategies. For example, you can try searching without a vector index or implementing post-filtering techniques like the following query: `select * from (select * from items ORDER BY embedding <-> '[3,2,1]' LIMIT 100 ) where category = 1`. This involves using approximate nearest neighbor (ANN) search to obtain enough results and then applying filtering afterwards.
+
 
 ## Why not a specialty vector database?
 
