@@ -1,3 +1,4 @@
+use super::impls::quantization::*;
 use super::utils::filtered_fixed_heap::FilteredFixedHeap;
 use super::Algo;
 use crate::bgworker::index::IndexOptions;
@@ -12,53 +13,98 @@ use thiserror::Error;
 
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
 pub enum FlatError {
-    //
+    #[error("Quantization {0}")]
+    Quantization(#[from] QuantizationError),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FlatOptions {}
+pub struct FlatOptions {
+    #[serde(default)]
+    pub quantization: Option<QuantizationOptions>,
+}
 
-pub struct Flat<D: DistanceFamily> {
+pub struct Flat<D: DistanceFamily, Q: Quantization> {
     vectors: Arc<Vectors>,
+    implementation: QuantizationImpl<Q>,
     _maker: PhantomData<D>,
 }
 
-impl<D: DistanceFamily> Algo for Flat<D> {
+impl<D: DistanceFamily, Q: Quantization> Algo for Flat<D, Q> {
     type Error = FlatError;
 
-    type Save = ();
+    type Save = Q;
 
-    fn prebuild(_: &mut StoragePreallocator, _: IndexOptions) -> Result<(), Self::Error> {
+    fn prebuild(
+        storage: &mut StoragePreallocator,
+        options: IndexOptions,
+    ) -> Result<(), Self::Error> {
+        let flat_options = options.algorithm.clone().unwrap_flat();
+        QuantizationImpl::<Q>::prebuild(
+            storage,
+            options.dims,
+            options.capacity,
+            flat_options.quantization.unwrap_or(QuantizationOptions {
+                memmap: Memmap::Ram,
+                sample: 0,
+            }),
+        )?;
         Ok(())
     }
 
     fn build(
-        _: &mut Storage,
-        _: IndexOptions,
+        storage: &mut Storage,
+        options: IndexOptions,
         vectors: Arc<Vectors>,
-        _: usize,
+        n: usize,
     ) -> Result<Self, FlatError> {
+        let flat_options = options.algorithm.clone().unwrap_flat();
+        let implementation = QuantizationImpl::new(
+            storage,
+            vectors.clone(),
+            options.dims,
+            n,
+            options.capacity,
+            flat_options.quantization.unwrap_or(QuantizationOptions {
+                memmap: Memmap::Ram,
+                sample: 0,
+            }),
+        )?;
         Ok(Self {
             vectors,
+            implementation,
             _maker: PhantomData,
         })
     }
 
-    fn save(&self) {}
+    fn save(&self) -> Q {
+        self.implementation.save()
+    }
 
     fn load(
-        _: &mut Storage,
-        _: IndexOptions,
+        storage: &mut Storage,
+        options: IndexOptions,
         vectors: Arc<Vectors>,
-        _: (),
+        save: Q,
     ) -> Result<Self, FlatError> {
+        let flat_options = options.algorithm.clone().unwrap_flat();
         Ok(Self {
-            vectors,
+            vectors: vectors.clone(),
+            implementation: QuantizationImpl::load(
+                storage,
+                vectors,
+                save,
+                options.capacity,
+                flat_options.quantization.unwrap_or(QuantizationOptions {
+                    memmap: Memmap::Ram,
+                    sample: 0,
+                }),
+            )?,
             _maker: PhantomData,
         })
     }
 
-    fn insert(&self, _: usize) -> Result<(), FlatError> {
+    fn insert(&self, x: usize) -> Result<(), FlatError> {
+        self.implementation.insert(x)?;
         Ok(())
     }
 
@@ -73,11 +119,17 @@ impl<D: DistanceFamily> Algo for Flat<D> {
     {
         let mut result = FilteredFixedHeap::new(k, filter);
         for i in 0..self.vectors.len() {
-            let this_vector = self.vectors.get_vector(i);
+            let this_vector = self.implementation.get_vector(i);
             let this_data = self.vectors.get_data(i);
-            let dis = D::distance(&target, this_vector);
+            let dis = self
+                .implementation
+                .asymmetric_distance(&target, this_vector);
             result.push((dis, this_data));
         }
-        Ok(result.into_sorted_vec())
+        let mut output = Vec::new();
+        for (i, j) in result.into_sorted_vec().into_iter() {
+            output.push((i, j));
+        }
+        Ok(output)
     }
 }

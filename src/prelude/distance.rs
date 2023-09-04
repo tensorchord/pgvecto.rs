@@ -56,7 +56,7 @@ impl DistanceFamily for L2 {
 
     #[inline(always)]
     fn elkan_k_means_distance(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
-        distance_squared_l2(lhs, rhs)
+        distance_squared_l2(lhs, rhs).sqrt()
     }
 
     type QuantizationState = Scalar;
