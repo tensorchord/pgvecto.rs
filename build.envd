@@ -1,8 +1,35 @@
+# syntax=v1
+
+
 def build():
-    config.repo(url="https://github.com/tensorchord/pgvecto.rs")
-    base(os="ubuntu20.04", language="python3")
+    base(dev=True)
     shell("zsh")
-    io.copy("./envd.sh", "/tmp/build/envd.sh")
-    io.copy("./rust-toolchain.toml", "/tmp/build/rust-toolchain.toml")
-    io.copy("./Cargo.toml", "/tmp/build/Cargo.toml")
-    run(commands=["cd /tmp/build", "sudo -u envd ./envd.sh"])
+    install.apt_packages(
+        name=[
+            "lsb-release",
+            "gnupg",
+            "tzdata",
+            "build-essential",
+            "libpq-dev",
+            "libssl-dev",
+            "pkg-config",
+            "gcc",
+            "libreadline-dev",
+            "flex",
+            "bison",
+            "libxml2-dev",
+            "libxslt-dev",
+            "libxml2-utils",
+            "xsltproc",
+            "zlib1g-dev",
+            "ccache",
+            "clang",
+        ]
+    )
+    run(
+        [
+            "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
+        ]
+    )
+    runtime.environ(extra_path=["/home/envd/.cargo/bin"])
+    run(commands=["bash pg.sh"], mount_host=True)
