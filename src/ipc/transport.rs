@@ -37,7 +37,7 @@ pub(super) struct Listener {
 
 impl Listener {
     pub fn new() -> Self {
-        let path = "/tmp/pgvectors.socket";
+        let path = "./pgvectors.socket";
         remove_file_if_exists(&path).expect("Failed to remove the socket file.");
         let listener = UnixListener::bind(&path).expect("Failed to bind.");
         Self { listener }
@@ -56,7 +56,7 @@ pub(super) struct Socket {
 
 impl Socket {
     pub fn new() -> Self {
-        let path = "/tmp/pgvectors.socket";
+        let path = "./pg_vectors/pgvectors.socket";
         let stream = UnixStream::connect(path).expect("Failed to connect.");
         Socket {
             stream: Some(stream),
