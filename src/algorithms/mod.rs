@@ -3,14 +3,17 @@ mod hnsw;
 mod impls;
 mod ivf;
 mod utils;
+mod vamana;
 
 pub use flat::{Flat, FlatOptions};
 pub use hnsw::{Hnsw, HnswOptions};
 pub use ivf::{Ivf, IvfOptions};
+pub use vamana::{Vamana, VamanaOptions};
 
 use self::flat::FlatError;
 use self::hnsw::HnswError;
 use self::ivf::IvfError;
+use self::vamana::VamanaError;
 use crate::bgworker::index::IndexOptions;
 use crate::bgworker::storage::{Storage, StoragePreallocator};
 use crate::bgworker::vectors::Vectors;
@@ -27,6 +30,8 @@ pub enum AlgorithmError {
     Hnsw(#[from] HnswError),
     #[error("Ivf {0}")]
     Ivf(#[from] IvfError),
+    #[error("Vamana {0}")]
+    Vamana(#[from] VamanaError),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,6 +40,7 @@ pub enum AlgorithmOptions {
     Flat(FlatOptions),
     Hnsw(HnswOptions),
     Ivf(IvfOptions),
+    Vamana(VamanaOptions),
 }
 
 impl AlgorithmOptions {
@@ -59,6 +65,13 @@ impl AlgorithmOptions {
             _ => unreachable!(),
         }
     }
+    pub fn unwrap_vamana(self) -> VamanaOptions {
+        use AlgorithmOptions::*;
+        match self {
+            Vamana(x) => x,
+            _ => unreachable!(),
+        }
+    }
 }
 
 pub enum Algorithm {
@@ -71,6 +84,9 @@ pub enum Algorithm {
     IvfL2(Ivf<L2>),
     IvfCosine(Ivf<Cosine>),
     IvfDot(Ivf<Dot>),
+    VamanaL2(Vamana<L2>),
+    VamanaCosine(Vamana<Cosine>),
+    VamanaDot(Vamana<Dot>),
 }
 
 impl Algorithm {
@@ -89,6 +105,9 @@ impl Algorithm {
             (O::Ivf(_), Distance::L2) => Ok(Ivf::<L2>::prebuild(storage, options)?),
             (O::Ivf(_), Distance::Cosine) => Ok(Ivf::<Cosine>::prebuild(storage, options)?),
             (O::Ivf(_), Distance::Dot) => Ok(Ivf::<Dot>::prebuild(storage, options)?),
+            (O::Vamana(_), Distance::L2) => Ok(Vamana::<L2>::prebuild(storage, options)?),
+            (O::Vamana(_), Distance::Cosine) => Ok(Vamana::<Cosine>::prebuild(storage, options)?),
+            (O::Vamana(_), Distance::Dot) => Ok(Vamana::<Dot>::prebuild(storage, options)?),
         }
     }
     pub fn build(
@@ -126,6 +145,15 @@ impl Algorithm {
             (O::Ivf(_), Distance::Dot) => {
                 Ok(Ivf::build(storage, options, vectors, n).map(Self::IvfDot)?)
             }
+            (O::Vamana(_), Distance::L2) => {
+                Ok(Vamana::build(storage, options, vectors, n).map(Self::VamanaL2)?)
+            }
+            (O::Vamana(_), Distance::Cosine) => {
+                Ok(Vamana::build(storage, options, vectors, n).map(Self::VamanaCosine)?)
+            }
+            (O::Vamana(_), Distance::Dot) => {
+                Ok(Vamana::build(storage, options, vectors, n).map(Self::VamanaDot)?)
+            }
         }
     }
     pub fn load(
@@ -160,6 +188,18 @@ impl Algorithm {
             (O::Ivf(_), Distance::Dot) => {
                 Ok(Ivf::load(storage, options, vectors).map(Self::IvfDot)?)
             }
+            (O::Vamana(_), Distance::L2) => {
+                let save = bincode::deserialize(&save).expect("Failed to deserialize.");
+                Ok(Vamana::load(storage, options, vectors, save).map(Self::VamanaL2)?)
+            }
+            (O::Vamana(_), Distance::Cosine) => {
+                let save = bincode::deserialize(&save).expect("Failed to deserialize.");
+                Ok(Vamana::load(storage, options, vectors, save).map(Self::VamanaCosine)?)
+            }
+            (O::Vamana(_), Distance::Dot) => {
+                let save = bincode::deserialize(&save).expect("Failed to deserialize.");
+                Ok(Vamana::load(storage, options, vectors, save).map(Self::VamanaDot)?)
+            }
         }
     }
     pub fn insert(&self, insert: usize) -> Result<(), AlgorithmError> {
@@ -174,6 +214,9 @@ impl Algorithm {
             IvfL2(sel) => Ok(sel.insert(insert)?),
             IvfCosine(sel) => Ok(sel.insert(insert)?),
             IvfDot(sel) => Ok(sel.insert(insert)?),
+            VamanaL2(sel) => Ok(sel.insert(insert)?),
+            VamanaCosine(sel) => Ok(sel.insert(insert)?),
+            VamanaDot(sel) => Ok(sel.insert(insert)?),
         }
     }
     pub fn search<F>(
@@ -196,6 +239,9 @@ impl Algorithm {
             IvfL2(sel) => Ok(sel.search(target, k, filter)?),
             IvfCosine(sel) => Ok(sel.search(target, k, filter)?),
             IvfDot(sel) => Ok(sel.search(target, k, filter)?),
+            VamanaL2(sel) => Ok(sel.search(target, k, filter)?),
+            VamanaCosine(sel) => Ok(sel.search(target, k, filter)?),
+            VamanaDot(sel) => Ok(sel.search(target, k, filter)?),
         }
     }
 }
