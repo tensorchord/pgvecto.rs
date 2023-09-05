@@ -69,6 +69,8 @@ cargo pgrx install --release
 
 Configure your PostgreSQL by modifying the `shared_preload_libraries` to include `vectors.so`.
 
+1. Using the PostgreSQL managed by `systemd`.
+
 ```sh
 psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
 ```
@@ -77,6 +79,20 @@ You need restart the PostgreSQL cluster.
 
 ```sh
 sudo systemctl restart postgresql.service
+```
+
+2. Using the PostgresSQL managed by `pgrx`,
+ 
+You can modify the `postgresql.conf` file in the `~/.pgrx/.pgrx/data-15` directory.
+
+```conf
+shared_preload_libraries = 'vectors.so'
+```
+
+Run the extension in `psql`:
+
+```bash
+cargo pgrx run
 ```
 
 </details>
