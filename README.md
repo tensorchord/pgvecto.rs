@@ -21,15 +21,15 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 
 ## Comparison with pgvector
 
-|                        | pgvecto.rs  | pgvector                  |
-| ---------------------- | ----------- | ------------------------- |
-| Transaction support    | ✅          | ⚠️                        |
-| Dead tuple issue       | Resolved ✅ | Partially fixed⚠️         |
-| Vector Dimension Limit | 65536       | 2000                      |
-| Prefilter on HNSW      | ✅          | ❌                        |
-| Parallel Index build   | ✅          | ❌                        |
-| Index Persistence      | mmap file   | Postgres internal storage |
-| WAL amplification      | 2x 😃       | 30x 🧐                    |
+|                        | pgvecto.rs                          | pgvector                  |
+| ---------------------- | ----------------------------------- | ------------------------- |
+| Transaction support    | ✅                                  | ⚠️                        |
+| Dead tuple issue       | Resolved ✅                         | Partially fixed⚠️         |
+| Vector Dimension Limit | 65536                               | 2000                      |
+| Prefilter on HNSW      | ✅                                  | ❌                        |
+| Parallel Index build   | ⚡️ Linearly faster with more cores | 🐌 Only single core used  |
+| Index Persistence      | mmap file                           | Postgres internal storage |
+| WAL amplification      | 2x 😃                               | 30x 🧐                    |
 
 And based on our benchmark, pgvecto.rs can be up to 2x faster than pgvector on hnsw indexes with same configurations. Read more at [here](./docs/comparison-pgvector.md).
 
