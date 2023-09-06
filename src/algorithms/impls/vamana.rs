@@ -34,7 +34,7 @@ impl Eq for VertexWithDistance {}
 
 impl PartialOrd for VertexWithDistance {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.distance.partial_cmp(&other.distance)
+        Some(self.distance.cmp(&other.distance))
     }
 }
 
