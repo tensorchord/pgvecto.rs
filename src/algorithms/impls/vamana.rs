@@ -57,7 +57,7 @@ pub struct SearchState {
     pub visited: HashSet<usize>,
     candidates: BTreeMap<OrderedFloat<f32>, usize>,
     heap: BinaryHeap<Reverse<VertexWithDistance>>,
-    heap_visisted: HashSet<usize>,
+    heap_visited: HashSet<usize>,
     l: usize,
     /// Number of results to return.
     //TODO: used during search.
@@ -72,7 +72,7 @@ impl SearchState {
             visited: HashSet::new(),
             candidates: BTreeMap::new(),
             heap: BinaryHeap::new(),
-            heap_visisted: HashSet::new(),
+            heap_visited: HashSet::new(),
             k,
             l,
         }
@@ -97,7 +97,7 @@ impl SearchState {
     /// Push a new (unvisited) vertex into the search state.
     fn push(&mut self, vertex_id: usize, distance: f32) {
         assert!(!self.visited.contains(&vertex_id));
-        self.heap_visisted.insert(vertex_id);
+        self.heap_visited.insert(vertex_id);
         self.heap
             .push(Reverse(VertexWithDistance::new(vertex_id, distance)));
         self.candidates.insert(OrderedFloat(distance), vertex_id);
@@ -113,7 +113,7 @@ impl SearchState {
 
     // Returns true if the vertex has been visited.
     fn is_visited(&self, vertex_id: usize) -> bool {
-        self.visited.contains(&vertex_id) || self.heap_visisted.contains(&vertex_id)
+        self.visited.contains(&vertex_id) || self.heap_visited.contains(&vertex_id)
     }
 }
 
