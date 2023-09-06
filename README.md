@@ -31,7 +31,7 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 | Index Persistence      | mmap file                           | Postgres internal storage |
 | WAL amplification      | 2x 😃                               | 30x 🧐                    |
 
-And based on our benchmark, pgvecto.rs can be up to 2x faster than pgvector on hnsw indexes with same configurations. Read more at [here](./docs/comparison-pgvector.md).
+And based on our benchmark, pgvecto.rs can be up to 2x faster than pgvector on hnsw indexes with same configurations. Read more about the comparison at [here](./docs/comparison-pgvector.md).
 
 ## Installation
 
