@@ -6,8 +6,6 @@ use crate::bgworker::storage::StoragePreallocator;
 use crate::bgworker::vectors::Vectors;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use thiserror::Error;
 
@@ -79,7 +77,8 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
         let implementation = VamanaImpl::new(
             storage,
             vectors,
-            options.capacity,
+            n,
+            options.dims,
             vamana_options.r,
             vamana_options.alpha,
             vamana_options.l,
@@ -99,6 +98,7 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
             storage,
             vectors,
             options.capacity,
+            options.dims,
             vamana_options.r,
             vamana_options.alpha,
             vamana_options.l,
@@ -106,6 +106,7 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
         )?;
         Ok(Self { implementation })
     }
+    #[allow(unused)]
     fn insert(&self, insert: usize) -> Result<(), VamanaError> {
         // TODO: the insert API is a fake insert for user,
         // but can be used to implement concurrent index building
@@ -120,6 +121,6 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
     where
         F: FnMut(u64) -> bool,
     {
-        self.implementation.search(target, k, filter)
+        Ok(self.implementation.search(target, k, filter)?)
     }
 }

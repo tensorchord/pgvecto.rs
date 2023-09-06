@@ -5,30 +5,22 @@ use crate::bgworker::storage_mmap::MmapBox;
 use crate::bgworker::vectors::Vectors;
 use crate::prelude::*;
 
-use crate::algorithms::utils::filtered_fixed_heap::FilteredFixedHeap;
-use crate::algorithms::utils::semaphore::Semaphore;
-use parking_lot::RwLock;
-use parking_lot::RwLockReadGuard;
-use parking_lot::RwLockWriteGuard;
+use rand::distributions::Uniform;
+use rand::prelude::SliceRandom;
 use rand::Rng;
-use std::cell::UnsafeCell;
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BinaryHeap, HashSet};
 use std::marker::PhantomData;
-use std::ops::RangeInclusive;
 use std::sync::Arc;
 
 pub struct VertexWithDistance {
     pub id: usize,
-    pub distance: OrderedFloat<f32>,
+    pub distance: Scalar,
 }
 
 impl VertexWithDistance {
-    pub fn new(id: usize, distance: f32) -> Self {
-        Self {
-            id,
-            distance: OrderedFloat(distance),
-        }
+    pub fn new(id: usize, distance: Scalar) -> Self {
+        Self { id, distance }
     }
 }
 
@@ -55,7 +47,7 @@ impl Ord for VertexWithDistance {
 /// DiskANN search state.
 pub struct SearchState {
     pub visited: HashSet<usize>,
-    candidates: BTreeMap<OrderedFloat<f32>, usize>,
+    candidates: BTreeMap<Scalar, usize>,
     heap: BinaryHeap<Reverse<VertexWithDistance>>,
     heap_visited: HashSet<usize>,
     l: usize,
@@ -95,12 +87,12 @@ impl SearchState {
     }
 
     /// Push a new (unvisited) vertex into the search state.
-    fn push(&mut self, vertex_id: usize, distance: f32) {
+    fn push(&mut self, vertex_id: usize, distance: Scalar) {
         assert!(!self.visited.contains(&vertex_id));
         self.heap_visited.insert(vertex_id);
         self.heap
             .push(Reverse(VertexWithDistance::new(vertex_id, distance)));
-        self.candidates.insert(OrderedFloat(distance), vertex_id);
+        self.candidates.insert(distance, vertex_id);
         if self.candidates.len() > self.l {
             self.candidates.pop_last();
         }
@@ -117,10 +109,12 @@ impl SearchState {
     }
 }
 
+#[allow(unused)]
 pub struct VamanaImpl<D: DistanceFamily> {
     neighbors: MmapBox<[usize]>,
     neighbor_size: MmapBox<[usize]>,
     vectors: Arc<Vectors>,
+    dims: u16,
     r: usize,
     alpha: f32,
     l: usize,
@@ -146,44 +140,47 @@ impl<D: DistanceFamily> VamanaImpl<D> {
     pub fn new(
         storage: &mut Storage,
         vectors: Arc<Vectors>,
-        capacity: usize,
+        n: usize,
+        dims: u16,
         r: usize,
         alpha: f32,
         l: usize,
         memmap: Memmap,
     ) -> Result<Self, VamanaError> {
-        let number_of_nodes = capacity;
-        let mut neighbors = unsafe {
+        assert!(n == vectors.len());
+        let number_of_nodes = n;
+        let neighbors = unsafe {
             storage
                 .alloc_mmap_slice::<usize>(memmap, r * number_of_nodes)
                 .assume_init()
         };
-        let mut neighbor_size = unsafe {
+        let neighbor_size = unsafe {
             storage
                 .alloc_mmap_slice::<usize>(memmap, number_of_nodes)
                 .assume_init()
         };
 
-        let new_vamana = Self {
-            neighbors: neighbors,
-            neighbor_size: neighbor_size,
-            vectors: vectors,
-            r: r,
-            alpha: alpha,
-            l: l,
+        let mut new_vamana = Self {
+            neighbors,
+            neighbor_size,
+            vectors: vectors.clone(),
+            dims,
+            r,
+            alpha,
+            l,
             _maker: PhantomData,
         };
 
         // 1. init graph with r random neighbors for each node
-        let rng = rand::rngs::SmallRng::from_entropy();
+        let rng = rand::thread_rng();
         let len = vectors.len();
-        new_vamana._init_graph(len, rng);
+        new_vamana._init_graph(len, rng.clone());
 
         // 2. find medoid
         let medoid = new_vamana._find_medoid();
 
         // 3. iterate pass (TODO: lancedb use two passes here, need further investigation)
-        new_vamana._one_pass(medoid, alpha, r, l, rng);
+        new_vamana._one_pass(medoid, alpha, r, l, rng.clone())?;
 
         Ok(new_vamana)
     }
@@ -192,6 +189,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         storage: &mut Storage,
         vectors: Arc<Vectors>,
         capacity: usize,
+        dims: u16,
         r: usize,
         alpha: f32,
         l: usize,
@@ -210,6 +208,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
                     .assume_init()
             },
             vectors: vectors,
+            dims: dims,
             r: r,
             alpha: alpha,
             l: l,
@@ -217,6 +216,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         })
     }
 
+    #[allow(unused)]
     pub fn search<F>(
         &self,
         target: Box<[Scalar]>,
@@ -227,26 +227,31 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         F: FnMut(u64) -> bool,
     {
         // TODO: filter
-        let state = self._greedy_search(0, &target, k, k * 2);
+        let state = self._greedy_search(0, &target, k, k * 2)?;
 
-        let mut results = BinaryHeap::<Reverse<(Scalar, usize)>>::new();
+        let mut results = BinaryHeap::<(Scalar, usize)>::new();
         for (distance, row) in state.candidates {
             if results.len() == k {
                 break;
             }
 
-            results.push((Scalar::from(distance), self.vectors.get_data(row)));
+            results.push((Scalar::from(distance), row));
         }
-        Ok(results.into_sorted_vec())
+        let res_vec: Vec<(Scalar, u64)> = results
+            .iter()
+            .map(|x| (x.0, self.vectors.get_data(x.1)))
+            .collect();
+        Ok(res_vec)
     }
 
+    #[allow(unused)]
     pub fn insert(&self, x: usize) -> Result<(), VamanaError> {
         // TODO: the insert API is a fake insert for user,
         // but can be used to implement concurrent index building
         Ok(())
     }
 
-    fn _init_graph(&self, n: usize, mut rng: impl Rng) {
+    fn _init_graph(&mut self, n: usize, mut rng: impl Rng) {
         let distribution = Uniform::new(0, n);
         for i in 0..n {
             let mut neighbor_ids: HashSet<usize> = HashSet::new();
@@ -261,20 +266,20 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         }
     }
 
-    fn _set_neighbors(&self, vertex_index: usize, neighbor_ids: &HashSet<usize>) {
-        assert!(neighbor_ids.size() <= self.r);
-        let i = 0;
+    fn _set_neighbors(&mut self, vertex_index: usize, neighbor_ids: &HashSet<usize>) {
+        assert!(neighbor_ids.len() <= self.r);
+        let mut i = 0;
         for item in neighbor_ids {
-            self.neighbors[vertex_index * r + i] = item;
+            self.neighbors[vertex_index * self.r + i] = *item;
             i += 1;
         }
-        self.neighbor_size[vertex_index] = neighbor_ids.size();
+        self.neighbor_size[vertex_index] = neighbor_ids.len();
     }
 
     fn _get_neighbors(&self, vertex_index: usize) -> &[usize] {
         //TODO: store neighbor length
         let size = self.neighbor_size[vertex_index];
-        neighbors[vertex_index * r..vertex_index * r + size]
+        &self.neighbors[(vertex_index * self.r)..(vertex_index * self.r + size)]
     }
 
     fn _find_medoid(&self) -> usize {
@@ -283,8 +288,8 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         let centroid_arr: &[Scalar] = &centroid;
 
         let len = self.vectors.len();
-        let medoid_index = 0;
-        let min_dis = Scalar::INFINITY;
+        let mut medoid_index = 0;
+        let mut min_dis = Scalar::INFINITY;
         for i in 0..len {
             let dis = D::distance(centroid_arr, self.vectors.get_vector(i));
             if dis < min_dis {
@@ -297,44 +302,59 @@ impl<D: DistanceFamily> VamanaImpl<D> {
 
     fn _compute_centroid(&self) -> Vec<Scalar> {
         // TODO: batch and concurrent
-        let dim = self.vectors.dims;
+        let dim = self.dims as usize;
         let len = self.vectors.len();
         let mut sum = vec![0_f64; dim]; // change to f32 to avoid overflow
         for i in 0..len {
             let vec = self.vectors.get_vector(i);
             for j in 0..dim {
-                sum[j] += vec[j] as f64;
+                sum[j] += f32::from(vec[j]) as f64;
             }
         }
 
-        let collection: Vec<Scalar> = sum.iter().map(|v| Scalar::from((v / len) as f32)).collect();
+        let collection: Vec<Scalar> = sum
+            .iter()
+            .map(|v| Scalar::from((*v / len as f64) as f32))
+            .collect();
         collection
     }
 
-    fn _one_pass(&self, medoid: usize, alpha: f32, r: usize, l: usize, mut rng: impl Rng) {
+    // r and l leave here for multiple pass extension
+    fn _one_pass(
+        &mut self,
+        medoid: usize,
+        alpha: f32,
+        r: usize,
+        l: usize,
+        mut rng: impl Rng,
+    ) -> Result<(), VamanaError> {
         let len = self.vectors.len();
         let mut ids = (0..len).collect::<Vec<_>>();
         ids.shuffle(&mut rng);
 
-        for (i, &id) in ids.iter().enumerate() {
+        for &id in ids.iter() {
             let query = self.vectors.get_vector(id);
-            let state = self._greedy_search(medoid, query, 1, l, r);
-            let neighbor_ids = self._robust_prune(id, state.visited, alpha, l);
-            self._set_neighbors(id, neighbor_ids);
-            for neighbor_id in neighbor_ids.iter() {
+            let state = self._greedy_search(medoid, query, 1, l)?;
+            let neighbor_ids = self._robust_prune(id, state.visited, alpha, l)?;
+            let neighbor_ids: HashSet<usize> = neighbor_ids.iter().cloned().collect();
+
+            self._set_neighbors(id, &neighbor_ids);
+            for &neighbor_id in neighbor_ids.iter() {
                 let old_neighbors = self._get_neighbors(neighbor_id);
                 let mut old_neighbors: HashSet<usize> = old_neighbors.iter().cloned().collect();
                 old_neighbors.insert(id);
-                if old_neighbors.size() > r {
+                if old_neighbors.len() > r {
                     // need robust prune
                     let new_neighbors = self._robust_prune(neighbor_id, old_neighbors, alpha, r)?;
                     let new_neighbors: HashSet<usize> = new_neighbors.iter().cloned().collect();
-                    self._set_neighbors(neighbor_id, new_neighbors);
+                    self._set_neighbors(neighbor_id, &new_neighbors);
                 } else {
-                    self._set_neighbors(neighbor_id, old_neighbors);
+                    self._set_neighbors(neighbor_id, &old_neighbors);
                 }
             }
         }
+
+        Ok(())
     }
 
     fn _greedy_search(
@@ -343,8 +363,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         query: &[Scalar],
         k: usize,
         search_size: usize,
-        r: usize,
-    ) -> Result<SearchState> {
+    ) -> Result<SearchState, VamanaError> {
         let mut state = SearchState::new(k, search_size);
 
         let dist = D::distance(query, self.vectors.get_vector(start));
@@ -354,7 +373,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
             state.visit(id);
 
             let neighbor_ids = self._get_neighbors(id);
-            for neighbor_id in neighbor_ids {
+            for &neighbor_id in neighbor_ids {
                 if state.is_visited(neighbor_id) {
                     continue;
                 }
@@ -373,7 +392,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         mut visited: HashSet<usize>,
         alpha: f32,
         r: usize,
-    ) -> Result<Vec<usize>> {
+    ) -> Result<Vec<usize>, VamanaError> {
         // TODO: batch and concurrent
         visited.remove(&id); // in case visited has id itself
         let neighbor_ids = self._get_neighbors(id);
@@ -382,10 +401,10 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         let mut heap: BinaryHeap<VertexWithDistance> = visited
             .iter()
             .map(|v| {
-                let dist = D::distance(self.vectors.get_vector(id), self.vectors.get_vector(v));
+                let dist = D::distance(self.vectors.get_vector(id), self.vectors.get_vector(*v));
                 VertexWithDistance {
                     id: *v,
-                    distance: OrderedFloat(dist),
+                    distance: dist,
                 }
             })
             .collect();
@@ -407,7 +426,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
                     D::distance(self.vectors.get_vector(p.id), self.vectors.get_vector(*pv));
                 let dist_query =
                     D::distance(self.vectors.get_vector(id), self.vectors.get_vector(*pv));
-                if alpha * dist_prime <= dist_query {
+                if Scalar::from(alpha) * dist_prime <= dist_query {
                     to_remove.insert(*pv);
                 }
             }
