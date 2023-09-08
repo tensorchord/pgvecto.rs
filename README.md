@@ -21,15 +21,15 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 
 ## Comparison with pgvector
 
-|                                          | pgvecto.rs                          | pgvector                  |
-| ---------------------------------------- | ----------------------------------- | ------------------------- |
-| Transaction support                      | ✅                                  | ⚠️                        |
-| Sufficient Result with Delete and Update | ✅                                  | ⚠️                        |
-| Vector Dimension Limit                   | 65535                               | 2000                      |
-| Prefilter on HNSW                        | ✅                                  | ❌                        |
-| Parallel Index build                     | ⚡️ Linearly faster with more cores | 🐌 Only single core used  |
-| Index Persistence                        | mmap file                           | Postgres internal storage |
-| WAL amplification                        | 2x 😃                               | 30x 🧐                    |
+|                                             | pgvecto.rs                          | pgvector                  |
+| ------------------------------------------- | ----------------------------------- | ------------------------- |
+| Transaction support                         | ✅                                  | ⚠️                        |
+| Sufficient Result with Delete/Update/Filter | ✅                                  | ⚠️                        |
+| Vector Dimension Limit                      | 65535                               | 2000                      |
+| Prefilter on HNSW                           | ✅                                  | ❌                        |
+| Parallel Index build                        | ⚡️ Linearly faster with more cores | 🐌 Only single core used  |
+| Index Persistence                           | mmap file                           | Postgres internal storage |
+| WAL amplification                           | 2x 😃                               | 30x 🧐                    |
 
 And based on our benchmark, pgvecto.rs can be up to 2x faster than pgvector on hnsw indexes with same configurations. Read more about the comparison at [here](./docs/comparison-pgvector.md).
 
@@ -189,16 +189,16 @@ We utilize TOML syntax to express the index's configuration. Here's what each ke
 | algorithm.hnsw.m      | integer | (Optional) Maximum degree of the node.                                                                                |
 | algorithm.hnsw.ef     | integer | (Optional) Search scope in building.                                                                                  |
 
-
 And you can change the number of expected result (such as `ef_search` in hnsw) by using the following SQL.
 
 ```sql
----  (Optional) Expected number of candidates returned by index                              
+---  (Optional) Expected number of candidates returned by index
 SET vectors.k = 32;
 --- Or use local to set the value for the current session
 SET LOCAL vectors.k = 32;
 ```
-```
+
+````
 
 ## Limitations
 
@@ -212,7 +212,7 @@ You could use [envd](https://github.com/tensorchord/envd) to set up the developm
 ```sh
 pip install envd
 envd up
-```
+````
 
 ## Contributing
 
