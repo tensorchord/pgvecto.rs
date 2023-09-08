@@ -29,12 +29,12 @@ We did the experiments using laion dataset with vector-db-benchmark, and pgvecto
 pgvector:
 - Utilize PostgreSQL's buffer and page storage for index storage.
 - The index build process cannot be parallelized because hnsw is originally designed for memory usage. Inserting new points will result in significant changes to memory. Using postgres's pages will cause too many buffer locking and raising errors in postgres.
-- There is also a WAL amplification issue for the same reason. When inserting 100k vectors with 100 dimensions. It will use 45mb as index's data size, but generates 1216mb write ahead logs, about 30x write amplification on the index
+- There is also a WAL amplification issue for the same reason. When inserting 100k vectors with 100 dimensions. It will use 45mb as the data size and 279mb as the index size, but generates 1216mb write ahead logs, about 30x write amplification on the index
 - The advantage of such implementation is that it seamlessly integrates with the postgres ecosystem, allowing for out-of-the-box compatibility with logical replication. However, it's important to note that pgvector's WAL amplification can also impact the logical replication process.
 
 pgvecto.rs
 - We initially attempted to use the page storage feature of PostgreSQL, but encountered issues with parallel build and WAL amplification mentioned above. As a result, we decided to utilize mmap for storing the index outside of PostgreSQL's storage system. We believe this approach will provide users with better experiences and allow us to iterate more quickly with various algorithms.
-- pgvecto.rs doesn't have WAL amplification problem. When inserting 100k vectors with 100 dimensions, it will use 45mb as index's data size, and generates 80mb write ahead logs, less than 2x write amplification on the index.
+- pgvecto.rs doesn't have WAL amplification problem. When inserting 100k vectors with 100 dimensions, it will use 42mb as index's data size, and generates 42mb write ahead logs, less than 2x write amplification on the index.
 - The drawback is that implementing logical replication in PostgreSQL requires additional effort. We have plans to implement it in the future.
 
 Based on our testing of the `gist-960-euclidean` dataset on an 8-core, 32GB instance, with 1 million 960-dimensional vectors, it took 11,640 seconds to build the index using pgvector. pgvecto.rs only took 1,500 seconds, which is about 8x speedup. With larger machine, pgvecto.rs can further accelerate on by utilizing all cores whereas pgvector cannot.

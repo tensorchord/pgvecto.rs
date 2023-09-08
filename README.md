@@ -21,15 +21,15 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 
 ## Comparison with pgvector
 
-|                        | pgvecto.rs                          | pgvector                  |
-| ---------------------- | ----------------------------------- | ------------------------- |
-| Transaction support    | ✅                                  | ⚠️                        |
-| Dead tuple issue       | Resolved ✅                         | Partially fixed⚠️         |
-| Vector Dimension Limit | 65536                               | 2000                      |
-| Prefilter on HNSW      | ✅                                  | ❌                        |
-| Parallel Index build   | ⚡️ Linearly faster with more cores | 🐌 Only single core used  |
-| Index Persistence      | mmap file                           | Postgres internal storage |
-| WAL amplification      | 2x 😃                               | 30x 🧐                    |
+|                                          | pgvecto.rs                          | pgvector                  |
+| ---------------------------------------- | ----------------------------------- | ------------------------- |
+| Transaction support                      | ✅                                  | ⚠️                        |
+| Sufficient Result with Delete and Update | ✅                                  | ⚠️                        |
+| Vector Dimension Limit                   | 65535                               | 2000                      |
+| Prefilter on HNSW                        | ✅                                  | ❌                        |
+| Parallel Index build                     | ⚡️ Linearly faster with more cores | 🐌 Only single core used  |
+| Index Persistence                        | mmap file                           | Postgres internal storage |
+| WAL amplification                        | 2x 😃                               | 30x 🧐                    |
 
 And based on our benchmark, pgvecto.rs can be up to 2x faster than pgvector on hnsw indexes with same configurations. Read more about the comparison at [here](./docs/comparison-pgvector.md).
 
@@ -180,7 +180,6 @@ We utilize TOML syntax to express the index's configuration. Here's what each ke
 | capacity              | integer | The index's capacity. The value should be greater than the number of rows in your table.                              |
 | vectors               | table   | Configuration of background process vector storage.                                                                   |
 | vectors.memmap        | string  | (Optional) `ram` ensures that the vectors always stays in memory while `disk` suggests otherwise.                     |
-| vectors.k             | integer | (Optional) Expected number of candidates returned by index                                                            |
 | algorithm.ivf         | table   | If this table is set, the IVF algorithm will be used for the index.                                                   |
 | algorithm.ivf.memmap  | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
 | algorithm.ivf.nlist   | integer | Number of cluster units.                                                                                              |
@@ -189,6 +188,17 @@ We utilize TOML syntax to express the index's configuration. Here's what each ke
 | algorithm.hnsw.memmap | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
 | algorithm.hnsw.m      | integer | (Optional) Maximum degree of the node.                                                                                |
 | algorithm.hnsw.ef     | integer | (Optional) Search scope in building.                                                                                  |
+
+
+And you can change the number of expected result (such as `ef_search` in hnsw) by using the following SQL.
+
+```sql
+---  (Optional) Expected number of candidates returned by index                              
+SET vectors.k = 32;
+--- Or use local to set the value for the current session
+SET LOCAL vectors.k = 32;
+```
+```
 
 ## Limitations
 
