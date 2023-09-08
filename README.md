@@ -16,100 +16,34 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 - 🥅 **Filtering**: pgvecto.rs supports filtering. You can set conditions when searching or retrieving points. This is the missing feature of other postgres extensions.
 - 🚀 **High Performance**: pgvecto.rs is designed to provide significant improvements compared to existing Postgres extensions. Benchmarks have shown that its HNSW index can deliver search performance up to 20 times faster than other indexes like ivfflat.
 - 🔧 **Extensible**: pgvecto.rs is designed to be extensible. It is easy to add new index structures and search algorithms. This flexibility ensures that pgvecto.rs can adapt to emerging vector search algorithms and meet diverse performance needs.
-- 🦀 **Rewrite in Rust**:  Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
+- 🦀 **Rewrite in Rust**: Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
 - 🙋 **Community Driven**: We encourage community involvement and contributions, fostering innovation and continuous improvement.
+
+## Comparison with pgvector
+
+|                                             | pgvecto.rs                          | pgvector                  |
+| ------------------------------------------- | ----------------------------------- | ------------------------- |
+| Transaction support                         | ✅                                  | ⚠️                        |
+| Sufficient Result with Delete/Update/Filter | ✅                                  | ⚠️                        |
+| Vector Dimension Limit                      | 65535                               | 2000                      |
+| Prefilter on HNSW                           | ✅                                  | ❌                        |
+| Parallel Index build                        | ⚡️ Linearly faster with more cores | 🐌 Only single core used  |
+| Index Persistence                           | mmap file                           | Postgres internal storage |
+| WAL amplification                           | 2x 😃                               | 30x 🧐                    |
+
+And based on our benchmark, pgvecto.rs can be up to 2x faster than pgvector on hnsw indexes with same configurations. Read more about the comparison at [here](./docs/comparison-pgvector.md).
 
 ## Installation
 
-### Try with docker 
+We recommend you to try pgvecto.rs using our pre-built docker, by running
 
-We have prebuild image at [tensorchord/pgvecto-rs](https://hub.docker.com/r/tensorchord/pgvecto-rs). You can try it with
-
-```
+```bash
 docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:latest
 ```
 
-To acheive full performance, please mount the volume to pg data directory by adding the option like `-v $PWD/pgdata:/var/lib/postgresql/data`
-
-Reference: https://hub.docker.com/_/postgres/.
-
-<details>
-  <summary>Build from source</summary>
-
-### Install Rust and base dependency
-
-```sh
-sudo apt install -y build-essential libpq-dev libssl-dev pkg-config gcc libreadline-dev flex bison libxml2-dev libxslt-dev libxml2-utils xsltproc zlib1g-dev ccache clang git
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-### Clone the Repository
-
-```sh
-git clone https://github.com/tensorchord/pgvecto.rs.git
-cd pgvecto.rs
-```
-
-### Install Postgresql and pgrx
-
-```sh
-sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-sudo apt-get update
-sudo apt-get -y install libpq-dev postgresql-15 postgresql-server-dev-15
-cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
-cargo pgrx init --pg15=/usr/lib/postgresql/15/bin/pg_config
-```
-
-### Install pgvecto.rs
-
-```sh
-cargo pgrx install --release
-```
-
-Configure your PostgreSQL by modifying the `shared_preload_libraries` to include `vectors.so`.
-
-```sh
-psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
-```
-
-You need restart the PostgreSQL cluster.
-
-```sh
-sudo systemctl restart postgresql.service
-```
-
-</details>
-
-<details>
-  <summary>Install from release</summary>
-
-Download the deb package in the release page, and type `sudo apt install vectors-pg15-*.deb` to install the deb package.
-
-Configure your PostgreSQL by modifying the `shared_preload_libraries` to include `vectors.so`.
-
-```sh
-psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
-```
-
-You need restart the PostgreSQL cluster.
-
-```sh
-sudo systemctl restart postgresql.service
-```
-
-</details>
-
-
-Connect to the database and enable the extension.
-
-```sql
-DROP EXTENSION IF EXISTS vectors;
-CREATE EXTENSION vectors;
-```
+For more installation method (binary install or install from source), read more at [docs/install.md](./docs/install.md)
 
 ## Get started
-
 
 Run the following SQL to ensure the extension is enabled
 
@@ -223,6 +157,10 @@ We planning to support more index types ([issue here](https://github.com/tensorc
 
 Welcome to contribute if you are also interested!
 
+## Why not a specialized vector database?
+
+Read our blog at [modelz.ai/blog/pgvector](https://modelz.ai/blog/pgvector)
+
 ## Reference
 
 ### `vector` type
@@ -237,55 +175,35 @@ There is only one exception: indexes cannot be created on columns without specif
 
 We utilize TOML syntax to express the index's configuration. Here's what each key in the configuration signifies:
 
-| Key                    | Type    | Description                                                                                                           |
-| ---------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| capacity               | integer | The index's capacity. The value should be greater than the number of rows in your table.                              |
-| vectors                | table   | Configuration of background process vector storage.                                                                   |
-| vectors.memmap         | string  | (Optional) `ram` ensures that the vectors always stays in memory while `disk` suggests otherwise.                     |
-| algorithm.ivf          | table   | If this table is set, the IVF algorithm will be used for the index.                                                   |
-| algorithm.ivf.memmap   | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
-| algorithm.ivf.nlist    | integer | Number of cluster units.                                                                                              |
-| algorithm.ivf.nprobe   | integer | Number of units to query.                                                                                             |
-| algorithm.hnsw         | table   | If this table is set, the HNSW algorithm will be used for the index.                                                  |
-| algorithm.hnsw.memmap  | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
-| algorithm.hnsw.m       | integer | (Optional) Maximum degree of the node.                                                                                |
-| algorithm.hnsw.ef      | integer | (Optional) Search scope in building.                                                                                  |
+| Key                   | Type    | Description                                                                                                           |
+| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| capacity              | integer | The index's capacity. The value should be greater than the number of rows in your table.                              |
+| vectors               | table   | Configuration of background process vector storage.                                                                   |
+| vectors.memmap        | string  | (Optional) `ram` ensures that the vectors always stays in memory while `disk` suggests otherwise.                     |
+| algorithm.ivf         | table   | If this table is set, the IVF algorithm will be used for the index.                                                   |
+| algorithm.ivf.memmap  | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
+| algorithm.ivf.nlist   | integer | Number of cluster units.                                                                                              |
+| algorithm.ivf.nprobe  | integer | Number of units to query.                                                                                             |
+| algorithm.hnsw        | table   | If this table is set, the HNSW algorithm will be used for the index.                                                  |
+| algorithm.hnsw.memmap | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
+| algorithm.hnsw.m      | integer | (Optional) Maximum degree of the node.                                                                                |
+| algorithm.hnsw.ef     | integer | (Optional) Search scope in building.                                                                                  |
 
-## Limitations
-- The index is constructed and persisted using a memory map file (mmap) instead of PostgreSQL's shared buffer. As a result, physical replication or logical replication may not function correctly. Additionally, vector indexes are not automatically loaded when PostgreSQL restarts. To load or unload the index, you can utilize the `vectors_load` and `vectors_unload` commands.
-- The filtering process is not yet optimized. To achieve optimal performance, you may need to manually experiment with different strategies. For example, you can try searching without a vector index or implementing post-filtering techniques like the following query: `select * from (select * from items ORDER BY embedding <-> '[3,2,1]' LIMIT 100 ) where category = 1`. This involves using approximate nearest neighbor (ANN) search to obtain enough results and then applying filtering afterwards.
-
-
-## Why not a specialty vector database?
-
-Imagine this, your existing data is stored in a Postgres database, and you want to use a vector database to do some vector similarity search. You have to move your data from Postgres to the vector database, and you have to maintain two databases at the same time. This is not a good idea.
-
-Why not just use Postgres to do the vector similarity search? This is the reason why we build pgvecto.rs. The user journey is like this:
+And you can change the number of expected result (such as `ef_search` in hnsw) by using the following SQL.
 
 ```sql
--- Update the embedding column for the documents table
-UPDATE documents SET embedding = ai_embedding_vector(content) WHERE length(embedding) = 0;
-
--- Create an index on the embedding column
-CREATE INDEX ON documents USING vectors (embedding l2_ops)
-WITH (options = $$
-capacity = 2097152
-[vectors]
-memmap = "ram"
-[algorithm.hnsw]
-memmap = "ram"
-m = 32
-ef = 256
-$$);
-
--- Query the similar embeddings
-SELECT * FROM documents ORDER BY embedding <-> ai_embedding_vector('hello world') LIMIT 5;
+---  (Optional) Expected number of candidates returned by index
+SET vectors.k = 32;
+--- Or use local to set the value for the current session
+SET LOCAL vectors.k = 32;
 ```
 
-From [SingleStore DB Blog](https://www.singlestore.com/blog/why-your-vector-database-should-not-be-a-vector-database/):
+````
 
-> Vectors and vector search are a data type and query processing approach, not a foundation for a new way of processing data. Using a specialty vector database (SVDB) will lead to the usual problems we see (and solve) again and again with our customers who use multiple specialty systems: redundant data, excessive data movement, lack of agreement on data values among distributed components, extra labor expense for specialized skills, extra licensing costs, limited query language power, programmability and extensibility, limited tool integration, and poor data integrity and availability compared with a true DBMS.
+## Limitations
 
+- The index is constructed and persisted using a memory map file (mmap) instead of PostgreSQL's shared buffer. As a result, physical replication or logical replication may not function correctly. Additionally, vector indexes are not automatically loaded when PostgreSQL restarts. To load or unload the index, you can utilize the `vectors_load` and `vectors_unload` commands.
+- The filtering process is not yet optimized. To achieve optimal performance, you may need to manually experiment with different strategies. For example, you can try searching without a vector index or implementing post-filtering techniques like the following query: `select * from (select * from items ORDER BY embedding <-> '[3,2,1]' LIMIT 100 ) where category = 1`. This involves using approximate nearest neighbor (ANN) search to obtain enough results and then applying filtering afterwards.
 
 ## Setting up the development environment
 
@@ -294,7 +212,7 @@ You could use [envd](https://github.com/tensorchord/envd) to set up the developm
 ```sh
 pip install envd
 envd up
-```
+````
 
 ## Contributing
 
