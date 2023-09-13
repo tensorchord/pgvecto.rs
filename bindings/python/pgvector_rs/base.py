@@ -16,7 +16,7 @@ def _ignore_ndarray(func):
     return _func
 
 
-def _ndarray_valiadtor(func):
+def _valiadte_ndarray(func):
     @wraps(func)
     def _func(value):
         if isinstance(value, np.ndarray):
@@ -33,7 +33,7 @@ def _ndarray_valiadtor(func):
 
 
 @_ignore_none
-@_ndarray_valiadtor
+@_valiadte_ndarray
 def serilize(value):
     return '[' + ','.join([str(float(v)) for v in value]) + ']'
 
