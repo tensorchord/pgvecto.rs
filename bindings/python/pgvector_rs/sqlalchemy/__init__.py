@@ -11,10 +11,14 @@ class Vector(types.UserDefinedType):
     def get_col_spec(self, **kw):
         if self.dim is None or self.dim <= 0:
             return "VECTOR"
-        return "VECTOR(%s)" % self.dim
+        return "VECTOR({})".format(self.dim)
 
     def bind_processor(self, dialect):
-        return serilize
+        def _processor(value):
+            if len(value) != self.dim:
+                raise ValueError("invalid dim for value: {}".format(value))
+            return serilize(value)
+        return _processor
 
     def result_processor(self, dialect, coltype):
         return deserilize
