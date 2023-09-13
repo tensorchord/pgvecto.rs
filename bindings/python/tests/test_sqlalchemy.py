@@ -6,7 +6,7 @@ from sqlalchemy.exc import StatementError
 from sqlalchemy.orm import declarative_base, mapped_column, Session
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def engine():
     '''
     connect to the test db
@@ -24,7 +24,7 @@ def engine():
     return engine
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def metadata(engine):
     metadata = MetaData()
     metadata.drop_all(engine)
@@ -32,7 +32,7 @@ def metadata(engine):
     return metadata
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def test_table(metadata):
     return Table(
         'tb_test_item',
@@ -42,7 +42,7 @@ def test_table(metadata):
     )
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope='module', autouse=True)
 def create_test_table(test_table, engine):
     '''
     create clean table for current db test before all tests
@@ -58,12 +58,13 @@ def test_insert(test_table, engine):
     _vectors = [
         [1, 2, 3],
         [0., -45, 2.34],
+        np.ones(shape=(3)),
     ]
 
     with engine.connect() as con:
         con.execute(
             test_table.insert().values(
-                [{"id": i, "embedding": e} for i, e in enumerate(_vectors)]
+                [{'id': i, 'embedding': e} for i, e in enumerate(_vectors)]
             )
         )
         for row in con.execute(test_table.select()):
@@ -75,22 +76,25 @@ def test_insert(test_table, engine):
 
 def test_invalid_insert(test_table, engine):
     _vectors = [
-        None,
         [1, 2, 3, 4],
-        [1,]
+        [1,],
+        ['123.', '123', 'a'],
+        np.array([1, 2, 3, 4]),
+        np.array([1, '3', 3]),
+        np.zeros(shape=(1, 2)),
     ]
     with engine.connect() as con:
         for i, e in enumerate(_vectors):
             try:
                 con.execute(
                     test_table.insert().values(
-                        {"id": i, "embedding": e}
+                        {'id': i, 'embedding': e}
                     )
                 )
             except:
                 continue
             assert (
                 False,
-                "failed to raise invalid value error for {}th vector {}"
+                'failed to raise invalid value error for {}th vector {}'
                 .format(i, e),
             )
