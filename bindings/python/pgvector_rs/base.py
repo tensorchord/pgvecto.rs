@@ -28,7 +28,7 @@ def _ndarray_valiadtor(func):
                     'ndarray data type must be numeric for vector'
                 )
             value = value.tolist()
-        func(value)
+        return func(value)
     return _func
 
 
