@@ -7,10 +7,12 @@ class Vector(types.UserDefinedType):
     cache_ok = True
 
     def __init__(self, dim):
+        if dim < 0:
+            raise ValueError("negative dim is not allowed")
         self.dim = dim
 
     def get_col_spec(self, **kw):
-        if self.dim is None or self.dim <= 0:
+        if self.dim is None or self.dim == 0:
             return 'VECTOR'
         return 'VECTOR({})'.format(self.dim)
 
@@ -35,3 +37,13 @@ class Vector(types.UserDefinedType):
             return base.deserilize(value)
 
         return _processor
+
+    class comparator_factory(types.UserDefinedType.Comparator):
+        def squared_euclidean_distance(self, other):
+            return self.op('<->', return_type=types.Float)(other)
+
+        def negative_dot_product_distance(self, other):
+            return self.op('<#>', return_type=types.Float)(other)
+
+        def negative_cosine_distance(self, other):
+            return self.op('<=>', return_type=types.Float)(other)
