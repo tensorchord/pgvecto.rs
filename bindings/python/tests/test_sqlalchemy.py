@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+from tests import URL
 from pgvector_rs.sqlalchemy import Vector
 from sqlalchemy import create_engine, select, text, MetaData, Table, Column, Index, Integer
 from sqlalchemy.exc import StatementError
@@ -9,13 +10,11 @@ from sqlalchemy.orm import declarative_base, mapped_column, Session
 @pytest.fixture(scope='module')
 def engine():
     '''
-    connect to the test db
+    Connect to the test db pointed by the URL. Can check more details
+    in `tests/__init__.py`
     '''
 
-    # TODO : create test table with script. This below is just the placeholder
-    engine = create_engine(
-        'postgresql+psycopg2://localhost/pgvector_test'
-    )
+    engine = create_engine(URL)
 
     # ensure that we have installed pgvector.rs extension
     with engine.connect() as con:
@@ -45,7 +44,8 @@ def test_table(metadata):
 @pytest.fixture(scope='module', autouse=True)
 def create_test_table(test_table, engine):
     '''
-    create clean table for current db test before all tests
+    Create clean table for current db test before all tests.
+    Note: this table will be dropped after finishing all tests.
     '''
     test_table.create(engine)
     try:
@@ -54,28 +54,8 @@ def create_test_table(test_table, engine):
         test_table.drop(engine)
 
 
-def test_insert(test_table, engine):
-    _vectors = [
-        [1, 2, 3],
-        [0., -45, 2.34],
-        np.ones(shape=(3)),
-    ]
-
-    with engine.connect() as con:
-        con.execute(
-            test_table.insert().values(
-                [{'id': i, 'embedding': e} for i, e in enumerate(_vectors)]
-            )
-        )
-        for row in con.execute(test_table.select()):
-            assert (
-                np.allclose(row.embedding, _vectors[row.id], atol=1e-10)
-            )
-        con.commit()
-
-
 def test_invalid_insert(test_table, engine):
-    _vectors = [
+    _invalid_vectors = [
         [1, 2, 3, 4],
         [1,],
         ['123.', '123', 'a'],
@@ -84,7 +64,7 @@ def test_invalid_insert(test_table, engine):
         np.zeros(shape=(1, 2)),
     ]
     with engine.connect() as con:
-        for i, e in enumerate(_vectors):
+        for i, e in enumerate(_invalid_vectors):
             try:
                 con.execute(
                     test_table.insert().values(
@@ -93,8 +73,77 @@ def test_invalid_insert(test_table, engine):
                 )
             except:
                 continue
-            assert (
+            assert(
                 False,
                 'failed to raise invalid value error for {}th vector {}'
                 .format(i, e),
             )
+
+
+# =================================
+# Tests share the same vectors
+# =================================
+_vectors = [
+    [1, 2, 3],
+    [0., -45, 2.34],
+    np.ones(shape=(3)),
+]
+
+
+def test_insert(test_table, engine):
+    with engine.connect() as con:
+        con.execute(
+            test_table.insert().values(
+                [{'id': i, 'embedding': e} for i, e in enumerate(_vectors)]
+            )
+        )
+        for row in con.execute(test_table.select()):
+            assert(
+                np.allclose(row.embedding, _vectors[row.id], atol=1e-10)
+            )
+        con.commit()
+
+
+def test_squared_euclidean_distance(test_table, engine):
+    # value excuted from psql
+    _expected = [14.0, 2030.4756, 3.0]
+    with engine.connect() as con:
+        for row in enumerate(con.execute(
+                select(test_table.c.id, test_table.c.embedding.squared_euclidean_distance([0, 0, 0])))):
+            (i, res) = row
+            assert(np.allclose(_expected[i], res, atol=1e-10),
+                    "incorrect calculation result for {}th vector {}".format(i, _vectors[i]))
+        con.commit()
+
+
+def test_negative_dot_product_distance(test_table, engine):
+    # value excuted from psql
+    _expected = [-17.0, 80.64, -7.0]
+    with engine.connect() as con:
+        for row in enumerate(con.execute(
+            select(test_table.c.embedding.negative_dot_product_distance([1, 2, 4])))
+        ):
+            (i, res)=row
+            assert(np.allclose(_expected[i], res, atol=1e-10),
+                    "incorrect calculation result for {}th vector {}".format(i, _vectors[i]))
+        con.commit()
+
+
+def test_negative_cosine_distance(test_table, engine):
+    # value excuted from psql
+    _expected = [-10.0, 87.66, -6.0]
+    with engine.connect() as con:
+        for row in enumerate(con.execute(
+            select(test_table.c.embedding.negative_cosine_distance([3, 2, 1])))
+        ):
+            (i, res)=row
+            assert(np.allclose(_expected[i], res, atol=1e-10),
+                    "incorrect calculation result for {}th vector {}".format(i, _vectors[i]))
+        con.commit()
+
+def test_delete(test_table, engine):
+    with engine.connect() as con:
+        con.execute(test_table.delete().where(test_table.c.embedding.__eq__([1, 2, 3])))
+        result = con.execute(test_table.select())
+        assert(len(list(result))==2)
+        con.commit()
