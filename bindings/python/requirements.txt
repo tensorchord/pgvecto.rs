@@ -1,0 +1,4 @@
+numpy
+psycopg2-binary
+pytest
+SQLAlchemy
