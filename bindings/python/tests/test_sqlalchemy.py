@@ -53,6 +53,36 @@ def create_test_table(test_table, engine):
     finally:
         test_table.drop(engine)
 
+def test_create_index(test_table, engine):
+    toml_settings = {
+        'hnsw': """$$
+capacity = 2097152
+[vectors]
+memmap = "ram"
+[algorithm.hnsw]
+memmap = "ram"
+$$
+""",
+        'ivf':  """$$
+capacity = 2097152
+[vectors]
+memmap = "ram"
+[algorithm.ivf]
+memmap = "ram"
+nlist = 1000
+nprobe = 10
+$$
+"""
+    }
+    index = Index(
+        'test_vector_index',
+        test_table.c.embedding,
+        postgresql_using='vectors',
+        postgresql_with={'options': toml_settings['hnsw']},
+        postgresql_ops={'embedding': 'l2_ops'}
+    )
+    index.create(engine)
+
 
 def test_invalid_insert(test_table, engine):
     _invalid_vectors = [
