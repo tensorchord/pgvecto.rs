@@ -179,15 +179,58 @@ We utilize TOML syntax to express the index's configuration. Here's what each ke
 | --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
 | capacity              | integer | The index's capacity. The value should be greater than the number of rows in your table.                              |
 | vectors               | table   | Configuration of background process vector storage.                                                                   |
-| vectors.memmap        | string  | (Optional) `ram` ensures that the vectors always stays in memory while `disk` suggests otherwise.                     |
+| algorithm.flat        | table   | If this table is set, the brute force algorithm will be used for the index.                                           |
 | algorithm.ivf         | table   | If this table is set, the IVF algorithm will be used for the index.                                                   |
-| algorithm.ivf.memmap  | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
-| algorithm.ivf.nlist   | integer | Number of cluster units.                                                                                              |
-| algorithm.ivf.nprobe  | integer | Number of units to query.                                                                                             |
 | algorithm.hnsw        | table   | If this table is set, the HNSW algorithm will be used for the index.                                                  |
-| algorithm.hnsw.memmap | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
-| algorithm.hnsw.m      | integer | (Optional) Maximum degree of the node.                                                                                |
-| algorithm.hnsw.ef     | integer | (Optional) Search scope in building.                                                                                  |
+
+Options for table `vectors`.
+
+| Key                   | Type    | Description                                                                                                           |
+| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| memmap                | string  | (Optional) `ram` ensures that the vectors always stays in memory while `disk` suggests otherwise.                     |
+
+Options for table `flat`.
+
+| Key                   | Type    | Description                                                                                                           |
+| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| quantization          | table   | (Optional) The quantization algorithm to be used.                                                                     |
+
+Options for table `ivf`.
+
+| Key                   | Type    | Description                                                                                                           |
+| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| memmap                | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
+| nlist                 | integer | Number of cluster units.                                                                                              |
+| nprobe                | integer | Number of units to query.                                                                                             |
+| quantization          | table   | (Optional) The quantization algorithm to be used.                                                                     |
+
+Options for table `hnsw`.
+
+| Key                   | Type    | Description                                                                                                           |
+| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| memmap                | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
+| m                     | integer | (Optional) Maximum degree of the node.                                                                                |
+| ef                    | integer | (Optional) Search scope in building.                                                                                  |
+
+Options for table `quantization`.
+
+| Key                   | Type    | Description                                                                                                           |
+| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| trivial               | table   | (Optional) If this table is set, no quantization is used.                                                             |
+| scalar                | table   | (Optional) If this table is set, scalar quantization is used.                                                         |
+| product               | table   | (Optional) If this table is set, product quantization is used.                                                        |
+
+Options for table `scalar`.
+
+| Key                   | Type    | Description                                                                                                           |
+| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| sample                | integer | Samples to be used for quantization.                                                                                  |
+
+Options for table `product`.
+
+| Key                   | Type    | Description                                                                                                           |
+| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| sample                | integer | Samples to be used for quantization.                                                                                  |
 
 And you can change the number of expected result (such as `ef_search` in hnsw) by using the following SQL.
 
