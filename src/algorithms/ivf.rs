@@ -1,4 +1,6 @@
 use super::impls::ivf::IvfImpl;
+use super::impls::quantization::QuantizationError;
+use super::impls::quantization::QuantizationOptions;
 use super::Algo;
 use crate::bgworker::index::IndexOptions;
 use crate::bgworker::storage::Storage;
@@ -13,7 +15,8 @@ use thiserror::Error;
 
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
 pub enum IvfError {
-    //
+    #[error("Quantization {0}")]
+    Quantization(#[from] QuantizationError),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,6 +31,8 @@ pub struct IvfOptions {
     pub iterations: usize,
     pub nlist: usize,
     pub nprobe: usize,
+    #[serde(default)]
+    pub quantization: QuantizationOptions,
 }
 
 impl IvfOptions {
@@ -52,8 +57,6 @@ pub struct Ivf<D: DistanceFamily> {
 impl<D: DistanceFamily> Algo for Ivf<D> {
     type Error = IvfError;
 
-    type Save = ();
-
     fn prebuild(
         storage: &mut StoragePreallocator,
         options: IndexOptions,
@@ -65,6 +68,8 @@ impl<D: DistanceFamily> Algo for Ivf<D> {
             ivf_options.nlist,
             options.capacity,
             ivf_options.memmap,
+            options,
+            ivf_options.quantization,
         )?;
         Ok(())
     }
@@ -88,6 +93,8 @@ impl<D: DistanceFamily> Algo for Ivf<D> {
             ivf_options.iterations,
             options.capacity,
             ivf_options.memmap,
+            options,
+            ivf_options.quantization,
         )?;
         let i = AtomicUsize::new(0);
         std::thread::scope(|scope| -> Result<(), IvfError> {
@@ -111,12 +118,10 @@ impl<D: DistanceFamily> Algo for Ivf<D> {
         })?;
         Ok(Self { implementation })
     }
-    fn save(&self) {}
     fn load(
         storage: &mut Storage,
         options: IndexOptions,
         vectors: Arc<Vectors>,
-        (): (),
     ) -> Result<Self, IvfError> {
         let ivf_options = options.algorithm.clone().unwrap_ivf();
         let implementation = IvfImpl::load(
@@ -127,6 +132,8 @@ impl<D: DistanceFamily> Algo for Ivf<D> {
             ivf_options.nprobe,
             options.capacity,
             ivf_options.memmap,
+            options,
+            ivf_options.quantization,
         )?;
         Ok(Self { implementation })
     }

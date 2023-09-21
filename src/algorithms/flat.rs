@@ -20,34 +20,34 @@ pub enum FlatError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FlatOptions {
     #[serde(default)]
-    pub quantization: Option<QuantizationOptions>,
+    pub quantization: QuantizationOptions,
 }
 
-pub struct Flat<D: DistanceFamily, Q: Quantization> {
+pub struct Flat<D: DistanceFamily> {
     vectors: Arc<Vectors>,
-    implementation: QuantizationImpl<Q>,
+    quantization: Box<dyn Quantization>,
     _maker: PhantomData<D>,
 }
 
-impl<D: DistanceFamily, Q: Quantization> Algo for Flat<D, Q> {
+impl<D: DistanceFamily> Algo for Flat<D> {
     type Error = FlatError;
-
-    type Save = Q;
 
     fn prebuild(
         storage: &mut StoragePreallocator,
         options: IndexOptions,
     ) -> Result<(), Self::Error> {
         let flat_options = options.algorithm.clone().unwrap_flat();
-        QuantizationImpl::<Q>::prebuild(
-            storage,
-            options.dims,
-            options.capacity,
-            flat_options.quantization.unwrap_or(QuantizationOptions {
-                memmap: Memmap::Ram,
-                sample: 0,
-            }),
-        )?;
+        match flat_options.quantization {
+            quantization_options @ QuantizationOptions::Trivial(_) => {
+                TrivialQuantization::<D>::prebuild(storage, options, quantization_options);
+            }
+            quantization_options @ QuantizationOptions::Scalar(_) => {
+                ScalarQuantization::<D>::prebuild(storage, options, quantization_options);
+            }
+            quantization_options @ QuantizationOptions::Product(_) => {
+                ProductQuantization::<D>::prebuild(storage, options, quantization_options);
+            }
+        };
         Ok(())
     }
 
@@ -58,53 +58,83 @@ impl<D: DistanceFamily, Q: Quantization> Algo for Flat<D, Q> {
         n: usize,
     ) -> Result<Self, FlatError> {
         let flat_options = options.algorithm.clone().unwrap_flat();
-        let implementation = QuantizationImpl::new(
-            storage,
-            vectors.clone(),
-            options.dims,
-            n,
-            options.capacity,
-            flat_options.quantization.unwrap_or(QuantizationOptions {
-                memmap: Memmap::Ram,
-                sample: 0,
-            }),
-        )?;
+        let implementation: Box<dyn Quantization> = match flat_options.quantization {
+            quantization_options @ QuantizationOptions::Trivial(_) => {
+                Box::new(TrivialQuantization::<D>::build(
+                    storage,
+                    options,
+                    quantization_options,
+                    vectors.clone(),
+                ))
+            }
+            quantization_options @ QuantizationOptions::Scalar(_) => {
+                Box::new(ScalarQuantization::<D>::build(
+                    storage,
+                    options,
+                    quantization_options,
+                    vectors.clone(),
+                ))
+            }
+            quantization_options @ QuantizationOptions::Product(_) => {
+                Box::new(ProductQuantization::<D>::build(
+                    storage,
+                    options,
+                    quantization_options,
+                    vectors.clone(),
+                ))
+            }
+        };
+        for i in 0..n {
+            implementation.insert(i, vectors.get_vector(i))?;
+        }
         Ok(Self {
             vectors,
-            implementation,
+            quantization: implementation,
             _maker: PhantomData,
         })
-    }
-
-    fn save(&self) -> Q {
-        self.implementation.save()
     }
 
     fn load(
         storage: &mut Storage,
         options: IndexOptions,
         vectors: Arc<Vectors>,
-        save: Q,
     ) -> Result<Self, FlatError> {
         let flat_options = options.algorithm.clone().unwrap_flat();
+        let implementation: Box<dyn Quantization> = match flat_options.quantization {
+            quantization_options @ QuantizationOptions::Trivial(_) => {
+                Box::new(TrivialQuantization::<D>::load(
+                    storage,
+                    options,
+                    quantization_options,
+                    vectors.clone(),
+                ))
+            }
+            quantization_options @ QuantizationOptions::Scalar(_) => {
+                Box::new(ScalarQuantization::<D>::load(
+                    storage,
+                    options,
+                    quantization_options,
+                    vectors.clone(),
+                ))
+            }
+            quantization_options @ QuantizationOptions::Product(_) => {
+                Box::new(ProductQuantization::<D>::load(
+                    storage,
+                    options,
+                    quantization_options,
+                    vectors.clone(),
+                ))
+            }
+        };
         Ok(Self {
             vectors: vectors.clone(),
-            implementation: QuantizationImpl::load(
-                storage,
-                vectors,
-                save,
-                options.capacity,
-                flat_options.quantization.unwrap_or(QuantizationOptions {
-                    memmap: Memmap::Ram,
-                    sample: 0,
-                }),
-            )?,
+            quantization: implementation,
             _maker: PhantomData,
         })
     }
 
     fn insert(&self, x: usize) -> Result<(), FlatError> {
-        self.implementation.insert(x)?;
+        self.quantization.insert(x, self.vectors.get_vector(x))?;
         Ok(())
     }
 
@@ -119,11 +149,8 @@ impl<D: DistanceFamily, Q: Quantization> Algo for Flat<D, Q> {
     {
         let mut result = FilteredFixedHeap::new(k, filter);
         for i in 0..self.vectors.len() {
-            let this_vector = self.implementation.get_vector(i);
             let this_data = self.vectors.get_data(i);
-            let dis = self
-                .implementation
-                .asymmetric_distance(&target, this_vector);
+            let dis = self.quantization.distance(&target, i);
             result.push((dis, this_data));
         }
         let mut output = Vec::new();

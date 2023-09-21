@@ -55,8 +55,6 @@ pub struct Hnsw<D: DistanceFamily> {
 impl<D: DistanceFamily> Algo for Hnsw<D> {
     type Error = HnswError;
 
-    type Save = ();
-
     fn prebuild(
         storage: &mut StoragePreallocator,
         options: IndexOptions,
@@ -111,13 +109,10 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
         Ok(Self { implementation })
     }
 
-    fn save(&self) {}
-
     fn load(
         storage: &mut Storage,
         options: IndexOptions,
         vectors: Arc<Vectors>,
-        (): (),
     ) -> Result<Self, HnswError> {
         let hnsw_options = options.algorithm.unwrap_hnsw();
         let implementation = HnswImpl::load(
