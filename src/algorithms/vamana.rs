@@ -83,6 +83,7 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
             storage,
             vectors,
             n,
+            options.capacity,
             options.dims,
             vamana_options.r,
             vamana_options.alpha,
@@ -108,13 +109,14 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
             vamana_options.r,
             vamana_options.alpha,
             vamana_options.l,
+            vamana_options.build_threads,
             vamana_options.memmap,
         )?;
         Ok(Self { implementation })
     }
     #[allow(unused)]
     fn insert(&self, insert: usize) -> Result<(), VamanaError> {
-        Ok(self.implementation.insert(insert));
+        Ok(self.implementation.insert(insert)?)
     }
     fn search<F>(
         &self,
