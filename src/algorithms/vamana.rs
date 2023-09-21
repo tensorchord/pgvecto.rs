@@ -27,6 +27,8 @@ pub struct VamanaOptions {
     /// Search list size
     #[serde(default = "VamanaOptions::default_l")]
     pub l: usize,
+    #[serde(default = "VamanaOptions::default_build_threads")]
+    pub build_threads: usize,
 }
 
 impl VamanaOptions {
@@ -41,6 +43,9 @@ impl VamanaOptions {
     }
     fn default_l() -> usize {
         70
+    }
+    fn default_build_threads() -> usize {
+        std::thread::available_parallelism().unwrap().get()
     }
 }
 
@@ -82,6 +87,7 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
             vamana_options.r,
             vamana_options.alpha,
             vamana_options.l,
+            vamana_options.build_threads,
             vamana_options.memmap,
         )?;
         Ok(Self { implementation })
@@ -108,9 +114,7 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
     }
     #[allow(unused)]
     fn insert(&self, insert: usize) -> Result<(), VamanaError> {
-        // TODO: the insert API is a fake insert for user,
-        // but can be used to implement concurrent index building
-        Ok(())
+        Ok(self.implementation.insert(insert));
     }
     fn search<F>(
         &self,
