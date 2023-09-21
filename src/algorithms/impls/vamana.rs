@@ -299,11 +299,15 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         let distribution = Uniform::new(0, n);
         for i in 0..n {
             let mut neighbor_ids: HashSet<usize> = HashSet::new();
-            while neighbor_ids.len() < self.r {
-                let neighbor_id = rng.sample(distribution);
-                if neighbor_id != i {
-                    neighbor_ids.insert(neighbor_id);
+            if self.r < n {
+                while neighbor_ids.len() < self.r {
+                    let neighbor_id = rng.sample(distribution);
+                    if neighbor_id != i {
+                        neighbor_ids.insert(neighbor_id);
+                    }
                 }
+            } else {
+                neighbor_ids = (0..n).into_iter().collect();
             }
 
             {
