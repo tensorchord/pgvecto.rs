@@ -4,11 +4,12 @@ use crate::bgworker::storage::StoragePreallocator;
 use crate::bgworker::storage_mmap::MmapBox;
 use crate::bgworker::vectors::Vectors;
 use crate::prelude::*;
+use rayon::prelude::*;
 
+use crossbeam::atomic::AtomicCell;
 use parking_lot::RwLock;
 use parking_lot::RwLockReadGuard;
 use parking_lot::RwLockWriteGuard;
-use crossbeam::atomic::AtomicCell;
 use rand::distributions::Uniform;
 use rand::prelude::SliceRandom;
 use rand::Rng;
@@ -174,11 +175,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
                 .alloc_mmap_slice::<RwLock<usize>>(memmap, number_of_nodes)
                 .assume_init()
         };
-        let medoid = unsafe {
-            storage
-                .alloc_mmap::<usize>(memmap)
-                .assume_init()
-        };
+        let medoid = unsafe { storage.alloc_mmap::<usize>(memmap).assume_init() };
 
         let mut new_vamana = Self {
             neighbors,
@@ -230,11 +227,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
                 .alloc_mmap_slice::<RwLock<usize>>(memmap, number_of_nodes)
                 .assume_init()
         };
-        let medoid = unsafe {
-            storage
-                .alloc_mmap::<usize>(memmap)
-                .assume_init()
-        };
+        let medoid = unsafe { storage.alloc_mmap::<usize>(memmap).assume_init() };
         Ok(Self {
             neighbors,
             neighbor_size,
@@ -279,7 +272,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
 
     #[allow(unused)]
     pub fn insert(&self, x: usize) -> Result<(), VamanaError> {
-        assert!(self.vectors.len()>x);
+        assert!(self.vectors.len() > x);
 
         // init random edges
         let distribution = Uniform::new(0, self.vectors.len());
@@ -298,13 +291,13 @@ impl<D: DistanceFamily> VamanaImpl<D> {
 
         // search and prune
         self.search_and_prune_for_one_vertex(x, self.alpha, self.r, self.l)?;
-        
+
         Ok(())
     }
 
     fn _init_graph(&self, n: usize, mut rng: impl Rng) {
         let distribution = Uniform::new(0, n);
-        for i in 0..n{
+        for i in 0..n {
             let mut neighbor_ids: HashSet<usize> = HashSet::new();
             while neighbor_ids.len() < self.r {
                 let neighbor_id = rng.sample(distribution);
@@ -320,7 +313,12 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         }
     }
 
-    fn _set_neighbors(&self, vertex_index: usize, neighbor_ids: &HashSet<usize>, guard: &mut RwLockWriteGuard<usize>) {
+    fn _set_neighbors(
+        &self,
+        vertex_index: usize,
+        neighbor_ids: &HashSet<usize>,
+        guard: &mut RwLockWriteGuard<usize>,
+    ) {
         assert!(neighbor_ids.len() <= self.r);
         let mut i = 0;
         for item in neighbor_ids {
@@ -330,13 +328,21 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         **guard = neighbor_ids.len();
     }
 
-    fn _get_neighbors(&self, vertex_index: usize, guard: &RwLockReadGuard<usize>) -> &[AtomicCell<usize>] {
+    fn _get_neighbors(
+        &self,
+        vertex_index: usize,
+        guard: &RwLockReadGuard<usize>,
+    ) -> &[AtomicCell<usize>] {
         //TODO: store neighbor length
         let size = **guard;
         &self.neighbors[(vertex_index * self.r)..(vertex_index * self.r + size)]
     }
 
-    fn _get_neighbors_with_write_guard(&self, vertex_index: usize, guard: &RwLockWriteGuard<usize>) -> &[AtomicCell<usize>] {
+    fn _get_neighbors_with_write_guard(
+        &self,
+        vertex_index: usize,
+        guard: &RwLockWriteGuard<usize>,
+    ) -> &[AtomicCell<usize>] {
         let size = **guard;
         &self.neighbors[(vertex_index * self.r)..(vertex_index * self.r + size)]
     }
@@ -386,9 +392,8 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         let mut ids = (0..n).collect::<Vec<_>>();
         ids.shuffle(&mut rng);
 
-        for &id in ids.iter() {
-            self.search_and_prune_for_one_vertex(id, alpha, r, l)?;
-        }
+        ids.into_par_iter()
+            .try_for_each(|id| self.search_and_prune_for_one_vertex(id, alpha, r, l))?;
 
         Ok(())
     }
@@ -399,7 +404,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         id: usize,
         alpha: f32,
         r: usize,
-        l: usize
+        l: usize,
     ) -> Result<(), VamanaError> {
         let query = self.vectors.get_vector(id);
         let mut state = self._greedy_search(*self.medoid, query, 1, l)?;
@@ -419,7 +424,8 @@ impl<D: DistanceFamily> VamanaImpl<D> {
             {
                 let mut guard = self.neighbor_size[neighbor_id].write();
                 let old_neighbors = self._get_neighbors_with_write_guard(neighbor_id, &guard);
-                let mut old_neighbors: HashSet<usize> = old_neighbors.into_iter().map(|x| x.load()).collect();
+                let mut old_neighbors: HashSet<usize> =
+                    old_neighbors.into_iter().map(|x| x.load()).collect();
                 old_neighbors.insert(id);
                 if old_neighbors.len() > r {
                     // need robust prune
@@ -456,7 +462,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
                     if state.is_visited(neighbor_id) {
                         continue;
                     }
-    
+
                     let dist = D::distance(query, self.vectors.get_vector(neighbor_id));
                     state.push(neighbor_id, dist); // push and retain closet l nodes
                 }

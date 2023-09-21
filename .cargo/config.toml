@@ -1,5 +1,5 @@
 [build]
-rustflags = ["-Ctarget-cpu=native"]
+rustflags = ["-Ctarget-cpu=x86-64-v3"]
 rustdocflags = ["--document-private-items"]
 
 [target.'cfg(target_os="macos")']
