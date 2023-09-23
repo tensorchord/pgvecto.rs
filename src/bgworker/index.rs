@@ -94,7 +94,6 @@ impl Index {
             let mut wal = Wal::create(path_wal);
             let log = LogFirst {
                 options: options.clone(),
-                save_algorithm: algo.save(),
             };
             wal.write(&log.bincode());
             wal
@@ -113,21 +112,13 @@ impl Index {
     pub fn load(id: Id) -> Self {
         let mut storage = Storage::load(id);
         let mut wal = Wal::open(format!("{}_wal", id.as_u32()));
-        let LogFirst {
-            options,
-            save_algorithm,
-        } = wal
+        let LogFirst { options } = wal
             .read()
             .expect("The index is broken.")
             .deserialize::<LogFirst>();
         let vectors = Arc::new(Vectors::load(&mut storage, options.clone()));
-        let algo = Algorithm::load(
-            &mut storage,
-            options.clone(),
-            vectors.clone(),
-            save_algorithm,
-        )
-        .expect("Failed to load the algorithm.");
+        let algo = Algorithm::load(&mut storage, options.clone(), vectors.clone())
+            .expect("Failed to load the algorithm.");
         let filter_delete = FilterDelete::new();
         loop {
             let Some(replay) = wal.read() else { break };
@@ -204,7 +195,6 @@ impl Index {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct LogFirst {
     options: IndexOptions,
-    save_algorithm: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

@@ -1,9 +1,13 @@
 use super::elkan_k_means::ElkanKMeans;
+use super::quantization::{
+    ProductQuantization, Quantization, QuantizationOptions, ScalarQuantization, TrivialQuantization,
+};
 use crate::algorithms::ivf::IvfError;
 use crate::algorithms::utils::filtered_fixed_heap::FilteredFixedHeap;
 use crate::algorithms::utils::fixed_heap::FixedHeap;
 use crate::algorithms::utils::mmap_vec2::MmapVec2;
 use crate::algorithms::utils::vec2::Vec2;
+use crate::bgworker::index::IndexOptions;
 use crate::bgworker::storage::{Storage, StoragePreallocator};
 use crate::bgworker::storage_mmap::MmapBox;
 use crate::bgworker::vectors::Vectors;
@@ -25,6 +29,8 @@ pub struct IvfImpl<D: DistanceFamily> {
     vectors: Arc<Vectors>,
     nprobe: usize,
     nlist: usize,
+    //
+    quantization: Box<dyn Quantization>,
     _maker: PhantomData<D>,
 }
 
@@ -38,10 +44,23 @@ impl<D: DistanceFamily> IvfImpl<D> {
         nlist: usize,
         capacity: usize,
         memmap: Memmap,
+        index_options: IndexOptions,
+        quantization_options: QuantizationOptions,
     ) -> Result<(), IvfError> {
         MmapVec2::prebuild(storage, dims, nlist);
         storage.palloc_mmap_slice::<AtomicCell<Option<usize>>>(memmap, nlist);
         storage.palloc_mmap_slice::<UnsafeCell<Vertex>>(memmap, capacity);
+        match quantization_options {
+            quantization_options @ QuantizationOptions::Trivial(_) => {
+                TrivialQuantization::<D>::prebuild(storage, index_options, quantization_options);
+            }
+            quantization_options @ QuantizationOptions::Scalar(_) => {
+                ScalarQuantization::<D>::prebuild(storage, index_options, quantization_options);
+            }
+            quantization_options @ QuantizationOptions::Product(_) => {
+                ProductQuantization::<D>::prebuild(storage, index_options, quantization_options);
+            }
+        };
         Ok(())
     }
     pub fn new(
@@ -56,6 +75,8 @@ impl<D: DistanceFamily> IvfImpl<D> {
         iterations: usize,
         capacity: usize,
         memmap: Memmap,
+        index_options: IndexOptions,
+        quantization_options: QuantizationOptions,
     ) -> Result<Self, IvfError> {
         let m = std::cmp::min(nsample, n);
         let f = sample(&mut thread_rng(), n, m).into_vec();
@@ -95,14 +116,40 @@ impl<D: DistanceFamily> IvfImpl<D> {
             }
             unsafe { vertexs.assume_init() }
         };
+        let quantization: Box<dyn Quantization> = match quantization_options {
+            quantization_options @ QuantizationOptions::Trivial(_) => {
+                Box::new(TrivialQuantization::<D>::build(
+                    storage,
+                    index_options,
+                    quantization_options,
+                    vectors.clone(),
+                ))
+            }
+            quantization_options @ QuantizationOptions::Scalar(_) => {
+                Box::new(ScalarQuantization::<D>::build(
+                    storage,
+                    index_options,
+                    quantization_options,
+                    vectors.clone(),
+                ))
+            }
+            quantization_options @ QuantizationOptions::Product(_) => {
+                Box::new(ProductQuantization::<D>::build(
+                    storage,
+                    index_options,
+                    quantization_options,
+                    vectors.clone(),
+                ))
+            }
+        };
         Ok(Self {
             centroids,
             heads,
             vertexs,
-            //
             vectors,
             nprobe,
             nlist,
+            quantization,
             _maker: PhantomData,
         })
     }
@@ -114,14 +161,42 @@ impl<D: DistanceFamily> IvfImpl<D> {
         nprobe: usize,
         capacity: usize,
         memmap: Memmap,
+        index_options: IndexOptions,
+        quantization_options: QuantizationOptions,
     ) -> Result<Self, IvfError> {
         Ok(Self {
             centroids: MmapVec2::load(storage, dims, nlist),
             heads: unsafe { storage.alloc_mmap_slice(memmap, nlist).assume_init() },
             vertexs: unsafe { storage.alloc_mmap_slice(memmap, capacity).assume_init() },
-            vectors,
+            vectors: vectors.clone(),
             nprobe,
             nlist,
+            quantization: match quantization_options {
+                quantization_options @ QuantizationOptions::Trivial(_) => {
+                    Box::new(TrivialQuantization::<D>::load(
+                        storage,
+                        index_options,
+                        quantization_options,
+                        vectors.clone(),
+                    ))
+                }
+                quantization_options @ QuantizationOptions::Scalar(_) => {
+                    Box::new(ScalarQuantization::<D>::load(
+                        storage,
+                        index_options,
+                        quantization_options,
+                        vectors.clone(),
+                    ))
+                }
+                quantization_options @ QuantizationOptions::Product(_) => {
+                    Box::new(ProductQuantization::<D>::load(
+                        storage,
+                        index_options,
+                        quantization_options,
+                        vectors.clone(),
+                    ))
+                }
+            },
             _maker: PhantomData,
         })
     }
@@ -146,9 +221,8 @@ impl<D: DistanceFamily> IvfImpl<D> {
         for (_, i) in lists.into_vec().into_iter() {
             let mut cursor = self.heads[i].load();
             while let Some(u) = cursor {
-                let u_vector = vectors.get_vector(u);
                 let u_data = vectors.get_data(u);
-                let u_dis = D::distance(&target, u_vector);
+                let u_dis = self.quantization.distance(&target, u);
                 result.push((u_dis, u_data));
                 cursor = unsafe { *self.vertexs[u].get() };
             }
@@ -179,6 +253,7 @@ impl<D: DistanceFamily> IvfImpl<D> {
                 break;
             }
         }
+        self.quantization.insert(x, &target)?;
         Ok(())
     }
 }
