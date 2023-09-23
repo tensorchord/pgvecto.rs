@@ -241,7 +241,6 @@ SET vectors.k = 32;
 SET LOCAL vectors.k = 32;
 ```
 
-````
 
 ## Limitations
 
