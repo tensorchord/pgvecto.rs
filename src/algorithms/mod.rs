@@ -189,16 +189,13 @@ impl Algorithm {
                 Ok(Ivf::load(storage, options, vectors).map(Self::IvfDot)?)
             }
             (O::Vamana(_), Distance::L2) => {
-                let save = bincode::deserialize(&save).expect("Failed to deserialize.");
-                Ok(Vamana::load(storage, options, vectors, save).map(Self::VamanaL2)?)
+                Ok(Vamana::load(storage, options, vectors).map(Self::VamanaL2)?)
             }
             (O::Vamana(_), Distance::Cosine) => {
-                let save = bincode::deserialize(&save).expect("Failed to deserialize.");
-                Ok(Vamana::load(storage, options, vectors, save).map(Self::VamanaCosine)?)
+                Ok(Vamana::load(storage, options, vectors).map(Self::VamanaCosine)?)
             }
             (O::Vamana(_), Distance::Dot) => {
-                let save = bincode::deserialize(&save).expect("Failed to deserialize.");
-                Ok(Vamana::load(storage, options, vectors, save).map(Self::VamanaDot)?)
+                Ok(Vamana::load(storage, options, vectors).map(Self::VamanaDot)?)
             }
         }
     }

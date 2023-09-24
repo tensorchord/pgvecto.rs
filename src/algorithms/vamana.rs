@@ -56,8 +56,6 @@ pub struct Vamana<D: DistanceFamily> {
 impl<D: DistanceFamily> Algo for Vamana<D> {
     type Error = VamanaError;
 
-    type Save = ();
-
     fn prebuild(
         storage: &mut StoragePreallocator,
         options: IndexOptions,
@@ -98,7 +96,6 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
         storage: &mut Storage,
         options: IndexOptions,
         vectors: Arc<Vectors>,
-        (): (),
     ) -> Result<Self, VamanaError> {
         let vamana_options = options.algorithm.unwrap_vamana();
         let implementation = VamanaImpl::load(
