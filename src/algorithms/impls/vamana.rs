@@ -242,7 +242,6 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         })
     }
 
-    #[allow(unused)]
     pub fn search<F>(
         &self,
         target: Box<[Scalar]>,
@@ -253,7 +252,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         F: FnMut(u64) -> bool,
     {
         // TODO: filter
-        let state = self._greedy_search(0, &target, k, k * 2)?;
+        let state = self._greedy_search_with_filter(0, &target, k, k * 2, filter)?;
 
         let mut results = BinaryHeap::<(Scalar, usize)>::new();
         for (distance, row) in state.candidates {
@@ -263,11 +262,50 @@ impl<D: DistanceFamily> VamanaImpl<D> {
 
             results.push((Scalar::from(distance), row));
         }
-        let res_vec: Vec<(Scalar, u64)> = results
+        let mut res_vec: Vec<(Scalar, u64)> = results
             .iter()
             .map(|x| (x.0, self.vectors.get_data(x.1)))
             .collect();
+        res_vec.sort();
         Ok(res_vec)
+    }
+
+    fn _greedy_search_with_filter<F>(
+        &self,
+        start: usize,
+        query: &[Scalar],
+        k: usize,
+        search_size: usize,
+        mut filter: F,
+    ) -> Result<SearchState, VamanaError>
+    where
+        F: FnMut(u64) -> bool,
+    {
+        let mut state = SearchState::new(k, search_size);
+
+        let dist = D::distance(query, self.vectors.get_vector(start));
+        state.push(start, dist);
+        while let Some(id) = state.pop() {
+            // only pop id in the search list but not visited
+            state.visit(id);
+            {
+                let guard = self.neighbor_size[id].read();
+                let neighbor_ids = self._get_neighbors(id, &guard);
+                for neighbor_id in neighbor_ids {
+                    let neighbor_id = neighbor_id.load();
+                    if state.is_visited(neighbor_id) {
+                        continue;
+                    }
+
+                    if filter(self.vectors.get_data(neighbor_id)) {
+                        let dist = D::distance(query, self.vectors.get_vector(neighbor_id));
+                        state.push(neighbor_id, dist); // push and retain closet l nodes
+                    }
+                }
+            }
+        }
+
+        Ok(state)
     }
 
     #[allow(unused)]
