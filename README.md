@@ -133,6 +133,17 @@ memmap = "ram"
 nlist = 1000
 nprobe = 10
 $$);
+
+--- Or using Vamana algorithm.
+
+CREATE INDEX ON items USING vectors (embedding l2_ops)
+WITH (options = $$
+capacity = 2097152
+[vectors]
+memmap = "ram"
+[algorithm.vamana]
+memmap = "ram"
+$$);
 ```
 
 Now you can perform a KNN search with the following SQL simply.
@@ -211,6 +222,15 @@ Options for table `hnsw`.
 | memmap                | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
 | m                     | integer | (Optional) Maximum degree of the node.                                                                                |
 | ef                    | integer | (Optional) Search scope in building.                                                                                  |
+
+Options for table `vamana`.
+
+| Key                   | Type    | Description                                                                                                           |
+| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| memmap                | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
+| r                     | integer | (Optional) Maximum degree of the node. Default value is 50.                                                                                |
+| l                    | integer | (Optional) Search scope in building. Default value is 70.                                                                                 |
+| alpha                    | float | (Optional) Slack factor in buiding. Default value is 1.2.                                                                               |
 
 Options for table `quantization`.
 
