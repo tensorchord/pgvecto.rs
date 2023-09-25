@@ -88,7 +88,7 @@ impl Algo for Vamana {
             vamana_options.l,
             vamana_options.build_threads,
             vamana_options.memmap,
-            options.distance,
+            options.d,
         )?;
         Ok(Self { implementation })
     }
@@ -109,7 +109,7 @@ impl Algo for Vamana {
             vamana_options.l,
             vamana_options.build_threads,
             vamana_options.memmap,
-            options.distance,
+            options.d,
         )?;
         Ok(Self { implementation })
     }

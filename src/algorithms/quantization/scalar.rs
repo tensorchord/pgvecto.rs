@@ -156,17 +156,17 @@ impl Quan for ScalarQuantization {
         Ok(())
     }
 
-    fn distance(&self, distance: Distance, lhs: &[Scalar], rhs: usize) -> Scalar {
+    fn distance(&self, d: Distance, lhs: &[Scalar], rhs: usize) -> Scalar {
         let dims = self.dims;
         assert!(dims as usize == lhs.len());
         let rhs = &self.data[rhs * dims as usize..][..dims as usize];
-        distance.scalar_quantization_distance(dims, &self.max, &self.min, lhs, rhs)
+        d.scalar_quantization_distance(dims, &self.max, &self.min, lhs, rhs)
     }
 
-    fn distance2(&self, distance: Distance, lhs: usize, rhs: usize) -> Scalar {
+    fn distance2(&self, d: Distance, lhs: usize, rhs: usize) -> Scalar {
         let dims = self.dims;
         let lhs = &self.data[lhs * dims as usize..][..dims as usize];
         let rhs = &self.data[rhs * dims as usize..][..dims as usize];
-        distance.scalar_quantization_distance2(dims, &self.max, &self.min, lhs, rhs)
+        d.scalar_quantization_distance2(dims, &self.max, &self.min, lhs, rhs)
     }
 }

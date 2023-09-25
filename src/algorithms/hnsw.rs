@@ -54,7 +54,7 @@ impl HnswOptions {
 }
 
 pub struct Hnsw {
-    implementation: HnswImpl,
+    x: HnswImpl,
 }
 
 impl Algo for Hnsw {
@@ -83,7 +83,7 @@ impl Algo for Hnsw {
         n: usize,
     ) -> Result<Self, HnswError> {
         let hnsw_options = options.algorithm.clone().unwrap_hnsw();
-        let implementation = HnswImpl::new(
+        let x = HnswImpl::new(
             storage,
             vectors,
             options.dims,
@@ -92,7 +92,7 @@ impl Algo for Hnsw {
             hnsw_options.m,
             hnsw_options.ef_construction,
             hnsw_options.memmap,
-            options.distance,
+            options.d,
             options,
             hnsw_options.clone(),
         )?;
@@ -106,7 +106,7 @@ impl Algo for Hnsw {
                         if i >= n {
                             break;
                         }
-                        implementation.insert(i)?;
+                        x.insert(i)?;
                     }
                     Result::Ok(())
                 }));
@@ -116,7 +116,7 @@ impl Algo for Hnsw {
             }
             Result::Ok(())
         })?;
-        Ok(Self { implementation })
+        Ok(Self { x })
     }
 
     fn load(
@@ -125,7 +125,7 @@ impl Algo for Hnsw {
         vectors: Arc<Vectors>,
     ) -> Result<Self, HnswError> {
         let hnsw_options = options.algorithm.clone().unwrap_hnsw();
-        let implementation = HnswImpl::load(
+        let x = HnswImpl::load(
             storage,
             vectors,
             options.dims,
@@ -134,14 +134,14 @@ impl Algo for Hnsw {
             hnsw_options.m,
             hnsw_options.ef_construction,
             hnsw_options.memmap,
-            options.distance,
+            options.d,
             options,
             hnsw_options,
         )?;
-        Ok(Self { implementation })
+        Ok(Self { x })
     }
     fn insert(&self, insert: usize) -> Result<(), HnswError> {
-        self.implementation.insert(insert)
+        self.x.insert(insert)
     }
     fn search<F>(
         &self,
@@ -152,6 +152,6 @@ impl Algo for Hnsw {
     where
         F: FnMut(u64) -> bool,
     {
-        self.implementation.search(target, k, filter)
+        self.x.search(target, k, filter)
     }
 }

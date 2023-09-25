@@ -1,4 +1,5 @@
-use super::impls::ivf::IvfImpl;
+use super::impls::ivf_native::IvfNative;
+use super::impls::ivf_pq::IvfPq;
 use super::Algo;
 use crate::algorithms::quantization::QuantizationError;
 use crate::algorithms::quantization::QuantizationOptions;
@@ -50,8 +51,9 @@ impl IvfOptions {
     }
 }
 
-pub struct Ivf {
-    implementation: IvfImpl,
+pub enum Ivf {
+    Native(IvfNative),
+    Pq(IvfPq),
 }
 
 impl Algo for Ivf {
@@ -62,15 +64,27 @@ impl Algo for Ivf {
         options: IndexOptions,
     ) -> Result<(), Self::Error> {
         let ivf_options = options.algorithm.clone().unwrap_ivf();
-        IvfImpl::prebuild(
-            storage,
-            options.dims,
-            ivf_options.nlist,
-            options.capacity,
-            ivf_options.memmap,
-            options,
-            ivf_options.quantization,
-        )?;
+        if ivf_options.quantization.is_product_quantization() {
+            IvfPq::prebuild(
+                storage,
+                options.dims,
+                ivf_options.nlist,
+                options.capacity,
+                ivf_options.memmap,
+                options,
+                ivf_options.quantization,
+            )?;
+        } else {
+            IvfNative::prebuild(
+                storage,
+                options.dims,
+                ivf_options.nlist,
+                options.capacity,
+                ivf_options.memmap,
+                options,
+                ivf_options.quantization,
+            )?;
+        }
         Ok(())
     }
 
@@ -81,42 +95,79 @@ impl Algo for Ivf {
         n: usize,
     ) -> Result<Self, IvfError> {
         let ivf_options = options.algorithm.clone().unwrap_ivf();
-        let implementation = IvfImpl::new(
-            storage,
-            vectors.clone(),
-            options.dims,
-            n,
-            ivf_options.nlist,
-            ivf_options.nlist * 50,
-            ivf_options.nprobe,
-            ivf_options.least_iterations,
-            ivf_options.iterations,
-            options.capacity,
-            ivf_options.memmap,
-            options,
-            ivf_options.quantization,
-        )?;
-        let i = AtomicUsize::new(0);
-        std::thread::scope(|scope| -> Result<(), IvfError> {
-            let mut handles = Vec::new();
-            for _ in 0..ivf_options.build_threads {
-                handles.push(scope.spawn(|| -> Result<(), IvfError> {
-                    loop {
-                        let i = i.fetch_add(1, Ordering::Relaxed);
-                        if i >= n {
-                            break;
+        if ivf_options.quantization.is_product_quantization() {
+            let x = IvfPq::new(
+                storage,
+                vectors.clone(),
+                n,
+                ivf_options.nlist,
+                ivf_options.nlist * 50,
+                ivf_options.nprobe,
+                ivf_options.least_iterations,
+                ivf_options.iterations,
+                options.capacity,
+                ivf_options.memmap,
+                options,
+                ivf_options.quantization,
+            )?;
+            let i = AtomicUsize::new(0);
+            std::thread::scope(|scope| -> Result<(), IvfError> {
+                let mut handles = Vec::new();
+                for _ in 0..ivf_options.build_threads {
+                    handles.push(scope.spawn(|| -> Result<(), IvfError> {
+                        loop {
+                            let i = i.fetch_add(1, Ordering::Relaxed);
+                            if i >= n {
+                                break;
+                            }
+                            x.insert(i)?;
                         }
-                        implementation.insert(i)?;
-                    }
-                    Result::Ok(())
-                }));
-            }
-            for handle in handles.into_iter() {
-                handle.join().unwrap()?;
-            }
-            Result::Ok(())
-        })?;
-        Ok(Self { implementation })
+                        Result::Ok(())
+                    }));
+                }
+                for handle in handles.into_iter() {
+                    handle.join().unwrap()?;
+                }
+                Result::Ok(())
+            })?;
+            Ok(Self::Pq(x))
+        } else {
+            let x = IvfNative::new(
+                storage,
+                vectors.clone(),
+                n,
+                ivf_options.nlist,
+                ivf_options.nlist * 50,
+                ivf_options.nprobe,
+                ivf_options.least_iterations,
+                ivf_options.iterations,
+                options.capacity,
+                ivf_options.memmap,
+                options,
+                ivf_options.quantization,
+            )?;
+            let i = AtomicUsize::new(0);
+            std::thread::scope(|scope| -> Result<(), IvfError> {
+                let mut handles = Vec::new();
+                for _ in 0..ivf_options.build_threads {
+                    handles.push(scope.spawn(|| -> Result<(), IvfError> {
+                        loop {
+                            let i = i.fetch_add(1, Ordering::Relaxed);
+                            if i >= n {
+                                break;
+                            }
+                            x.insert(i)?;
+                        }
+                        Result::Ok(())
+                    }));
+                }
+                for handle in handles.into_iter() {
+                    handle.join().unwrap()?;
+                }
+                Result::Ok(())
+            })?;
+            Ok(Self::Native(x))
+        }
     }
     fn load(
         storage: &mut Storage,
@@ -124,21 +175,37 @@ impl Algo for Ivf {
         vectors: Arc<Vectors>,
     ) -> Result<Self, IvfError> {
         let ivf_options = options.algorithm.clone().unwrap_ivf();
-        let implementation = IvfImpl::load(
-            storage,
-            options.dims,
-            vectors,
-            ivf_options.nlist,
-            ivf_options.nprobe,
-            options.capacity,
-            ivf_options.memmap,
-            options,
-            ivf_options.quantization,
-        )?;
-        Ok(Self { implementation })
+        if ivf_options.quantization.is_product_quantization() {
+            let x = IvfPq::load(
+                storage,
+                vectors,
+                ivf_options.nlist,
+                ivf_options.nprobe,
+                options.capacity,
+                ivf_options.memmap,
+                options,
+                ivf_options.quantization,
+            )?;
+            Ok(Self::Pq(x))
+        } else {
+            let x = IvfNative::load(
+                storage,
+                vectors,
+                ivf_options.nlist,
+                ivf_options.nprobe,
+                options.capacity,
+                ivf_options.memmap,
+                options,
+                ivf_options.quantization,
+            )?;
+            Ok(Self::Native(x))
+        }
     }
     fn insert(&self, insert: usize) -> Result<(), IvfError> {
-        self.implementation.insert(insert)
+        match self {
+            Ivf::Native(x) => x.insert(insert),
+            Ivf::Pq(x) => x.insert(insert),
+        }
     }
     fn search<F>(
         &self,
@@ -149,6 +216,9 @@ impl Algo for Ivf {
     where
         F: FnMut(u64) -> bool,
     {
-        self.implementation.search(target, k, filter)
+        match self {
+            Ivf::Native(x) => x.search(target, k, filter),
+            Ivf::Pq(x) => x.search(target, k, filter),
+        }
     }
 }

@@ -77,7 +77,7 @@ impl HnswImpl {
         m: usize,
         ef_construction: usize,
         memmap: Memmap,
-        distance: Distance,
+        d: Distance,
         index_options: IndexOptions,
         hnsw_options: HnswOptions,
     ) -> Result<Self, HnswError> {
@@ -149,7 +149,7 @@ impl HnswImpl {
             m,
             ef_construction,
             quantization,
-            d: distance,
+            d,
         })
     }
     pub fn load(
@@ -161,7 +161,7 @@ impl HnswImpl {
         m: usize,
         ef_construction: usize,
         memmap: Memmap,
-        distance: Distance,
+        d: Distance,
         index_options: IndexOptions,
         hnsw_options: HnswOptions,
     ) -> Result<Self, HnswError> {
@@ -190,7 +190,7 @@ impl HnswImpl {
                 }
                 semaphore
             },
-            d: distance,
+            d,
             quantization,
         })
     }

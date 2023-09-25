@@ -43,11 +43,11 @@ impl Quan for TrivialQuantization {
         Ok(())
     }
 
-    fn distance(&self, distance: Distance, lhs: &[Scalar], rhs: usize) -> Scalar {
-        distance.distance(lhs, self.vectors.get_vector(rhs))
+    fn distance(&self, d: Distance, lhs: &[Scalar], rhs: usize) -> Scalar {
+        d.distance(lhs, self.vectors.get_vector(rhs))
     }
 
-    fn distance2(&self, distance: Distance, lhs: usize, rhs: usize) -> Scalar {
-        distance.distance(self.vectors.get_vector(lhs), self.vectors.get_vector(rhs))
+    fn distance2(&self, d: Distance, lhs: usize, rhs: usize) -> Scalar {
+        d.distance(self.vectors.get_vector(lhs), self.vectors.get_vector(rhs))
     }
 }

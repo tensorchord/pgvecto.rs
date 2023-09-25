@@ -81,7 +81,7 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
     let parsed = get_parsed_from_varlena((*index_relation).rd_options);
     let options = IndexOptions {
         dims,
-        distance,
+        d: distance,
         capacity: parsed.capacity,
         vectors: parsed.vectors,
         algorithm: parsed.algorithm,

@@ -49,7 +49,7 @@ impl Algo for Flat {
         vectors: Arc<Vectors>,
         n: usize,
     ) -> Result<Self, FlatError> {
-        let distance = options.distance;
+        let d = options.d;
         let flat_options = options.algorithm.clone().unwrap_flat();
         let quantization =
             Quantization::build(storage, options, flat_options.quantization, vectors.clone());
@@ -59,7 +59,7 @@ impl Algo for Flat {
         Ok(Self {
             vectors,
             quantization,
-            d: distance,
+            d,
         })
     }
 
@@ -68,14 +68,14 @@ impl Algo for Flat {
         options: IndexOptions,
         vectors: Arc<Vectors>,
     ) -> Result<Self, FlatError> {
-        let distance = options.distance;
+        let d = options.d;
         let flat_options = options.algorithm.clone().unwrap_flat();
         let quantization =
             Quantization::load(storage, options, flat_options.quantization, vectors.clone());
         Ok(Self {
             vectors: vectors.clone(),
             quantization,
-            d: distance,
+            d,
         })
     }
 

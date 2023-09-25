@@ -111,55 +111,13 @@ impl Quan for ProductQuantization {
         quantization_options: QuantizationOptions,
         vectors: Arc<Vectors>,
     ) -> Self {
-        let quantization_options = quantization_options.unwrap_product_quantization();
-        let dims = index_options.dims;
-        let ratio = quantization_options.ratio as u16;
-        let n = vectors.len();
-        let m = std::cmp::min(n, quantization_options.sample);
-        let f = sample(&mut thread_rng(), n, m).into_vec();
-        let mut samples = Vec2::new(index_options.dims, m);
-        for i in 0..m {
-            samples[i].copy_from_slice(vectors.get_vector(f[i]));
-        }
-        let width = dims.div_ceil(ratio);
-        let mut centroids = unsafe {
-            storage
-                .alloc_mmap_slice(quantization_options.memmap, 256 * dims as usize)
-                .assume_init()
-        };
-        for i in 0..width {
-            let subdims = std::cmp::min(ratio, dims - ratio * i);
-            let mut subsamples = Vec2::new(subdims, m);
-            for j in 0..m {
-                let src = &samples[j][(i * ratio) as usize..][..subdims as usize];
-                subsamples[j].copy_from_slice(src);
-            }
-            let mut k_means = ElkanKMeans::new(256, subsamples, Distance::L2);
-            for _ in 0..25 {
-                if k_means.iterate() {
-                    break;
-                }
-            }
-            let centroid = k_means.finish();
-            for j in 0u8..=255 {
-                centroids[j as usize * dims as usize..][(i * ratio) as usize..][..subdims as usize]
-                    .copy_from_slice(&centroid[j as usize]);
-            }
-        }
-        let data = unsafe {
-            storage
-                .alloc_mmap_slice::<u8>(
-                    quantization_options.memmap,
-                    width as usize * index_options.capacity,
-                )
-                .assume_init()
-        };
-        Self {
-            dims,
-            centroids,
-            data,
-            ratio,
-        }
+        Self::build_with_normalizer(
+            storage,
+            index_options,
+            quantization_options,
+            vectors,
+            |_| (),
+        )
     }
 
     fn load(
@@ -207,21 +165,100 @@ impl Quan for ProductQuantization {
         Ok(())
     }
 
-    fn distance(&self, distance: Distance, lhs: &[Scalar], rhs: usize) -> Scalar {
+    fn distance(&self, d: Distance, lhs: &[Scalar], rhs: usize) -> Scalar {
         let dims = self.dims;
         let ratio = self.ratio;
         let width = dims.div_ceil(ratio);
         assert!(lhs.len() == width as usize);
         let rhs = &self.data[rhs * width as usize..][..width as usize];
-        distance.product_quantization_distance(dims, ratio, &self.centroids, lhs, rhs)
+        d.product_quantization_distance(dims, ratio, &self.centroids, lhs, rhs)
     }
 
-    fn distance2(&self, distance: Distance, lhs: usize, rhs: usize) -> Scalar {
+    fn distance2(&self, d: Distance, lhs: usize, rhs: usize) -> Scalar {
         let dims = self.dims;
         let ratio = self.ratio;
         let width = dims.div_ceil(ratio);
         let lhs = &self.data[lhs * width as usize..][..width as usize];
         let rhs = &self.data[rhs * width as usize..][..width as usize];
-        distance.product_quantization_distance2(dims, ratio, &self.centroids, lhs, rhs)
+        d.product_quantization_distance2(dims, ratio, &self.centroids, lhs, rhs)
+    }
+}
+
+impl ProductQuantization {
+    pub fn build_with_normalizer<F>(
+        storage: &mut Storage,
+        index_options: IndexOptions,
+        quantization_options: QuantizationOptions,
+        vectors: Arc<Vectors>,
+        normalizer: F,
+    ) -> Self
+    where
+        F: Fn(&mut [Scalar]),
+    {
+        let quantization_options = quantization_options.unwrap_product_quantization();
+        let dims = index_options.dims;
+        let ratio = quantization_options.ratio as u16;
+        let n = vectors.len();
+        let m = std::cmp::min(n, quantization_options.sample);
+        let f = sample(&mut thread_rng(), n, m).into_vec();
+        let mut samples = Vec2::new(index_options.dims, m);
+        for i in 0..m {
+            samples[i].copy_from_slice(vectors.get_vector(f[i]));
+            normalizer(&mut samples[i]);
+        }
+        let width = dims.div_ceil(ratio);
+        let mut centroids = unsafe {
+            storage
+                .alloc_mmap_slice(quantization_options.memmap, 256 * dims as usize)
+                .assume_init()
+        };
+        for i in 0..width {
+            let subdims = std::cmp::min(ratio, dims - ratio * i);
+            let mut subsamples = Vec2::new(subdims, m);
+            for j in 0..m {
+                let src = &samples[j][(i * ratio) as usize..][..subdims as usize];
+                subsamples[j].copy_from_slice(src);
+            }
+            let mut k_means = ElkanKMeans::new(256, subsamples, Distance::L2);
+            for _ in 0..25 {
+                if k_means.iterate() {
+                    break;
+                }
+            }
+            let centroid = k_means.finish();
+            for j in 0u8..=255 {
+                centroids[j as usize * dims as usize..][(i * ratio) as usize..][..subdims as usize]
+                    .copy_from_slice(&centroid[j as usize]);
+            }
+        }
+        let data = unsafe {
+            storage
+                .alloc_mmap_slice::<u8>(
+                    quantization_options.memmap,
+                    width as usize * index_options.capacity,
+                )
+                .assume_init()
+        };
+        Self {
+            dims,
+            centroids,
+            data,
+            ratio,
+        }
+    }
+
+    pub fn distance_with_delta(
+        &self,
+        d: Distance,
+        lhs: &[Scalar],
+        rhs: usize,
+        delta: &[Scalar],
+    ) -> Scalar {
+        let dims = self.dims;
+        let ratio = self.ratio;
+        let width = dims.div_ceil(ratio);
+        assert!(lhs.len() == width as usize);
+        let rhs = &self.data[rhs * width as usize..][..width as usize];
+        d.product_quantization_distance_with_delta(dims, ratio, &self.centroids, lhs, rhs, delta)
     }
 }

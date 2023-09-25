@@ -31,7 +31,8 @@ pub enum IndexError {
 pub struct IndexOptions {
     #[validate(range(min = 1))]
     pub dims: u16,
-    pub distance: Distance,
+    #[serde(rename = "distance")]
+    pub d: Distance,
     #[validate(range(min = 1))]
     pub capacity: usize,
     pub vectors: VectorsOptions,

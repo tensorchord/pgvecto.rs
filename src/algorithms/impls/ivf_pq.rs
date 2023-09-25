@@ -1,6 +1,6 @@
 use super::elkan_k_means::ElkanKMeans;
 use crate::algorithms::ivf::IvfError;
-use crate::algorithms::quantization::{Quan, Quantization, QuantizationOptions};
+use crate::algorithms::quantization::{ProductQuantization, Quan, QuantizationOptions};
 use crate::algorithms::utils::filtered_fixed_heap::FilteredFixedHeap;
 use crate::algorithms::utils::fixed_heap::FixedHeap;
 use crate::algorithms::utils::mmap_vec2::MmapVec2;
@@ -18,7 +18,7 @@ use std::sync::Arc;
 
 type Vertex = Option<usize>;
 
-pub struct IvfImpl {
+pub struct IvfPq {
     centroids: MmapVec2,
     heads: MmapBox<[AtomicCell<Option<usize>>]>,
     vertexs: MmapBox<[UnsafeCell<Vertex>]>,
@@ -27,14 +27,15 @@ pub struct IvfImpl {
     nprobe: usize,
     nlist: usize,
     //
-    quantization: Quantization,
+    dims: u16,
+    quantization: ProductQuantization,
     d: Distance,
 }
 
-unsafe impl Send for IvfImpl {}
-unsafe impl Sync for IvfImpl {}
+unsafe impl Send for IvfPq {}
+unsafe impl Sync for IvfPq {}
 
-impl IvfImpl {
+impl IvfPq {
     pub fn prebuild(
         storage: &mut StoragePreallocator,
         dims: u16,
@@ -47,13 +48,12 @@ impl IvfImpl {
         MmapVec2::prebuild(storage, dims, nlist);
         storage.palloc_mmap_slice::<AtomicCell<Option<usize>>>(memmap, nlist);
         storage.palloc_mmap_slice::<UnsafeCell<Vertex>>(memmap, capacity);
-        Quantization::prebuild(storage, index_options, quantization_options);
+        ProductQuantization::prebuild(storage, index_options, quantization_options);
         Ok(())
     }
     pub fn new(
         storage: &mut Storage,
         vectors: Arc<Vectors>,
-        dims: u16,
         n: usize,
         nlist: usize,
         nsample: usize,
@@ -65,17 +65,16 @@ impl IvfImpl {
         index_options: IndexOptions,
         quantization_options: QuantizationOptions,
     ) -> Result<Self, IvfError> {
-        let distance = index_options.distance;
+        let dims = index_options.dims;
+        let d = index_options.d;
         let m = std::cmp::min(nsample, n);
         let f = sample(&mut thread_rng(), n, m).into_vec();
         let mut samples = Vec2::new(dims, m);
         for i in 0..m {
             samples[i].copy_from_slice(vectors.get_vector(f[i]));
-            index_options
-                .distance
-                .elkan_k_means_normalize(&mut samples[i]);
+            index_options.d.elkan_k_means_normalize(&mut samples[i]);
         }
-        let mut k_means = ElkanKMeans::new(nlist, samples, index_options.distance);
+        let mut k_means = ElkanKMeans::new(nlist, samples, index_options.d);
         for _ in 0..least_iterations {
             k_means.iterate();
         }
@@ -106,11 +105,26 @@ impl IvfImpl {
             }
             unsafe { vertexs.assume_init() }
         };
-        let quantization = Quantization::build(
+        let quantization = ProductQuantization::build_with_normalizer(
             storage,
             index_options,
             quantization_options,
             vectors.clone(),
+            |point| {
+                let mut target = point.to_vec();
+                d.elkan_k_means_normalize(&mut target);
+                let mut result = (Scalar::INFINITY, 0);
+                for i in 0..nlist {
+                    let centroid = &centroids[i];
+                    let dis = d.elkan_k_means_distance(&target, centroid);
+                    result = std::cmp::min(result, (dis, i));
+                }
+                let centroid_id = result.1;
+                let centroid_point = &centroids[centroid_id];
+                for i in 0..dims {
+                    point[i as usize] -= centroid_point[i as usize];
+                }
+            },
         );
         Ok(Self {
             centroids,
@@ -120,12 +134,12 @@ impl IvfImpl {
             nprobe,
             nlist,
             quantization,
-            d: distance,
+            d,
+            dims,
         })
     }
     pub fn load(
         storage: &mut Storage,
-        dims: u16,
         vectors: Arc<Vectors>,
         nlist: usize,
         nprobe: usize,
@@ -134,7 +148,8 @@ impl IvfImpl {
         index_options: IndexOptions,
         quantization_options: QuantizationOptions,
     ) -> Result<Self, IvfError> {
-        let distance = index_options.distance;
+        let dims = index_options.dims;
+        let d = index_options.d;
         Ok(Self {
             centroids: MmapVec2::load(storage, dims, nlist),
             heads: unsafe { storage.alloc_mmap_slice(memmap, nlist).assume_init() },
@@ -142,8 +157,14 @@ impl IvfImpl {
             vectors: vectors.clone(),
             nprobe,
             nlist,
-            quantization: Quantization::load(storage, index_options, quantization_options, vectors),
-            d: distance,
+            quantization: ProductQuantization::load(
+                storage,
+                index_options,
+                quantization_options,
+                vectors,
+            ),
+            d,
+            dims,
         })
     }
     pub fn search<F>(
@@ -168,7 +189,9 @@ impl IvfImpl {
             let mut cursor = self.heads[i].load();
             while let Some(u) = cursor {
                 let u_data = vectors.get_data(u);
-                let u_dis = self.quantization.distance(self.d, &target, u);
+                let u_dis =
+                    self.quantization
+                        .distance_with_delta(self.d, &target, u, &self.centroids[i]);
                 result.push((u_dis, u_data));
                 cursor = unsafe { *self.vertexs[u].get() };
             }
@@ -181,7 +204,8 @@ impl IvfImpl {
     }
     pub fn _insert(&self, x: usize) -> Result<(), IvfError> {
         let vertexs = self.vertexs.as_ref();
-        let mut target = self.vectors.get_vector(x).to_vec();
+        let mut point = self.vectors.get_vector(x).to_vec();
+        let mut target = point.clone();
         self.d.elkan_k_means_normalize(&mut target);
         let mut result = (Scalar::INFINITY, 0);
         for i in 0..self.nlist {
@@ -189,13 +213,18 @@ impl IvfImpl {
             let dis = self.d.elkan_k_means_distance(&target, centroid);
             result = std::cmp::min(result, (dis, i));
         }
-        self.quantization.insert(x, &target)?;
+        let centroid_id = result.1;
+        let centroid_point = &self.centroids[result.1];
+        for i in 0..self.dims {
+            point[i as usize] -= centroid_point[i as usize];
+        }
+        self.quantization.insert(x, &point)?;
         loop {
-            let next = self.heads[result.1].load();
+            let next = self.heads[centroid_id].load();
             unsafe {
                 vertexs[x].get().write(next);
             }
-            let head = &self.heads[result.1];
+            let head = &self.heads[centroid_id];
             if head.compare_exchange(next, Some(x)).is_ok() {
                 break;
             }

@@ -11,9 +11,9 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use thiserror::Error;
 
-use self::product::{ProductQuantization, ProductQuantizationOptions};
-use self::scalar::{ScalarQuantization, ScalarQuantizationOptions};
-use self::trivial::{TrivialQuantization, TrivialQuantizationOptions};
+pub use self::product::{ProductQuantization, ProductQuantizationOptions};
+pub use self::scalar::{ScalarQuantization, ScalarQuantizationOptions};
+pub use self::trivial::{TrivialQuantization, TrivialQuantizationOptions};
 
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
 pub enum QuantizationError {}
@@ -51,6 +51,12 @@ impl QuantizationOptions {
             _ => unreachable!(),
         }
     }
+    pub fn is_product_quantization(&self) -> bool {
+        match self {
+            Self::Product(_) => true,
+            _ => false,
+        }
+    }
 }
 
 pub trait Quan {
@@ -72,8 +78,8 @@ pub trait Quan {
         vectors: Arc<Vectors>,
     ) -> Self;
     fn insert(&self, i: usize, point: &[Scalar]) -> Result<(), QuantizationError>;
-    fn distance(&self, distance: Distance, lhs: &[Scalar], rhs: usize) -> Scalar;
-    fn distance2(&self, distance: Distance, lhs: usize, rhs: usize) -> Scalar;
+    fn distance(&self, d: Distance, lhs: &[Scalar], rhs: usize) -> Scalar;
+    fn distance2(&self, d: Distance, lhs: usize, rhs: usize) -> Scalar;
 }
 
 pub enum Quantization {
@@ -148,21 +154,21 @@ impl Quan for Quantization {
         }
     }
 
-    fn distance(&self, distance: Distance, lhs: &[Scalar], rhs: usize) -> Scalar {
+    fn distance(&self, d: Distance, lhs: &[Scalar], rhs: usize) -> Scalar {
         use Quantization::*;
         match self {
-            Trivial(x) => x.distance(distance, lhs, rhs),
-            Scalar(x) => x.distance(distance, lhs, rhs),
-            Product(x) => x.distance(distance, lhs, rhs),
+            Trivial(x) => x.distance(d, lhs, rhs),
+            Scalar(x) => x.distance(d, lhs, rhs),
+            Product(x) => x.distance(d, lhs, rhs),
         }
     }
 
-    fn distance2(&self, distance: Distance, lhs: usize, rhs: usize) -> Scalar {
+    fn distance2(&self, d: Distance, lhs: usize, rhs: usize) -> Scalar {
         use Quantization::*;
         match self {
-            Trivial(x) => x.distance2(distance, lhs, rhs),
-            Scalar(x) => x.distance2(distance, lhs, rhs),
-            Product(x) => x.distance2(distance, lhs, rhs),
+            Trivial(x) => x.distance2(d, lhs, rhs),
+            Scalar(x) => x.distance2(d, lhs, rhs),
+            Product(x) => x.distance2(d, lhs, rhs),
         }
     }
 }
