@@ -440,7 +440,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         Ok(())
     }
 
-    #[warn(unused_assignments)]
+    #[allow(unused_assignments)]
     fn search_and_prune_for_one_vertex(
         &self,
         id: usize,
