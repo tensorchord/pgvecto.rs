@@ -92,6 +92,16 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "AveryQi115",
+      "name": "Avery",
+      "avatar_url": "https://avatars.githubusercontent.com/u/42568619?v=4",
+      "profile": "https://github.com/AveryQi115",
+      "contributions": [
+        "code",
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
