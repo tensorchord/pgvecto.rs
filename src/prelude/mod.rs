@@ -2,7 +2,7 @@ mod distance;
 mod scalar;
 mod sys;
 
-pub use self::distance::{Cosine, Distance, DistanceFamily, Dot, L2};
+pub use self::distance::Distance;
 pub use self::scalar::{Float, Scalar};
 pub use self::sys::{Id, Pointer};
 

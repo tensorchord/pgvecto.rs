@@ -1,7 +1,7 @@
 use super::impls::ivf::IvfImpl;
-use super::impls::quantization::QuantizationError;
-use super::impls::quantization::QuantizationOptions;
 use super::Algo;
+use crate::algorithms::quantization::QuantizationError;
+use crate::algorithms::quantization::QuantizationOptions;
 use crate::bgworker::index::IndexOptions;
 use crate::bgworker::storage::Storage;
 use crate::bgworker::storage::StoragePreallocator;
@@ -50,11 +50,11 @@ impl IvfOptions {
     }
 }
 
-pub struct Ivf<D: DistanceFamily> {
-    implementation: IvfImpl<D>,
+pub struct Ivf {
+    implementation: IvfImpl,
 }
 
-impl<D: DistanceFamily> Algo for Ivf<D> {
+impl Algo for Ivf {
     type Error = IvfError;
 
     fn prebuild(
@@ -62,7 +62,7 @@ impl<D: DistanceFamily> Algo for Ivf<D> {
         options: IndexOptions,
     ) -> Result<(), Self::Error> {
         let ivf_options = options.algorithm.clone().unwrap_ivf();
-        IvfImpl::<D>::prebuild(
+        IvfImpl::prebuild(
             storage,
             options.dims,
             ivf_options.nlist,

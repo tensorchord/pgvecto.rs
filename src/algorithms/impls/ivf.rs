@@ -1,8 +1,6 @@
 use super::elkan_k_means::ElkanKMeans;
-use super::quantization::{
-    ProductQuantization, Quantization, QuantizationOptions, ScalarQuantization, TrivialQuantization,
-};
 use crate::algorithms::ivf::IvfError;
+use crate::algorithms::quantization::{Quan, Quantization, QuantizationOptions};
 use crate::algorithms::utils::filtered_fixed_heap::FilteredFixedHeap;
 use crate::algorithms::utils::fixed_heap::FixedHeap;
 use crate::algorithms::utils::mmap_vec2::MmapVec2;
@@ -16,12 +14,11 @@ use crossbeam::atomic::AtomicCell;
 use rand::seq::index::sample;
 use rand::thread_rng;
 use std::cell::UnsafeCell;
-use std::marker::PhantomData;
 use std::sync::Arc;
 
 type Vertex = Option<usize>;
 
-pub struct IvfImpl<D: DistanceFamily> {
+pub struct IvfImpl {
     centroids: MmapVec2,
     heads: MmapBox<[AtomicCell<Option<usize>>]>,
     vertexs: MmapBox<[UnsafeCell<Vertex>]>,
@@ -30,14 +27,14 @@ pub struct IvfImpl<D: DistanceFamily> {
     nprobe: usize,
     nlist: usize,
     //
-    quantization: Box<dyn Quantization>,
-    _maker: PhantomData<D>,
+    quantization: Quantization,
+    d: Distance,
 }
 
-unsafe impl<D: DistanceFamily> Send for IvfImpl<D> {}
-unsafe impl<D: DistanceFamily> Sync for IvfImpl<D> {}
+unsafe impl Send for IvfImpl {}
+unsafe impl Sync for IvfImpl {}
 
-impl<D: DistanceFamily> IvfImpl<D> {
+impl IvfImpl {
     pub fn prebuild(
         storage: &mut StoragePreallocator,
         dims: u16,
@@ -50,17 +47,7 @@ impl<D: DistanceFamily> IvfImpl<D> {
         MmapVec2::prebuild(storage, dims, nlist);
         storage.palloc_mmap_slice::<AtomicCell<Option<usize>>>(memmap, nlist);
         storage.palloc_mmap_slice::<UnsafeCell<Vertex>>(memmap, capacity);
-        match quantization_options {
-            quantization_options @ QuantizationOptions::Trivial(_) => {
-                TrivialQuantization::<D>::prebuild(storage, index_options, quantization_options);
-            }
-            quantization_options @ QuantizationOptions::Scalar(_) => {
-                ScalarQuantization::<D>::prebuild(storage, index_options, quantization_options);
-            }
-            quantization_options @ QuantizationOptions::Product(_) => {
-                ProductQuantization::<D>::prebuild(storage, index_options, quantization_options);
-            }
-        };
+        Quantization::prebuild(storage, index_options, quantization_options);
         Ok(())
     }
     pub fn new(
@@ -78,14 +65,17 @@ impl<D: DistanceFamily> IvfImpl<D> {
         index_options: IndexOptions,
         quantization_options: QuantizationOptions,
     ) -> Result<Self, IvfError> {
+        let distance = index_options.distance;
         let m = std::cmp::min(nsample, n);
         let f = sample(&mut thread_rng(), n, m).into_vec();
         let mut samples = Vec2::new(dims, m);
         for i in 0..m {
             samples[i].copy_from_slice(vectors.get_vector(f[i]));
-            D::elkan_k_means_normalize(&mut samples[i]);
+            index_options
+                .distance
+                .elkan_k_means_normalize(&mut samples[i]);
         }
-        let mut k_means = ElkanKMeans::<D>::new(nlist, samples);
+        let mut k_means = ElkanKMeans::new(nlist, samples, index_options.distance);
         for _ in 0..least_iterations {
             k_means.iterate();
         }
@@ -116,32 +106,12 @@ impl<D: DistanceFamily> IvfImpl<D> {
             }
             unsafe { vertexs.assume_init() }
         };
-        let quantization: Box<dyn Quantization> = match quantization_options {
-            quantization_options @ QuantizationOptions::Trivial(_) => {
-                Box::new(TrivialQuantization::<D>::build(
-                    storage,
-                    index_options,
-                    quantization_options,
-                    vectors.clone(),
-                ))
-            }
-            quantization_options @ QuantizationOptions::Scalar(_) => {
-                Box::new(ScalarQuantization::<D>::build(
-                    storage,
-                    index_options,
-                    quantization_options,
-                    vectors.clone(),
-                ))
-            }
-            quantization_options @ QuantizationOptions::Product(_) => {
-                Box::new(ProductQuantization::<D>::build(
-                    storage,
-                    index_options,
-                    quantization_options,
-                    vectors.clone(),
-                ))
-            }
-        };
+        let quantization = Quantization::build(
+            storage,
+            index_options,
+            quantization_options,
+            vectors.clone(),
+        );
         Ok(Self {
             centroids,
             heads,
@@ -150,7 +120,7 @@ impl<D: DistanceFamily> IvfImpl<D> {
             nprobe,
             nlist,
             quantization,
-            _maker: PhantomData,
+            d: distance,
         })
     }
     pub fn load(
@@ -164,6 +134,7 @@ impl<D: DistanceFamily> IvfImpl<D> {
         index_options: IndexOptions,
         quantization_options: QuantizationOptions,
     ) -> Result<Self, IvfError> {
+        let distance = index_options.distance;
         Ok(Self {
             centroids: MmapVec2::load(storage, dims, nlist),
             heads: unsafe { storage.alloc_mmap_slice(memmap, nlist).assume_init() },
@@ -171,33 +142,8 @@ impl<D: DistanceFamily> IvfImpl<D> {
             vectors: vectors.clone(),
             nprobe,
             nlist,
-            quantization: match quantization_options {
-                quantization_options @ QuantizationOptions::Trivial(_) => {
-                    Box::new(TrivialQuantization::<D>::load(
-                        storage,
-                        index_options,
-                        quantization_options,
-                        vectors.clone(),
-                    ))
-                }
-                quantization_options @ QuantizationOptions::Scalar(_) => {
-                    Box::new(ScalarQuantization::<D>::load(
-                        storage,
-                        index_options,
-                        quantization_options,
-                        vectors.clone(),
-                    ))
-                }
-                quantization_options @ QuantizationOptions::Product(_) => {
-                    Box::new(ProductQuantization::<D>::load(
-                        storage,
-                        index_options,
-                        quantization_options,
-                        vectors.clone(),
-                    ))
-                }
-            },
-            _maker: PhantomData,
+            quantization: Quantization::load(storage, index_options, quantization_options, vectors),
+            d: distance,
         })
     }
     pub fn search<F>(
@@ -210,11 +156,11 @@ impl<D: DistanceFamily> IvfImpl<D> {
         F: FnMut(u64) -> bool,
     {
         let vectors = self.vectors.as_ref();
-        D::elkan_k_means_normalize(&mut target);
+        self.d.elkan_k_means_normalize(&mut target);
         let mut lists = FixedHeap::new(self.nprobe);
         for i in 0..self.nlist {
             let centroid = &self.centroids[i];
-            let dis = D::elkan_k_means_distance(&target, centroid);
+            let dis = self.d.elkan_k_means_distance(&target, centroid);
             lists.push((dis, i));
         }
         let mut result = FilteredFixedHeap::new(k, filter);
@@ -222,7 +168,7 @@ impl<D: DistanceFamily> IvfImpl<D> {
             let mut cursor = self.heads[i].load();
             while let Some(u) = cursor {
                 let u_data = vectors.get_data(u);
-                let u_dis = self.quantization.distance(&target, u);
+                let u_dis = self.quantization.distance(self.d, &target, u);
                 result.push((u_dis, u_data));
                 cursor = unsafe { *self.vertexs[u].get() };
             }
@@ -236,13 +182,14 @@ impl<D: DistanceFamily> IvfImpl<D> {
     pub fn _insert(&self, x: usize) -> Result<(), IvfError> {
         let vertexs = self.vertexs.as_ref();
         let mut target = self.vectors.get_vector(x).to_vec();
-        D::elkan_k_means_normalize(&mut target);
+        self.d.elkan_k_means_normalize(&mut target);
         let mut result = (Scalar::INFINITY, 0);
         for i in 0..self.nlist {
             let centroid = &self.centroids[i];
-            let dis = D::elkan_k_means_distance(&target, centroid);
+            let dis = self.d.elkan_k_means_distance(&target, centroid);
             result = std::cmp::min(result, (dis, i));
         }
+        self.quantization.insert(x, &target)?;
         loop {
             let next = self.heads[result.1].load();
             unsafe {
@@ -253,7 +200,6 @@ impl<D: DistanceFamily> IvfImpl<D> {
                 break;
             }
         }
-        self.quantization.insert(x, &target)?;
         Ok(())
     }
 }

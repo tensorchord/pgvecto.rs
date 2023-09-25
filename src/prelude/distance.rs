@@ -14,180 +14,226 @@ pub enum Distance {
     Dot,
 }
 
-pub trait DistanceFamily: sealed::Sealed + Copy + Default + Send + Sync + Unpin + 'static {
-    fn distance(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar;
-    // elkan k means
-    fn elkan_k_means_normalize(vector: &mut [Scalar]);
-    fn elkan_k_means_distance(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar;
-    type QuantizationState: Debug
-        + Copy
-        + Send
-        + Sync
-        + serde::Serialize
-        + for<'a> serde::Deserialize<'a>;
-    // quantization
-    const QUANTIZATION_INITIAL_STATE: Self::QuantizationState;
-    fn quantization_new(lhs: &[Scalar], rhs: &[Scalar]) -> Self::QuantizationState;
-    fn quantization_merge(
-        lhs: Self::QuantizationState,
-        rhs: Self::QuantizationState,
-    ) -> Self::QuantizationState;
-    fn quantization_append(
-        state: Self::QuantizationState,
-        lhs: Scalar,
-        rhs: Scalar,
-    ) -> Self::QuantizationState;
-    fn quantization_finish(state: Self::QuantizationState) -> Scalar;
-}
-
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
-pub struct L2;
-
-impl sealed::Sealed for L2 {}
-
-impl DistanceFamily for L2 {
-    #[inline(always)]
-    fn distance(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
-        distance_squared_l2(lhs, rhs)
+impl Distance {
+    pub fn distance(self, lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
+        match self {
+            Distance::L2 => distance_squared_l2(lhs, rhs),
+            Distance::Cosine => distance_cosine(lhs, rhs) * (-1.0),
+            Distance::Dot => distance_dot(lhs, rhs) * (-1.0),
+        }
     }
-
-    #[inline(always)]
-    fn elkan_k_means_normalize(_: &mut [Scalar]) {}
-
-    #[inline(always)]
-    fn elkan_k_means_distance(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
-        distance_squared_l2(lhs, rhs).sqrt()
+    pub fn elkan_k_means_normalize(self, vector: &mut [Scalar]) {
+        match self {
+            Distance::L2 => (),
+            Distance::Cosine => l2_normalize(vector),
+            Distance::Dot => l2_normalize(vector),
+        }
     }
-
-    type QuantizationState = Scalar;
-
-    const QUANTIZATION_INITIAL_STATE: Scalar = Scalar::Z;
-
-    #[inline(always)]
-    fn quantization_new(lhs: &[Scalar], rhs: &[Scalar]) -> Self::QuantizationState {
-        distance_squared_l2(lhs, rhs)
+    pub fn elkan_k_means_distance(self, lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
+        match self {
+            Distance::L2 => distance_squared_l2(lhs, rhs).sqrt(),
+            Distance::Cosine => distance_dot(lhs, rhs).acos(),
+            Distance::Dot => distance_dot(lhs, rhs).acos(),
+        }
     }
-
-    #[inline(always)]
-    fn quantization_merge(lhs: Scalar, rhs: Scalar) -> Scalar {
-        lhs + rhs
+    pub fn scalar_quantization_distance(
+        self,
+        dims: u16,
+        max: &[Scalar],
+        min: &[Scalar],
+        lhs: &[Scalar],
+        rhs: &[u8],
+    ) -> Scalar {
+        match self {
+            Distance::L2 => {
+                let mut result = Scalar::Z;
+                for i in 0..dims as usize {
+                    let _x = lhs[i];
+                    let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                    result += (_x - _y) * (_x - _y);
+                }
+                result
+            }
+            Distance::Cosine => {
+                let mut xy = Scalar::Z;
+                let mut x2 = Scalar::Z;
+                let mut y2 = Scalar::Z;
+                for i in 0..dims as usize {
+                    let _x = lhs[i];
+                    let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                    xy += _x * _y;
+                    x2 += _x * _x;
+                    y2 += _y * _y;
+                }
+                xy / (x2 * y2).sqrt() * (-1.0)
+            }
+            Distance::Dot => {
+                let mut xy = Scalar::Z;
+                for i in 0..dims as usize {
+                    let _x = lhs[i];
+                    let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                    xy += _x * _y;
+                }
+                xy * (-1.0)
+            }
+        }
     }
-
-    #[inline(always)]
-    fn quantization_finish(state: Scalar) -> Scalar {
-        state
+    pub fn scalar_quantization_distance2(
+        self,
+        dims: u16,
+        max: &[Scalar],
+        min: &[Scalar],
+        lhs: &[u8],
+        rhs: &[u8],
+    ) -> Scalar {
+        match self {
+            Distance::L2 => {
+                let mut result = Scalar::Z;
+                for i in 0..dims as usize {
+                    let _x = Scalar(lhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                    let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                    result += (_x - _y) * (_x - _y);
+                }
+                result
+            }
+            Distance::Cosine => {
+                let mut xy = Scalar::Z;
+                let mut x2 = Scalar::Z;
+                let mut y2 = Scalar::Z;
+                for i in 0..dims as usize {
+                    let _x = Scalar(lhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                    let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                    xy += _x * _y;
+                    x2 += _x * _x;
+                    y2 += _y * _y;
+                }
+                xy / (x2 * y2).sqrt() * (-1.0)
+            }
+            Distance::Dot => {
+                let mut xy = Scalar::Z;
+                for i in 0..dims as usize {
+                    let _x = Scalar(lhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                    let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                    xy += _x * _y;
+                }
+                xy * (-1.0)
+            }
+        }
     }
-
-    #[inline(always)]
-    fn quantization_append(
-        result: Self::QuantizationState,
-        lhs: Scalar,
-        rhs: Scalar,
-    ) -> Self::QuantizationState {
-        result + (lhs - rhs) * (lhs - rhs)
+    pub fn product_quantization_distance(
+        self,
+        dims: u16,
+        ratio: u16,
+        centroids: &[Scalar],
+        lhs: &[Scalar],
+        rhs: &[u8],
+    ) -> Scalar {
+        match self {
+            Distance::L2 => {
+                let width = dims.div_ceil(ratio);
+                assert!(lhs.len() == width as usize);
+                let mut result = Scalar::Z;
+                for i in 0..width {
+                    let k = std::cmp::min(ratio, dims - ratio * i);
+                    let lhs = &lhs[(i * ratio) as usize..][..k as usize];
+                    let rhsp = rhs[i as usize] as usize * dims as usize;
+                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                    result += distance_squared_l2(lhs, rhs);
+                }
+                result
+            }
+            Distance::Cosine => {
+                let width = dims.div_ceil(ratio);
+                assert!(lhs.len() == width as usize);
+                let mut xy = Scalar::Z;
+                let mut x2 = Scalar::Z;
+                let mut y2 = Scalar::Z;
+                for i in 0..width {
+                    let k = std::cmp::min(ratio, dims - ratio * i);
+                    let lhs = &lhs[(i * ratio) as usize..][..k as usize];
+                    let rhsp = rhs[i as usize] as usize * dims as usize;
+                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                    let (_xy, _x2, _y2) = xy_x2_y2(lhs, rhs);
+                    xy += _xy;
+                    x2 += _x2;
+                    y2 += _y2;
+                }
+                xy / (x2 * y2).sqrt() * (-1.0)
+            }
+            Distance::Dot => {
+                let width = dims.div_ceil(ratio);
+                assert!(lhs.len() == width as usize);
+                let mut xy = Scalar::Z;
+                for i in 0..width {
+                    let k = std::cmp::min(ratio, dims - ratio * i);
+                    let lhs = &lhs[(i * ratio) as usize..][..k as usize];
+                    let rhsp = rhs[i as usize] as usize * dims as usize;
+                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                    let _xy = distance_dot(lhs, rhs);
+                    xy += _xy;
+                }
+                xy * (-1.0)
+            }
+        }
     }
-}
-
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
-pub struct Cosine;
-
-impl sealed::Sealed for Cosine {}
-
-impl DistanceFamily for Cosine {
-    #[inline(always)]
-    fn distance(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
-        distance_cosine(lhs, rhs) * (-1.0)
-    }
-
-    #[inline(always)]
-    fn elkan_k_means_normalize(vector: &mut [Scalar]) {
-        l2_normalize(vector)
-    }
-
-    #[inline(always)]
-    fn elkan_k_means_distance(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
-        distance_dot(lhs, rhs).acos()
-    }
-
-    type QuantizationState = (Scalar, Scalar, Scalar);
-
-    const QUANTIZATION_INITIAL_STATE: (Scalar, Scalar, Scalar) = (Scalar::Z, Scalar::Z, Scalar::Z);
-
-    #[inline(always)]
-    fn quantization_new(lhs: &[Scalar], rhs: &[Scalar]) -> (Scalar, Scalar, Scalar) {
-        xy_x2_y2(lhs, rhs)
-    }
-
-    #[inline(always)]
-    fn quantization_merge(
-        (l_xy, l_x2, l_y2): (Scalar, Scalar, Scalar),
-        (r_xy, r_x2, r_y2): (Scalar, Scalar, Scalar),
-    ) -> (Scalar, Scalar, Scalar) {
-        (l_xy + r_xy, l_x2 + r_x2, l_y2 + r_y2)
-    }
-
-    #[inline(always)]
-    fn quantization_finish((xy, x2, y2): (Scalar, Scalar, Scalar)) -> Scalar {
-        xy / (x2 * y2).sqrt() * (-1.0)
-    }
-
-    #[inline(always)]
-    fn quantization_append(
-        (xy, x2, y2): Self::QuantizationState,
-        x: Scalar,
-        y: Scalar,
-    ) -> Self::QuantizationState {
-        (xy + x * y, x2 + x * x, y2 + y * y)
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
-pub struct Dot;
-
-impl sealed::Sealed for Dot {}
-
-impl DistanceFamily for Dot {
-    #[inline(always)]
-    fn distance(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
-        distance_dot(lhs, rhs) * (-1.0)
-    }
-
-    #[inline(always)]
-    fn elkan_k_means_normalize(vector: &mut [Scalar]) {
-        l2_normalize(vector)
-    }
-
-    #[inline(always)]
-    fn elkan_k_means_distance(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
-        distance_dot(lhs, rhs).acos()
-    }
-
-    type QuantizationState = Scalar;
-
-    const QUANTIZATION_INITIAL_STATE: Scalar = Scalar::Z;
-
-    #[inline(always)]
-    fn quantization_new(lhs: &[Scalar], rhs: &[Scalar]) -> Self::QuantizationState {
-        distance_dot(lhs, rhs)
-    }
-
-    #[inline(always)]
-    fn quantization_merge(lhs: Scalar, rhs: Scalar) -> Scalar {
-        lhs + rhs
-    }
-
-    #[inline(always)]
-    fn quantization_finish(state: Scalar) -> Scalar {
-        state * (-1.0)
-    }
-
-    #[inline(always)]
-    fn quantization_append(
-        result: Self::QuantizationState,
-        x: Scalar,
-        y: Scalar,
-    ) -> Self::QuantizationState {
-        result + x * y
+    pub fn product_quantization_distance2(
+        self,
+        dims: u16,
+        ratio: u16,
+        centroids: &[Scalar],
+        lhs: &[u8],
+        rhs: &[u8],
+    ) -> Scalar {
+        match self {
+            Distance::L2 => {
+                let width = dims.div_ceil(ratio);
+                assert!(lhs.len() == width as usize);
+                let mut result = Scalar::Z;
+                for i in 0..width {
+                    let k = std::cmp::min(ratio, dims - ratio * i);
+                    let lhsp = lhs[i as usize] as usize * dims as usize;
+                    let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
+                    let rhsp = rhs[i as usize] as usize * dims as usize;
+                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                    result += distance_squared_l2(lhs, rhs);
+                }
+                result
+            }
+            Distance::Cosine => {
+                let width = dims.div_ceil(ratio);
+                assert!(lhs.len() == width as usize);
+                let mut xy = Scalar::Z;
+                let mut x2 = Scalar::Z;
+                let mut y2 = Scalar::Z;
+                for i in 0..width {
+                    let k = std::cmp::min(ratio, dims - ratio * i);
+                    let lhsp = lhs[i as usize] as usize * dims as usize;
+                    let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
+                    let rhsp = rhs[i as usize] as usize * dims as usize;
+                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                    let (_xy, _x2, _y2) = xy_x2_y2(lhs, rhs);
+                    xy += _xy;
+                    x2 += _x2;
+                    y2 += _y2;
+                }
+                xy / (x2 * y2).sqrt() * (-1.0)
+            }
+            Distance::Dot => {
+                let width = dims.div_ceil(ratio);
+                assert!(lhs.len() == width as usize);
+                let mut xy = Scalar::Z;
+                for i in 0..width {
+                    let k = std::cmp::min(ratio, dims - ratio * i);
+                    let lhsp = lhs[i as usize] as usize * dims as usize;
+                    let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
+                    let rhsp = rhs[i as usize] as usize * dims as usize;
+                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                    let _xy = distance_dot(lhs, rhs);
+                    xy += _xy;
+                }
+                xy * (-1.0)
+            }
+        }
     }
 }
 

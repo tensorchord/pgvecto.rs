@@ -1,4 +1,6 @@
 use super::impls::hnsw::HnswImpl;
+use super::quantization::QuantizationError;
+use super::quantization::QuantizationOptions;
 use super::Algo;
 use crate::bgworker::index::IndexOptions;
 use crate::bgworker::storage::Storage;
@@ -13,7 +15,8 @@ use thiserror::Error;
 
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
 pub enum HnswError {
-    //
+    #[error("Quantization {0}")]
+    Quantization(#[from] QuantizationError),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,6 +31,8 @@ pub struct HnswOptions {
     pub m: usize,
     #[serde(default = "HnswOptions::default_ef_construction")]
     pub ef_construction: usize,
+    #[serde(default)]
+    pub quantization: QuantizationOptions,
 }
 
 impl HnswOptions {
@@ -48,11 +53,11 @@ impl HnswOptions {
     }
 }
 
-pub struct Hnsw<D: DistanceFamily> {
-    implementation: HnswImpl<D>,
+pub struct Hnsw {
+    implementation: HnswImpl,
 }
 
-impl<D: DistanceFamily> Algo for Hnsw<D> {
+impl Algo for Hnsw {
     type Error = HnswError;
 
     fn prebuild(
@@ -60,11 +65,13 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
         options: IndexOptions,
     ) -> Result<(), Self::Error> {
         let hnsw_options = options.algorithm.clone().unwrap_hnsw();
-        HnswImpl::<D>::prebuild(
+        HnswImpl::prebuild(
             storage,
             options.capacity,
             hnsw_options.m,
             hnsw_options.memmap,
+            options,
+            hnsw_options,
         )?;
         Ok(())
     }
@@ -85,6 +92,9 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
             hnsw_options.m,
             hnsw_options.ef_construction,
             hnsw_options.memmap,
+            options.distance,
+            options,
+            hnsw_options.clone(),
         )?;
         let i = AtomicUsize::new(0);
         std::thread::scope(|scope| -> Result<(), HnswError> {
@@ -114,7 +124,7 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
         options: IndexOptions,
         vectors: Arc<Vectors>,
     ) -> Result<Self, HnswError> {
-        let hnsw_options = options.algorithm.unwrap_hnsw();
+        let hnsw_options = options.algorithm.clone().unwrap_hnsw();
         let implementation = HnswImpl::load(
             storage,
             vectors,
@@ -124,6 +134,9 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
             hnsw_options.m,
             hnsw_options.ef_construction,
             hnsw_options.memmap,
+            options.distance,
+            options,
+            hnsw_options,
         )?;
         Ok(Self { implementation })
     }

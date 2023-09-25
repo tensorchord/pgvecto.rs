@@ -15,7 +15,6 @@ use rand::prelude::SliceRandom;
 use rand::Rng;
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BinaryHeap, HashSet};
-use std::marker::PhantomData;
 use std::sync::Arc;
 
 pub struct VertexWithDistance {
@@ -115,7 +114,7 @@ impl SearchState {
 }
 
 #[allow(unused)]
-pub struct VamanaImpl<D: DistanceFamily> {
+pub struct VamanaImpl {
     /// neighbors[vertex_id*r..(vertex_id+1)*r] records r neighbors for each vertex
     neighbors: MmapBox<[AtomicCell<usize>]>,
 
@@ -132,13 +131,14 @@ pub struct VamanaImpl<D: DistanceFamily> {
     alpha: f32,
     l: usize,
     build_threads: usize,
-    _maker: PhantomData<D>,
+
+    d: Distance,
 }
 
-unsafe impl<D: DistanceFamily> Send for VamanaImpl<D> {}
-unsafe impl<D: DistanceFamily> Sync for VamanaImpl<D> {}
+unsafe impl Send for VamanaImpl {}
+unsafe impl Sync for VamanaImpl {}
 
-impl<D: DistanceFamily> VamanaImpl<D> {
+impl VamanaImpl {
     pub fn prebuild(
         storage: &mut StoragePreallocator,
         capacity: usize,
@@ -163,6 +163,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         l: usize,
         build_threads: usize,
         memmap: Memmap,
+        d: Distance,
     ) -> Result<Self, VamanaError> {
         let number_of_nodes = capacity;
         let neighbors = unsafe {
@@ -187,7 +188,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
             alpha,
             l,
             build_threads,
-            _maker: PhantomData,
+            d,
         };
 
         // 1. init graph with r random neighbors for each node
@@ -215,6 +216,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         l: usize,
         build_threads: usize,
         memmap: Memmap,
+        d: Distance,
     ) -> Result<Self, VamanaError> {
         let number_of_nodes = capacity;
         let neighbors = unsafe {
@@ -238,7 +240,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
             alpha,
             l,
             build_threads,
-            _maker: PhantomData,
+            d,
         })
     }
 
@@ -283,7 +285,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
     {
         let mut state = SearchState::new(k, search_size);
 
-        let dist = D::distance(query, self.vectors.get_vector(start));
+        let dist = self.d.distance(query, self.vectors.get_vector(start));
         state.push(start, dist);
         while let Some(id) = state.pop() {
             // only pop id in the search list but not visited
@@ -298,7 +300,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
                     }
 
                     if filter(self.vectors.get_data(neighbor_id)) {
-                        let dist = D::distance(query, self.vectors.get_vector(neighbor_id));
+                        let dist = self.d.distance(query, self.vectors.get_vector(neighbor_id));
                         state.push(neighbor_id, dist); // push and retain closet l nodes
                     }
                 }
@@ -396,7 +398,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         let mut medoid_index = 0;
         let mut min_dis = Scalar::INFINITY;
         for i in 0..n {
-            let dis = D::distance(centroid_arr, self.vectors.get_vector(i));
+            let dis = self.d.distance(centroid_arr, self.vectors.get_vector(i));
             if dis < min_dis {
                 min_dis = dis;
                 medoid_index = i;
@@ -491,7 +493,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
     ) -> Result<SearchState, VamanaError> {
         let mut state = SearchState::new(k, search_size);
 
-        let dist = D::distance(query, self.vectors.get_vector(start));
+        let dist = self.d.distance(query, self.vectors.get_vector(start));
         state.push(start, dist);
         while let Some(id) = state.pop() {
             // only pop id in the search list but not visited
@@ -505,7 +507,7 @@ impl<D: DistanceFamily> VamanaImpl<D> {
                         continue;
                     }
 
-                    let dist = D::distance(query, self.vectors.get_vector(neighbor_id));
+                    let dist = self.d.distance(query, self.vectors.get_vector(neighbor_id));
                     state.push(neighbor_id, dist); // push and retain closet l nodes
                 }
             }
@@ -524,7 +526,9 @@ impl<D: DistanceFamily> VamanaImpl<D> {
         let mut heap: BinaryHeap<VertexWithDistance> = visited
             .iter()
             .map(|v| {
-                let dist = D::distance(self.vectors.get_vector(id), self.vectors.get_vector(*v));
+                let dist = self
+                    .d
+                    .distance(self.vectors.get_vector(id), self.vectors.get_vector(*v));
                 VertexWithDistance {
                     id: *v,
                     distance: dist,
@@ -545,10 +549,12 @@ impl<D: DistanceFamily> VamanaImpl<D> {
             }
             let mut to_remove: HashSet<usize> = HashSet::new();
             for pv in visited.iter() {
-                let dist_prime =
-                    D::distance(self.vectors.get_vector(p.id), self.vectors.get_vector(*pv));
-                let dist_query =
-                    D::distance(self.vectors.get_vector(id), self.vectors.get_vector(*pv));
+                let dist_prime = self
+                    .d
+                    .distance(self.vectors.get_vector(p.id), self.vectors.get_vector(*pv));
+                let dist_query = self
+                    .d
+                    .distance(self.vectors.get_vector(id), self.vectors.get_vector(*pv));
                 if Scalar::from(alpha) * dist_prime <= dist_query {
                     to_remove.insert(*pv);
                 }

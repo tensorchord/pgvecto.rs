@@ -3,10 +3,9 @@ use crate::prelude::*;
 use crate::algorithms::utils::vec2::Vec2;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use std::marker::PhantomData;
 use std::ops::{Index, IndexMut};
 
-pub struct ElkanKMeans<D: DistanceFamily> {
+pub struct ElkanKMeans {
     dims: u16,
     c: usize,
     pub centroids: Vec2,
@@ -15,13 +14,13 @@ pub struct ElkanKMeans<D: DistanceFamily> {
     assign: Vec<usize>,
     rand: StdRng,
     samples: Vec2,
-    _maker: PhantomData<D>,
+    d: Distance,
 }
 
 const DELTA: f32 = 1.0 / 1024.0;
 
-impl<D: DistanceFamily> ElkanKMeans<D> {
-    pub fn new(c: usize, samples: Vec2) -> Self {
+impl ElkanKMeans {
+    pub fn new(c: usize, samples: Vec2, d: Distance) -> Self {
         let n = samples.len();
         let dims = samples.dims();
 
@@ -37,7 +36,7 @@ impl<D: DistanceFamily> ElkanKMeans<D> {
         for i in 0..c {
             let mut sum = Scalar::Z;
             for j in 0..n {
-                let dis = D::elkan_k_means_distance(&samples[j], &centroids[i]);
+                let dis = d.elkan_k_means_distance(&samples[j], &centroids[i]);
                 lowerbound[(j, i)] = dis;
                 if dis * dis < weight[j] {
                     weight[j] = dis * dis;
@@ -83,13 +82,13 @@ impl<D: DistanceFamily> ElkanKMeans<D> {
             assign,
             rand,
             samples,
-            _maker: PhantomData,
+            d,
         }
     }
 
     pub fn iterate(&mut self) -> bool {
         let c = self.c;
-        let f = |lhs: &[Scalar], rhs: &[Scalar]| D::elkan_k_means_distance(lhs, rhs);
+        let f = |lhs: &[Scalar], rhs: &[Scalar]| self.d.elkan_k_means_distance(lhs, rhs);
         let dims = self.dims;
         let samples = &self.samples;
         let rand = &mut self.rand;
@@ -201,7 +200,7 @@ impl<D: DistanceFamily> ElkanKMeans<D> {
             count[o] = count[o] - count[i];
         }
         for i in 0..c {
-            D::elkan_k_means_normalize(&mut centroids[i]);
+            self.d.elkan_k_means_normalize(&mut centroids[i]);
         }
 
         // Step 5, 6

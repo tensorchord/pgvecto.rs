@@ -222,6 +222,7 @@ Options for table `hnsw`.
 | memmap                | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
 | m                     | integer | (Optional) Maximum degree of the node.                                                                                |
 | ef                    | integer | (Optional) Search scope in building.                                                                                  |
+| quantization          | table   | (Optional) The quantization algorithm to be used.                                                                     |
 
 Options for table `vamana`.
 
@@ -244,13 +245,13 @@ Options for table `scalar`.
 
 | Key                   | Type    | Description                                                                                                           |
 | --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| sample                | integer | Samples to be used for quantization.                                                                                  |
 
 Options for table `product`.
 
 | Key                   | Type    | Description                                                                                                           |
 | --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
 | sample                | integer | Samples to be used for quantization.                                                                                  |
+| ratio                 | string  | Compression ratio for quantization. Only `x1`, `x2`, `x4`, ... `x64` are allowed.                                     |
 
 And you can change the number of expected result (such as `ef_search` in hnsw) by using the following SQL.
 

@@ -1,12 +1,14 @@
 use crate::algorithms::hnsw::HnswError;
+use crate::algorithms::quantization::{Quan, Quantization};
+use crate::algorithms::utils::filtered_fixed_heap::FilteredFixedHeap;
+use crate::algorithms::utils::semaphore::Semaphore;
+use crate::algorithms::HnswOptions;
+use crate::bgworker::index::IndexOptions;
 use crate::bgworker::storage::Storage;
 use crate::bgworker::storage::StoragePreallocator;
 use crate::bgworker::storage_mmap::MmapBox;
 use crate::bgworker::vectors::Vectors;
 use crate::prelude::*;
-
-use crate::algorithms::utils::filtered_fixed_heap::FilteredFixedHeap;
-use crate::algorithms::utils::semaphore::Semaphore;
 use parking_lot::RwLock;
 use parking_lot::RwLockReadGuard;
 use parking_lot::RwLockWriteGuard;
@@ -14,7 +16,6 @@ use rand::Rng;
 use std::cell::UnsafeCell;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
-use std::marker::PhantomData;
 use std::ops::RangeInclusive;
 use std::sync::Arc;
 
@@ -31,7 +32,7 @@ struct EdgesIndexer {
     len: usize,
 }
 
-pub struct HnswImpl<D: DistanceFamily> {
+pub struct HnswImpl {
     indexers: MmapBox<[VertexIndexer]>,
     vertexs: MmapBox<[RwLock<EdgesIndexer>]>,
     edges: MmapBox<[UnsafeCell<(Scalar, usize)>]>,
@@ -41,18 +42,21 @@ pub struct HnswImpl<D: DistanceFamily> {
     m: usize,
     ef_construction: usize,
     visited: Semaphore<Visited>,
-    _maker: PhantomData<D>,
+    quantization: Quantization,
+    d: Distance,
 }
 
-unsafe impl<D: DistanceFamily> Send for HnswImpl<D> {}
-unsafe impl<D: DistanceFamily> Sync for HnswImpl<D> {}
+unsafe impl Send for HnswImpl {}
+unsafe impl Sync for HnswImpl {}
 
-impl<D: DistanceFamily> HnswImpl<D> {
+impl HnswImpl {
     pub fn prebuild(
         storage: &mut StoragePreallocator,
         capacity: usize,
         m: usize,
         memmap: Memmap,
+        index_options: IndexOptions,
+        hnsw_options: HnswOptions,
     ) -> Result<(), HnswError> {
         let len_indexers = capacity;
         let len_vertexs = capacity * 2;
@@ -61,6 +65,7 @@ impl<D: DistanceFamily> HnswImpl<D> {
         storage.palloc_mmap_slice::<RwLock<EdgesIndexer>>(memmap, len_vertexs);
         storage.palloc_mmap_slice::<UnsafeCell<(Scalar, usize)>>(memmap, len_edges);
         storage.palloc_mmap::<RwLock<Option<usize>>>(memmap);
+        Quantization::prebuild(storage, index_options, hnsw_options.quantization);
         Ok(())
     }
     pub fn new(
@@ -72,6 +77,9 @@ impl<D: DistanceFamily> HnswImpl<D> {
         m: usize,
         ef_construction: usize,
         memmap: Memmap,
+        distance: Distance,
+        index_options: IndexOptions,
+        hnsw_options: HnswOptions,
     ) -> Result<Self, HnswError> {
         let len_indexers = capacity;
         let len_vertexs = capacity * 2;
@@ -118,6 +126,12 @@ impl<D: DistanceFamily> HnswImpl<D> {
                 offset_vertexs += capacity_vertexs;
             }
         }
+        let quantization = Quantization::build(
+            storage,
+            index_options,
+            hnsw_options.quantization,
+            vectors.clone(),
+        );
         Ok(Self {
             indexers,
             vertexs,
@@ -134,7 +148,8 @@ impl<D: DistanceFamily> HnswImpl<D> {
             },
             m,
             ef_construction,
-            _maker: PhantomData,
+            quantization,
+            d: distance,
         })
     }
     pub fn load(
@@ -146,10 +161,19 @@ impl<D: DistanceFamily> HnswImpl<D> {
         m: usize,
         ef_construction: usize,
         memmap: Memmap,
+        distance: Distance,
+        index_options: IndexOptions,
+        hnsw_options: HnswOptions,
     ) -> Result<Self, HnswError> {
         let len_indexers = capacity;
         let len_vertexs = capacity * 2;
         let len_edges = capacity * 2 * (2 * m);
+        let quantization = Quantization::load(
+            storage,
+            index_options,
+            hnsw_options.quantization,
+            vectors.clone(),
+        );
         Ok(Self {
             indexers: unsafe { storage.alloc_mmap_slice(memmap, len_indexers).assume_init() },
             vertexs: unsafe { storage.alloc_mmap_slice(memmap, len_vertexs).assume_init() },
@@ -166,7 +190,8 @@ impl<D: DistanceFamily> HnswImpl<D> {
                 }
                 semaphore
             },
-            _maker: PhantomData,
+            d: distance,
+            quantization,
         })
     }
     pub fn search<F>(
@@ -247,6 +272,7 @@ impl<D: DistanceFamily> HnswImpl<D> {
     }
     fn _insert(&self, visited: &mut Visited, id: usize) -> Result<(), HnswError> {
         let target = self.vectors.get_vector(id);
+        self.quantization.insert(id, target)?;
         let levels = self._levels(id);
         let entry;
         let lock = {
@@ -434,13 +460,12 @@ impl<D: DistanceFamily> HnswImpl<D> {
         results.into_sorted_vec()
     }
     fn _dist0(&self, u: usize, target: &[Scalar]) -> Scalar {
-        let u = self.vectors.get_vector(u);
-        D::distance(u, target)
+        self.quantization.distance(self.d, target, u)
     }
     fn _dist1(&self, u: usize, v: usize) -> Scalar {
         let u = self.vectors.get_vector(u);
         let v = self.vectors.get_vector(v);
-        D::distance(u, v)
+        self.d.distance(u, v)
     }
     fn _levels(&self, u: usize) -> u8 {
         self._vertex(u).len() as u8 - 1

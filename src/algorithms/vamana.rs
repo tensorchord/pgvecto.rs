@@ -49,11 +49,11 @@ impl VamanaOptions {
     }
 }
 
-pub struct Vamana<D: DistanceFamily> {
-    implementation: VamanaImpl<D>,
+pub struct Vamana {
+    implementation: VamanaImpl,
 }
 
-impl<D: DistanceFamily> Algo for Vamana<D> {
+impl Algo for Vamana {
     type Error = VamanaError;
 
     fn prebuild(
@@ -61,7 +61,7 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
         options: IndexOptions,
     ) -> Result<(), Self::Error> {
         let vamana_options = options.algorithm.clone().unwrap_vamana();
-        VamanaImpl::<D>::prebuild(
+        VamanaImpl::prebuild(
             storage,
             options.capacity,
             vamana_options.r,
@@ -88,6 +88,7 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
             vamana_options.l,
             vamana_options.build_threads,
             vamana_options.memmap,
+            options.distance,
         )?;
         Ok(Self { implementation })
     }
@@ -108,6 +109,7 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
             vamana_options.l,
             vamana_options.build_threads,
             vamana_options.memmap,
+            options.distance,
         )?;
         Ok(Self { implementation })
     }
