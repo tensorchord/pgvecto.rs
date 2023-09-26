@@ -21,15 +21,15 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 
 ## Comparison with pgvector
 
-|                                             | pgvecto.rs                          | pgvector                  |
-| ------------------------------------------- | ----------------------------------- | ------------------------- |
-| Transaction support                         | ✅                                  | ⚠️                        |
-| Sufficient Result with Delete/Update/Filter | ✅                                  | ⚠️                        |
-| Vector Dimension Limit                      | 65535                               | 2000                      |
-| Prefilter on HNSW                           | ✅                                  | ❌                        |
-| Parallel Index build                        | ⚡️ Linearly faster with more cores | 🐌 Only single core used  |
-| Index Persistence                           | mmap file                           | Postgres internal storage |
-| WAL amplification                           | 2x 😃                               | 30x 🧐                    |
+|                                             | pgvecto.rs                        | pgvector                  |
+| ------------------------------------------- | --------------------------------- | ------------------------- |
+| Transaction support                         | ✅                                 | ⚠️                         |
+| Sufficient Result with Delete/Update/Filter | ✅                                 | ⚠️                         |
+| Vector Dimension Limit                      | 65535                             | 2000                      |
+| Prefilter on HNSW                           | ✅                                 | ❌                         |
+| Parallel Index build                        | ⚡️ Linearly faster with more cores | 🐌 Only single core used   |
+| Index Persistence                           | mmap file                         | Postgres internal storage |
+| WAL amplification                           | 2x 😃                              | 30x 🧐                     |
 
 And based on our benchmark, pgvecto.rs can be up to 2x faster than pgvector on hnsw indexes with same configurations. Read more about the comparison at [here](./docs/comparison-pgvector.md).
 
@@ -113,25 +113,28 @@ You can create an index, using squared Euclidean distance with the following SQL
 -- Using HNSW algorithm.
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
-WITH (options = $$
-capacity = 2097152
-[vectors]
-memmap = "ram"
-[algorithm.hnsw]
-memmap = "ram"
-$$);
+WITH (options = "capacity = 2097152");
 
---- Or using IVFFlat algorithm.
+--- Or using bruteforce with PQ.
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
 capacity = 2097152
 [vectors]
-memmap = "ram"
+memmap = "disk"
+[algorithm.flat]
+quantization = { product = { ratio = "x16" } }
+$$);
+
+--- Or using IVFPQ algorithm.
+
+CREATE INDEX ON items USING vectors (embedding l2_ops)
+WITH (options = $$
+capacity = 2097152
+[vectors]
+memmap = "disk"
 [algorithm.ivf]
-memmap = "ram"
-nlist = 1000
-nprobe = 10
+quantization = { product = { ratio = "x16" } }
 $$);
 
 --- Or using Vamana algorithm.
@@ -139,10 +142,7 @@ $$);
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
 capacity = 2097152
-[vectors]
-memmap = "ram"
 [algorithm.vamana]
-memmap = "ram"
 $$);
 ```
 
@@ -186,72 +186,93 @@ There is only one exception: indexes cannot be created on columns without specif
 
 We utilize TOML syntax to express the index's configuration. Here's what each key in the configuration signifies:
 
-| Key                   | Type    | Description                                                                                                           |
-| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| capacity              | integer | The index's capacity. The value should be greater than the number of rows in your table.                              |
-| vectors               | table   | Configuration of background process vector storage.                                                                   |
-| algorithm.flat        | table   | If this table is set, the brute force algorithm will be used for the index.                                           |
-| algorithm.ivf         | table   | If this table is set, the IVF algorithm will be used for the index.                                                   |
-| algorithm.hnsw        | table   | If this table is set, the HNSW algorithm will be used for the index.                                                  |
+| Key       | Type    | Description                                                                              |
+| --------- | ------- | ---------------------------------------------------------------------------------------- |
+| capacity  | integer | The index's capacity. The value should be greater than the number of rows in your table. |
+| vectors   | table   | Configuration of background process vector storage.                                      |
+| algorithm | table   | The algorithm to be used for indexing.                                                   |
+
+Options for table `algorithm`.
+
+| Key    | Type  | Description                                                             |
+| ------ | ----- | ----------------------------------------------------------------------- |
+| flat   | table | If this table is set, brute force algorithm will be used for the index. |
+| ivf    | table | If this table is set, IVF will be used for the index.                   |
+| hnsw   | table | If this table is set, HNSW will be used for the index.                  |
+| vamana | table | If this table is set. vamana will be used for the index.                |
+
+You can choose only one algorithm in above indexing algorithms. Default value is `hnsw`.
 
 Options for table `vectors`.
 
-| Key                   | Type    | Description                                                                                                           |
-| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| memmap                | string  | (Optional) `ram` ensures that the vectors always stays in memory while `disk` suggests otherwise.                     |
+| Key    | Type   | Description                                                                                              |
+| ------ | ------ | -------------------------------------------------------------------------------------------------------- |
+| memmap | string | `"ram"` keeps vectors always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`. |
 
 Options for table `flat`.
 
-| Key                   | Type    | Description                                                                                                           |
-| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| quantization          | table   | (Optional) The quantization algorithm to be used.                                                                     |
+| Key          | Type  | Description                                |
+| ------------ | ----- | ------------------------------------------ |
+| quantization | table | The algorithm to be used for quantization. |
 
 Options for table `ivf`.
 
-| Key                   | Type    | Description                                                                                                           |
-| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| memmap                | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
-| nlist                 | integer | Number of cluster units.                                                                                              |
-| nprobe                | integer | Number of units to query.                                                                                             |
-| quantization          | table   | (Optional) The quantization algorithm to be used.                                                                     |
+| Key              | Type    | Description                                                                                                        |
+| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
+| memmap           | string  | `"ram"` keeps algorithm storage always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`. |
+| build_threads    | integer | How many threads to be used for building the index. Default value is the number of hardware threads.               |
+| max_threads      | integer | How many threads can be used for searching in the index. Default value is twice of the number of hardware threads. |
+| nlist            | integer | Number of cluster units. Default value is `1000`.                                                                  |
+| nprobe           | integer | Number of units to query. Default value is `10`.                                                                   |
+| least_iterations | integer | Least iterations for K-Means clustering. Default value is `16`.                                                    |
+| iterations       | integer | Max iterations for K-Means clustering. Default value is `500`.                                                     |
+| quantization     | table   | The quantization algorithm to be used.                                                                             |
 
 Options for table `hnsw`.
 
-| Key                   | Type    | Description                                                                                                           |
-| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| memmap                | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
-| m                     | integer | (Optional) Maximum degree of the node.                                                                                |
-| ef                    | integer | (Optional) Search scope in building.                                                                                  |
-| quantization          | table   | (Optional) The quantization algorithm to be used.                                                                     |
+| Key             | Type    | Description                                                                                                        |
+| --------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
+| memmap          | string  | `"ram"` keeps algorithm storage always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`. |
+| build_threads   | integer | How many threads to be used for building the index. Default value is the number of hardware threads.               |
+| m               | integer | Maximum degree of the node. Default value is `36`.                                                                 |
+| ef_construction | integer | Search scope in building.  Default value is `500`.                                                                 |
+| quantization    | table   | The quantization algorithm to be used.                                                                             |
 
 Options for table `vamana`.
 
-| Key                   | Type    | Description                                                                                                           |
-| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| memmap                | string  | (Optional) `ram` ensures that the persisent part of algorithm always stays in memory while `disk` suggests otherwise. |
-| r                     | integer | (Optional) Maximum degree of the node. Default value is 50.                                                                                |
-| l                    | integer | (Optional) Search scope in building. Default value is 70.                                                                                 |
-| alpha                    | float | (Optional) Slack factor in buiding. Default value is 1.2.                                                                               |
+| Key           | Type    | Description                                                                                                        |
+| ------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
+| memmap        | string  | `"ram"` keeps algorithm storage always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`. |
+| build_threads | integer | How many threads to be used for building the index. Default value is the number of hardware threads.               |
+| r             | integer | Maximum degree of the node. Default value is `50`.                                                                 |
+| l             | integer | Search scope in building. Default value is `70`.                                                                   |
+| alpha         | float   | Slack factor in buiding. Default value is `1.2`.                                                                   |
 
 Options for table `quantization`.
 
-| Key                   | Type    | Description                                                                                                           |
-| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| trivial               | table   | (Optional) If this table is set, no quantization is used.                                                             |
-| scalar                | table   | (Optional) If this table is set, scalar quantization is used.                                                         |
-| product               | table   | (Optional) If this table is set, product quantization is used.                                                        |
+| Key     | Type  | Description                                         |
+| ------- | ----- | --------------------------------------------------- |
+| trivial | table | If this table is set, no quantization is used.      |
+| scalar  | table | If this table is set, scalar quantization is used.  |
+| product | table | If this table is set, product quantization is used. |
+
+You can choose only one algorithm in above indexing algorithms. Default value is `trivial`.
 
 Options for table `scalar`.
 
-| Key                   | Type    | Description                                                                                                           |
-| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| Key    | Type   | Description                                                                                                        |
+| ------ | ------ | ------------------------------------------------------------------------------------------------------------------ |
+| memmap | string | `"ram"` keeps quantized vectors always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`. |
+
+The compression ratio for scalar production is always `"x4"`: if the size of vectors is 1024 MB, then the size of quantized vectors is 256 MB.
 
 Options for table `product`.
 
-| Key                   | Type    | Description                                                                                                           |
-| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| sample                | integer | Samples to be used for quantization.                                                                                  |
-| ratio                 | string  | Compression ratio for quantization. Only `x1`, `x2`, `x4`, ... `x64` are allowed.                                     |
+| Key    | Type    | Description                                                                                                              |
+| ------ | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| memmap | string  | `"ram"` keeps quantized vectors always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`.       |
+| sample | integer | Samples to be used for quantization. Default value is `65535`.                                                           |
+| ratio  | string  | Compression ratio for quantization. Only `"x4"`, `"x8"`, `"x16"`, `"x32"`, `"x64"` are allowed. Default value is `"x4"`. |
 
 And you can change the number of expected result (such as `ef_search` in hnsw) by using the following SQL.
 

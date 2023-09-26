@@ -12,13 +12,15 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScalarQuantizationOptions {
-    #[serde(default = "ScalarQuantizationOptions::default_memmap")]
+    #[serde(default)]
     pub memmap: Memmap,
 }
 
-impl ScalarQuantizationOptions {
-    fn default_memmap() -> Memmap {
-        Memmap::Ram
+impl Default for ScalarQuantizationOptions {
+    fn default() -> Self {
+        Self {
+            memmap: Default::default(),
+        }
     }
 }
 

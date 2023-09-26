@@ -28,7 +28,7 @@ pub enum QuantizationOptions {
 
 impl Default for QuantizationOptions {
     fn default() -> Self {
-        Self::Trivial(TrivialQuantizationOptions {})
+        Self::Trivial(Default::default())
     }
 }
 

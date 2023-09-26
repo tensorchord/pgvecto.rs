@@ -15,3 +15,9 @@ pub enum Memmap {
     Ram = 0,
     Disk = 1,
 }
+
+impl Default for Memmap {
+    fn default() -> Self {
+        Memmap::Ram
+    }
+}

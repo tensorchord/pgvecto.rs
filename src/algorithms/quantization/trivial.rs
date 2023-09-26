@@ -12,6 +12,12 @@ use std::sync::Arc;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrivialQuantizationOptions {}
 
+impl Default for TrivialQuantizationOptions {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
 #[derive(Clone)]
 pub struct TrivialQuantization {
     vectors: Arc<Vectors>,

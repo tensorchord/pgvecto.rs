@@ -108,7 +108,9 @@ unsafe fn get_parsed_from_varlena(helper: *const pgrx::pg_sys::varlena) -> Parse
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Parsed {
     capacity: usize,
+    #[serde(default)]
     vectors: VectorsOptions,
+    #[serde(default)]
     algorithm: AlgorithmOptions,
 }
 

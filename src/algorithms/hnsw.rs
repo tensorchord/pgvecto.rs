@@ -21,7 +21,7 @@ pub enum HnswError {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HnswOptions {
-    #[serde(default = "HnswOptions::default_memmap")]
+    #[serde(default)]
     pub memmap: Memmap,
     #[serde(default = "HnswOptions::default_build_threads")]
     pub build_threads: usize,
@@ -36,9 +36,6 @@ pub struct HnswOptions {
 }
 
 impl HnswOptions {
-    fn default_memmap() -> Memmap {
-        Memmap::Ram
-    }
     fn default_build_threads() -> usize {
         std::thread::available_parallelism().unwrap().get()
     }
@@ -50,6 +47,19 @@ impl HnswOptions {
     }
     fn default_ef_construction() -> usize {
         500
+    }
+}
+
+impl Default for HnswOptions {
+    fn default() -> Self {
+        Self {
+            memmap: Default::default(),
+            build_threads: Self::default_build_threads(),
+            max_threads: Self::default_max_threads(),
+            m: Self::default_m(),
+            ef_construction: Self::default_ef_construction(),
+            quantization: Default::default(),
+        }
     }
 }
 

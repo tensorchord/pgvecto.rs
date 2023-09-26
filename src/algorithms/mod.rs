@@ -44,6 +44,12 @@ pub enum AlgorithmOptions {
     Vamana(VamanaOptions),
 }
 
+impl Default for AlgorithmOptions {
+    fn default() -> Self {
+        Self::Hnsw(Default::default())
+    }
+}
+
 impl AlgorithmOptions {
     pub fn unwrap_flat(self) -> FlatOptions {
         use AlgorithmOptions::*;

@@ -25,6 +25,14 @@ pub struct FlatOptions {
     pub quantization: QuantizationOptions,
 }
 
+impl Default for FlatOptions {
+    fn default() -> Self {
+        Self {
+            quantization: Default::default(),
+        }
+    }
+}
+
 pub struct Flat {
     vectors: Arc<Vectors>,
     quantization: Quantization,

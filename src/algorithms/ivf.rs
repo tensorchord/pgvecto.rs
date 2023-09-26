@@ -22,7 +22,7 @@ pub enum IvfError {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IvfOptions {
-    #[serde(default = "IvfOptions::default_memmap")]
+    #[serde(default)]
     pub memmap: Memmap,
     #[serde(default = "IvfOptions::default_build_threads")]
     pub build_threads: usize,
@@ -30,16 +30,15 @@ pub struct IvfOptions {
     pub least_iterations: usize,
     #[serde(default = "IvfOptions::default_iterations")]
     pub iterations: usize,
+    #[serde(default = "IvfOptions::default_nlist")]
     pub nlist: usize,
+    #[serde(default = "IvfOptions::default_nprobe")]
     pub nprobe: usize,
     #[serde(default)]
     pub quantization: QuantizationOptions,
 }
 
 impl IvfOptions {
-    fn default_memmap() -> Memmap {
-        Memmap::Ram
-    }
     fn default_build_threads() -> usize {
         std::thread::available_parallelism().unwrap().get()
     }
@@ -48,6 +47,26 @@ impl IvfOptions {
     }
     fn default_iterations() -> usize {
         500
+    }
+    fn default_nlist() -> usize {
+        1000
+    }
+    fn default_nprobe() -> usize {
+        10
+    }
+}
+
+impl Default for IvfOptions {
+    fn default() -> Self {
+        Self {
+            memmap: Default::default(),
+            build_threads: Self::default_build_threads(),
+            least_iterations: Self::default_least_iterations(),
+            iterations: Self::default_iterations(),
+            nlist: Self::default_nlist(),
+            nprobe: Self::default_nprobe(),
+            quantization: Default::default(),
+        }
     }
 }
 

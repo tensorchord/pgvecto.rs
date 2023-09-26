@@ -17,20 +17,27 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProductQuantizationOptions {
-    #[serde(default = "ProductQuantizationOptions::default_memmap")]
+    #[serde(default)]
     pub memmap: Memmap,
-    #[serde(default = "ProductQuantizationOptions::default_sample_size")]
+    #[serde(default = "ProductQuantizationOptions::default_sample")]
     pub sample: usize,
     #[serde(default)]
     pub ratio: ProductQuantizationOptionsRatio,
 }
 
 impl ProductQuantizationOptions {
-    fn default_memmap() -> Memmap {
-        Memmap::Ram
-    }
-    fn default_sample_size() -> usize {
+    fn default_sample() -> usize {
         65535
+    }
+}
+
+impl Default for ProductQuantizationOptions {
+    fn default() -> Self {
+        Self {
+            memmap: Default::default(),
+            sample: Self::default_sample(),
+            ratio: Default::default(),
+        }
     }
 }
 
@@ -38,18 +45,16 @@ impl ProductQuantizationOptions {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProductQuantizationOptionsRatio {
-    X1 = 1,
-    X2 = 2,
-    X4 = 4,
-    X8 = 8,
-    X16 = 16,
-    X32 = 32,
-    X64 = 64,
+    X4 = 1,
+    X8 = 2,
+    X16 = 4,
+    X32 = 8,
+    X64 = 16,
 }
 
 impl Default for ProductQuantizationOptionsRatio {
     fn default() -> Self {
-        Self::X1
+        Self::X4
     }
 }
 
