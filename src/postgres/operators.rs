@@ -98,7 +98,7 @@ fn operator_neq(lhs: VectorInput<'_>, rhs: VectorInput<'_>) -> bool {
 #[pgrx::commutator(<=>)]
 fn operator_cosine(lhs: VectorInput<'_>, rhs: VectorInput<'_>) -> Scalar {
     assert_eq!(lhs.len(), rhs.len(), "Invaild operation.");
-    Cosine::distance(&lhs, &rhs)
+    Distance::Cosine.distance(&lhs, &rhs)
 }
 
 #[pgrx::pg_operator(immutable, parallel_safe, requires = ["vector"])]
@@ -106,7 +106,7 @@ fn operator_cosine(lhs: VectorInput<'_>, rhs: VectorInput<'_>) -> Scalar {
 #[pgrx::commutator(<#>)]
 fn operator_dot(lhs: VectorInput<'_>, rhs: VectorInput<'_>) -> Scalar {
     assert_eq!(lhs.len(), rhs.len(), "Invaild operation.");
-    Dot::distance(&lhs, &rhs)
+    Distance::Dot.distance(&lhs, &rhs)
 }
 
 #[pgrx::pg_operator(immutable, parallel_safe, requires = ["vector"])]
@@ -114,5 +114,5 @@ fn operator_dot(lhs: VectorInput<'_>, rhs: VectorInput<'_>) -> Scalar {
 #[pgrx::commutator(<->)]
 fn operator_l2(lhs: VectorInput<'_>, rhs: VectorInput<'_>) -> Scalar {
     assert_eq!(lhs.len(), rhs.len(), "Invaild operation.");
-    L2::distance(&lhs, &rhs)
+    Distance::L2.distance(&lhs, &rhs)
 }

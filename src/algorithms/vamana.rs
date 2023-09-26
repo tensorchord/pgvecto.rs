@@ -16,7 +16,7 @@ pub enum VamanaError {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VamanaOptions {
-    #[serde(default = "VamanaOptions::default_memmap")]
+    #[serde(default)]
     pub memmap: Memmap,
     /// out degree bound
     #[serde(default = "VamanaOptions::default_r")]
@@ -32,9 +32,6 @@ pub struct VamanaOptions {
 }
 
 impl VamanaOptions {
-    fn default_memmap() -> Memmap {
-        Memmap::Ram
-    }
     fn default_r() -> usize {
         50
     }
@@ -49,11 +46,23 @@ impl VamanaOptions {
     }
 }
 
-pub struct Vamana<D: DistanceFamily> {
-    implementation: VamanaImpl<D>,
+impl Default for VamanaOptions {
+    fn default() -> Self {
+        Self {
+            memmap: Default::default(),
+            r: Self::default_r(),
+            alpha: Self::default_alpha(),
+            l: Self::default_l(),
+            build_threads: Self::default_build_threads(),
+        }
+    }
 }
 
-impl<D: DistanceFamily> Algo for Vamana<D> {
+pub struct Vamana {
+    implementation: VamanaImpl,
+}
+
+impl Algo for Vamana {
     type Error = VamanaError;
 
     fn prebuild(
@@ -61,7 +70,7 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
         options: IndexOptions,
     ) -> Result<(), Self::Error> {
         let vamana_options = options.algorithm.clone().unwrap_vamana();
-        VamanaImpl::<D>::prebuild(
+        VamanaImpl::prebuild(
             storage,
             options.capacity,
             vamana_options.r,
@@ -88,6 +97,7 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
             vamana_options.l,
             vamana_options.build_threads,
             vamana_options.memmap,
+            options.d,
         )?;
         Ok(Self { implementation })
     }
@@ -108,6 +118,7 @@ impl<D: DistanceFamily> Algo for Vamana<D> {
             vamana_options.l,
             vamana_options.build_threads,
             vamana_options.memmap,
+            options.d,
         )?;
         Ok(Self { implementation })
     }

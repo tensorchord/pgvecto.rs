@@ -1,4 +1,6 @@
 use super::impls::hnsw::HnswImpl;
+use super::quantization::QuantizationError;
+use super::quantization::QuantizationOptions;
 use super::Algo;
 use crate::bgworker::index::IndexOptions;
 use crate::bgworker::storage::Storage;
@@ -13,12 +15,13 @@ use thiserror::Error;
 
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
 pub enum HnswError {
-    //
+    #[error("Quantization {0}")]
+    Quantization(#[from] QuantizationError),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HnswOptions {
-    #[serde(default = "HnswOptions::default_memmap")]
+    #[serde(default)]
     pub memmap: Memmap,
     #[serde(default = "HnswOptions::default_build_threads")]
     pub build_threads: usize,
@@ -28,12 +31,11 @@ pub struct HnswOptions {
     pub m: usize,
     #[serde(default = "HnswOptions::default_ef_construction")]
     pub ef_construction: usize,
+    #[serde(default)]
+    pub quantization: QuantizationOptions,
 }
 
 impl HnswOptions {
-    fn default_memmap() -> Memmap {
-        Memmap::Ram
-    }
     fn default_build_threads() -> usize {
         std::thread::available_parallelism().unwrap().get()
     }
@@ -48,11 +50,24 @@ impl HnswOptions {
     }
 }
 
-pub struct Hnsw<D: DistanceFamily> {
-    implementation: HnswImpl<D>,
+impl Default for HnswOptions {
+    fn default() -> Self {
+        Self {
+            memmap: Default::default(),
+            build_threads: Self::default_build_threads(),
+            max_threads: Self::default_max_threads(),
+            m: Self::default_m(),
+            ef_construction: Self::default_ef_construction(),
+            quantization: Default::default(),
+        }
+    }
 }
 
-impl<D: DistanceFamily> Algo for Hnsw<D> {
+pub struct Hnsw {
+    x: HnswImpl,
+}
+
+impl Algo for Hnsw {
     type Error = HnswError;
 
     fn prebuild(
@@ -60,11 +75,13 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
         options: IndexOptions,
     ) -> Result<(), Self::Error> {
         let hnsw_options = options.algorithm.clone().unwrap_hnsw();
-        HnswImpl::<D>::prebuild(
+        HnswImpl::prebuild(
             storage,
             options.capacity,
             hnsw_options.m,
             hnsw_options.memmap,
+            options,
+            hnsw_options,
         )?;
         Ok(())
     }
@@ -76,7 +93,7 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
         n: usize,
     ) -> Result<Self, HnswError> {
         let hnsw_options = options.algorithm.clone().unwrap_hnsw();
-        let implementation = HnswImpl::new(
+        let x = HnswImpl::new(
             storage,
             vectors,
             options.dims,
@@ -85,6 +102,9 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
             hnsw_options.m,
             hnsw_options.ef_construction,
             hnsw_options.memmap,
+            options.d,
+            options,
+            hnsw_options.clone(),
         )?;
         let i = AtomicUsize::new(0);
         std::thread::scope(|scope| -> Result<(), HnswError> {
@@ -96,7 +116,7 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
                         if i >= n {
                             break;
                         }
-                        implementation.insert(i)?;
+                        x.insert(i)?;
                     }
                     Result::Ok(())
                 }));
@@ -106,7 +126,7 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
             }
             Result::Ok(())
         })?;
-        Ok(Self { implementation })
+        Ok(Self { x })
     }
 
     fn load(
@@ -114,8 +134,8 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
         options: IndexOptions,
         vectors: Arc<Vectors>,
     ) -> Result<Self, HnswError> {
-        let hnsw_options = options.algorithm.unwrap_hnsw();
-        let implementation = HnswImpl::load(
+        let hnsw_options = options.algorithm.clone().unwrap_hnsw();
+        let x = HnswImpl::load(
             storage,
             vectors,
             options.dims,
@@ -124,11 +144,14 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
             hnsw_options.m,
             hnsw_options.ef_construction,
             hnsw_options.memmap,
+            options.d,
+            options,
+            hnsw_options,
         )?;
-        Ok(Self { implementation })
+        Ok(Self { x })
     }
     fn insert(&self, insert: usize) -> Result<(), HnswError> {
-        self.implementation.insert(insert)
+        self.x.insert(insert)
     }
     fn search<F>(
         &self,
@@ -139,6 +162,6 @@ impl<D: DistanceFamily> Algo for Hnsw<D> {
     where
         F: FnMut(u64) -> bool,
     {
-        self.implementation.search(target, k, filter)
+        self.x.search(target, k, filter)
     }
 }

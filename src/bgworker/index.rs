@@ -31,7 +31,8 @@ pub enum IndexError {
 pub struct IndexOptions {
     #[validate(range(min = 1))]
     pub dims: u16,
-    pub distance: Distance,
+    #[serde(rename = "distance")]
+    pub d: Distance,
     #[validate(range(min = 1))]
     pub capacity: usize,
     pub vectors: VectorsOptions,
@@ -56,7 +57,7 @@ impl Index {
         for f in std::fs::read_dir(".").expect("Failed to clean.") {
             let f = f.unwrap();
             if let Some(filename) = f.file_name().to_str() {
-                if filename.starts_with(&format!("{}_", id.as_u32())) {
+                if filename.starts_with(&format!("{}_", id)) {
                     remove_file_if_exists(filename).expect("Failed to delete.");
                 }
             }
@@ -90,7 +91,7 @@ impl Index {
         storage.persist();
         let filter_delete = FilterDelete::new();
         let wal = {
-            let path_wal = format!("{}_wal", id.as_u32());
+            let path_wal = format!("{}_wal", id);
             let mut wal = Wal::create(path_wal);
             let log = LogFirst {
                 options: options.clone(),
@@ -111,7 +112,7 @@ impl Index {
 
     pub fn load(id: Id) -> Self {
         let mut storage = Storage::load(id);
-        let mut wal = Wal::open(format!("{}_wal", id.as_u32()));
+        let mut wal = Wal::open(format!("{}_wal", id));
         let LogFirst { options } = wal
             .read()
             .expect("The index is broken.")

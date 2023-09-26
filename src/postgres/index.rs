@@ -34,11 +34,18 @@ pub unsafe fn init() {
 fn vectors_amhandler(
     _fcinfo: pgrx::pg_sys::FunctionCallInfo,
 ) -> pgrx::PgBox<pgrx::pg_sys::IndexAmRoutine> {
-    let mut am_routine = unsafe {
-        pgrx::PgBox::<pgrx::pg_sys::IndexAmRoutine>::alloc_node(
-            pgrx::pg_sys::NodeTag_T_IndexAmRoutine,
-        )
-    };
+    unsafe {
+        let mut am_routine = pgrx::PgBox::<pgrx::pg_sys::IndexAmRoutine>::alloc0();
+        *am_routine = AM_HANDLER;
+        am_routine.into_pg_boxed()
+    }
+}
+
+const AM_HANDLER: pgrx::pg_sys::IndexAmRoutine = {
+    let mut am_routine =
+        unsafe { std::mem::MaybeUninit::<pgrx::pg_sys::IndexAmRoutine>::zeroed().assume_init() };
+
+    am_routine.type_ = pgrx::pg_sys::NodeTag_T_IndexAmRoutine;
 
     am_routine.amstrategies = 1;
     am_routine.amsupport = 0;
@@ -75,8 +82,8 @@ fn vectors_amhandler(
     am_routine.ambulkdelete = Some(ambulkdelete);
     am_routine.amvacuumcleanup = Some(amvacuumcleanup);
 
-    am_routine.into_pg_boxed()
-}
+    am_routine
+};
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn amvalidate(opclass_oid: pgrx::pg_sys::Oid) -> bool {

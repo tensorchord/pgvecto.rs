@@ -11,13 +11,15 @@ use std::sync::atomic::Ordering;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VectorsOptions {
-    #[serde(default = "VectorsOptions::default_memmap")]
+    #[serde(default)]
     pub memmap: Memmap,
 }
 
-impl VectorsOptions {
-    fn default_memmap() -> Memmap {
-        Memmap::Ram
+impl Default for VectorsOptions {
+    fn default() -> Self {
+        Self {
+            memmap: Default::default(),
+        }
     }
 }
 

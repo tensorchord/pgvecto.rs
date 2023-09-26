@@ -7,12 +7,14 @@ on:
       - 'src/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
+      - 'rust-toolchain.toml'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'src/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
+      - 'rust-toolchain.toml'
   merge_group:
   workflow_dispatch:
 

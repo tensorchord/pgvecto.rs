@@ -81,7 +81,7 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
     let parsed = get_parsed_from_varlena((*index_relation).rd_options);
     let options = IndexOptions {
         dims,
-        distance,
+        d: distance,
         capacity: parsed.capacity,
         vectors: parsed.vectors,
         algorithm: parsed.algorithm,
@@ -108,7 +108,9 @@ unsafe fn get_parsed_from_varlena(helper: *const pgrx::pg_sys::varlena) -> Parse
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Parsed {
     capacity: usize,
+    #[serde(default)]
     vectors: VectorsOptions,
+    #[serde(default)]
     algorithm: AlgorithmOptions,
 }
 

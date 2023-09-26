@@ -2,7 +2,7 @@ mod distance;
 mod scalar;
 mod sys;
 
-pub use self::distance::{Cosine, Distance, DistanceFamily, Dot, L2};
+pub use self::distance::Distance;
 pub use self::scalar::{Float, Scalar};
 pub use self::sys::{Id, Pointer};
 
@@ -14,4 +14,10 @@ use serde::{Deserialize, Serialize};
 pub enum Memmap {
     Ram = 0,
     Disk = 1,
+}
+
+impl Default for Memmap {
+    fn default() -> Self {
+        Memmap::Ram
+    }
 }

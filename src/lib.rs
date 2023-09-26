@@ -10,6 +10,7 @@
 #![feature(new_uninit)]
 #![feature(int_roundings)]
 #![feature(never_type)]
+#![feature(const_maybe_uninit_zeroed)]
 #![allow(clippy::complexity)]
 #![allow(clippy::style)]
 
