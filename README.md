@@ -1,5 +1,5 @@
 <div align="center">
-<h1>pgvecto.rs</h1>
+<h1>Pgvecto.rs</h1>
 </div>
 
 <p align=center>
