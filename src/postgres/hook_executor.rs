@@ -81,7 +81,12 @@ unsafe extern "C" fn rewrite_plan_state(
             let node = node as *mut pgrx::pg_sys::IndexScanState;
             let index_relation = (*node).iss_RelationDesc;
             // Check the pointer of `amvalidate`.
-            if (*(*index_relation).rd_indam).amvalidate == Some(super::index::amvalidate) {
+            if index_relation
+                .as_ref()
+                .and_then(|p| p.rd_indam.as_ref())
+                .and_then(|p| Some(p.amvalidate == Some(super::index::amvalidate)))
+                .unwrap_or(false)
+            {
                 // The logic is copied from Postgres source code.
                 if (*node).iss_ScanDesc.is_null() {
                     (*node).iss_ScanDesc = pgrx::pg_sys::index_beginscan(

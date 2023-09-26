@@ -131,7 +131,6 @@ impl Distance {
         match self {
             Distance::L2 => {
                 let width = dims.div_ceil(ratio);
-                assert!(lhs.len() == width as usize);
                 let mut result = Scalar::Z;
                 for i in 0..width {
                     let k = std::cmp::min(ratio, dims - ratio * i);
@@ -144,7 +143,6 @@ impl Distance {
             }
             Distance::Cosine => {
                 let width = dims.div_ceil(ratio);
-                assert!(lhs.len() == width as usize);
                 let mut xy = Scalar::Z;
                 let mut x2 = Scalar::Z;
                 let mut y2 = Scalar::Z;
@@ -162,7 +160,6 @@ impl Distance {
             }
             Distance::Dot => {
                 let width = dims.div_ceil(ratio);
-                assert!(lhs.len() == width as usize);
                 let mut xy = Scalar::Z;
                 for i in 0..width {
                     let k = std::cmp::min(ratio, dims - ratio * i);
@@ -187,7 +184,6 @@ impl Distance {
         match self {
             Distance::L2 => {
                 let width = dims.div_ceil(ratio);
-                assert!(lhs.len() == width as usize);
                 let mut result = Scalar::Z;
                 for i in 0..width {
                     let k = std::cmp::min(ratio, dims - ratio * i);
@@ -201,7 +197,6 @@ impl Distance {
             }
             Distance::Cosine => {
                 let width = dims.div_ceil(ratio);
-                assert!(lhs.len() == width as usize);
                 let mut xy = Scalar::Z;
                 let mut x2 = Scalar::Z;
                 let mut y2 = Scalar::Z;
@@ -220,7 +215,6 @@ impl Distance {
             }
             Distance::Dot => {
                 let width = dims.div_ceil(ratio);
-                assert!(lhs.len() == width as usize);
                 let mut xy = Scalar::Z;
                 for i in 0..width {
                     let k = std::cmp::min(ratio, dims - ratio * i);
@@ -247,7 +241,6 @@ impl Distance {
         match self {
             Distance::L2 => {
                 let width = dims.div_ceil(ratio);
-                assert!(lhs.len() == width as usize);
                 let mut result = Scalar::Z;
                 for i in 0..width {
                     let k = std::cmp::min(ratio, dims - ratio * i);
@@ -261,7 +254,6 @@ impl Distance {
             }
             Distance::Cosine => {
                 let width = dims.div_ceil(ratio);
-                assert!(lhs.len() == width as usize);
                 let mut xy = Scalar::Z;
                 let mut x2 = Scalar::Z;
                 let mut y2 = Scalar::Z;
@@ -280,7 +272,6 @@ impl Distance {
             }
             Distance::Dot => {
                 let width = dims.div_ceil(ratio);
-                assert!(lhs.len() == width as usize);
                 let mut xy = Scalar::Z;
                 for i in 0..width {
                     let k = std::cmp::min(ratio, dims - ratio * i);

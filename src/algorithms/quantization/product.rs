@@ -169,7 +169,6 @@ impl Quan for ProductQuantization {
         let dims = self.dims;
         let ratio = self.ratio;
         let width = dims.div_ceil(ratio);
-        assert!(lhs.len() == width as usize);
         let rhs = &self.data[rhs * width as usize..][..width as usize];
         d.product_quantization_distance(dims, ratio, &self.centroids, lhs, rhs)
     }
@@ -257,7 +256,6 @@ impl ProductQuantization {
         let dims = self.dims;
         let ratio = self.ratio;
         let width = dims.div_ceil(ratio);
-        assert!(lhs.len() == width as usize);
         let rhs = &self.data[rhs * width as usize..][..width as usize];
         d.product_quantization_distance_with_delta(dims, ratio, &self.centroids, lhs, rhs, delta)
     }

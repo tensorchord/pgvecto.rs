@@ -168,6 +168,10 @@ impl HnswImpl {
         let len_indexers = capacity;
         let len_vertexs = capacity * 2;
         let len_edges = capacity * 2 * (2 * m);
+        let indexers = unsafe { storage.alloc_mmap_slice(memmap, len_indexers).assume_init() };
+        let vertexs = unsafe { storage.alloc_mmap_slice(memmap, len_vertexs).assume_init() };
+        let edges = unsafe { storage.alloc_mmap_slice(memmap, len_edges).assume_init() };
+        let entry = unsafe { storage.alloc_mmap(memmap).assume_init() };
         let quantization = Quantization::load(
             storage,
             index_options,
@@ -175,10 +179,10 @@ impl HnswImpl {
             vectors.clone(),
         );
         Ok(Self {
-            indexers: unsafe { storage.alloc_mmap_slice(memmap, len_indexers).assume_init() },
-            vertexs: unsafe { storage.alloc_mmap_slice(memmap, len_vertexs).assume_init() },
-            edges: unsafe { storage.alloc_mmap_slice(memmap, len_edges).assume_init() },
-            entry: unsafe { storage.alloc_mmap(memmap).assume_init() },
+            indexers,
+            vertexs,
+            edges,
+            entry,
             vectors,
             dims,
             m,
@@ -463,9 +467,7 @@ impl HnswImpl {
         self.quantization.distance(self.d, target, u)
     }
     fn _dist1(&self, u: usize, v: usize) -> Scalar {
-        let u = self.vectors.get_vector(u);
-        let v = self.vectors.get_vector(v);
-        self.d.distance(u, v)
+        self.quantization.distance2(self.d, u, v)
     }
     fn _levels(&self, u: usize) -> u8 {
         self._vertex(u).len() as u8 - 1

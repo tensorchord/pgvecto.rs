@@ -33,7 +33,6 @@ pub struct ScalarQuantization {
 impl ScalarQuantization {
     fn process(&self, vector: &[Scalar]) -> Vec<u8> {
         let dims = self.dims;
-        assert!(dims as usize == vector.len());
         let mut result = vec![0u8; dims as usize];
         for i in 0..dims as usize {
             let w = ((vector[i] - self.min[i]) / (self.max[i] - self.min[i]) * 256.0).0 as u32;
@@ -52,13 +51,11 @@ impl Quan for ScalarQuantization {
         Self: Sized,
     {
         let quantization_options = quantization_options.unwrap_scalar_quantization();
+        let memmap = quantization_options.memmap;
         let dims = index_options.dims;
-        storage.palloc_mmap_slice::<Scalar>(quantization_options.memmap, dims as usize);
-        storage.palloc_mmap_slice::<Scalar>(quantization_options.memmap, dims as usize);
-        storage.palloc_mmap_slice::<u8>(
-            quantization_options.memmap,
-            dims as usize * index_options.capacity,
-        );
+        storage.palloc_mmap_slice::<Scalar>(memmap, dims as usize);
+        storage.palloc_mmap_slice::<Scalar>(memmap, dims as usize);
+        storage.palloc_mmap_slice::<u8>(memmap, dims as usize * index_options.capacity);
     }
 
     fn build(
@@ -71,32 +68,31 @@ impl Quan for ScalarQuantization {
         Self: Sized,
     {
         let quantization_options = quantization_options.unwrap_scalar_quantization();
+        let memmap = quantization_options.memmap;
         let dims = index_options.dims;
         let n = vectors.len();
         let mut max = unsafe {
             storage
-                .alloc_mmap_slice::<Scalar>(quantization_options.memmap, dims as usize)
+                .alloc_mmap_slice::<Scalar>(memmap, dims as usize)
                 .assume_init()
         };
         let mut min = unsafe {
             storage
-                .alloc_mmap_slice::<Scalar>(quantization_options.memmap, dims as usize)
+                .alloc_mmap_slice::<Scalar>(memmap, dims as usize)
                 .assume_init()
         };
         max.fill(Scalar::NEG_INFINITY);
         min.fill(Scalar::INFINITY);
         for i in 0..n {
+            let vector = vectors.get_vector(i);
             for j in 0..dims as usize {
-                max[j] = std::cmp::max(max[j], vectors.get_vector(i)[j]);
-                min[j] = std::cmp::max(min[j], vectors.get_vector(i)[j]);
+                max[j] = std::cmp::max(max[j], vector[j]);
+                min[j] = std::cmp::min(min[j], vector[j]);
             }
         }
         let data = unsafe {
             storage
-                .alloc_mmap_slice::<u8>(
-                    quantization_options.memmap,
-                    dims as usize * index_options.capacity,
-                )
+                .alloc_mmap_slice::<u8>(memmap, dims as usize * index_options.capacity)
                 .assume_init()
         };
         Self {
@@ -116,24 +112,22 @@ impl Quan for ScalarQuantization {
     where
         Self: Sized,
     {
-        let quantization_options = quantization_options.unwrap_product_quantization();
+        let quantization_options = quantization_options.unwrap_scalar_quantization();
+        let memmap = quantization_options.memmap;
         let dims = index_options.dims;
         let max = unsafe {
             storage
-                .alloc_mmap_slice::<Scalar>(quantization_options.memmap, dims as usize)
+                .alloc_mmap_slice::<Scalar>(memmap, dims as usize)
                 .assume_init()
         };
         let min = unsafe {
             storage
-                .alloc_mmap_slice::<Scalar>(quantization_options.memmap, dims as usize)
+                .alloc_mmap_slice::<Scalar>(memmap, dims as usize)
                 .assume_init()
         };
         let data = unsafe {
             storage
-                .alloc_mmap_slice::<u8>(
-                    quantization_options.memmap,
-                    dims as usize * index_options.capacity,
-                )
+                .alloc_mmap_slice::<u8>(memmap, dims as usize * index_options.capacity)
                 .assume_init()
         };
         Self {
@@ -158,7 +152,6 @@ impl Quan for ScalarQuantization {
 
     fn distance(&self, d: Distance, lhs: &[Scalar], rhs: usize) -> Scalar {
         let dims = self.dims;
-        assert!(dims as usize == lhs.len());
         let rhs = &self.data[rhs * dims as usize..][..dims as usize];
         d.scalar_quantization_distance(dims, &self.max, &self.min, lhs, rhs)
     }
