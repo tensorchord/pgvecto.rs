@@ -115,13 +115,13 @@ You can create an index, using squared Euclidean distance with the following SQL
 -- Using HNSW algorithm.
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
-WITH (options = "capacity = 2097152");
+WITH (options = "capacity = 67108864");
 
 --- Or using bruteforce with PQ.
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
-capacity = 2097152
+capacity = 67108864
 [vectors]
 memmap = "disk"
 [algorithm.flat]
@@ -132,7 +132,7 @@ $$);
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
-capacity = 2097152
+capacity = 67108864
 [vectors]
 memmap = "disk"
 [algorithm.ivf]
@@ -143,7 +143,7 @@ $$);
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
-capacity = 2097152
+capacity = 67108864
 [algorithm.vamana]
 $$);
 ```
