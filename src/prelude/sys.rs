@@ -19,7 +19,7 @@ impl Id {
 
 impl Display for Id {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self.as_u32())
+        write!(f, "{}", self.as_u32())
     }
 }
 
