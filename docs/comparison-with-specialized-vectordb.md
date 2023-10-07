@@ -14,7 +14,7 @@ UPDATE documents SET embedding = ai_embedding_vector(content) WHERE length(embed
 -- Create an index on the embedding column
 CREATE INDEX ON documents USING vectors (embedding l2_ops)
 WITH (options = $$
-capacity = 67108864
+capacity = 2097152
 [vectors]
 memmap = "ram"
 [algorithm.hnsw]
