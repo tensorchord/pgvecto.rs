@@ -15,23 +15,21 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 - 💃 **Easy to use**: pgvecto.rs is a Postgres extension, which means that you can use it directly within your existing database. This makes it easy to integrate into your existing workflows and applications.
 - 🥅 **Filtering**: pgvecto.rs supports filtering. You can set conditions when searching or retrieving points. This is the missing feature of other postgres extensions.
 - 🚀 **High Performance**: pgvecto.rs is designed to provide significant improvements compared to existing Postgres extensions. Benchmarks have shown that its HNSW index can deliver search performance up to 20 times faster than other indexes like ivfflat.
-- 🔧 **Extensible**: pgvecto.rs is designed to be extensible. Now it supports IVFFlat, HNSW and also in-memory DiskANN(Vamana Graph). It is easy to add new index structures and search algorithms. This flexibility ensures that pgvecto.rs can adapt to emerging vector search algorithms and meet diverse performance needs.
+- 🔧 **Extensible**: pgvecto.rs is designed to be extensible. It is easy to add new index structures and search algorithms. This flexibility ensures that pgvecto.rs can adapt to emerging vector search algorithms and meet diverse performance needs.
 - 🦀 **Rewrite in Rust**: Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
 - 🙋 **Community Driven**: We encourage community involvement and contributions, fostering innovation and continuous improvement.
 
 ## Comparison with pgvector
 
-|                                             | pgvecto.rs                                 | pgvector                  |
-| ------------------------------------------- | ------------------------------------------ | ------------------------- | -------------- |
-| Index Type                                  | IVFFlat + HNSW + in-memory DiskANN(Vamana) |                           | IVFFlat + HNSW |
-| Quantization Support                        | ✅ Scalar and Product Quantization         | ❌                        |
-| Transaction Support                         | ✅                                         | ⚠️                        |
-| Sufficient Result with Delete/Update/Filter | ✅                                         | ⚠️                        |
-| Vector Dimension Limit                      | 65535                                      | 2000                      |
-| Prefilter on HNSW                           | ✅                                         | ❌                        |
-| Parallel Index build                        | ⚡️ Linearly faster with more cores        | 🐌 Only single core used  |
-| Index Persistence                           | mmap file                                  | Postgres internal storage |
-| WAL amplification                           | 2x 😃                                      | 30x 🧐                    |
+|                                             | pgvecto.rs                        | pgvector                  |
+| ------------------------------------------- | --------------------------------- | ------------------------- |
+| Transaction support                         | ✅                                 | ⚠️                         |
+| Sufficient Result with Delete/Update/Filter | ✅                                 | ⚠️                         |
+| Vector Dimension Limit                      | 65535                             | 2000                      |
+| Prefilter on HNSW                           | ✅                                 | ❌                         |
+| Parallel Index build                        | ⚡️ Linearly faster with more cores | 🐌 Only single core used   |
+| Index Persistence                           | mmap file                         | Postgres internal storage |
+| WAL amplification                           | 2x 😃                              | 30x 🧐                     |
 
 And based on our benchmark, pgvecto.rs can be up to 2x faster than pgvector on hnsw indexes with same configurations. Read more about the comparison at [here](./docs/comparison-pgvector.md).
 
@@ -115,13 +113,13 @@ You can create an index, using squared Euclidean distance with the following SQL
 -- Using HNSW algorithm.
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
-WITH (options = "capacity = 67108864");
+WITH (options = "capacity = 2097152");
 
 --- Or using bruteforce with PQ.
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
-capacity = 67108864
+capacity = 2097152
 [vectors]
 memmap = "disk"
 [algorithm.flat]
@@ -132,7 +130,7 @@ $$);
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
-capacity = 67108864
+capacity = 2097152
 [vectors]
 memmap = "disk"
 [algorithm.ivf]
@@ -143,7 +141,7 @@ $$);
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
-capacity = 67108864
+capacity = 2097152
 [algorithm.vamana]
 $$);
 ```
@@ -237,7 +235,7 @@ Options for table `hnsw`.
 | memmap          | string  | `"ram"` keeps algorithm storage always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`. |
 | build_threads   | integer | How many threads to be used for building the index. Default value is the number of hardware threads.               |
 | m               | integer | Maximum degree of the node. Default value is `36`.                                                                 |
-| ef_construction | integer | Search scope in building. Default value is `500`.                                                                  |
+| ef_construction | integer | Search scope in building.  Default value is `500`.                                                                 |
 | quantization    | table   | The quantization algorithm to be used.                                                                             |
 
 Options for table `vamana`.
@@ -285,6 +283,7 @@ SET vectors.k = 32;
 SET LOCAL vectors.k = 32;
 ```
 
+
 ## Limitations
 
 - The index is constructed and persisted using a memory map file (mmap) instead of PostgreSQL's shared buffer. As a result, physical replication or logical replication may not function correctly. Additionally, vector indexes are not automatically loaded when PostgreSQL restarts. To load or unload the index, you can utilize the `vectors_load` and `vectors_unload` commands.
@@ -297,7 +296,7 @@ You could use [envd](https://github.com/tensorchord/envd) to set up the developm
 ```sh
 pip install envd
 envd up
-```
+````
 
 ## Contributing
 
