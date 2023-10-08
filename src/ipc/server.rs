@@ -1,24 +1,26 @@
+use std::error::Error;
+
 use crate::bgworker::index::IndexOptions;
 use crate::ipc::packet::*;
-use crate::ipc::transport::Socket;
-use crate::ipc::ServerIpcError;
 use crate::prelude::*;
 
+use super::{Channel, ChannelWithSerialize};
+
 pub struct RpcHandler {
-    socket: Socket,
+    channel: Channel,
 }
 
 impl RpcHandler {
-    pub(super) fn new(socket: Socket) -> Self {
-        Self { socket }
+    pub(super) fn new(channel: Channel) -> Self {
+        Self { channel }
     }
-    pub fn handle(mut self) -> Result<RpcHandle, ServerIpcError> {
-        Ok(match self.socket.server_recv::<RpcPacket>()? {
+    pub fn handle(mut self) -> Result<RpcHandle, Box<dyn Error>> {
+        Ok(match self.channel.recv::<RpcPacket>()? {
             RpcPacket::Build { id, options } => RpcHandle::Build {
                 id,
                 options,
                 x: Build {
-                    socket: self.socket,
+                    channel: self.channel,
                     reach: false,
                 },
             },
@@ -26,14 +28,14 @@ impl RpcHandler {
                 id,
                 insert,
                 x: Insert {
-                    socket: self.socket,
+                    channel: self.channel,
                 },
             },
             RpcPacket::Delete { id, delete } => RpcHandle::Delete {
                 id,
                 delete,
                 x: Delete {
-                    socket: self.socket,
+                    channel: self.channel,
                 },
             },
             RpcPacket::Search { id, target, k } => RpcHandle::Search {
@@ -41,31 +43,31 @@ impl RpcHandler {
                 target,
                 k,
                 x: Search {
-                    socket: self.socket,
+                    channel: self.channel,
                 },
             },
             RpcPacket::Load { id } => RpcHandle::Load {
                 id,
                 x: Load {
-                    socket: self.socket,
+                    channel: self.channel,
                 },
             },
             RpcPacket::Unload { id } => RpcHandle::Unload {
                 id,
                 x: Unload {
-                    socket: self.socket,
+                    channel: self.channel,
                 },
             },
             RpcPacket::Flush { id } => RpcHandle::Flush {
                 id,
                 x: Flush {
-                    socket: self.socket,
+                    channel: self.channel,
                 },
             },
             RpcPacket::Clean { id } => RpcHandle::Clean {
                 id,
                 x: Clean {
-                    socket: self.socket,
+                    channel: self.channel,
                 },
             },
             RpcPacket::Leave {} => RpcHandle::Leave {},
@@ -115,14 +117,14 @@ pub enum RpcHandle {
 }
 
 pub struct Build {
-    socket: Socket,
+    channel: Channel,
     reach: bool,
 }
 
 impl Build {
-    pub fn next(&mut self) -> Result<Option<(Box<[Scalar]>, Pointer)>, ServerIpcError> {
+    pub fn next(&mut self) -> Result<Option<(Box<[Scalar]>, Pointer)>, Box<dyn Error>> {
         if !self.reach {
-            let packet = self.socket.server_recv::<NextPacket>()?;
+            let packet = self.channel.recv::<NextPacket>()?;
             match packet {
                 NextPacket::Leave { data: Some(data) } => Ok(Some(data)),
                 NextPacket::Leave { data: None } => {
@@ -134,115 +136,115 @@ impl Build {
             Ok(None)
         }
     }
-    pub fn leave(mut self) -> Result<RpcHandler, ServerIpcError> {
+    pub fn leave(mut self) -> Result<RpcHandler, Box<dyn Error>> {
         let packet = BuildPacket::Leave {};
-        self.socket.server_send(packet)?;
+        self.channel.send(packet)?;
         Ok(RpcHandler {
-            socket: self.socket,
+            channel: self.channel,
         })
     }
 }
 
 pub struct Insert {
-    socket: Socket,
+    channel: Channel,
 }
 
 impl Insert {
-    pub fn leave(mut self) -> Result<RpcHandler, ServerIpcError> {
+    pub fn leave(mut self) -> Result<RpcHandler, Box<dyn Error>> {
         let packet = InsertPacket::Leave {};
-        self.socket.server_send(packet)?;
+        self.channel.send(packet)?;
         Ok(RpcHandler {
-            socket: self.socket,
+            channel: self.channel,
         })
     }
 }
 
 pub struct Delete {
-    socket: Socket,
+    channel: Channel,
 }
 
 impl Delete {
-    pub fn leave(mut self) -> Result<RpcHandler, ServerIpcError> {
+    pub fn leave(mut self) -> Result<RpcHandler, Box<dyn Error>> {
         let packet = DeletePacket::Leave {};
-        self.socket.server_send(packet)?;
+        self.channel.send(packet)?;
         Ok(RpcHandler {
-            socket: self.socket,
+            channel: self.channel,
         })
     }
 }
 
 pub struct Search {
-    socket: Socket,
+    channel: Channel,
 }
 
 impl Search {
-    pub fn check(&mut self, p: Pointer) -> Result<bool, ServerIpcError> {
+    pub fn check(&mut self, p: Pointer) -> Result<bool, Box<dyn Error>> {
         let packet = SearchPacket::Check { p };
-        self.socket.server_send(packet)?;
-        let CheckPacket::Leave { result } = self.socket.server_recv::<CheckPacket>()?;
+        self.channel.send(packet)?;
+        let CheckPacket::Leave { result } = self.channel.recv::<CheckPacket>()?;
         Ok(result)
     }
-    pub fn leave(mut self, result: Vec<Pointer>) -> Result<RpcHandler, ServerIpcError> {
+    pub fn leave(mut self, result: Vec<Pointer>) -> Result<RpcHandler, Box<dyn Error>> {
         let packet = SearchPacket::Leave { result };
-        self.socket.server_send(packet)?;
+        self.channel.send(packet)?;
         Ok(RpcHandler {
-            socket: self.socket,
+            channel: self.channel,
         })
     }
 }
 
 pub struct Load {
-    socket: Socket,
+    channel: Channel,
 }
 
 impl Load {
-    pub fn leave(mut self) -> Result<RpcHandler, ServerIpcError> {
+    pub fn leave(mut self) -> Result<RpcHandler, Box<dyn Error>> {
         let packet = LoadPacket::Leave {};
-        self.socket.server_send(packet)?;
+        self.channel.send(packet)?;
         Ok(RpcHandler {
-            socket: self.socket,
+            channel: self.channel,
         })
     }
 }
 
 pub struct Unload {
-    socket: Socket,
+    channel: Channel,
 }
 
 impl Unload {
-    pub fn leave(mut self) -> Result<RpcHandler, ServerIpcError> {
+    pub fn leave(mut self) -> Result<RpcHandler, Box<dyn Error>> {
         let packet = UnloadPacket::Leave {};
-        self.socket.server_send(packet)?;
+        self.channel.send(packet)?;
         Ok(RpcHandler {
-            socket: self.socket,
+            channel: self.channel,
         })
     }
 }
 
 pub struct Flush {
-    socket: Socket,
+    channel: Channel,
 }
 
 impl Flush {
-    pub fn leave(mut self) -> Result<RpcHandler, ServerIpcError> {
+    pub fn leave(mut self) -> Result<RpcHandler, Box<dyn Error>> {
         let packet = FlushPacket::Leave {};
-        self.socket.server_send(packet)?;
+        self.channel.send(packet)?;
         Ok(RpcHandler {
-            socket: self.socket,
+            channel: self.channel,
         })
     }
 }
 
 pub struct Clean {
-    socket: Socket,
+    channel: Channel,
 }
 
 impl Clean {
-    pub fn leave(mut self) -> Result<RpcHandler, ServerIpcError> {
+    pub fn leave(mut self) -> Result<RpcHandler, Box<dyn Error>> {
         let packet = CleanPacket::Leave {};
-        self.socket.server_send(packet)?;
+        self.channel.send(packet)?;
         Ok(RpcHandler {
-            socket: self.socket,
+            channel: self.channel,
         })
     }
 }

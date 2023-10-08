@@ -1,38 +1,42 @@
+mod channel;
 pub mod client;
+#[cfg(feature = "ipc-use-mmap")]
+mod mmap;
 mod packet;
 pub mod server;
-mod transport;
+#[cfg(not(feature = "ipc-use-mmap"))]
+mod socket;
 
+pub use self::channel::*;
 use self::client::Rpc;
 use self::server::RpcHandler;
-use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
-#[derive(Debug, Clone, Error, Serialize, Deserialize)]
-pub enum ServerIpcError {
-    #[error("The connection is closed.")]
-    Closed,
-    #[error("Server encounters an error.")]
-    Server,
-}
-
-#[derive(Debug, Error, Serialize, Deserialize)]
-pub enum ClientIpcError {
-    #[error("The connection is closed.")]
-    Closed,
-    #[error("Server encounters an error.")]
-    Server,
-}
-
+#[cfg(not(feature = "ipc-use-mmap"))]
 pub fn listen() -> impl Iterator<Item = RpcHandler> {
-    let mut listener = self::transport::Listener::new();
+    let mut listener = self::socket::Listener::new();
     std::iter::from_fn(move || {
-        let socket = listener.accept();
+        let socket = Box::new(listener.accept());
         Some(self::server::RpcHandler::new(socket))
     })
 }
 
+#[cfg(not(feature = "ipc-use-mmap"))]
 pub fn connect() -> Rpc {
-    let socket = self::transport::Socket::new();
+    let socket = Box::new(self::socket::Socket::new());
     self::client::Rpc::new(socket)
+}
+
+#[cfg(feature = "ipc-use-mmap")]
+pub fn listen() -> impl Iterator<Item = RpcHandler> {
+    let mut listener = self::mmap::Listener::new();
+    std::iter::from_fn(move || {
+        let channel = Box::new(listener.accept());
+        Some(self::server::RpcHandler::new(channel))
+    })
+}
+
+#[cfg(feature = "ipc-use-mmap")]
+pub fn connect() -> Rpc {
+    let channel = Box::new(self::mmap::MmapSynchronizer::conn());
+    self::client::Rpc::new(channel)
 }

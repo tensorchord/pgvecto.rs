@@ -1,22 +1,24 @@
+use std::error::Error;
+
 use crate::bgworker::index::IndexOptions;
 use crate::ipc::packet::*;
-use crate::ipc::transport::Socket;
-use crate::ipc::ClientIpcError;
 use crate::prelude::*;
 
+use super::{Channel, ChannelWithSerialize};
+
 pub struct Rpc {
-    socket: Socket,
+    channel: Channel,
 }
 
 impl Rpc {
-    pub(super) fn new(socket: Socket) -> Self {
-        Self { socket }
+    pub(super) fn new(channel: Channel) -> Self {
+        Self { channel }
     }
-    pub fn build(mut self, id: Id, options: IndexOptions) -> Result<BuildHandler, ClientIpcError> {
+    pub fn build(mut self, id: Id, options: IndexOptions) -> Result<BuildHandler, Box<dyn Error>> {
         let packet = RpcPacket::Build { id, options };
-        self.socket.client_send(packet)?;
+        self.channel.send(packet)?;
         Ok(BuildHandler {
-            socket: self.socket,
+            socket: self.channel,
             reach: false,
         })
     }
@@ -25,73 +27,73 @@ impl Rpc {
         id: Id,
         target: Box<[Scalar]>,
         k: usize,
-    ) -> Result<SearchHandler, ClientIpcError> {
+    ) -> Result<SearchHandler, Box<dyn Error>> {
         let packet = RpcPacket::Search { id, target, k };
-        self.socket.client_send(packet)?;
+        self.channel.send(packet)?;
         Ok(SearchHandler {
-            socket: self.socket,
+            channel: self.channel,
         })
     }
     pub fn insert(
         &mut self,
         id: Id,
         insert: (Box<[Scalar]>, Pointer),
-    ) -> Result<(), ClientIpcError> {
+    ) -> Result<(), Box<dyn Error>> {
         let packet = RpcPacket::Insert { id, insert };
-        self.socket.client_send(packet)?;
-        let InsertPacket::Leave {} = self.socket.client_recv::<InsertPacket>()?;
+        self.channel.send(packet)?;
+        let InsertPacket::Leave {} = self.channel.recv::<InsertPacket>()?;
         Ok(())
     }
-    pub fn delete(&mut self, id: Id, delete: Pointer) -> Result<(), ClientIpcError> {
+    pub fn delete(&mut self, id: Id, delete: Pointer) -> Result<(), Box<dyn Error>> {
         let packet = RpcPacket::Delete { id, delete };
-        self.socket.client_send(packet)?;
-        let DeletePacket::Leave {} = self.socket.client_recv::<DeletePacket>()?;
+        self.channel.send(packet)?;
+        let DeletePacket::Leave {} = self.channel.recv::<DeletePacket>()?;
         Ok(())
     }
-    pub fn load(&mut self, id: Id) -> Result<(), ClientIpcError> {
+    pub fn load(&mut self, id: Id) -> Result<(), Box<dyn Error>> {
         let packet = RpcPacket::Load { id };
-        self.socket.client_send(packet)?;
-        let LoadPacket::Leave {} = self.socket.client_recv::<LoadPacket>()?;
+        self.channel.send(packet)?;
+        let LoadPacket::Leave {} = self.channel.recv::<LoadPacket>()?;
         Ok(())
     }
-    pub fn unload(&mut self, id: Id) -> Result<(), ClientIpcError> {
+    pub fn unload(&mut self, id: Id) -> Result<(), Box<dyn Error>> {
         let packet = RpcPacket::Unload { id };
-        self.socket.client_send(packet)?;
-        let UnloadPacket::Leave {} = self.socket.client_recv::<UnloadPacket>()?;
+        self.channel.send(packet)?;
+        let UnloadPacket::Leave {} = self.channel.recv::<UnloadPacket>()?;
         Ok(())
     }
-    pub fn flush(&mut self, id: Id) -> Result<(), ClientIpcError> {
+    pub fn flush(&mut self, id: Id) -> Result<(), Box<dyn Error>> {
         let packet = RpcPacket::Flush { id };
-        self.socket.client_send(packet)?;
-        let FlushPacket::Leave {} = self.socket.client_recv::<FlushPacket>()?;
+        self.channel.send(packet)?;
+        let FlushPacket::Leave {} = self.channel.recv::<FlushPacket>()?;
         Ok(())
     }
-    pub fn clean(&mut self, id: Id) -> Result<(), ClientIpcError> {
+    pub fn clean(&mut self, id: Id) -> Result<(), Box<dyn Error>> {
         let packet = RpcPacket::Clean { id };
-        self.socket.client_send(packet)?;
-        let CleanPacket::Leave {} = self.socket.client_recv::<CleanPacket>()?;
+        self.channel.send(packet)?;
+        let CleanPacket::Leave {} = self.channel.recv::<CleanPacket>()?;
         Ok(())
     }
 }
 
 pub struct BuildHandler {
     reach: bool,
-    socket: Socket,
+    socket: Channel,
 }
 
 impl BuildHandler {
-    pub fn handle(mut self) -> Result<BuildHandle, ClientIpcError> {
+    pub fn handle(mut self) -> Result<BuildHandle, Box<dyn Error>> {
         if !self.reach {
             Ok(BuildHandle::Next {
                 x: Next {
-                    socket: self.socket,
+                    channel: self.socket,
                 },
             })
         } else {
-            Ok(match self.socket.client_recv::<BuildPacket>()? {
+            Ok(match self.socket.recv::<BuildPacket>()? {
                 BuildPacket::Leave {} => BuildHandle::Leave {
                     x: Rpc {
-                        socket: self.socket,
+                        channel: self.socket,
                     },
                 },
                 _ => unreachable!(),
@@ -106,19 +108,19 @@ pub enum BuildHandle {
 }
 
 pub struct Next {
-    socket: Socket,
+    channel: Channel,
 }
 
 impl Next {
     pub fn leave(
         mut self,
         data: Option<(Box<[Scalar]>, Pointer)>,
-    ) -> Result<BuildHandler, ClientIpcError> {
+    ) -> Result<BuildHandler, Box<dyn Error>> {
         let end = data.is_none();
         let packet = NextPacket::Leave { data };
-        self.socket.client_send(packet)?;
+        self.channel.send(packet)?;
         Ok(BuildHandler {
-            socket: self.socket,
+            socket: self.channel,
             reach: end,
         })
     }
@@ -130,22 +132,22 @@ pub enum SearchHandle {
 }
 
 pub struct SearchHandler {
-    socket: Socket,
+    channel: Channel,
 }
 
 impl SearchHandler {
-    pub fn handle(mut self) -> Result<SearchHandle, ClientIpcError> {
-        Ok(match self.socket.client_recv::<SearchPacket>()? {
+    pub fn handle(mut self) -> Result<SearchHandle, Box<dyn Error>> {
+        Ok(match self.channel.recv::<SearchPacket>()? {
             SearchPacket::Check { p } => SearchHandle::Check {
                 p,
                 x: Check {
-                    socket: self.socket,
+                    channel: self.channel,
                 },
             },
             SearchPacket::Leave { result } => SearchHandle::Leave {
                 result,
                 x: Rpc {
-                    socket: self.socket,
+                    channel: self.channel,
                 },
             },
         })
@@ -153,15 +155,15 @@ impl SearchHandler {
 }
 
 pub struct Check {
-    socket: Socket,
+    channel: Channel,
 }
 
 impl Check {
-    pub fn leave(mut self, result: bool) -> Result<SearchHandler, ClientIpcError> {
+    pub fn leave(mut self, result: bool) -> Result<SearchHandler, Box<dyn Error>> {
         let packet = CheckPacket::Leave { result };
-        self.socket.client_send(packet)?;
+        self.channel.send(packet)?;
         Ok(SearchHandler {
-            socket: self.socket,
+            channel: self.channel,
         })
     }
 }

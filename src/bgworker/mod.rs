@@ -7,7 +7,6 @@ pub mod wal;
 
 use self::index::IndexError;
 use crate::ipc::server::RpcHandler;
-use crate::ipc::ServerIpcError;
 use crate::prelude::*;
 use dashmap::DashMap;
 use index::Index;
@@ -80,10 +79,10 @@ fn thread_listening() {
     }
 }
 
-#[derive(Debug, Clone, Error)]
+#[derive(Debug, Error)]
 pub enum SessionError {
     #[error("Ipc")]
-    Ipc(#[from] ServerIpcError),
+    Ipc(#[from] Box<dyn std::error::Error>),
     #[error("Index")]
     Index(#[from] IndexError),
 }

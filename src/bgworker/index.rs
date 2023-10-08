@@ -10,7 +10,6 @@ use crate::algorithms::AlgorithmOptions;
 use crate::bgworker::vectors::VectorsOptions;
 use crate::ipc::server::Build;
 use crate::ipc::server::Search;
-use crate::ipc::ServerIpcError;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::io::ErrorKind;
@@ -19,12 +18,12 @@ use std::sync::Arc;
 use thiserror::Error;
 use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Error)]
+#[derive(Debug, Error)]
 pub enum IndexError {
     #[error("Algorithm {0}")]
     Algorithm(#[from] AlgorithmError),
     #[error("Ipc {0}")]
-    Ipc(#[from] ServerIpcError),
+    Ipc(#[from] Box<dyn std::error::Error>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]

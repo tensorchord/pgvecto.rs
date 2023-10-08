@@ -1,6 +1,7 @@
 use super::hook_transaction::drop_if_commit;
 use crate::postgres::index_scan::Scanner;
 use crate::prelude::*;
+use pgrx::pg_sys::Oid;
 use std::ptr::null_mut;
 
 type PlanstateTreeWalker =
@@ -84,7 +85,12 @@ unsafe extern "C" fn rewrite_plan_state(
             if index_relation
                 .as_ref()
                 .and_then(|p| p.rd_indam.as_ref())
-                .and_then(|p| Some(p.amvalidate == Some(super::index::amvalidate)))
+                .and_then(|p| {
+                    Some(
+                        p.amvalidate
+                            == Some(super::index::amvalidate as unsafe extern "C" fn(Oid) -> bool),
+                    )
+                })
                 .unwrap_or(false)
             {
                 // The logic is copied from Postgres source code.
