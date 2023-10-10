@@ -458,7 +458,7 @@ impl VamanaImpl {
             let mut guard = self.neighbor_size[id].write();
             let neighbor_ids = self._get_neighbors_with_write_guard(id, &guard);
             state.visited.extend(neighbor_ids.iter().map(|x| x.load()));
-            let neighbor_ids = self._robust_prune(id, state.visited, alpha, l)?;
+            let neighbor_ids = self._robust_prune(id, state.visited, alpha, r)?;
             let neighbor_ids: HashSet<usize> = neighbor_ids.into_iter().collect();
             self._set_neighbors(id, &neighbor_ids, &mut guard);
             new_neighbor_ids = neighbor_ids;
@@ -538,29 +538,38 @@ impl VamanaImpl {
 
         let mut new_neighbor_ids: Vec<usize> = vec![];
         while !visited.is_empty() {
-            let mut p = heap.pop().unwrap();
-            while !visited.contains(&p.id) {
-                p = heap.pop().unwrap();
-            }
-
-            new_neighbor_ids.push(p.id);
-            if new_neighbor_ids.len() >= r {
-                break;
-            }
-            let mut to_remove: HashSet<usize> = HashSet::new();
-            for pv in visited.iter() {
-                let dist_prime = self
-                    .d
-                    .distance(self.vectors.get_vector(p.id), self.vectors.get_vector(*pv));
-                let dist_query = self
-                    .d
-                    .distance(self.vectors.get_vector(id), self.vectors.get_vector(*pv));
-                if Scalar::from(alpha) * dist_prime <= dist_query {
-                    to_remove.insert(*pv);
+            if let Some(mut p) = heap.pop() {
+                while !visited.contains(&p.id) {
+                    match heap.pop() {
+                        Some(value) => {
+                            p = value;
+                        }
+                        None => {
+                            return Ok(new_neighbor_ids);
+                        }
+                    }
                 }
-            }
-            for pv in to_remove.iter() {
-                visited.remove(pv);
+                new_neighbor_ids.push(p.id);
+                if new_neighbor_ids.len() >= r {
+                    break;
+                }
+                let mut to_remove: HashSet<usize> = HashSet::new();
+                for pv in visited.iter() {
+                    let dist_prime = self
+                        .d
+                        .distance(self.vectors.get_vector(p.id), self.vectors.get_vector(*pv));
+                    let dist_query = self
+                        .d
+                        .distance(self.vectors.get_vector(id), self.vectors.get_vector(*pv));
+                    if Scalar::from(alpha) * dist_prime <= dist_query {
+                        to_remove.insert(*pv);
+                    }
+                }
+                for pv in to_remove.iter() {
+                    visited.remove(pv);
+                }
+            } else {
+                return Ok(new_neighbor_ids);
             }
         }
         Ok(new_neighbor_ids)
