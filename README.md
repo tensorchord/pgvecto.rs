@@ -283,6 +283,9 @@ SET vectors.k = 32;
 SET LOCAL vectors.k = 32;
 ```
 
+If you want to disable vector indexing or prefilter, we also offer some GUC options:
+- `vectors.enable_vector_index`: Enable or disable the vector index. Default value is `on`.
+- `vectors.enable_prefilter`: Enable or disable the prefilter. Default value is `on`.
 
 ## Limitations
 

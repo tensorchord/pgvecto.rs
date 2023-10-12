@@ -1,4 +1,4 @@
-use pgrx::{GucContext, GucFlags, GucRegistry, GucSetting, PostgresGucEnum};
+use pgrx::{GucContext, GucFlags, GucRegistry, GucSetting};
 use std::ffi::CStr;
 
 pub static OPENAI_API_KEY_GUC: GucSetting<Option<&'static CStr>> =
@@ -6,15 +6,9 @@ pub static OPENAI_API_KEY_GUC: GucSetting<Option<&'static CStr>> =
 
 pub static K: GucSetting<i32> = GucSetting::<i32>::new(64);
 
-pub static FILTER_MODE: GucSetting<FilterMode> =
-    GucSetting::<FilterMode>::new(FilterMode::Prefilter);
+pub static ENABLE_VECTOR_INDEX: GucSetting<bool> = GucSetting::<bool>::new(true);
 
-#[derive(PostgresGucEnum, PartialEq, Eq, Clone, Copy)]
-pub enum FilterMode {
-    Skip,
-    Prefilter,
-    Postfilter,
-}
+pub static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(true);
 
 pub unsafe fn init() {
     GucRegistry::define_string_guc(
@@ -35,11 +29,19 @@ pub unsafe fn init() {
         GucContext::Userset,
         GucFlags::default(),
     );
-    GucRegistry::define_enum_guc(
-        "vectors.filter_mode",
-        "The filter mode for vector index",
-        "The filter mode for vector index",
-        &FILTER_MODE,
+    GucRegistry::define_bool_guc(
+        "vectors.enable_vector_index",
+        "Whether to enable vector index.",
+        "When enabled, it will use existing vector index to speed up the search.",
+        &ENABLE_PREFILTER,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
+    GucRegistry::define_bool_guc(
+        "vectors.enable_prefilter",
+        "Whether to enable prefilter.",
+        "When enabled, it will use prefilter to reduce the number of vectors to search.",
+        &ENABLE_PREFILTER,
         GucContext::Userset,
         GucFlags::default(),
     );

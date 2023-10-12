@@ -1,10 +1,9 @@
+use super::gucs::ENABLE_PREFILTER;
+use super::hook_transaction::client;
 use crate::postgres::datatype::VectorInput;
 use crate::postgres::gucs::K;
 use crate::prelude::*;
 use pgrx::FromDatum;
-
-use super::gucs::{FilterMode, FILTER_MODE};
-use super::hook_transaction::client;
 
 #[derive(Debug, Clone)]
 pub enum Scanner {
@@ -134,7 +133,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         let oid = (*(*scan).indexRelation).rd_id;
         let id = Id::from_sys(oid);
         let vector = vector.expect("`rescan` is never called.");
-        if index_scan_state.is_some() && FILTER_MODE.get() == FilterMode::Prefilter {
+        if index_scan_state.is_some() && ENABLE_PREFILTER.get() {
             client(|rpc| {
                 let index_scan_state = index_scan_state.unwrap();
                 let k = K.get() as _;
