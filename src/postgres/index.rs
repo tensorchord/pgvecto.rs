@@ -3,6 +3,8 @@ use super::index_scan;
 use super::index_setup;
 use super::index_update;
 use crate::postgres::datatype::VectorInput;
+use crate::postgres::gucs::FILTER_MODE;
+use crate::postgres::gucs::FilterMode;
 use crate::prelude::*;
 use std::cell::Cell;
 
@@ -160,7 +162,7 @@ pub unsafe extern "C" fn amcostestimate(
     index_correlation: *mut f64,
     index_pages: *mut f64,
 ) {
-    if (*path).indexorderbys.is_null() {
+    if (*path).indexorderbys.is_null() || FILTER_MODE.get() == FilterMode::Skip {
         *index_startup_cost = f64::MAX;
         *index_total_cost = f64::MAX;
         *index_selectivity = 0.0;
