@@ -3,8 +3,8 @@ use super::index_scan;
 use super::index_setup;
 use super::index_update;
 use crate::postgres::datatype::VectorInput;
-use crate::postgres::gucs::FILTER_MODE;
 use crate::postgres::gucs::FilterMode;
+use crate::postgres::gucs::FILTER_MODE;
 use crate::prelude::*;
 use std::cell::Cell;
 
