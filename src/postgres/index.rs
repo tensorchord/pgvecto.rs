@@ -3,6 +3,7 @@ use super::index_scan;
 use super::index_setup;
 use super::index_update;
 use crate::postgres::datatype::VectorInput;
+use crate::postgres::gucs::ENABLE_VECTOR_INDEX;
 use crate::prelude::*;
 use std::cell::Cell;
 
@@ -160,7 +161,7 @@ pub unsafe extern "C" fn amcostestimate(
     index_correlation: *mut f64,
     index_pages: *mut f64,
 ) {
-    if (*path).indexorderbys.is_null() {
+    if (*path).indexorderbys.is_null() || !ENABLE_VECTOR_INDEX.get() {
         *index_startup_cost = f64::MAX;
         *index_total_cost = f64::MAX;
         *index_selectivity = 0.0;
