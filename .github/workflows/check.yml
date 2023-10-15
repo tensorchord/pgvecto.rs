@@ -67,3 +67,27 @@ jobs:
       env:
         RUST_BACKTRACE: 1
       run: cargo test --all --no-default-features --features "pg${{ matrix.version }} pg_test" -- --nocapture
+
+  test:
+    strategy:
+      matrix:
+        version: [15]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Prepare
+      run: |
+        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+        sudo apt-get update
+        sudo apt-get -y install libpq-dev postgresql-${{ matrix.version }} postgresql-server-dev-${{ matrix.version }}
+        cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
+        cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
+        cargo install sqllogictest-bin
+    - name: Build && Install
+      run: cargo pgrx install --release
+    - name: Sqllogictest
+      run: |
+        sudo systemctl restart postgresql
+        sudo -u postgres psql -f tests/init.sql
+        sudo -u postgres sqllogictest './tests/**/*.slt'
