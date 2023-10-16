@@ -50,7 +50,7 @@ jobs:
     - name: Prepare
       run: |
         cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1) || true
-        cargo pgrx init --pg${{ matrix.version }}=$(which pg_config)
+        cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
     - name: Format check
       run: cargo fmt --check
     - name: Semantic check
@@ -80,7 +80,7 @@ jobs:
     - name: Prepare
       run: |
         cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1) || true
-        cargo pgrx init --pg${{ matrix.version }}=$(which pg_config)
+        cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
     - name: Build
       run: cargo build --verbose
     - name: Test
@@ -113,7 +113,7 @@ jobs:
     - name: Prepare
       run: |
         cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1) || true
-        cargo pgrx init --pg${{ matrix.version }}=$(which pg_config)
+        cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
         cargo install sqllogictest-bin || true
     - name: Build
       run: |

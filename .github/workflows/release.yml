@@ -124,7 +124,7 @@ jobs:
       - name: Prepare
         run: |
           cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1) || true
-          cargo pgrx init --pg${{ matrix.version }}=$(which pg_config)
+          cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
       - name: Build Release
         id: build_release
         run: |
