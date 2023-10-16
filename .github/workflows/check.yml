@@ -45,8 +45,12 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
+        key: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
         restore-keys: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}
+    - name: Prepare
+      run: |
+        cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
+        cargo pgrx init --pg${{ matrix.version }}=$(which pg_config)
     - name: Format check
       run: cargo fmt --check
     - name: Semantic check
@@ -71,7 +75,7 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
+        key: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
         restore-keys: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}
     - name: Prepare
       run: |
@@ -104,7 +108,7 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: cargo-release-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
+        key: cargo-release-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
         restore-keys: cargo-release-${{ runner.os }}-pg${{ matrix.version }}
     - name: Prepare
       run: |
@@ -116,8 +120,11 @@ jobs:
         sudo chmod -R 777 /usr/share/postgresql/${{ matrix.version }}/extension
         sudo chmod -R 777 /usr/lib/postgresql/${{ matrix.version }}/lib
         cargo pgrx install --release
+        psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
+        sudo systemctl restart postgresql@${{ matrix.version }}-main
     - name: Sqllogictest
       run: |
-        sudo systemctl restart postgresql@${{ matrix.version }}-main
+        export password=$(openssl rand -base64 32)
+        psql -c "ALTER USER $USER WITH PASSWORD '$password'"
         psql -d testdb -f ./tests/init.sql
-        sqllogictest -d testdb -w "" './tests/**/*.slt'
+        sqllogictest -u $USER -w $password -d testdb './tests/**/*.slt'
