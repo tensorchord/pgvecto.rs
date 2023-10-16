@@ -101,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/cache@v3
+    - uses: actions/cache/restore@v3
       with:
         path: |
           ~/.cargo/bin/
@@ -113,6 +113,7 @@ jobs:
     - uses: mozilla-actions/sccache-action@v0.0.3
     - name: Prepare
       run: |
+        sudo pg_dropcluster 14 main
         sudo apt-get --purge remove postgresql
         sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
         wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
@@ -121,14 +122,22 @@ jobs:
         cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1) || true
         cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
         cargo install sqllogictest-bin || true
+    - uses: actions/cache/save@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
     - name: Build
       run: |
         sudo chmod -R 777 /usr/share/postgresql/${{ matrix.version }}/extension
         sudo chmod -R 777 /usr/lib/postgresql/${{ matrix.version }}/lib
         cargo pgrx install --release
         sudo systemctl start postgresql@${{ matrix.version }}-main
-        sudo -u postgres createuser -s -w $USER
-        sudo -u postgres createdb $USER
+        sudo -u postgres psql -c 'CREATE USER $USER LOGIN SUPERUSER'
+        sudo -u postgres psql -c 'CREATE DATABASE $USER OWNER $USER'
         psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
         sudo systemctl restart postgresql@${{ matrix.version }}-main
     - name: Sqllogictest
