@@ -4,6 +4,7 @@ on:
   push:
     branches: [ "main" ]
     paths:
+      - '.github/workflows/check.yml'
       - 'src/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -12,6 +13,7 @@ on:
   pull_request:
     branches: [ "main" ]
     paths:
+      - '.github/workflows/check.yml'
       - 'src/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -87,7 +89,7 @@ jobs:
         cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
         cargo install sqllogictest-bin
     - name: Build && Install
-      run: cargo pgrx install --release
+      run: sudo cargo pgrx install --release
     - name: Sqllogictest
       run: |
         sudo systemctl restart postgresql
