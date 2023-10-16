@@ -107,14 +107,24 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ needs.setup.outputs.ref }}
+      - uses: ankane/setup-postgres@v1
+        with:
+          postgres-version: ${{ matrix.version }}
+          dev-files: true
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: cargo-release-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
+          restore-keys: cargo-release-${{ runner.os }}-pg${{ matrix.version }}
       - name: Prepare
         run: |
-          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-          sudo apt-get update
-          sudo apt-get -y install libpq-dev postgresql-${{ matrix.version }} postgresql-server-dev-${{ matrix.version }}
           cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
-          cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
+          cargo pgrx init --pg${{ matrix.version }}=$(which pg_config)
       - name: Build Release
         id: build_release
         run: |
