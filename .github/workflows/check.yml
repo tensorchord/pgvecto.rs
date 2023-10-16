@@ -63,10 +63,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: ankane/setup-postgres@v1
-      with:
-        postgres-version: ${{ matrix.version }}
-        dev-files: true
     - uses: actions/cache@v3
       with:
         path: |
@@ -79,6 +75,10 @@ jobs:
         restore-keys: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}
     - name: Prepare
       run: |
+        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+        sudo apt-get update
+        sudo apt-get -y install libpq-dev postgresql-${{ matrix.version }} postgresql-server-dev-${{ matrix.version }}
         cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1) || true
         cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
     - name: Build
@@ -95,11 +95,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: ankane/setup-postgres@v1
-      with:
-        postgres-version: ${{ matrix.version }}
-        database: testdb
-        dev-files: true
     - uses: actions/cache@v3
       with:
         path: |
@@ -112,6 +107,11 @@ jobs:
         restore-keys: cargo-release-${{ runner.os }}-pg${{ matrix.version }}
     - name: Prepare
       run: |
+        sudo apt-get --purge remove postgresql
+        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+        sudo apt-get update
+        sudo apt-get -y install libpq-dev postgresql-${{ matrix.version }} postgresql-server-dev-${{ matrix.version }}
         cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1) || true
         cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
         cargo install sqllogictest-bin || true
@@ -120,11 +120,13 @@ jobs:
         sudo chmod -R 777 /usr/share/postgresql/${{ matrix.version }}/extension
         sudo chmod -R 777 /usr/lib/postgresql/${{ matrix.version }}/lib
         cargo pgrx install --release
+        sudo -u postgres createuser -s -w $USER
+        sudo -u postgres createdb $USER
         psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
         sudo systemctl restart postgresql@${{ matrix.version }}-main
     - name: Sqllogictest
       run: |
         export password=$(openssl rand -base64 32)
         psql -c "ALTER USER $USER WITH PASSWORD '$password'"
-        psql -d testdb -f ./tests/init.sql
-        sqllogictest -u $USER -w $password -d testdb './tests/**/*.slt'
+        psql -f ./tests/init.sql
+        sqllogictest -u $USER -w $password -d $USER './tests/**/*.slt'
