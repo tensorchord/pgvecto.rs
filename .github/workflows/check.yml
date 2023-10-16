@@ -114,7 +114,6 @@ jobs:
     - name: Prepare
       run: |
         sudo pg_dropcluster 14 main
-        sudo apt-get --purge remove postgresql
         sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
         wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
         sudo apt-get update
@@ -136,8 +135,8 @@ jobs:
         sudo chmod -R 777 /usr/lib/postgresql/${{ matrix.version }}/lib
         cargo pgrx install --release
         sudo systemctl start postgresql@${{ matrix.version }}-main
-        sudo -u postgres psql -c 'CREATE USER $USER LOGIN SUPERUSER'
-        sudo -u postgres psql -c 'CREATE DATABASE $USER OWNER $USER'
+        sudo -u postgres psql -c "CREATE USER $USER LOGIN SUPERUSER"
+        sudo -u postgres psql -c "CREATE DATABASE $USER OWNER $USER"
         psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
         sudo systemctl restart postgresql@${{ matrix.version }}-main
     - name: Sqllogictest
@@ -145,4 +144,4 @@ jobs:
         export password=$(openssl rand -base64 32)
         psql -c "ALTER USER $USER WITH PASSWORD '$password'"
         psql -f ./tests/init.sql
-        sqllogictest -u $USER -w $password -d $USER './tests/**/*.slt'
+        sqllogictest -u "$USER" -w "$password" -d "$USER" './tests/**/*.slt'
