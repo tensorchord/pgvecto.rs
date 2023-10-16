@@ -97,7 +97,7 @@ jobs:
       run: |
         sudo systemctl restart postgresql
         export password=$(openssl rand -base64 32)
-        sudo -u postgres psql -c "CREATE ROLE $USER WITH LOGIN PASSWORD $password SUPERUSER"
+        sudo -u postgres psql -c "CREATE ROLE $USER WITH LOGIN PASSWORD '$password' SUPERUSER"
         sudo -u postgres createdb $USER
         psql -f ./tests/init.sql
         sqllogictest -u $USER -w $password -d $USER './tests/**/*.slt'
