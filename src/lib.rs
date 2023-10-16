@@ -22,7 +22,6 @@ mod postgres;
 mod prelude;
 
 pgrx::pg_module_magic!();
-
 pgrx::extension_sql_file!("./sql/bootstrap.sql", bootstrap);
 pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
 
