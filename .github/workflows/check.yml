@@ -82,6 +82,7 @@ jobs:
     - uses: ankane/setup-postgres@v1
       with:
         postgres-version: ${{ matrix.version }}
+        database: testdb
         dev-files: true
     - name: Prepare
       run: |
@@ -95,5 +96,5 @@ jobs:
         cargo pgrx install --release
     - name: Sqllogictest
       run: |
-        psql -f ./tests/init.sql
+        psql -d testdb -f ./tests/init.sql
         sqllogictest -d testdb './tests/**/*.slt'
