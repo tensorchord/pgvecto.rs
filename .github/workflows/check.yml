@@ -28,6 +28,8 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  SCCACHE_GHA_ENABLED: true
+  RUSTC_WRAPPER: sccache
 
 jobs:
   lint:
@@ -44,11 +46,15 @@ jobs:
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-          target/
-        key: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
-        restore-keys: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}
+        key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
+        restore-keys: cargo-${{ runner.os }}-pg${{ matrix.version }}
+    - uses: mozilla-actions/sccache-action@v0.0.3
     - name: Prepare
       run: |
+        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+        sudo apt-get update
+        sudo apt-get -y install libpq-dev postgresql-${{ matrix.version }} postgresql-server-dev-${{ matrix.version }}
         cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1) || true
         cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
     - name: Format check
@@ -63,16 +69,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/cache@v3
+    - uses: actions/cache/restore@v3
       with:
         path: |
           ~/.cargo/bin/
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-          target/
-        key: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
-        restore-keys: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}
+        key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
+        restore-keys: cargo-${{ runner.os }}-pg${{ matrix.version }}
+    - uses: mozilla-actions/sccache-action@v0.0.3
     - name: Prepare
       run: |
         sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
@@ -102,9 +108,9 @@ jobs:
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-          target/
-        key: cargo-release-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
-        restore-keys: cargo-release-${{ runner.os }}-pg${{ matrix.version }}
+        key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
+        restore-keys: cargo-${{ runner.os }}-pg${{ matrix.version }}
+    - uses: mozilla-actions/sccache-action@v0.0.3
     - name: Prepare
       run: |
         sudo apt-get --purge remove postgresql
@@ -120,6 +126,7 @@ jobs:
         sudo chmod -R 777 /usr/share/postgresql/${{ matrix.version }}/extension
         sudo chmod -R 777 /usr/lib/postgresql/${{ matrix.version }}/lib
         cargo pgrx install --release
+        sudo systemctl start postgresql@${{ matrix.version }}-main
         sudo -u postgres createuser -s -w $USER
         sudo -u postgres createdb $USER
         psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
