@@ -91,6 +91,7 @@ jobs:
     - name: Build && Install
       run: |
         sudo chmod 777 /usr/share/postgresql/${{ matrix.version }}/extension/
+        sudo chmod 777 /usr/lib/postgresql/${{ matrix.version }}/lib
         cargo pgrx install --release
     - name: Sqllogictest
       run: |
