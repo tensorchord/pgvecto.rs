@@ -49,7 +49,7 @@ jobs:
         restore-keys: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}
     - name: Prepare
       run: |
-        cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
+        cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1) || true
         cargo pgrx init --pg${{ matrix.version }}=$(which pg_config)
     - name: Format check
       run: cargo fmt --check
@@ -79,7 +79,7 @@ jobs:
         restore-keys: cargo-debug-${{ runner.os }}-pg${{ matrix.version }}
     - name: Prepare
       run: |
-        cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
+        cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1) || true
         cargo pgrx init --pg${{ matrix.version }}=$(which pg_config)
     - name: Build
       run: cargo build --verbose
@@ -112,9 +112,9 @@ jobs:
         restore-keys: cargo-release-${{ runner.os }}-pg${{ matrix.version }}
     - name: Prepare
       run: |
-        cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
+        cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1) || true
         cargo pgrx init --pg${{ matrix.version }}=$(which pg_config)
-        cargo install sqllogictest-bin
+        cargo install sqllogictest-bin || true
     - name: Build
       run: |
         sudo chmod -R 777 /usr/share/postgresql/${{ matrix.version }}/extension
