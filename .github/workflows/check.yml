@@ -90,9 +90,9 @@ jobs:
         cargo install sqllogictest-bin
     - name: Build
       run: |
-      sudo chmod -R 777 /usr/share/postgresql/${{ matrix.version }}/extension
-      sudo chmod -R 777 /usr/lib/postgresql/${{ matrix.version }}/lib
-      cargo pgrx install --release
+        sudo chmod -R 777 /usr/share/postgresql/${{ matrix.version }}/extension
+        sudo chmod -R 777 /usr/lib/postgresql/${{ matrix.version }}/lib
+        cargo pgrx install --release
     - name: Sqllogictest
       run: |
         psql -f ./tests/init.sql
