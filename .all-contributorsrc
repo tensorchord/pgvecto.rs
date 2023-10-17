@@ -102,6 +102,17 @@
         "code",
         "ideas"
       ]
+    },
+    {
+      "login": "silver-ymz",
+      "name": "Mingzhuo Yin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/78400701?v=4",
+      "profile": "https://blog.ymzymz.me",
+      "contributions": [
+        "code",
+        "test",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
