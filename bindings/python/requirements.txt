@@ -1,4 +1,4 @@
-numpy
-psycopg2-binary
-pytest
-SQLAlchemy
+numpy >= 1.23
+SQLAlchemy >= 2
+pytest >= 7.4
+psycopg2-binary >= 2.9
