@@ -80,8 +80,7 @@ def test_invalid_insert(test_table, engine):
                 )
             except:
                 continue
-            assert(
-                False,
+            raise AssertionError(
                 'failed to raise invalid value error for {}th vector {}'
                 .format(i, e),
             )
