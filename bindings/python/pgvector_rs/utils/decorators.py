@@ -16,9 +16,10 @@ def ignore_ndarray(func):
     return _func
 
 
-def valiadte_ndarray(func):
+def validate_ndarray(func):
+    '''Validate ndarray data type for vector'''
     @wraps(func)
-    def _func(value, *args, **kwargs):
+    def _func(value: np.ndarray, *args, **kwargs):
         if isinstance(value, np.ndarray):
             if value.ndim != 1:
                 raise ValueError('ndarray must be 1D for vector')
@@ -26,20 +27,18 @@ def valiadte_ndarray(func):
                 raise ValueError(
                     'ndarray data type must be numeric for vector'
                 )
-            value = value.tolist()
         return func(value, *args, **kwargs)
     return _func
 
-
-def serilize(value):
-    '''
-    define your own decorators or use predefined decorators to add check or data processing logic
-    '''
-    return '[' + ','.join([str(float(v)) for v in value]) + ']'
-
-
-def deserilize(value):
-    '''
-    define your own decorators or use predefined decorators to add check or data processing logic
-    '''
-    return np.array(value[1:-1].split(','), dtype=np.float32)
+def validate_builtin_list(func):
+    '''Validate list data type for vector and convert to ndarray'''
+    @wraps(func)
+    def _func(value: list, *args, **kwargs):
+        if isinstance(value, list):
+            if not all(isinstance(x, (int, float)) for x in value):
+                raise ValueError(
+                    'list data type must be numeric for vector'
+                )
+            value = np.array(value, dtype=np.float32)
+        return func(value, *args, **kwargs)
+    return _func
