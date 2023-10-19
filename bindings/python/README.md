@@ -1,51 +1,77 @@
-# python bindings for pgvector.rs
-Supports [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy)
+# Python bindings for pgvector.rs
+Currently supports [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy).
 
-See use example below:
+See the usage examples:
 - [SQLAlchemy](#SQLAlchemy)
 
 ## SQLAlchemy
 
-Create a table with `VECTOR` column:
-
 ```python
+import numpy as np
+from sqlalchemy import create_engine, select, insert, types
+from sqlalchemy import Integer, String
 from pgvector_rs.sqlalchemy import Vector
-from sqlalchemy import create_engine, MetaData, Table, Column
+from sqlalchemy.orm import Session, DeclarativeBase, mapped_column, Mapped
 
-# set connection info for the postgres db
+URL = "postgres://<...>"
+
+# Define the ORM model
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    text: Mapped[str] = mapped_column(String)
+    embedding: Mapped[np.ndarray] = mapped_column(Vector(3))
+
+    def __repr__(self) -> str:
+        return f"{self.text}: {self.embedding}"
+
+
+# Connect to the DB and create the table
 engine = create_engine(URL)
-metadata = MetaData()
-metadata.bind = engine
+Document.metadata.create_all(engine)
 
-# create table
-tb_embbeding = Table(
-        'tb_test_item',
-        metadata,
-        Column('id', Integer, primary_key=True),
-        Column('embedding', Vector(3)) # a 3-dim VECTOR type
-    )
-tb_embbeding.create(engine)
+with Session(engine) as session:
+    # Insert 3 rows into the table
+    t1 = insert(Document).values(text="hello world", embedding=[1, 2, 3])
+    t2 = insert(Document).values(text="hello postgres", embedding=[1, 2, 4])
+    t3 = insert(Document).values(text="hello pgvecto.rs", embedding=[1, 3, 4])
+    for t in [t1, t2, t3]:
+        session.execute(t)
+    session.commit()
+
+    # Select the row "hello pgvecto.rs"
+    stmt = select(Document).where(Document.text == "hello pgvecto.rs")
+    target = session.scalar(stmt)
+
+    # Select all the rows and sort them
+    # by the squared_euclidean_distance to "hello pgvecto.rs"
+    stmt = select(
+        Document.text,
+        Document.embedding.squared_euclidean_distance(target.embedding).label(
+            "distance"
+        ),
+    ).order_by("distance")
+    for doc in session.execute(stmt):
+        print(doc)
+
+# Drop the table
+Document.metadata.drop_all(engine)
+```
+The output will be:
+```
+('hello pgvecto.rs', 0.0)
+('hello postgres', 1.0)
+('hello world', 2.0)
 ```
 
-Insert a vector
-
-```python
-with engine.connect() as con:
-	con.execute(
-		tb_embbeding.insert().values({'id': _id_value, 'embedding': [1, 2, 3]})
-	)
-	con.commit()
-```
-
-Get entries within a certain distance
-
-```python
-with engine.connect() as con:
-	res = con.execute(
-		tb_embbeding.select().filter(tb_embbeding.c.embedding.squared_euclidean_distance([3, 1, 2]) < 5)
-	)
-	# do something with res
-	# ...
-	con.commit()
-
-```
+All the operators include:
+- `squared_euclidean_distance`
+- `negative_dot_product_distance`
+- `negative_cosine_distance`
