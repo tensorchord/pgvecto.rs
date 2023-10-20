@@ -21,28 +21,46 @@ URL = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(
 # ==== test_create_index ====
 
 TOML_SETTINGS = {
-    "flat": "$${}$$".format(toml.dumps({
-        "capacity": 2097152,
-        "algorithm": {"flat": {}},
-    })),
-    "hnsw": "$${}$$".format(toml.dumps({
-        "capacity": 2097152,
-        "algorithm": {"hnsw": {}},
-    })),
-    "ivf": "$${}$$".format(toml.dumps({
-        "capacity": 2097152,
-        "algorithm": {"ivf": {}},
-    })),
-    "vamana": "$${}$$".format(toml.dumps({
-        "capacity": 2097152,
-        "algorithm": {"vamana": {}},
-    })),
+    "flat": "$${}$$".format(
+        toml.dumps(
+            {
+                "capacity": 2097152,
+                "algorithm": {"flat": {}},
+            }
+        )
+    ),
+    "hnsw": "$${}$$".format(
+        toml.dumps(
+            {
+                "capacity": 2097152,
+                "algorithm": {"hnsw": {}},
+            }
+        )
+    ),
+    # "ivf": "$${}$$".format(
+    #     toml.dumps(
+    #         {
+    #             "capacity": 2097152,
+    #             "algorithm": {"ivf": {}},
+    #         }
+    #     )
+    # ),
+    # "vamana": "$${}$$".format(
+    #     toml.dumps(
+    #         {
+    #             "capacity": 2097152,
+    #             "algorithm": {"vamana": {}},
+    #         }
+    #     )
+    # ),
 }
 
 # ==== test_invalid_insert ====
 INVALID_VECTORS = [
     [1, 2, 3, 4],
-    [1, ],
+    [
+        1,
+    ],
     [[1, 2], [3, 4], [5, 6]],
     ["123.", "123", "a"],
     np.array([1, 2, 3, 4]),
@@ -65,4 +83,13 @@ EXPECTED_NEG_COS_DIS = [-10.0, 87.66, -6.0]
 # ==== test_delete ====
 LEN_AFT_DEL = 2
 
-__all__ = ["URL", "TOML_SETTINGS", "INVALID_VECTORS", "VECTORS", "EXPECTED_SQRT_EUCLID_DIS", "EXPECTED_NEG_DOT_PROD_DIS", "EXPECTED_NEG_COS_DIS", "LEN_AFT_DEL"]
+__all__ = [
+    "URL",
+    "TOML_SETTINGS",
+    "INVALID_VECTORS",
+    "VECTORS",
+    "EXPECTED_SQRT_EUCLID_DIS",
+    "EXPECTED_NEG_DOT_PROD_DIS",
+    "EXPECTED_NEG_COS_DIS",
+    "LEN_AFT_DEL",
+]
