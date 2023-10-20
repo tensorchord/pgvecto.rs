@@ -4,7 +4,9 @@ from tests import *
 from sqlalchemy import create_engine, select, text, insert, delete
 from sqlalchemy import Integer, Index
 from pgvector_rs.sqlalchemy import Vector
+from pgvector_rs.utils import VectorValueError
 from sqlalchemy.orm import Session, DeclarativeBase, mapped_column, Mapped
+from sqlalchemy.exc import StatementError
 
 
 class Base(DeclarativeBase):
@@ -67,13 +69,14 @@ def test_create_index(session: Session, index_name: str, index_setting: str):
 def test_invalid_insert(session: Session, i: int, e: np.ndarray):
     try:
         session.execute(insert(Document).values(id=i, embedding=e))
-    except:
-        session.rollback()
+    except StatementError:
+        pass
     else:
-        session.rollback()
         raise AssertionError(
             "failed to raise invalid value error for {}th vector {}".format(i, e),
         )
+    finally:
+        session.rollback()
 
 
 # =================================
