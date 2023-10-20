@@ -4,7 +4,6 @@ from tests import *
 from sqlalchemy import create_engine, select, text, insert, delete
 from sqlalchemy import Integer, Index
 from pgvecto_rs.sqlalchemy import Vector
-from pgvecto_rs.utils import VectorValueError
 from sqlalchemy.orm import Session, DeclarativeBase, mapped_column, Mapped
 from sqlalchemy.exc import StatementError
 

@@ -1,10 +1,15 @@
 # Python bindings for pgvector.rs
+
+[![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm.fming.dev)
+
 Currently supports [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy).
+
+## Usage
 
 See the usage examples:
 - [SQLAlchemy](#SQLAlchemy)
 
-## SQLAlchemy
+### SQLAlchemy
 
 ```python
 import numpy as np
@@ -75,3 +80,33 @@ All the operators include:
 - `squared_euclidean_distance`
 - `negative_dot_product_distance`
 - `negative_cosine_distance`
+
+## Development
+
+This module is managed by [PDM](https://pdm.fming.dev).
+
+Set up things:
+```
+pdm venv create
+pdm sync
+```
+
+Run lint:
+```
+pdm run lint
+```
+
+Run test in current environment:
+```
+pdm run test
+```
+
+
+## Test
+
+[Tox](https://tox.wiki) is used to test the module locally.
+
+Run test in all environment:
+```
+tox run
+```
