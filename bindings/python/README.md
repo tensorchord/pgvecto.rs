@@ -83,30 +83,31 @@ All the operators include:
 
 ## Development
 
-This module is managed by [PDM](https://pdm.fming.dev).
+This package is managed by [PDM](https://pdm.fming.dev).
 
 Set up things:
-```
+```bash
 pdm venv create
+pdm use # select the venv inside the project path
 pdm sync
 ```
 
 Run lint:
-```
+```bash
 pdm run lint
 ```
 
 Run test in current environment:
-```
+```bash
 pdm run test
 ```
 
 
 ## Test
 
-[Tox](https://tox.wiki) is used to test the module locally.
+[Tox](https://tox.wiki) is used to test the package locally.
 
 Run test in all environment:
-```
+```bash
 tox run
 ```
