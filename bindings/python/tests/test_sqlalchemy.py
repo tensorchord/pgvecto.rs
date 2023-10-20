@@ -20,19 +20,20 @@ class Document(Base):
     def __repr__(self) -> str:
         return f"{self.embedding}"
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope="module")
 def session():
-    '''
+    """
     Connect to the test db pointed by the URL. Can check more details
     in `tests/__init__.py`
-    '''
+    """
 
-    engine = create_engine(URL.replace('postgresql', 'postgresql+psycopg'))
+    engine = create_engine(URL.replace("postgresql", "postgresql+psycopg"))
 
     # ensure that we have installed pgvector.rs extension
     with engine.connect() as conn:
-        conn.execute(text('CREATE EXTENSION IF NOT EXISTS vectors'))
-        conn.execute(text('DROP TABLE IF EXISTS tb_test_item'))
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vectors"))
+        conn.execute(text("DROP TABLE IF EXISTS tb_test_item"))
         conn.commit()
 
     with Session(engine) as session:
@@ -48,75 +49,88 @@ def session():
 # Prefix functional tests
 # =================================
 
+
 @pytest.mark.parametrize("index_name,index_setting", TOML_SETTINGS.items())
 def test_create_index(session: Session, index_name: str, index_setting: str):
     index = Index(
         index_name,
         Document.embedding,
-        postgresql_using='vectors',
-        postgresql_with={'options': index_setting},
-        postgresql_ops={'embedding': 'l2_ops'}
+        postgresql_using="vectors",
+        postgresql_with={"options": index_setting},
+        postgresql_ops={"embedding": "l2_ops"},
     )
     index.create(session.bind)
     session.rollback()
 
-@pytest.mark.parametrize('i,e', enumerate(INVALID_VECTORS))
+
+@pytest.mark.parametrize("i,e", enumerate(INVALID_VECTORS))
 def test_invalid_insert(session: Session, i: int, e: np.ndarray):
     try:
-        session.execute(insert(Document).values(id = i, embedding=e))
+        session.execute(insert(Document).values(id=i, embedding=e))
     except:
         session.rollback()
     else:
         session.rollback()
         raise AssertionError(
-            'failed to raise invalid value error for {}th vector {}'
-            .format(i, e),
+            "failed to raise invalid value error for {}th vector {}".format(i, e),
         )
+
 
 # =================================
 # Semetic search tests
 # =================================
 
+
 def test_insert(session: Session):
-    for stat in [insert(Document).values(id = i, embedding=e) for i, e in enumerate(VECTORS)]:
+    for stat in [
+        insert(Document).values(id=i, embedding=e) for i, e in enumerate(VECTORS)
+    ]:
         session.execute(stat)
     session.commit()
     for row in session.scalars(select(Document)):
-        assert(
-            np.allclose(row.embedding, VECTORS[row.id], atol=1e-10)
-        )
+        assert np.allclose(row.embedding, VECTORS[row.id], atol=1e-10)
+
 
 def test_squared_euclidean_distance(session: Session):
     for row in session.execute(
         select(Document.id, Document.embedding.squared_euclidean_distance([0, 0, 0]))
-        ):
+    ):
         (i, res) = row
-        assert(np.allclose(EXPECTED_SQRT_EUCLID_DIS[i], res, atol=1e-10),
-                "incorrect calculation result for {}th vector {}".format(i, VECTORS[i]))
+        assert (
+            np.allclose(EXPECTED_SQRT_EUCLID_DIS[i], res, atol=1e-10),
+            "incorrect calculation result for {}th vector {}".format(i, VECTORS[i]),
+        )
 
 
 def test_negative_dot_product_distance(session: Session):
     for row in session.execute(
         select(Document.id, Document.embedding.negative_dot_product_distance([0, 0, 0]))
-        ):
+    ):
         (i, res) = row
-        assert(np.allclose(EXPECTED_NEG_DOT_PROD_DIS[i], res, atol=1e-10),
-                "incorrect calculation result for {}th vector {}".format(i, VECTORS[i]))
+        assert (
+            np.allclose(EXPECTED_NEG_DOT_PROD_DIS[i], res, atol=1e-10),
+            "incorrect calculation result for {}th vector {}".format(i, VECTORS[i]),
+        )
+
 
 def test_negative_cosine_distance(session: Session):
     for row in session.execute(
         select(Document.id, Document.embedding.negative_cosine_distance([0, 0, 0]))
-        ):
+    ):
         (i, res) = row
-        assert(np.allclose(EXPECTED_NEG_COS_DIS[i], res, atol=1e-10),
-                "incorrect calculation result for {}th vector {}".format(i, VECTORS[i]))
+        assert (
+            np.allclose(EXPECTED_NEG_COS_DIS[i], res, atol=1e-10),
+            "incorrect calculation result for {}th vector {}".format(i, VECTORS[i]),
+        )
+
 
 # # =================================
 # # Suffix functional tests
 # # =================================
 
+
 def test_delete(session: Session):
     session.execute(delete(Document).where(Document.embedding == [1, 2, 3]))
     session.commit()
     res = session.execute(select(Document))
-    assert(len(list(res))==LEN_AFT_DEL)
+    assert len(list(res)) == LEN_AFT_DEL
