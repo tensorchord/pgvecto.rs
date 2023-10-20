@@ -3,8 +3,8 @@ import numpy as np
 from tests import *
 from sqlalchemy import create_engine, select, text, insert, delete
 from sqlalchemy import Integer, Index
-from pgvector_rs.sqlalchemy import Vector
-from pgvector_rs.utils import VectorValueError
+from pgvecto_rs.sqlalchemy import Vector
+from pgvecto_rs.utils import VectorValueError
 from sqlalchemy.orm import Session, DeclarativeBase, mapped_column, Mapped
 from sqlalchemy.exc import StatementError
 
