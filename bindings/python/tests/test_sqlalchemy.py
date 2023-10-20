@@ -27,7 +27,7 @@ def session():
     in `tests/__init__.py`
     '''
 
-    engine = create_engine(URL)
+    engine = create_engine(URL.replace('postgresql', 'postgresql+psycopg'))
 
     # ensure that we have installed pgvector.rs extension
     with engine.connect() as conn:
@@ -48,25 +48,25 @@ def session():
 # Prefix functional tests
 # =================================
 
-def test_create_index(session: Session):
+@pytest.mark.parametrize("index_name,index_setting", TOML_SETTINGS.items())
+def test_create_index(session: Session, index_name: str, index_setting: str):
     index = Index(
-        'test_vector_index',
+        index_name,
         Document.embedding,
         postgresql_using='vectors',
-        postgresql_with={'options': TOML_SETTINGS['hnsw']},
+        postgresql_with={'options': index_setting},
         postgresql_ops={'embedding': 'l2_ops'}
     )
-    index.create(session.bind, checkfirst=True)
-    session.commit()
+    index.create(session.bind)
+    session.rollback()
 
-
-def test_invalid_insert(session: Session):
-    for i, e in enumerate(INVALID_VECTORS):
-        try:
-            session.execute(insert(Document).values(id = i, embedding=e))
-        except:
-            session.rollback()
-            continue
+@pytest.mark.parametrize('i,e', enumerate(INVALID_VECTORS))
+def test_invalid_insert(session: Session, i: int, e: np.ndarray):
+    try:
+        session.execute(insert(Document).values(id = i, embedding=e))
+    except:
+        session.rollback()
+    else:
         session.rollback()
         raise AssertionError(
             'failed to raise invalid value error for {}th vector {}'

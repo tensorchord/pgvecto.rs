@@ -1,4 +1,4 @@
-import os
+import os, toml
 import numpy as np
 
 PORT = os.getenv("DB_PORT", 5432)
@@ -19,25 +19,24 @@ URL = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(
 
 
 # ==== test_create_index ====
+
 TOML_SETTINGS = {
-    "hnsw": """$$
-capacity = 2097152
-[vectors]
-memmap = "ram"
-[algorithm.hnsw]
-memmap = "ram"
-$$
-""",
-    "ivf": """$$
-capacity = 2097152
-[vectors]
-memmap = "ram"
-[algorithm.ivf]
-memmap = "ram"
-nlist = 1000
-nprobe = 10
-$$
-""",
+    "flat": "$${}$$".format(toml.dumps({
+        "capacity": 2097152,
+        "algorithm": {"flat": {}},
+    })),
+    "hnsw": "$${}$$".format(toml.dumps({
+        "capacity": 2097152,
+        "algorithm": {"hnsw": {}},
+    })),
+    "ivf": "$${}$$".format(toml.dumps({
+        "capacity": 2097152,
+        "algorithm": {"ivf": {}},
+    })),
+    "vamana": "$${}$$".format(toml.dumps({
+        "capacity": 2097152,
+        "algorithm": {"vamana": {}},
+    })),
 }
 
 # ==== test_invalid_insert ====
@@ -65,3 +64,5 @@ EXPECTED_NEG_COS_DIS = [-10.0, 87.66, -6.0]
 
 # ==== test_delete ====
 LEN_AFT_DEL = 2
+
+__all__ = ["URL", "TOML_SETTINGS", "INVALID_VECTORS", "VECTORS", "EXPECTED_SQRT_EUCLID_DIS", "EXPECTED_NEG_DOT_PROD_DIS", "EXPECTED_NEG_COS_DIS", "LEN_AFT_DEL"]
