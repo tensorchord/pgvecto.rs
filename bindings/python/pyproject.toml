@@ -34,4 +34,4 @@ test = "pytest tests/"
 lint = "black src tests"
 
 [tool.pytest.ini_options]
-pythonpath = "src tests"
+addopts = "-r aR"
