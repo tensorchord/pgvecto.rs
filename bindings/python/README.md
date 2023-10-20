@@ -13,7 +13,7 @@ from sqlalchemy import Integer, String
 from pgvector_rs.sqlalchemy import Vector
 from sqlalchemy.orm import Session, DeclarativeBase, mapped_column, Mapped
 
-URL = "postgres://<...>"
+URL = "postgresql+psycopg://<...>"
 
 # Define the ORM model
 
