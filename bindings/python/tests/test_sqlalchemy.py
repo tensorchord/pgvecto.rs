@@ -5,8 +5,11 @@ from tests import (
     TOML_SETTINGS,
     VECTORS,
     INVALID_VECTORS,
+    OP_NEG_DOT_PROD_DIS,
     EXPECTED_SQRT_EUCLID_DIS,
+    OP_SQRT_EUCLID_DIS,
     EXPECTED_NEG_DOT_PROD_DIS,
+    OP_NEG_COS_DIS,
     EXPECTED_NEG_COS_DIS,
     LEN_AFT_DEL,
 )
@@ -104,7 +107,10 @@ def test_insert(session: Session):
 
 def test_squared_euclidean_distance(session: Session):
     for row in session.execute(
-        select(Document.id, Document.embedding.squared_euclidean_distance([0, 0, 0]))
+        select(
+            Document.id,
+            Document.embedding.squared_euclidean_distance(OP_SQRT_EUCLID_DIS),
+        )
     ):
         (i, res) = row
         assert np.allclose(EXPECTED_SQRT_EUCLID_DIS[i], res, atol=1e-10)
@@ -112,7 +118,10 @@ def test_squared_euclidean_distance(session: Session):
 
 def test_negative_dot_product_distance(session: Session):
     for row in session.execute(
-        select(Document.id, Document.embedding.negative_dot_product_distance([0, 0, 0]))
+        select(
+            Document.id,
+            Document.embedding.negative_dot_product_distance(OP_NEG_DOT_PROD_DIS),
+        )
     ):
         (i, res) = row
         assert np.allclose(EXPECTED_NEG_DOT_PROD_DIS[i], res, atol=1e-10)
@@ -120,7 +129,7 @@ def test_negative_dot_product_distance(session: Session):
 
 def test_negative_cosine_distance(session: Session):
     for row in session.execute(
-        select(Document.id, Document.embedding.negative_cosine_distance([0, 0, 0]))
+        select(Document.id, Document.embedding.negative_cosine_distance(OP_NEG_COS_DIS))
     ):
         (i, res) = row
         assert np.allclose(EXPECTED_NEG_COS_DIS[i], res, atol=1e-10)
@@ -132,7 +141,7 @@ def test_negative_cosine_distance(session: Session):
 
 
 def test_delete(session: Session):
-    session.execute(delete(Document).where(Document.embedding == [1, 2, 3]))
+    session.execute(delete(Document).where(Document.embedding == VECTORS[0]))
     session.commit()
     res = session.execute(select(Document))
     assert len(list(res)) == LEN_AFT_DEL
