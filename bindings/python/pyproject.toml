@@ -32,6 +32,7 @@ dev = [
 [tool.pdm.scripts]
 test = "pytest tests/"
 lint = "black src tests"
+checklint = "black --check src tests"
 
 [tool.pytest.ini_options]
 addopts = "-r aR"
