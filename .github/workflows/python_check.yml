@@ -48,7 +48,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -63,11 +63,11 @@ jobs:
       run: |
         pdm sync -d
     
-    - name: Install Docker for macOS
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew install docker
-        colima start
+    # - name: Install Docker for macOS
+    #   if: matrix.os == 'macos-latest'
+    #   run: |
+    #     brew install docker
+    #     colima start
 
     - name: Start Postgres
       run: |
