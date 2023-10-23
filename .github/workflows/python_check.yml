@@ -1,0 +1,82 @@
+name: Python check
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - '.github/workflows/python_check.yml'
+      - 'bindings/python/src/**'
+      - 'bindings/python/tests/**'
+      - 'bindings/python/pyproject.toml'
+      - 'bindings/python/pdm.lock'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - '.github/workflows/python_check.yml'
+      - 'bindings/python/src/**'
+      - 'bindings/python/tests/**'
+      - 'bindings/python/pyproject.toml'
+      - 'bindings/python/pdm.lock'
+  merge_group:
+  workflow_dispatch:
+
+# concurrency:
+#   group: ${{ github.ref }}-${{ github.workflow }}
+#   cancel-in-progress: true
+
+# env:
+#   CARGO_TERM_COLOR: always
+#   SCCACHE_GHA_ENABLED: true
+#   RUSTC_WRAPPER: sccache
+
+jobs:
+  lint:
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup PDM
+      uses: pdm-project/setup-pdm@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Dependencies
+      working-directory: bindings/python
+      run: |
+        pdm sync -d -G lint
+    - name: Run Lint Checks
+      working-directory: bindings/python
+      run: |
+        pdm run checklint
+
+  test:
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup PDM
+      uses: pdm-project/setup-pdm@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Dependencies
+      working-directory: bindings/python
+      run: |
+        pdm sync -d
+
+    - name: Start Postgres
+      run: |
+        docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:latest
+    
+    - name: Run Tests
+      working-directory: bindings/python
+      run: |
+        pdm run test
