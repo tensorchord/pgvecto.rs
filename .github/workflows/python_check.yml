@@ -62,6 +62,12 @@ jobs:
       working-directory: bindings/python
       run: |
         pdm sync -d
+    
+    - name: Install Docker for macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install docker
+        colima start
 
     - name: Start Postgres
       run: |
