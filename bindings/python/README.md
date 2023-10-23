@@ -6,6 +6,11 @@ Currently supports [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy).
 
 ## Usage
 
+Install from PyPI:
+```bash
+pip install pgvecto_rs
+```
+
 See the usage examples:
 - [SQLAlchemy](#SQLAlchemy)
 
