@@ -94,7 +94,8 @@ pdm sync
 
 Run lint:
 ```bash
-pdm run lint
+pdm run format
+pdm run check
 ```
 
 Run test in current environment:

@@ -1,6 +1,5 @@
 from typing import Optional
 import numpy as np
-from struct import pack, unpack
 from . import decorators
 
 

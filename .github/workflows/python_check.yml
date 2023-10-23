@@ -20,15 +20,6 @@ on:
   merge_group:
   workflow_dispatch:
 
-# concurrency:
-#   group: ${{ github.ref }}-${{ github.workflow }}
-#   cancel-in-progress: true
-
-# env:
-#   CARGO_TERM_COLOR: always
-#   SCCACHE_GHA_ENABLED: true
-#   RUSTC_WRAPPER: sccache
-
 jobs:
   lint:
     strategy:
@@ -51,7 +42,7 @@ jobs:
     - name: Run Lint Checks
       working-directory: bindings/python
       run: |
-        pdm run checklint
+        pdm run check
 
   test:
     strategy:

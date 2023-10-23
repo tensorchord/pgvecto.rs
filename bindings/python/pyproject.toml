@@ -20,6 +20,7 @@ build-backend = "pdm.backend"
 [project.optional-dependencies]
 lint = [
     "black>=23.10.0",
+    "ruff>=0.1.1",
 ]
 
 [tool.pdm.dev-dependencies]
@@ -31,8 +32,8 @@ dev = [
 
 [tool.pdm.scripts]
 test = "pytest tests/"
-lint = "black src tests"
-checklint = "black --check src tests"
+format = "black ."
+check = {composite = ["black --check .", "ruff check ."]}
 
 [tool.pytest.ini_options]
 addopts = "-r aR"

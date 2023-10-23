@@ -1,4 +1,5 @@
-import os, toml
+import os
+import toml
 import numpy as np
 
 PORT = os.getenv("DB_PORT", 5432)

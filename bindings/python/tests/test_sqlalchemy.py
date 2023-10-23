@@ -1,6 +1,15 @@
 import pytest
 import numpy as np
-from tests import *
+from tests import (
+    URL,
+    TOML_SETTINGS,
+    VECTORS,
+    INVALID_VECTORS,
+    EXPECTED_SQRT_EUCLID_DIS,
+    EXPECTED_NEG_DOT_PROD_DIS,
+    EXPECTED_NEG_COS_DIS,
+    LEN_AFT_DEL,
+)
 from sqlalchemy import create_engine, select, text, insert, delete
 from sqlalchemy import Integer, Index
 from pgvecto_rs.sqlalchemy import Vector
@@ -98,10 +107,7 @@ def test_squared_euclidean_distance(session: Session):
         select(Document.id, Document.embedding.squared_euclidean_distance([0, 0, 0]))
     ):
         (i, res) = row
-        assert (
-            np.allclose(EXPECTED_SQRT_EUCLID_DIS[i], res, atol=1e-10),
-            "incorrect calculation result for {}th vector {}".format(i, VECTORS[i]),
-        )
+        assert np.allclose(EXPECTED_SQRT_EUCLID_DIS[i], res, atol=1e-10)
 
 
 def test_negative_dot_product_distance(session: Session):
@@ -109,10 +115,7 @@ def test_negative_dot_product_distance(session: Session):
         select(Document.id, Document.embedding.negative_dot_product_distance([0, 0, 0]))
     ):
         (i, res) = row
-        assert (
-            np.allclose(EXPECTED_NEG_DOT_PROD_DIS[i], res, atol=1e-10),
-            "incorrect calculation result for {}th vector {}".format(i, VECTORS[i]),
-        )
+        assert np.allclose(EXPECTED_NEG_DOT_PROD_DIS[i], res, atol=1e-10)
 
 
 def test_negative_cosine_distance(session: Session):
@@ -120,10 +123,7 @@ def test_negative_cosine_distance(session: Session):
         select(Document.id, Document.embedding.negative_cosine_distance([0, 0, 0]))
     ):
         (i, res) = row
-        assert (
-            np.allclose(EXPECTED_NEG_COS_DIS[i], res, atol=1e-10),
-            "incorrect calculation result for {}th vector {}".format(i, VECTORS[i]),
-        )
+        assert np.allclose(EXPECTED_NEG_COS_DIS[i], res, atol=1e-10)
 
 
 # # =================================
