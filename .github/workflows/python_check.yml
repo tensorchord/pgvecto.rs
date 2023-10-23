@@ -1,4 +1,4 @@
-name: Python check
+name: Python Check
 
 on:
   push:
