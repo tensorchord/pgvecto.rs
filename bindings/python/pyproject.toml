@@ -32,7 +32,7 @@ dev = [
 
 [tool.pdm.scripts]
 test = "pytest tests/"
-format = "black ."
+format = {composite = ["black .", "ruff check --fix ."]}
 check = {composite = ["black --check .", "ruff check ."]}
 
 [tool.pytest.ini_options]
