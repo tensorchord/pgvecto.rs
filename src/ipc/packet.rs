@@ -14,7 +14,6 @@ pub enum RpcPacket {
     },
     Delete {
         id: Id,
-        delete: Pointer,
     },
     Search {
         id: Id,
@@ -43,7 +42,7 @@ pub enum BuildPacket {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum NextPacket {
+pub enum BuildNextPacket {
     Leave {
         data: Option<(Box<[Scalar]>, Pointer)>,
     },
@@ -61,12 +60,18 @@ pub enum CheckPacket {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum InsertPacket {
+pub enum DeletePacket {
+    Next { p: Pointer },
     Leave {},
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum DeletePacket {
+pub enum DeleteNextPacket {
+    Leave { delete: bool },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum InsertPacket {
     Leave {},
 }
 

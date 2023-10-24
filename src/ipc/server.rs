@@ -29,9 +29,8 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Delete { id, delete } => RpcHandle::Delete {
+            RpcPacket::Delete { id } => RpcHandle::Delete {
                 id,
-                delete,
                 x: Delete {
                     socket: self.socket,
                 },
@@ -92,7 +91,6 @@ pub enum RpcHandle {
     },
     Delete {
         id: Id,
-        delete: Pointer,
         x: Delete,
     },
     Load {
@@ -122,10 +120,10 @@ pub struct Build {
 impl Build {
     pub fn next(&mut self) -> Result<Option<(Box<[Scalar]>, Pointer)>, ServerIpcError> {
         if !self.reach {
-            let packet = self.socket.server_recv::<NextPacket>()?;
+            let packet = self.socket.server_recv::<BuildNextPacket>()?;
             match packet {
-                NextPacket::Leave { data: Some(data) } => Ok(Some(data)),
-                NextPacket::Leave { data: None } => {
+                BuildNextPacket::Leave { data: Some(data) } => Ok(Some(data)),
+                BuildNextPacket::Leave { data: None } => {
                     self.reach = true;
                     Ok(None)
                 }
@@ -162,6 +160,12 @@ pub struct Delete {
 }
 
 impl Delete {
+    pub fn next(&mut self, p: Pointer) -> Result<bool, ServerIpcError> {
+        let packet = DeletePacket::Next { p };
+        self.socket.server_send(packet)?;
+        let DeleteNextPacket::Leave { delete } = self.socket.server_recv::<DeleteNextPacket>()?;
+        Ok(delete)
+    }
     pub fn leave(mut self) -> Result<RpcHandler, ServerIpcError> {
         let packet = DeletePacket::Leave {};
         self.socket.server_send(packet)?;

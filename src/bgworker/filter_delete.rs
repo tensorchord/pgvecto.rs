@@ -65,4 +65,7 @@ impl FilterDelete {
             }
         }
     }
+    pub fn deleted(&self, p: Pointer) -> bool {
+        self.data.get(&p).map_or(false, |x| !x.value().1)
+    }
 }

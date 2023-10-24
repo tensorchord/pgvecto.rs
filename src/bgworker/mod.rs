@@ -93,6 +93,7 @@ fn thread_session(mut rpc_handler: RpcHandler) -> Result<(), SessionError> {
     loop {
         match rpc_handler.handle()? {
             RpcHandle::Build { id, options, mut x } => {
+                log::debug!("Handle build rpc. id: {}, options: {:?}.", id, options);
                 use dashmap::mapref::entry::Entry;
                 let indexes = unsafe { INDEXES.assume_init_ref() };
                 match indexes.entry(id) {
@@ -105,15 +106,17 @@ fn thread_session(mut rpc_handler: RpcHandler) -> Result<(), SessionError> {
                 rpc_handler = x.leave()?;
             }
             RpcHandle::Insert { id, insert, x } => {
+                log::debug!("Handle insert rpc. id: {}, insert: {:?}.", id, insert);
                 let indexes = unsafe { INDEXES.assume_init_ref() };
                 let index = indexes.get(&id).expect("Not load.");
                 index.insert(insert)?;
                 rpc_handler = x.leave()?;
             }
-            RpcHandle::Delete { id, delete, x } => {
+            RpcHandle::Delete { id, mut x } => {
+                log::debug!("Handle delete rpc. id: {}.", id);
                 let indexes = unsafe { INDEXES.assume_init_ref() };
                 let index = indexes.get(&id).expect("Not load.");
-                index.delete(delete)?;
+                index.delete(&mut x)?;
                 rpc_handler = x.leave()?;
             }
             RpcHandle::Search {
@@ -122,12 +125,19 @@ fn thread_session(mut rpc_handler: RpcHandler) -> Result<(), SessionError> {
                 k,
                 mut x,
             } => {
+                log::debug!(
+                    "Handle search rpc. id: {}, target: {:?}, k: {:?}.",
+                    id,
+                    target,
+                    k
+                );
                 let indexes = unsafe { INDEXES.assume_init_ref() };
                 let index = indexes.get(&id).expect("Not load.");
                 let result = index.search(target, k, &mut x)?;
                 rpc_handler = x.leave(result)?;
             }
             RpcHandle::Load { id, x } => {
+                log::debug!("Handle load rpc. id: {}.", id);
                 use dashmap::mapref::entry::Entry;
                 let indexes: &DashMap<Id, Index> = unsafe { INDEXES.assume_init_ref() };
                 match indexes.entry(id) {
@@ -140,6 +150,7 @@ fn thread_session(mut rpc_handler: RpcHandler) -> Result<(), SessionError> {
                 rpc_handler = x.leave()?;
             }
             RpcHandle::Unload { id, x } => {
+                log::debug!("Handle unload rpc. id: {}.", id);
                 use dashmap::mapref::entry::Entry;
                 let indexes: &DashMap<Id, Index> = unsafe { INDEXES.assume_init_ref() };
                 match indexes.entry(id) {
@@ -152,12 +163,14 @@ fn thread_session(mut rpc_handler: RpcHandler) -> Result<(), SessionError> {
                 rpc_handler = x.leave()?;
             }
             RpcHandle::Flush { id, x } => {
+                log::debug!("Handle flush rpc. id: {}.", id);
                 let indexes = unsafe { INDEXES.assume_init_ref() };
                 let index = indexes.get(&id).expect("Not load.");
                 index.flush();
                 rpc_handler = x.leave()?;
             }
             RpcHandle::Clean { id, x } => {
+                log::debug!("Handle clean rpc. id: {}.", id);
                 use dashmap::mapref::entry::Entry;
                 let indexes: &DashMap<Id, Index> = unsafe { INDEXES.assume_init_ref() };
                 match indexes.entry(id) {
@@ -172,7 +185,10 @@ fn thread_session(mut rpc_handler: RpcHandler) -> Result<(), SessionError> {
                 };
                 rpc_handler = x.leave()?;
             }
-            RpcHandle::Leave {} => break,
+            RpcHandle::Leave {} => {
+                log::debug!("Handle leave rpc.");
+                break;
+            }
         }
     }
     Ok(())
