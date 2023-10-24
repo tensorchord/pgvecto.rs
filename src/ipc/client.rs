@@ -32,6 +32,13 @@ impl Rpc {
             socket: self.socket,
         })
     }
+    pub fn delete(mut self, id: Id) -> Result<DeleteHandler, ClientIpcError> {
+        let packet = RpcPacket::Delete { id };
+        self.socket.client_send(packet)?;
+        Ok(DeleteHandler {
+            socket: self.socket,
+        })
+    }
     pub fn insert(
         &mut self,
         id: Id,
@@ -40,12 +47,6 @@ impl Rpc {
         let packet = RpcPacket::Insert { id, insert };
         self.socket.client_send(packet)?;
         let InsertPacket::Leave {} = self.socket.client_recv::<InsertPacket>()?;
-        Ok(())
-    }
-    pub fn delete(&mut self, id: Id, delete: Pointer) -> Result<(), ClientIpcError> {
-        let packet = RpcPacket::Delete { id, delete };
-        self.socket.client_send(packet)?;
-        let DeletePacket::Leave {} = self.socket.client_recv::<DeletePacket>()?;
         Ok(())
     }
     pub fn load(&mut self, id: Id) -> Result<(), ClientIpcError> {
@@ -79,11 +80,16 @@ pub struct BuildHandler {
     socket: Socket,
 }
 
+pub enum BuildHandle {
+    Next { x: BuildNext },
+    Leave { x: Rpc },
+}
+
 impl BuildHandler {
     pub fn handle(mut self) -> Result<BuildHandle, ClientIpcError> {
         if !self.reach {
             Ok(BuildHandle::Next {
-                x: Next {
+                x: BuildNext {
                     socket: self.socket,
                 },
             })
@@ -100,22 +106,17 @@ impl BuildHandler {
     }
 }
 
-pub enum BuildHandle {
-    Next { x: Next },
-    Leave { x: Rpc },
-}
-
-pub struct Next {
+pub struct BuildNext {
     socket: Socket,
 }
 
-impl Next {
+impl BuildNext {
     pub fn leave(
         mut self,
         data: Option<(Box<[Scalar]>, Pointer)>,
     ) -> Result<BuildHandler, ClientIpcError> {
         let end = data.is_none();
-        let packet = NextPacket::Leave { data };
+        let packet = BuildNextPacket::Leave { data };
         self.socket.client_send(packet)?;
         Ok(BuildHandler {
             socket: self.socket,
@@ -124,13 +125,13 @@ impl Next {
     }
 }
 
+pub struct SearchHandler {
+    socket: Socket,
+}
+
 pub enum SearchHandle {
     Check { p: Pointer, x: Check },
     Leave { result: Vec<Pointer>, x: Rpc },
-}
-
-pub struct SearchHandler {
-    socket: Socket,
 }
 
 impl SearchHandler {
@@ -161,6 +162,47 @@ impl Check {
         let packet = CheckPacket::Leave { result };
         self.socket.client_send(packet)?;
         Ok(SearchHandler {
+            socket: self.socket,
+        })
+    }
+}
+
+pub struct DeleteHandler {
+    socket: Socket,
+}
+
+pub enum DeleteHandle {
+    Next { p: Pointer, x: DeleteNext },
+    Leave { x: Rpc },
+}
+
+impl DeleteHandler {
+    pub fn handle(mut self) -> Result<DeleteHandle, ClientIpcError> {
+        Ok(match self.socket.client_recv::<DeletePacket>()? {
+            DeletePacket::Next { p } => DeleteHandle::Next {
+                p,
+                x: DeleteNext {
+                    socket: self.socket,
+                },
+            },
+            DeletePacket::Leave {} => DeleteHandle::Leave {
+                x: Rpc {
+                    socket: self.socket,
+                },
+            },
+        })
+    }
+}
+
+pub struct DeleteNext {
+    socket: Socket,
+}
+
+impl DeleteNext {
+    pub fn leave(mut self, delete: bool) -> Result<DeleteHandler, ClientIpcError> {
+        let packet = DeleteNextPacket::Leave { delete };
+        self.socket.client_send(packet)?;
+        Ok(DeleteHandler {
             socket: self.socket,
         })
     }

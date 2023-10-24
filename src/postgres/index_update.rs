@@ -10,12 +10,21 @@ pub unsafe fn update_insert(id: Id, vector: Box<[Scalar]>, tid: pgrx::pg_sys::It
     })
 }
 
-pub fn update_delete(id: Id, deletes: Vec<Pointer>) {
+pub fn update_delete(id: Id, hook: impl Fn(Pointer) -> bool) {
     flush_if_commit(id);
-    client(|mut rpc| {
-        for message in deletes {
-            rpc.delete(id, message).unwrap();
+    client(|rpc| {
+        use crate::ipc::client::DeleteHandle;
+        let mut handler = rpc.delete(id).unwrap();
+        loop {
+            let handle = handler.handle().unwrap();
+            match handle {
+                DeleteHandle::Next { p, x } => {
+                    handler = x.leave(hook(p)).unwrap();
+                }
+                DeleteHandle::Leave { x } => {
+                    break x;
+                }
+            }
         }
-        rpc
     })
 }

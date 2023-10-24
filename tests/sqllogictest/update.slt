@@ -1,0 +1,41 @@
+statement ok
+DROP TABLE IF EXISTS t;
+
+statement ok
+CREATE TABLE t (val vector(3));
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM generate_series(1, 1000);
+
+statement ok
+CREATE INDEX CONCURRENTLY ON t USING vectors (val l2_ops)
+WITH (options = $$
+capacity = 2000
+[algorithm.hnsw]
+$$);
+
+statement ok
+UPDATE t SET val = ARRAY[0.2, random(), random()]::real[] WHERE val = (SELECT val FROM t ORDER BY val <-> '[0.1,0.1,0.1]' LIMIT 1);
+
+statement ok
+INSERT INTO t (val) VALUES ('[0.1,0.1,0.1]');
+
+query I
+SELECT val = '[0.1,0.1,0.1]' FROM t ORDER BY val <-> '[0.1,0.1,0.1]' LIMIT 2;
+----
+t
+f
+
+statement ok
+REINDEX TABLE CONCURRENTLY t;
+
+statement ok
+DELETE FROM t WHERE val = '[0.1,0.1,0.1]';
+
+query I
+SELECT val = '[0.1,0.1,0.1]' FROM t ORDER BY val <-> '[0.1,0.1,0.1]' LIMIT 1;
+----
+f
+
+statement ok
+DROP TABLE t;

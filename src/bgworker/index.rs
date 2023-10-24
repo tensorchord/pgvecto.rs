@@ -9,6 +9,7 @@ use crate::algorithms::AlgorithmError;
 use crate::algorithms::AlgorithmOptions;
 use crate::bgworker::vectors::VectorsOptions;
 use crate::ipc::server::Build;
+use crate::ipc::server::Delete;
 use crate::ipc::server::Search;
 use crate::ipc::ServerIpcError;
 use crate::prelude::*;
@@ -156,7 +157,21 @@ impl Index {
         Ok(())
     }
 
-    pub fn delete(&self, delete: Pointer) -> Result<(), IndexError> {
+    pub fn delete(&self, server_delete: &mut Delete) -> Result<(), IndexError> {
+        for i in 0..self.vectors.len() {
+            let p = Pointer::from_u48(self.vectors.get_data(i) >> 16);
+            if self.filter_delete.deleted(p) {
+                continue;
+            }
+            let delete = server_delete.next(p).expect("IPC error.");
+            if delete {
+                self.delete_once(p)?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn delete_once(&self, delete: Pointer) -> Result<(), IndexError> {
         self.filter_delete.on_deleting(delete);
         let bytes = LogFollowing::Delete { p: delete }.bincode();
         self.wal.write(bytes);
