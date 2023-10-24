@@ -1,20 +1,11 @@
-import psycopg, pytest
+import pytest
+import psycopg
 import numpy as np
-from psycopg import Cursor, Connection
+from psycopg import Connection
 from pgvecto_rs.psycopg import register_vector
-import logging
 from tests import (
     URL,
-    TOML_SETTINGS,
     VECTORS,
-    INVALID_VECTORS,
-    OP_NEG_DOT_PROD_DIS,
-    EXPECTED_SQRT_EUCLID_DIS,
-    OP_SQRT_EUCLID_DIS,
-    EXPECTED_NEG_DOT_PROD_DIS,
-    OP_NEG_COS_DIS,
-    EXPECTED_NEG_COS_DIS,
-    LEN_AFT_DEL,
 )
 
 
@@ -22,17 +13,20 @@ from tests import (
 def conn():
     with psycopg.connect(URL) as conn:
         register_vector(conn)
-        conn.execute('CREATE EXTENSION IF NOT EXISTS vectors;')
-        conn.execute('DROP TABLE IF EXISTS tb_test_item')
-        conn.execute('CREATE TABLE tb_test_item (id bigserial PRIMARY KEY, embedding vector(3) NOT NULL);')
+        conn.execute("CREATE EXTENSION IF NOT EXISTS vectors;")
+        conn.execute("DROP TABLE IF EXISTS tb_test_item")
+        conn.execute(
+            "CREATE TABLE tb_test_item (id bigserial PRIMARY KEY, embedding vector(3) NOT NULL);"
+        )
         conn.commit()
         try:
-            yield
+            yield conn
         finally:
-            conn.execute('DROP TABLE IF EXISTS tb_test_item')
+            conn.execute("DROP TABLE IF EXISTS tb_test_item")
             conn.commit()
 
 
+# The server cannot handle invalid vectors curently, see https://github.com/tensorchord/pgvecto.rs/issues/96
 # def test_invalid_insert(conn: Connection):
 #     for i, e in enumerate(INVALID_VECTORS):
 #         try:
@@ -51,9 +45,12 @@ def conn():
 # Semetic search tests
 # =================================
 
+
 def test_insert(conn: Connection):
     with conn.cursor() as cur:
-        cur.executemany("INSERT INTO tb_test_item (embedding) VALUES (%s);", [(e, ) for e in VECTORS])
+        cur.executemany(
+            "INSERT INTO tb_test_item (embedding) VALUES (%s);", [(e,) for e in VECTORS]
+        )
         cur.execute("SELECT * FROM tb_test_item;")
         conn.commit()
         rows = cur.fetchall()
