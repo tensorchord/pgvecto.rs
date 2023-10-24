@@ -8,10 +8,13 @@ pub struct Builder {
     pub ntuples: f64,
 }
 
-pub unsafe fn build(
-    index: pgrx::pg_sys::Relation,
-    data: Option<(pgrx::pg_sys::Relation, *mut pgrx::pg_sys::IndexInfo)>,
-) {
+pub struct BuildData<'a> {
+    pub heap: pgrx::pg_sys::Relation,
+    pub index_info: *mut pgrx::pg_sys::IndexInfo,
+    pub result: &'a mut pgrx::pg_sys::IndexBuildResult,
+}
+
+pub unsafe fn build(index: pgrx::pg_sys::Relation, data: Option<BuildData>) {
     let oid = (*index).rd_id;
     let id = Id::from_sys(oid);
     flush_if_commit(id);
@@ -22,8 +25,27 @@ pub unsafe fn build(
             build_handler: Some(build_handler),
             ntuples: 0.0,
         };
-        if let Some((heap, index_info)) = data {
-            pgrx::pg_sys::IndexBuildHeapScan(heap, index, index_info, Some(callback), &mut builder);
+        if let Some(BuildData {
+            heap,
+            index_info,
+            result,
+        }) = data
+        {
+            let scan_fn = (*(*heap).rd_tableam).index_build_range_scan.unwrap();
+            result.heap_tuples = scan_fn(
+                heap,
+                index,
+                index_info,
+                true,
+                false,
+                true,
+                0,
+                pgrx::pg_sys::InvalidBlockNumber,
+                Some(callback),
+                (&mut builder) as *mut Builder as *mut std::os::raw::c_void,
+                std::ptr::null_mut(),
+            );
+            result.index_tuples = builder.ntuples;
         }
         let build_handler = builder.build_handler.take().unwrap();
         let BuildHandle::Next { x } = build_handler.handle().unwrap() else {

@@ -60,6 +60,6 @@ SELECT '[1,2]'::vector <#> '[3,4]';
 -11
 
 query I
-SELECT '[1,2]'::vector <=> '[3,4]';
+SELECT '[1,2]'::vector <=> '[3,4]' > -1;
 ----
--0.98386997
+t

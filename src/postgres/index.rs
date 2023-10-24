@@ -182,10 +182,15 @@ pub unsafe extern "C" fn ambuild(
     index_relation: pgrx::pg_sys::Relation,
     index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> *mut pgrx::pg_sys::IndexBuildResult {
-    index_build::build(index_relation, Some((heap_relation, index_info)));
     let mut result = pgrx::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0();
-    result.heap_tuples = 0.0;
-    result.index_tuples = 0.0;
+    index_build::build(
+        index_relation,
+        Some(index_build::BuildData {
+            heap: heap_relation,
+            index_info,
+            result: &mut *result,
+        }),
+    );
     result.into_pg()
 }
 
@@ -267,100 +272,23 @@ pub unsafe extern "C" fn amgettuple(
 #[pgrx::pg_guard]
 pub extern "C" fn amendscan(_scan: pgrx::pg_sys::IndexScanDesc) {}
 
-#[cfg(any(feature = "pg11", feature = "pg12"))]
-#[pg_guard]
-pub unsafe extern "C" fn ambulkdelete(
-    info: *mut pg_sys::IndexVacuumInfo,
-    _stats: *mut pg_sys::IndexBulkDeleteResult,
-    _callback: pg_sys::IndexBulkDeleteCallback,
-    callback_state: *mut std::os::raw::c_void,
-) -> *mut pg_sys::IndexBulkDeleteResult {
-    #[repr(C)]
-    pub struct LVRelStats {
-        pub useindex: bool,
-        pub old_rel_pages: pg_sys::BlockNumber,
-        pub rel_pages: pg_sys::BlockNumber,
-        pub scanned_pages: pg_sys::BlockNumber,
-        pub pinskipped_pages: pg_sys::BlockNumber,
-        pub frozenskipped_pages: pg_sys::BlockNumber,
-        pub tupcount_pages: pg_sys::BlockNumber,
-        pub old_live_tuples: libc::c_double,
-        pub new_rel_tuples: libc::c_double,
-        pub new_live_tuples: libc::c_double,
-        pub new_dead_tuples: libc::c_double,
-        pub pages_removed: pg_sys::BlockNumber,
-        pub tuples_deleted: libc::c_double,
-        pub nonempty_pages: pg_sys::BlockNumber,
-        pub num_dead_tuples: libc::c_int,
-        pub max_dead_tuples: libc::c_int,
-        pub dead_tuples: pg_sys::ItemPointer,
-        pub num_index_scans: libc::c_int,
-        pub latestRemovedXid: pg_sys::TransactionId,
-        pub lock_waiter_detected: bool,
-    }
-    let oid = (*(*info).index).rd_id;
-    let id = Id::from_sys(oid);
-    let items = callback_state as *mut LVRelStats;
-    let deletes =
-        std::slice::from_raw_parts((*items).dead_tuples, (*items).num_dead_tuples as usize)
-            .iter()
-            .copied()
-            .map(Pointer::from_sys)
-            .collect::<Vec<Pointer>>();
-    update_delete(id, deletes);
-    let result = PgBox::<pg_sys::IndexBulkDeleteResult>::alloc0();
-    result.into_pg()
-}
-
-#[cfg(any(feature = "pg13", feature = "pg14"))]
-#[pg_guard]
-pub unsafe extern "C" fn ambulkdelete(
-    info: *mut pg_sys::IndexVacuumInfo,
-    _stats: *mut pg_sys::IndexBulkDeleteResult,
-    _callback: pg_sys::IndexBulkDeleteCallback,
-    callback_state: *mut std::os::raw::c_void,
-) -> *mut pg_sys::IndexBulkDeleteResult {
-    use crate::pg_sys::__IncompleteArrayField;
-    #[repr(C)]
-    struct LVDeadTuples {
-        max_tuples: ::std::os::raw::c_int,
-        num_tuples: ::std::os::raw::c_int,
-        itemptrs: __IncompleteArrayField<pg_sys::ItemPointerData>,
-    }
-    let oid = (*(*info).index).rd_id;
-    let id = Id::from_sys(oid);
-    let items = callback_state as *mut LVDeadTuples;
-    let deletes = (*items)
-        .itemptrs
-        .as_slice((*items).num_tuples as usize)
-        .iter()
-        .copied()
-        .map(Pointer::from_sys)
-        .collect::<Vec<Pointer>>();
-    update_delete(id, deletes);
-    let result = PgBox::<pg_sys::IndexBulkDeleteResult>::alloc0();
-    result.into_pg()
-}
-
-#[cfg(any(feature = "pg15", feature = "pg16"))]
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn ambulkdelete(
     info: *mut pgrx::pg_sys::IndexVacuumInfo,
     _stats: *mut pgrx::pg_sys::IndexBulkDeleteResult,
-    _callback: pgrx::pg_sys::IndexBulkDeleteCallback,
+    callback: pgrx::pg_sys::IndexBulkDeleteCallback,
     callback_state: *mut std::os::raw::c_void,
 ) -> *mut pgrx::pg_sys::IndexBulkDeleteResult {
     let oid = (*(*info).index).rd_id;
     let id = Id::from_sys(oid);
-    let items = callback_state as *mut pgrx::pg_sys::VacDeadItems;
-    let deletes = (*items)
-        .items
-        .as_slice((*items).num_items as usize)
-        .iter()
-        .copied()
-        .map(Pointer::from_sys)
-        .collect::<Vec<Pointer>>();
-    index_update::update_delete(id, deletes);
+    if let Some(callback) = callback {
+        index_update::update_delete(id, |pointer| {
+            callback(
+                &mut pointer.into_sys() as *mut pgrx::pg_sys::ItemPointerData,
+                callback_state,
+            )
+        });
+    }
     let result = pgrx::PgBox::<pgrx::pg_sys::IndexBulkDeleteResult>::alloc0();
     result.into_pg()
 }
