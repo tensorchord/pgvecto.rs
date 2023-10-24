@@ -16,6 +16,12 @@ See the usage examples:
 
 ### SQLAlchemy
 
+Install [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy) and [psycopg3](https://www.psycopg.org/psycopg3/docs/basic/install.html)
+```bash
+pip install "psycopg[binary]" sqlalchemy
+```
+
+Then write your code. For example:
 ```python
 import numpy as np
 from sqlalchemy import create_engine, select, insert, types
