@@ -1,12 +1,7 @@
 name: Python Release
 
 on:
-#   push:
-#     tags:
-#       - "v*"
-  schedule:
-    # 00:00 UTC+8 -> 16:00
-    - cron: "0 16 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: write
