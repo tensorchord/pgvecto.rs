@@ -1,0 +1,79 @@
+name: Python Check
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - '.github/workflows/python_check.yml'
+      - 'bindings/python/src/**'
+      - 'bindings/python/tests/**'
+      - 'bindings/python/pyproject.toml'
+      - 'bindings/python/pdm.lock'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - '.github/workflows/python_check.yml'
+      - 'bindings/python/src/**'
+      - 'bindings/python/tests/**'
+      - 'bindings/python/pyproject.toml'
+      - 'bindings/python/pdm.lock'
+  merge_group:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup PDM
+      uses: pdm-project/setup-pdm@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Dependencies
+      working-directory: bindings/python
+      run: |
+        pdm sync -d -G lint
+    - name: Run Lint Checks
+      working-directory: bindings/python
+      run: |
+        pdm run check
+
+  test:
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup PDM
+      uses: pdm-project/setup-pdm@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Dependencies
+      working-directory: bindings/python
+      run: |
+        pdm sync -d
+    
+    # - name: Install Docker for macOS
+    #   if: matrix.os == 'macos-latest'
+    #   run: |
+    #     brew install docker
+    #     colima start
+
+    - name: Start Postgres
+      run: |
+        docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:latest
+    
+    - name: Run Tests
+      working-directory: bindings/python
+      run: |
+        pdm run test
