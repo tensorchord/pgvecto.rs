@@ -1,8 +1,9 @@
 [project]
 name = "pgvecto_rs"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python binding for pgvecto.rs"
 authors = [
+    {name = "TensorChord", email = "modelz-support@tensorchord.ai"},
     {name = "盐粒 Yanli", email = "mail@yanli.one"},
 ]
 dependencies = [
