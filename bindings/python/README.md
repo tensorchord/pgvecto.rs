@@ -13,6 +13,7 @@ pip install pgvecto_rs
 
 See the usage examples:
 - [SQLAlchemy](#SQLAlchemy)
+- [psycopg3](#psycopg3)
 
 ### SQLAlchemy
 
@@ -56,8 +57,8 @@ Document.metadata.create_all(engine)
 with Session(engine) as session:
     # Insert 3 rows into the table
     t1 = insert(Document).values(text="hello world", embedding=[1, 2, 3])
-    t2 = insert(Document).values(text="hello postgres", embedding=[1, 2, 4])
-    t3 = insert(Document).values(text="hello pgvecto.rs", embedding=[1, 3, 4])
+    t2 = insert(Document).values(text="hello postgres", embedding=[1.0, 2.0, 4.0])
+    t3 = insert(Document).values(text="hello pgvecto.rs", embedding=np.array([1, 3, 4]))
     for t in [t1, t2, t3]:
         session.execute(t)
     session.commit()
@@ -91,6 +92,74 @@ All the operators include:
 - `squared_euclidean_distance`
 - `negative_dot_product_distance`
 - `negative_cosine_distance`
+
+### psycopg3
+
+Install [psycopg3](https://www.psycopg.org/psycopg3/docs/basic/install.html)
+```bash
+pip install "psycopg[binary]"
+```
+
+Then write your code. For example:
+```python
+import os
+import psycopg
+import numpy as np
+from pgvecto_rs.psycopg import register_vector
+
+URL = "postgresql://..."
+
+# Connect to the DB and init things
+with psycopg.connect(URL) as conn:
+    conn.execute("CREATE EXTENSION IF NOT EXISTS vectors;")
+    register_vector(conn)
+    conn.execute(
+        "CREATE TABLE documents (id SERIAL PRIMARY KEY, text TEXT NOT NULL, embedding vector(3) NOT NULL);"
+    )
+    conn.commit()
+    try:
+        # Insert 3 rows into the table
+        conn.execute(
+            "INSERT INTO documents (text, embedding) VALUES (%s, %s);",
+            ("hello world", [1, 2, 3]),
+        )
+        conn.execute(
+            "INSERT INTO documents (text, embedding) VALUES (%s, %s);",
+            ("hello postgres", [1.0, 2.0, 4.0]),
+        )
+        conn.execute(
+            "INSERT INTO documents (text, embedding) VALUES (%s, %s);",
+            ("hello pgvecto.rs", np.array([1, 3, 4])),
+        )
+        conn.commit()
+
+        # Select the row "hello pgvecto.rs"
+        cur = conn.execute(
+            "SELECT * FROM documents WHERE text = %s;", ("hello pgvecto.rs",)
+        )
+        target = cur.fetchone()[2]
+
+        # Select all the rows and sort them
+        # by the squared_euclidean_distance to "hello pgvecto.rs"
+        cur = conn.execute(
+            "SELECT text, embedding <-> %s AS distance FROM documents ORDER BY distance;",
+            (target,),
+        )
+        for row in cur.fetchall():
+            print(row)
+    finally:
+        # Drop the table
+        conn.execute("DROP TABLE IF EXISTS documents;")
+        conn.commit()
+
+```
+
+The output will be:
+```
+('hello pgvecto.rs', 0.0)
+('hello postgres', 1.0)
+('hello world', 2.0)
+```
 
 ## Development
 
