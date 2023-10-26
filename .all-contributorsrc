@@ -113,6 +113,15 @@
         "test",
         "infra"
       ]
+    },
+    {
+      "login": "BeautyyuYanli",
+      "name": "盐粒 Yanli",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32453863?v=4",
+      "profile": "https://yanli.one",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
