@@ -20,8 +20,8 @@ from tests import (
 @pytest.fixture(scope="module")
 def conn():
     with psycopg.connect(URL) as conn:
-        register_vector(conn)
         conn.execute("CREATE EXTENSION IF NOT EXISTS vectors;")
+        register_vector(conn)
         conn.execute("DROP TABLE IF EXISTS tb_test_item;")
         conn.execute(
             "CREATE TABLE tb_test_item (id bigserial PRIMARY KEY, embedding vector(3) NOT NULL);"
