@@ -22,38 +22,18 @@ URL = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(
 # ==== test_create_index ====
 
 TOML_SETTINGS = {
-    "flat": "$${}$$".format(
-        toml.dumps(
-            {
-                "capacity": 2097152,
-                "algorithm": {"flat": {}},
-            }
-        )
+    "flat": toml.dumps(
+        {
+            "capacity": 2097152,
+            "algorithm": {"flat": {}},
+        }
     ),
-    "hnsw": "$${}$$".format(
-        toml.dumps(
-            {
-                "capacity": 2097152,
-                "algorithm": {"hnsw": {}},
-            }
-        )
+    "hnsw": toml.dumps(
+        {
+            "capacity": 2097152,
+            "algorithm": {"hnsw": {}},
+        }
     ),
-    # "ivf": "$${}$$".format(
-    #     toml.dumps(
-    #         {
-    #             "capacity": 2097152,
-    #             "algorithm": {"ivf": {}},
-    #         }
-    #     )
-    # ),
-    # "vamana": "$${}$$".format(
-    #     toml.dumps(
-    #         {
-    #             "capacity": 2097152,
-    #             "algorithm": {"vamana": {}},
-    #         }
-    #     )
-    # ),
 }
 
 # ==== test_invalid_insert ====

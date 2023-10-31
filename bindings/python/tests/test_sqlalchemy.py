@@ -69,11 +69,11 @@ def test_create_index(session: Session, index_name: str, index_setting: str):
         index_name,
         Document.embedding,
         postgresql_using="vectors",
-        postgresql_with={"options": index_setting},
+        postgresql_with={"options": f"$${index_setting}$$"},
         postgresql_ops={"embedding": "l2_ops"},
     )
     index.create(session.bind)
-    session.rollback()
+    session.commit()
 
 
 @pytest.mark.parametrize("i,e", enumerate(INVALID_VECTORS))
