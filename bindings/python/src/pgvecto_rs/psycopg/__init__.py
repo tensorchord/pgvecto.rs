@@ -39,10 +39,10 @@ def register_vector_info(context: Connection, info: TypeInfo):
         raise ProgrammingError("vector type not found in the database")
     info.register(context)
 
-    # add oid to anonymous class for set_types
-    text_dumper = type("", (VectorDumper,), {"oid": info.oid})
+    class VectorTextDumper(VectorDumper):
+        oid = info.oid
 
     adapters = context.adapters
-    adapters.register_dumper(list, text_dumper)
-    adapters.register_dumper(ndarray, text_dumper)
+    adapters.register_dumper(list, VectorTextDumper)
+    adapters.register_dumper(ndarray, VectorTextDumper)
     adapters.register_loader(info.oid, VectorLoader)
