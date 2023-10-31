@@ -17,7 +17,7 @@ pg16 = ["pgrx/pg16", "pgrx-tests/pg16"]
 pg_test = []
 
 [dependencies]
-pgrx = { git = "https://github.com/tensorchord/pgrx.git", rev = "c0d11a8b78b0d707a5e9106bc4d5f66395ca9a2e" }
+pgrx = "0.11.0"
 openai_api_rust = { git = "https://github.com/tensorchord/openai-api.git", rev = "228d54b6002e98257b3c81501a054942342f585f" }
 static_assertions = "1.1.0"
 libc = "~0.2"
@@ -43,7 +43,7 @@ toml = "0.7.6"
 rayon = "1.6.1"
 
 [dev-dependencies]
-pgrx-tests = { git = "https://github.com/tensorchord/pgrx.git", rev = "c0d11a8b78b0d707a5e9106bc4d5f66395ca9a2e" }
+pgrx-tests = "0.11.0"
 httpmock = "0.6"
 mockall = "0.11.4"
 

@@ -46,7 +46,7 @@ const AM_HANDLER: pgrx::pg_sys::IndexAmRoutine = {
     let mut am_routine =
         unsafe { std::mem::MaybeUninit::<pgrx::pg_sys::IndexAmRoutine>::zeroed().assume_init() };
 
-    am_routine.type_ = pgrx::pg_sys::NodeTag_T_IndexAmRoutine;
+    am_routine.type_ = pgrx::pg_sys::NodeTag::T_IndexAmRoutine;
 
     am_routine.amstrategies = 1;
     am_routine.amsupport = 0;

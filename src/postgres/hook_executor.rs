@@ -17,7 +17,10 @@ pub unsafe fn pre_process_utility(pstmt: *mut pgrx::pg_sys::PlannedStmt) {
     unsafe {
         let utility_statement = pgrx::PgBox::from_pg((*pstmt).utilityStmt);
 
-        let is_drop = pgrx::is_a(utility_statement.as_ptr(), pgrx::pg_sys::NodeTag_T_DropStmt);
+        let is_drop = pgrx::is_a(
+            utility_statement.as_ptr(),
+            pgrx::pg_sys::NodeTag::T_DropStmt,
+        );
 
         if is_drop {
             let stat_drop =
@@ -77,7 +80,7 @@ unsafe extern "C" fn rewrite_plan_state(
     context: *mut libc::c_void,
 ) -> bool {
     match (*node).type_ {
-        pgrx::pg_sys::NodeTag_T_IndexScanState => {
+        pgrx::pg_sys::NodeTag::T_IndexScanState => {
             let node = node as *mut pgrx::pg_sys::IndexScanState;
             let index_relation = (*node).iss_RelationDesc;
             // Check the pointer of `amvalidate`.

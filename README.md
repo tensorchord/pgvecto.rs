@@ -89,7 +89,7 @@ We support three operators to calculate the distance between two vectors.
 -- call the distance function through operators
 
 -- squared Euclidean distance
-SELECT '[1, 2, 3]' <-> '[3, 2, 1]';
+SELECT '[1, 2, 3]'::vector <-> '[3, 2, 1]'::vector;
 -- negative dot product distance
 SELECT '[1, 2, 3]' <#> '[3, 2, 1]';
 -- negative square cosine distance
