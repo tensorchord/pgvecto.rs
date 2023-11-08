@@ -8,18 +8,10 @@ use crate::utils::dir_ops::sync_dir;
 use crate::utils::file_atomic::FileAtomic;
 use arc_swap::ArcSwap;
 use parking_lot::Mutex;
-use serde::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use thiserror::Error;
-
-#[derive(Debug, Error, Serialize, Deserialize)]
-pub enum BgworkerError {
-    #[error("Bad input. vector = {0:?}.")]
-    InvalidVector(Vec<Scalar>),
-}
 
 pub struct Bgworker {
     path: PathBuf,
@@ -77,7 +69,7 @@ impl Bgworker {
         id: Id,
         search: (Vec<Scalar>, usize),
         mut f: F,
-    ) -> Result<Vec<Pointer>, BgworkerError>
+    ) -> Result<Vec<Pointer>, FriendlyError>
     where
         F: FnMut(Pointer) -> bool,
     {
@@ -86,10 +78,10 @@ impl Bgworker {
         let view = index.view();
         match view.search(search.1, &search.0, |p| f(p)) {
             Ok(x) => Ok(x),
-            Err(IndexSearchError::InvalidVector(x)) => Err(BgworkerError::InvalidVector(x)),
+            Err(IndexSearchError::InvalidVector(x)) => Err(FriendlyError::InvalidVector(x)),
         }
     }
-    pub fn call_insert(&self, id: Id, insert: (Vec<Scalar>, Pointer)) -> Result<(), BgworkerError> {
+    pub fn call_insert(&self, id: Id, insert: (Vec<Scalar>, Pointer)) -> Result<(), FriendlyError> {
         let view = self.view.load_full();
         let index = view.indexes.get(&id).expect("Not exists.");
         loop {
@@ -97,7 +89,7 @@ impl Bgworker {
             match view.insert(insert.0.clone(), insert.1) {
                 Ok(()) => break Ok(()),
                 Err(IndexInsertError::InvalidVector(x)) => {
-                    break Err(BgworkerError::InvalidVector(x))
+                    break Err(FriendlyError::InvalidVector(x))
                 }
                 Err(IndexInsertError::OutdatedView(_)) => index.refresh(),
             }

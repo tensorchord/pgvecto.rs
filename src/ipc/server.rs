@@ -1,4 +1,3 @@
-use crate::bgworker::bgworker::BgworkerError;
 use crate::index::IndexOptions;
 use crate::ipc::packet::*;
 use crate::ipc::transport::Socket;
@@ -115,7 +114,7 @@ pub struct Insert {
 }
 
 impl Insert {
-    pub fn leave(mut self, result: Result<(), BgworkerError>) -> Result<RpcHandler, IpcError> {
+    pub fn leave(mut self, result: Result<(), FriendlyError>) -> Result<RpcHandler, IpcError> {
         let packet = InsertPacket::Leave { result };
         self.socket.server_send(packet)?;
         Ok(RpcHandler {
@@ -157,7 +156,7 @@ impl Search {
     }
     pub fn leave(
         mut self,
-        result: Result<Vec<Pointer>, BgworkerError>,
+        result: Result<Vec<Pointer>, FriendlyError>,
     ) -> Result<RpcHandler, IpcError> {
         let packet = SearchPacket::Leave { result };
         self.socket.server_send(packet)?;

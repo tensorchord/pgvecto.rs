@@ -13,10 +13,7 @@ INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM gene
 
 statement ok
 CREATE INDEX ON t USING vectors (val l2_ops)
-WITH (options = $$
-capacity = 2000
-[algorithm.ivf]
-$$);
+WITH (options = "[indexing.ivf]");
 
 statement ok
 INSERT INTO t (val) VALUES ('[0.6,0.6,0.6]');
@@ -51,10 +48,7 @@ INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM gene
 
 statement ok
 CREATE INDEX ON t USING vectors (val l2_ops)
-WITH (options = $$
-capacity = 2000
-[algorithm.ivf.quantization.product]
-$$);
+WITH (options = "[indexing.ivf.quantization.product]");
 
 statement ok
 INSERT INTO t (val) VALUES ('[0.6,0.6,0.6]');

@@ -5,9 +5,7 @@ pub unsafe fn update_insert(id: Id, vector: Vec<Scalar>, tid: pgrx::pg_sys::Item
     flush_if_commit(id);
     let p = Pointer::from_sys(*tid);
     client(|mut rpc| {
-        rpc.insert(id, (vector, p))
-            .unwrap()
-            .expect("Bgworker Error.");
+        rpc.insert(id, (vector, p)).unwrap().friendly();
         rpc
     })
 }

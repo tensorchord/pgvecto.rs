@@ -1,4 +1,3 @@
-use crate::bgworker::bgworker::BgworkerError;
 use crate::index::IndexOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -47,7 +46,7 @@ pub enum DestoryPacket {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum InsertPacket {
-    Leave { result: Result<(), BgworkerError> },
+    Leave { result: Result<(), FriendlyError> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -67,7 +66,7 @@ pub enum SearchPacket {
         p: Pointer,
     },
     Leave {
-        result: Result<Vec<Pointer>, BgworkerError>,
+        result: Result<Vec<Pointer>, FriendlyError>,
     },
 }
 

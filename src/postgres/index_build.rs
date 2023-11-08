@@ -69,10 +69,6 @@ unsafe extern "C" fn callback(
     let state = &mut *(state as *mut Builder);
     let pgvector = VectorInput::from_datum(*values.add(0), *is_null.add(0)).unwrap();
     let data = (pgvector.to_vec(), Pointer::from_sys(*ctid));
-    state
-        .rpc
-        .insert(id, data)
-        .unwrap()
-        .expect("Bgworker Error.");
+    state.rpc.insert(id, data).unwrap().friendly();
     state.ntuples += 1.0;
 }

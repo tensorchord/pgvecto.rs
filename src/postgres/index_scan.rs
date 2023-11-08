@@ -147,7 +147,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
                             handler = x.leave(result).unwrap();
                         }
                         Leave { result, x } => {
-                            res = result.expect("Bgworker Error.");
+                            res = result.friendly();
                             break x;
                         }
                     }
@@ -171,7 +171,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
                             unreachable!()
                         }
                         Leave { result, x } => {
-                            res = result.expect("Bgworker Error.");
+                            res = result.friendly();
                             break x;
                         }
                     }

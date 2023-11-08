@@ -86,7 +86,9 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
         optimizing: parsed.optimizing,
         indexing: parsed.indexing,
     };
-    options.validate().expect("The options is invalid.");
+    if let Err(errors) = options.validate() {
+        FriendlyError::InvalidOption(errors.to_string());
+    }
     options
 }
 

@@ -12,16 +12,7 @@ Why not just use Postgres to do the vector similarity search? This is the reason
 UPDATE documents SET embedding = ai_embedding_vector(content) WHERE length(embedding) = 0;
 
 -- Create an index on the embedding column
-CREATE INDEX ON documents USING vectors (embedding l2_ops)
-WITH (options = $$
-capacity = 2097152
-[vectors]
-memmap = "ram"
-[algorithm.hnsw]
-memmap = "ram"
-m = 32
-ef = 256
-$$);
+CREATE INDEX ON documents USING vectors (embedding l2_ops);
 
 -- Query the similar embeddings
 SELECT * FROM documents ORDER BY embedding <-> ai_embedding_vector('hello world') LIMIT 5;

@@ -1,4 +1,3 @@
-use crate::bgworker::bgworker::BgworkerError;
 use crate::index::IndexOptions;
 use crate::ipc::packet::*;
 use crate::ipc::transport::Socket;
@@ -46,7 +45,7 @@ impl Rpc {
         &mut self,
         id: Id,
         insert: (Vec<Scalar>, Pointer),
-    ) -> Result<Result<(), BgworkerError>, IpcError> {
+    ) -> Result<Result<(), FriendlyError>, IpcError> {
         let packet = RpcPacket::Insert { id, insert };
         self.socket.client_send(packet)?;
         let InsertPacket::Leave { result } = self.socket.client_recv::<InsertPacket>()?;
@@ -72,7 +71,7 @@ pub enum SearchHandle {
         x: SearchCheck,
     },
     Leave {
-        result: Result<Vec<Pointer>, BgworkerError>,
+        result: Result<Vec<Pointer>, FriendlyError>,
         x: Rpc,
     },
 }

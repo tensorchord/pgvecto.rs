@@ -12,10 +12,7 @@ INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM gene
 # Maybe we need better error handling.
 statement ok
 CREATE INDEX ON t USING vectors (val l2_ops)
-WITH (options = $$
-capacity = 2000
-[algorithm.hnsw]
-$$);
+WITH (options = "[indexing.hnsw]");
 
 statement ok
 INSERT INTO t (val) VALUES ('[0.6,0.6,0.6]');
