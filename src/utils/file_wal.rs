@@ -1,7 +1,6 @@
 use byteorder::NativeEndian as N;
 use crc32fast::hash as crc32;
 use std::path::Path;
-use std::thread::JoinHandle;
 
 /*
 +----------+-----------+---------+
@@ -9,35 +8,13 @@ use std::thread::JoinHandle;
 +----------+-----------+---------+
 */
 
-#[derive(Debug, Clone, Copy)]
-pub enum WalStatus {
-    Read,
-    Truncate,
-    Write,
-    Flush,
-}
-
-pub struct Wal {
+pub struct FileWal {
     file: std::fs::File,
     offset: usize,
     status: WalStatus,
 }
 
-impl Wal {
-    pub fn open(path: impl AsRef<Path>) -> Self {
-        use WalStatus::*;
-        let file = std::fs::OpenOptions::new()
-            .create(true)
-            .write(true)
-            .read(true)
-            .open(path)
-            .expect("Failed to open wal.");
-        Self {
-            file,
-            offset: 0,
-            status: Read,
-        }
-    }
+impl FileWal {
     pub fn create(path: impl AsRef<Path>) -> Self {
         use WalStatus::*;
         let file = std::fs::OpenOptions::new()
@@ -51,6 +28,20 @@ impl Wal {
             file,
             offset: 0,
             status: Write,
+        }
+    }
+    pub fn open(path: impl AsRef<Path>) -> Self {
+        use WalStatus::*;
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .read(true)
+            .open(path)
+            .expect("Failed to open wal.");
+        Self {
+            file,
+            offset: 0,
+            status: Read,
         }
     }
     pub fn read(&mut self) -> Option<Vec<u8>> {
@@ -111,7 +102,7 @@ impl Wal {
         self.offset += 4 + 4 + bytes.len();
         self.status = WalStatus::Write;
     }
-    pub fn flush(&mut self) {
+    pub fn sync_all(&mut self) {
         use WalStatus::*;
         let (Write | Flush) = self.status else {
             panic!("Operation not permitted.")
@@ -121,64 +112,10 @@ impl Wal {
     }
 }
 
-pub struct WalWriter {
-    #[allow(dead_code)]
-    handle: JoinHandle<Wal>,
-    tx: crossbeam::channel::Sender<WalWriterMessage>,
-}
-
-impl WalWriter {
-    pub fn spawn(wal: Wal) -> WalWriter {
-        use WalStatus::*;
-        let (Write | Flush) = wal.status else {
-            panic!("Operation not permitted.")
-        };
-        let (tx, rx) = crossbeam::channel::bounded(256);
-        let handle = std::thread::spawn(move || thread_wal(wal, rx));
-        WalWriter { handle, tx }
-    }
-    pub fn write(&self, data: Vec<u8>) {
-        self.tx
-            .send(WalWriterMessage::Write(data))
-            .expect("Wal thread exited.");
-    }
-    pub fn flush(&self) {
-        let (tx, rx) = crossbeam::channel::bounded::<!>(0);
-        self.tx
-            .send(WalWriterMessage::Flush(tx))
-            .expect("Wal thread exited.");
-        let _ = rx.recv();
-    }
-    pub fn shutdown(&mut self) {
-        let (tx, rx) = crossbeam::channel::bounded::<!>(0);
-        self.tx
-            .send(WalWriterMessage::Shutdown(tx))
-            .expect("Wal thread exited.");
-        let _ = rx.recv();
-    }
-}
-
-enum WalWriterMessage {
-    Write(Vec<u8>),
-    Flush(crossbeam::channel::Sender<!>),
-    Shutdown(crossbeam::channel::Sender<!>),
-}
-
-fn thread_wal(mut wal: Wal, rx: crossbeam::channel::Receiver<WalWriterMessage>) -> Wal {
-    while let Ok(message) = rx.recv() {
-        match message {
-            WalWriterMessage::Write(data) => {
-                wal.write(&data);
-            }
-            WalWriterMessage::Flush(_callback) => {
-                wal.flush();
-            }
-            WalWriterMessage::Shutdown(_callback) => {
-                wal.flush();
-                return wal;
-            }
-        }
-    }
-    wal.flush();
-    wal
+#[derive(Debug, Clone, Copy)]
+enum WalStatus {
+    Read,
+    Truncate,
+    Write,
+    Flush,
 }

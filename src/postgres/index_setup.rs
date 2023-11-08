@@ -1,6 +1,7 @@
-use crate::algorithms::AlgorithmOptions;
-use crate::bgworker::index::IndexOptions;
-use crate::bgworker::vectors::VectorsOptions;
+use crate::index::indexing::IndexingOptions;
+use crate::index::optimizing::OptimizingOptions;
+use crate::index::segments::SegmentsOptions;
+use crate::index::{IndexOptions, VectorOptions};
 use crate::postgres::datatype::VectorTypmod;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -71,7 +72,7 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
     assert!(nkeysatts == 1, "Can not be built on multicolumns.");
     // get distance
     let opfamily = (*index_relation).rd_opfamily.read();
-    let distance = convert_opfamily_to_distance(opfamily);
+    let d = convert_opfamily_to_distance(opfamily);
     // get dims
     let attrs = (*(*index_relation).rd_att).attrs.as_slice(1);
     let attr = &attrs[0];
@@ -80,13 +81,14 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
     // get other options
     let parsed = get_parsed_from_varlena((*index_relation).rd_options);
     let options = IndexOptions {
-        dims,
-        d: distance,
-        capacity: parsed.capacity,
-        vectors: parsed.vectors,
-        algorithm: parsed.algorithm,
+        vector: VectorOptions { dims, d },
+        segment: parsed.segment,
+        optimizing: parsed.optimizing,
+        indexing: parsed.indexing,
     };
-    options.validate().expect("The options is invalid.");
+    if let Err(errors) = options.validate() {
+        FriendlyError::InvalidOption(errors.to_string());
+    }
     options
 }
 
@@ -99,19 +101,22 @@ struct Helper {
 
 unsafe fn get_parsed_from_varlena(helper: *const pgrx::pg_sys::varlena) -> Parsed {
     let helper = helper as *const Helper;
-    assert!((*helper).offset != 0, "`options` cannot be null.");
+    if helper.is_null() || (*helper).offset == 0 {
+        return Default::default();
+    }
     let ptr = (helper as *const libc::c_char).offset((*helper).offset as isize);
     let cstr = CStr::from_ptr(ptr);
     toml::from_str::<Parsed>(cstr.to_str().unwrap()).unwrap()
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 struct Parsed {
-    capacity: usize,
     #[serde(default)]
-    vectors: VectorsOptions,
+    segment: SegmentsOptions,
     #[serde(default)]
-    algorithm: AlgorithmOptions,
+    optimizing: OptimizingOptions,
+    #[serde(default)]
+    indexing: IndexingOptions,
 }
 
 fn regoperatorin(name: &str) -> pgrx::pg_sys::Oid {

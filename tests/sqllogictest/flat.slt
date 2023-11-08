@@ -9,10 +9,7 @@ INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM gene
 
 statement ok
 CREATE INDEX ON t USING vectors (val l2_ops)
-WITH (options = $$
-capacity = 2000
-[algorithm.flat]
-$$);
+WITH (options = "[indexing.flat]");
 
 statement ok
 INSERT INTO t (val) VALUES ('[0.6,0.6,0.6]');

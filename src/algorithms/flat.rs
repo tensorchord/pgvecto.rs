@@ -1,116 +1,134 @@
 use super::quantization::Quantization;
-use super::utils::filtered_fixed_heap::FilteredFixedHeap;
-use super::Algo;
-use crate::algorithms::quantization::Quan;
-use crate::algorithms::quantization::QuantizationError;
-use crate::algorithms::quantization::QuantizationOptions;
-use crate::bgworker::index::IndexOptions;
-use crate::bgworker::storage::Storage;
-use crate::bgworker::storage::StoragePreallocator;
-use crate::bgworker::vectors::Vectors;
+use super::raw::Raw;
+use crate::index::segments::growing::GrowingSegment;
+use crate::index::segments::sealed::SealedSegment;
+use crate::index::IndexOptions;
 use crate::prelude::*;
-use serde::{Deserialize, Serialize};
+use crate::utils::dir_ops::sync_dir;
+use std::fs::create_dir;
+use std::path::PathBuf;
 use std::sync::Arc;
-use thiserror::Error;
 
-#[derive(Debug, Clone, Error, Serialize, Deserialize)]
-pub enum FlatError {
-    #[error("Quantization {0}")]
-    Quantization(#[from] QuantizationError),
+pub struct Flat {
+    mmap: FlatMmap,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FlatOptions {
-    #[serde(default)]
-    pub quantization: QuantizationOptions,
-}
+impl Flat {
+    pub fn create(
+        path: PathBuf,
+        options: IndexOptions,
+        sealed: Vec<Arc<SealedSegment>>,
+        growing: Vec<Arc<GrowingSegment>>,
+    ) -> Self {
+        create_dir(&path).unwrap();
+        let ram = make(path.clone(), sealed, growing, options.clone());
+        let mmap = save(ram, path.clone());
+        sync_dir(&path);
+        Self { mmap }
+    }
+    pub fn open(path: PathBuf, options: IndexOptions) -> Self {
+        let mmap = load(path, options.clone());
+        Self { mmap }
+    }
 
-impl Default for FlatOptions {
-    fn default() -> Self {
-        Self {
-            quantization: Default::default(),
-        }
+    pub fn len(&self) -> u32 {
+        self.mmap.raw.len()
+    }
+
+    pub fn vector(&self, i: u32) -> &[Scalar] {
+        &self.mmap.raw.vector(i)
+    }
+
+    pub fn data(&self, i: u32) -> u64 {
+        self.mmap.raw.data(i)
+    }
+
+    pub fn search<F: FnMut(u64) -> bool>(&self, k: usize, vector: &[Scalar], filter: F) -> Heap {
+        search(&self.mmap, k, vector, filter)
     }
 }
 
-pub struct Flat {
-    vectors: Arc<Vectors>,
+unsafe impl Send for Flat {}
+unsafe impl Sync for Flat {}
+
+pub struct FlatRam {
+    raw: Arc<Raw>,
     quantization: Quantization,
     d: Distance,
 }
 
-impl Algo for Flat {
-    type Error = FlatError;
+pub struct FlatMmap {
+    raw: Arc<Raw>,
+    quantization: Quantization,
+    d: Distance,
+}
 
-    fn prebuild(
-        storage: &mut StoragePreallocator,
-        index_options: IndexOptions,
-    ) -> Result<(), Self::Error> {
-        let flat_options = index_options.algorithm.clone().unwrap_flat();
-        Quantization::prebuild(storage, index_options, flat_options.quantization);
-        Ok(())
+unsafe impl Send for FlatMmap {}
+unsafe impl Sync for FlatMmap {}
+
+pub fn make(
+    path: PathBuf,
+    sealed: Vec<Arc<SealedSegment>>,
+    growing: Vec<Arc<GrowingSegment>>,
+    options: IndexOptions,
+) -> FlatRam {
+    let idx_opts = options.indexing.clone().unwrap_flat();
+    let raw = Arc::new(Raw::create(
+        path.join("raw"),
+        options.clone(),
+        sealed,
+        growing,
+    ));
+    let quantization = Quantization::create(
+        path.join("quantization"),
+        options.clone(),
+        idx_opts.quantization,
+        &raw,
+    );
+    FlatRam {
+        raw,
+        quantization,
+        d: options.vector.d,
     }
+}
 
-    fn build(
-        storage: &mut Storage,
-        options: IndexOptions,
-        vectors: Arc<Vectors>,
-        n: usize,
-    ) -> Result<Self, FlatError> {
-        let d = options.d;
-        let flat_options = options.algorithm.clone().unwrap_flat();
-        let quantization =
-            Quantization::build(storage, options, flat_options.quantization, vectors.clone());
-        for i in 0..n {
-            quantization.insert(i, vectors.get_vector(i))?;
+pub fn save(ram: FlatRam, _: PathBuf) -> FlatMmap {
+    FlatMmap {
+        raw: ram.raw,
+        quantization: ram.quantization,
+        d: ram.d,
+    }
+}
+
+pub fn load(path: PathBuf, options: IndexOptions) -> FlatMmap {
+    let idx_opts = options.indexing.clone().unwrap_flat();
+    let raw = Arc::new(Raw::open(path.join("raw"), options.clone()));
+    let quantization = Quantization::open(
+        path.join("quantization"),
+        options.clone(),
+        idx_opts.quantization,
+        &raw,
+    );
+    FlatMmap {
+        raw,
+        quantization,
+        d: options.vector.d,
+    }
+}
+
+pub fn search<F: FnMut(u64) -> bool>(
+    mmap: &FlatMmap,
+    k: usize,
+    vector: &[Scalar],
+    mut filter: F,
+) -> Heap {
+    let mut result = Heap::new(k);
+    for i in 0..mmap.raw.len() {
+        let distance = mmap.quantization.distance(mmap.d, vector, i);
+        let data = mmap.raw.data(i);
+        if filter(data) {
+            result.push(HeapElement { distance, data });
         }
-        Ok(Self {
-            vectors,
-            quantization,
-            d,
-        })
     }
-
-    fn load(
-        storage: &mut Storage,
-        options: IndexOptions,
-        vectors: Arc<Vectors>,
-    ) -> Result<Self, FlatError> {
-        let d = options.d;
-        let flat_options = options.algorithm.clone().unwrap_flat();
-        let quantization =
-            Quantization::load(storage, options, flat_options.quantization, vectors.clone());
-        Ok(Self {
-            vectors: vectors.clone(),
-            quantization,
-            d,
-        })
-    }
-
-    fn insert(&self, x: usize) -> Result<(), FlatError> {
-        self.quantization.insert(x, self.vectors.get_vector(x))?;
-        Ok(())
-    }
-
-    fn search<F>(
-        &self,
-        target: Box<[Scalar]>,
-        k: usize,
-        filter: F,
-    ) -> Result<Vec<(Scalar, u64)>, FlatError>
-    where
-        F: FnMut(u64) -> bool,
-    {
-        let mut result = FilteredFixedHeap::new(k, filter);
-        for i in 0..self.vectors.len() {
-            let this_data = self.vectors.get_data(i);
-            let dis = self.quantization.distance(self.d, &target, i);
-            result.push((dis, this_data));
-        }
-        let mut output = Vec::new();
-        for (i, j) in result.into_sorted_vec().into_iter() {
-            output.push((i, j));
-        }
-        Ok(output)
-    }
+    result
 }

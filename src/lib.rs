@@ -10,16 +10,21 @@
 #![feature(new_uninit)]
 #![feature(int_roundings)]
 #![feature(never_type)]
+#![feature(lazy_cell)]
 #![feature(const_maybe_uninit_zeroed)]
+#![feature(fs_try_exists)]
+#![feature(sync_unsafe_cell)]
 #![allow(clippy::complexity)]
 #![allow(clippy::style)]
 
 mod algorithms;
 mod bgworker;
 mod embedding;
+mod index;
 mod ipc;
 mod postgres;
 mod prelude;
+mod utils;
 
 pgrx::pg_module_magic!();
 pgrx::extension_sql_file!("./sql/bootstrap.sql", bootstrap);
@@ -30,11 +35,6 @@ pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
 pub unsafe extern "C" fn _PG_init() {
     use pgrx::bgworkers::BackgroundWorkerBuilder;
     use pgrx::bgworkers::BgWorkerStartTime;
-    #[cfg(debug_assertions)]
-    {
-        std::env::set_var("RUST_LIB_BACKTRACE", "1");
-        std::env::set_var("RUST_BACKTRACE", "1");
-    }
     BackgroundWorkerBuilder::new("vectors")
         .set_function("vectors_main")
         .set_library("vectors")
@@ -43,6 +43,11 @@ pub unsafe extern "C" fn _PG_init() {
         .set_start_time(BgWorkerStartTime::PostmasterStart)
         .load();
     self::postgres::init();
+}
+
+#[no_mangle]
+extern "C" fn vectors_main(_arg: pgrx::pg_sys::Datum) {
+    let _ = std::panic::catch_unwind(crate::bgworker::main);
 }
 
 /// This module is required by `cargo pgrx test` invocations.

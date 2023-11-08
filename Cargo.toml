@@ -41,6 +41,13 @@ memmap2 = "0.7.0"
 validator = { version = "0.16.1", features = ["derive"] }
 toml = "0.7.6"
 rayon = "1.6.1"
+uuid = { version = "1.4.1", features = ["serde"] }
+rustix = "0.38.20"
+arc-swap = "1.6.0"
+bytemuck = "1.14.0"
+serde_with = "3.4.0"
+chrono = { version = "0.4.31", features = ["clock"] }
+chrono-tz = "0.8.4"
 
 [dev-dependencies]
 pgrx-tests = "0.11.0"

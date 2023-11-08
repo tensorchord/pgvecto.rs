@@ -1,50 +1,50 @@
-pub mod filter_delete;
-pub mod index;
-pub mod storage;
-pub mod storage_mmap;
-pub mod vectors;
-pub mod wal;
+pub mod bgworker;
 
-use self::index::IndexError;
+use self::bgworker::Bgworker;
 use crate::ipc::server::RpcHandler;
-use crate::ipc::ServerIpcError;
-use crate::prelude::*;
-use dashmap::DashMap;
-use index::Index;
+use crate::ipc::IpcError;
 use std::fs::OpenOptions;
-use std::mem::MaybeUninit;
-use thiserror::Error;
+use std::path::PathBuf;
+use std::sync::Arc;
 
-#[no_mangle]
-extern "C" fn vectors_main(_arg: pgrx::pg_sys::Datum) -> ! {
-    match std::panic::catch_unwind(thread_main) {
-        Ok(never) => never,
-        Err(_) => {
-            log::error!("The background process crashed.");
-            pgrx::PANIC!("The background process crashed.");
+pub fn main() {
+    {
+        let logging = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("vectors.log")
+            .unwrap();
+        let mut builder = env_logger::builder();
+        builder.target(env_logger::Target::Pipe(Box::new(logging)));
+        #[cfg(not(debug_assertions))]
+        {
+            builder.filter(None, log::LevelFilter::Info);
         }
+        #[cfg(debug_assertions)]
+        {
+            builder.filter(None, log::LevelFilter::Trace);
+        }
+        builder.init();
     }
-}
-
-fn thread_main() -> ! {
-    std::fs::create_dir_all("pg_vectors").expect("Failed to create the directory.");
-    std::env::set_current_dir("pg_vectors").expect("Failed to set the current variable.");
-    unsafe {
-        INDEXES.as_mut_ptr().write(DashMap::new());
-    }
-    let logging = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open("_log")
-        .expect("The logging file is failed to open.");
-    env_logger::builder()
-        .target(env_logger::Target::Pipe(Box::new(logging)))
-        .init();
     std::panic::set_hook(Box::new(|info| {
-        let backtrace = std::backtrace::Backtrace::capture();
-        log::error!("Process panickied. {:?}. Backtrace. {}.", info, backtrace);
+        let backtrace;
+        #[cfg(not(debug_assertions))]
+        {
+            backtrace = std::backtrace::Backtrace::capture();
+        }
+        #[cfg(debug_assertions)]
+        {
+            backtrace = std::backtrace::Backtrace::force_capture();
+        }
+        log::error!("Panickied. Info: {:?}. Backtrace: {}.", info, backtrace);
     }));
-    std::thread::spawn(|| thread_listening());
+    let bgworker;
+    if std::fs::try_exists("pg_vectors").unwrap() {
+        bgworker = Bgworker::open(PathBuf::from("pg_vectors"));
+    } else {
+        bgworker = Bgworker::create(PathBuf::from("pg_vectors"));
+    }
+    std::thread::spawn(move || thread_main_2(bgworker));
     loop {
         let mut sig: i32 = 0;
         unsafe {
@@ -67,123 +67,57 @@ fn thread_main() -> ! {
     }
 }
 
-static mut INDEXES: MaybeUninit<DashMap<Id, Index>> = MaybeUninit::uninit();
-
-fn thread_listening() {
+fn thread_main_2(bgworker: Arc<Bgworker>) {
     let listener = crate::ipc::listen();
     for rpc_handler in listener {
-        std::thread::spawn(move || {
-            if let Err(e) = thread_session(rpc_handler) {
-                log::error!("Session exited. {}.", e);
+        std::thread::spawn({
+            let bgworker = bgworker.clone();
+            move || {
+                if let Err(e) = thread_session(bgworker, rpc_handler) {
+                    log::error!("Session exited. {}.", e);
+                }
             }
         });
     }
 }
 
-#[derive(Debug, Clone, Error)]
-pub enum SessionError {
-    #[error("Ipc")]
-    Ipc(#[from] ServerIpcError),
-    #[error("Index")]
-    Index(#[from] IndexError),
-}
-
-fn thread_session(mut rpc_handler: RpcHandler) -> Result<(), SessionError> {
+fn thread_session(bgworker: Arc<Bgworker>, mut handler: RpcHandler) -> Result<(), IpcError> {
     use crate::ipc::server::RpcHandle;
     loop {
-        match rpc_handler.handle()? {
-            RpcHandle::Build { id, options, mut x } => {
-                log::debug!("Handle build rpc. id: {}, options: {:?}.", id, options);
-                use dashmap::mapref::entry::Entry;
-                let indexes = unsafe { INDEXES.assume_init_ref() };
-                match indexes.entry(id) {
-                    Entry::Occupied(entry) => entry.into_ref(),
-                    Entry::Vacant(entry) => {
-                        let index = Index::build(id, options, &mut x)?;
-                        entry.insert(index)
-                    }
-                };
-                rpc_handler = x.leave()?;
+        match handler.handle()? {
+            RpcHandle::Create { id, options, x } => {
+                bgworker.call_create(id, options);
+                handler = x.leave()?;
             }
             RpcHandle::Insert { id, insert, x } => {
-                log::debug!("Handle insert rpc. id: {}, insert: {:?}.", id, insert);
-                let indexes = unsafe { INDEXES.assume_init_ref() };
-                let index = indexes.get(&id).expect("Not load.");
-                index.insert(insert)?;
-                rpc_handler = x.leave()?;
+                let res = bgworker.call_insert(id, insert);
+                handler = x.leave(res)?;
             }
             RpcHandle::Delete { id, mut x } => {
-                log::debug!("Handle delete rpc. id: {}.", id);
-                let indexes = unsafe { INDEXES.assume_init_ref() };
-                let index = indexes.get(&id).expect("Not load.");
-                index.delete(&mut x)?;
-                rpc_handler = x.leave()?;
+                bgworker.call_delete(id, |p| x.next(p).unwrap());
+                handler = x.leave()?;
             }
             RpcHandle::Search {
                 id,
-                target,
-                k,
+                search,
+                prefilter,
                 mut x,
             } => {
-                log::debug!(
-                    "Handle search rpc. id: {}, target: {:?}, k: {:?}.",
-                    id,
-                    target,
-                    k
-                );
-                let indexes = unsafe { INDEXES.assume_init_ref() };
-                let index = indexes.get(&id).expect("Not load.");
-                let result = index.search(target, k, &mut x)?;
-                rpc_handler = x.leave(result)?;
-            }
-            RpcHandle::Load { id, x } => {
-                log::debug!("Handle load rpc. id: {}.", id);
-                use dashmap::mapref::entry::Entry;
-                let indexes: &DashMap<Id, Index> = unsafe { INDEXES.assume_init_ref() };
-                match indexes.entry(id) {
-                    Entry::Occupied(entry) => entry.into_ref(),
-                    Entry::Vacant(entry) => {
-                        let index = Index::load(id);
-                        entry.insert(index)
-                    }
-                };
-                rpc_handler = x.leave()?;
-            }
-            RpcHandle::Unload { id, x } => {
-                log::debug!("Handle unload rpc. id: {}.", id);
-                use dashmap::mapref::entry::Entry;
-                let indexes: &DashMap<Id, Index> = unsafe { INDEXES.assume_init_ref() };
-                match indexes.entry(id) {
-                    Entry::Occupied(mut entry) => {
-                        entry.get_mut().shutdown();
-                        entry.remove();
-                    }
-                    Entry::Vacant(_) => (),
-                };
-                rpc_handler = x.leave()?;
+                if prefilter {
+                    let res = bgworker.call_search(id, search, |p| x.check(p).unwrap());
+                    handler = x.leave(res)?;
+                } else {
+                    let res = bgworker.call_search(id, search, |_| true);
+                    handler = x.leave(res)?;
+                }
             }
             RpcHandle::Flush { id, x } => {
-                log::debug!("Handle flush rpc. id: {}.", id);
-                let indexes = unsafe { INDEXES.assume_init_ref() };
-                let index = indexes.get(&id).expect("Not load.");
-                index.flush();
-                rpc_handler = x.leave()?;
+                bgworker.call_flush(id);
+                handler = x.leave()?;
             }
-            RpcHandle::Clean { id, x } => {
-                log::debug!("Handle clean rpc. id: {}.", id);
-                use dashmap::mapref::entry::Entry;
-                let indexes: &DashMap<Id, Index> = unsafe { INDEXES.assume_init_ref() };
-                match indexes.entry(id) {
-                    Entry::Occupied(mut entry) => {
-                        entry.get_mut().shutdown();
-                        entry.remove();
-                        Index::clean(id);
-                    }
-                    Entry::Vacant(_entry) => {
-                        Index::clean(id);
-                    }
-                };
-                rpc_handler = x.leave()?;
+            RpcHandle::Destory { id, x } => {
+                bgworker.call_destory(id);
+                handler = x.leave()?;
             }
             RpcHandle::Leave {} => {
                 log::debug!("Handle leave rpc.");

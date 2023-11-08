@@ -1,0 +1,14 @@
+statement ok
+DROP TABLE IF EXISTS t;
+
+statement ok
+CREATE TABLE t (val vector(3));
+
+statement ok
+CREATE INDEX ON t USING vectors (val l2_ops);
+
+statement error The given vector is invalid for input.
+INSERT INTO t (val) VALUES ('[0, 1, 2, 3]');
+
+statement error The given vector is invalid for input.
+SELECT * FROM t ORDER BY val <-> '[0, 1, 2, 3]';
