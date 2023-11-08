@@ -112,17 +112,13 @@ You can create an index, using squared Euclidean distance with the following SQL
 ```sql
 -- Using HNSW algorithm.
 
-CREATE INDEX ON items USING vectors (embedding l2_ops)
-WITH (options = "capacity = 2097152");
+CREATE INDEX ON items USING vectors (embedding l2_ops);
 
 --- Or using bruteforce with PQ.
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
-capacity = 2097152
-[vectors]
-memmap = "disk"
-[algorithm.flat]
+[indexing.flat]
 quantization = { product = { ratio = "x16" } }
 $$);
 
@@ -130,10 +126,7 @@ $$);
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
-capacity = 2097152
-[vectors]
-memmap = "disk"
-[algorithm.ivf]
+[indexing.ivf]
 quantization = { product = { ratio = "x16" } }
 $$);
 
@@ -141,8 +134,7 @@ $$);
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
-capacity = 2097152
-[algorithm.vamana]
+[indexing.vamana]
 $$);
 ```
 
@@ -152,16 +144,6 @@ Now you can perform a KNN search with the following SQL simply.
 SELECT *, embedding <-> '[0, 0, 0]' AS score
 FROM items
 ORDER BY embedding <-> '[0, 0, 0]' LIMIT 10;
-```
-
-Please note, vector indexes are not loaded by default when PostgreSQL restarts. To load or unload the index, you can use `vectors_load` and `vectors_unload`.
-
-```sql
---- get the index name
-\d items
-
--- load the index
-SELECT vectors_load('items_embedding_idx'::regclass);
 ```
 
 We planning to support more index types ([issue here](https://github.com/tensorchord/pgvecto.rs/issues/17)).
@@ -186,28 +168,35 @@ There is only one exception: indexes cannot be created on columns without specif
 
 We utilize TOML syntax to express the index's configuration. Here's what each key in the configuration signifies:
 
-| Key       | Type    | Description                                                                              |
-| --------- | ------- | ---------------------------------------------------------------------------------------- |
-| capacity  | integer | The index's capacity. The value should be greater than the number of rows in your table. |
-| vectors   | table   | Configuration of background process vector storage.                                      |
-| algorithm | table   | The algorithm to be used for indexing.                                                   |
+| Key        | Type  | Description                            |
+| ---------- | ----- | -------------------------------------- |
+| segment    | table | Options for segments.                  |
+| optimizing | table | Options for background optimizing.     |
+| indexing   | table | The algorithm to be used for indexing. |
 
-Options for table `algorithm`.
+Options for table `segment`.
 
-| Key    | Type  | Description                                                             |
-| ------ | ----- | ----------------------------------------------------------------------- |
-| flat   | table | If this table is set, brute force algorithm will be used for the index. |
-| ivf    | table | If this table is set, IVF will be used for the index.                   |
-| hnsw   | table | If this table is set, HNSW will be used for the index.                  |
-| vamana | table | If this table is set. vamana will be used for the index.                |
+| Key                      | Type    | Description                                                         |
+| ------------------------ | ------- | ------------------------------------------------------------------- |
+| max_growing_segment_size | integer | Maximum size of unindexed vectors. Default value is `20_000`.       |
+| min_sealed_segment_size  | integer | Minimum size of vectors for indexing. Default value is `1_000`.     |
+| max_sealed_segment_size  | integer | Maximum size of vectors for indexing. Default value is `1_000_000`. |
+
+Options for table `optimizing`.
+
+| Key                | Type    | Description                                                                 |
+| ------------------ | ------- | --------------------------------------------------------------------------- |
+| optimizing_threads | integer | Maximum threads for indexing. Default value is the sqrt of number of cores. |
+
+Options for table `indexing`.
+
+| Key  | Type  | Description                                                             |
+| ---- | ----- | ----------------------------------------------------------------------- |
+| flat | table | If this table is set, brute force algorithm will be used for the index. |
+| ivf  | table | If this table is set, IVF will be used for the index.                   |
+| hnsw | table | If this table is set, HNSW will be used for the index.                  |
 
 You can choose only one algorithm in above indexing algorithms. Default value is `hnsw`.
-
-Options for table `vectors`.
-
-| Key    | Type   | Description                                                                                              |
-| ------ | ------ | -------------------------------------------------------------------------------------------------------- |
-| memmap | string | `"ram"` keeps vectors always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`. |
 
 Options for table `flat`.
 
@@ -217,36 +206,21 @@ Options for table `flat`.
 
 Options for table `ivf`.
 
-| Key              | Type    | Description                                                                                                        |
-| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
-| memmap           | string  | `"ram"` keeps algorithm storage always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`. |
-| build_threads    | integer | How many threads to be used for building the index. Default value is the number of hardware threads.               |
-| max_threads      | integer | How many threads can be used for searching in the index. Default value is twice of the number of hardware threads. |
-| nlist            | integer | Number of cluster units. Default value is `1000`.                                                                  |
-| nprobe           | integer | Number of units to query. Default value is `10`.                                                                   |
-| least_iterations | integer | Least iterations for K-Means clustering. Default value is `16`.                                                    |
-| iterations       | integer | Max iterations for K-Means clustering. Default value is `500`.                                                     |
-| quantization     | table   | The quantization algorithm to be used.                                                                             |
+| Key              | Type    | Description                                                     |
+| ---------------- | ------- | --------------------------------------------------------------- |
+| nlist            | integer | Number of cluster units. Default value is `1000`.               |
+| nprobe           | integer | Number of units to query. Default value is `10`.                |
+| least_iterations | integer | Least iterations for K-Means clustering. Default value is `16`. |
+| iterations       | integer | Max iterations for K-Means clustering. Default value is `500`.  |
+| quantization     | table   | The quantization algorithm to be used.                          |
 
 Options for table `hnsw`.
 
-| Key             | Type    | Description                                                                                                        |
-| --------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
-| memmap          | string  | `"ram"` keeps algorithm storage always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`. |
-| build_threads   | integer | How many threads to be used for building the index. Default value is the number of hardware threads.               |
-| m               | integer | Maximum degree of the node. Default value is `36`.                                                                 |
-| ef_construction | integer | Search scope in building.  Default value is `500`.                                                                 |
-| quantization    | table   | The quantization algorithm to be used.                                                                             |
-
-Options for table `vamana`.
-
-| Key           | Type    | Description                                                                                                        |
-| ------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
-| memmap        | string  | `"ram"` keeps algorithm storage always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`. |
-| build_threads | integer | How many threads to be used for building the index. Default value is the number of hardware threads.               |
-| r             | integer | Maximum degree of the node. Default value is `50`.                                                                 |
-| l             | integer | Search scope in building. Default value is `70`.                                                                   |
-| alpha         | float   | Slack factor in buiding. Default value is `1.2`.                                                                   |
+| Key             | Type    | Description                                        |
+| --------------- | ------- | -------------------------------------------------- |
+| m               | integer | Maximum degree of the node. Default value is `12`. |
+| ef_construction | integer | Search scope in building.  Default value is `300`. |
+| quantization    | table   | The quantization algorithm to be used.             |
 
 Options for table `quantization`.
 
@@ -258,19 +232,10 @@ Options for table `quantization`.
 
 You can choose only one algorithm in above indexing algorithms. Default value is `trivial`.
 
-Options for table `scalar`.
-
-| Key    | Type   | Description                                                                                                        |
-| ------ | ------ | ------------------------------------------------------------------------------------------------------------------ |
-| memmap | string | `"ram"` keeps quantized vectors always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`. |
-
-The compression ratio for scalar production is always `"x4"`: if the size of vectors is 1024 MB, then the size of quantized vectors is 256 MB.
-
 Options for table `product`.
 
 | Key    | Type    | Description                                                                                                              |
 | ------ | ------- | ------------------------------------------------------------------------------------------------------------------------ |
-| memmap | string  | `"ram"` keeps quantized vectors always cached in RAM, while `"disk"` suggests otherwise. Default value is `"ram"`.       |
 | sample | integer | Samples to be used for quantization. Default value is `65535`.                                                           |
 | ratio  | string  | Compression ratio for quantization. Only `"x4"`, `"x8"`, `"x16"`, `"x32"`, `"x64"` are allowed. Default value is `"x4"`. |
 
@@ -289,7 +254,6 @@ If you want to disable vector indexing or prefilter, we also offer some GUC opti
 
 ## Limitations
 
-- The index is constructed and persisted using a memory map file (mmap) instead of PostgreSQL's shared buffer. As a result, physical replication or logical replication may not function correctly. Additionally, vector indexes are not automatically loaded when PostgreSQL restarts. To load or unload the index, you can utilize the `vectors_load` and `vectors_unload` commands.
 - The filtering process is not yet optimized. To achieve optimal performance, you may need to manually experiment with different strategies. For example, you can try searching without a vector index or implementing post-filtering techniques like the following query: `select * from (select * from items ORDER BY embedding <-> '[3,2,1]' LIMIT 100 ) where category = 1`. This involves using approximate nearest neighbor (ANN) search to obtain enough results and then applying filtering afterwards.
 
 ## Setting up the development environment

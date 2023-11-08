@@ -1,32 +1,30 @@
-use crate::algorithms::impls::elkan_k_means::ElkanKMeans;
+use crate::algorithms::clustering::elkan_k_means::ElkanKMeans;
 use crate::algorithms::quantization::Quan;
-use crate::algorithms::quantization::QuantizationError;
 use crate::algorithms::quantization::QuantizationOptions;
-use crate::algorithms::utils::vec2::Vec2;
-use crate::bgworker::index::IndexOptions;
-use crate::bgworker::storage::{Storage, StoragePreallocator};
-use crate::bgworker::storage_mmap::MmapBox;
-use crate::bgworker::vectors::Vectors;
+use crate::algorithms::raw::Raw;
+use crate::index::IndexOptions;
 use crate::prelude::*;
+use crate::utils::dir_ops::sync_dir;
+use crate::utils::mmap_array::MmapArray;
+use crate::utils::vec2::Vec2;
 use rand::seq::index::sample;
 use rand::thread_rng;
-
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
+use std::path::PathBuf;
 use std::sync::Arc;
+use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct ProductQuantizationOptions {
-    #[serde(default)]
-    pub memmap: Memmap,
     #[serde(default = "ProductQuantizationOptions::default_sample")]
-    pub sample: usize,
+    pub sample: u32,
     #[serde(default)]
     pub ratio: ProductQuantizationOptionsRatio,
 }
 
 impl ProductQuantizationOptions {
-    fn default_sample() -> usize {
+    fn default_sample() -> u32 {
         65535
     }
 }
@@ -34,7 +32,6 @@ impl ProductQuantizationOptions {
 impl Default for ProductQuantizationOptions {
     fn default() -> Self {
         Self {
-            memmap: Default::default(),
             sample: Self::default_sample(),
             ratio: Default::default(),
         }
@@ -58,170 +55,101 @@ impl Default for ProductQuantizationOptionsRatio {
     }
 }
 
-#[derive(Debug)]
 pub struct ProductQuantization {
     dims: u16,
-    centroids: MmapBox<[Scalar]>,
-    data: MmapBox<[u8]>,
     ratio: u16,
+    centroids: Vec<Scalar>,
+    codes: MmapArray<u8>,
 }
 
+unsafe impl Send for ProductQuantization {}
+unsafe impl Sync for ProductQuantization {}
+
 impl ProductQuantization {
-    fn process(&self, vector: &[Scalar]) -> Vec<u8> {
-        let dims = self.dims;
-        let ratio = self.ratio;
-        assert!(dims as usize == vector.len());
-        let width = dims.div_ceil(ratio);
-        let mut result = Vec::with_capacity(width as usize);
-        for i in 0..width {
-            let subdims = std::cmp::min(ratio, dims - ratio * i);
-            let mut minimal = Scalar::INFINITY;
-            let mut target = 0u8;
-            let left = &vector[(i * ratio) as usize..][..subdims as usize];
-            for j in 0u8..=255 {
-                let right = &self.centroids[j as usize * dims as usize..][(i * ratio) as usize..]
-                    [..subdims as usize];
-                let dis = Distance::L2.distance(left, right);
-                if dis < minimal {
-                    minimal = dis;
-                    target = j;
-                }
-            }
-            result.push(target);
-        }
-        result
+    fn codes(&self, i: u32) -> &[u8] {
+        let width = self.dims.div_ceil(self.ratio);
+        let s = i as usize * width as usize;
+        let e = (i + 1) as usize * width as usize;
+        &self.codes[s..e]
     }
 }
 
 impl Quan for ProductQuantization {
-    fn prebuild(
-        storage: &mut StoragePreallocator,
-        index_options: IndexOptions,
+    fn create(
+        path: PathBuf,
+        options: IndexOptions,
         quantization_options: QuantizationOptions,
-    ) {
-        let quantization_options = quantization_options.unwrap_product_quantization();
-        let dims = index_options.dims;
-        let ratio = quantization_options.ratio as u16;
-        storage.palloc_mmap_slice::<Scalar>(quantization_options.memmap, 256 * dims as usize);
-        let width = dims.div_ceil(ratio);
-        storage.palloc_mmap_slice::<u8>(
-            quantization_options.memmap,
-            width as usize * index_options.capacity,
-        );
+        raw: &Arc<Raw>,
+    ) -> Self {
+        Self::with_normalizer(path, options, quantization_options, raw, |_, _| ())
     }
 
-    fn build(
-        storage: &mut Storage,
-        index_options: IndexOptions,
+    fn open(
+        path: PathBuf,
+        options: IndexOptions,
         quantization_options: QuantizationOptions,
-        vectors: Arc<Vectors>,
+        _: &Arc<Raw>,
     ) -> Self {
-        Self::build_with_normalizer(
-            storage,
-            index_options,
-            quantization_options,
-            vectors,
-            |_| (),
-        )
-    }
-
-    fn load(
-        storage: &mut Storage,
-        index_options: IndexOptions,
-        quantization_options: QuantizationOptions,
-        _vectors: Arc<Vectors>,
-    ) -> Self {
-        let quantization_options = quantization_options.unwrap_product_quantization();
-        let dims = index_options.dims;
-        let ratio = quantization_options.ratio as u16;
-        let centroids = unsafe {
-            storage
-                .alloc_mmap_slice::<Scalar>(quantization_options.memmap, 256 * dims as usize)
-                .assume_init()
-        };
-        let width = dims.div_ceil(ratio);
-        let data = unsafe {
-            storage
-                .alloc_mmap_slice::<u8>(
-                    quantization_options.memmap,
-                    width as usize * index_options.capacity,
-                )
-                .assume_init()
-        };
+        let centroids =
+            serde_json::from_slice(&std::fs::read(path.join("centroids")).unwrap()).unwrap();
+        let codes = MmapArray::open(path.join("codes"));
         Self {
-            dims,
+            dims: options.vector.dims,
+            ratio: quantization_options.unwrap_product_quantization().ratio as _,
             centroids,
-            data,
-            ratio,
+            codes,
         }
     }
 
-    fn insert(&self, x: usize, vector: &[Scalar]) -> Result<(), QuantizationError> {
-        let ratio = self.ratio;
-        let width = self.dims.div_ceil(ratio);
-        let p = self.process(vector);
-        unsafe {
-            std::ptr::copy_nonoverlapping(
-                p.as_ptr(),
-                self.data[x * width as usize..][..width as usize].as_ptr() as *mut u8,
-                width as usize,
-            );
-        }
-        Ok(())
-    }
-
-    fn distance(&self, d: Distance, lhs: &[Scalar], rhs: usize) -> Scalar {
+    fn distance(&self, d: Distance, lhs: &[Scalar], rhs: u32) -> Scalar {
         let dims = self.dims;
         let ratio = self.ratio;
-        let width = dims.div_ceil(ratio);
-        let rhs = &self.data[rhs * width as usize..][..width as usize];
+        let rhs = self.codes(rhs);
         d.product_quantization_distance(dims, ratio, &self.centroids, lhs, rhs)
     }
 
-    fn distance2(&self, d: Distance, lhs: usize, rhs: usize) -> Scalar {
+    fn distance2(&self, d: Distance, lhs: u32, rhs: u32) -> Scalar {
         let dims = self.dims;
         let ratio = self.ratio;
-        let width = dims.div_ceil(ratio);
-        let lhs = &self.data[lhs * width as usize..][..width as usize];
-        let rhs = &self.data[rhs * width as usize..][..width as usize];
+        let lhs = self.codes(lhs);
+        let rhs = self.codes(rhs);
         d.product_quantization_distance2(dims, ratio, &self.centroids, lhs, rhs)
     }
 }
 
 impl ProductQuantization {
-    pub fn build_with_normalizer<F>(
-        storage: &mut Storage,
-        index_options: IndexOptions,
+    pub fn with_normalizer<F>(
+        path: PathBuf,
+        options: IndexOptions,
         quantization_options: QuantizationOptions,
-        vectors: Arc<Vectors>,
+        raw: &Raw,
         normalizer: F,
     ) -> Self
     where
-        F: Fn(&mut [Scalar]),
+        F: Fn(u32, &mut [Scalar]),
     {
+        std::fs::create_dir(&path).unwrap();
         let quantization_options = quantization_options.unwrap_product_quantization();
-        let dims = index_options.dims;
+        let dims = options.vector.dims;
         let ratio = quantization_options.ratio as u16;
-        let n = vectors.len();
+        let n = raw.len();
         let m = std::cmp::min(n, quantization_options.sample);
-        let f = sample(&mut thread_rng(), n, m).into_vec();
-        let mut samples = Vec2::new(index_options.dims, m);
-        for i in 0..m {
-            samples[i].copy_from_slice(vectors.get_vector(f[i]));
-            normalizer(&mut samples[i]);
-        }
-        let width = dims.div_ceil(ratio);
-        let mut centroids = unsafe {
-            storage
-                .alloc_mmap_slice(quantization_options.memmap, 256 * dims as usize)
-                .assume_init()
+        let samples = {
+            let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
+            let mut samples = Vec2::new(options.vector.dims, m as usize);
+            for i in 0..m {
+                samples[i as usize].copy_from_slice(raw.vector(f[i as usize] as u32));
+            }
+            samples
         };
+        let width = dims.div_ceil(ratio);
+        let mut centroids = vec![Scalar::Z; 256 * dims as usize];
         for i in 0..width {
             let subdims = std::cmp::min(ratio, dims - ratio * i);
-            let mut subsamples = Vec2::new(subdims, m);
+            let mut subsamples = Vec2::new(subdims, m as usize);
             for j in 0..m {
-                let src = &samples[j][(i * ratio) as usize..][..subdims as usize];
-                subsamples[j].copy_from_slice(src);
+                let src = &samples[j as usize][(i * ratio) as usize..][..subdims as usize];
+                subsamples[j as usize].copy_from_slice(src);
             }
             let mut k_means = ElkanKMeans::new(256, subsamples, Distance::L2);
             for _ in 0..25 {
@@ -235,19 +163,41 @@ impl ProductQuantization {
                     .copy_from_slice(&centroid[j as usize]);
             }
         }
-        let data = unsafe {
-            storage
-                .alloc_mmap_slice::<u8>(
-                    quantization_options.memmap,
-                    width as usize * index_options.capacity,
-                )
-                .assume_init()
-        };
+        let codes_iter = (0..n).flat_map(|i| {
+            let mut vector = raw.vector(i).to_vec();
+            normalizer(i, &mut vector);
+            let width = dims.div_ceil(ratio);
+            let mut result = Vec::with_capacity(width as usize);
+            for i in 0..width {
+                let subdims = std::cmp::min(ratio, dims - ratio * i);
+                let mut minimal = Scalar::INFINITY;
+                let mut target = 0u8;
+                let left = &vector[(i * ratio) as usize..][..subdims as usize];
+                for j in 0u8..=255 {
+                    let right = &centroids[j as usize * dims as usize..][(i * ratio) as usize..]
+                        [..subdims as usize];
+                    let dis = Distance::L2.distance(left, right);
+                    if dis < minimal {
+                        minimal = dis;
+                        target = j;
+                    }
+                }
+                result.push(target);
+            }
+            result.into_iter()
+        });
+        sync_dir(&path);
+        std::fs::write(
+            path.join("centroids"),
+            serde_json::to_string(&centroids).unwrap(),
+        )
+        .unwrap();
+        let codes = MmapArray::create(path.join("codes"), codes_iter);
         Self {
             dims,
-            centroids,
-            data,
             ratio,
+            centroids,
+            codes,
         }
     }
 
@@ -255,13 +205,12 @@ impl ProductQuantization {
         &self,
         d: Distance,
         lhs: &[Scalar],
-        rhs: usize,
+        rhs: u32,
         delta: &[Scalar],
     ) -> Scalar {
         let dims = self.dims;
         let ratio = self.ratio;
-        let width = dims.div_ceil(ratio);
-        let rhs = &self.data[rhs * width as usize..][..width as usize];
+        let rhs = self.codes(rhs);
         d.product_quantization_distance_with_delta(dims, ratio, &self.centroids, lhs, rhs, delta)
     }
 }

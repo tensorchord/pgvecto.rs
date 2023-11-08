@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;

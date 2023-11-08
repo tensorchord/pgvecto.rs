@@ -1,6 +1,5 @@
 use crate::prelude::*;
-
-use crate::algorithms::utils::vec2::Vec2;
+use crate::utils::vec2::Vec2;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use std::ops::{Index, IndexMut};

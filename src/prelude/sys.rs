@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
+use std::{fmt::Display, num::ParseIntError, str::FromStr};
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Id {
@@ -20,6 +20,16 @@ impl Id {
 impl Display for Id {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.as_u32())
+    }
+}
+
+impl FromStr for Id {
+    type Err = ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Id {
+            newtype: u32::from_str(s)?,
+        })
     }
 }
 

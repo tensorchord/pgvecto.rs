@@ -1,3 +1,4 @@
+use bytemuck::{Pod, Zeroable};
 use pgrx::pg_sys::{Datum, Oid};
 use pgrx::pgrx_sql_entity_graph::metadata::ArgumentError;
 use pgrx::pgrx_sql_entity_graph::metadata::FunctionMetadataTypeEntity;
@@ -34,6 +35,10 @@ impl Scalar {
         Self(self.0.sqrt())
     }
 }
+
+unsafe impl Zeroable for Scalar {}
+
+unsafe impl Pod for Scalar {}
 
 impl Debug for Scalar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

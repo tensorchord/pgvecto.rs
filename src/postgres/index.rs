@@ -182,15 +182,8 @@ pub unsafe extern "C" fn ambuild(
     index_relation: pgrx::pg_sys::Relation,
     index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> *mut pgrx::pg_sys::IndexBuildResult {
-    let mut result = pgrx::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0();
-    index_build::build(
-        index_relation,
-        Some(index_build::BuildData {
-            heap: heap_relation,
-            index_info,
-            result: &mut *result,
-        }),
-    );
+    let result = pgrx::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0();
+    index_build::build(index_relation, Some((heap_relation, index_info)));
     result.into_pg()
 }
 
@@ -235,7 +228,7 @@ pub unsafe extern "C" fn aminsert(
     let oid = (*index_relation).rd_id;
     let id = Id::from_sys(oid);
     let vector = VectorInput::from_datum(*values.add(0), *is_null.add(0)).unwrap();
-    let vector = vector.data().to_vec().into_boxed_slice();
+    let vector = vector.data().to_vec();
     index_update::update_insert(id, vector, heap_tid);
     true
 }

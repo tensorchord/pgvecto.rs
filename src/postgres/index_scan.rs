@@ -9,7 +9,7 @@ use pgrx::FromDatum;
 pub enum Scanner {
     Initial {
         // fields to be filled by amhandler and hook
-        vector: Option<Box<[Scalar]>>,
+        vector: Option<Vec<Scalar>>,
         index_scan_state: Option<*mut pgrx::pg_sys::IndexScanState>,
     },
     Type0 {
@@ -82,7 +82,7 @@ pub unsafe fn start_scan(
     let orderby = orderbys.add(0);
     let argument = (*orderby).sk_argument;
     let vector = VectorInput::from_datum(argument, false).unwrap();
-    let vector = vector.to_vec().into_boxed_slice();
+    let vector = vector.to_vec();
 
     let last = (*((*scan).opaque as *mut Scanner)).clone();
     let scanner = (*scan).opaque as *mut Scanner;
@@ -137,7 +137,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
             client(|rpc| {
                 let index_scan_state = index_scan_state.unwrap();
                 let k = K.get() as _;
-                let mut handler = rpc.search(id, vector, k).unwrap();
+                let mut handler = rpc.search(id, (vector, k), true).unwrap();
                 let mut res;
                 let rpc = loop {
                     use crate::ipc::client::SearchHandle::*;
@@ -147,7 +147,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
                             handler = x.leave(result).unwrap();
                         }
                         Leave { result, x } => {
-                            res = result;
+                            res = result.expect("Bgworker Error.");
                             break x;
                         }
                     }
@@ -160,19 +160,18 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
                 rpc
             });
         } else {
-            pgrx::warning!("Fallback to post-filter.");
             client(|rpc| {
                 let k = K.get() as _;
-                let mut handler = rpc.search(id, vector, k).unwrap();
+                let handler = rpc.search(id, (vector, k), false).unwrap();
                 let mut res;
                 let rpc = loop {
                     use crate::ipc::client::SearchHandle::*;
                     match handler.handle().unwrap() {
-                        Check { p: _, x } => {
-                            handler = x.leave(true).unwrap();
+                        Check { .. } => {
+                            unreachable!()
                         }
                         Leave { result, x } => {
-                            res = result;
+                            res = result.expect("Bgworker Error.");
                             break x;
                         }
                     }

@@ -1,62 +1,53 @@
-use crate::bgworker::index::IndexOptions;
+use crate::bgworker::bgworker::BgworkerError;
+use crate::index::IndexOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum RpcPacket {
-    Build {
+    Create {
         id: Id,
         options: IndexOptions,
     },
+    Flush {
+        id: Id,
+    },
+    Destory {
+        id: Id,
+    },
     Insert {
         id: Id,
-        insert: (Box<[Scalar]>, Pointer),
+        insert: (Vec<Scalar>, Pointer),
     },
     Delete {
         id: Id,
     },
     Search {
         id: Id,
-        target: Box<[Scalar]>,
-        k: usize,
-    },
-    Load {
-        id: Id,
-    },
-    Unload {
-        id: Id,
-    },
-    Flush {
-        id: Id,
-    },
-    Clean {
-        id: Id,
+        search: (Vec<Scalar>, usize),
+        prefilter: bool,
     },
     Leave {},
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum BuildPacket {
-    Next {},
+pub enum CreatePacket {
     Leave {},
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum BuildNextPacket {
-    Leave {
-        data: Option<(Box<[Scalar]>, Pointer)>,
-    },
+pub enum FlushPacket {
+    Leave {},
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum SearchPacket {
-    Check { p: Pointer },
-    Leave { result: Vec<Pointer> },
+pub enum DestoryPacket {
+    Leave {},
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum CheckPacket {
-    Leave { result: bool },
+pub enum InsertPacket {
+    Leave { result: Result<(), BgworkerError> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -71,26 +62,16 @@ pub enum DeleteNextPacket {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum InsertPacket {
-    Leave {},
+pub enum SearchPacket {
+    Check {
+        p: Pointer,
+    },
+    Leave {
+        result: Result<Vec<Pointer>, BgworkerError>,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum LoadPacket {
-    Leave {},
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum UnloadPacket {
-    Leave {},
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum FlushPacket {
-    Leave {},
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum CleanPacket {
-    Leave {},
+pub enum SearchCheckPacket {
+    Leave { result: bool },
 }

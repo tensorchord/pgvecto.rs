@@ -19,17 +19,23 @@ pub fn aborting() {
 }
 
 pub fn committing() {
-    client(|mut rpc| {
-        for id in FLUSH_IF_COMMIT.borrow().iter().copied() {
-            rpc.flush(id).unwrap();
-        }
+    {
+        let flush_if_commit = FLUSH_IF_COMMIT.borrow();
+        let drop_if_commit = DROP_IF_COMMIT.borrow();
+        if flush_if_commit.len() != 0 || drop_if_commit.len() != 0 {
+            client(|mut rpc| {
+                for id in flush_if_commit.iter().copied() {
+                    rpc.flush(id).unwrap();
+                }
 
-        for id in DROP_IF_COMMIT.borrow().iter().copied() {
-            rpc.clean(id).unwrap();
-        }
+                for id in drop_if_commit.iter().copied() {
+                    rpc.destory(id).unwrap();
+                }
 
-        rpc
-    });
+                rpc
+            });
+        }
+    }
     *FLUSH_IF_COMMIT.borrow_mut() = BTreeSet::new();
     *DROP_IF_COMMIT.borrow_mut() = BTreeSet::new();
 }
