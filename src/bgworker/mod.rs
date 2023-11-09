@@ -100,10 +100,10 @@ fn thread_session(bgworker: Arc<Bgworker>, mut handler: RpcHandler) -> Result<()
             RpcHandle::Search {
                 id,
                 search,
-                prefilter,
+                select,
                 mut x,
             } => {
-                if prefilter {
+                if select {
                     let res = bgworker.call_search(id, search, |p| x.check(p).unwrap());
                     handler = x.leave(res)?;
                 } else {

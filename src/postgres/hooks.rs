@@ -75,4 +75,5 @@ unsafe extern "C" fn xact_callback(event: pgrx::pg_sys::XactEvent, _data: pgrx::
 pub unsafe fn init() {
     pgrx::register_hook(&mut HOOKS);
     pgrx::pg_sys::RegisterXactCallback(Some(xact_callback), std::ptr::null_mut());
+    super::hook_custom_scan::init();
 }

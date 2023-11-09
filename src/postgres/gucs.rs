@@ -10,6 +10,8 @@ pub static ENABLE_VECTOR_INDEX: GucSetting<bool> = GucSetting::<bool>::new(true)
 
 pub static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(false);
 
+pub static ENABLE_BITMAP_PUSHDOWN: GucSetting<bool> = GucSetting::<bool>::new(true);
+
 pub unsafe fn init() {
     GucRegistry::define_string_guc(
         "vectors.openai_api_key",
@@ -42,6 +44,14 @@ pub unsafe fn init() {
         "Whether to enable prefilter.",
         "When enabled, it will use prefilter to reduce the number of vectors to search.",
         &ENABLE_PREFILTER,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
+    GucRegistry::define_bool_guc(
+        "vectors.enable_bitmap_pushdown",
+        "Whether to enable bitmap pushdown.",
+        "When enabled, it will push down the bitmap index to the index scan if possible.",
+        &ENABLE_BITMAP_PUSHDOWN,
         GucContext::Userset,
         GucFlags::default(),
     );

@@ -37,11 +37,11 @@ impl RpcHandler {
             RpcPacket::Search {
                 id,
                 search,
-                prefilter,
+                select,
             } => RpcHandle::Search {
                 id,
                 search,
-                prefilter,
+                select,
                 x: Search {
                     socket: self.socket,
                 },
@@ -72,7 +72,7 @@ pub enum RpcHandle {
     Search {
         id: Id,
         search: (Vec<Scalar>, usize),
-        prefilter: bool,
+        select: bool,
         x: Search,
     },
     Insert {

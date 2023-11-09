@@ -24,7 +24,7 @@ pub enum RpcPacket {
     Search {
         id: Id,
         search: (Vec<Scalar>, usize),
-        prefilter: bool,
+        select: bool,
     },
     Leave {},
 }

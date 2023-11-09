@@ -22,12 +22,12 @@ impl Rpc {
         mut self,
         id: Id,
         search: (Vec<Scalar>, usize),
-        prefilter: bool,
+        select: bool,
     ) -> Result<SearchHandler, IpcError> {
         let packet = RpcPacket::Search {
             id,
             search,
-            prefilter,
+            select,
         };
         self.socket.client_send(packet)?;
         Ok(SearchHandler {

@@ -4,6 +4,7 @@ use crate::postgres::datatype::VectorInput;
 use crate::postgres::gucs::K;
 use crate::prelude::*;
 use pgrx::FromDatum;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
 pub enum Scanner {
@@ -11,12 +12,18 @@ pub enum Scanner {
         // fields to be filled by amhandler and hook
         vector: Option<Vec<Scalar>>,
         index_scan_state: Option<*mut pgrx::pg_sys::IndexScanState>,
+        bitmap: Option<*mut pgrx::pg_sys::TIDBitmap>,
     },
     Type0 {
         data: Vec<Pointer>,
     },
     Type1 {
         index_scan_state: *mut pgrx::pg_sys::IndexScanState,
+        data: Vec<Pointer>,
+    },
+    Type2 {
+        index_scan_state: *mut pgrx::pg_sys::IndexScanState,
+        bitmap: *mut pgrx::pg_sys::TIDBitmap,
         data: Vec<Pointer>,
     },
 }
@@ -39,6 +46,7 @@ pub unsafe fn make_scan(
     let scanner = Scanner::Initial {
         vector: None,
         index_scan_state: None,
+        bitmap: None,
     };
 
     (*scan).opaque = PgMemoryContexts::CurrentMemoryContext.leak_and_drop_on_delete(scanner) as _;
@@ -89,17 +97,21 @@ pub unsafe fn start_scan(
 
     match last {
         Initial {
-            index_scan_state, ..
+            index_scan_state,
+            bitmap,
+            ..
         } => {
             *scanner = Initial {
                 vector: Some(vector),
                 index_scan_state,
+                bitmap,
             };
         }
         Type0 { data: _ } => {
             *scanner = Initial {
                 vector: Some(vector),
                 index_scan_state: None,
+                bitmap: None,
             };
         }
         Type1 {
@@ -109,6 +121,18 @@ pub unsafe fn start_scan(
             *scanner = Initial {
                 vector: Some(vector),
                 index_scan_state: Some(index_scan_state),
+                bitmap: None,
+            };
+        }
+        Type2 {
+            index_scan_state,
+            bitmap,
+            data: _,
+        } => {
+            *scanner = Initial {
+                vector: Some(vector),
+                index_scan_state: Some(index_scan_state),
+                bitmap: Some(bitmap),
             };
         }
     }
@@ -120,11 +144,13 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         let Scanner::Initial {
             vector,
             index_scan_state,
+            bitmap,
         } = std::mem::replace(
             scanner,
             Scanner::Initial {
                 vector: None,
                 index_scan_state: None,
+                bitmap: None,
             },
         )
         else {
@@ -134,31 +160,62 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         let id = Id::from_sys(oid);
         let vector = vector.expect("`rescan` is never called.");
         if index_scan_state.is_some() && ENABLE_PREFILTER.get() {
-            client(|rpc| {
-                let index_scan_state = index_scan_state.unwrap();
-                let k = K.get() as _;
-                let mut handler = rpc.search(id, (vector, k), true).unwrap();
-                let mut res;
-                let rpc = loop {
-                    use crate::ipc::client::SearchHandle::*;
-                    match handler.handle().unwrap() {
-                        Check { p, x } => {
-                            let result = check(index_scan_state, p);
-                            handler = x.leave(result).unwrap();
+            if bitmap.is_some() {
+                client(|rpc| {
+                    let index_scan_state = index_scan_state.unwrap();
+                    let bitmap = bitmap.unwrap();
+                    let k = K.get() as _;
+                    let mut handler = rpc.search(id, (vector, k), true).unwrap();
+                    let mut res;
+                    let set = deal_pg_bitmap(bitmap);
+                    let rpc = loop {
+                        use crate::ipc::client::SearchHandle::*;
+                        match handler.handle().unwrap() {
+                            Check { p, x } => {
+                                let result = set.contains(&p);
+                                handler = x.leave(result).unwrap();
+                            }
+                            Leave { result, x } => {
+                                res = result.friendly();
+                                break x;
+                            }
                         }
-                        Leave { result, x } => {
-                            res = result.friendly();
-                            break x;
+                    };
+                    res.reverse();
+                    *scanner = Scanner::Type2 {
+                        index_scan_state,
+                        bitmap,
+                        data: res,
+                    };
+                    rpc
+                });
+            } else {
+                client(|rpc| {
+                    let index_scan_state = index_scan_state.unwrap();
+                    let k = K.get() as _;
+                    let mut handler = rpc.search(id, (vector, k), true).unwrap();
+                    let mut res;
+                    let rpc = loop {
+                        use crate::ipc::client::SearchHandle::*;
+                        match handler.handle().unwrap() {
+                            Check { p, x } => {
+                                let result = check(index_scan_state, p);
+                                handler = x.leave(result).unwrap();
+                            }
+                            Leave { result, x } => {
+                                res = result.friendly();
+                                break x;
+                            }
                         }
-                    }
-                };
-                res.reverse();
-                *scanner = Scanner::Type1 {
-                    index_scan_state,
-                    data: res,
-                };
-                rpc
-            });
+                    };
+                    res.reverse();
+                    *scanner = Scanner::Type1 {
+                        index_scan_state,
+                        data: res,
+                    };
+                    rpc
+                });
+            }
         } else {
             client(|rpc| {
                 let k = K.get() as _;
@@ -200,6 +257,21 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
             }
         }
         Scanner::Type1 { data, .. } => {
+            if let Some(p) = data.pop() {
+                #[cfg(feature = "pg11")]
+                {
+                    (*scan).xs_ctup.t_self = p.into_sys();
+                }
+                #[cfg(not(feature = "pg11"))]
+                {
+                    (*scan).xs_heaptid = p.into_sys();
+                }
+                true
+            } else {
+                false
+            }
+        }
+        Scanner::Type2 { data, .. } => {
             if let Some(p) = data.pop() {
                 #[cfg(feature = "pg11")]
                 {
@@ -291,4 +363,28 @@ unsafe fn check(node: *mut pgrx::pg_sys::IndexScanState, p: Pointer) -> bool {
         return false;
     }
     true
+}
+
+unsafe fn deal_pg_bitmap(bitmap: *mut pgrx::pg_sys::TIDBitmap) -> HashSet<Pointer> {
+    let iter = pgrx::pg_sys::tbm_begin_iterate(bitmap);
+    let mut set = HashSet::new();
+    loop {
+        let res = pgrx::pg_sys::tbm_iterate(iter);
+        if res.is_null() {
+            break;
+        }
+        let block_num = (*res).blockno;
+        let len = match (*res).ntuples {
+            x if x < 0 => continue,
+            x => x as usize,
+        };
+        let offsets = (*res).offsets.as_slice(len);
+        for i in 0..len {
+            let offset = offsets[i];
+            let pointer = ((block_num as u64) << 16) | (offset as u64);
+            set.insert(Pointer::from_u48(pointer));
+        }
+    }
+    pgrx::pg_sys::tbm_end_iterate(iter);
+    set
 }
