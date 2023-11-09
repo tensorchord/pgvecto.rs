@@ -15,7 +15,7 @@ UPDATE documents SET embedding = ai_embedding_vector(content) WHERE length(embed
 CREATE INDEX ON documents USING vectors (embedding l2_ops);
 
 -- Query the similar embeddings
-SELECT * FROM documents ORDER BY embedding <-> ai_embedding_vector('hello world') LIMIT 5;
+SELECT * FROM documents ORDER BY embedding <*> ai_embedding_vector('hello world') LIMIT 5;
 ```
 
 From [SingleStore DB Blog](https://www.singlestore.com/blog/why-your-vector-database-should-not-be-a-vector-database/):

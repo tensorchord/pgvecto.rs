@@ -110,8 +110,8 @@ fn operator_dot(lhs: VectorInput<'_>, rhs: VectorInput<'_>) -> Scalar {
 }
 
 #[pgrx::pg_operator(immutable, parallel_safe, requires = ["vector"])]
-#[pgrx::opname(<->)]
-#[pgrx::commutator(<->)]
+#[pgrx::opname(<*>)]
+#[pgrx::commutator(<*>)]
 fn operator_l2(lhs: VectorInput<'_>, rhs: VectorInput<'_>) -> Scalar {
     assert_eq!(lhs.len(), rhs.len(), "Invaild operation.");
     Distance::L2.distance(&lhs, &rhs)

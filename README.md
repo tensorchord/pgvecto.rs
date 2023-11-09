@@ -81,7 +81,7 @@ VALUES (ARRAY[1, 2, 3]::real[]), (ARRAY[4, 5, 6]::real[]);
 
 We support three operators to calculate the distance between two vectors.
 
-- `<->`: squared Euclidean distance, defined as $\Sigma (x_i - y_i) ^ 2$.
+- `<*>`: squared Euclidean distance, defined as $\Sigma (x_i - y_i) ^ 2$.
 - `<#>`: negative dot product distance, defined as $- \Sigma x_iy_i$.
 - `<=>`: negative cosine distance, defined as $- \frac{\Sigma x_iy_i}{\sqrt{\Sigma x_i^2 \Sigma y_i^2}}$.
 
@@ -89,10 +89,10 @@ We support three operators to calculate the distance between two vectors.
 -- call the distance function through operators
 
 -- squared Euclidean distance
-SELECT '[1, 2, 3]'::vector <-> '[3, 2, 1]'::vector;
+SELECT '[1, 2, 3]' <*> '[3, 2, 1]';
 -- negative dot product distance
 SELECT '[1, 2, 3]' <#> '[3, 2, 1]';
--- negative square cosine distance
+-- negative cosine distance
 SELECT '[1, 2, 3]' <=> '[3, 2, 1]';
 ```
 
@@ -100,9 +100,9 @@ You can search for a vector simply like this.
 
 ```sql
 -- query the similar embeddings
-SELECT * FROM items ORDER BY embedding <-> '[3,2,1]' LIMIT 5;
+SELECT * FROM items ORDER BY embedding <*> '[3,2,1]' LIMIT 5;
 -- query the neighbors within a certain distance
-SELECT * FROM items WHERE embedding <-> '[3,2,1]' < 5;
+SELECT * FROM items WHERE embedding <*> '[3,2,1]' < 5;
 ```
 
 ### Indexing
@@ -141,9 +141,9 @@ $$);
 Now you can perform a KNN search with the following SQL simply.
 
 ```sql
-SELECT *, embedding <-> '[0, 0, 0]' AS score
+SELECT *, embedding <*> '[0, 0, 0]' AS score
 FROM items
-ORDER BY embedding <-> '[0, 0, 0]' LIMIT 10;
+ORDER BY embedding <*> '[0, 0, 0]' LIMIT 10;
 ```
 
 We planning to support more index types ([issue here](https://github.com/tensorchord/pgvecto.rs/issues/17)).
@@ -254,7 +254,7 @@ If you want to disable vector indexing or prefilter, we also offer some GUC opti
 
 ## Limitations
 
-- The filtering process is not yet optimized. To achieve optimal performance, you may need to manually experiment with different strategies. For example, you can try searching without a vector index or implementing post-filtering techniques like the following query: `select * from (select * from items ORDER BY embedding <-> '[3,2,1]' LIMIT 100 ) where category = 1`. This involves using approximate nearest neighbor (ANN) search to obtain enough results and then applying filtering afterwards.
+- The filtering process is not yet optimized. To achieve optimal performance, you may need to manually experiment with different strategies. For example, you can try searching without a vector index or implementing post-filtering techniques like the following query: `select * from (select * from items ORDER BY embedding <*> '[3,2,1]' LIMIT 100 ) where category = 1`. This involves using approximate nearest neighbor (ANN) search to obtain enough results and then applying filtering afterwards.
 
 ## Setting up the development environment
 

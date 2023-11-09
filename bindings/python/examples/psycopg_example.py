@@ -44,7 +44,7 @@ with psycopg.connect(URL) as conn:
         # Select all the rows and sort them
         # by the squared_euclidean_distance to "hello pgvecto.rs"
         cur = conn.execute(
-            "SELECT text, embedding <-> %s AS distance FROM documents ORDER BY distance;",
+            "SELECT text, embedding <*> %s AS distance FROM documents ORDER BY distance;",
             (target,),
         )
         for row in cur.fetchall():

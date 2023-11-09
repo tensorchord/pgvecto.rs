@@ -53,7 +53,7 @@ pub unsafe fn convert_opfamily_to_distance(opfamily: pgrx::pg_sys::Oid) -> Dista
     assert!((*amop).amoppurpose == pgrx::pg_sys::AMOP_ORDER as i8);
     let operator = (*amop).amopopr;
     let distance;
-    if operator == regoperatorin("<->(vector,vector)") {
+    if operator == regoperatorin("<*>(vector,vector)") {
         distance = Distance::L2;
     } else if operator == regoperatorin("<#>(vector,vector)") {
         distance = Distance::Dot;

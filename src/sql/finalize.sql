@@ -6,7 +6,7 @@ CREATE CAST (vector AS real[])
 
 CREATE OPERATOR CLASS l2_ops
 	FOR TYPE vector USING vectors AS
-	OPERATOR 1 <-> (vector, vector) FOR ORDER BY float_ops;
+	OPERATOR 1 <*> (vector, vector) FOR ORDER BY float_ops;
 
 CREATE OPERATOR CLASS dot_ops
 	FOR TYPE vector USING vectors AS

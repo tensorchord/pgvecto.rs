@@ -79,7 +79,7 @@ def test_insert(conn: Connection):
 
 def test_squared_euclidean_distance(conn: Connection):
     cur = conn.execute(
-        "SELECT embedding <-> %s FROM tb_test_item;", (OP_SQRT_EUCLID_DIS,)
+        "SELECT embedding <*> %s FROM tb_test_item;", (OP_SQRT_EUCLID_DIS,)
     )
     for i, row in enumerate(cur.fetchall()):
         assert np.allclose(EXPECTED_SQRT_EUCLID_DIS[i], row[0], atol=1e-10)

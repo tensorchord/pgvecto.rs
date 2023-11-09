@@ -29,7 +29,7 @@ class Vector(types.UserDefinedType):
 
     class comparator_factory(types.UserDefinedType.Comparator):
         def squared_euclidean_distance(self, other):
-            return self.op("<->", return_type=types.Float)(other)
+            return self.op("<*>", return_type=types.Float)(other)
 
         def negative_dot_product_distance(self, other):
             return self.op("<#>", return_type=types.Float)(other)
