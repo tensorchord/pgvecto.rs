@@ -1,7 +1,9 @@
 import os
-from pgvecto_rs.highapi import Client, Record, RecordORMType
-from pgvecto_rs.highapi.embedder import OpenAIEmbedder
+
 from openai import OpenAI
+
+from pgvecto_rs.highapi import Client
+from pgvecto_rs.highapi.embedder import OpenAIEmbedder
 
 URL = "postgresql+psycopg://{username}:{password}@{host}:{port}/{db_name}".format(
     port=os.getenv("DB_PORT", 5432),

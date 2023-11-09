@@ -1,6 +1,7 @@
+from typing import List, Optional, Type, Union
 from uuid import UUID, uuid4
-from numpy import ndarray
-from typing import Any, Optional, Type
+
+from numpy import array, float32, ndarray
 from sqlalchemy.orm import DeclarativeBase, Mapped
 
 
@@ -40,5 +41,9 @@ class Record:
         return cls(orm.id, orm.text, orm.meta, orm.embedding)
 
     @classmethod
-    def from_text(cls, text: str, meta: Optional[dict], embedding: ndarray):
+    def from_text(
+        cls, text: str, meta: Optional[dict], embedding: Union[ndarray, List[float]]
+    ):
+        if isinstance(embedding, list):
+            embedding = array(embedding, dtype=float32)
         return cls(uuid4(), text, meta or {}, embedding)

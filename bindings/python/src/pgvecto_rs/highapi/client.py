@@ -1,24 +1,26 @@
-from uuid import UUID, uuid4
-from numpy import ndarray
-from typing import Type, Optional, List, Tuple, Literal, Callable, Union, Dict
+from typing import List, Literal, Optional, Tuple, Type, Union
+from uuid import UUID
 
-from .record import Record, RecordORM, RecordORMType
-from .embedder import BaseEmbbeder
-from pgvecto_rs.sqlalchemy import Vector
+from numpy import ndarray
 from sqlalchemy import (
+    ColumnElement,
+    Float,
+    String,
     create_engine,
+    delete,
     insert,
     select,
-    delete,
-    update,
-    String,
-    Float,
-    ColumnElement,
 )
-from sqlalchemy.engine import Engine
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm.session import Session
+
+from pgvecto_rs.sqlalchemy import Vector
+
+from .embedder import BaseEmbbeder
+from .filter import FilterFunc
+from .record import Record, RecordORM, RecordORMType
 
 
 class Client:
@@ -63,11 +65,15 @@ class Client:
         self._table.__table__.create(self._engine, checkfirst=not new_table)  # type: ignore
         self.dimension = dimension
         self.embedder = embedder
-        if embedder is not None:
-            if embedder.get_dimension() != dimension:
-                raise ValueError(
-                    f"Dimension mismatch: (embedder){embedder.get_dimension()} != (given){dimension}"
-                )
+        try:
+            if embedder is not None:
+                if embedder.get_dimension() != dimension:
+                    raise ValueError(
+                        f"Dimension mismatch: (embedder){embedder.get_dimension()} != (given){dimension}"
+                    )
+        except Exception as e:
+            self.drop()
+            raise e
 
     @classmethod
     def from_records(
@@ -79,8 +85,12 @@ class Client:
         embedder: Optional[BaseEmbbeder] = None,
     ):
         client = cls(db_url, table_name, dimension, embedder, True)
-        for record in records:
-            client.add_record(record)
+        try:
+            for record in records:
+                client.add_record(record)
+        except Exception as e:
+            client.drop()
+            raise e
         return client
 
     @classmethod
@@ -95,8 +105,12 @@ class Client:
     ):
         client = cls(db_url, table_name, dimension, embedder, True)
         meta = meta or {}
-        for i in range(len(texts)):
-            client.add_text(texts[i], meta)
+        try:
+            for i in range(len(texts)):
+                client.add_text(texts[i], meta)
+        except Exception as e:
+            client.drop()
+            raise e
         return client
 
     # ================ Insert ================
@@ -121,18 +135,20 @@ class Client:
         return record
 
     # ================ Query ================
+
     def search(
         self,
-        embedding: ndarray,
+        embedding: Union[ndarray, List[float]],
         distance_op: Literal["<->", "<=>", "<#>"] = "<->",
         limit: int = 10,
-        filter: Optional[Callable[[RecordORMType], ColumnElement[bool]]] = None,
+        filter: Optional[FilterFunc] = None,
+        order_by_dis: bool = True,
     ) -> List[Tuple[Record, float]]:
         """Search for the nearest records.
 
         Args:
             embedding : Target embedding.
-            distance_op : Distance op. Defaults to >", "<#>"]="<->".
+            distance_op : Distance op. Defaults to >", "<#>"]="<->".Defaults to >", "<#>"]="<->".
             limit : Max records to return. Defaults to 10.
             filter : Read our document. Defaults to None. https://docs.sqlalchemy.org/en/20/tutorial/data_select.html#the-where-clause
 
@@ -141,25 +157,23 @@ class Client:
 
         """
         with Session(self._engine) as session:
-            stmt = (
-                select(
-                    self._table,
-                    self._table.embedding.op(distance_op, return_type=Float)(
-                        embedding
-                    ).label("distance"),
-                )
-                .order_by("distance")
-                .limit(limit)
-            )
+            stmt = select(
+                self._table,
+                self._table.embedding.op(distance_op, return_type=Float)(
+                    embedding
+                ).label("distance"),
+            ).limit(limit)
+            if order_by_dis:
+                stmt = stmt.order_by("distance")
             if filter is not None:
-                stmt = stmt.where(filter(self._table.meta))
+                stmt = stmt.where(filter(self._table))
             res = session.execute(stmt)
             return [(Record.from_orm(row[0]), row[1]) for row in res]
 
     # ================ Delete ================
-    def delete(self, filter: Callable[[RecordORMType], ColumnElement[bool]]) -> None:
+    def delete(self, filter: FilterFunc) -> None:
         with Session(self._engine) as session:
-            session.execute(delete(self._table).where(filter(self._table.meta)))
+            session.execute(delete(self._table).where(filter(self._table)))
             session.commit()
 
     def delete_all(self) -> None:

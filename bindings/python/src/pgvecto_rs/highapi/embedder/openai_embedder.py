@@ -1,6 +1,5 @@
-from numpy import ndarray, array, float32
+from numpy import array, float32, ndarray
 from openai import OpenAI
-from typing import Optional
 
 from .base import BaseEmbbeder
 

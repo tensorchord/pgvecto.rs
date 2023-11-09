@@ -1,5 +1,6 @@
-from numpy import ndarray, array
 from abc import ABC, abstractmethod
+
+from numpy import ndarray
 
 
 class BaseEmbbeder(ABC):
