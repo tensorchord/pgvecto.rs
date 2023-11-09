@@ -1,4 +1,5 @@
-comment = 'vectors:  Created by pgrx'
+comment = 'vectors: Vector similarity search with filter'
+schema = 'tensorchord'
 default_version = '@CARGO_VERSION@'
 module_pathname = '$libdir/vectors'
 relocatable = false
