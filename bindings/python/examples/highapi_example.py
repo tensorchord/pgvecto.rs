@@ -30,7 +30,7 @@ client = Client.from_texts(
 
 # Query
 for record, dis in client.search(embedder.embed("hello pgvector")):
-    print(f"======={dis}=======")
+    print(f"DISTANCE SCORE: {dis}")
     print(record)
 
 # Clean up

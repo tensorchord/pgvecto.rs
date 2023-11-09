@@ -28,12 +28,12 @@ class Record:
         self.embedding = embedding
 
     def __repr__(self) -> str:
-        return f"""### Record ###
-# id: {self.id}
-# text: {self.text}
-# meta: {self.meta}
-# embedding: {self.embedding}
-### End of Record ###"""
+        return f"""============= Record =============
+[id]       : {self.id}
+[text]     : {self.text}
+[meta]     : {self.meta}
+[embedding]: {self.embedding}
+========== End of Record ========="""
 
     @classmethod
     def from_orm(cls, orm: RecordORM):
