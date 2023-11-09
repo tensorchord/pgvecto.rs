@@ -16,6 +16,7 @@ use std::alloc::Layout;
 use std::cmp::Ordering;
 use std::ffi::CStr;
 use std::ffi::CString;
+use std::num::NonZeroU16;
 use std::ops::Deref;
 use std::ops::DerefMut;
 use std::ops::Index;
@@ -25,13 +26,13 @@ use std::ptr::NonNull;
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum VectorTypmod {
     Any,
-    Dims(u16),
+    Dims(NonZeroU16),
 }
 
 impl VectorTypmod {
     pub fn parse_from_str(s: &str) -> Option<Self> {
         use VectorTypmod::*;
-        if let Ok(x) = s.parse::<u16>() {
+        if let Ok(x) = s.parse::<NonZeroU16>() {
             Some(Dims(x))
         } else {
             None
@@ -41,8 +42,8 @@ impl VectorTypmod {
         use VectorTypmod::*;
         if x == -1 {
             Some(Any)
-        } else if u16::MIN as i32 <= x && x <= u16::MAX as i32 {
-            Some(Dims(x as u16))
+        } else if 1 <= x && x <= u16::MAX as i32 {
+            Some(Dims(NonZeroU16::new(x as u16).unwrap()))
         } else {
             None
         }
@@ -51,21 +52,21 @@ impl VectorTypmod {
         use VectorTypmod::*;
         match self {
             Any => None,
-            Dims(x) => Some(i32::from(x).to_string()),
+            Dims(x) => Some(i32::from(x.get()).to_string()),
         }
     }
     pub fn into_i32(self) -> i32 {
         use VectorTypmod::*;
         match self {
             Any => -1,
-            Dims(x) => i32::from(x),
+            Dims(x) => i32::from(x.get()),
         }
     }
     pub fn dims(self) -> Option<u16> {
         use VectorTypmod::*;
         match self {
             Any => None,
-            Dims(dims) => Some(dims),
+            Dims(dims) => Some(dims.get()),
         }
     }
 }
