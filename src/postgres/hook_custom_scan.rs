@@ -60,6 +60,8 @@ unsafe extern "C" fn set_fusion_path_hook(
         return;
     }
 
+    pgrx::debug1!("set_fusion_path_hook");
+
     if (*rte).rtekind != pgrx::pg_sys::RTEKind_RTE_RELATION
         || (*rte).relkind as u8 != pgrx::pg_sys::RELKIND_RELATION
     {
@@ -72,6 +74,7 @@ unsafe extern "C" fn set_fusion_path_hook(
     let path_lists = List::<*mut libc::c_void>::downcast_ptr((*rel).pathlist).unwrap();
     for ptr in path_lists.iter() {
         let path = &*(ptr.cast::<pgrx::pg_sys::Path>());
+        pgrx::debug1!("path: {}", path);
         if let Some(ptr) = find_vector_index_scan(path) {
             match vector_index_scan {
                 Some(_) => {

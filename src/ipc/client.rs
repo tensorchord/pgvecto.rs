@@ -24,11 +24,7 @@ impl Rpc {
         search: (Vec<Scalar>, usize),
         select: bool,
     ) -> Result<SearchHandler, IpcError> {
-        let packet = RpcPacket::Search {
-            id,
-            search,
-            select,
-        };
+        let packet = RpcPacket::Search { id, search, select };
         self.socket.client_send(packet)?;
         Ok(SearchHandler {
             socket: self.socket,

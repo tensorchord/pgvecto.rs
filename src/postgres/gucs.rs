@@ -10,7 +10,7 @@ pub static ENABLE_VECTOR_INDEX: GucSetting<bool> = GucSetting::<bool>::new(true)
 
 pub static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(false);
 
-pub static ENABLE_BITMAP_PUSHDOWN: GucSetting<bool> = GucSetting::<bool>::new(true);
+pub static ENABLE_BITMAP_PUSHDOWN: GucSetting<bool> = GucSetting::<bool>::new(false);
 
 pub unsafe fn init() {
     GucRegistry::define_string_guc(
@@ -35,7 +35,7 @@ pub unsafe fn init() {
         "vectors.enable_vector_index",
         "Whether to enable vector index.",
         "When enabled, it will use existing vector index to speed up the search.",
-        &ENABLE_PREFILTER,
+        &ENABLE_VECTOR_INDEX,
         GucContext::Userset,
         GucFlags::default(),
     );

@@ -34,11 +34,7 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Search {
-                id,
-                search,
-                select,
-            } => RpcHandle::Search {
+            RpcPacket::Search { id, search, select } => RpcHandle::Search {
                 id,
                 search,
                 select,
