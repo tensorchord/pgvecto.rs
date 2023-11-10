@@ -33,18 +33,13 @@ class PGVectoRs:
         db_url: str,
         table_name: str,
         dimension: int,
-        new_table: bool = False,
     ) -> None:
-        """Connect to an existing table or create a new one.
+        """Connect to an existing table or create a new empty one.
 
         Args:
             db_url (str): url to the database.
             table_name (str): name of the table.
             dimension (int): dimension of the embeddings.
-            new_table (bool, optional): Defaults to False.
-
-        Raises:
-            ValueError: When the dimension of the embedder does not match the given dimension.
         """
 
         class _Table(RecordORM):
@@ -61,37 +56,20 @@ class PGVectoRs:
             session.execute(text("CREATE EXTENSION IF NOT EXISTS vectors"))
             session.commit()
         self._table = _Table
-        if new_table:
-            self._table.__table__.create(self._engine, checkfirst=False)
+        self._table.__table__.create(self._engine)
         self.dimension = dimension
 
-    @classmethod
-    def from_records(
-        cls,
-        records: List[Record],
-        db_url: str,
-        table_name: str,
-        dimension: int,
-    ):
-        client = cls(db_url, table_name, dimension, True)
-        try:
-            for record in records:
-                client.add_record(record)
-        except Exception as e:
-            client.drop()
-            raise e
-        return client
-
-    def add_record(self, record: Record) -> None:
+    def add_records(self, records: List[Record]) -> None:
         with Session(self._engine) as session:
-            session.execute(
-                insert(self._table).values(
-                    id=record.id,
-                    text=record.text,
-                    meta=record.meta,
-                    embedding=record.embedding,
+            for record in records:
+                session.execute(
+                    insert(self._table).values(
+                        id=record.id,
+                        text=record.text,
+                        meta=record.meta,
+                        embedding=record.embedding,
+                    )
                 )
-            )
             session.commit()
 
     def search(
@@ -100,7 +78,6 @@ class PGVectoRs:
         distance_op: Literal["<->", "<=>", "<#>"] = "<->",
         limit: int = 10,
         filter: Optional[Filter] = None,
-        order_by_dis: bool = True,
     ) -> List[Tuple[Record, float]]:
         """Search for the nearest records.
 
@@ -116,14 +93,16 @@ class PGVectoRs:
 
         """
         with Session(self._engine) as session:
-            stmt = select(
-                self._table,
-                self._table.embedding.op(distance_op, return_type=Float)(
-                    embedding
-                ).label("distance"),
-            ).limit(limit)
-            if order_by_dis:
-                stmt = stmt.order_by("distance")
+            stmt = (
+                select(
+                    self._table,
+                    self._table.embedding.op(distance_op, return_type=Float)(
+                        embedding
+                    ).label("distance"),
+                )
+                .limit(limit)
+                .order_by("distance")
+            )
             if filter is not None:
                 stmt = stmt.where(filter(self._table))
             res = session.execute(stmt)

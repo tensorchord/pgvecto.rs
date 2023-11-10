@@ -32,35 +32,17 @@ class MockEmbedder:
 
 @pytest.fixture(scope="module")
 def client():
-    client = PGVectoRs(
-        db_url=URL,
-        table_name="empty",
-        dimension=3,
-        new_table=True,
-    )
+    client = PGVectoRs(db_url=URL, table_name="empty", dimension=3)
     try:
-        for t, v in mockTexts.items():
-            client.add_record(Record.from_text(t, {"src": "src1"}, v))
-        for t, v in mockTexts.items():
-            client.add_record(Record.from_text(t, {"src": "src2"}, v))
+        records1 = [
+            Record.from_text(t, {"src": "src1"}, v) for t, v in mockTexts.items()
+        ]
+        records2 = [
+            Record.from_text(t, {"src": "src2"}, v) for t, v in mockTexts.items()
+        ]
+        client.add_records(records1)
+        client.add_records(records2)
         yield client
-    finally:
-        client.drop()
-
-
-def test_client_from_records():
-    try:
-        client = PGVectoRs.from_records(
-            [Record.from_text(t, None, e) for t, e in mockTexts.items()],
-            db_url=URL,
-            table_name="from_records",
-            dimension=3,
-        )
-        results = client.search([0, 0, 0], "<#>", 99, order_by_dis=False)
-        assert len(results) == 3
-        for i in range(3):
-            assert results[i][0].text == f"text{i}"
-            assert np.allclose(results[i][0].embedding, mockTexts[f"text{i}"])
     finally:
         client.drop()
 
@@ -85,10 +67,13 @@ def test_search_filter_and_op(
     dis_oprand: List[float],
     dis_expected: List[float],
 ):
-    for i, (rec, dis) in enumerate(
-        client.search(dis_oprand, dis_op, limit=99, filter=filter, order_by_dis=False)
-    ):
-        assert np.allclose(dis, dis_expected[i])
+    for rec, dis in client.search(dis_oprand, dis_op, limit=99, filter=filter):
+        cnt = None
+        for i in range(len(VECTORS)):
+            if np.allclose(rec.embedding, VECTORS[i]):
+                cnt = i
+                break
+        assert np.allclose(dis, dis_expected[cnt])
 
 
 @pytest.mark.parametrize(
