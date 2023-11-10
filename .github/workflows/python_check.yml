@@ -61,7 +61,7 @@ jobs:
     - name: Install Dependencies
       working-directory: bindings/python
       run: |
-        pdm sync -d
+        pdm sync -G :all
     
     # - name: Install Docker for macOS
     #   if: matrix.os == 'macos-latest'
