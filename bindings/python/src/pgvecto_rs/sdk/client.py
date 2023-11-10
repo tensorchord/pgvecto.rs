@@ -28,7 +28,6 @@ class PGVectoRs:
     _table: Type[RecordORM]
     dimension: int
 
-    # ================ Initialization ================
     def __init__(
         self,
         db_url: str,
@@ -42,7 +41,6 @@ class PGVectoRs:
             db_url (str): url to the database.
             table_name (str): name of the table.
             dimension (int): dimension of the embeddings.
-            embedder (Optional[BaseEmbbeder], optional): Defaults to None.
             new_table (bool, optional): Defaults to False.
 
         Raises:
@@ -63,7 +61,8 @@ class PGVectoRs:
             session.execute(text("CREATE EXTENSION IF NOT EXISTS vectors"))
             session.commit()
         self._table = _Table
-        self._table.__table__.create(self._engine, checkfirst=not new_table)  # type: ignore
+        if new_table:
+            self._table.__table__.create(self._engine, checkfirst=False)
         self.dimension = dimension
 
     @classmethod
@@ -83,7 +82,6 @@ class PGVectoRs:
             raise e
         return client
 
-    # ================ Insert ================
     def add_record(self, record: Record) -> None:
         with Session(self._engine) as session:
             session.execute(
@@ -95,16 +93,6 @@ class PGVectoRs:
                 )
             )
             session.commit()
-
-    def add_text(self, text: str, meta: dict = {}) -> Record:
-        if self.embedder is None:
-            raise ValueError("No embedder provided")
-        embedding = self.embedder.embed(text)
-        record = Record.from_text(text, meta, embedding)
-        self.add_record(record)
-        return record
-
-    # ================ Query ================
 
     def search(
         self,
@@ -118,9 +106,10 @@ class PGVectoRs:
 
         Args:
             embedding : Target embedding.
-            distance_op : Distance op. Defaults to >", "<#>"]="<->".Defaults to >", "<#>"]="<->".
+            distance_op : Distance op.
             limit : Max records to return. Defaults to 10.
-            filter : Read our document. Defaults to None. https://docs.sqlalchemy.org/en/20/tutorial/data_select.html#the-where-clause
+            filter : Read our document. Defaults to None.
+            order_by_dis : Order by distance. Defaults to True.
 
         Returns:
             List of records and coresponding distances.
