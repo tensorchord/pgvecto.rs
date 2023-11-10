@@ -1,5 +1,5 @@
 from .client import PGVectoRs
-from .filter import FilterFunc
-from .record import Record, RecordORMType
+from .filters import Filter
+from .record import Record
 
-__all__ = ["PGVectoRs", "Record", "RecordORMType", "FilterFunc"]
+__all__ = ["PGVectoRs", "Record", "Filter"]

@@ -3,8 +3,7 @@ from typing import List
 import numpy as np
 import pytest
 
-from pgvecto_rs.sdk import FilterFunc, PGVectoRs, Record
-from pgvecto_rs.sdk.filter import filter_meta_contains
+from pgvecto_rs.sdk import Filter, PGVectoRs, Record, filters
 from tests import (
     EXPECTED_NEG_COS_DIS,
     EXPECTED_NEG_DOT_PROD_DIS,
@@ -66,11 +65,11 @@ def test_client_from_records():
         client.drop()
 
 
-filter_src_by_text = filter_meta_contains({"src": "src1"})
-filter_src_by_record = filter_meta_contains({"src": "src2"})
+filter_src1 = filters.meta_contains({"src": "src1"})
+filter_src2: Filter = lambda r: r.meta.contains({"src": "src2"})
 
 
-@pytest.mark.parametrize("filter", [filter_src_by_text, filter_src_by_record])
+@pytest.mark.parametrize("filter", [filter_src1, filter_src2])
 @pytest.mark.parametrize(
     "dis_op, dis_oprand, dis_expected",
     zip(
@@ -81,7 +80,7 @@ filter_src_by_record = filter_meta_contains({"src": "src2"})
 )
 def test_search_filter_and_op(
     client: PGVectoRs,
-    filter: FilterFunc,
+    filter: Filter,
     dis_op: str,
     dis_oprand: List[float],
     dis_expected: List[float],

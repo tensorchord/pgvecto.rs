@@ -15,13 +15,13 @@ readme = "README.md"
 license = { text = "Apache-2.0" }
 
 [build-system]
-requires      = ["pdm-backend"]
+requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
 [project.optional-dependencies]
 sdk = [
-    "openai>=1.2.2",
-    "pgvecto_rs[sqlalchemy]",
+"openai>=1.2.2",
+"pgvecto_rs[sqlalchemy]",
 ]
 sqlalchemy = [
 "SQLAlchemy>=2.0.23",
@@ -42,9 +42,13 @@ test = [
 ]
 
 [tool.pdm.scripts]
-test   = "pytest tests/"
-format = { composite = ["isort .", "ruff check --fix .", "black ."] }
-check  = { composite = ["black --check .", "ruff check ."] }
+test = "pytest tests/"
+format = { composite = [
+"isort .",
+"ruff check --ignore E731 --fix .",
+"black .",
+] }
+check = { composite = ["black --check .", "ruff check --ignore E731 ."] }
 
 [tool.pytest.ini_options]
 addopts = "-r aR"

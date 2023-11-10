@@ -19,7 +19,7 @@ from sqlalchemy.orm.session import Session
 
 from pgvecto_rs.sqlalchemy import Vector
 
-from .filter import FilterFunc
+from .filters import Filter
 from .record import Record, RecordORM, RecordORMType
 
 
@@ -111,7 +111,7 @@ class PGVectoRs:
         embedding: Union[ndarray, List[float]],
         distance_op: Literal["<->", "<=>", "<#>"] = "<->",
         limit: int = 10,
-        filter: Optional[FilterFunc] = None,
+        filter: Optional[Filter] = None,
         order_by_dis: bool = True,
     ) -> List[Tuple[Record, float]]:
         """Search for the nearest records.
@@ -141,7 +141,7 @@ class PGVectoRs:
             return [(Record.from_orm(row[0]), row[1]) for row in res]
 
     # ================ Delete ================
-    def delete(self, filter: FilterFunc) -> None:
+    def delete(self, filter: Filter) -> None:
         with Session(self._engine) as session:
             session.execute(delete(self._table).where(filter(self._table)))
             session.commit()
