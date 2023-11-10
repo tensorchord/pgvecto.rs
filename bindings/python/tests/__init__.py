@@ -1,6 +1,7 @@
 import os
-import toml
+
 import numpy as np
+import toml
 
 PORT = os.getenv("DB_PORT", 5432)
 HOST = os.getenv("DB_HOST", "localhost")

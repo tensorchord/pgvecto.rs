@@ -1,19 +1,20 @@
-import pytest
-import psycopg
 import numpy as np
+import psycopg
+import pytest
 from psycopg import Connection, sql
+
 from pgvecto_rs.psycopg import register_vector
 from tests import (
-    URL,
-    TOML_SETTINGS,
-    VECTORS,
-    OP_SQRT_EUCLID_DIS,
-    OP_NEG_DOT_PROD_DIS,
-    OP_NEG_COS_DIS,
-    EXPECTED_SQRT_EUCLID_DIS,
-    EXPECTED_NEG_DOT_PROD_DIS,
     EXPECTED_NEG_COS_DIS,
+    EXPECTED_NEG_DOT_PROD_DIS,
+    EXPECTED_SQRT_EUCLID_DIS,
     LEN_AFT_DEL,
+    OP_NEG_COS_DIS,
+    OP_NEG_DOT_PROD_DIS,
+    OP_SQRT_EUCLID_DIS,
+    TOML_SETTINGS,
+    URL,
+    VECTORS,
 )
 
 

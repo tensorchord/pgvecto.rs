@@ -1,9 +1,10 @@
 import os
+
 import numpy as np
-from sqlalchemy import create_engine, select, insert
-from sqlalchemy import Integer, String
+from sqlalchemy import Integer, String, create_engine, insert, select
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
 from pgvecto_rs.sqlalchemy import Vector
-from sqlalchemy.orm import Session, DeclarativeBase, mapped_column, Mapped
 
 URL = "postgresql+psycopg://{username}:{password}@{host}:{port}/{db_name}".format(
     port=os.getenv("DB_PORT", 5432),
