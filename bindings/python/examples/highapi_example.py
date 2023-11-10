@@ -18,8 +18,12 @@ embedder = OpenAIEmbedder(
     OpenAI(),
     "text-embedding-ada-002",
 )
-with open("./examples/data/sample.txt", "r") as f:
-    texts = f.readlines()
+
+texts = [
+    "Hello world!",
+    "Hello PostgreSQL!",
+    "Hello pgvecto.rs!",
+]
 
 client = Client.from_texts(
     texts=texts,
@@ -30,10 +34,11 @@ client = Client.from_texts(
     embedder=embedder,
 )
 
-# Query
-for record, dis in client.search(embedder.embed("hello pgvector")):
-    print(f"DISTANCE SCORE: {dis}")
-    print(record)
-
-# Clean up
-client.drop()
+try:
+    # Query
+    for record, dis in client.search(embedder.embed("hello pgvector")):
+        print(f"DISTANCE SCORE: {dis}")
+        print(record)
+finally:
+    # Clean up
+    client.drop()
