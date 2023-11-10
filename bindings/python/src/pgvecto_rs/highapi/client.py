@@ -10,6 +10,7 @@ from sqlalchemy import (
     delete,
     insert,
     select,
+    text,
 )
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import Engine
@@ -61,6 +62,9 @@ class Client:
             embedding: Mapped[ndarray] = mapped_column(Vector(dimension))
 
         self._engine = create_engine(db_url)
+        with Session(self._engine) as session:
+            session.execute(text("CREATE EXTENSION IF NOT EXISTS vectors"))
+            session.commit()
         self._table = _Table
         self._table.__table__.create(self._engine, checkfirst=not new_table)  # type: ignore
         self.dimension = dimension
