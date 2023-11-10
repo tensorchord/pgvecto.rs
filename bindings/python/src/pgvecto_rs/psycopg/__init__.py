@@ -1,8 +1,9 @@
+from numpy import ndarray
 from psycopg import Connection, ProgrammingError
-from psycopg.adapt import Loader, Dumper
+from psycopg.adapt import Dumper, Loader
 from psycopg.pq import Format
 from psycopg.types import TypeInfo
-from numpy import ndarray
+
 from ..utils.serializer import from_db_str, to_db_str
 
 __all__ = ["register_vector"]

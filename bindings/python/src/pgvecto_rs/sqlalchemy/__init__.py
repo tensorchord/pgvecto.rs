@@ -1,4 +1,5 @@
 import sqlalchemy.types as types
+
 from ..utils import serializer
 
 

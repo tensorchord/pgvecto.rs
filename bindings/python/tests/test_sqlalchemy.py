@@ -1,23 +1,23 @@
-import pytest
 import numpy as np
-from tests import (
-    URL,
-    TOML_SETTINGS,
-    VECTORS,
-    INVALID_VECTORS,
-    OP_NEG_DOT_PROD_DIS,
-    EXPECTED_SQRT_EUCLID_DIS,
-    OP_SQRT_EUCLID_DIS,
-    EXPECTED_NEG_DOT_PROD_DIS,
-    OP_NEG_COS_DIS,
-    EXPECTED_NEG_COS_DIS,
-    LEN_AFT_DEL,
-)
-from sqlalchemy import create_engine, select, text, insert, delete
-from sqlalchemy import Integer, Index
-from pgvecto_rs.sqlalchemy import Vector
-from sqlalchemy.orm import Session, DeclarativeBase, mapped_column, Mapped
+import pytest
+from sqlalchemy import Index, Integer, create_engine, delete, insert, select, text
 from sqlalchemy.exc import StatementError
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
+from pgvecto_rs.sqlalchemy import Vector
+from tests import (
+    EXPECTED_NEG_COS_DIS,
+    EXPECTED_NEG_DOT_PROD_DIS,
+    EXPECTED_SQRT_EUCLID_DIS,
+    INVALID_VECTORS,
+    LEN_AFT_DEL,
+    OP_NEG_COS_DIS,
+    OP_NEG_DOT_PROD_DIS,
+    OP_SQRT_EUCLID_DIS,
+    TOML_SETTINGS,
+    URL,
+    VECTORS,
+)
 
 
 class Base(DeclarativeBase):

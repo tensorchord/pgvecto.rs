@@ -1,5 +1,6 @@
-import numpy as np
 from functools import wraps
+
+import numpy as np
 
 
 def ignore_none(func):
