@@ -35,7 +35,6 @@ psycopg3 = [
 lint = [
 "black>=23.10.0",
 "ruff>=0.1.1",
-"isort>=5.12.0",
 ]
 test = [
 "pytest>=7.4.3",
@@ -44,11 +43,14 @@ test = [
 [tool.pdm.scripts]
 test = "pytest tests/"
 format = { composite = [
-"isort .",
-"ruff check --ignore E731 --fix .",
+"ruff --fix .",
 "black .",
 ] }
-check = { composite = ["black --check .", "ruff check --ignore E731 ."] }
+check = { composite = ["black --check .", "ruff ."] }
 
 [tool.pytest.ini_options]
 addopts = "-r aR"
+
+[tool.ruff]
+select = ["E", "F", "I"]
+ignore = ["E731", "E501"]

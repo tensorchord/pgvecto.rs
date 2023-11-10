@@ -1,7 +1,6 @@
 import os
 
 from openai import OpenAI
-
 from pgvecto_rs.sdk import PGVectoRs
 from pgvecto_rs.sdk.embedder import OpenAIEmbedder
 
