@@ -20,8 +20,8 @@ build-backend = "pdm.backend"
 
 [project.optional-dependencies]
 sdk = [
-"openai>=1.2.2",
-"pgvecto_rs[sqlalchemy]",
+    "openai>=1.2.2",
+    "pgvecto_rs[sqlalchemy]",
 ]
 sqlalchemy = [
 "SQLAlchemy>=2.0.23",

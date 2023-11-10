@@ -19,7 +19,6 @@ from sqlalchemy.orm.session import Session
 
 from pgvecto_rs.sqlalchemy import Vector
 
-from .embedder import BaseEmbbeder
 from .filter import FilterFunc
 from .record import Record, RecordORM, RecordORMType
 
@@ -27,7 +26,6 @@ from .record import Record, RecordORM, RecordORMType
 class PGVectoRs:
     _engine: Engine
     _table: Type[RecordORM]
-    embedder: Optional[BaseEmbbeder]
     dimension: int
 
     # ================ Initialization ================
@@ -36,7 +34,6 @@ class PGVectoRs:
         db_url: str,
         table_name: str,
         dimension: int,
-        embedder: Optional[BaseEmbbeder] = None,
         new_table: bool = False,
     ) -> None:
         """Connect to an existing table or create a new one.
@@ -68,16 +65,6 @@ class PGVectoRs:
         self._table = _Table
         self._table.__table__.create(self._engine, checkfirst=not new_table)  # type: ignore
         self.dimension = dimension
-        self.embedder = embedder
-        try:
-            if embedder is not None:
-                if embedder.get_dimension() != dimension:
-                    raise ValueError(
-                        f"Dimension mismatch: (embedder){embedder.get_dimension()} != (given){dimension}"
-                    )
-        except Exception as e:
-            self.drop()
-            raise e
 
     @classmethod
     def from_records(
@@ -86,32 +73,11 @@ class PGVectoRs:
         db_url: str,
         table_name: str,
         dimension: int,
-        embedder: Optional[BaseEmbbeder] = None,
     ):
-        client = cls(db_url, table_name, dimension, embedder, True)
+        client = cls(db_url, table_name, dimension, True)
         try:
             for record in records:
                 client.add_record(record)
-        except Exception as e:
-            client.drop()
-            raise e
-        return client
-
-    @classmethod
-    def from_texts(
-        cls,
-        texts: List[str],
-        meta: Optional[dict],
-        db_url: str,
-        table_name: str,
-        dimension: int,
-        embedder: BaseEmbbeder,
-    ):
-        client = cls(db_url, table_name, dimension, embedder, True)
-        meta = meta or {}
-        try:
-            for i in range(len(texts)):
-                client.add_text(texts[i], meta)
         except Exception as e:
             client.drop()
             raise e

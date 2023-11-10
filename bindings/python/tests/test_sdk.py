@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 
 from pgvecto_rs.sdk import FilterFunc, PGVectoRs, Record
-from pgvecto_rs.sdk.embedder import BaseEmbbeder
 from pgvecto_rs.sdk.filter import filter_meta_contains
 from tests import (
     EXPECTED_NEG_COS_DIS,
@@ -25,14 +24,11 @@ mockTexts = {
 }
 
 
-class MockEmbedder(BaseEmbbeder):
+class MockEmbedder:
     def embed(self, text: str) -> np.ndarray:
         if isinstance(mockTexts[text], list):
             return np.array(mockTexts[text], dtype=np.float32)
         return mockTexts[text]
-
-    def get_dimension(self) -> int:
-        return 3
 
 
 @pytest.fixture(scope="module")
@@ -41,34 +37,14 @@ def client():
         db_url=URL,
         table_name="empty",
         dimension=3,
-        embedder=MockEmbedder(),
         new_table=True,
     )
     try:
         for t, v in mockTexts.items():
-            client.add_text(t, {"src": "add_text"})
+            client.add_record(Record.from_text(t, {"src": "src1"}, v))
         for t, v in mockTexts.items():
-            client.add_record(Record.from_text(t, {"src": "add_record"}, v))
+            client.add_record(Record.from_text(t, {"src": "src2"}, v))
         yield client
-    finally:
-        client.drop()
-
-
-def test_client_from_texts():
-    try:
-        client = PGVectoRs.from_texts(
-            texts=["text0", "text1", "text2"],
-            meta=None,
-            db_url=URL,
-            table_name="from_texts",
-            dimension=3,
-            embedder=MockEmbedder(),
-        )
-        results = client.search([0, 0, 0], "<#>", 99, order_by_dis=False)
-        assert len(results) == 3
-        for i in range(3):
-            assert results[i][0].text == f"text{i}"
-            assert np.allclose(results[i][0].embedding, mockTexts[f"text{i}"])
     finally:
         client.drop()
 
@@ -90,8 +66,8 @@ def test_client_from_records():
         client.drop()
 
 
-filter_src_by_text = filter_meta_contains({"src": "add_text"})
-filter_src_by_record = filter_meta_contains({"src": "add_record"})
+filter_src_by_text = filter_meta_contains({"src": "src1"})
+filter_src_by_record = filter_meta_contains({"src": "src2"})
 
 
 @pytest.mark.parametrize("filter", [filter_src_by_text, filter_src_by_record])
