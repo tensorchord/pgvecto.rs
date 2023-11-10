@@ -1,4 +1,4 @@
-# Python bindings for pgvector.rs
+# Python bindings for pgvecto.rs
 
 [![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm.fming.dev)
 
@@ -27,21 +27,23 @@ pip install "pgvecto_rs[sdk]"
 A minimal example:
 
 ```Python
-from pgvecto_rs.sdk import Client, Record
+from pgvecto_rs.sdk import PGVectoRs, Record
 
 # Create a client
-client = Client(
+client = PGVectoRs(
     db_url="postgresql+psycopg://postgres:mysecretpassword@localhost:5432/postgres",
     table_name="example",
     dimension=3,
-    embedder=None,
-    new_table=True,
 )
 
 try:
     # Add some records
-    client.add_record(Record.from_text("hello 1", None, [1, 2, 3]))
-    client.add_record(Record.from_text("hello 2", None, [1, 2, 4]))
+    client.add_records(
+        [
+            Record.from_text("hello 1", None, [1, 2, 3]),
+            Record.from_text("hello 2", None, [1, 2, 4]),
+        ]
+    )
 
     # Search with default operator (sqrt_euclid).
     # The results is sorted by distance
