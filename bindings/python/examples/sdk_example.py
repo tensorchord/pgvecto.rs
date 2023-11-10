@@ -2,8 +2,8 @@ import os
 
 from openai import OpenAI
 
-from pgvecto_rs.highapi import Client
-from pgvecto_rs.highapi.embedder import OpenAIEmbedder
+from pgvecto_rs.sdk import PGVectoRs
+from pgvecto_rs.sdk.embedder import OpenAIEmbedder
 
 URL = "postgresql+psycopg://{username}:{password}@{host}:{port}/{db_name}".format(
     port=os.getenv("DB_PORT", 5432),
@@ -25,7 +25,7 @@ texts = [
     "Hello pgvecto.rs!",
 ]
 
-client = Client.from_texts(
+client = PGVectoRs.from_texts(
     texts=texts,
     meta={"source": "sample.txt"},
     db_url=URL,

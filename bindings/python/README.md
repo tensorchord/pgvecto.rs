@@ -9,26 +9,25 @@ Install from PyPI:
 pip install pgvecto_rs
 ```
 
-See the usage of:
-- [High-level API](#high-level-api)
+See the [usage of SDK](#sdk)
 
 Or use it as an extension of postgres clients:
 - [SQLAlchemy](#sqlalchemy)
 - [psycopg3](#psycopg3)
 
-### High-level API
+### SDK
 
-High-level API is designed to use the pgvecto.rs out-of-box. You can exploit the power of pgvecto.rs to do similarity search or retrieve with filters, without writing any SQL code.
+Our SDK is designed to use the pgvecto.rs out-of-box. You can exploit the power of pgvecto.rs to do similarity search or retrieve with filters, without writing any SQL code.
 
 Install dependencies:
 ```bash
-pip install "pgvecto_rs[highapi]"
+pip install "pgvecto_rs[sdk]"
 ```
 
 A minimal example:
 
 ```Python
-from pgvecto_rs.highapi import Client, Record
+from pgvecto_rs.sdk import Client, Record
 
 # Create a client
 client = Client(
@@ -62,7 +61,7 @@ hello 1
 4.0
 ```
 
-See [examples/highapi_example.py](examples/highapi_example.py) and [tests/test_highapi.py](tests/test_highapi.py) for more examples.
+See [examples/sdk_example.py](examples/sdk_example.py) and [tests/test_sdk.py](tests/test_sdk.py) for more examples.
 
 
 ### SQLAlchemy

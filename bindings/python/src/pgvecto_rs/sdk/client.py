@@ -24,7 +24,7 @@ from .filter import FilterFunc
 from .record import Record, RecordORM, RecordORMType
 
 
-class Client:
+class PGVectoRs:
     _engine: Engine
     _table: Type[RecordORM]
     embedder: Optional[BaseEmbbeder]

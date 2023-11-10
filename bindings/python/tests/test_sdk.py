@@ -3,9 +3,9 @@ from typing import List
 import numpy as np
 import pytest
 
-from pgvecto_rs.highapi import Client, FilterFunc, Record
-from pgvecto_rs.highapi.embedder import BaseEmbbeder
-from pgvecto_rs.highapi.filter import filter_meta_contains
+from pgvecto_rs.sdk import FilterFunc, PGVectoRs, Record
+from pgvecto_rs.sdk.embedder import BaseEmbbeder
+from pgvecto_rs.sdk.filter import filter_meta_contains
 from tests import (
     EXPECTED_NEG_COS_DIS,
     EXPECTED_NEG_DOT_PROD_DIS,
@@ -37,7 +37,7 @@ class MockEmbedder(BaseEmbbeder):
 
 @pytest.fixture(scope="module")
 def client():
-    client = Client(
+    client = PGVectoRs(
         db_url=URL,
         table_name="empty",
         dimension=3,
@@ -56,7 +56,7 @@ def client():
 
 def test_client_from_texts():
     try:
-        client = Client.from_texts(
+        client = PGVectoRs.from_texts(
             texts=["text0", "text1", "text2"],
             meta=None,
             db_url=URL,
@@ -75,7 +75,7 @@ def test_client_from_texts():
 
 def test_client_from_records():
     try:
-        client = Client.from_records(
+        client = PGVectoRs.from_records(
             [Record.from_text(t, None, e) for t, e in mockTexts.items()],
             db_url=URL,
             table_name="from_records",
@@ -104,7 +104,7 @@ filter_src_by_record = filter_meta_contains({"src": "add_record"})
     ),
 )
 def test_search_filter_and_op(
-    client: Client,
+    client: PGVectoRs,
     filter: FilterFunc,
     dis_op: str,
     dis_oprand: List[float],
@@ -125,7 +125,7 @@ def test_search_filter_and_op(
     ),
 )
 def test_search_order_and_limit(
-    client: Client,
+    client: PGVectoRs,
     dis_op: str,
     dis_oprand: List[float],
     dis_expected: List[float],

@@ -19,7 +19,7 @@ requires      = ["pdm-backend"]
 build-backend = "pdm.backend"
 
 [project.optional-dependencies]
-highapi = [
+sdk = [
 "openai>=1.2.2",
 "pgvecto_rs[sqlalchemy]",
 ]

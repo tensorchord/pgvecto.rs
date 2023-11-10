@@ -9,3 +9,7 @@ def filter_meta_contains(meta_contains: dict) -> FilterFunc:
         return r.meta.contains(meta_contains)
 
     return _filter
+
+
+def simpleFilter(r: RecordORMType) -> ColumnElement[bool]:
+    return r.meta.contains({"foo": "bar"}) and r.text.startswith("title")
