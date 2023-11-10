@@ -3,12 +3,12 @@ name = "pgvecto_rs"
 version = "0.1.2"
 description = "Python binding for pgvecto.rs"
 authors = [
-  { name = "TensorChord", email = "envd-maintainers@tensorchord.ai" },
-  { name = "盐粒 Yanli", email = "mail@yanli.one" },
+    { name = "TensorChord", email = "envd-maintainers@tensorchord.ai" },
+    { name = "盐粒 Yanli", email = "mail@yanli.one" },
 ]
 dependencies = [
-  "numpy>=1.23",
-  "toml>=0.10",
+    "numpy>=1.23",
+    "toml>=0.10",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
@@ -20,24 +20,24 @@ build-backend = "pdm.backend"
 
 [project.optional-dependencies]
 highapi = [
-  "openai>=1.2.0",
-  "pgvecto_rs[sqlalchemy]",
-]
-psycopg3 = [
-  "psycopg[binary]>=3.1.12",
+    "openai>=1.2.2",
+    "pgvecto_rs[sqlalchemy]",
 ]
 sqlalchemy = [
-  "SQLAlchemy>=2.0.23",
-  "pgvecto_rs[psycopg3]",
+    "SQLAlchemy>=2.0.23",
+    "pgvecto_rs[psycopg3]",
+]
+psycopg3 = [
+    "psycopg[binary]>=3.1.12",
 ]
 
 [tool.pdm.dev-dependencies]
 lint = [
-  "black>=23.10.0",
-  "ruff>=0.1.1",
+    "black>=23.10.0",
+    "ruff>=0.1.1",
 ]
 test = [
-  "pytest>=7.4",
+    "pytest>=7.4.3",
 ]
 
 [tool.pdm.scripts]
