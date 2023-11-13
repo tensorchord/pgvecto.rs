@@ -17,5 +17,3 @@ DOWNLOAD=$(curl -s $URL | grep browser_download_url | grep -o 'https://[^ ]*vect
 wget -O /tmp/vectors.deb $DOWNLOAD
 apt-get install -y /tmp/vectors.deb
 rm -f /tmp/vectors.deb
-
-echo "echo 'shared_preload_libraries = '\"'\"'vectors.so'\"'\"'' >> /var/lib/postgresql/data/postgresql.auto.conf" > /docker-entrypoint-initdb.d/vectors.sh
