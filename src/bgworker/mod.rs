@@ -44,7 +44,14 @@ pub fn main() {
     } else {
         bgworker = Bgworker::create(PathBuf::from("pg_vectors"));
     }
-    std::thread::spawn(move || thread_main_2(bgworker));
+    std::thread::spawn({
+        let bgworker = bgworker.clone();
+        move || thread_main_2(crate::ipc::listen_unix(), bgworker)
+    });
+    std::thread::spawn({
+        let bgworker = bgworker.clone();
+        move || thread_main_2(crate::ipc::listen_mmap(), bgworker)
+    });
     loop {
         let mut sig: i32 = 0;
         unsafe {
@@ -67,9 +74,11 @@ pub fn main() {
     }
 }
 
-fn thread_main_2(bgworker: Arc<Bgworker>) {
-    let listener = crate::ipc::listen();
-    for rpc_handler in listener {
+fn thread_main_2<T>(listen: T, bgworker: Arc<Bgworker>)
+where
+    T: Iterator<Item = RpcHandler>,
+{
+    for rpc_handler in listen {
         std::thread::spawn({
             let bgworker = bgworker.clone();
             move || {

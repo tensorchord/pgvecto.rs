@@ -1,6 +1,13 @@
 use pgrx::{GucContext, GucFlags, GucRegistry, GucSetting};
 use std::ffi::CStr;
 
+#[derive(Debug, Clone, Copy, pgrx::PostgresGucEnum)]
+#[allow(non_camel_case_types)]
+pub enum Transport {
+    unix,
+    mmap,
+}
+
 pub static OPENAI_API_KEY_GUC: GucSetting<Option<&'static CStr>> =
     GucSetting::<Option<&'static CStr>>::new(None);
 
@@ -9,6 +16,8 @@ pub static K: GucSetting<i32> = GucSetting::<i32>::new(64);
 pub static ENABLE_VECTOR_INDEX: GucSetting<bool> = GucSetting::<bool>::new(true);
 
 pub static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(false);
+
+pub static TRANSPORT: GucSetting<Transport> = GucSetting::<Transport>::new(Transport::mmap);
 
 pub unsafe fn init() {
     GucRegistry::define_string_guc(
@@ -45,4 +54,12 @@ pub unsafe fn init() {
         GucContext::Userset,
         GucFlags::default(),
     );
+    GucRegistry::define_enum_guc(
+        "vectors.transport",
+        "Transport for communicating with background worker.",
+        "Transport for communicating with background worker.",
+        &TRANSPORT,
+        GucContext::Userset,
+        GucFlags::default(),
+    )
 }

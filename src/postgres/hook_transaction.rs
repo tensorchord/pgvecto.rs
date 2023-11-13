@@ -1,5 +1,7 @@
+use super::gucs::Transport;
+use super::gucs::TRANSPORT;
 use crate::ipc::client::Rpc;
-use crate::ipc::connect;
+use crate::ipc::{connect_mmap, connect_unix};
 use crate::prelude::*;
 use std::cell::RefCell;
 use std::collections::BTreeSet;
@@ -53,7 +55,10 @@ where
     F: FnOnce(Rpc) -> Rpc,
 {
     let mut guard = CLIENT.borrow_mut();
-    let client = guard.take().unwrap_or_else(|| connect());
+    let client = guard.take().unwrap_or_else(|| match TRANSPORT.get() {
+        Transport::unix => connect_unix(),
+        Transport::mmap => connect_mmap(),
+    });
     let client = f(client);
     *guard = Some(client);
 }

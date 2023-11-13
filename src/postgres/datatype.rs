@@ -390,6 +390,10 @@ fn vector_in(input: &CStr, _oid: Oid, typmod: i32) -> VectorOutput {
         if dims as usize != vector.len() {
             panic!("The dimensions are unmatched with the type modifier.");
         }
+    } else {
+        if vector.len() == 0 || vector.len() > 65535 {
+            panic!("The vector contains no element or too many elements.");
+        }
     }
     Vector::new_in_postgres(&vector)
 }

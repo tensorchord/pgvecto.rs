@@ -33,6 +33,9 @@ pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
 #[allow(non_snake_case)]
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn _PG_init() {
+    if pgrx::pg_sys::IsUnderPostmaster {
+        pgrx::error!("pgvecto.rs must be loaded via shared_preload_libraries");
+    }
     use pgrx::bgworkers::BackgroundWorkerBuilder;
     use pgrx::bgworkers::BgWorkerStartTime;
     BackgroundWorkerBuilder::new("vectors")
@@ -43,6 +46,8 @@ pub unsafe extern "C" fn _PG_init() {
         .set_start_time(BgWorkerStartTime::PostmasterStart)
         .load();
     self::postgres::init();
+    self::ipc::transport::unix::init();
+    self::ipc::transport::mmap::init();
 }
 
 #[no_mangle]
