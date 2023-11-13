@@ -54,11 +54,8 @@ SELECT '[3.4e38, -3.4e38, 3.5e38, -3.5e38]'::vector
 statement error assertion failed: !array.is_empty()
 SELECT '{}'::real[]::vector;
 
-# TODO: inconsistent behavior with empty array casting
-query I
+statement error no element or too many elements
 SELECT '[]'::vector;
-----
-[]
 
 # parse all kinds of string
 statement error Bad sequence
@@ -78,11 +75,6 @@ SELECT '['::vector;
 
 statement error Expect a number
 SELECT '[,'::vector;
-
-query I
-SELECT '[]'::vector;
-----
-[]
 
 query I
 SELECT '[1,]'::vector;

@@ -46,7 +46,7 @@ pub fn accept() -> Socket {
 pub fn connect() -> Socket {
     let memfd = rustix::fs::memfd_create("transport", MemfdFlags::empty()).unwrap();
     rustix::fs::ftruncate(&memfd, BUFFER_SIZE as u64).unwrap();
-    rustix::fs::flock(&memfd, FlockOperation::NonBlockingLockExclusive).unwrap();
+    rustix::fs::fcntl_lock(&memfd, FlockOperation::NonBlockingLockExclusive).unwrap();
     CHANNEL.get().unwrap().send(memfd.as_fd()).unwrap();
     let addr;
     unsafe {
@@ -79,7 +79,7 @@ unsafe impl Sync for Socket {}
 impl Socket {
     pub fn test(&self) -> bool {
         if self.is_server {
-            match rustix::fs::flock(&self.memfd, FlockOperation::NonBlockingLockExclusive) {
+            match rustix::fs::fcntl_lock(&self.memfd, FlockOperation::NonBlockingLockExclusive) {
                 Ok(()) => false,
                 Err(e) if e.kind() == ErrorKind::WouldBlock => true,
                 Err(e) => panic!("{:?}", e),
