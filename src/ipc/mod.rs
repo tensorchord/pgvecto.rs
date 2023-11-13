@@ -8,8 +8,13 @@ use self::server::RpcHandler;
 use thiserror::Error;
 
 #[derive(Debug, Clone, Error)]
+#[rustfmt::skip]
 pub enum IpcError {
-    #[error("The connection is closed.")]
+    #[error("\
+pgvecto.rs: IPC connection is closed unexpected.
+ADVICE: The error is raisen by background worker errors. \
+Please check the full Postgresql log to get more information.\
+")]
     Closed,
 }
 
