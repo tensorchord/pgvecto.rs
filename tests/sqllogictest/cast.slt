@@ -54,7 +54,7 @@ SELECT '[3.4e38, -3.4e38, 3.5e38, -3.5e38]'::vector
 statement error assertion failed: !array.is_empty()
 SELECT '{}'::real[]::vector;
 
-statement error no element or too many elements
+statement error dimensions of the vector are among 1 and 65535.
 SELECT '[]'::vector;
 
 # parse all kinds of string
