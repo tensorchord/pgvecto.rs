@@ -60,7 +60,7 @@ pub unsafe fn convert_opfamily_to_distance(opfamily: pgrx::pg_sys::Oid) -> Dista
     } else if operator == regoperatorin("<=>(vector,vector)") {
         distance = Distance::Cosine;
     } else {
-        panic!("Unsupported operator.")
+        FriendlyError::UnsupportedOperator.friendly();
     };
     pgrx::pg_sys::ReleaseCatCacheList(list);
     pgrx::pg_sys::ReleaseSysCache(tuple);
@@ -77,7 +77,7 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
     let attrs = (*(*index_relation).rd_att).attrs.as_slice(1);
     let attr = &attrs[0];
     let typmod = VectorTypmod::parse_from_i32(attr.type_mod()).unwrap();
-    let dims = typmod.dims().expect("Column does not have dimensions.");
+    let dims = typmod.dims().ok_or(FriendlyError::DimsIsNeeded).friendly();
     // get other options
     let parsed = get_parsed_from_varlena((*index_relation).rd_options);
     let options = IndexOptions {
@@ -87,7 +87,7 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
         indexing: parsed.indexing,
     };
     if let Err(errors) = options.validate() {
-        FriendlyError::InvalidOption(errors.to_string());
+        FriendlyError::BadOption(errors.to_string());
     }
     options
 }

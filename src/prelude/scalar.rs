@@ -10,7 +10,9 @@ use pgrx::{FromDatum, IntoDatum};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display};
+use std::num::ParseFloatError;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign};
+use std::str::FromStr;
 
 pub type Float = f32;
 
@@ -242,6 +244,14 @@ impl RemAssign<Scalar> for Scalar {
     #[inline(always)]
     fn rem_assign(&mut self, rhs: Scalar) {
         unsafe { self.0 = std::intrinsics::frem_fast(self.0, rhs.0) }
+    }
+}
+
+impl FromStr for Scalar {
+    type Err = ParseFloatError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Float::from_str(s).map(|x| x.into())
     }
 }
 

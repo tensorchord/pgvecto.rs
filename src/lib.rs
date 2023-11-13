@@ -33,8 +33,9 @@ pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
 #[allow(non_snake_case)]
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn _PG_init() {
+    use crate::prelude::*;
     if pgrx::pg_sys::IsUnderPostmaster {
-        pgrx::error!("pgvecto.rs must be loaded via shared_preload_libraries");
+        FriendlyError::BadInit.friendly();
     }
     use pgrx::bgworkers::BackgroundWorkerBuilder;
     use pgrx::bgworkers::BgWorkerStartTime;

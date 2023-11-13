@@ -134,8 +134,8 @@ impl Delete {
         let DeleteNextPacket::Leave { delete } = self.socket.recv::<DeleteNextPacket>()?;
         Ok(delete)
     }
-    pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
-        let packet = DeletePacket::Leave {};
+    pub fn leave(mut self, result: Result<(), FriendlyError>) -> Result<RpcHandler, IpcError> {
+        let packet = DeletePacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
@@ -171,8 +171,8 @@ pub struct Flush {
 }
 
 impl Flush {
-    pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
-        let packet = FlushPacket::Leave {};
+    pub fn leave(mut self, result: Result<(), FriendlyError>) -> Result<RpcHandler, IpcError> {
+        let packet = FlushPacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
             socket: self.socket,

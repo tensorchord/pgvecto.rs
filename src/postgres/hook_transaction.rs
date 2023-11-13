@@ -27,7 +27,7 @@ pub fn committing() {
         if flush_if_commit.len() != 0 || drop_if_commit.len() != 0 {
             client(|mut rpc| {
                 for id in flush_if_commit.iter().copied() {
-                    rpc.flush(id).unwrap();
+                    rpc.flush(id).unwrap().unwrap();
                 }
 
                 for id in drop_if_commit.iter().copied() {

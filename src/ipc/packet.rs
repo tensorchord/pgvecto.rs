@@ -49,7 +49,7 @@ pub enum CreatePacket {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum FlushPacket {
-    Leave {},
+    Leave { result: Result<(), FriendlyError> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -65,7 +65,7 @@ pub enum InsertPacket {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DeletePacket {
     Next { p: Pointer },
-    Leave {},
+    Leave { result: Result<(), FriendlyError> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]

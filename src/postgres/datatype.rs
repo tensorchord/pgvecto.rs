@@ -348,6 +348,16 @@ unsafe impl SqlTranslatable for VectorOutput {
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn vector_in(input: &CStr, _oid: Oid, typmod: i32) -> VectorOutput {
+    fn solve<T>(option: Option<T>, hint: &str) -> T {
+        if let Some(x) = option {
+            x
+        } else {
+            FriendlyError::BadVectorString {
+                hint: hint.to_string(),
+            }
+            .friendly()
+        }
+    }
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     enum State {
         MatchingLeft,
@@ -370,29 +380,40 @@ fn vector_in(input: &CStr, _oid: Oid, typmod: i32) -> VectorOutput {
                 token.push(char::from_u32(c as u32).unwrap());
             }
             (Reading, b',') => {
-                let token = token.take().expect("Expect a number.");
-                vector.push(token.parse::<Float>().expect("Bad number.").into());
+                let token = solve(token.take(), "Expect a number.");
+                vector.push(solve(token.parse().ok(), "Bad number."));
             }
             (Reading, b']') => {
                 if let Some(token) = token.take() {
-                    vector.push(token.parse::<Float>().expect("Bad number.").into());
+                    vector.push(solve(token.parse().ok(), "Bad number."));
                 }
                 state = MatchedRight;
             }
             (_, b' ') => {}
-            _ => panic!("Bad charactor with ascii {:#x}.", c),
+            _ => {
+                FriendlyError::BadVectorString {
+                    hint: format!("Bad charactor with ascii {:#x}.", c),
+                }
+                .friendly();
+            }
         }
     }
     if state != MatchedRight {
-        panic!("Bad sequence.");
+        FriendlyError::BadVectorString {
+            hint: "Bad sequence.".to_string(),
+        }
+        .friendly();
+    }
+    if vector.len() == 0 || vector.len() > 65535 {
+        FriendlyError::BadVecForDims.friendly();
     }
     if let Some(dims) = typmod.dims() {
         if dims as usize != vector.len() {
-            panic!("The dimensions are unmatched with the type modifier.");
-        }
-    } else {
-        if vector.len() == 0 || vector.len() > 65535 {
-            panic!("The vector contains no element or too many elements.");
+            FriendlyError::BadVecForUnmatchedDims {
+                value_dimensions: dims,
+                type_dimensions: vector.len() as u16,
+            }
+            .friendly();
         }
     }
     Vector::new_in_postgres(&vector)
@@ -418,10 +439,12 @@ fn vector_typmod_in(list: Array<&CStr>) -> i32 {
         -1
     } else if list.len() == 1 {
         let s = list.get(0).unwrap().unwrap().to_str().unwrap();
-        let typmod = VectorTypmod::parse_from_str(s).expect("Invaild typmod.");
+        let typmod = VectorTypmod::parse_from_str(s)
+            .ok_or(FriendlyError::BadTypmod)
+            .friendly();
         typmod.into_i32()
     } else {
-        panic!("Invaild typmod.");
+        FriendlyError::BadTypmod.friendly();
     }
 }
 

@@ -103,8 +103,8 @@ fn thread_session(bgworker: Arc<Bgworker>, mut handler: RpcHandler) -> Result<()
                 handler = x.leave(res)?;
             }
             RpcHandle::Delete { id, mut x } => {
-                bgworker.call_delete(id, |p| x.next(p).unwrap());
-                handler = x.leave()?;
+                let res = bgworker.call_delete(id, |p| x.next(p).unwrap());
+                handler = x.leave(res)?;
             }
             RpcHandle::Search {
                 id,
@@ -121,8 +121,8 @@ fn thread_session(bgworker: Arc<Bgworker>, mut handler: RpcHandler) -> Result<()
                 }
             }
             RpcHandle::Flush { id, x } => {
-                bgworker.call_flush(id);
-                handler = x.leave()?;
+                let result = bgworker.call_flush(id);
+                handler = x.leave(result)?;
             }
             RpcHandle::Destory { id, x } => {
                 bgworker.call_destory(id);

@@ -24,6 +24,7 @@ pub fn init() {
 
 pub fn accept() -> Socket {
     let memfd = CHANNEL.get().unwrap().recv().unwrap();
+    rustix::fs::fcntl_lock(&memfd, FlockOperation::NonBlockingLockShared).unwrap();
     let addr;
     unsafe {
         addr = rustix::mm::mmap(
@@ -46,7 +47,7 @@ pub fn accept() -> Socket {
 pub fn connect() -> Socket {
     let memfd = rustix::fs::memfd_create("transport", MemfdFlags::empty()).unwrap();
     rustix::fs::ftruncate(&memfd, BUFFER_SIZE as u64).unwrap();
-    rustix::fs::fcntl_lock(&memfd, FlockOperation::NonBlockingLockExclusive).unwrap();
+    rustix::fs::fcntl_lock(&memfd, FlockOperation::NonBlockingLockShared).unwrap();
     CHANNEL.get().unwrap().send(memfd.as_fd()).unwrap();
     let addr;
     unsafe {
@@ -76,16 +77,18 @@ pub struct Socket {
 unsafe impl Send for Socket {}
 unsafe impl Sync for Socket {}
 
+impl Drop for Socket {
+    fn drop(&mut self) {
+        rustix::fs::fcntl_lock(&self.memfd, FlockOperation::Unlock).unwrap();
+    }
+}
+
 impl Socket {
     pub fn test(&self) -> bool {
-        if self.is_server {
-            match rustix::fs::fcntl_lock(&self.memfd, FlockOperation::NonBlockingLockExclusive) {
-                Ok(()) => false,
-                Err(e) if e.kind() == ErrorKind::WouldBlock => true,
-                Err(e) => panic!("{:?}", e),
-            }
-        } else {
-            true
+        match rustix::fs::fcntl_lock(&self.memfd, FlockOperation::NonBlockingLockExclusive) {
+            Ok(()) => false,
+            Err(e) if e.kind() == ErrorKind::WouldBlock => true,
+            Err(e) => panic!("{:?}", e),
         }
     }
     pub fn send<T>(&mut self, packet: T) -> Result<(), IpcError>

@@ -51,11 +51,11 @@ impl Rpc {
         let InsertPacket::Leave { result } = self.socket.recv::<InsertPacket>()?;
         Ok(result)
     }
-    pub fn flush(&mut self, id: Id) -> Result<(), IpcError> {
+    pub fn flush(&mut self, id: Id) -> Result<Result<(), FriendlyError>, IpcError> {
         let packet = RpcPacket::Flush { id };
         self.socket.send(packet)?;
-        let FlushPacket::Leave {} = self.socket.recv::<FlushPacket>()?;
-        Ok(())
+        let FlushPacket::Leave { result } = self.socket.recv::<FlushPacket>()?;
+        Ok(result)
     }
     pub fn destory(&mut self, id: Id) -> Result<(), IpcError> {
         let packet = RpcPacket::Destory { id };
@@ -114,8 +114,14 @@ impl SearchCheck {
 }
 
 pub enum DeleteHandle {
-    Next { p: Pointer, x: DeleteNext },
-    Leave { x: Rpc },
+    Next {
+        p: Pointer,
+        x: DeleteNext,
+    },
+    Leave {
+        result: Result<(), FriendlyError>,
+        x: Rpc,
+    },
 }
 
 pub struct DeleteHandler {
@@ -131,7 +137,8 @@ impl DeleteHandler {
                     socket: self.socket,
                 },
             },
-            DeletePacket::Leave {} => DeleteHandle::Leave {
+            DeletePacket::Leave { result } => DeleteHandle::Leave {
+                result,
                 x: Rpc {
                     socket: self.socket,
                 },

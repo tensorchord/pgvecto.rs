@@ -74,41 +74,41 @@ impl Bgworker {
         F: FnMut(Pointer) -> bool,
     {
         let view = self.view.load_full();
-        let index = view.indexes.get(&id).expect("Not exists.");
+        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
         let view = index.view();
         match view.search(search.1, &search.0, |p| f(p)) {
             Ok(x) => Ok(x),
-            Err(IndexSearchError::InvalidVector(x)) => Err(FriendlyError::InvalidVector(x)),
+            Err(IndexSearchError::InvalidVector(x)) => Err(FriendlyError::BadVector(x)),
         }
     }
     pub fn call_insert(&self, id: Id, insert: (Vec<Scalar>, Pointer)) -> Result<(), FriendlyError> {
         let view = self.view.load_full();
-        let index = view.indexes.get(&id).expect("Not exists.");
+        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
         loop {
             let view = index.view();
             match view.insert(insert.0.clone(), insert.1) {
                 Ok(()) => break Ok(()),
-                Err(IndexInsertError::InvalidVector(x)) => {
-                    break Err(FriendlyError::InvalidVector(x))
-                }
+                Err(IndexInsertError::InvalidVector(x)) => break Err(FriendlyError::BadVector(x)),
                 Err(IndexInsertError::OutdatedView(_)) => index.refresh(),
             }
         }
     }
-    pub fn call_delete<F>(&self, id: Id, f: F)
+    pub fn call_delete<F>(&self, id: Id, f: F) -> Result<(), FriendlyError>
     where
         F: FnMut(Pointer) -> bool,
     {
         let view = self.view.load_full();
-        let index = view.indexes.get(&id).expect("Not exists.");
+        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
         let view = index.view();
         view.delete(f);
+        Ok(())
     }
-    pub fn call_flush(&self, id: Id) {
+    pub fn call_flush(&self, id: Id) -> Result<(), FriendlyError> {
         let view = self.view.load_full();
-        let index = view.indexes.get(&id).expect("Not exists.");
+        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
         let view = index.view();
         view.flush().unwrap();
+        Ok(())
     }
     pub fn call_destory(&self, id: Id) {
         let mut protect = self.protect.lock();
