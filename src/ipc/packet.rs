@@ -3,6 +3,19 @@ use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
+pub enum Packet {
+    RpcPacket(RpcPacket),
+    CreatePacket(CreatePacket),
+    FlushPacket(FlushPacket),
+    DestoryPacket(DestoryPacket),
+    InsertPacket(InsertPacket),
+    DeletePacket(DeletePacket),
+    DeleteNextPacket(DeleteNextPacket),
+    SearchPacket(SearchPacket),
+    SearchCheckPacket(SearchCheckPacket),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub enum RpcPacket {
     Create {
         id: Id,
@@ -36,7 +49,7 @@ pub enum CreatePacket {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum FlushPacket {
-    Leave {},
+    Leave { result: Result<(), FriendlyError> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -52,7 +65,7 @@ pub enum InsertPacket {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DeletePacket {
     Next { p: Pointer },
-    Leave {},
+    Leave { result: Result<(), FriendlyError> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]

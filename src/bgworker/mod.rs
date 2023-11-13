@@ -44,7 +44,14 @@ pub fn main() {
     } else {
         bgworker = Bgworker::create(PathBuf::from("pg_vectors"));
     }
-    std::thread::spawn(move || thread_main_2(bgworker));
+    std::thread::spawn({
+        let bgworker = bgworker.clone();
+        move || thread_main_2(crate::ipc::listen_unix(), bgworker)
+    });
+    std::thread::spawn({
+        let bgworker = bgworker.clone();
+        move || thread_main_2(crate::ipc::listen_mmap(), bgworker)
+    });
     loop {
         let mut sig: i32 = 0;
         unsafe {
@@ -67,9 +74,11 @@ pub fn main() {
     }
 }
 
-fn thread_main_2(bgworker: Arc<Bgworker>) {
-    let listener = crate::ipc::listen();
-    for rpc_handler in listener {
+fn thread_main_2<T>(listen: T, bgworker: Arc<Bgworker>)
+where
+    T: Iterator<Item = RpcHandler>,
+{
+    for rpc_handler in listen {
         std::thread::spawn({
             let bgworker = bgworker.clone();
             move || {
@@ -94,8 +103,8 @@ fn thread_session(bgworker: Arc<Bgworker>, mut handler: RpcHandler) -> Result<()
                 handler = x.leave(res)?;
             }
             RpcHandle::Delete { id, mut x } => {
-                bgworker.call_delete(id, |p| x.next(p).unwrap());
-                handler = x.leave()?;
+                let res = bgworker.call_delete(id, |p| x.next(p).unwrap());
+                handler = x.leave(res)?;
             }
             RpcHandle::Search {
                 id,
@@ -112,8 +121,8 @@ fn thread_session(bgworker: Arc<Bgworker>, mut handler: RpcHandler) -> Result<()
                 }
             }
             RpcHandle::Flush { id, x } => {
-                bgworker.call_flush(id);
-                handler = x.leave()?;
+                let result = bgworker.call_flush(id);
+                handler = x.leave(result)?;
             }
             RpcHandle::Destory { id, x } => {
                 bgworker.call_destory(id);

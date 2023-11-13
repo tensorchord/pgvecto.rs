@@ -4,6 +4,7 @@ use crate::prelude::Scalar;
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn cast_array_to_vector(array: pgrx::Array<Scalar>, typmod: i32, _explicit: bool) -> VectorOutput {
     assert!(!array.is_empty());
+    assert!(array.len() <= 65535);
     assert!(!array.contains_nulls());
     let typmod = VectorTypmod::parse_from_i32(typmod).unwrap();
     let mut data = Vec::with_capacity(typmod.dims().unwrap_or_default() as usize);

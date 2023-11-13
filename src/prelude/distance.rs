@@ -293,11 +293,11 @@ impl Distance {
 #[inline(always)]
 fn distance_squared_l2(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
     if lhs.len() != rhs.len() {
-        panic!(
-            "different vector dimensions {} and {}.",
-            lhs.len(),
-            rhs.len()
-        );
+        FriendlyError::DifferentVectorDims {
+            left_dimensions: lhs.len() as _,
+            right_dimensions: rhs.len() as _,
+        }
+        .friendly();
     }
     let n = lhs.len();
     let mut d2 = Scalar::Z;
@@ -311,11 +311,11 @@ fn distance_squared_l2(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
 #[inline(always)]
 fn distance_cosine(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
     if lhs.len() != rhs.len() {
-        panic!(
-            "different vector dimensions {} and {}.",
-            lhs.len(),
-            rhs.len()
-        );
+        FriendlyError::DifferentVectorDims {
+            left_dimensions: lhs.len() as _,
+            right_dimensions: rhs.len() as _,
+        }
+        .friendly();
     }
     let n = lhs.len();
     let mut xy = Scalar::Z;
@@ -332,11 +332,11 @@ fn distance_cosine(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
 #[inline(always)]
 fn distance_dot(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
     if lhs.len() != rhs.len() {
-        panic!(
-            "different vector dimensions {} and {}.",
-            lhs.len(),
-            rhs.len()
-        );
+        FriendlyError::DifferentVectorDims {
+            left_dimensions: lhs.len() as _,
+            right_dimensions: rhs.len() as _,
+        }
+        .friendly();
     }
     let n = lhs.len();
     let mut xy = Scalar::Z;
@@ -349,11 +349,11 @@ fn distance_dot(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
 #[inline(always)]
 fn xy_x2_y2(lhs: &[Scalar], rhs: &[Scalar]) -> (Scalar, Scalar, Scalar) {
     if lhs.len() != rhs.len() {
-        panic!(
-            "different vector dimensions {} and {}.",
-            lhs.len(),
-            rhs.len()
-        );
+        FriendlyError::DifferentVectorDims {
+            left_dimensions: lhs.len() as _,
+            right_dimensions: rhs.len() as _,
+        }
+        .friendly();
     }
     let n = lhs.len();
     let mut xy = Scalar::Z;
@@ -389,11 +389,11 @@ fn l2_normalize(vector: &mut [Scalar]) {
 #[inline(always)]
 fn distance_squared_l2_delta(lhs: &[Scalar], rhs: &[Scalar], del: &[Scalar]) -> Scalar {
     if lhs.len() != rhs.len() {
-        panic!(
-            "different vector dimensions {} and {}.",
-            lhs.len(),
-            rhs.len()
-        );
+        FriendlyError::DifferentVectorDims {
+            left_dimensions: lhs.len() as _,
+            right_dimensions: rhs.len() as _,
+        }
+        .friendly();
     }
     let n = lhs.len();
     let mut d2 = Scalar::Z;
@@ -407,11 +407,11 @@ fn distance_squared_l2_delta(lhs: &[Scalar], rhs: &[Scalar], del: &[Scalar]) -> 
 #[inline(always)]
 fn xy_x2_y2_delta(lhs: &[Scalar], rhs: &[Scalar], del: &[Scalar]) -> (Scalar, Scalar, Scalar) {
     if lhs.len() != rhs.len() {
-        panic!(
-            "different vector dimensions {} and {}.",
-            lhs.len(),
-            rhs.len()
-        );
+        FriendlyError::DifferentVectorDims {
+            left_dimensions: lhs.len() as _,
+            right_dimensions: rhs.len() as _,
+        }
+        .friendly();
     }
     let n = lhs.len();
     let mut xy = Scalar::Z;
@@ -428,11 +428,11 @@ fn xy_x2_y2_delta(lhs: &[Scalar], rhs: &[Scalar], del: &[Scalar]) -> (Scalar, Sc
 #[inline(always)]
 fn distance_dot_delta(lhs: &[Scalar], rhs: &[Scalar], del: &[Scalar]) -> Scalar {
     if lhs.len() != rhs.len() {
-        panic!(
-            "different vector dimensions {} and {}.",
-            lhs.len(),
-            rhs.len()
-        );
+        FriendlyError::DifferentVectorDims {
+            left_dimensions: lhs.len() as _,
+            right_dimensions: rhs.len() as _,
+        }
+        .friendly();
     }
     let n = lhs.len();
     let mut xy = Scalar::Z;

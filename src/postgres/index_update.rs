@@ -21,7 +21,8 @@ pub fn update_delete(id: Id, hook: impl Fn(Pointer) -> bool) {
                 DeleteHandle::Next { p, x } => {
                     handler = x.leave(hook(p)).unwrap();
                 }
-                DeleteHandle::Leave { x } => {
+                DeleteHandle::Leave { result, x } => {
+                    result.friendly();
                     break x;
                 }
             }
