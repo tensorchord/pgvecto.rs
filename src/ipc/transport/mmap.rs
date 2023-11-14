@@ -149,7 +149,7 @@ impl Channel {
                         self.futex.as_ptr(),
                         libc::FUTEX_WAIT,
                         T,
-                        FUTEX_TIMEOUT,
+                        &FUTEX_TIMEOUT,
                     );
                 }
                 _ => std::hint::unreachable_unchecked(),
@@ -190,7 +190,7 @@ impl Channel {
                         self.futex.as_ptr(),
                         libc::FUTEX_WAIT,
                         T,
-                        FUTEX_TIMEOUT,
+                        &FUTEX_TIMEOUT,
                     );
                 }
                 _ => std::hint::unreachable_unchecked(),
