@@ -33,8 +33,7 @@ psycopg3 = [
 
 [tool.pdm.dev-dependencies]
 lint = [
-"black>=23.10.0",
-"ruff>=0.1.1",
+    "ruff>=0.1.1",
 ]
 test = [
 "pytest>=7.4.3",
@@ -42,9 +41,9 @@ test = [
 
 [tool.pdm.scripts]
 test = "pytest tests/"
-format = "black ."
+format = "ruff format ."
 fix = "ruff --fix ."
-check = { composite = ["black --check .", "ruff ."] }
+check = { composite = ["ruff format . --check", "ruff ."] }
 
 [tool.pytest.ini_options]
 addopts = "-r aR"
