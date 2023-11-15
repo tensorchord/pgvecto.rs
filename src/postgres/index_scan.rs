@@ -186,14 +186,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         Scanner::Initial { .. } => unreachable!(),
         Scanner::Type0 { data } => {
             if let Some(p) = data.pop() {
-                #[cfg(feature = "pg11")]
-                {
-                    (*scan).xs_ctup.t_self = p.into_sys();
-                }
-                #[cfg(not(feature = "pg11"))]
-                {
-                    (*scan).xs_heaptid = p.into_sys();
-                }
+                (*scan).xs_heaptid = p.into_sys();
                 true
             } else {
                 false
@@ -201,14 +194,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         }
         Scanner::Type1 { data, .. } => {
             if let Some(p) = data.pop() {
-                #[cfg(feature = "pg11")]
-                {
-                    (*scan).xs_ctup.t_self = p.into_sys();
-                }
-                #[cfg(not(feature = "pg11"))]
-                {
-                    (*scan).xs_heaptid = p.into_sys();
-                }
+                (*scan).xs_heaptid = p.into_sys();
                 true
             } else {
                 false

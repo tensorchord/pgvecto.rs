@@ -50,7 +50,7 @@ pub unsafe fn convert_opfamily_to_distance(opfamily: pgrx::pg_sys::Oid) -> Dista
     let member_tuple = &mut (*member).tuple;
     let amop = pgrx::pg_sys::GETSTRUCT(member_tuple).cast::<pgrx::pg_sys::FormData_pg_amop>();
     assert!((*amop).amopstrategy == 1);
-    assert!((*amop).amoppurpose == pgrx::pg_sys::AMOP_ORDER as i8);
+    assert!((*amop).amoppurpose == pgrx::pg_sys::AMOP_ORDER as libc::c_char);
     let operator = (*amop).amopopr;
     let distance;
     if operator == regoperatorin("<->(vector,vector)") {

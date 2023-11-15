@@ -8,6 +8,19 @@ pub enum Transport {
     mmap,
 }
 
+impl Transport {
+    pub const fn default() -> Transport {
+        #[cfg(target_os = "linux")]
+        {
+            Transport::mmap
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            Transport::unix
+        }
+    }
+}
+
 pub static OPENAI_API_KEY_GUC: GucSetting<Option<&'static CStr>> =
     GucSetting::<Option<&'static CStr>>::new(None);
 
@@ -17,7 +30,7 @@ pub static ENABLE_VECTOR_INDEX: GucSetting<bool> = GucSetting::<bool>::new(true)
 
 pub static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(false);
 
-pub static TRANSPORT: GucSetting<Transport> = GucSetting::<Transport>::new(Transport::mmap);
+pub static TRANSPORT: GucSetting<Transport> = GucSetting::<Transport>::new(Transport::default());
 
 pub unsafe fn init() {
     GucRegistry::define_string_guc(

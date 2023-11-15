@@ -28,8 +28,10 @@ pub unsafe fn pre_process_utility(pstmt: *mut pgrx::pg_sys::PlannedStmt) {
 
             match stat_drop.removeType {
                 pgrx::pg_sys::ObjectType_OBJECT_TABLE | pgrx::pg_sys::ObjectType_OBJECT_INDEX => {
-                    let objects = pgrx::PgList::<pgrx::pg_sys::Node>::from_pg(stat_drop.objects);
-                    for object in objects.iter_ptr() {
+                    let objects =
+                        pgrx::list::List::<*mut libc::c_void>::downcast_ptr(stat_drop.objects)
+                            .unwrap();
+                    for object in objects.iter().map(|&p| p as *mut pgrx::pg_sys::Node) {
                         let mut rel = std::ptr::null_mut();
                         let address = pgrx::pg_sys::get_object_address(
                             stat_drop.removeType,
@@ -45,10 +47,11 @@ pub unsafe fn pre_process_utility(pstmt: *mut pgrx::pg_sys::PlannedStmt) {
 
                         match stat_drop.removeType {
                             pgrx::pg_sys::ObjectType_OBJECT_TABLE => {
-                                // Memory leak here?
                                 let list = pgrx::pg_sys::RelationGetIndexList(rel);
-                                let list = pgrx::PgList::<pgrx::pg_sys::Oid>::from_pg(list);
-                                for index in list.iter_oid() {
+                                let list =
+                                    pgrx::list::List::<pgrx::pg_sys::Oid>::downcast_ptr(list)
+                                        .unwrap();
+                                for &index in list.iter() {
                                     drop_if_commit(Id::from_sys(index));
                                 }
                                 pgrx::pg_sys::relation_close(
