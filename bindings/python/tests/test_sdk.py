@@ -32,7 +32,7 @@ class MockEmbedder:
 
 @pytest.fixture(scope="module")
 def client():
-    client = PGVectoRs(db_url=URL, table_name="empty", dimension=3)
+    client = PGVectoRs(db_url=URL, collection_name="empty", dimension=3)
     try:
         records1 = [
             Record.from_text({"text": t, "src": "src1"}, v)
@@ -42,8 +42,8 @@ def client():
             Record.from_text({"text": t, "src": "src2"}, v)
             for t, v in mockTexts.items()
         ]
-        client.add_records(records1)
-        client.add_records(records2)
+        client.upsert(records1)
+        client.upsert(records2)
         yield client
     finally:
         client.drop()
@@ -69,7 +69,7 @@ def test_search_filter_and_op(
     dis_oprand: List[float],
     dis_expected: List[float],
 ):
-    for rec, dis in client.search(dis_oprand, dis_op, limit=99, filter=filter):
+    for rec, dis in client.search(dis_oprand, dis_op, top_k=99, filter=filter):
         cnt = None
         for i in range(len(VECTORS)):
             if np.allclose(rec.embedding, VECTORS[i]):
@@ -94,5 +94,5 @@ def test_search_order_and_limit(
 ):
     dis_expected = dis_expected.copy()
     dis_expected.sort()
-    for i, (rec, dis) in enumerate(client.search(dis_oprand, dis_op, limit=4)):
+    for i, (rec, dis) in enumerate(client.search(dis_oprand, dis_op, top_k=4)):
         assert np.allclose(dis, dis_expected[i // 2])

@@ -36,13 +36,13 @@ target = embed("Hello vector database!")
 # Create an empty client
 client = PGVectoRs(
     db_url=URL,
-    table_name="example",
+    collection_name="example",
     dimension=1536,
 )
 try:
     # Add some records
-    client.add_records(records1)
-    client.add_records(records2)
+    client.upsert(records1)
+    client.upsert(records2)
 
     # Query (With a filter from the filters module)
     print("#################### First Query ####################")

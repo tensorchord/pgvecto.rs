@@ -13,4 +13,9 @@ def document_contains(document_contains: dict) -> Filter:
     return lambda r: r.document.contains(document_contains)
 
 
-__all__ = ["Filter", "FilterInput", "FilterOutput", "document_contains"]
+__all__ = [
+    "Filter",
+    "FilterInput",
+    "FilterOutput",
+    "document_contains",
+]

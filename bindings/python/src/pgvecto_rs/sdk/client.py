@@ -5,7 +5,6 @@ from numpy import ndarray
 from sqlalchemy import (
     ColumnElement,
     Float,
-    String,
     create_engine,
     delete,
     insert,
@@ -31,7 +30,7 @@ class PGVectoRs:
     def __init__(
         self,
         db_url: str,
-        table_name: str,
+        collection_name: str,
         dimension: int,
     ) -> None:
         """Connect to an existing table or create a new empty one.
@@ -43,7 +42,7 @@ class PGVectoRs:
         """
 
         class _Table(RecordORM):
-            __tablename__ = f"table_{table_name}"
+            __tablename__ = f"collection_{collection_name}"
             id: Mapped[UUID] = mapped_column(
                 postgresql.UUID(as_uuid=True), primary_key=True
             )
@@ -58,7 +57,7 @@ class PGVectoRs:
         self._table.__table__.create(self._engine)
         self.dimension = dimension
 
-    def add_records(self, records: List[Record]) -> None:
+    def upsert(self, records: List[Record]) -> None:
         with Session(self._engine) as session:
             for record in records:
                 session.execute(
@@ -74,7 +73,7 @@ class PGVectoRs:
         self,
         embedding: Union[ndarray, List[float]],
         distance_op: Literal["<->", "<=>", "<#>"] = "<->",
-        limit: int = 10,
+        top_k: int = 4,
         filter: Optional[Filter] = None,
     ) -> List[Tuple[Record, float]]:
         """Search for the nearest records.
@@ -82,7 +81,7 @@ class PGVectoRs:
         Args:
             embedding : Target embedding.
             distance_op : Distance op.
-            limit : Max records to return. Defaults to 10.
+            top_k : Max records to return. Defaults to 4.
             filter : Read our document. Defaults to None.
             order_by_dis : Order by distance. Defaults to True.
 
@@ -98,7 +97,7 @@ class PGVectoRs:
                         embedding
                     ).label("distance"),
                 )
-                .limit(limit)
+                .limit(top_k)
                 .order_by("distance")
             )
             if filter is not None:
