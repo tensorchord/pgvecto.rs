@@ -9,8 +9,8 @@ FilterInput = RecordORMType
 FilterOutput = ColumnElement[bool]
 
 
-def document_contains(document_contains: dict) -> Filter:
-    return lambda r: r.document.contains(document_contains)
+def meta_contains(meta_contains: dict) -> Filter:
+    return lambda r: r.meta.contains(meta_contains)
 
 
 __all__ = [
