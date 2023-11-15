@@ -92,7 +92,7 @@ pub unsafe extern "C" fn amvalidate(opclass_oid: pgrx::pg_sys::Oid) -> bool {
     true
 }
 
-#[cfg(any(feature = "pg11", feature = "pg12"))]
+#[cfg(feature = "pg12")]
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn amoptions(
     reloptions: pg_sys::Datum,
@@ -183,7 +183,10 @@ pub unsafe extern "C" fn ambuild(
     index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> *mut pgrx::pg_sys::IndexBuildResult {
     let result = pgrx::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0();
-    index_build::build(index_relation, Some((heap_relation, index_info)));
+    index_build::build(
+        index_relation,
+        Some((heap_relation, index_info, result.as_ptr())),
+    );
     result.into_pg()
 }
 
@@ -192,7 +195,7 @@ pub unsafe extern "C" fn ambuildempty(index_relation: pgrx::pg_sys::Relation) {
     index_build::build(index_relation, None);
 }
 
-#[cfg(any(feature = "pg11", feature = "pg12", feature = "pg13"))]
+#[cfg(any(feature = "pg12", feature = "pg13"))]
 #[pg_guard]
 pub unsafe extern "C" fn aminsert(
     index_relation: pg_sys::Relation,

@@ -8,7 +8,6 @@ crate-type = ["cdylib"]
 
 [features]
 default = ["pg15"]
-pg11 = ["pgrx/pg11", "pgrx-tests/pg11"]
 pg12 = ["pgrx/pg12", "pgrx-tests/pg12"]
 pg13 = ["pgrx/pg13", "pgrx-tests/pg13"]
 pg14 = ["pgrx/pg14", "pgrx-tests/pg14"]
@@ -17,7 +16,7 @@ pg16 = ["pgrx/pg16", "pgrx-tests/pg16"]
 pg_test = []
 
 [dependencies]
-pgrx = "0.11.0"
+pgrx = { version = "0.11.0", default-features = false, features = [] }
 openai_api_rust = { git = "https://github.com/tensorchord/openai-api.git", rev = "228d54b6002e98257b3c81501a054942342f585f" }
 static_assertions = "1.1.0"
 libc = "~0.2"

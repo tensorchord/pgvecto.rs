@@ -72,6 +72,10 @@ INFORMATION: hint = {hint}\
     BadVectorString {
         hint: String,
     },
+    #[error("\
+`mmap` transport is not supported by MacOS.\
+")]
+    MmapTransportNotSupported,
 }
 
 impl FriendlyError {

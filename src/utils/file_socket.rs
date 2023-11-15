@@ -53,7 +53,6 @@ fn recv_fd(rx: BorrowedFd<'_>) -> std::io::Result<OwnedFd> {
             RecvAncillaryMessage::ScmRights(iter) => {
                 fds.extend(iter);
             }
-            RecvAncillaryMessage::ScmCredentials(_) => unreachable!(),
             _ => unreachable!(),
         }
     }

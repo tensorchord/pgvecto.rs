@@ -48,6 +48,7 @@ pub unsafe extern "C" fn _PG_init() {
         .load();
     self::postgres::init();
     self::ipc::transport::unix::init();
+    #[cfg(target_os = "linux")]
     self::ipc::transport::mmap::init();
 }
 
