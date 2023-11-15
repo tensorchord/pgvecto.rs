@@ -11,8 +11,9 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::OnceLock;
 
 const BUFFER_SIZE: usize = 512 * 1024;
+const SPIN_LIMIT: usize = 8;
 const FUTEX_TIMEOUT: libc::timespec = libc::timespec {
-    tv_sec: 10,
+    tv_sec: 15,
     tv_nsec: 0,
 };
 
@@ -125,8 +126,10 @@ impl Socket {
 struct Channel {
     bytes: UnsafeCell<[u8; BUFFER_SIZE - 8]>,
     len: UnsafeCell<u32>,
-    /// 0: locked by client
-    /// 1: locked by server
+    /// 0: locked by client, nobody is waiting
+    /// 1: locked by server, nobody is waiting
+    /// 2: locked by client, server is waiting
+    /// 3: locked by server, client is waiting
     futex: AtomicU32,
 }
 
@@ -136,25 +139,48 @@ impl Channel {
     unsafe fn client_recv(&self, test: impl Fn() -> bool) -> Result<Vec<u8>, IpcError> {
         const S: u32 = 0;
         const T: u32 = 1;
-        let mut timeout = false;
+        const X: u32 = 2;
+        const Y: u32 = 3;
+        let mut backoff = 0usize;
         loop {
             match self.futex.load(Ordering::Acquire) {
-                S => break,
+                S | X => break,
+                T if backoff <= SPIN_LIMIT => {
+                    for _ in 0..1usize << backoff {
+                        std::hint::spin_loop();
+                    }
+                    backoff += 1;
+                }
                 T => {
-                    if timeout && !test() {
+                    if self
+                        .futex
+                        .compare_exchange(T, Y, Ordering::Relaxed, Ordering::Acquire)
+                        .is_err()
+                    {
+                        break;
+                    }
+                    libc::syscall(
+                        libc::SYS_futex,
+                        self.futex.as_ptr(),
+                        libc::FUTEX_WAIT,
+                        Y,
+                        &FUTEX_TIMEOUT,
+                    );
+                }
+                Y => {
+                    if !test() {
                         return Err(IpcError::Closed);
                     }
                     libc::syscall(
                         libc::SYS_futex,
                         self.futex.as_ptr(),
                         libc::FUTEX_WAIT,
-                        T,
+                        Y,
                         &FUTEX_TIMEOUT,
                     );
                 }
                 _ => std::hint::unreachable_unchecked(),
             }
-            timeout = true;
         }
         let len = *self.len.get();
         let res = (*self.bytes.get())[0..len as usize].to_vec();
@@ -163,39 +189,68 @@ impl Channel {
     unsafe fn client_send(&self, data: &[u8]) {
         const S: u32 = 0;
         const T: u32 = 1;
-        debug_assert!(self.futex.load(Ordering::Relaxed) == S);
+        const X: u32 = 2;
+        debug_assert!(matches!(self.futex.load(Ordering::Relaxed), S | X));
         *self.len.get() = data.len() as u32;
         (*self.bytes.get())[0..data.len()].copy_from_slice(data);
-        self.futex.store(T, Ordering::Release);
-        libc::syscall(
-            libc::SYS_futex,
-            self.futex.as_ptr(),
-            libc::FUTEX_WAKE,
-            i32::MAX,
-        );
+        match self.futex.swap(T, Ordering::Release) {
+            S => (),
+            X => {
+                libc::syscall(
+                    libc::SYS_futex,
+                    self.futex.as_ptr(),
+                    libc::FUTEX_WAKE,
+                    i32::MAX,
+                );
+            }
+            _ => std::hint::unreachable_unchecked(),
+        }
     }
     unsafe fn server_recv(&self, test: impl Fn() -> bool) -> Result<Vec<u8>, IpcError> {
         const S: u32 = 1;
         const T: u32 = 0;
-        let mut timeout = false;
+        const X: u32 = 3;
+        const Y: u32 = 2;
+        let mut backoff = 0usize;
         loop {
             match self.futex.load(Ordering::Acquire) {
-                S => break,
+                S | X => break,
+                T if backoff <= SPIN_LIMIT => {
+                    for _ in 0..1usize << backoff {
+                        std::hint::spin_loop();
+                    }
+                    backoff += 1;
+                }
                 T => {
-                    if timeout && !test() {
+                    if self
+                        .futex
+                        .compare_exchange(T, Y, Ordering::Relaxed, Ordering::Acquire)
+                        .is_err()
+                    {
+                        break;
+                    }
+                    libc::syscall(
+                        libc::SYS_futex,
+                        self.futex.as_ptr(),
+                        libc::FUTEX_WAIT,
+                        Y,
+                        &FUTEX_TIMEOUT,
+                    );
+                }
+                Y => {
+                    if !test() {
                         return Err(IpcError::Closed);
                     }
                     libc::syscall(
                         libc::SYS_futex,
                         self.futex.as_ptr(),
                         libc::FUTEX_WAIT,
-                        T,
+                        Y,
                         &FUTEX_TIMEOUT,
                     );
                 }
                 _ => std::hint::unreachable_unchecked(),
             }
-            timeout = true;
         }
         let len = *self.len.get();
         let res = (*self.bytes.get())[0..len as usize].to_vec();
@@ -204,15 +259,21 @@ impl Channel {
     unsafe fn server_send(&self, data: &[u8]) {
         const S: u32 = 1;
         const T: u32 = 0;
-        debug_assert!(self.futex.load(Ordering::Relaxed) == S);
+        const X: u32 = 3;
+        debug_assert!(matches!(self.futex.load(Ordering::Relaxed), S | X));
         *self.len.get() = data.len() as u32;
         (*self.bytes.get())[0..data.len()].copy_from_slice(data);
-        self.futex.store(T, Ordering::Release);
-        libc::syscall(
-            libc::SYS_futex,
-            self.futex.as_ptr(),
-            libc::FUTEX_WAKE,
-            i32::MAX,
-        );
+        match self.futex.swap(T, Ordering::Release) {
+            S => (),
+            X => {
+                libc::syscall(
+                    libc::SYS_futex,
+                    self.futex.as_ptr(),
+                    libc::FUTEX_WAKE,
+                    i32::MAX,
+                );
+            }
+            _ => std::hint::unreachable_unchecked(),
+        }
     }
 }
