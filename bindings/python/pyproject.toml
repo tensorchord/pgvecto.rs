@@ -42,10 +42,8 @@ test = [
 
 [tool.pdm.scripts]
 test = "pytest tests/"
-format = { composite = [
-"ruff --fix .",
-"black .",
-] }
+format = "black ."
+fix = "ruff --fix ."
 check = { composite = ["black --check .", "ruff ."] }
 
 [tool.pytest.ini_options]
