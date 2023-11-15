@@ -47,8 +47,7 @@ class PGVectoRs:
             id: Mapped[UUID] = mapped_column(
                 postgresql.UUID(as_uuid=True), primary_key=True
             )
-            text: Mapped[str] = mapped_column(String)
-            meta: Mapped[dict] = mapped_column(postgresql.JSONB)
+            document: Mapped[dict] = mapped_column(postgresql.JSONB)
             embedding: Mapped[ndarray] = mapped_column(Vector(dimension))
 
         self._engine = create_engine(db_url)
@@ -65,8 +64,7 @@ class PGVectoRs:
                 session.execute(
                     insert(self._table).values(
                         id=record.id,
-                        text=record.text,
-                        meta=record.meta,
+                        document=record.document,
                         embedding=record.embedding,
                     )
                 )

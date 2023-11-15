@@ -8,8 +8,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped
 class RecordORM(DeclarativeBase):
     __tablename__: str
     id: Mapped[UUID]
-    text: Mapped[str]
-    meta: Mapped[dict]
+    document: Mapped[dict]
     embedding: Mapped[ndarray]
 
 
@@ -18,32 +17,29 @@ RecordORMType = Type[RecordORM]
 
 class Record:
     id: UUID
-    text: str
-    meta: dict
+    document: dict
     embedding: ndarray
 
-    def __init__(self, id: UUID, text: str, meta: dict, embedding: ndarray):
+    def __init__(self, id: UUID, document: dict, embedding: ndarray):
         self.id = id
-        self.text = text
-        self.meta = meta
+        self.document = document
         self.embedding = embedding
 
     def __repr__(self) -> str:
         return f"""============= Record =============
 [id]       : {self.id}
-[text]     : {self.text}
-[meta]     : {self.meta}
+[document]     : {self.document}
 [embedding]: {self.embedding}
 ========== End of Record ========="""
 
     @classmethod
     def from_orm(cls, orm: RecordORM):
-        return cls(orm.id, orm.text, orm.meta, orm.embedding)
+        return cls(orm.id, orm.document, orm.embedding)
 
     @classmethod
     def from_text(
-        cls, text: str, meta: Optional[dict], embedding: Union[ndarray, List[float]]
+        cls, document: Optional[dict], embedding: Union[ndarray, List[float]]
     ):
         if isinstance(embedding, list):
             embedding = array(embedding, dtype=float32)
-        return cls(uuid4(), text, meta or {}, embedding)
+        return cls(uuid4(), document or {}, embedding)

@@ -35,10 +35,12 @@ def client():
     client = PGVectoRs(db_url=URL, table_name="empty", dimension=3)
     try:
         records1 = [
-            Record.from_text(t, {"src": "src1"}, v) for t, v in mockTexts.items()
+            Record.from_text({"text": t, "src": "src1"}, v)
+            for t, v in mockTexts.items()
         ]
         records2 = [
-            Record.from_text(t, {"src": "src2"}, v) for t, v in mockTexts.items()
+            Record.from_text({"text": t, "src": "src2"}, v)
+            for t, v in mockTexts.items()
         ]
         client.add_records(records1)
         client.add_records(records2)
@@ -47,8 +49,8 @@ def client():
         client.drop()
 
 
-filter_src1 = filters.meta_contains({"src": "src1"})
-filter_src2: Filter = lambda r: r.meta.contains({"src": "src2"})
+filter_src1 = filters.document_contains({"src": "src1"})
+filter_src2: Filter = lambda r: r.document.contains({"src": "src2"})
 
 
 @pytest.mark.parametrize("filter", [filter_src1, filter_src2])
