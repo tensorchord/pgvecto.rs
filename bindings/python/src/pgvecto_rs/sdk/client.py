@@ -15,6 +15,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm.session import Session
+from sqlalchemy.types import String
 
 from pgvecto_rs.sqlalchemy import Vector
 
@@ -58,7 +59,7 @@ class PGVectoRs:
         self._table.__table__.create(self._engine)
         self.dimension = dimension
 
-    def upsert(self, records: List[Record]) -> None:
+    def insert(self, records: List[Record]) -> None:
         with Session(self._engine) as session:
             for record in records:
                 session.execute(

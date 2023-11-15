@@ -36,8 +36,8 @@ client = PGVectoRs(
 )
 try:
     # Add some records
-    client.upsert(records1)
-    client.upsert(records2)
+    client.insert(records1)
+    client.insert(records2)
 
     # Query (With a filter from the filters module)
     print("#################### First Query ####################")

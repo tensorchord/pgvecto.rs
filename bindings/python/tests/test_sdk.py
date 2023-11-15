@@ -40,8 +40,8 @@ def client():
         records2 = [
             Record.from_text(t, {"src": "src2"}, v) for t, v in mockTexts.items()
         ]
-        client.upsert(records1)
-        client.upsert(records2)
+        client.insert(records1)
+        client.insert(records2)
         yield client
     finally:
         client.drop()
