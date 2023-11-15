@@ -11,11 +11,3 @@ FilterOutput = ColumnElement[bool]
 
 def meta_contains(meta_contains: dict) -> Filter:
     return lambda r: r.meta.contains(meta_contains)
-
-
-__all__ = [
-    "Filter",
-    "FilterInput",
-    "FilterOutput",
-    "document_contains",
-]
