@@ -1,6 +1,7 @@
 use rustix::fd::{AsFd, OwnedFd};
 use rustix::mm::{MapFlags, ProtFlags};
 use std::sync::atomic::AtomicU32;
+use uuid::Uuid;
 
 #[cfg(target_os = "linux")]
 pub unsafe fn futex_wait(futex: &AtomicU32, value: u32) {
@@ -25,7 +26,10 @@ pub unsafe fn futex_wake(futex: &AtomicU32) {
 #[cfg(target_os = "linux")]
 pub fn memfd_create() -> std::io::Result<OwnedFd> {
     use rustix::fs::MemfdFlags;
-    Ok(rustix::fs::memfd_create("transport", MemfdFlags::empty())?)
+    Ok(rustix::fs::memfd_create(
+        &format!(".memfd.VECTORS.{}", std::process::id()),
+        MemfdFlags::empty(),
+    )?)
 }
 
 #[cfg(target_os = "linux")]
@@ -65,11 +69,14 @@ pub unsafe fn futex_wake(futex: &AtomicU32) {
 pub fn memfd_create() -> std::io::Result<OwnedFd> {
     use rustix::fs::Mode;
     use rustix::shm::ShmOFlags;
-    Ok(rustix::shm::shm_open(
-        &format!("./.s.VECTORS.{}", std::process::id()),
+    let name = format!("/.shm.VECTORS.{}.{}", std::process::id(), Uuid::new_v4());
+    let fd = rustix::shm::shm_open(
+        &name,
         ShmOFlags::RDWR | ShmOFlags::CREATE | ShmOFlags::EXCL,
         Mode::RUSR | Mode::WUSR,
-    )?)
+    )?;
+    rustix::shm::shm_unlink(&name)?;
+    Ok(fd)
 }
 
 #[cfg(target_os = "macos")]
