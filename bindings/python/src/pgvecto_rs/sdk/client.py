@@ -9,10 +9,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm.session import Session
 from sqlalchemy.types import String
 
+from pgvecto_rs.sdk.filters import Filter
+from pgvecto_rs.sdk.record import Record, RecordORM, RecordORMType
 from pgvecto_rs.sqlalchemy import Vector
-
-from .filters import Filter
-from .record import Record, RecordORM, RecordORMType
 
 
 class PGVectoRs:
