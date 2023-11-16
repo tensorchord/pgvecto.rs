@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Union
+from typing import List, Type, Union
 from uuid import UUID, uuid4
 
 from numpy import array, float32, ndarray
