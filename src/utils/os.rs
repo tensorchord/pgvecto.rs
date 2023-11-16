@@ -1,7 +1,6 @@
 use rustix::fd::{AsFd, OwnedFd};
 use rustix::mm::{MapFlags, ProtFlags};
 use std::sync::atomic::AtomicU32;
-use uuid::Uuid;
 
 #[cfg(target_os = "linux")]
 pub unsafe fn futex_wait(futex: &AtomicU32, value: u32) {
@@ -27,7 +26,7 @@ pub unsafe fn futex_wake(futex: &AtomicU32) {
 pub fn memfd_create() -> std::io::Result<OwnedFd> {
     use rustix::fs::MemfdFlags;
     Ok(rustix::fs::memfd_create(
-        &format!(".memfd.VECTORS.{}", std::process::id()),
+        &format!(".memfd.VECTORS.{:x}", std::process::id()),
         MemfdFlags::empty(),
     )?)
 }
@@ -69,7 +68,15 @@ pub unsafe fn futex_wake(futex: &AtomicU32) {
 pub fn memfd_create() -> std::io::Result<OwnedFd> {
     use rustix::fs::Mode;
     use rustix::shm::ShmOFlags;
-    let name = format!("/.shm.VECTORS.{}.{}", std::process::id(), Uuid::new_v4());
+    // SHM_NAME_MAX = 30
+    // 9 + 8 + 8 = 25 < SHM_NAME_MAX
+    // reference: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/shm_open.2.html
+    // reference: https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/posix_sem.c#L89-L90
+    let name = format!(
+        "/.shm.V.{:x}.{:x}",
+        std::process::id(),
+        rand::random::<u32>()
+    );
     let fd = rustix::shm::shm_open(
         &name,
         ShmOFlags::RDWR | ShmOFlags::CREATE | ShmOFlags::EXCL,
