@@ -3,7 +3,7 @@ import os
 import numpy as np
 import toml
 
-PORT = os.getenv("DB_PORT", 5432)
+PORT = os.getenv("DB_PORT", "5432")
 HOST = os.getenv("DB_HOST", "localhost")
 USER = os.getenv("DB_USER", "postgres")
 PASS = os.getenv("DB_PASS", "mysecretpassword")
@@ -11,13 +11,7 @@ DB_NAME = os.getenv("DB_NAME", "postgres")
 
 # Run tests with shell:
 #   DB_HOST=localhost DB_USER=postgres DB_PASS=password DB_NAME=postgres python3 -m pytest bindings/python/tests/
-URL = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(
-    port=PORT,
-    host=HOST,
-    username=USER,
-    password=PASS,
-    db_name=DB_NAME,
-)
+URL = f"postgresql://{USER}:{PASS}@{HOST}:{PORT}/{DB_NAME}"
 
 
 # ==== test_create_index ====
@@ -27,13 +21,13 @@ TOML_SETTINGS = {
         {
             "capacity": 2097152,
             "algorithm": {"flat": {}},
-        }
+        },
     ),
     "hnsw": toml.dumps(
         {
             "capacity": 2097152,
             "algorithm": {"hnsw": {}},
-        }
+        },
     ),
 }
 

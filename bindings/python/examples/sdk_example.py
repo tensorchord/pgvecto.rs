@@ -5,7 +5,7 @@ from openai import OpenAI
 from pgvecto_rs.sdk import PGVectoRs, Record, filters
 
 URL = "postgresql+psycopg://{username}:{password}@{host}:{port}/{db_name}".format(
-    port=os.getenv("DB_PORT", 5432),
+    port=os.getenv("DB_PORT", "5432"),
     host=os.getenv("DB_HOST", "localhost"),
     username=os.getenv("DB_USER", "postgres"),
     password=os.getenv("DB_PASS", "mysecretpassword"),
@@ -43,7 +43,8 @@ try:
     # Query (With a filter from the filters module)
     print("#################### First Query ####################")
     for record, dis in client.search(
-        target, filter=filters.meta_contains({"src": "one"})
+        target,
+        filter=filters.meta_contains({"src": "one"}),
     ):
         print(f"DISTANCE SCORE: {dis}")
         print(record)
@@ -51,7 +52,8 @@ try:
     # Another Query (Equivalent to the first one, but with a lambda filter written by hand)
     print("#################### Second Query ####################")
     for record, dis in client.search(
-        target, filter=lambda r: r.meta.contains({"src": "one"})
+        target,
+        filter=lambda r: r.meta.contains({"src": "one"}),
     ):
         print(f"DISTANCE SCORE: {dis}")
         print(record)

@@ -37,7 +37,7 @@ async def register_vector_async(context: Connection):
 
 def register_vector_info(context: Connection, info: TypeInfo):
     if info is None:
-        raise ProgrammingError("vector type not found in the database")
+        raise ProgrammingError(info="vector type not found in the database")
     info.register(context)
 
     class VectorTextDumper(VectorDumper):

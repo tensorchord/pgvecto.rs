@@ -1,5 +1,6 @@
-import sqlalchemy.types as types
+from sqlalchemy import types
 
+from pgvecto_rs.errors import VectorDimensionError
 from pgvecto_rs.utils import serializer
 
 
@@ -8,13 +9,13 @@ class Vector(types.UserDefinedType):
 
     def __init__(self, dim):
         if dim < 0:
-            raise ValueError("negative dim is not allowed")
+            raise VectorDimensionError(dim)
         self.dim = dim
 
     def get_col_spec(self, **kw):
         if self.dim is None or self.dim == 0:
             return "VECTOR"
-        return "VECTOR({})".format(self.dim)
+        return f"VECTOR({self.dim})"
 
     def bind_processor(self, dialect):
         def _processor(value):
@@ -28,7 +29,7 @@ class Vector(types.UserDefinedType):
 
         return _processor
 
-    class comparator_factory(types.UserDefinedType.Comparator):
+    class comparator_factory(types.UserDefinedType.Comparator):  # noqa: N801
         def squared_euclidean_distance(self, other):
             return self.op("<->", return_type=types.Float)(other)
 
