@@ -1,8 +1,6 @@
-# Python bindings for pgvector.rs
+# Python bindings for pgvecto.rs
 
 [![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm.fming.dev)
-
-Currently supports [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy).
 
 ## Usage
 
@@ -11,15 +9,68 @@ Install from PyPI:
 pip install pgvecto_rs
 ```
 
-See the usage examples:
-- [SQLAlchemy](#SQLAlchemy)
+See the [usage of SDK](#sdk)
+
+Or use it as an extension of postgres clients:
+- [SQLAlchemy](#sqlalchemy)
 - [psycopg3](#psycopg3)
+
+### SDK
+
+Our SDK is designed to use the pgvecto.rs out-of-box. You can exploit the power of pgvecto.rs to do similarity search or retrieve with filters, without writing any SQL code.
+
+Install dependencies:
+```bash
+pip install "pgvecto_rs[sdk]"
+```
+
+A minimal example:
+
+```Python
+from pgvecto_rs.sdk import PGVectoRs, Record
+
+# Create a client
+client = PGVectoRs(
+    db_url="postgresql+psycopg://postgres:mysecretpassword@localhost:5432/postgres",
+    table_name="example",
+    dimension=3,
+)
+
+try:
+    # Add some records
+    client.add_records(
+        [
+            Record.from_text("hello 1", [1, 2, 3]),
+            Record.from_text("hello 2", [1, 2, 4]),
+        ]
+    )
+
+    # Search with default operator (sqrt_euclid).
+    # The results is sorted by distance
+    for rec, dis in client.search([1, 2, 5]):
+        print(rec.text)
+        print(dis)
+finally:
+    # Clean up (i.e. drop the table)
+    client.drop()
+```
+
+Output:
+```
+hello 2
+1.0
+hello 1
+4.0
+```
+
+See [examples/sdk_example.py](examples/sdk_example.py) and [tests/test_sdk.py](tests/test_sdk.py) for more examples.
+
 
 ### SQLAlchemy
 
-Install [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy) and [psycopg3](https://www.psycopg.org/psycopg3/docs/basic/install.html)
+Install dependencies:
 ```bash
-pip install "psycopg[binary]" sqlalchemy
+pip install "pgvecto_rs[sqlalchemy]"
 ```
 
 Then write your code. See [examples/sqlalchemy_example.py](examples/sqlalchemy_example.py) and [tests/test_sqlalchemy.py](tests/test_sqlalchemy.py) for example.
@@ -31,9 +82,9 @@ All the operators include:
 
 ### psycopg3
 
-Install [psycopg3](https://www.psycopg.org/psycopg3/docs/basic/install.html)
+Install dependencies:
 ```bash
-pip install "psycopg[binary]"
+pip install "pgvecto_rs[psycopg3]"
 ```
 
 Then write your code. See [examples/psycopg_example.py](examples/psycopg_example.py) and [tests/test_psycopg.py](tests/test_psycopg.py) for example.

@@ -1,6 +1,6 @@
 import sqlalchemy.types as types
 
-from ..utils import serializer
+from pgvecto_rs.utils import serializer
 
 
 class Vector(types.UserDefinedType):
