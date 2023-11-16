@@ -14,6 +14,34 @@ unsafe extern "C" fn vectors_executor_start(
     super::hook_executor::post_executor_start(query_desc);
 }
 
+#[cfg(any(feature = "pg12", feature = "pg13"))]
+#[pgrx::pg_guard]
+unsafe extern "C" fn vectors_process_utility(
+    pstmt: *mut pgrx::pg_sys::PlannedStmt,
+    query_string: *const ::std::os::raw::c_char,
+    context: pgrx::pg_sys::ProcessUtilityContext,
+    params: pgrx::pg_sys::ParamListInfo,
+    query_env: *mut pgrx::pg_sys::QueryEnvironment,
+    dest: *mut pgrx::pg_sys::DestReceiver,
+    qc: *mut pgrx::pg_sys::QueryCompletion,
+) {
+    super::hook_executor::pre_process_utility(pstmt);
+    if let Some(prev_process_utility) = PREV_PROCESS_UTILITY {
+        prev_process_utility(pstmt, query_string, context, params, query_env, dest, qc);
+    } else {
+        pgrx::pg_sys::standard_ProcessUtility(
+            pstmt,
+            query_string,
+            context,
+            params,
+            query_env,
+            dest,
+            qc,
+        );
+    }
+}
+
+#[cfg(any(feature = "pg14", feature = "pg15", feature = "pg16"))]
 #[pgrx::pg_guard]
 unsafe extern "C" fn vectors_process_utility(
     pstmt: *mut pgrx::pg_sys::PlannedStmt,

@@ -44,11 +44,11 @@ pub unsafe fn build(
 }
 
 #[cfg(feature = "pg12")]
-#[pg_guard]
+#[pgrx::pg_guard]
 unsafe extern "C" fn callback(
-    index_relation: pg_sys::Relation,
-    htup: pg_sys::HeapTuple,
-    values: *mut pg_sys::Datum,
+    index_relation: pgrx::pg_sys::Relation,
+    htup: pgrx::pg_sys::HeapTuple,
+    values: *mut pgrx::pg_sys::Datum,
     is_null: *mut bool,
     _tuple_is_alive: bool,
     state: *mut std::os::raw::c_void,
