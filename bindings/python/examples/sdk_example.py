@@ -25,8 +25,8 @@ texts = [
     "Hello PostgreSQL",
     "Hello pgvecto.rs!",
 ]
-records1 = [Record.from_text(text, {"src": "one"}, embed(text)) for text in texts]
-records2 = [Record.from_text(text, {"src": "two"}, embed(text)) for text in texts]
+records1 = [Record.from_text(text, embed(text), {"src": "one"}) for text in texts]
+records2 = [Record.from_text(text, embed(text), {"src": "two"}) for text in texts]
 target = embed("Hello vector database!")
 
 # Create an empty client

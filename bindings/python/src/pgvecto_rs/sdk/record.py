@@ -42,7 +42,7 @@ class Record:
 
     @classmethod
     def from_text(
-        cls, text: str, meta: Optional[dict], embedding: Union[ndarray, List[float]]
+        cls, text: str, embedding: Union[ndarray, List[float]], meta: dict = {}
     ):
         if isinstance(embedding, list):
             embedding = array(embedding, dtype=float32)

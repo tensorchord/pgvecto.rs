@@ -35,10 +35,10 @@ def client():
     client = PGVectoRs(db_url=URL, collection_name="empty", dimension=3)
     try:
         records1 = [
-            Record.from_text(t, {"src": "src1"}, v) for t, v in mockTexts.items()
+            Record.from_text(t, v, {"src": "src1"}) for t, v in mockTexts.items()
         ]
         records2 = [
-            Record.from_text(t, {"src": "src2"}, v) for t, v in mockTexts.items()
+            Record.from_text(t, v, {"src": "src2"}) for t, v in mockTexts.items()
         ]
         client.insert(records1)
         client.insert(records2)

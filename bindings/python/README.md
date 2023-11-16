@@ -40,8 +40,8 @@ try:
     # Add some records
     client.add_records(
         [
-            Record.from_text("hello 1", None, [1, 2, 3]),
-            Record.from_text("hello 2", None, [1, 2, 4]),
+            Record.from_text("hello 1", [1, 2, 3]),
+            Record.from_text("hello 2", [1, 2, 4]),
         ]
     )
 
