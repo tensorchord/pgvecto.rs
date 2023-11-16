@@ -1,4 +1,4 @@
-from typing import List, Type, Union
+from typing import List, Optional, Type, Union
 from uuid import UUID, uuid4
 
 from numpy import array, float32, ndarray
@@ -42,7 +42,10 @@ class Record:
 
     @classmethod
     def from_text(
-        cls, text: str, embedding: Union[ndarray, List[float]], meta: dict = {}
+        cls,
+        text: str,
+        embedding: Union[ndarray, List[float]],
+        meta: Optional[dict] = None,
     ):
         if isinstance(embedding, list):
             embedding = array(embedding, dtype=float32)
