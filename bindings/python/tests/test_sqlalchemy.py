@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
-from pgvecto_rs.sqlalchemy import Vector
 from sqlalchemy import Index, Integer, create_engine, delete, insert, select, text
 from sqlalchemy.exc import StatementError
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
+from pgvecto_rs.sqlalchemy import Vector
 from tests import (
     EXPECTED_NEG_COS_DIS,
     EXPECTED_NEG_DOT_PROD_DIS,

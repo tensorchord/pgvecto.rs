@@ -2,8 +2,8 @@ from typing import List
 
 import numpy as np
 import pytest
-from pgvecto_rs.sdk import Filter, PGVectoRs, Record, filters
 
+from pgvecto_rs.sdk import Filter, PGVectoRs, Record, filters
 from tests import (
     EXPECTED_NEG_COS_DIS,
     EXPECTED_NEG_DOT_PROD_DIS,

@@ -1,6 +1,7 @@
 import os
 
 from openai import OpenAI
+
 from pgvecto_rs.sdk import PGVectoRs, Record, filters
 
 URL = "postgresql+psycopg://{username}:{password}@{host}:{port}/{db_name}".format(

@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import psycopg
+
 from pgvecto_rs.psycopg import register_vector
 
 URL = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(

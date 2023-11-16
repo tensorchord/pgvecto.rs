@@ -1,9 +1,9 @@
 import numpy as np
 import psycopg
 import pytest
-from pgvecto_rs.psycopg import register_vector
 from psycopg import Connection, sql
 
+from pgvecto_rs.psycopg import register_vector
 from tests import (
     EXPECTED_NEG_COS_DIS,
     EXPECTED_NEG_DOT_PROD_DIS,

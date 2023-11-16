@@ -4,7 +4,7 @@ from psycopg.adapt import Dumper, Loader
 from psycopg.pq import Format
 from psycopg.types import TypeInfo
 
-from ..utils.serializer import from_db_str, to_db_str
+from pgvecto_rs.utils.serializer import from_db_str, to_db_str
 
 __all__ = ["register_vector"]
 

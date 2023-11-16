@@ -1,53 +1,58 @@
 [project]
-name = "pgvecto_rs"
+name = "pgvecto-rs"
 version = "0.1.3"
 description = "Python binding for pgvecto.rs"
 authors = [
-{ name = "TensorChord", email = "envd-maintainers@tensorchord.ai" },
-{ name = "盐粒 Yanli", email = "mail@yanli.one" },
+    { name = "TensorChord", email = "envd-maintainers@tensorchord.ai" },
+    { name = "盐粒 Yanli", email = "mail@yanli.one" },
 ]
 dependencies = [
-"numpy>=1.23",
-"toml>=0.10",
+  "numpy>=1.23",
+  "toml>=0.10",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
 license = { text = "Apache-2.0" }
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+]
 
 [build-system]
-requires = ["pdm-backend"]
 build-backend = "pdm.backend"
+requires      = [
+  "pdm-backend",
+]
 
 [project.optional-dependencies]
-sdk = [
-"openai>=1.2.2",
-"pgvecto_rs[sqlalchemy]",
+psycopg3   = [
+  "psycopg[binary]>=3.1.12",
+]
+sdk        = [
+  "openai>=1.2.2",
+  "pgvecto_rs[sqlalchemy]",
 ]
 sqlalchemy = [
-"SQLAlchemy>=2.0.23",
-"pgvecto_rs[psycopg3]",
+  "pgvecto_rs[psycopg3]",
+  "SQLAlchemy>=2.0.23",
 ]
-psycopg3 = [
-"psycopg[binary]>=3.1.12",
-]
-
 [tool.pdm.dev-dependencies]
-lint = [
-    "ruff>=0.1.1",
-]
-test = [
-"pytest>=7.4.3",
-]
+lint = ["ruff>=0.1.1"]
+test = ["pytest>=7.4.3"]
 
 [tool.pdm.scripts]
-test = "pytest tests/"
+test   = "pytest tests/"
 format = "ruff format ."
-fix = "ruff --fix ."
-check = { composite = ["ruff format . --check", "ruff ."] }
+fix    = "ruff --fix ."
+check  = { composite = ["ruff format . --check", "ruff ."] }
+
+[tool.ruff]
+select = ["E", "F", "I", "TID"]
+ignore = ["E731", "E501"]
+src    = ["src"]
 
 [tool.pytest.ini_options]
 addopts = "-r aR"
-
-[tool.ruff]
-select = ["E", "F", "I"]
-ignore = ["E731", "E501"]

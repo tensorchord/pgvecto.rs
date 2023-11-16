@@ -2,15 +2,7 @@ from typing import List, Literal, Optional, Tuple, Type, Union
 from uuid import UUID
 
 from numpy import ndarray
-from sqlalchemy import (
-    ColumnElement,
-    Float,
-    create_engine,
-    delete,
-    insert,
-    select,
-    text,
-)
+from sqlalchemy import ColumnElement, Float, create_engine, delete, insert, select, text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Mapped, mapped_column
