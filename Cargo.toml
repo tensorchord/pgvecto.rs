@@ -41,7 +41,7 @@ validator = { version = "0.16.1", features = ["derive"] }
 toml = "0.7.6"
 rayon = "1.6.1"
 uuid = { version = "1.4.1", features = ["serde"] }
-rustix = { version = "0.38.20", features = ["net", "mm"] }
+rustix = { version = "0.38.20", features = ["net", "mm", "shm"] }
 arc-swap = "1.6.0"
 bytemuck = "1.14.0"
 serde_with = "3.4.0"
@@ -52,6 +52,9 @@ chrono-tz = "0.8.4"
 pgrx-tests = "0.11.0"
 httpmock = "0.6"
 mockall = "0.11.4"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+ulock-sys = "0.1.0"
 
 [profile.dev]
 panic = "unwind"

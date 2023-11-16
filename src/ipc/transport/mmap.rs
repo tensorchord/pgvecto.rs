@@ -1,21 +1,16 @@
 use crate::ipc::IpcError;
 use crate::utils::file_socket::FileSocket;
+use crate::utils::os::{futex_wait, futex_wake, memfd_create, mmap_populate};
 use rustix::fd::{AsFd, OwnedFd};
-use rustix::fs::{FlockOperation, MemfdFlags};
-use rustix::mm::{MapFlags, ProtFlags};
+use rustix::fs::FlockOperation;
 use serde::{Deserialize, Serialize};
 use std::cell::UnsafeCell;
 use std::io::ErrorKind;
-use std::ptr::null_mut;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::OnceLock;
 
 const BUFFER_SIZE: usize = 512 * 1024;
 const SPIN_LIMIT: usize = 8;
-const FUTEX_TIMEOUT: libc::timespec = libc::timespec {
-    tv_sec: 15,
-    tv_nsec: 0,
-};
 
 static CHANNEL: OnceLock<FileSocket> = OnceLock::new();
 
@@ -26,18 +21,7 @@ pub fn init() {
 pub fn accept() -> Socket {
     let memfd = CHANNEL.get().unwrap().recv().unwrap();
     rustix::fs::fcntl_lock(&memfd, FlockOperation::NonBlockingLockShared).unwrap();
-    let addr;
-    unsafe {
-        addr = rustix::mm::mmap(
-            null_mut(),
-            BUFFER_SIZE,
-            ProtFlags::READ | ProtFlags::WRITE,
-            MapFlags::POPULATE | MapFlags::SHARED,
-            &memfd,
-            0,
-        )
-        .unwrap();
-    }
+    let addr = unsafe { mmap_populate(BUFFER_SIZE, &memfd).unwrap() };
     Socket {
         is_server: true,
         addr: addr as _,
@@ -46,22 +30,11 @@ pub fn accept() -> Socket {
 }
 
 pub fn connect() -> Socket {
-    let memfd = rustix::fs::memfd_create("transport", MemfdFlags::empty()).unwrap();
+    let memfd = memfd_create().unwrap();
     rustix::fs::ftruncate(&memfd, BUFFER_SIZE as u64).unwrap();
     rustix::fs::fcntl_lock(&memfd, FlockOperation::NonBlockingLockShared).unwrap();
     CHANNEL.get().unwrap().send(memfd.as_fd()).unwrap();
-    let addr;
-    unsafe {
-        addr = rustix::mm::mmap(
-            null_mut(),
-            BUFFER_SIZE,
-            ProtFlags::READ | ProtFlags::WRITE,
-            MapFlags::POPULATE | MapFlags::SHARED,
-            &memfd,
-            0,
-        )
-        .unwrap();
-    }
+    let addr = unsafe { mmap_populate(BUFFER_SIZE, &memfd).unwrap() };
     Socket {
         is_server: false,
         addr: addr as _,
@@ -159,25 +132,13 @@ impl Channel {
                     {
                         break;
                     }
-                    libc::syscall(
-                        libc::SYS_futex,
-                        self.futex.as_ptr(),
-                        libc::FUTEX_WAIT,
-                        Y,
-                        &FUTEX_TIMEOUT,
-                    );
+                    futex_wait(&self.futex, Y);
                 }
                 Y => {
                     if !test() {
                         return Err(IpcError::Closed);
                     }
-                    libc::syscall(
-                        libc::SYS_futex,
-                        self.futex.as_ptr(),
-                        libc::FUTEX_WAIT,
-                        Y,
-                        &FUTEX_TIMEOUT,
-                    );
+                    futex_wait(&self.futex, Y);
                 }
                 _ => std::hint::unreachable_unchecked(),
             }
@@ -193,17 +154,8 @@ impl Channel {
         debug_assert!(matches!(self.futex.load(Ordering::Relaxed), S | X));
         *self.len.get() = data.len() as u32;
         (*self.bytes.get())[0..data.len()].copy_from_slice(data);
-        match self.futex.swap(T, Ordering::Release) {
-            S => (),
-            X => {
-                libc::syscall(
-                    libc::SYS_futex,
-                    self.futex.as_ptr(),
-                    libc::FUTEX_WAKE,
-                    i32::MAX,
-                );
-            }
-            _ => std::hint::unreachable_unchecked(),
+        if X == self.futex.swap(T, Ordering::Release) {
+            futex_wake(&self.futex);
         }
     }
     unsafe fn server_recv(&self, test: impl Fn() -> bool) -> Result<Vec<u8>, IpcError> {
@@ -229,25 +181,13 @@ impl Channel {
                     {
                         break;
                     }
-                    libc::syscall(
-                        libc::SYS_futex,
-                        self.futex.as_ptr(),
-                        libc::FUTEX_WAIT,
-                        Y,
-                        &FUTEX_TIMEOUT,
-                    );
+                    futex_wait(&self.futex, Y);
                 }
                 Y => {
                     if !test() {
                         return Err(IpcError::Closed);
                     }
-                    libc::syscall(
-                        libc::SYS_futex,
-                        self.futex.as_ptr(),
-                        libc::FUTEX_WAIT,
-                        Y,
-                        &FUTEX_TIMEOUT,
-                    );
+                    futex_wait(&self.futex, Y);
                 }
                 _ => std::hint::unreachable_unchecked(),
             }
@@ -263,17 +203,8 @@ impl Channel {
         debug_assert!(matches!(self.futex.load(Ordering::Relaxed), S | X));
         *self.len.get() = data.len() as u32;
         (*self.bytes.get())[0..data.len()].copy_from_slice(data);
-        match self.futex.swap(T, Ordering::Release) {
-            S => (),
-            X => {
-                libc::syscall(
-                    libc::SYS_futex,
-                    self.futex.as_ptr(),
-                    libc::FUTEX_WAKE,
-                    i32::MAX,
-                );
-            }
-            _ => std::hint::unreachable_unchecked(),
+        if X == self.futex.swap(T, Ordering::Release) {
+            futex_wake(&self.futex);
         }
     }
 }
