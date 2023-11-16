@@ -106,6 +106,7 @@ pdm sync
 Run lint:
 ```bash
 pdm run format
+pdm run fix
 pdm run check
 ```
 
