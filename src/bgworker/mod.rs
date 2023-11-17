@@ -4,7 +4,7 @@ use self::bgworker::Bgworker;
 use crate::ipc::server::RpcHandler;
 use crate::ipc::IpcError;
 use std::fs::OpenOptions;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub fn main() {
@@ -39,7 +39,7 @@ pub fn main() {
         log::error!("Panickied. Info: {:?}. Backtrace: {}.", info, backtrace);
     }));
     let bgworker;
-    if std::fs::try_exists("pg_vectors").unwrap() {
+    if Path::new("pg_vectors").try_exists().unwrap() {
         bgworker = Bgworker::open(PathBuf::from("pg_vectors"));
     } else {
         bgworker = Bgworker::create(PathBuf::from("pg_vectors"));

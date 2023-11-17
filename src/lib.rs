@@ -3,16 +3,7 @@
 //! Provides an easy-to-use extension for vector similarity search.
 #![feature(core_intrinsics)]
 #![feature(allocator_api)]
-#![feature(thread_local)]
-#![feature(auto_traits)]
-#![feature(negative_impls)]
-#![feature(ptr_metadata)]
 #![feature(new_uninit)]
-#![feature(int_roundings)]
-#![feature(never_type)]
-#![feature(lazy_cell)]
-#![feature(fs_try_exists)]
-#![feature(sync_unsafe_cell)]
 #![allow(clippy::complexity)]
 #![allow(clippy::style)]
 

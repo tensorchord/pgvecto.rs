@@ -1,3 +1,4 @@
+pub mod cells;
 pub mod clean;
 pub mod dir_ops;
 pub mod file_atomic;

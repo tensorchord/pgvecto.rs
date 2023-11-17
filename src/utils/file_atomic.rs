@@ -1,5 +1,5 @@
 use super::dir_ops::sync_dir;
-use std::fs::{try_exists, File};
+use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
@@ -43,7 +43,7 @@ where
 {
     pub fn open(path: impl AsRef<Path>) -> Self {
         let path = path.as_ref().to_owned();
-        if try_exists("1").unwrap() {
+        if path.join("1").try_exists().unwrap() {
             std::fs::remove_file(path.join("1")).unwrap();
             sync_dir(&path);
         }

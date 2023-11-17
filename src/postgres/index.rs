@@ -5,10 +5,9 @@ use super::index_update;
 use crate::postgres::datatype::VectorInput;
 use crate::postgres::gucs::ENABLE_VECTOR_INDEX;
 use crate::prelude::*;
-use std::cell::Cell;
+use crate::utils::cells::PgCell;
 
-#[thread_local]
-static RELOPT_KIND: Cell<pgrx::pg_sys::relopt_kind> = Cell::new(0);
+static RELOPT_KIND: PgCell<pgrx::pg_sys::relopt_kind> = unsafe { PgCell::new(0) };
 
 pub unsafe fn init() {
     use pgrx::pg_sys::AsPgCStr;
