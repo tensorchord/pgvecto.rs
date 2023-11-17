@@ -67,22 +67,20 @@ pub unsafe fn futex_wake(futex: &AtomicU32) {
 #[cfg(target_os = "macos")]
 pub fn memfd_create() -> std::io::Result<OwnedFd> {
     use rustix::fs::Mode;
-    use rustix::shm::ShmOFlags;
-    // SHM_NAME_MAX = 30
-    // 9 + 8 + 8 = 25 < SHM_NAME_MAX
-    // reference: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/shm_open.2.html
-    // reference: https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/posix_sem.c#L89-L90
+    use rustix::fs::OFlags;
+    // POSIX fcntl locking do not support shmem, so we use a regular file here.
+    // reference: https://man7.org/linux/man-pages/man3/fcntl.3p.html
     let name = format!(
-        "/.shm.V.{:x}.{:x}",
+        ".shm.VECTORS.{:x}.{:x}",
         std::process::id(),
         rand::random::<u32>()
     );
-    let fd = rustix::shm::shm_open(
+    let fd = rustix::fs::open(
         &name,
-        ShmOFlags::RDWR | ShmOFlags::CREATE | ShmOFlags::EXCL,
+        OFlags::RDWR | OFlags::CREATE | OFlags::EXCL,
         Mode::RUSR | Mode::WUSR,
     )?;
-    rustix::shm::shm_unlink(&name)?;
+    rustix::fs::unlink(&name)?;
     Ok(fd)
 }
 
