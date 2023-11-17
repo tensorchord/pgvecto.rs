@@ -144,7 +144,7 @@ jobs:
           cargo install cargo-pgrx --version $(grep '^pgrx ' Cargo.toml | awk -F'\"' '{print $2}')
           cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
           if [[ "${{ matrix.arch }}" == "arm64" ]]; then
-            sudo apt-get -y install crossbuild-essential-arm64
+            sudo apt-get -y install crossbuild-essential-arm64 libc6-dev-arm64-cross
             rustup target add aarch64-unknown-linux-gnu
           fi
       - name: Build Release
@@ -157,7 +157,7 @@ jobs:
           if [[ "${{ matrix.arch }}" == "arm64" ]]; then
             export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
             cargo build --target aarch64-unknown-linux-gnu --release --features "pg${{ matrix.version }}" --no-default-features
-            mv ./aarch64-unknown-linux-gnu/target/release/libvectors.so ./target/release/vectors-pg${{ matrix.version }}/usr/lib/postgresql/${{ matrix.version }}/lib/vectors.so
+            mv ./target/aarch64-unknown-linux-gnu/release/libvectors.so ./target/release/vectors-pg${{ matrix.version }}/usr/lib/postgresql/${{ matrix.version }}/lib/vectors.so
           fi
           mv ./target/release/vectors-pg${{ matrix.version }}/usr ./artifacts/usr
           cd artifacts
