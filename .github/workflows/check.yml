@@ -65,7 +65,6 @@ jobs:
                 { version: 13, os: "macos-latest" },
                 { version: 14, os: "macos-latest" },
                 { version: 15, os: "macos-latest" },
-                { version: 16, os: "macos-latest" },
               ];
             }
             core.setOutput('matrix', JSON.stringify(matrix));
