@@ -134,6 +134,7 @@ jobs:
             ~/.cargo/git/db/
           key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
           restore-keys: cargo-${{ runner.os }}-pg${{ matrix.version }}
+      - uses: lhotari/action-upterm@v1
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Prepare
         run: |
@@ -144,7 +145,7 @@ jobs:
           cargo install cargo-pgrx --version $(grep '^pgrx ' Cargo.toml | awk -F'\"' '{print $2}')
           cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
           if [[ "${{ matrix.arch }}" == "arm64" ]]; then
-            sudo apt-get -y install crossbuild-essential-arm64 libc6-dev-arm64-cross
+            sudo apt-get -y install crossbuild-essential-arm64
             rustup target add aarch64-unknown-linux-gnu
           fi
       - name: Build Release
