@@ -192,15 +192,16 @@ jobs:
           password: ${{ secrets.DOCKERIO_TOKEN }}
       - name: Push binary release to Docker Registry        
         uses: docker/build-push-action@v4
+        
         with:
           context: .
           push: true
           file: ./docker/binary_release.Dockerfile
-          tags: tensorchord/pgvecto-rs-binary:latest, tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}
+          tags: silverha/pgvecto-rs-binary:latest, silverha/pgvecto-rs-binary:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}
       - name: Push postgres with pgvecto.rs to Docker Registry        
         uses: docker/build-push-action@v4
         with:
           context: .          
           push: true
           file: ./docker/pgvecto-rs.Dockerfile
-          tags: tensorchord/pgvecto-rs:latest, tensorchord/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}
+          tags: silverha/pgvecto-rs:latest, silverha/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}
