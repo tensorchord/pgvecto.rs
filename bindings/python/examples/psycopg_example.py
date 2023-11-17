@@ -6,7 +6,7 @@ import psycopg
 from pgvecto_rs.psycopg import register_vector
 
 URL = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(
-    port=os.getenv("DB_PORT", 5432),
+    port=os.getenv("DB_PORT", "5432"),
     host=os.getenv("DB_HOST", "localhost"),
     username=os.getenv("DB_USER", "postgres"),
     password=os.getenv("DB_PASS", "mysecretpassword"),
@@ -18,7 +18,7 @@ with psycopg.connect(URL) as conn:
     conn.execute("CREATE EXTENSION IF NOT EXISTS vectors;")
     register_vector(conn)
     conn.execute(
-        "CREATE TABLE documents (id SERIAL PRIMARY KEY, text TEXT NOT NULL, embedding vector(3) NOT NULL);"
+        "CREATE TABLE documents (id SERIAL PRIMARY KEY, text TEXT NOT NULL, embedding vector(3) NOT NULL);",
     )
     conn.commit()
     try:
@@ -39,7 +39,8 @@ with psycopg.connect(URL) as conn:
 
         # Select the row "hello pgvecto.rs"
         cur = conn.execute(
-            "SELECT * FROM documents WHERE text = %s;", ("hello pgvecto.rs",)
+            "SELECT * FROM documents WHERE text = %s;",
+            ("hello pgvecto.rs",),
         )
         target = cur.fetchone()[2]
 

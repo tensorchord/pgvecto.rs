@@ -25,7 +25,7 @@ def conn():
         register_vector(conn)
         conn.execute("DROP TABLE IF EXISTS tb_test_item;")
         conn.execute(
-            "CREATE TABLE tb_test_item (id bigserial PRIMARY KEY, embedding vector(3) NOT NULL);"
+            "CREATE TABLE tb_test_item (id bigserial PRIMARY KEY, embedding vector(3) NOT NULL);",
         )
         conn.commit()
         try:
@@ -35,7 +35,7 @@ def conn():
             conn.commit()
 
 
-@pytest.mark.parametrize("index_name,index_setting", TOML_SETTINGS.items())
+@pytest.mark.parametrize(("index_name", "index_setting"), TOML_SETTINGS.items())
 def test_create_index(conn: Connection, index_name: str, index_setting: str):
     stat = sql.SQL(
         "CREATE INDEX {} ON tb_test_item USING vectors (embedding l2_ops) WITH (options={});",
@@ -68,7 +68,8 @@ def test_create_index(conn: Connection, index_name: str, index_setting: str):
 def test_insert(conn: Connection):
     with conn.cursor() as cur:
         cur.executemany(
-            "INSERT INTO tb_test_item (embedding) VALUES (%s);", [(e,) for e in VECTORS]
+            "INSERT INTO tb_test_item (embedding) VALUES (%s);",
+            [(e,) for e in VECTORS],
         )
         cur.execute("SELECT * FROM tb_test_item;")
         conn.commit()
@@ -80,7 +81,8 @@ def test_insert(conn: Connection):
 
 def test_squared_euclidean_distance(conn: Connection):
     cur = conn.execute(
-        "SELECT embedding <-> %s FROM tb_test_item;", (OP_SQRT_EUCLID_DIS,)
+        "SELECT embedding <-> %s FROM tb_test_item;",
+        (OP_SQRT_EUCLID_DIS,),
     )
     for i, row in enumerate(cur.fetchall()):
         assert np.allclose(EXPECTED_SQRT_EUCLID_DIS[i], row[0], atol=1e-10)
@@ -88,7 +90,8 @@ def test_squared_euclidean_distance(conn: Connection):
 
 def test_negative_dot_product_distance(conn: Connection):
     cur = conn.execute(
-        "SELECT embedding <#> %s FROM tb_test_item;", (OP_NEG_DOT_PROD_DIS,)
+        "SELECT embedding <#> %s FROM tb_test_item;",
+        (OP_NEG_DOT_PROD_DIS,),
     )
     for i, row in enumerate(cur.fetchall()):
         assert np.allclose(EXPECTED_NEG_DOT_PROD_DIS[i], row[0], atol=1e-10)

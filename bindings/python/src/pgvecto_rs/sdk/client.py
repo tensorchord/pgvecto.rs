@@ -28,6 +28,7 @@ class PGVectoRs:
         """Connect to an existing table or create a new empty one.
 
         Args:
+        ----
             db_url (str): url to the database.
             table_name (str): name of the table.
             dimension (int): dimension of the embeddings.
@@ -36,7 +37,8 @@ class PGVectoRs:
         class _Table(RecordORM):
             __tablename__ = f"collection_{collection_name}"
             id: Mapped[UUID] = mapped_column(
-                postgresql.UUID(as_uuid=True), primary_key=True
+                postgresql.UUID(as_uuid=True),
+                primary_key=True,
             )
             text: Mapped[str] = mapped_column(String)
             meta: Mapped[dict] = mapped_column(postgresql.JSONB)
@@ -59,7 +61,7 @@ class PGVectoRs:
                         text=record.text,
                         meta=record.meta,
                         embedding=record.embedding,
-                    )
+                    ),
                 )
             session.commit()
 
@@ -73,6 +75,7 @@ class PGVectoRs:
         """Search for the nearest records.
 
         Args:
+        ----
             embedding : Target embedding.
             distance_op : Distance op.
             top_k : Max records to return. Defaults to 4.
@@ -80,6 +83,7 @@ class PGVectoRs:
             order_by_dis : Order by distance. Defaults to True.
 
         Returns:
+        -------
             List of records and coresponding distances.
 
         """
@@ -88,7 +92,7 @@ class PGVectoRs:
                 select(
                     self._table,
                     self._table.embedding.op(distance_op, return_type=Float)(
-                        embedding
+                        embedding,
                     ).label("distance"),
                 )
                 .limit(top_k)

@@ -7,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from pgvecto_rs.sqlalchemy import Vector
 
 URL = "postgresql+psycopg://{username}:{password}@{host}:{port}/{db_name}".format(
-    port=os.getenv("DB_PORT", 5432),
+    port=os.getenv("DB_PORT", "5432"),
     host=os.getenv("DB_HOST", "localhost"),
     username=os.getenv("DB_USER", "postgres"),
     password=os.getenv("DB_PASS", "mysecretpassword"),
@@ -53,7 +53,7 @@ with Session(engine) as session:
     stmt = select(
         Document.text,
         Document.embedding.squared_euclidean_distance(target.embedding).label(
-            "distance"
+            "distance",
         ),
     ).order_by("distance")
     for doc in session.execute(stmt):
