@@ -92,11 +92,22 @@ jobs:
             } else {
               throw new Error("unreachable");
             }
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.sets.outputs.version }}
+          release_name: ${{ steps.sets.outputs.version }}
+          draft: false
+          prerelease: ${{ steps.sets.outputs.prerelease }}
     outputs:
       version: ${{ steps.sets.outputs.version }}
       recheck: ${{ steps.sets.outputs.recheck }}
       ref: ${{ steps.sets.outputs.ref }}
       prerelease: ${{ steps.sets.outputs.prerelease }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
   release:
     strategy:
       matrix:
@@ -160,24 +171,13 @@ jobs:
             --package ../vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.full_arch }}-unknown-linux-gnu.deb \
             --architecture ${{ matrix.arch }} \
             .
-      - name: Create Release
-        id: create_release
-        continue-on-error: true
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ needs.setup.outputs.version }}
-          release_name: ${{ needs.setup.outputs.version }}
-          draft: false
-          prerelease: ${{ needs.setup.outputs.prerelease }}
       - name: Upload Release / DEB
         id: upload_release_deb
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ needs.setup.outputs.upload_url }}
           asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.full_arch }}-unknown-linux-gnu.deb
           asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.full_arch }}-unknown-linux-gnu.deb
           asset_content_type: application/vnd.debian.binary-package
