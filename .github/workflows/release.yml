@@ -92,15 +92,32 @@ jobs:
             } else {
               throw new Error("unreachable");
             }
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.sets.outputs.version }}
+          release_name: ${{ steps.sets.outputs.version }}
+          draft: false
+          prerelease: ${{ steps.sets.outputs.prerelease }}
     outputs:
       version: ${{ steps.sets.outputs.version }}
       recheck: ${{ steps.sets.outputs.recheck }}
       ref: ${{ steps.sets.outputs.ref }}
       prerelease: ${{ steps.sets.outputs.prerelease }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
   release:
     strategy:
       matrix:
-        version: [15]
+        arch: [amd64, arm64]
+        version: [14, 15, 16]
+        include:
+          - arch: amd64
+            full_arch: x86_64
+          - arch: arm64
+            full_arch: aarch64
     needs: setup
     runs-on: ubuntu-20.04
     if: ${{ needs.setup.outputs.recheck == 'true' }}
@@ -126,13 +143,23 @@ jobs:
           sudo apt-get -y install libpq-dev postgresql-${{ matrix.version }} postgresql-server-dev-${{ matrix.version }}
           cargo install cargo-pgrx --version $(grep '^pgrx ' Cargo.toml | awk -F'\"' '{print $2}')
           cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
+          if [[ "${{ matrix.arch }}" == "arm64" ]]; then
+            sudo apt-get -y install crossbuild-essential-arm64
+            rustup target add aarch64-unknown-linux-gnu
+          fi
       - name: Build Release
         id: build_release
         run: |
-          sudo apt-get install ruby-dev libarchive-tools
+          sudo apt-get -y install ruby-dev libarchive-tools
           sudo gem install --no-document fpm
-          cargo pgrx package
           mkdir ./artifacts
+          cargo pgrx package
+          if [[ "${{ matrix.arch }}" == "arm64" ]]; then
+            export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+            export BINDGEN_EXTRA_CLANG_ARGS_aarch64_unknown_linux_gnu="-target aarch64-unknown-linux-gnu -isystem /usr/aarch64-linux-gnu/include/ -ccc-gcc-name aarch64-linux-gnu-gcc"
+            cargo build --target aarch64-unknown-linux-gnu --release --features "pg${{ matrix.version }}" --no-default-features
+            mv ./target/aarch64-unknown-linux-gnu/release/libvectors.so ./target/release/vectors-pg${{ matrix.version }}/usr/lib/postgresql/${{ matrix.version }}/lib/vectors.so
+          fi
           mv ./target/release/vectors-pg${{ matrix.version }}/usr ./artifacts/usr
           cd artifacts
           fpm \
@@ -142,32 +169,21 @@ jobs:
             --version ${{ needs.setup.outputs.version }} \
             --license apache2 \
             --deb-no-default-config-files \
-            --package ../vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64-unknown-linux-gnu.deb \
-            --architecture amd64 \
+            --package ../vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb \
+            --architecture ${{ matrix.arch }} \
             .
-          cd ..
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ needs.setup.outputs.version }}
-          release_name: ${{ needs.setup.outputs.version }}
-          draft: false
-          prerelease: ${{ needs.setup.outputs.prerelease }}
       - name: Upload Release / DEB
         id: upload_release_deb
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64-unknown-linux-gnu.deb
-          asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64-unknown-linux-gnu.deb
+          upload_url: ${{ needs.setup.outputs.upload_url }}
+          asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
+          asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Copy binary release
-        run: 'cp vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64-unknown-linux-gnu.deb pgvecto-rs-binary-release.deb'
+        run: 'cp vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb pgvecto-rs-binary-release.deb'
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to Docker Hub
@@ -181,11 +197,11 @@ jobs:
           context: .
           push: true
           file: ./docker/binary_release.Dockerfile
-          tags: tensorchord/pgvecto-rs-binary:latest, tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64
+          tags: tensorchord/pgvecto-rs-binary:latest, tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}
       - name: Push postgres with pgvecto.rs to Docker Registry        
         uses: docker/build-push-action@v4
         with:
           context: .          
           push: true
           file: ./docker/pgvecto-rs.Dockerfile
-          tags: tensorchord/pgvecto-rs:latest, tensorchord/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-amd64
+          tags: tensorchord/pgvecto-rs:latest, tensorchord/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}
