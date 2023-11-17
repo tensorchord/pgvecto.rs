@@ -25,7 +25,7 @@ if [ "$OS" == "macos-latest" ]; then
     export PATH="$PATH:$(brew --prefix postgresql@$VERSION)/bin"
     echo "$(brew --prefix postgresql@$VERSION)/bin" >> $GITHUB_PATH
     brew services start postgresql@$VERSION
-    sleep 5
+    sleep 30
     createdb
 fi
 
