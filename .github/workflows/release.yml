@@ -205,10 +205,10 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .          
-          push: true
+          push: trueq
           platforms: "linux/${{ matrix.arch }}"
           file: ./docker/pgvecto-rs.Dockerfile
           build-args: |
-            TAGS = pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}    
-            POSTGRES_VERSION = ${{ matrix.version }}
+            TAGS=pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}    
+            POSTGRES_VERSION=${{ matrix.version }}
           tags: tensorchord/pgvecto-rs:latest, tensorchord/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}
