@@ -102,6 +102,11 @@ jobs:
       matrix:
         arch: [amd64, arm64]
         version: [14, 15, 16]
+        include:
+          - arch: amd64
+            full_arch: x86_64
+          - arch: arm64
+            full_arch: aarch64
     needs: setup
     runs-on: ubuntu-20.04
     if: ${{ needs.setup.outputs.recheck == 'true' }}
@@ -119,13 +124,6 @@ jobs:
           key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
           restore-keys: cargo-${{ runner.os }}-pg${{ matrix.version }}
       - uses: mozilla-actions/sccache-action@v0.0.3
-      - name: Set env variable
-        run: |
-          if [[ "${{ matrix.arch }}" == "amd64" ]]; then
-            echo "FULL_ARCH=x86_64" >> $GITHUB_ENV
-          else
-            echo "FULL_ARCH=aarch64" >> $GITHUB_ENV
-          fi
       - name: Prepare
         run: |
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
@@ -144,14 +142,13 @@ jobs:
           sudo apt-get install ruby-dev libarchive-tools
           sudo gem install --no-document fpm
           mkdir ./artifacts
+          cargo pgrx package
           if [[ "${{ matrix.arch }}" == "arm64" ]]; then
             export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
-            cargo pgrx package --target aarch64-unknown-linux-gnu
-            mv ./aarch64-unknown-linux-gnu/target/release/vectors-pg${{ matrix.version }}/usr ./artifacts/usr
-          else
-            cargo pgrx package
-            mv ./target/release/vectors-pg${{ matrix.version }}/usr ./artifacts/usr
+            cargo pgrx build --target aarch64-unknown-linux-gnu --release
+            mv ./aarch64-unknown-linux-gnu/target/release/libvectors.so ./target/release/vectors-pg${{ matrix.version }}/usr/lib/postgresql/${{ matrix.version }}/lib/vectors.so
           fi
+          mv ./target/release/vectors-pg${{ matrix.version }}/usr ./artifacts/usr
           cd artifacts
           fpm \
             --input-type dir \
@@ -160,7 +157,7 @@ jobs:
             --version ${{ needs.setup.outputs.version }} \
             --license apache2 \
             --deb-no-default-config-files \
-            --package ../vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.FULL_ARCH }}-unknown-linux-gnu.deb \
+            --package ../vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.full_arch }}-unknown-linux-gnu.deb \
             --architecture ${{ matrix.arch }} \
             .
       - name: Create Release
@@ -180,11 +177,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.FULL_ARCH }}-unknown-linux-gnu.deb
-          asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.FULL_ARCH }}-unknown-linux-gnu.deb
+          asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.full_arch }}-unknown-linux-gnu.deb
+          asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.full_arch }}-unknown-linux-gnu.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Copy binary release
-        run: 'cp vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.FULL_ARCH }}-unknown-linux-gnu.deb pgvecto-rs-binary-release.deb'
+        run: 'cp vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.full_arch }}-unknown-linux-gnu.deb pgvecto-rs-binary-release.deb'
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to Docker Hub
