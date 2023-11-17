@@ -114,6 +114,7 @@ pub unsafe fn start_scan(
     }
 }
 
+#[allow(clippy::never_loop)]
 pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
     let scanner = &mut *((*scan).opaque as *mut Scanner);
     if matches!(scanner, Scanner::Initial { .. }) {

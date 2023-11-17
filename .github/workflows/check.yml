@@ -28,15 +28,20 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
   SCCACHE_GHA_ENABLED: true
   RUSTC_WRAPPER: sccache
 
 jobs:
-  lint:
+  check:
     strategy:
       matrix:
-        version: [15]
-    runs-on: ubuntu-latest
+        version: [12, 13, 14, 15, 16]
+        os: ["ubuntu-latest", "macos-latest"]
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ matrix.version }}
+      OS: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
     - uses: actions/cache/restore@v3
@@ -45,99 +50,30 @@ jobs:
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-        key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
-        restore-keys: cargo-${{ runner.os }}-pg${{ matrix.version }}
+        key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
+        restore-keys: cargo-${{ matrix.os }}-pg${{ matrix.version }}
     - uses: mozilla-actions/sccache-action@v0.0.3
-    - name: Prepare
-      run: |
-        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-        sudo apt-get update
-        sudo apt-get -y install libpq-dev postgresql-${{ matrix.version }} postgresql-server-dev-${{ matrix.version }}
-        cargo install cargo-pgrx --version $(grep '^pgrx ' Cargo.toml | awk -F'\"' '{print $2}')
-        cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
+    - name: Setup
+      shell: bash
+      run: ./scripts/ci_setup.sh
     - name: Format check
       run: cargo fmt --check
     - name: Semantic check
-      run: cargo clippy
-
-  build:
-    strategy:
-      matrix:
-        version: [15]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: actions/cache/restore@v3
-      with:
-        path: |
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-        key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
-        restore-keys: cargo-${{ runner.os }}-pg${{ matrix.version }}
-    - uses: mozilla-actions/sccache-action@v0.0.3
-    - name: Prepare
-      run: |
-        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-        sudo apt-get update
-        sudo apt-get -y install libpq-dev postgresql-${{ matrix.version }} postgresql-server-dev-${{ matrix.version }}
-        cargo install cargo-pgrx --version $(grep '^pgrx ' Cargo.toml | awk -F'\"' '{print $2}')
-        cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
-    - name: Build
-      run: cargo build --verbose
+      run: cargo clippy --no-default-features --features "pg${{ matrix.version }} pg_test"
+    - name: Debug build
+      run: cargo build --no-default-features --features "pg${{ matrix.version }} pg_test"
     - name: Test
-      env:
-        RUST_BACKTRACE: 1
       run: cargo test --all --no-default-features --features "pg${{ matrix.version }} pg_test" -- --nocapture
-
-  test:
-    strategy:
-      matrix:
-        version: [15]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: actions/cache/restore@v3
-      with:
-        path: |
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-        key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
-        restore-keys: cargo-${{ runner.os }}-pg${{ matrix.version }}
-    - uses: mozilla-actions/sccache-action@v0.0.3
-    - name: Prepare
+    - name: Install release
+      run: ./scripts/ci_install.sh
+    - name: Sqllogictest
       run: |
-        sudo pg_dropcluster 14 main
-        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-        sudo apt-get update
-        sudo apt-get -y install libpq-dev postgresql-${{ matrix.version }} postgresql-server-dev-${{ matrix.version }}
-        cargo install cargo-pgrx --version $(grep '^pgrx ' Cargo.toml | awk -F'\"' '{print $2}')
-        cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
-        cargo install sqllogictest-bin
+        psql -f ./tests/init.sql
+        sqllogictest -u runner -d runner './tests/**/*.slt'
     - uses: actions/cache/save@v3
       with:
         path: |
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-        key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
-    - name: Build
-      run: |
-        sudo chmod -R 777 /usr/share/postgresql/${{ matrix.version }}/extension
-        sudo chmod -R 777 /usr/lib/postgresql/${{ matrix.version }}/lib
-        cargo pgrx install --release
-        sudo systemctl start postgresql@${{ matrix.version }}-main
-        sudo -u postgres psql -c "CREATE USER $USER LOGIN SUPERUSER"
-        sudo -u postgres psql -c "CREATE DATABASE $USER OWNER $USER"
-        psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
-        sudo systemctl restart postgresql@${{ matrix.version }}-main
-    - name: Sqllogictest
-      run: |
-        export password=$(openssl rand -base64 32)
-        psql -c "ALTER USER $USER WITH PASSWORD '$password'"
-        psql -f ./tests/init.sql
-        sqllogictest -u "$USER" -w "$password" -d "$USER" './tests/**/*.slt'
+        key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}

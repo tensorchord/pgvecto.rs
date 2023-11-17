@@ -11,7 +11,6 @@
 #![feature(int_roundings)]
 #![feature(never_type)]
 #![feature(lazy_cell)]
-#![feature(const_maybe_uninit_zeroed)]
 #![feature(fs_try_exists)]
 #![feature(sync_unsafe_cell)]
 #![allow(clippy::complexity)]
