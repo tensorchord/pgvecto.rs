@@ -208,4 +208,7 @@ jobs:
           push: true
           platforms: "linux/${{ matrix.arch }}"
           file: ./docker/pgvecto-rs.Dockerfile
+          build-args: |
+            TAGS=pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}    
+            POSTGRES_VERSION=${{ matrix.version }}
           tags: tensorchord/pgvecto-rs:latest, tensorchord/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}
