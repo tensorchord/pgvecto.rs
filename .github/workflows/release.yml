@@ -144,7 +144,8 @@ jobs:
           cargo install cargo-pgrx --version $(grep '^pgrx ' Cargo.toml | awk -F'\"' '{print $2}')
           cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
           if [[ "${{ matrix.arch }}" == "arm64" ]]; then
-            sudo apt-get -y install crossbuild-essential-arm64 gcc-multilib
+            sudo apt-get -y install crossbuild-essential-arm64 
+            sudo apt-get -y install gcc-multilib
             rustup target add aarch64-unknown-linux-gnu
           fi
       - name: Build Release
