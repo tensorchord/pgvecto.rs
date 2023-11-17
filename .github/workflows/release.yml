@@ -145,7 +145,7 @@ jobs:
           cargo pgrx package
           if [[ "${{ matrix.arch }}" == "arm64" ]]; then
             export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
-            cargo pgrx build --target aarch64-unknown-linux-gnu --release
+            cargo build --target aarch64-unknown-linux-gnu --release
             mv ./aarch64-unknown-linux-gnu/target/release/libvectors.so ./target/release/vectors-pg${{ matrix.version }}/usr/lib/postgresql/${{ matrix.version }}/lib/vectors.so
           fi
           mv ./target/release/vectors-pg${{ matrix.version }}/usr ./artifacts/usr
