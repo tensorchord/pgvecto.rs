@@ -10,14 +10,7 @@ pub enum Transport {
 
 impl Transport {
     pub const fn default() -> Transport {
-        #[cfg(target_os = "linux")]
-        {
-            Transport::mmap
-        }
-        #[cfg(not(target_os = "linux"))]
-        {
-            Transport::unix
-        }
+        Transport::mmap
     }
 }
 

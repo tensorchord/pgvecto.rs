@@ -29,8 +29,7 @@ SELECT '[1,2]'::vector < '[1,3]';
 ----
 t
 
-# TODO: may need better error message
-statement error assertion failed: `\(left == right\)`
+statement error differs in dimensions
 SELECT '[1,2]'::vector < '[1,2,3]';
 
 query I

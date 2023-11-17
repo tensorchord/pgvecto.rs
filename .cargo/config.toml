@@ -1,7 +1,7 @@
 [build]
 rustdocflags = ["--document-private-items"]
 
-[target.'cfg(target_arch="x86_64")']
+[target.'cfg(all(target_os="linux", target_arch="x86_64"))']
 rustflags = ["-Ctarget-cpu=x86-64-v3"]
 
 [target.'cfg(target_os="macos")']

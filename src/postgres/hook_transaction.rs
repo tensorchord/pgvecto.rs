@@ -3,17 +3,14 @@ use super::gucs::TRANSPORT;
 use crate::ipc::client::Rpc;
 use crate::ipc::{connect_mmap, connect_unix};
 use crate::prelude::*;
-use std::cell::RefCell;
+use crate::utils::cells::PgRefCell;
 use std::collections::BTreeSet;
 
-#[thread_local]
-static FLUSH_IF_COMMIT: RefCell<BTreeSet<Id>> = RefCell::new(BTreeSet::new());
+static FLUSH_IF_COMMIT: PgRefCell<BTreeSet<Id>> = unsafe { PgRefCell::new(BTreeSet::new()) };
 
-#[thread_local]
-static DROP_IF_COMMIT: RefCell<BTreeSet<Id>> = RefCell::new(BTreeSet::new());
+static DROP_IF_COMMIT: PgRefCell<BTreeSet<Id>> = unsafe { PgRefCell::new(BTreeSet::new()) };
 
-#[thread_local]
-static CLIENT: RefCell<Option<Rpc>> = RefCell::new(None);
+static CLIENT: PgRefCell<Option<Rpc>> = unsafe { PgRefCell::new(None) };
 
 pub fn aborting() {
     *FLUSH_IF_COMMIT.borrow_mut() = BTreeSet::new();

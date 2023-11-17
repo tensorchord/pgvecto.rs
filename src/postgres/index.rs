@@ -5,10 +5,9 @@ use super::index_update;
 use crate::postgres::datatype::VectorInput;
 use crate::postgres::gucs::ENABLE_VECTOR_INDEX;
 use crate::prelude::*;
-use std::cell::Cell;
+use crate::utils::cells::PgCell;
 
-#[thread_local]
-static RELOPT_KIND: Cell<pgrx::pg_sys::relopt_kind> = Cell::new(0);
+static RELOPT_KIND: PgCell<pgrx::pg_sys::relopt_kind> = unsafe { PgCell::new(0) };
 
 pub unsafe fn init() {
     use pgrx::pg_sys::AsPgCStr;
@@ -50,7 +49,6 @@ const AM_HANDLER: pgrx::pg_sys::IndexAmRoutine = {
 
     am_routine.amstrategies = 1;
     am_routine.amsupport = 0;
-    am_routine.amoptsprocnum = 0;
 
     am_routine.amcanorder = false;
     am_routine.amcanorderbyop = true;
@@ -64,7 +62,6 @@ const AM_HANDLER: pgrx::pg_sys::IndexAmRoutine = {
     am_routine.amclusterable = false;
     am_routine.ampredlocks = false;
     am_routine.amcaninclude = false;
-    am_routine.amusemaintenanceworkmem = false;
     am_routine.amkeytype = pgrx::pg_sys::InvalidOid;
 
     am_routine.amvalidate = Some(amvalidate);
@@ -95,25 +92,27 @@ pub unsafe extern "C" fn amvalidate(opclass_oid: pgrx::pg_sys::Oid) -> bool {
 #[cfg(feature = "pg12")]
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn amoptions(
-    reloptions: pg_sys::Datum,
+    reloptions: pgrx::pg_sys::Datum,
     validate: bool,
-) -> *mut pg_sys::bytea {
-    use pg_sys::AsPgCStr;
-    let tab: &[pg_sys::relopt_parse_elt] = &[pg_sys::relopt_parse_elt {
+) -> *mut pgrx::pg_sys::bytea {
+    use pgrx::pg_sys::AsPgCStr;
+    let tab: &[pgrx::pg_sys::relopt_parse_elt] = &[pgrx::pg_sys::relopt_parse_elt {
         optname: "options".as_pg_cstr(),
-        opttype: pg_sys::relopt_type_RELOPT_TYPE_STRING,
+        opttype: pgrx::pg_sys::relopt_type_RELOPT_TYPE_STRING,
         offset: index_setup::helper_offset() as i32,
     }];
     let mut noptions = 0;
-    let options = pg_sys::parseRelOptions(reloptions, validate, RELOPT_KIND.get(), &mut noptions);
+    let options =
+        pgrx::pg_sys::parseRelOptions(reloptions, validate, RELOPT_KIND.get(), &mut noptions);
     if noptions == 0 {
         return std::ptr::null_mut();
     }
     for relopt in std::slice::from_raw_parts_mut(options, noptions as usize) {
-        relopt.gen.as_mut().unwrap().lockmode = pg_sys::AccessExclusiveLock as pg_sys::LOCKMODE;
+        relopt.gen.as_mut().unwrap().lockmode =
+            pgrx::pg_sys::AccessExclusiveLock as pgrx::pg_sys::LOCKMODE;
     }
-    let rdopts = pg_sys::allocateReloptStruct(index_setup::helper_size(), options, noptions);
-    pg_sys::fillRelOptions(
+    let rdopts = pgrx::pg_sys::allocateReloptStruct(index_setup::helper_size(), options, noptions);
+    pgrx::pg_sys::fillRelOptions(
         rdopts,
         index_setup::helper_size(),
         options,
@@ -122,8 +121,8 @@ pub unsafe extern "C" fn amoptions(
         tab.as_ptr(),
         tab.len() as i32,
     );
-    pg_sys::pfree(options as pgrx::void_mut_ptr);
-    rdopts as *mut pg_sys::bytea
+    pgrx::pg_sys::pfree(options as pgrx::void_mut_ptr);
+    rdopts as *mut pgrx::pg_sys::bytea
 }
 
 #[cfg(any(feature = "pg13", feature = "pg14", feature = "pg15", feature = "pg16"))]
@@ -196,21 +195,21 @@ pub unsafe extern "C" fn ambuildempty(index_relation: pgrx::pg_sys::Relation) {
 }
 
 #[cfg(any(feature = "pg12", feature = "pg13"))]
-#[pg_guard]
+#[pgrx::pg_guard]
 pub unsafe extern "C" fn aminsert(
-    index_relation: pg_sys::Relation,
-    values: *mut pg_sys::Datum,
+    index_relation: pgrx::pg_sys::Relation,
+    values: *mut pgrx::pg_sys::Datum,
     is_null: *mut bool,
-    heap_tid: pg_sys::ItemPointer,
-    _heap_relation: pg_sys::Relation,
-    _check_unique: pg_sys::IndexUniqueCheck,
-    _index_info: *mut pg_sys::IndexInfo,
+    heap_tid: pgrx::pg_sys::ItemPointer,
+    _heap_relation: pgrx::pg_sys::Relation,
+    _check_unique: pgrx::pg_sys::IndexUniqueCheck,
+    _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
     use pgrx::FromDatum;
     let oid = (*index_relation).rd_id;
     let id = Id::from_sys(oid);
     let vector = VectorInput::from_datum(*values.add(0), *is_null.add(0)).unwrap();
-    let vector = vector.data().to_vec().into_boxed_slice();
+    let vector = vector.data().to_vec();
     index_update::update_insert(id, vector, heap_tid);
     true
 }

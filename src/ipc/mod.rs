@@ -26,17 +26,10 @@ pub fn listen_unix() -> impl Iterator<Item = RpcHandler> {
 }
 
 pub fn listen_mmap() -> impl Iterator<Item = RpcHandler> {
-    #[cfg(target_os = "linux")]
-    {
-        std::iter::from_fn(move || {
-            let socket = self::transport::Socket::Mmap(self::transport::mmap::accept());
-            Some(self::server::RpcHandler::new(socket))
-        })
-    }
-    #[cfg(not(target_os = "linux"))]
-    {
-        std::iter::empty()
-    }
+    std::iter::from_fn(move || {
+        let socket = self::transport::Socket::Mmap(self::transport::mmap::accept());
+        Some(self::server::RpcHandler::new(socket))
+    })
 }
 
 pub fn connect_unix() -> Rpc {
@@ -45,14 +38,6 @@ pub fn connect_unix() -> Rpc {
 }
 
 pub fn connect_mmap() -> Rpc {
-    #[cfg(target_os = "linux")]
-    {
-        let socket = self::transport::Socket::Mmap(self::transport::mmap::connect());
-        self::client::Rpc::new(socket)
-    }
-    #[cfg(not(target_os = "linux"))]
-    {
-        use crate::prelude::FriendlyError;
-        FriendlyError::MmapTransportNotSupported.friendly();
-    }
+    let socket = self::transport::Socket::Mmap(self::transport::mmap::connect());
+    self::client::Rpc::new(socket)
 }
