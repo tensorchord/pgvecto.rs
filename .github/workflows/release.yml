@@ -205,7 +205,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .          
-          push: trueq
+          push: true
           platforms: "linux/${{ matrix.arch }}"
           file: ./docker/pgvecto-rs.Dockerfile
           build-args: |
