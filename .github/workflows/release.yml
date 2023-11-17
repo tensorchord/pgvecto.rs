@@ -169,7 +169,7 @@ jobs:
             --version ${{ needs.setup.outputs.version }} \
             --license apache2 \
             --deb-no-default-config-files \
-            --package ../vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.full_arch }}-unknown-linux-gnu.deb \
+            --package ../vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb \
             --architecture ${{ matrix.arch }} \
             .
       - name: Upload Release / DEB
@@ -179,11 +179,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.setup.outputs.upload_url }}
-          asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.full_arch }}-unknown-linux-gnu.deb
-          asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.full_arch }}-unknown-linux-gnu.deb
+          asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
+          asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Copy binary release
-        run: 'cp vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ env.full_arch }}-unknown-linux-gnu.deb pgvecto-rs-binary-release.deb'
+        run: 'cp vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb pgvecto-rs-binary-release.deb'
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to Docker Hub
