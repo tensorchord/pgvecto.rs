@@ -210,7 +210,7 @@ pub unsafe extern "C" fn aminsert(
     let id = Id::from_sys(oid);
     let vector = VectorInput::from_datum(*values.add(0), *is_null.add(0)).unwrap();
     let vector = vector.data().to_vec();
-    index_update::update_insert(id, vector, heap_tid);
+    index_update::update_insert(id, vector, *heap_tid);
     true
 }
 
@@ -231,7 +231,7 @@ pub unsafe extern "C" fn aminsert(
     let id = Id::from_sys(oid);
     let vector = VectorInput::from_datum(*values.add(0), *is_null.add(0)).unwrap();
     let vector = vector.data().to_vec();
-    index_update::update_insert(id, vector, heap_tid);
+    index_update::update_insert(id, vector, *heap_tid);
     true
 }
 

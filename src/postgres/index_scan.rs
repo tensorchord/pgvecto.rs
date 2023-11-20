@@ -114,7 +114,6 @@ pub unsafe fn start_scan(
     }
 }
 
-#[allow(clippy::never_loop)]
 pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
     let scanner = &mut *((*scan).opaque as *mut Scanner);
     if matches!(scanner, Scanner::Initial { .. }) {
@@ -165,7 +164,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
                 let k = K.get() as _;
                 let handler = rpc.search(id, (vector, k), false).unwrap();
                 let mut res;
-                let rpc = loop {
+                let rpc = {
                     use crate::ipc::client::SearchHandle::*;
                     match handler.handle().unwrap() {
                         Check { .. } => {
@@ -173,7 +172,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
                         }
                         Leave { result, x } => {
                             res = result.friendly();
-                            break x;
+                            x
                         }
                     }
                 };

@@ -1,9 +1,9 @@
 use crate::postgres::hook_transaction::{client, flush_if_commit};
 use crate::prelude::*;
 
-pub unsafe fn update_insert(id: Id, vector: Vec<Scalar>, tid: pgrx::pg_sys::ItemPointer) {
+pub fn update_insert(id: Id, vector: Vec<Scalar>, tid: pgrx::pg_sys::ItemPointerData) {
     flush_if_commit(id);
-    let p = Pointer::from_sys(*tid);
+    let p = Pointer::from_sys(tid);
     client(|mut rpc| {
         rpc.insert(id, (vector, p)).unwrap().friendly();
         rpc

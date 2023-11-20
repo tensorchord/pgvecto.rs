@@ -1,6 +1,6 @@
-pub mod bgworker;
+pub mod worker;
 
-use self::bgworker::Bgworker;
+use self::worker::Worker;
 use crate::ipc::server::RpcHandler;
 use crate::ipc::IpcError;
 use std::fs::OpenOptions;
@@ -38,19 +38,18 @@ pub fn main() {
         }
         log::error!("Panickied. Info: {:?}. Backtrace: {}.", info, backtrace);
     }));
-    let bgworker;
-    if Path::new("pg_vectors").try_exists().unwrap() {
-        bgworker = Bgworker::open(PathBuf::from("pg_vectors"));
+    let worker = if Path::new("pg_vectors").try_exists().unwrap() {
+        Worker::open(PathBuf::from("pg_vectors"))
     } else {
-        bgworker = Bgworker::create(PathBuf::from("pg_vectors"));
-    }
+        Worker::create(PathBuf::from("pg_vectors"))
+    };
     std::thread::spawn({
-        let bgworker = bgworker.clone();
-        move || thread_main_2(crate::ipc::listen_unix(), bgworker)
+        let worker = worker.clone();
+        move || thread_main_2(crate::ipc::listen_unix(), worker)
     });
     std::thread::spawn({
-        let bgworker = bgworker.clone();
-        move || thread_main_2(crate::ipc::listen_mmap(), bgworker)
+        let worker = worker.clone();
+        move || thread_main_2(crate::ipc::listen_mmap(), worker)
     });
     loop {
         let mut sig: i32 = 0;
@@ -70,19 +69,18 @@ pub fn main() {
             }
             _ => (),
         }
-        std::thread::yield_now();
     }
 }
 
-fn thread_main_2<T>(listen: T, bgworker: Arc<Bgworker>)
+fn thread_main_2<T>(listen: T, worker: Arc<Worker>)
 where
     T: Iterator<Item = RpcHandler>,
 {
     for rpc_handler in listen {
         std::thread::spawn({
-            let bgworker = bgworker.clone();
+            let worker = worker.clone();
             move || {
-                if let Err(e) = thread_session(bgworker, rpc_handler) {
+                if let Err(e) = thread_session(worker, rpc_handler) {
                     log::error!("Session exited. {}.", e);
                 }
             }
@@ -90,20 +88,20 @@ where
     }
 }
 
-fn thread_session(bgworker: Arc<Bgworker>, mut handler: RpcHandler) -> Result<(), IpcError> {
+fn thread_session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError> {
     use crate::ipc::server::RpcHandle;
     loop {
         match handler.handle()? {
             RpcHandle::Create { id, options, x } => {
-                bgworker.call_create(id, options);
+                worker.call_create(id, options);
                 handler = x.leave()?;
             }
             RpcHandle::Insert { id, insert, x } => {
-                let res = bgworker.call_insert(id, insert);
+                let res = worker.call_insert(id, insert);
                 handler = x.leave(res)?;
             }
             RpcHandle::Delete { id, mut x } => {
-                let res = bgworker.call_delete(id, |p| x.next(p).unwrap());
+                let res = worker.call_delete(id, |p| x.next(p).unwrap());
                 handler = x.leave(res)?;
             }
             RpcHandle::Search {
@@ -113,19 +111,19 @@ fn thread_session(bgworker: Arc<Bgworker>, mut handler: RpcHandler) -> Result<()
                 mut x,
             } => {
                 if prefilter {
-                    let res = bgworker.call_search(id, search, |p| x.check(p).unwrap());
+                    let res = worker.call_search(id, search, |p| x.check(p).unwrap());
                     handler = x.leave(res)?;
                 } else {
-                    let res = bgworker.call_search(id, search, |_| true);
+                    let res = worker.call_search(id, search, |_| true);
                     handler = x.leave(res)?;
                 }
             }
             RpcHandle::Flush { id, x } => {
-                let result = bgworker.call_flush(id);
+                let result = worker.call_flush(id);
                 handler = x.leave(result)?;
             }
             RpcHandle::Destory { id, x } => {
-                bgworker.call_destory(id);
+                worker.call_destory(id);
                 handler = x.leave()?;
             }
             RpcHandle::Leave {} => {

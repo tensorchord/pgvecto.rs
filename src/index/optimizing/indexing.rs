@@ -93,7 +93,7 @@ fn merge(index: &Arc<Index>, segs: &[Seg]) -> Arc<SealedSegment> {
     let sealed = segs.iter().filter_map(|x| x.get_sealed()).collect();
     let growing = segs.iter().filter_map(|x| x.get_growing()).collect();
     let sealed_segment_uuid = Uuid::new_v4();
-    let sealed_segment = SealedSegment::create(
+    SealedSegment::create(
         index._tracker.clone(),
         index
             .path
@@ -103,6 +103,5 @@ fn merge(index: &Arc<Index>, segs: &[Seg]) -> Arc<SealedSegment> {
         index.options.clone(),
         sealed,
         growing,
-    );
-    sealed_segment
+    )
 }

@@ -35,7 +35,7 @@ impl SegmentsOptions {
     }
     // min_sealed_segment_size <= max_growing_segment_size <= max_sealed_segment_size
     fn validate_0(&self) -> Result<(), ValidationError> {
-        if !(self.min_sealed_segment_size <= self.max_growing_segment_size) {
+        if self.min_sealed_segment_size > self.max_growing_segment_size {
             return Err(ValidationError::new(
                 "`min_sealed_segment_size` must be less than or equal to `max_growing_segment_size`",
             ));
@@ -43,7 +43,7 @@ impl SegmentsOptions {
         Ok(())
     }
     fn validate_1(&self) -> Result<(), ValidationError> {
-        if !(self.max_growing_segment_size <= self.max_sealed_segment_size) {
+        if self.max_growing_segment_size > self.max_sealed_segment_size {
             return Err(ValidationError::new(
                 "`max_growing_segment_size` must be less than or equal to `max_sealed_segment_size`",
             ));

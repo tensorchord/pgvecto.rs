@@ -235,7 +235,7 @@ impl Square {
         Self {
             x,
             y,
-            v: unsafe { Box::new_uninit_slice(x * y).assume_init() },
+            v: bytemuck::zeroed_slice_box(x * y),
         }
     }
 }

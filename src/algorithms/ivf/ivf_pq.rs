@@ -44,11 +44,11 @@ impl IvfPq {
     }
 
     pub fn len(&self) -> u32 {
-        self.mmap.raw.len() as u32
+        self.mmap.raw.len()
     }
 
     pub fn vector(&self, i: u32) -> &[Scalar] {
-        &self.mmap.raw.vector(i)
+        self.mmap.raw.vector(i)
     }
 
     pub fn data(&self, i: u32) -> u64 {
@@ -277,12 +277,10 @@ pub fn search<F: FnMut(u64) -> bool>(
         while u32::MAX != j {
             let distance =
                 mmap.quantization
-                    .distance_with_delta(mmap.d, &vector, j, mmap.centroids(i));
+                    .distance_with_delta(mmap.d, vector, j, mmap.centroids(i));
             let data = mmap.raw.data(j);
-            if result.check(distance) {
-                if filter(data) {
-                    result.push(HeapElement { distance, data });
-                }
+            if result.check(distance) && filter(data) {
+                result.push(HeapElement { distance, data });
             }
             j = mmap.nexts[j as usize];
         }

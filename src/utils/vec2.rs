@@ -11,7 +11,7 @@ impl Vec2 {
     pub fn new(dims: u16, n: usize) -> Self {
         Self {
             dims,
-            v: unsafe { Box::new_zeroed_slice(dims as usize * n).assume_init() },
+            v: bytemuck::zeroed_slice_box(dims as usize * n),
         }
     }
     pub fn dims(&self) -> u16 {
