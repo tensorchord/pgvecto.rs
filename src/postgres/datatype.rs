@@ -10,8 +10,6 @@ use pgrx::Array;
 use pgrx::FromDatum;
 use pgrx::IntoDatum;
 use serde::{Deserialize, Serialize};
-use std::alloc::Allocator;
-use std::alloc::Global;
 use std::alloc::Layout;
 use std::cmp::Ordering;
 use std::ffi::CStr;
@@ -110,7 +108,7 @@ impl Vector {
         unsafe {
             assert!(u16::try_from(slice.len()).is_ok());
             let layout = Vector::layout(slice.len());
-            let ptr = Global.allocate(layout).unwrap().as_ptr() as *mut Vector;
+            let ptr = std::alloc::alloc(layout) as *mut Vector;
             std::ptr::addr_of_mut!((*ptr).varlena).write(Vector::varlena(layout.size()));
             std::ptr::addr_of_mut!((*ptr).len).write(slice.len() as u16);
             std::ptr::copy_nonoverlapping(slice.as_ptr(), (*ptr).phantom.as_mut_ptr(), slice.len());
@@ -132,7 +130,7 @@ impl Vector {
         unsafe {
             assert!(u16::try_from(len).is_ok());
             let layout = Vector::layout(len);
-            let ptr = std::alloc::Global.allocate_zeroed(layout).unwrap().as_ptr() as *mut Vector;
+            let ptr = std::alloc::alloc_zeroed(layout) as *mut Vector;
             std::ptr::addr_of_mut!((*ptr).varlena).write(Vector::varlena(layout.size()));
             std::ptr::addr_of_mut!((*ptr).len).write(len as u16);
             Box::from_raw(ptr)
@@ -404,7 +402,7 @@ fn vector_in(input: &CStr, _oid: Oid, typmod: i32) -> VectorOutput {
         }
         .friendly();
     }
-    if vector.len() == 0 || vector.len() > 65535 {
+    if vector.is_empty() || vector.len() > 65535 {
         FriendlyError::BadVecForDims.friendly();
     }
     if let Some(dims) = typmod.dims() {

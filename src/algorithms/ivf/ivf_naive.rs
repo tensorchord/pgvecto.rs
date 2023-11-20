@@ -44,11 +44,11 @@ impl IvfNaive {
     }
 
     pub fn len(&self) -> u32 {
-        self.mmap.raw.len() as u32
+        self.mmap.raw.len()
     }
 
     pub fn vector(&self, i: u32) -> &[Scalar] {
-        &self.mmap.raw.vector(i)
+        self.mmap.raw.vector(i)
     }
 
     pub fn data(&self, i: u32) -> u64 {
@@ -272,12 +272,10 @@ pub fn search<F: FnMut(u64) -> bool>(
     for i in lists.iter().map(|e| e.data as usize) {
         let mut j = mmap.heads[i];
         while u32::MAX != j {
-            let distance = mmap.quantization.distance(mmap.d, &vector, j);
+            let distance = mmap.quantization.distance(mmap.d, vector, j);
             let data = mmap.raw.data(j);
-            if result.check(distance) {
-                if filter(data) {
-                    result.push(HeapElement { distance, data });
-                }
+            if result.check(distance) && filter(data) {
+                result.push(HeapElement { distance, data });
             }
             j = mmap.nexts[j as usize];
         }

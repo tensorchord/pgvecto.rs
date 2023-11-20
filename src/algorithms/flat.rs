@@ -36,7 +36,7 @@ impl Flat {
     }
 
     pub fn vector(&self, i: u32) -> &[Scalar] {
-        &self.mmap.raw.vector(i)
+        self.mmap.raw.vector(i)
     }
 
     pub fn data(&self, i: u32) -> u64 {

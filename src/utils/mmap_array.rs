@@ -8,15 +8,14 @@ use std::path::PathBuf;
 pub struct MmapArray<T> {
     info: Information,
     outp: *const [T],
-    #[allow(unused)]
-    mmap: memmap2::Mmap,
+    _mmap: memmap2::Mmap,
 }
 
 impl<T> MmapArray<T>
 where
     T: Pod,
 {
-    pub fn create<I>(path: PathBuf, mut iter: I) -> Self
+    pub fn create<I>(path: PathBuf, iter: I) -> Self
     where
         I: Iterator<Item = T>,
     {
@@ -25,11 +24,11 @@ where
             .read(true)
             .write(true)
             .append(true)
-            .open(&path)
+            .open(path)
             .unwrap();
         let mut info = Information { len: 0 };
         let mut buffered = BufWriter::new(&file);
-        while let Some(data) = iter.next() {
+        for data in iter {
             buffered.write_all(bytemuck::bytes_of(&data)).unwrap();
             info.len += 1;
         }
@@ -39,14 +38,22 @@ where
         file.sync_all().unwrap();
         let mmap = unsafe { read_mmap(&file, info.len * std::mem::size_of::<T>()) };
         let outp = unsafe { std::slice::from_raw_parts(mmap.as_ptr() as *const T, info.len) };
-        Self { info, outp, mmap }
+        Self {
+            info,
+            outp,
+            _mmap: mmap,
+        }
     }
     pub fn open(path: PathBuf) -> Self {
-        let file = std::fs::OpenOptions::new().read(true).open(&path).unwrap();
+        let file = std::fs::OpenOptions::new().read(true).open(path).unwrap();
         let info = read_information(&file);
         let mmap = unsafe { read_mmap(&file, info.len * std::mem::size_of::<T>()) };
         let outp = unsafe { std::slice::from_raw_parts(mmap.as_ptr() as *const T, info.len) };
-        Self { info, outp, mmap }
+        Self {
+            info,
+            outp,
+            _mmap: mmap,
+        }
     }
     pub fn len(&self) -> usize {
         self.info.len

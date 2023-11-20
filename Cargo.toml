@@ -41,9 +41,9 @@ validator = { version = "0.16.1", features = ["derive"] }
 toml = "0.7.6"
 rayon = "1.6.1"
 uuid = { version = "1.4.1", features = ["serde"] }
-rustix = { version = "0.38.20", features = ["net", "mm", "shm"] }
+rustix = { version = "0.38.20", features = ["net", "mm"] }
 arc-swap = "1.6.0"
-bytemuck = "1.14.0"
+bytemuck = { version = "1.14.0", features = ["extern_crate_alloc"] }
 serde_with = "3.4.0"
 chrono = { version = "0.4.31", features = ["clock"] }
 chrono-tz = "0.8.4"
@@ -65,3 +65,10 @@ opt-level = 3
 lto = "fat"
 codegen-units = 1
 debug = true
+
+[lints.clippy]
+needless_range_loop = "allow"
+derivable_impls = "allow"
+unnecessary_literal_unwrap = "allow"
+too_many_arguments = "allow"
+unnecessary_unwrap = "allow"

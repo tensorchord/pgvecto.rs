@@ -26,7 +26,7 @@ pub unsafe fn futex_wake(futex: &AtomicU32) {
 pub fn memfd_create() -> std::io::Result<OwnedFd> {
     use rustix::fs::MemfdFlags;
     Ok(rustix::fs::memfd_create(
-        &format!(".memfd.VECTORS.{:x}", std::process::id()),
+        format!(".memfd.VECTORS.{:x}", std::process::id()),
         MemfdFlags::empty(),
     )?)
 }

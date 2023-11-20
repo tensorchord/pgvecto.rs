@@ -155,13 +155,11 @@ impl GrowingSegment {
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
             let distance = self.options.d.distance(vector, &log.vector);
-            if heap.check(distance) {
-                if filter(log.data) {
-                    heap.push(HeapElement {
-                        distance,
-                        data: log.data,
-                    });
-                }
+            if heap.check(distance) && filter(log.data) {
+                heap.push(HeapElement {
+                    distance,
+                    data: log.data,
+                });
             }
         }
         heap

@@ -2,10 +2,6 @@
 //!
 //! Provides an easy-to-use extension for vector similarity search.
 #![feature(core_intrinsics)]
-#![feature(allocator_api)]
-#![feature(new_uninit)]
-#![allow(clippy::complexity)]
-#![allow(clippy::style)]
 
 mod algorithms;
 mod bgworker;
@@ -22,7 +18,7 @@ pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
 
 #[allow(non_snake_case)]
 #[pgrx::pg_guard]
-pub unsafe extern "C" fn _PG_init() {
+unsafe extern "C" fn _PG_init() {
     use crate::prelude::*;
     if pgrx::pg_sys::IsUnderPostmaster {
         FriendlyError::BadInit.friendly();

@@ -13,31 +13,31 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-pub struct Bgworker {
+pub struct Worker {
     path: PathBuf,
-    protect: Mutex<BgworkerProtect>,
-    view: ArcSwap<BgworkerView>,
+    protect: Mutex<WorkerProtect>,
+    view: ArcSwap<WorkerView>,
 }
 
-impl Bgworker {
+impl Worker {
     pub fn create(path: PathBuf) -> Arc<Self> {
         std::fs::create_dir(&path).unwrap();
         std::fs::create_dir(path.join("indexes")).unwrap();
-        let startup = FileAtomic::create(path.join("startup"), BgworkerStartup::new());
+        let startup = FileAtomic::create(path.join("startup"), WorkerStartup::new());
         let indexes = HashMap::new();
-        let view = Arc::new(BgworkerView {
+        let view = Arc::new(WorkerView {
             indexes: indexes.clone(),
         });
-        let protect = BgworkerProtect { startup, indexes };
+        let protect = WorkerProtect { startup, indexes };
         sync_dir(&path);
-        Arc::new(Bgworker {
+        Arc::new(Worker {
             path,
             protect: Mutex::new(protect),
             view: ArcSwap::new(view),
         })
     }
     pub fn open(path: PathBuf) -> Arc<Self> {
-        let startup = FileAtomic::<BgworkerStartup>::open(path.join("startup"));
+        let startup = FileAtomic::<WorkerStartup>::open(path.join("startup"));
         clean(
             path.join("indexes"),
             startup.get().indexes.keys().map(|s| s.to_string()),
@@ -48,11 +48,11 @@ impl Bgworker {
             let index = Index::open(path, options.clone());
             indexes.insert(id, index);
         }
-        let view = Arc::new(BgworkerView {
+        let view = Arc::new(WorkerView {
             indexes: indexes.clone(),
         });
-        let protect = BgworkerProtect { startup, indexes };
-        Arc::new(Bgworker {
+        let protect = WorkerProtect { startup, indexes };
+        Arc::new(Worker {
             path,
             protect: Mutex::new(protect),
             view: ArcSwap::new(view),
@@ -68,7 +68,7 @@ impl Bgworker {
         &self,
         id: Id,
         search: (Vec<Scalar>, usize),
-        mut f: F,
+        f: F,
     ) -> Result<Vec<Pointer>, FriendlyError>
     where
         F: FnMut(Pointer) -> bool,
@@ -76,7 +76,7 @@ impl Bgworker {
         let view = self.view.load_full();
         let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
         let view = index.view();
-        match view.search(search.1, &search.0, |p| f(p)) {
+        match view.search(search.1, &search.0, f) {
             Ok(x) => Ok(x),
             Err(IndexSearchError::InvalidVector(x)) => Err(FriendlyError::BadVector(x)),
         }
@@ -117,24 +117,24 @@ impl Bgworker {
     }
 }
 
-struct BgworkerView {
+struct WorkerView {
     indexes: HashMap<Id, Arc<Index>>,
 }
 
-struct BgworkerProtect {
-    startup: FileAtomic<BgworkerStartup>,
+struct WorkerProtect {
+    startup: FileAtomic<WorkerStartup>,
     indexes: HashMap<Id, Arc<Index>>,
 }
 
-impl BgworkerProtect {
-    fn maintain(&mut self, swap: &ArcSwap<BgworkerView>) {
+impl WorkerProtect {
+    fn maintain(&mut self, swap: &ArcSwap<WorkerView>) {
         let indexes = self
             .indexes
             .iter()
             .map(|(&k, v)| (k, v.options().clone()))
             .collect();
-        self.startup.set(BgworkerStartup { indexes });
-        swap.swap(Arc::new(BgworkerView {
+        self.startup.set(WorkerStartup { indexes });
+        swap.swap(Arc::new(WorkerView {
             indexes: self.indexes.clone(),
         }));
     }
@@ -142,12 +142,12 @@ impl BgworkerProtect {
 
 #[serde_with::serde_as]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-struct BgworkerStartup {
+struct WorkerStartup {
     #[serde_as(as = "HashMap<DisplayFromStr, _>")]
     indexes: HashMap<Id, IndexOptions>,
 }
 
-impl BgworkerStartup {
+impl WorkerStartup {
     pub fn new() -> Self {
         Self {
             indexes: HashMap::new(),

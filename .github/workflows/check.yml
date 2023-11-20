@@ -37,6 +37,7 @@ env:
   RUST_BACKTRACE: 1
   SCCACHE_GHA_ENABLED: true
   RUSTC_WRAPPER: sccache
+  RUSTFLAGS: "-Dwarnings"
 
 jobs:
   matrix:
@@ -49,22 +50,17 @@ jobs:
         with:
           script: |
             let matrix;
-            if("${{ github.event_name }}" == "push" || "${{ github.event_name }}" == "pull_request"){
+            if ("${{ github.event_name }}" == "pull_request") {
               matrix = [
                 { version: 15, os: "ubuntu-latest" },
               ];
-            }
-            if("${{ github.event_name }}" == "merge_group" || "${{ github.event_name }}" == "workflow_dispatch"){
+            } else {
               matrix = [
                 { version: 12, os: "ubuntu-latest" },
                 { version: 13, os: "ubuntu-latest" },
                 { version: 14, os: "ubuntu-latest" },
                 { version: 15, os: "ubuntu-latest" },
                 { version: 16, os: "ubuntu-latest" },
-                { version: 12, os: "macos-latest" },
-                { version: 13, os: "macos-latest" },
-                { version: 14, os: "macos-latest" },
-                { version: 15, os: "macos-latest" },
               ];
             }
             core.setOutput('matrix', JSON.stringify(matrix));

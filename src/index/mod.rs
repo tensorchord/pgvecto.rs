@@ -230,8 +230,8 @@ pub struct IndexView {
 impl IndexView {
     #[allow(dead_code)]
     pub fn len(&self) -> u32 {
-        self.sealed.iter().map(|(_, x)| x.len()).sum::<u32>()
-            + self.growing.iter().map(|(_, x)| x.len()).sum::<u32>()
+        self.sealed.values().map(|x| x.len()).sum::<u32>()
+            + self.growing.values().map(|x| x.len()).sum::<u32>()
     }
     pub fn search<F: FnMut(Pointer) -> bool>(
         &self,
@@ -374,13 +374,8 @@ impl IndexProtect {
             write: self.write.clone(),
         });
         let startup_write = self.write.as_ref().map(|(uuid, _)| *uuid);
-        let startup_sealeds = self.sealed.iter().map(|(uuid, _)| *uuid).collect();
-        let startup_growings = self
-            .growing
-            .iter()
-            .map(|(uuid, _)| *uuid)
-            .chain(startup_write)
-            .collect();
+        let startup_sealeds = self.sealed.keys().copied().collect();
+        let startup_growings = self.growing.keys().copied().chain(startup_write).collect();
         self.startup.set(IndexStartup {
             sealeds: startup_sealeds,
             growings: startup_growings,

@@ -45,7 +45,7 @@ impl Hnsw {
     }
 
     pub fn vector(&self, i: u32) -> &[Scalar] {
-        &self.mmap.raw.vector(i)
+        self.mmap.raw.vector(i)
     }
 
     pub fn data(&self, i: u32) -> u64 {
@@ -430,8 +430,7 @@ pub fn search<F: FnMut(u64) -> bool>(
     let s = mmap.entry;
     let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
     let u = fast_search(mmap, 1..=levels, s, vector);
-    let result = local_search(mmap, k, u, &vector, filter);
-    result
+    local_search(mmap, k, u, vector, filter)
 }
 
 pub fn fast_search(mmap: &HnswMmap, levels: RangeInclusive<u8>, u: u32, vector: &[Scalar]) -> u32 {
@@ -554,7 +553,7 @@ impl Visited {
     fn new(capacity: usize) -> Self {
         Self {
             version: 0,
-            data: unsafe { Box::new_zeroed_slice(capacity).assume_init() },
+            data: bytemuck::zeroed_slice_box(capacity),
         }
     }
     fn new_version(&mut self) -> VisitedVersion<'_> {
