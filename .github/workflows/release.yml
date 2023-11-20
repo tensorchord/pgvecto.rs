@@ -132,7 +132,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
+          key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-pg${{ matrix.version }}
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Prepare

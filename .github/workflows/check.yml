@@ -81,7 +81,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
+          key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
           restore-keys: cargo-${{ matrix.os }}-pg${{ matrix.version }}
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Setup
@@ -107,4 +107,4 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.toml') }}
+          key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
