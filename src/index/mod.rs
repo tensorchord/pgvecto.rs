@@ -108,6 +108,7 @@ impl Index {
         });
         IndexBackground {
             index: Arc::downgrade(&index),
+            waiting_secs: options.optimizing.waiting_secs,
         }
         .spawn();
         index
@@ -178,6 +179,7 @@ impl Index {
         });
         IndexBackground {
             index: Arc::downgrade(&index),
+            waiting_secs: options.optimizing.waiting_secs,
         }
         .spawn();
         index
@@ -386,6 +388,7 @@ impl IndexProtect {
 
 pub struct IndexBackground {
     index: Weak<Index>,
+    waiting_secs: u64,
 }
 
 impl IndexBackground {
@@ -403,7 +406,7 @@ impl IndexBackground {
             pool.install(|| {
                 optimizing::indexing::optimizing_indexing(index.clone());
             });
-            std::thread::sleep(Duration::from_secs(60));
+            std::thread::sleep(Duration::from_secs(self.waiting_secs));
         }
     }
     pub fn spawn(self) {
