@@ -35,6 +35,7 @@ impl Delete {
                 }
             }
         }
+        wal.truncate();
         Arc::new(Self {
             version,
             wal: wal.into(),
