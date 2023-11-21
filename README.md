@@ -260,7 +260,7 @@ We also provide a view `pg_vector_index_info` to monitor the progress of indexin
 | relid           | oid    | The oid of the table.                        |
 | indexrelid      | oid    | The oid of the index.                        |
 | relname         | name   | The name of the table.                       |
-| indexname       | name   | The name of the index.                       |
+| indexrelname    | name   | The name of the index.                       |
 | idx_tuples      | float4 | The number of tuples.                        |
 | idx_tuples_done | int4   | The number of tuples that have been indexed. |
 | idx_config      | text   | The configuration of the index.              |
