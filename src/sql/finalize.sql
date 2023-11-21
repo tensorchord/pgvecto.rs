@@ -18,10 +18,10 @@ CREATE OPERATOR CLASS cosine_ops
 
 CREATE VIEW pg_vector_index_info AS
     SELECT
-        C.oid AS relid,
+        C.oid AS relid AS tablerelid,
         I.oid AS indexrelid,
-        C.relname AS relname,
-        I.relname AS indexrelname,
+        C.relname AS relname AS tablename,
+        I.relname AS indexrelname AS indexname,
         I.reltuples AS idx_tuples,
         vector_stat_tuples_done(I.oid) AS idx_tuples_done,
         vector_stat_config(I.oid) AS idx_config
