@@ -58,6 +58,18 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
+            RpcPacket::Stat { id } => RpcHandle::Stat {
+                id,
+                x: Stat {
+                    socket: self.socket,
+                },
+            },
+            RpcPacket::Config { id } => RpcHandle::Config {
+                id,
+                x: Config {
+                    socket: self.socket,
+                },
+            },
             RpcPacket::Leave {} => RpcHandle::Leave {},
         })
     }
@@ -91,6 +103,14 @@ pub enum RpcHandle {
     Destory {
         id: Id,
         x: Destory,
+    },
+    Stat {
+        id: Id,
+        x: Stat,
+    },
+    Config {
+        id: Id,
+        x: Config,
     },
     Leave {},
 }
@@ -187,6 +207,34 @@ pub struct Destory {
 impl Destory {
     pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
         let packet = DestoryPacket::Leave {};
+        self.socket.send(packet)?;
+        Ok(RpcHandler {
+            socket: self.socket,
+        })
+    }
+}
+
+pub struct Stat {
+    socket: Socket,
+}
+
+impl Stat {
+    pub fn leave(mut self, result: Result<u32, FriendlyError>) -> Result<RpcHandler, IpcError> {
+        let packet = StatPacket::Leave { result };
+        self.socket.send(packet)?;
+        Ok(RpcHandler {
+            socket: self.socket,
+        })
+    }
+}
+
+pub struct Config {
+    socket: Socket,
+}
+
+impl Config {
+    pub fn leave(mut self, result: Result<String, FriendlyError>) -> Result<RpcHandler, IpcError> {
+        let packet = ConfigPacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
             socket: self.socket,

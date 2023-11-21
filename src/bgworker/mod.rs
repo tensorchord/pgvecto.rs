@@ -126,6 +126,14 @@ fn thread_session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), Ip
                 worker.call_destory(id);
                 handler = x.leave()?;
             }
+            RpcHandle::Stat { id, x } => {
+                let result = worker.call_stat(id);
+                handler = x.leave(result)?;
+            }
+            RpcHandle::Config { id, x } => {
+                let result = worker.call_config(id);
+                handler = x.leave(result)?;
+            }
             RpcHandle::Leave {} => {
                 log::debug!("Handle leave rpc.");
                 break;
