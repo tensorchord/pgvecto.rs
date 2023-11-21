@@ -133,6 +133,12 @@ impl Worker {
         let len = index.view().sealed_len();
         Ok(len)
     }
+    pub fn call_config(&self, id: Id) -> Result<String, FriendlyError> {
+        let view = self.view.load_full();
+        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
+        let config = serde_json::to_string(index.options()).unwrap();
+        Ok(config)
+    }
 }
 
 struct WorkerView {

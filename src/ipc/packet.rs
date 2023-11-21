@@ -29,6 +29,9 @@ pub enum RpcPacket {
     Stat {
         id: Id,
     },
+    Config {
+        id: Id,
+    },
     Leave {},
 }
 
@@ -81,4 +84,11 @@ pub enum SearchCheckPacket {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StatPacket {
     Leave { result: Result<u32, FriendlyError> },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ConfigPacket {
+    Leave {
+        result: Result<String, FriendlyError>,
+    },
 }

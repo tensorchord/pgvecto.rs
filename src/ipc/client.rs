@@ -69,6 +69,12 @@ impl Rpc {
         let StatPacket::Leave { result } = self.socket.recv::<StatPacket>()?;
         Ok(result)
     }
+    pub fn config(&mut self, id: Id) -> Result<Result<String, FriendlyError>, IpcError> {
+        let packet = RpcPacket::Config { id };
+        self.socket.send(packet)?;
+        let ConfigPacket::Leave { result } = self.socket.recv::<ConfigPacket>()?;
+        Ok(result)
+    }
 }
 
 pub enum SearchHandle {
