@@ -188,6 +188,7 @@ Options for table `optimizing`.
 | Key                | Type    | Description                                                                 |
 | ------------------ | ------- | --------------------------------------------------------------------------- |
 | optimizing_threads | integer | Maximum threads for indexing. Default value is the sqrt of number of cores. |
+| waiting_secs       | integer | Waiting seconds for indexing. Default value is `60`.                        |
 
 Options for table `indexing`.
 
@@ -253,6 +254,17 @@ If you want to disable vector indexing or prefilter, we also offer some GUC opti
 - `vectors.enable_vector_index`: Enable or disable the vector index. Default value is `on`.
 - `vectors.enable_prefilter`: Enable or disable the prefilter. Default value is `on`.
 
+We provide a view `vector_index_progress` to monitor the progress of indexing.
+
+| Column          | Type   | Description                                  |
+| --------------- | ------ | -------------------------------------------- |
+| relid           | oid    | The oid of the table.                        |
+| indexrelid      | oid    | The oid of the index.                        |
+| relname         | name   | The name of the table.                       |
+| indexname       | name   | The name of the index.                       |
+| idx_tuples      | float4 | The number of tuples.                        |
+| idx_tuples_done | int4   | The number of tuples that have been indexed. |
+ 
 ## Limitations
 
 - The filtering process is not yet optimized. To achieve optimal performance, you may need to manually experiment with different strategies. For example, you can try searching without a vector index or implementing post-filtering techniques like the following query: `select * from (select * from items ORDER BY embedding <-> '[3,2,1]' LIMIT 100 ) where category = 1`. This involves using approximate nearest neighbor (ANN) search to obtain enough results and then applying filtering afterwards.
