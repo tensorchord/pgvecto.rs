@@ -253,7 +253,7 @@ If you want to disable vector indexing or prefilter, we also offer some GUC opti
 - `vectors.enable_vector_index`: Enable or disable the vector index. Default value is `on`.
 - `vectors.enable_prefilter`: Enable or disable the prefilter. Default value is `on`.
 
-We provide a view `vector_index_progress` to monitor the progress of indexing.
+We also provide a view `pg_vector_index_info` to monitor the progress of indexing.
 
 | Column          | Type   | Description                                  |
 | --------------- | ------ | -------------------------------------------- |
@@ -263,6 +263,7 @@ We provide a view `vector_index_progress` to monitor the progress of indexing.
 | indexname       | name   | The name of the index.                       |
 | idx_tuples      | float4 | The number of tuples.                        |
 | idx_tuples_done | int4   | The number of tuples that have been indexed. |
+| idx_config      | text   | The configuration of the index.              |
  
 ## Limitations
 

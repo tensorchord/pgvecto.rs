@@ -16,14 +16,15 @@ CREATE OPERATOR CLASS cosine_ops
     FOR TYPE vector USING vectors AS
     OPERATOR 1 <=> (vector, vector) FOR ORDER BY float_ops;
 
-CREATE VIEW vector_index_progress AS
+CREATE VIEW pg_vector_index_info AS
     SELECT
         C.oid AS relid,
         I.oid AS indexrelid,
         C.relname AS relname,
         I.relname AS indexrelname,
         I.reltuples AS idx_tuples,
-        vector_stat_tuples_done(I.oid) AS idx_tuples_done
+        vector_stat_tuples_done(I.oid) AS idx_tuples_done,
+        vector_stat_config(I.oid) AS idx_config
     FROM pg_class C JOIN
          pg_index X ON C.oid = X.indrelid JOIN
          pg_class I ON I.oid = X.indexrelid JOIN
