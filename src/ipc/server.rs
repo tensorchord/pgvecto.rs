@@ -209,10 +209,7 @@ pub struct Stat {
 }
 
 impl Stat {
-    pub fn leave(
-        mut self,
-        result: Result<u32, FriendlyError>,
-    ) -> Result<RpcHandler, IpcError> {
+    pub fn leave(mut self, result: Result<u32, FriendlyError>) -> Result<RpcHandler, IpcError> {
         let packet = StatPacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
