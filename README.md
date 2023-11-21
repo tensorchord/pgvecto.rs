@@ -188,7 +188,6 @@ Options for table `optimizing`.
 | Key                | Type    | Description                                                                 |
 | ------------------ | ------- | --------------------------------------------------------------------------- |
 | optimizing_threads | integer | Maximum threads for indexing. Default value is the sqrt of number of cores. |
-| waiting_secs       | integer | Waiting seconds for indexing. Default value is `60`.                        |
 
 Options for table `indexing`.
 
