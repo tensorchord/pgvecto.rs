@@ -80,7 +80,5 @@ pub enum SearchCheckPacket {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StatPacket {
-    Leave {
-        result: Result<u32, FriendlyError>,
-    },
+    Leave { result: Result<u32, FriendlyError> },
 }
