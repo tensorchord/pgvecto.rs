@@ -235,6 +235,9 @@ impl IndexView {
         self.sealed.values().map(|x| x.len()).sum::<u32>()
             + self.growing.values().map(|x| x.len()).sum::<u32>()
     }
+    pub fn sealed_len(&self) -> u32 {
+        self.sealed.values().map(|x| x.len()).sum::<u32>()
+    }
     pub fn search<F: FnMut(Pointer) -> bool>(
         &self,
         k: usize,

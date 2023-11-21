@@ -115,6 +115,12 @@ impl Worker {
         protect.indexes.remove(&id);
         protect.maintain(&self.view);
     }
+    pub fn call_stat(&self, id: Id) -> Result<u32, FriendlyError> {
+        let view = self.view.load_full();
+        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
+        let len = index.view().sealed_len();
+        Ok(len)
+    }
 }
 
 struct WorkerView {
