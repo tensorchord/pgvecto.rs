@@ -47,7 +47,7 @@ impl Worker {
     }
     pub fn open(path: PathBuf) -> Arc<Self> {
         let startup = FileAtomic::<WorkerStartup>::open(path.join("startup"));
-        if !check(&std::fs::read(path.join("magic")).unwrap_or(Vec::new())) {
+        if !check(&std::fs::read(path.join("magic")).unwrap_or_default()) {
             panic!("Please delete the directory pg_vectors in Postgresql data folder. The files are created by older versions of postgresql or broken.");
         }
         clean(
