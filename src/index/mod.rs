@@ -243,10 +243,10 @@ pub struct IndexView {
 }
 
 impl IndexView {
-    #[allow(dead_code)]
     pub fn len(&self) -> u32 {
         self.sealed.values().map(|x| x.len()).sum::<u32>()
             + self.growing.values().map(|x| x.len()).sum::<u32>()
+            + self.write.as_ref().map(|x| x.1.len()).unwrap_or(0)
     }
     pub fn sealed_len(&self) -> u32 {
         self.sealed.values().map(|x| x.len()).sum::<u32>()

@@ -254,16 +254,19 @@ If you want to disable vector indexing or prefilter, we also offer some GUC opti
 - `vectors.enable_prefilter`: Enable or disable the prefilter. Default value is `on`.
 
 We also provide a view `pg_vector_index_info` to monitor the progress of indexing.
+Note that whether idx_tuples_done is equal to idx_tuples doesn't relate to the completion of indexing.
+It may do further optimization after indexing. It may also stop indexing because there are too few tuples left.
 
-| Column          | Type   | Description                                  |
-| --------------- | ------ | -------------------------------------------- |
-| tablerelid      | oid    | The oid of the table.                        |
-| indexrelid      | oid    | The oid of the index.                        |
-| tablename       | name   | The name of the table.                       |
-| indexname       | name   | The name of the index.                       |
-| idx_tuples      | float4 | The number of tuples.                        |
-| idx_tuples_done | int4   | The number of tuples that have been indexed. |
-| idx_config      | text   | The configuration of the index.              |
+| Column          | Type | Description                                  |
+| --------------- | ---- | -------------------------------------------- |
+| tablerelid      | oid  | The oid of the table.                        |
+| indexrelid      | oid  | The oid of the index.                        |
+| tablename       | name | The name of the table.                       |
+| indexname       | name | The name of the index.                       |
+| idx_indexing    | bool | Whether the background worker is indexing.   |
+| idx_tuples      | int4 | The number of tuples.                        |
+| idx_tuples_done | int4 | The number of tuples that have been indexed. |
+| idx_config      | text | The configuration of the index.              |
  
 ## Limitations
 
