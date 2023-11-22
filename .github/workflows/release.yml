@@ -231,4 +231,15 @@ jobs:
           build-args: |
             TAG=pg${{ matrix.version }}-${{ needs.setup.outputs.version }}
             POSTGRES_VERSION=${{ matrix.version }}
-          tags: tensorchord/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}, tensorchord/pgvecto-rs:latest
+          tags: tensorchord/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}, tensorchord/pgvecto-rs:pg${{ matrix.version }}-latest      
+      - name: Set postgres 16 image as the latest
+        uses: docker/build-push-action@v4
+        with:
+          context: .          
+          push: true
+          platforms: "linux/amd64,linux/arm64"
+          file: ./docker/pgvecto-rs.Dockerfile
+          build-args: |
+            TAG=pg16-${{ needs.setup.outputs.version }}
+            POSTGRES_VERSION=16
+          tags: tensorchord/pgvecto-rs:latest
