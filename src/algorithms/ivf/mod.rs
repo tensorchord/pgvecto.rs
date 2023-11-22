@@ -63,17 +63,17 @@ impl Ivf {
         }
     }
 
-    pub fn data(&self, i: u32) -> u64 {
+    pub fn payload(&self, i: u32) -> Payload {
         match self {
-            Ivf::Naive(x) => x.data(i),
-            Ivf::Pq(x) => x.data(i),
+            Ivf::Naive(x) => x.payload(i),
+            Ivf::Pq(x) => x.payload(i),
         }
     }
 
-    pub fn search<F: FnMut(u64) -> bool>(&self, k: usize, vector: &[Scalar], filter: F) -> Heap {
+    pub fn search<F: FnMut(Payload) -> bool>(&self, k: usize, vector: &[Scalar], f: F) -> Heap {
         match self {
-            Ivf::Naive(x) => x.search(k, vector, filter),
-            Ivf::Pq(x) => x.search(k, vector, filter),
+            Ivf::Naive(x) => x.search(k, vector, f),
+            Ivf::Pq(x) => x.search(k, vector, f),
         }
     }
 }

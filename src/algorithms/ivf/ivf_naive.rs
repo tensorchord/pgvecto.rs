@@ -51,12 +51,12 @@ impl IvfNaive {
         self.mmap.raw.vector(i)
     }
 
-    pub fn data(&self, i: u32) -> u64 {
-        self.mmap.raw.data(i)
+    pub fn payload(&self, i: u32) -> Payload {
+        self.mmap.raw.payload(i)
     }
 
-    pub fn search<F: FnMut(u64) -> bool>(&self, k: usize, vector: &[Scalar], filter: F) -> Heap {
-        search(&self.mmap, k, vector, filter)
+    pub fn search<F: FnMut(Payload) -> bool>(&self, k: usize, vector: &[Scalar], f: F) -> Heap {
+        search(&self.mmap, k, vector, f)
     }
 }
 
@@ -248,11 +248,11 @@ pub fn load(path: PathBuf, options: IndexOptions) -> IvfMmap {
     }
 }
 
-pub fn search<F: FnMut(u64) -> bool>(
+pub fn search<F: FnMut(Payload) -> bool>(
     mmap: &IvfMmap,
     k: usize,
     vector: &[Scalar],
-    mut filter: F,
+    mut f: F,
 ) -> Heap {
     let mut target = vector.to_vec();
     mmap.d.elkan_k_means_normalize(&mut target);
@@ -263,19 +263,19 @@ pub fn search<F: FnMut(u64) -> bool>(
         if lists.check(distance) {
             lists.push(HeapElement {
                 distance,
-                data: i as u64,
+                payload: i as Payload,
             });
         }
     }
     let lists = lists.into_sorted_vec();
     let mut result = Heap::new(k);
-    for i in lists.iter().map(|e| e.data as usize) {
+    for i in lists.iter().map(|e| e.payload as usize) {
         let mut j = mmap.heads[i];
         while u32::MAX != j {
             let distance = mmap.quantization.distance(mmap.d, vector, j);
-            let data = mmap.raw.data(j);
-            if result.check(distance) && filter(data) {
-                result.push(HeapElement { distance, data });
+            let payload = mmap.raw.payload(j);
+            if result.check(distance) && f(payload) {
+                result.push(HeapElement { distance, payload });
             }
             j = mmap.nexts[j as usize];
         }

@@ -92,11 +92,11 @@ impl AbstractIndexing for IvfIndexing {
         self.raw.vector(i)
     }
 
-    fn data(&self, i: u32) -> u64 {
-        self.raw.data(i)
+    fn payload(&self, i: u32) -> Payload {
+        self.raw.payload(i)
     }
 
-    fn search<F: FnMut(u64) -> bool>(&self, k: usize, vector: &[Scalar], filter: F) -> Heap {
-        self.raw.search(k, vector, filter)
+    fn search<F: FnMut(Payload) -> bool>(&self, k: usize, vector: &[Scalar], f: F) -> Heap {
+        self.raw.search(k, vector, f)
     }
 }

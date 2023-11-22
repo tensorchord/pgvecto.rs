@@ -265,8 +265,8 @@ impl IndexView {
             }
         }
 
-        let mut filter = |data| {
-            if let Some(p) = self.delete.check(data) {
+        let mut filter = |payload| {
+            if let Some(p) = self.delete.check(payload) {
                 f(p)
             } else {
                 false
@@ -296,16 +296,16 @@ impl IndexView {
         Ok(result
             .into_sorted_vec()
             .iter()
-            .map(|x| Pointer::from_u48(x.data >> 16))
+            .map(|x| Pointer::from_u48(x.payload >> 16))
             .collect())
     }
     pub fn insert(&self, vector: Vec<Scalar>, pointer: Pointer) -> Result<(), IndexInsertError> {
         if self.options.vector.dims as usize != vector.len() {
             return Err(IndexInsertError::InvalidVector(vector));
         }
-        let data = (pointer.as_u48() << 16) | self.delete.version(pointer) as u64;
+        let payload = (pointer.as_u48() << 16) | self.delete.version(pointer) as Payload;
         if let Some((_, growing)) = self.write.as_ref() {
-            Ok(growing.insert(vector, data)?)
+            Ok(growing.insert(vector, payload)?)
         } else {
             Err(IndexInsertError::OutdatedView(None))
         }
@@ -314,7 +314,7 @@ impl IndexView {
         for (_, sealed) in self.sealed.iter() {
             let n = sealed.len();
             for i in 0..n {
-                if let Some(p) = self.delete.check(sealed.data(i)) {
+                if let Some(p) = self.delete.check(sealed.payload(i)) {
                     if f(p) {
                         self.delete.delete(p);
                     }
@@ -324,7 +324,7 @@ impl IndexView {
         for (_, growing) in self.growing.iter() {
             let n = growing.len();
             for i in 0..n {
-                if let Some(p) = self.delete.check(growing.data(i)) {
+                if let Some(p) = self.delete.check(growing.payload(i)) {
                     if f(p) {
                         self.delete.delete(p);
                     }
@@ -334,7 +334,7 @@ impl IndexView {
         if let Some((_, write)) = &self.write {
             let n = write.len();
             for i in 0..n {
-                if let Some(p) = self.delete.check(write.data(i)) {
+                if let Some(p) = self.delete.check(write.payload(i)) {
                     if f(p) {
                         self.delete.delete(p);
                     }

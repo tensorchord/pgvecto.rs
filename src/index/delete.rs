@@ -41,11 +41,11 @@ impl Delete {
             wal: wal.into(),
         })
     }
-    pub fn check(&self, data: u64) -> Option<Pointer> {
-        let pointer = Pointer::from_u48(data >> 16);
+    pub fn check(&self, payload: Payload) -> Option<Pointer> {
+        let pointer = Pointer::from_u48(payload >> 16);
         match self.version.get(&pointer) {
             Some(e) => {
-                if (data as u16) == *e {
+                if (payload as u16) == *e {
                     Some(pointer)
                 } else {
                     None

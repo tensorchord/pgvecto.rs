@@ -48,12 +48,12 @@ impl Hnsw {
         self.mmap.raw.vector(i)
     }
 
-    pub fn data(&self, i: u32) -> u64 {
-        self.mmap.raw.data(i)
+    pub fn payload(&self, i: u32) -> Payload {
+        self.mmap.raw.payload(i)
     }
 
-    pub fn search<F: FnMut(u64) -> bool>(&self, k: usize, vector: &[Scalar], filter: F) -> Heap {
-        search(&self.mmap, k, vector, filter)
+    pub fn search<F: FnMut(Payload) -> bool>(&self, k: usize, vector: &[Scalar], f: F) -> Heap {
+        search(&self.mmap, k, vector, f)
     }
 }
 
@@ -421,16 +421,16 @@ pub fn load(path: PathBuf, options: IndexOptions) -> HnswMmap {
     }
 }
 
-pub fn search<F: FnMut(u64) -> bool>(
+pub fn search<F: FnMut(Payload) -> bool>(
     mmap: &HnswMmap,
     k: usize,
     vector: &[Scalar],
-    filter: F,
+    f: F,
 ) -> Heap {
     let s = mmap.entry;
     let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
     let u = fast_search(mmap, 1..=levels, s, vector);
-    local_search(mmap, k, u, vector, filter)
+    local_search(mmap, k, u, vector, f)
 }
 
 pub fn fast_search(mmap: &HnswMmap, levels: RangeInclusive<u8>, u: u32, vector: &[Scalar]) -> u32 {
@@ -454,12 +454,12 @@ pub fn fast_search(mmap: &HnswMmap, levels: RangeInclusive<u8>, u: u32, vector: 
     u
 }
 
-pub fn local_search<F: FnMut(u64) -> bool>(
+pub fn local_search<F: FnMut(Payload) -> bool>(
     mmap: &HnswMmap,
     k: usize,
     s: u32,
     vector: &[Scalar],
-    mut filter: F,
+    mut f: F,
 ) -> Heap {
     assert!(k > 0);
     let mut visited = mmap.visited.acquire();
@@ -469,10 +469,10 @@ pub fn local_search<F: FnMut(u64) -> bool>(
     let s_dis = mmap.quantization.distance(mmap.d, vector, s);
     visited.set(s as usize);
     candidates.push(Reverse((s_dis, s)));
-    if filter(mmap.raw.data(s)) {
+    if f(mmap.raw.payload(s)) {
         results.push(HeapElement {
             distance: s_dis,
-            data: mmap.raw.data(s),
+            payload: mmap.raw.payload(s),
         });
     }
     while let Some(Reverse((u_dis, u))) = candidates.pop() {
@@ -488,10 +488,10 @@ pub fn local_search<F: FnMut(u64) -> bool>(
             let v_dis = mmap.quantization.distance(mmap.d, vector, v);
             if results.check(v_dis) {
                 candidates.push(Reverse((v_dis, v)));
-                if filter(mmap.raw.data(v)) {
+                if f(mmap.raw.payload(v)) {
                     results.push(HeapElement {
                         distance: v_dis,
-                        data: mmap.raw.data(v),
+                        payload: mmap.raw.payload(v),
                     });
                 }
             }
