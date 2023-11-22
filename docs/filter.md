@@ -9,6 +9,6 @@ The actual performance of filtering depends on how tight your condition is:
 vector index have already met the filter criteria.
 
 To select different mode:
-Prefiltering (default mode): SET vectors.enable_vector_index=on; SET vectors.enable_prefilter=on
-Postfiltering: SET vectors.enable_vector_index=on; SET vectors.enable_prefilter=off
-Brute force: SET vectors.enable_vector_index=off
+Prefiltering (default mode): `SET vectors.enable_vector_index=on; SET vectors.enable_prefilter=on`
+Postfiltering: `SET vectors.enable_vector_index=on; SET vectors.enable_prefilter=off`
+Brute force: `SET vectors.enable_vector_index=off`
