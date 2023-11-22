@@ -14,6 +14,8 @@ use crate::prelude::*;
 use crate::utils::clean::clean;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::file_atomic::FileAtomic;
+use crate::utils::os::futex_wait;
+use crate::utils::os::futex_wake;
 use arc_swap::ArcSwap;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
@@ -23,6 +25,8 @@ use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::PathBuf;
+use std::sync::atomic::AtomicU32;
+use std::sync::atomic::Ordering::Relaxed;
 use std::sync::{Arc, Weak};
 use thiserror::Error;
 use uuid::Uuid;
@@ -69,6 +73,9 @@ pub struct Index {
     delete: Arc<Delete>,
     protect: Mutex<IndexProtect>,
     view: ArcSwap<IndexView>,
+    // the first bit represents whether it is indexing
+    // the second bit represents whether there is new data
+    state: AtomicU32,
     _tracker: Arc<IndexTracker>,
 }
 
@@ -103,6 +110,7 @@ impl Index {
                 delete: delete.clone(),
                 write: None,
             })),
+            state: AtomicU32::new(0),
             _tracker: Arc::new(IndexTracker { path }),
         });
         IndexBackground {
@@ -173,6 +181,7 @@ impl Index {
                 growing,
                 write: None,
             })),
+            state: AtomicU32::new(0),
             _tracker: tracker,
         });
         IndexBackground {
@@ -204,6 +213,13 @@ impl Index {
         );
         protect.write = Some((write_segment_uuid, write_segment));
         protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
+        self.state.fetch_or(0b10, Relaxed);
+        unsafe {
+            futex_wake(&self.state);
+        }
+    }
+    pub fn indexing(&self) -> bool {
+        self.state.load(Relaxed) != 0
     }
 }
 
@@ -402,9 +418,14 @@ impl IndexBackground {
             return;
         }
         while let Some(index) = self.index.upgrade() {
-            pool.install(|| {
-                optimizing::indexing::optimizing_indexing(index.clone());
-            });
+            index.state.store(1, Relaxed);
+            let done = pool.install(|| optimizing::indexing::optimizing_indexing(index.clone()));
+            if done {
+                index.state.fetch_xor(1, Relaxed);
+                unsafe {
+                    futex_wait(&index.state, 0);
+                }
+            }
         }
     }
     pub fn spawn(self) {

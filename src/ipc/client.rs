@@ -63,16 +63,28 @@ impl Rpc {
         let DestoryPacket::Leave {} = self.socket.recv::<DestoryPacket>()?;
         Ok(())
     }
-    pub fn stat(&mut self, id: Id) -> Result<Result<u32, FriendlyError>, IpcError> {
-        let packet = RpcPacket::Stat { id };
+    pub fn stat_indexing(&mut self, id: Id) -> Result<Result<bool, FriendlyError>, IpcError> {
+        let packet = RpcPacket::StatIndexing { id };
         self.socket.send(packet)?;
-        let StatPacket::Leave { result } = self.socket.recv::<StatPacket>()?;
+        let StatIndexingPacket::Leave { result } = self.socket.recv::<StatIndexingPacket>()?;
         Ok(result)
     }
-    pub fn config(&mut self, id: Id) -> Result<Result<String, FriendlyError>, IpcError> {
-        let packet = RpcPacket::Config { id };
+    pub fn stat_tuples(&mut self, id: Id) -> Result<Result<u32, FriendlyError>, IpcError> {
+        let packet = RpcPacket::StatTuples { id };
         self.socket.send(packet)?;
-        let ConfigPacket::Leave { result } = self.socket.recv::<ConfigPacket>()?;
+        let StatTuplesPacket::Leave { result } = self.socket.recv::<StatTuplesPacket>()?;
+        Ok(result)
+    }
+    pub fn stat_tuples_done(&mut self, id: Id) -> Result<Result<u32, FriendlyError>, IpcError> {
+        let packet = RpcPacket::StatTuplesDone { id };
+        self.socket.send(packet)?;
+        let StatTuplesDonePacket::Leave { result } = self.socket.recv::<StatTuplesDonePacket>()?;
+        Ok(result)
+    }
+    pub fn stat_config(&mut self, id: Id) -> Result<Result<String, FriendlyError>, IpcError> {
+        let packet = RpcPacket::StatConfig { id };
+        self.socket.send(packet)?;
+        let StatConfigPacket::Leave { result } = self.socket.recv::<StatConfigPacket>()?;
         Ok(result)
     }
 }

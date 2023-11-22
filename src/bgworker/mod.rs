@@ -117,12 +117,20 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                 worker.call_destory(id);
                 handler = x.leave()?;
             }
-            RpcHandle::Stat { id, x } => {
-                let result = worker.call_stat(id);
+            RpcHandle::StatIndexing { id, x } => {
+                let result = worker.call_stat_indexing(id);
                 handler = x.leave(result)?;
             }
-            RpcHandle::Config { id, x } => {
-                let result = worker.call_config(id);
+            RpcHandle::StatTuples { id, x } => {
+                let result = worker.call_stat_tuples(id);
+                handler = x.leave(result)?;
+            }
+            RpcHandle::StatTuplesDone { id, x } => {
+                let result = worker.call_stat_tuples_done(id);
+                handler = x.leave(result)?;
+            }
+            RpcHandle::StatConfig { id, x } => {
+                let result = worker.call_stat_config(id);
                 handler = x.leave(result)?;
             }
             RpcHandle::Leave {} => {

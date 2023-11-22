@@ -39,7 +39,7 @@ impl Seg {
     }
 }
 
-pub fn optimizing_indexing(index: Arc<Index>) {
+pub fn optimizing_indexing(index: Arc<Index>) -> bool {
     use Seg::*;
     let segs = {
         let mut all_segs = {
@@ -60,11 +60,8 @@ pub fn optimizing_indexing(index: Arc<Index>) {
                 break;
             }
         }
-        if segs_len < index.options.segment.min_sealed_segment_size as u64 {
-            return;
-        }
-        if segs.len() < 3 {
-            return;
+        if segs_len < index.options.segment.min_sealed_segment_size as u64 || segs.len() < 3 {
+            return true;
         }
         segs
     };
@@ -78,7 +75,7 @@ pub fn optimizing_indexing(index: Arc<Index>) {
             if protect.growing.contains_key(&seg.uuid()) {
                 continue;
             }
-            return;
+            return false;
         }
         for seg in segs.iter() {
             protect.sealed.remove(&seg.uuid());
@@ -87,6 +84,7 @@ pub fn optimizing_indexing(index: Arc<Index>) {
         protect.sealed.insert(sealed_segment.uuid(), sealed_segment);
         protect.maintain(index.options.clone(), index.delete.clone(), &index.view);
     }
+    false
 }
 
 fn merge(index: &Arc<Index>, segs: &[Seg]) -> Arc<SealedSegment> {

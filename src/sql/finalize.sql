@@ -22,7 +22,8 @@ CREATE VIEW pg_vector_index_info AS
         I.oid AS indexrelid,
         C.relname AS tablename,
         I.relname AS indexname,
-        I.reltuples AS idx_tuples,
+        vector_stat_indexing(I.oid) AS idx_indexing,
+        vector_stat_tuples(I.oid) AS idx_tuples,
         vector_stat_tuples_done(I.oid) AS idx_tuples_done,
         vector_stat_config(I.oid) AS idx_config
     FROM pg_class C JOIN
