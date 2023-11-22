@@ -42,6 +42,15 @@ extern "C" fn vectors_main(_arg: pgrx::pg_sys::Datum) {
     let _ = std::panic::catch_unwind(crate::bgworker::main);
 }
 
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+compile_error!("Target is not supported.");
+
+#[cfg(not(target_endian = "little"))]
+compile_error!("Target is not supported.");
+
+#[cfg(not(target_pointer_width = "64"))]
+compile_error!("Target is not supported.");
+
 /// This module is required by `cargo pgrx test` invocations.
 /// It must be visible at the root of your extension crate.
 #[cfg(test)]

@@ -1,3 +1,4 @@
+use crate::ipc::IpcError;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -84,6 +85,12 @@ impl FriendlyError {
     }
 }
 
+impl IpcError {
+    pub fn friendly(self) -> ! {
+        panic!("pgvecto.rs: {}", self);
+    }
+}
+
 pub trait Friendly {
     type Output;
 
@@ -91,6 +98,17 @@ pub trait Friendly {
 }
 
 impl<T> Friendly for Result<T, FriendlyError> {
+    type Output = T;
+
+    fn friendly(self) -> T {
+        match self {
+            Ok(x) => x,
+            Err(e) => e.friendly(),
+        }
+    }
+}
+
+impl<T> Friendly for Result<T, IpcError> {
     type Output = T;
 
     fn friendly(self) -> T {
