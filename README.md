@@ -16,7 +16,7 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 - 💃 **Easy to use**: pgvecto.rs is a Postgres extension, which means that you can use it directly within your existing database. This makes it easy to integrate into your existing workflows and applications.
 - 🔗 **Blazing fast indexing**: pgvecto.rs is fast not only at index creation, but also at insertion with an index. With async creation support, enjoy your search immediately.
 - 🥅 **Filtering**: pgvecto.rs supports filtering. You can set conditions when searching or retrieving points. This is the missing feature of other postgres extensions.
-- 🧮 **Quantization**: pgvecto.rs supports scalar quantization and product qutization up to 16x.
+- 🧮 **Quantization**: pgvecto.rs supports scalar quantization and product qutization up to 64x.
 - 🦀 **Rewrite in Rust**: Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
 
 ## Comparison with pgvector
@@ -27,7 +27,7 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 | Sufficient Result with Delete/Update/Filter | ✅                                  | ⚠️                       |
 | Vector Dimension Limit                      | 65535                               | 2000                     |
 | Prefilter on HNSW                           | ✅                                  | ❌                       |
-| Parallel ans Async Index build              | ⚡️ Linearly faster with more cores | 🐌 Only single core used |
+| Parallel and Async Index build              | ⚡️ Linearly faster with more cores | 🐌 Only single core used |
 | Quantization                                | Scalar/Product Quantization         | ❌                       |
 
 And based on our benchmark, pgvecto.rs can be up to 2x faster than pgvector on hnsw indexes with same configurations. Read more about the comparison at [here](./docs/comparison-pgvector.md).
@@ -225,6 +225,9 @@ Options for table `product`.
 
 <details>
 <summary>[Advanced] Segment and Optimization Settings</summary>
+
+Docs can be found at [docs/indexing.md](docs/indexing.md)
+
 Options for table `segment`.
 
 | Key                      | Type    | Description                                                         |
@@ -254,7 +257,7 @@ SET LOCAL vectors.k = 32;
 
 If you want to disable vector indexing or prefilter, we also offer some GUC options:
 - `vectors.enable_vector_index`: Enable or disable the vector index. Default value is `on`.
-- `vectors.enable_prefilter`: Enable or disable the prefilter. Default value is `on`.
+- `vectors.enable_prefilter`: Enable or disable the prefilter. Default value is `off`.
 More detailed doc at [./docs/filter.md] and issue [#113](https://github.com/tensorchord/pgvecto.rs/issues/113).
 
 ## Setting up the development environment

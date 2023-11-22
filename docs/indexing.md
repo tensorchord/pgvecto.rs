@@ -1,0 +1,3 @@
+# Indexing
+
+pgvecto.rs constructs the index asynchrnously to ensure the performance of insertion.When you insert new rows into the table, they will first be placed in an append-only file. The background thread will periodically merge the newly inserted row with the existing segments. When a user performs any search prior to the merge process, it scans the append-only file to ensure accuracy and consistency.
