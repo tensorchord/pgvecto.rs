@@ -52,11 +52,11 @@ impl AbstractIndexing for FlatIndexing {
         self.raw.vector(i)
     }
 
-    fn data(&self, i: u32) -> u64 {
-        self.raw.data(i)
+    fn payload(&self, i: u32) -> Payload {
+        self.raw.payload(i)
     }
 
-    fn search<F: FnMut(u64) -> bool>(&self, k: usize, vector: &[Scalar], filter: F) -> Heap {
+    fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
         self.raw.search(k, vector, filter)
     }
 }
