@@ -253,18 +253,6 @@ If you want to disable vector indexing or prefilter, we also offer some GUC opti
 - `vectors.enable_vector_index`: Enable or disable the vector index. Default value is `on`.
 - `vectors.enable_prefilter`: Enable or disable the prefilter. Default value is `on`.
 
-We also provide a view `pg_vector_index_info` to monitor the progress of indexing.
-
-| Column          | Type   | Description                                  |
-| --------------- | ------ | -------------------------------------------- |
-| tablerelid      | oid    | The oid of the table.                        |
-| indexrelid      | oid    | The oid of the index.                        |
-| tablename       | name   | The name of the table.                       |
-| indexname       | name   | The name of the index.                       |
-| idx_tuples      | float4 | The number of tuples.                        |
-| idx_tuples_done | int4   | The number of tuples that have been indexed. |
-| idx_config      | text   | The configuration of the index.              |
- 
 ## Limitations
 
 - The filtering process is not yet optimized. To achieve optimal performance, you may need to manually experiment with different strategies. For example, you can try searching without a vector index or implementing post-filtering techniques like the following query: `select * from (select * from items ORDER BY embedding <-> '[3,2,1]' LIMIT 100 ) where category = 1`. This involves using approximate nearest neighbor (ANN) search to obtain enough results and then applying filtering afterwards.

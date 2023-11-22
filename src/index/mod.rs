@@ -24,6 +24,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::{Arc, Weak};
+use std::time::Duration;
 use thiserror::Error;
 use uuid::Uuid;
 use validator::Validate;
@@ -232,9 +233,6 @@ impl IndexView {
         self.sealed.values().map(|x| x.len()).sum::<u32>()
             + self.growing.values().map(|x| x.len()).sum::<u32>()
     }
-    pub fn sealed_len(&self) -> u32 {
-        self.sealed.values().map(|x| x.len()).sum::<u32>()
-    }
     pub fn search<F: FnMut(Pointer) -> bool>(
         &self,
         k: usize,
@@ -405,6 +403,7 @@ impl IndexBackground {
             pool.install(|| {
                 optimizing::indexing::optimizing_indexing(index.clone());
             });
+            std::thread::sleep(Duration::from_secs(60));
         }
     }
     pub fn spawn(self) {
