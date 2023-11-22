@@ -87,7 +87,7 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
         indexing: parsed.indexing,
     };
     if let Err(errors) = options.validate() {
-        FriendlyError::BadOption(errors.to_string());
+        FriendlyError::BadOption(errors.to_string()).friendly();
     }
     options
 }

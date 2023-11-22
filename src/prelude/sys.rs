@@ -43,7 +43,7 @@ impl Pointer {
         let mut newtype = 0;
         newtype |= (sys.ip_blkid.bi_hi as u64) << 32;
         newtype |= (sys.ip_blkid.bi_lo as u64) << 16;
-        newtype |= (sys.ip_posid as u64) << 0;
+        newtype |= sys.ip_posid as u64;
         Self { newtype }
     }
     pub fn into_sys(self) -> pgrx::pg_sys::ItemPointerData {
@@ -52,7 +52,7 @@ impl Pointer {
                 bi_hi: ((self.newtype >> 32) & 0xffff) as u16,
                 bi_lo: ((self.newtype >> 16) & 0xffff) as u16,
             },
-            ip_posid: ((self.newtype >> 0) & 0xffff) as u16,
+            ip_posid: (self.newtype & 0xffff) as u16,
         }
     }
     pub fn from_u48(value: u64) -> Self {

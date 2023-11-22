@@ -54,7 +54,6 @@ pub struct SearchState {
     l: usize,
     /// Number of results to return.
     //TODO: used during search.
-    #[allow(dead_code)]
     k: usize,
 }
 
@@ -94,7 +93,7 @@ impl SearchState {
         self.heap
             .push(Reverse(VertexWithDistance::new(vertex_id, distance)));
         self.candidates.insert(distance, vertex_id);
-        if self.candidates.len() > self.l as usize {
+        if self.candidates.len() > self.l {
             self.candidates.pop_last();
         }
     }
@@ -110,7 +109,6 @@ impl SearchState {
     }
 }
 
-#[allow(unused)]
 pub struct VamanaImpl {
     raw: Arc<Raw>,
 
@@ -184,12 +182,12 @@ impl VamanaImpl {
         new_vamana
     }
 
-    pub fn search<F>(&self, target: Box<[Scalar]>, k: usize, filter: F) -> Vec<(Scalar, u64)>
+    pub fn search<F>(&self, target: Box<[Scalar]>, k: usize, f: F) -> Vec<(Scalar, Payload)>
     where
-        F: FnMut(u64) -> bool,
+        F: FnMut(Payload) -> bool,
     {
         // TODO: filter
-        let state = self._greedy_search_with_filter(0, &target, k, k * 2, filter);
+        let state = self._greedy_search_with_filter(0, &target, k, k * 2, f);
 
         let mut results = BinaryHeap::<(Scalar, u32)>::new();
         for (distance, row) in state.candidates {
@@ -197,10 +195,12 @@ impl VamanaImpl {
                 break;
             }
 
-            results.push((Scalar::from(distance), row));
+            results.push((distance, row));
         }
-        let mut res_vec: Vec<(Scalar, u64)> =
-            results.iter().map(|x| (x.0, self.raw.data(x.1))).collect();
+        let mut res_vec: Vec<(Scalar, Payload)> = results
+            .iter()
+            .map(|x| (x.0, self.raw.payload(x.1)))
+            .collect();
         res_vec.sort();
         res_vec
     }
@@ -211,10 +211,10 @@ impl VamanaImpl {
         query: &[Scalar],
         k: usize,
         search_size: usize,
-        mut filter: F,
+        mut f: F,
     ) -> SearchState
     where
-        F: FnMut(u64) -> bool,
+        F: FnMut(Payload) -> bool,
     {
         let mut state = SearchState::new(k, search_size);
 
@@ -232,7 +232,7 @@ impl VamanaImpl {
                         continue;
                     }
 
-                    if filter(self.raw.data(neighbor_id)) {
+                    if f(self.raw.payload(neighbor_id)) {
                         let dist = self.d.distance(query, self.raw.vector(neighbor_id));
                         state.push(neighbor_id, dist); // push and retain closet l nodes
                     }
@@ -255,7 +255,7 @@ impl VamanaImpl {
                     }
                 }
             } else {
-                neighbor_ids = (0..n).into_iter().collect();
+                neighbor_ids = (0..n).collect();
             }
 
             {
@@ -272,10 +272,8 @@ impl VamanaImpl {
         guard: &mut RwLockWriteGuard<u32>,
     ) {
         assert!(neighbor_ids.len() <= self.r as usize);
-        let mut i = 0;
-        for item in neighbor_ids {
+        for (i, item) in neighbor_ids.iter().enumerate() {
             self.neighbors[vertex_index as usize * self.r as usize + i].store(*item);
-            i += 1;
         }
         **guard = neighbor_ids.len() as u32;
     }
@@ -343,7 +341,6 @@ impl VamanaImpl {
             .for_each(|id| self.search_and_prune_for_one_vertex(id, alpha, r, l));
     }
 
-    #[allow(unused_assignments)]
     fn search_and_prune_for_one_vertex(&self, id: u32, alpha: f32, r: u32, l: usize) {
         let query = self.raw.vector(id);
         let mut state = self._greedy_search(self.medoid, query, 1, l);
@@ -364,7 +361,7 @@ impl VamanaImpl {
                 let mut guard = self.neighbor_size[neighbor_id as usize].write();
                 let old_neighbors = self._get_neighbors_with_write_guard(neighbor_id, &guard);
                 let mut old_neighbors: HashSet<u32> =
-                    old_neighbors.into_iter().map(|x| x.load()).collect();
+                    old_neighbors.iter().map(|x| x.load()).collect();
                 old_neighbors.insert(id);
                 if old_neighbors.len() > r as usize {
                     // need robust prune

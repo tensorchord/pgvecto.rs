@@ -44,18 +44,18 @@ impl IvfNaive {
     }
 
     pub fn len(&self) -> u32 {
-        self.mmap.raw.len() as u32
+        self.mmap.raw.len()
     }
 
     pub fn vector(&self, i: u32) -> &[Scalar] {
-        &self.mmap.raw.vector(i)
+        self.mmap.raw.vector(i)
     }
 
-    pub fn data(&self, i: u32) -> u64 {
-        self.mmap.raw.data(i)
+    pub fn payload(&self, i: u32) -> Payload {
+        self.mmap.raw.payload(i)
     }
 
-    pub fn search<F: FnMut(u64) -> bool>(&self, k: usize, vector: &[Scalar], filter: F) -> Heap {
+    pub fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
         search(&self.mmap, k, vector, filter)
     }
 }
@@ -248,12 +248,7 @@ pub fn load(path: PathBuf, options: IndexOptions) -> IvfMmap {
     }
 }
 
-pub fn search<F: FnMut(u64) -> bool>(
-    mmap: &IvfMmap,
-    k: usize,
-    vector: &[Scalar],
-    mut filter: F,
-) -> Heap {
+pub fn search(mmap: &IvfMmap, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
     let mut target = vector.to_vec();
     mmap.d.elkan_k_means_normalize(&mut target);
     let mut lists = Heap::new(mmap.nprobe as usize);
@@ -263,21 +258,19 @@ pub fn search<F: FnMut(u64) -> bool>(
         if lists.check(distance) {
             lists.push(HeapElement {
                 distance,
-                data: i as u64,
+                payload: i as Payload,
             });
         }
     }
     let lists = lists.into_sorted_vec();
     let mut result = Heap::new(k);
-    for i in lists.iter().map(|e| e.data as usize) {
+    for i in lists.iter().map(|e| e.payload as usize) {
         let mut j = mmap.heads[i];
         while u32::MAX != j {
-            let distance = mmap.quantization.distance(mmap.d, &vector, j);
-            let data = mmap.raw.data(j);
-            if result.check(distance) {
-                if filter(data) {
-                    result.push(HeapElement { distance, data });
-                }
+            let distance = mmap.quantization.distance(mmap.d, vector, j);
+            let payload = mmap.raw.payload(j);
+            if result.check(distance) && filter.check(payload) {
+                result.push(HeapElement { distance, payload });
             }
             j = mmap.nexts[j as usize];
         }

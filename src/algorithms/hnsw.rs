@@ -7,9 +7,8 @@ use crate::index::{IndexOptions, VectorOptions};
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::mmap_array::MmapArray;
-use crate::utils::semaphore::Semaphore;
 use bytemuck::{Pod, Zeroable};
-use parking_lot::{RwLock, RwLockWriteGuard};
+use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -45,14 +44,14 @@ impl Hnsw {
     }
 
     pub fn vector(&self, i: u32) -> &[Scalar] {
-        &self.mmap.raw.vector(i)
+        self.mmap.raw.vector(i)
     }
 
-    pub fn data(&self, i: u32) -> u64 {
-        self.mmap.raw.data(i)
+    pub fn payload(&self, i: u32) -> Payload {
+        self.mmap.raw.payload(i)
     }
 
-    pub fn search<F: FnMut(u64) -> bool>(&self, k: usize, vector: &[Scalar], filter: F) -> Heap {
+    pub fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
         search(&self.mmap, k, vector, filter)
     }
 }
@@ -69,9 +68,8 @@ pub struct HnswRam {
     m: u32,
     // ----------------------
     graph: HnswRamGraph,
-    entry: Option<u32>,
     // ----------------------
-    visited: Semaphore<Visited>,
+    visited: VisitedPool,
 }
 
 struct HnswRamGraph {
@@ -103,9 +101,8 @@ pub struct HnswMmap {
     edges: MmapArray<HnswMmapEdge>,
     by_layer_id: MmapArray<usize>,
     by_vertex_id: MmapArray<usize>,
-    entry: u32,
     // ----------------------
-    visited: Semaphore<Visited>,
+    visited: VisitedPool,
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -152,13 +149,7 @@ pub fn make(
             .collect(),
     };
     let entry = RwLock::<Option<u32>>::new(None);
-    let visited = {
-        let semaphore = Semaphore::<Visited>::new();
-        for _ in 0..std::thread::available_parallelism().unwrap().get() * 2 {
-            semaphore.push(Visited::new(n as usize));
-        }
-        semaphore
-    };
+    let visited = VisitedPool::new(raw.len());
     (0..n).into_par_iter().for_each(|i| {
         fn fast_search(
             quantization: &Quantization,
@@ -191,18 +182,18 @@ pub fn make(
             quantization: &Quantization,
             graph: &HnswRamGraph,
             d: Distance,
-            visited: &mut Visited,
+            visited: &mut VisitedGuard,
             vector: &[Scalar],
             s: u32,
             k: usize,
             i: u8,
         ) -> Vec<(Scalar, u32)> {
             assert!(k > 0);
-            let mut visited = visited.new_version();
+            let mut visited = visited.fetch();
             let mut candidates = BinaryHeap::<Reverse<(Scalar, u32)>>::new();
             let mut results = BinaryHeap::new();
             let s_dis = quantization.distance(d, vector, s);
-            visited.set(s as usize);
+            visited.mark(s);
             candidates.push(Reverse((s_dis, s)));
             results.push((s_dis, s));
             while let Some(Reverse((u_dis, u))) = candidates.pop() {
@@ -214,10 +205,10 @@ pub fn make(
                     .edges
                     .iter()
                 {
-                    if visited.test(v as usize) {
+                    if !visited.check(v) {
                         continue;
                     }
-                    visited.set(v as usize);
+                    visited.mark(v);
                     let v_dis = quantization.distance(d, vector, v);
                     if results.len() < k || v_dis < results.peek().unwrap().0 {
                         candidates.push(Reverse((v_dis, v)));
@@ -254,7 +245,7 @@ pub fn make(
             }
             *input = res;
         }
-        let mut visited = visited.acquire();
+        let mut visited = visited.fetch();
         let target = raw.vector(i);
         let levels = graph.vertexs[i as usize].levels();
         let local_entry;
@@ -342,14 +333,7 @@ pub fn make(
         d,
         m,
         graph,
-        entry: entry.into_inner(),
-        visited: {
-            let semaphore = Semaphore::<Visited>::new();
-            for _ in 0..std::thread::available_parallelism().unwrap().get() * 2 {
-                semaphore.push(Visited::new(n as usize));
-            }
-            semaphore
-        },
+        visited,
     }
 }
 
@@ -382,7 +366,6 @@ pub fn save(mut ram: HnswRam, path: PathBuf) -> HnswMmap {
         edges,
         by_layer_id,
         by_vertex_id,
-        entry: ram.entry.unwrap(),
         visited: ram.visited,
     }
 }
@@ -401,7 +384,6 @@ pub fn load(path: PathBuf, options: IndexOptions) -> HnswMmap {
     let by_vertex_id = MmapArray::open(path.join("by_vertex_id"));
     let idx_opts = options.indexing.unwrap_hnsw();
     let n = raw.len();
-    let m = idx_opts.m;
     HnswMmap {
         raw,
         quantization,
@@ -410,31 +392,54 @@ pub fn load(path: PathBuf, options: IndexOptions) -> HnswMmap {
         edges,
         by_layer_id,
         by_vertex_id,
-        entry: entry_for_hnsw_graph(m, n),
-        visited: {
-            let semaphore = Semaphore::<Visited>::new();
-            for _ in 0..std::thread::available_parallelism().unwrap().get() * 2 {
-                semaphore.push(Visited::new(n as usize));
-            }
-            semaphore
-        },
+        visited: VisitedPool::new(n),
     }
 }
 
-pub fn search<F: FnMut(u64) -> bool>(
-    mmap: &HnswMmap,
-    k: usize,
-    vector: &[Scalar],
-    filter: F,
-) -> Heap {
-    let s = mmap.entry;
+pub fn search(mmap: &HnswMmap, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
+    let Some(s) = entry(mmap, filter) else {
+        return Heap::new(k);
+    };
     let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
-    let u = fast_search(mmap, 1..=levels, s, vector);
-    let result = local_search(mmap, k, u, &vector, filter);
-    result
+    let u = fast_search(mmap, 1..=levels, s, vector, filter);
+    local_search(mmap, k, u, vector, filter)
 }
 
-pub fn fast_search(mmap: &HnswMmap, levels: RangeInclusive<u8>, u: u32, vector: &[Scalar]) -> u32 {
+pub fn entry(mmap: &HnswMmap, filter: &mut impl Filter) -> Option<u32> {
+    let m = mmap.m;
+    let n = mmap.raw.len();
+    let mut shift = 1u64;
+    let mut count = 0u64;
+    while shift * m as u64 <= n as u64 {
+        shift *= m as u64;
+    }
+    while shift != 0 {
+        let mut i = 1u64;
+        while i * shift <= n as u64 {
+            let e = (i * shift - 1) as u32;
+            if i % m as u64 != 0 {
+                if filter.check(mmap.raw.payload(e)) {
+                    return Some(e);
+                }
+                count += 1;
+                if count >= 10000 {
+                    return None;
+                }
+            }
+            i += 1;
+        }
+        shift /= m as u64;
+    }
+    None
+}
+
+pub fn fast_search(
+    mmap: &HnswMmap,
+    levels: RangeInclusive<u8>,
+    u: u32,
+    vector: &[Scalar],
+    filter: &mut impl Filter,
+) -> u32 {
     let mut u = u;
     let mut u_dis = mmap.quantization.distance(mmap.d, vector, u);
     for i in levels.rev() {
@@ -443,6 +448,9 @@ pub fn fast_search(mmap: &HnswMmap, levels: RangeInclusive<u8>, u: u32, vector: 
             changed = false;
             let edges = find_edges(mmap, u, i);
             for &HnswMmapEdge(_, v) in edges.iter() {
+                if !filter.check(mmap.raw.payload(v)) {
+                    continue;
+                }
                 let v_dis = mmap.quantization.distance(mmap.d, vector, v);
                 if v_dis < u_dis {
                     u = v;
@@ -455,58 +463,50 @@ pub fn fast_search(mmap: &HnswMmap, levels: RangeInclusive<u8>, u: u32, vector: 
     u
 }
 
-pub fn local_search<F: FnMut(u64) -> bool>(
+pub fn local_search(
     mmap: &HnswMmap,
     k: usize,
     s: u32,
     vector: &[Scalar],
-    mut filter: F,
+    filter: &mut impl Filter,
 ) -> Heap {
     assert!(k > 0);
-    let mut visited = mmap.visited.acquire();
-    let mut visited = visited.new_version();
+    let mut visited = mmap.visited.fetch();
+    let mut visited = visited.fetch();
     let mut candidates = BinaryHeap::<Reverse<(Scalar, u32)>>::new();
     let mut results = Heap::new(k);
+    visited.mark(s);
     let s_dis = mmap.quantization.distance(mmap.d, vector, s);
-    visited.set(s as usize);
     candidates.push(Reverse((s_dis, s)));
-    if filter(mmap.raw.data(s)) {
-        results.push(HeapElement {
-            distance: s_dis,
-            data: mmap.raw.data(s),
-        });
-    }
+    results.push(HeapElement {
+        distance: s_dis,
+        payload: mmap.raw.payload(s),
+    });
     while let Some(Reverse((u_dis, u))) = candidates.pop() {
         if !results.check(u_dis) {
             break;
         }
         let edges = find_edges(mmap, u, 0);
         for &HnswMmapEdge(_, v) in edges.iter() {
-            if visited.test(v as usize) {
+            if !visited.check(v) {
                 continue;
             }
-            visited.set(v as usize);
-            let v_dis = mmap.quantization.distance(mmap.d, vector, v);
-            if results.check(v_dis) {
-                candidates.push(Reverse((v_dis, v)));
-                if filter(mmap.raw.data(v)) {
-                    results.push(HeapElement {
-                        distance: v_dis,
-                        data: mmap.raw.data(v),
-                    });
-                }
+            visited.mark(v);
+            if !filter.check(mmap.raw.payload(v)) {
+                continue;
             }
+            let v_dis = mmap.quantization.distance(mmap.d, vector, v);
+            if !results.check(v_dis) {
+                continue;
+            }
+            candidates.push(Reverse((v_dis, v)));
+            results.push(HeapElement {
+                distance: v_dis,
+                payload: mmap.raw.payload(v),
+            });
         }
     }
     results
-}
-
-fn entry_for_hnsw_graph(m: u32, n: u32) -> u32 {
-    let mut ans = 1u64;
-    while ans * m as u64 <= n as u64 {
-        ans *= m as u64;
-    }
-    (ans - 1) as u32
 }
 
 fn count_layers_of_a_vertex(m: u32, i: u32) -> u8 {
@@ -545,34 +545,79 @@ fn find_edges(mmap: &HnswMmap, u: u32, level: u8) -> &[HnswMmapEdge] {
     &mmap.edges[index]
 }
 
-struct Visited {
+struct VisitedPool {
+    n: u32,
+    locked_buffers: Mutex<Vec<VisitedBuffer>>,
+}
+
+impl VisitedPool {
+    pub fn new(n: u32) -> Self {
+        Self {
+            n,
+            locked_buffers: Mutex::new(Vec::new()),
+        }
+    }
+    pub fn fetch(&self) -> VisitedGuard<'_> {
+        let buffer = self
+            .locked_buffers
+            .lock()
+            .pop()
+            .unwrap_or_else(|| VisitedBuffer::new(self.n as _));
+        VisitedGuard { buffer, pool: self }
+    }
+}
+
+struct VisitedGuard<'a> {
+    buffer: VisitedBuffer,
+    pool: &'a VisitedPool,
+}
+
+impl<'a> VisitedGuard<'a> {
+    fn fetch(&mut self) -> VisitedChecker<'_> {
+        self.buffer.version = self.buffer.version.wrapping_add(1);
+        if self.buffer.version == 0 {
+            self.buffer.data.fill(0);
+        }
+        VisitedChecker {
+            buffer: &mut self.buffer,
+        }
+    }
+}
+
+impl<'a> Drop for VisitedGuard<'a> {
+    fn drop(&mut self) {
+        let src = VisitedBuffer {
+            version: 0,
+            data: Box::new([]),
+        };
+        let buffer = std::mem::replace(&mut self.buffer, src);
+        self.pool.locked_buffers.lock().push(buffer);
+    }
+}
+
+struct VisitedChecker<'a> {
+    buffer: &'a mut VisitedBuffer,
+}
+
+impl<'a> VisitedChecker<'a> {
+    fn check(&mut self, i: u32) -> bool {
+        self.buffer.data[i as usize] != self.buffer.version
+    }
+    fn mark(&mut self, i: u32) {
+        self.buffer.data[i as usize] = self.buffer.version;
+    }
+}
+
+struct VisitedBuffer {
     version: usize,
     data: Box<[usize]>,
 }
 
-impl Visited {
+impl VisitedBuffer {
     fn new(capacity: usize) -> Self {
         Self {
             version: 0,
-            data: unsafe { Box::new_zeroed_slice(capacity).assume_init() },
+            data: bytemuck::zeroed_slice_box(capacity),
         }
-    }
-    fn new_version(&mut self) -> VisitedVersion<'_> {
-        assert_ne!(self.version, usize::MAX);
-        self.version += 1;
-        VisitedVersion { inner: self }
-    }
-}
-
-struct VisitedVersion<'a> {
-    inner: &'a mut Visited,
-}
-
-impl<'a> VisitedVersion<'a> {
-    fn test(&mut self, i: usize) -> bool {
-        self.inner.data[i] == self.inner.version
-    }
-    fn set(&mut self, i: usize) {
-        self.inner.data[i] = self.inner.version;
     }
 }

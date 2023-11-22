@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -46,39 +44,7 @@ impl Distance {
         lhs: &[Scalar],
         rhs: &[u8],
     ) -> Scalar {
-        match self {
-            Distance::L2 => {
-                let mut result = Scalar::Z;
-                for i in 0..dims as usize {
-                    let _x = lhs[i];
-                    let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
-                    result += (_x - _y) * (_x - _y);
-                }
-                result
-            }
-            Distance::Cosine => {
-                let mut xy = Scalar::Z;
-                let mut x2 = Scalar::Z;
-                let mut y2 = Scalar::Z;
-                for i in 0..dims as usize {
-                    let _x = lhs[i];
-                    let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
-                    xy += _x * _y;
-                    x2 += _x * _x;
-                    y2 += _y * _y;
-                }
-                xy / (x2 * y2).sqrt() * (-1.0)
-            }
-            Distance::Dot => {
-                let mut xy = Scalar::Z;
-                for i in 0..dims as usize {
-                    let _x = lhs[i];
-                    let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
-                    xy += _x * _y;
-                }
-                xy * (-1.0)
-            }
-        }
+        scalar_quantization_distance(self, dims, max, min, lhs, rhs)
     }
     pub fn scalar_quantization_distance2(
         self,
@@ -88,39 +54,7 @@ impl Distance {
         lhs: &[u8],
         rhs: &[u8],
     ) -> Scalar {
-        match self {
-            Distance::L2 => {
-                let mut result = Scalar::Z;
-                for i in 0..dims as usize {
-                    let _x = Scalar(lhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
-                    let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
-                    result += (_x - _y) * (_x - _y);
-                }
-                result
-            }
-            Distance::Cosine => {
-                let mut xy = Scalar::Z;
-                let mut x2 = Scalar::Z;
-                let mut y2 = Scalar::Z;
-                for i in 0..dims as usize {
-                    let _x = Scalar(lhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
-                    let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
-                    xy += _x * _y;
-                    x2 += _x * _x;
-                    y2 += _y * _y;
-                }
-                xy / (x2 * y2).sqrt() * (-1.0)
-            }
-            Distance::Dot => {
-                let mut xy = Scalar::Z;
-                for i in 0..dims as usize {
-                    let _x = Scalar(lhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
-                    let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
-                    xy += _x * _y;
-                }
-                xy * (-1.0)
-            }
-        }
+        scalar_quantization_distance2(self, dims, max, min, lhs, rhs)
     }
     pub fn product_quantization_distance(
         self,
@@ -130,50 +64,7 @@ impl Distance {
         lhs: &[Scalar],
         rhs: &[u8],
     ) -> Scalar {
-        match self {
-            Distance::L2 => {
-                let width = dims.div_ceil(ratio);
-                let mut result = Scalar::Z;
-                for i in 0..width {
-                    let k = std::cmp::min(ratio, dims - ratio * i);
-                    let lhs = &lhs[(i * ratio) as usize..][..k as usize];
-                    let rhsp = rhs[i as usize] as usize * dims as usize;
-                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-                    result += distance_squared_l2(lhs, rhs);
-                }
-                result
-            }
-            Distance::Cosine => {
-                let width = dims.div_ceil(ratio);
-                let mut xy = Scalar::Z;
-                let mut x2 = Scalar::Z;
-                let mut y2 = Scalar::Z;
-                for i in 0..width {
-                    let k = std::cmp::min(ratio, dims - ratio * i);
-                    let lhs = &lhs[(i * ratio) as usize..][..k as usize];
-                    let rhsp = rhs[i as usize] as usize * dims as usize;
-                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-                    let (_xy, _x2, _y2) = xy_x2_y2(lhs, rhs);
-                    xy += _xy;
-                    x2 += _x2;
-                    y2 += _y2;
-                }
-                xy / (x2 * y2).sqrt() * (-1.0)
-            }
-            Distance::Dot => {
-                let width = dims.div_ceil(ratio);
-                let mut xy = Scalar::Z;
-                for i in 0..width {
-                    let k = std::cmp::min(ratio, dims - ratio * i);
-                    let lhs = &lhs[(i * ratio) as usize..][..k as usize];
-                    let rhsp = rhs[i as usize] as usize * dims as usize;
-                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-                    let _xy = distance_dot(lhs, rhs);
-                    xy += _xy;
-                }
-                xy * (-1.0)
-            }
-        }
+        product_quantization_distance(self, dims, ratio, centroids, lhs, rhs)
     }
     pub fn product_quantization_distance2(
         self,
@@ -183,53 +74,7 @@ impl Distance {
         lhs: &[u8],
         rhs: &[u8],
     ) -> Scalar {
-        match self {
-            Distance::L2 => {
-                let width = dims.div_ceil(ratio);
-                let mut result = Scalar::Z;
-                for i in 0..width {
-                    let k = std::cmp::min(ratio, dims - ratio * i);
-                    let lhsp = lhs[i as usize] as usize * dims as usize;
-                    let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
-                    let rhsp = rhs[i as usize] as usize * dims as usize;
-                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-                    result += distance_squared_l2(lhs, rhs);
-                }
-                result
-            }
-            Distance::Cosine => {
-                let width = dims.div_ceil(ratio);
-                let mut xy = Scalar::Z;
-                let mut x2 = Scalar::Z;
-                let mut y2 = Scalar::Z;
-                for i in 0..width {
-                    let k = std::cmp::min(ratio, dims - ratio * i);
-                    let lhsp = lhs[i as usize] as usize * dims as usize;
-                    let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
-                    let rhsp = rhs[i as usize] as usize * dims as usize;
-                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-                    let (_xy, _x2, _y2) = xy_x2_y2(lhs, rhs);
-                    xy += _xy;
-                    x2 += _x2;
-                    y2 += _y2;
-                }
-                xy / (x2 * y2).sqrt() * (-1.0)
-            }
-            Distance::Dot => {
-                let width = dims.div_ceil(ratio);
-                let mut xy = Scalar::Z;
-                for i in 0..width {
-                    let k = std::cmp::min(ratio, dims - ratio * i);
-                    let lhsp = lhs[i as usize] as usize * dims as usize;
-                    let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
-                    let rhsp = rhs[i as usize] as usize * dims as usize;
-                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-                    let _xy = distance_dot(lhs, rhs);
-                    xy += _xy;
-                }
-                xy * (-1.0)
-            }
-        }
+        product_quantization_distance2(self, dims, ratio, centroids, lhs, rhs)
     }
     pub fn product_quantization_distance_with_delta(
         self,
@@ -240,57 +85,12 @@ impl Distance {
         rhs: &[u8],
         delta: &[Scalar],
     ) -> Scalar {
-        match self {
-            Distance::L2 => {
-                let width = dims.div_ceil(ratio);
-                let mut result = Scalar::Z;
-                for i in 0..width {
-                    let k = std::cmp::min(ratio, dims - ratio * i);
-                    let lhs = &lhs[(i * ratio) as usize..][..k as usize];
-                    let rhsp = rhs[i as usize] as usize * dims as usize;
-                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-                    let del = &delta[(i * ratio) as usize..][..k as usize];
-                    result += distance_squared_l2_delta(lhs, rhs, del);
-                }
-                result
-            }
-            Distance::Cosine => {
-                let width = dims.div_ceil(ratio);
-                let mut xy = Scalar::Z;
-                let mut x2 = Scalar::Z;
-                let mut y2 = Scalar::Z;
-                for i in 0..width {
-                    let k = std::cmp::min(ratio, dims - ratio * i);
-                    let lhs = &lhs[(i * ratio) as usize..][..k as usize];
-                    let rhsp = rhs[i as usize] as usize * dims as usize;
-                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-                    let del = &delta[(i * ratio) as usize..][..k as usize];
-                    let (_xy, _x2, _y2) = xy_x2_y2_delta(lhs, rhs, del);
-                    xy += _xy;
-                    x2 += _x2;
-                    y2 += _y2;
-                }
-                xy / (x2 * y2).sqrt() * (-1.0)
-            }
-            Distance::Dot => {
-                let width = dims.div_ceil(ratio);
-                let mut xy = Scalar::Z;
-                for i in 0..width {
-                    let k = std::cmp::min(ratio, dims - ratio * i);
-                    let lhs = &lhs[(i * ratio) as usize..][..k as usize];
-                    let rhsp = rhs[i as usize] as usize * dims as usize;
-                    let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-                    let del = &delta[(i * ratio) as usize..][..k as usize];
-                    let _xy = distance_dot_delta(lhs, rhs, del);
-                    xy += _xy;
-                }
-                xy * (-1.0)
-            }
-        }
+        product_quantization_distance_with_delta(self, dims, ratio, centroids, lhs, rhs, delta)
     }
 }
 
 #[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
 fn distance_squared_l2(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
     if lhs.len() != rhs.len() {
         FriendlyError::DifferentVectorDims {
@@ -309,6 +109,7 @@ fn distance_squared_l2(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
 }
 
 #[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
 fn distance_cosine(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
     if lhs.len() != rhs.len() {
         FriendlyError::DifferentVectorDims {
@@ -330,6 +131,7 @@ fn distance_cosine(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
 }
 
 #[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
 fn distance_dot(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
     if lhs.len() != rhs.len() {
         FriendlyError::DifferentVectorDims {
@@ -347,6 +149,7 @@ fn distance_dot(lhs: &[Scalar], rhs: &[Scalar]) -> Scalar {
 }
 
 #[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
 fn xy_x2_y2(lhs: &[Scalar], rhs: &[Scalar]) -> (Scalar, Scalar, Scalar) {
     if lhs.len() != rhs.len() {
         FriendlyError::DifferentVectorDims {
@@ -368,6 +171,7 @@ fn xy_x2_y2(lhs: &[Scalar], rhs: &[Scalar]) -> (Scalar, Scalar, Scalar) {
 }
 
 #[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
 fn length(vector: &[Scalar]) -> Scalar {
     let n = vector.len();
     let mut dot = Scalar::Z;
@@ -378,6 +182,7 @@ fn length(vector: &[Scalar]) -> Scalar {
 }
 
 #[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
 fn l2_normalize(vector: &mut [Scalar]) {
     let n = vector.len();
     let l = length(vector);
@@ -387,6 +192,7 @@ fn l2_normalize(vector: &mut [Scalar]) {
 }
 
 #[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
 fn distance_squared_l2_delta(lhs: &[Scalar], rhs: &[Scalar], del: &[Scalar]) -> Scalar {
     if lhs.len() != rhs.len() {
         FriendlyError::DifferentVectorDims {
@@ -405,6 +211,7 @@ fn distance_squared_l2_delta(lhs: &[Scalar], rhs: &[Scalar], del: &[Scalar]) -> 
 }
 
 #[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
 fn xy_x2_y2_delta(lhs: &[Scalar], rhs: &[Scalar], del: &[Scalar]) -> (Scalar, Scalar, Scalar) {
     if lhs.len() != rhs.len() {
         FriendlyError::DifferentVectorDims {
@@ -426,6 +233,7 @@ fn xy_x2_y2_delta(lhs: &[Scalar], rhs: &[Scalar], del: &[Scalar]) -> (Scalar, Sc
 }
 
 #[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
 fn distance_dot_delta(lhs: &[Scalar], rhs: &[Scalar], del: &[Scalar]) -> Scalar {
     if lhs.len() != rhs.len() {
         FriendlyError::DifferentVectorDims {
@@ -440,4 +248,269 @@ fn distance_dot_delta(lhs: &[Scalar], rhs: &[Scalar], del: &[Scalar]) -> Scalar 
         xy += lhs[i] * (rhs[i] + del[i]);
     }
     xy
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
+fn scalar_quantization_distance(
+    distance: Distance,
+    dims: u16,
+    max: &[Scalar],
+    min: &[Scalar],
+    lhs: &[Scalar],
+    rhs: &[u8],
+) -> Scalar {
+    match distance {
+        Distance::L2 => {
+            let mut result = Scalar::Z;
+            for i in 0..dims as usize {
+                let _x = lhs[i];
+                let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                result += (_x - _y) * (_x - _y);
+            }
+            result
+        }
+        Distance::Cosine => {
+            let mut xy = Scalar::Z;
+            let mut x2 = Scalar::Z;
+            let mut y2 = Scalar::Z;
+            for i in 0..dims as usize {
+                let _x = lhs[i];
+                let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                xy += _x * _y;
+                x2 += _x * _x;
+                y2 += _y * _y;
+            }
+            xy / (x2 * y2).sqrt() * (-1.0)
+        }
+        Distance::Dot => {
+            let mut xy = Scalar::Z;
+            for i in 0..dims as usize {
+                let _x = lhs[i];
+                let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                xy += _x * _y;
+            }
+            xy * (-1.0)
+        }
+    }
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
+fn scalar_quantization_distance2(
+    distance: Distance,
+    dims: u16,
+    max: &[Scalar],
+    min: &[Scalar],
+    lhs: &[u8],
+    rhs: &[u8],
+) -> Scalar {
+    match distance {
+        Distance::L2 => {
+            let mut result = Scalar::Z;
+            for i in 0..dims as usize {
+                let _x = Scalar(lhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                result += (_x - _y) * (_x - _y);
+            }
+            result
+        }
+        Distance::Cosine => {
+            let mut xy = Scalar::Z;
+            let mut x2 = Scalar::Z;
+            let mut y2 = Scalar::Z;
+            for i in 0..dims as usize {
+                let _x = Scalar(lhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                xy += _x * _y;
+                x2 += _x * _x;
+                y2 += _y * _y;
+            }
+            xy / (x2 * y2).sqrt() * (-1.0)
+        }
+        Distance::Dot => {
+            let mut xy = Scalar::Z;
+            for i in 0..dims as usize {
+                let _x = Scalar(lhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                let _y = Scalar(rhs[i] as Float / 256.0) * (max[i] - min[i]) + min[i];
+                xy += _x * _y;
+            }
+            xy * (-1.0)
+        }
+    }
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
+fn product_quantization_distance(
+    distance: Distance,
+    dims: u16,
+    ratio: u16,
+    centroids: &[Scalar],
+    lhs: &[Scalar],
+    rhs: &[u8],
+) -> Scalar {
+    match distance {
+        Distance::L2 => {
+            let width = dims.div_ceil(ratio);
+            let mut result = Scalar::Z;
+            for i in 0..width {
+                let k = std::cmp::min(ratio, dims - ratio * i);
+                let lhs = &lhs[(i * ratio) as usize..][..k as usize];
+                let rhsp = rhs[i as usize] as usize * dims as usize;
+                let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                result += distance_squared_l2(lhs, rhs);
+            }
+            result
+        }
+        Distance::Cosine => {
+            let width = dims.div_ceil(ratio);
+            let mut xy = Scalar::Z;
+            let mut x2 = Scalar::Z;
+            let mut y2 = Scalar::Z;
+            for i in 0..width {
+                let k = std::cmp::min(ratio, dims - ratio * i);
+                let lhs = &lhs[(i * ratio) as usize..][..k as usize];
+                let rhsp = rhs[i as usize] as usize * dims as usize;
+                let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                let (_xy, _x2, _y2) = xy_x2_y2(lhs, rhs);
+                xy += _xy;
+                x2 += _x2;
+                y2 += _y2;
+            }
+            xy / (x2 * y2).sqrt() * (-1.0)
+        }
+        Distance::Dot => {
+            let width = dims.div_ceil(ratio);
+            let mut xy = Scalar::Z;
+            for i in 0..width {
+                let k = std::cmp::min(ratio, dims - ratio * i);
+                let lhs = &lhs[(i * ratio) as usize..][..k as usize];
+                let rhsp = rhs[i as usize] as usize * dims as usize;
+                let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                let _xy = distance_dot(lhs, rhs);
+                xy += _xy;
+            }
+            xy * (-1.0)
+        }
+    }
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
+fn product_quantization_distance2(
+    distance: Distance,
+    dims: u16,
+    ratio: u16,
+    centroids: &[Scalar],
+    lhs: &[u8],
+    rhs: &[u8],
+) -> Scalar {
+    match distance {
+        Distance::L2 => {
+            let width = dims.div_ceil(ratio);
+            let mut result = Scalar::Z;
+            for i in 0..width {
+                let k = std::cmp::min(ratio, dims - ratio * i);
+                let lhsp = lhs[i as usize] as usize * dims as usize;
+                let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
+                let rhsp = rhs[i as usize] as usize * dims as usize;
+                let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                result += distance_squared_l2(lhs, rhs);
+            }
+            result
+        }
+        Distance::Cosine => {
+            let width = dims.div_ceil(ratio);
+            let mut xy = Scalar::Z;
+            let mut x2 = Scalar::Z;
+            let mut y2 = Scalar::Z;
+            for i in 0..width {
+                let k = std::cmp::min(ratio, dims - ratio * i);
+                let lhsp = lhs[i as usize] as usize * dims as usize;
+                let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
+                let rhsp = rhs[i as usize] as usize * dims as usize;
+                let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                let (_xy, _x2, _y2) = xy_x2_y2(lhs, rhs);
+                xy += _xy;
+                x2 += _x2;
+                y2 += _y2;
+            }
+            xy / (x2 * y2).sqrt() * (-1.0)
+        }
+        Distance::Dot => {
+            let width = dims.div_ceil(ratio);
+            let mut xy = Scalar::Z;
+            for i in 0..width {
+                let k = std::cmp::min(ratio, dims - ratio * i);
+                let lhsp = lhs[i as usize] as usize * dims as usize;
+                let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
+                let rhsp = rhs[i as usize] as usize * dims as usize;
+                let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                let _xy = distance_dot(lhs, rhs);
+                xy += _xy;
+            }
+            xy * (-1.0)
+        }
+    }
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets = "simd")]
+fn product_quantization_distance_with_delta(
+    distance: Distance,
+    dims: u16,
+    ratio: u16,
+    centroids: &[Scalar],
+    lhs: &[Scalar],
+    rhs: &[u8],
+    delta: &[Scalar],
+) -> Scalar {
+    match distance {
+        Distance::L2 => {
+            let width = dims.div_ceil(ratio);
+            let mut result = Scalar::Z;
+            for i in 0..width {
+                let k = std::cmp::min(ratio, dims - ratio * i);
+                let lhs = &lhs[(i * ratio) as usize..][..k as usize];
+                let rhsp = rhs[i as usize] as usize * dims as usize;
+                let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                let del = &delta[(i * ratio) as usize..][..k as usize];
+                result += distance_squared_l2_delta(lhs, rhs, del);
+            }
+            result
+        }
+        Distance::Cosine => {
+            let width = dims.div_ceil(ratio);
+            let mut xy = Scalar::Z;
+            let mut x2 = Scalar::Z;
+            let mut y2 = Scalar::Z;
+            for i in 0..width {
+                let k = std::cmp::min(ratio, dims - ratio * i);
+                let lhs = &lhs[(i * ratio) as usize..][..k as usize];
+                let rhsp = rhs[i as usize] as usize * dims as usize;
+                let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                let del = &delta[(i * ratio) as usize..][..k as usize];
+                let (_xy, _x2, _y2) = xy_x2_y2_delta(lhs, rhs, del);
+                xy += _xy;
+                x2 += _x2;
+                y2 += _y2;
+            }
+            xy / (x2 * y2).sqrt() * (-1.0)
+        }
+        Distance::Dot => {
+            let width = dims.div_ceil(ratio);
+            let mut xy = Scalar::Z;
+            for i in 0..width {
+                let k = std::cmp::min(ratio, dims - ratio * i);
+                let lhs = &lhs[(i * ratio) as usize..][..k as usize];
+                let rhsp = rhs[i as usize] as usize * dims as usize;
+                let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
+                let del = &delta[(i * ratio) as usize..][..k as usize];
+                let _xy = distance_dot_delta(lhs, rhs, del);
+                xy += _xy;
+            }
+            xy * (-1.0)
+        }
+    }
 }

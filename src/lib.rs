@@ -2,10 +2,6 @@
 //!
 //! Provides an easy-to-use extension for vector similarity search.
 #![feature(core_intrinsics)]
-#![feature(allocator_api)]
-#![feature(new_uninit)]
-#![allow(clippy::complexity)]
-#![allow(clippy::style)]
 
 mod algorithms;
 mod bgworker;
@@ -22,7 +18,7 @@ pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
 
 #[allow(non_snake_case)]
 #[pgrx::pg_guard]
-pub unsafe extern "C" fn _PG_init() {
+unsafe extern "C" fn _PG_init() {
     use crate::prelude::*;
     if pgrx::pg_sys::IsUnderPostmaster {
         FriendlyError::BadInit.friendly();
@@ -45,6 +41,15 @@ pub unsafe extern "C" fn _PG_init() {
 extern "C" fn vectors_main(_arg: pgrx::pg_sys::Datum) {
     let _ = std::panic::catch_unwind(crate::bgworker::main);
 }
+
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+compile_error!("Target is not supported.");
+
+#[cfg(not(target_endian = "little"))]
+compile_error!("Target is not supported.");
+
+#[cfg(not(target_pointer_width = "64"))]
+compile_error!("Target is not supported.");
 
 /// This module is required by `cargo pgrx test` invocations.
 /// It must be visible at the root of your extension crate.

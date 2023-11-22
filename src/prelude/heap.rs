@@ -1,10 +1,10 @@
-use crate::prelude::Scalar;
+use crate::prelude::{Payload, Scalar};
 use std::{cmp::Reverse, collections::BinaryHeap};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct HeapElement {
     pub distance: Scalar,
-    pub data: u64,
+    pub payload: Payload,
 }
 
 pub struct Heap {

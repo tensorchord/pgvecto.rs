@@ -52,10 +52,7 @@ impl QuantizationOptions {
         }
     }
     pub fn is_product_quantization(&self) -> bool {
-        match self {
-            Self::Product(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::Product(_))
     }
 }
 

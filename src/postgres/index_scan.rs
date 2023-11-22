@@ -114,7 +114,6 @@ pub unsafe fn start_scan(
     }
 }
 
-#[allow(clippy::never_loop)]
 pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
     let scanner = &mut *((*scan).opaque as *mut Scanner);
     if matches!(scanner, Scanner::Initial { .. }) {
@@ -138,14 +137,14 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
             client(|rpc| {
                 let index_scan_state = index_scan_state.unwrap();
                 let k = K.get() as _;
-                let mut handler = rpc.search(id, (vector, k), true).unwrap();
+                let mut handler = rpc.search(id, (vector, k), true).friendly();
                 let mut res;
                 let rpc = loop {
                     use crate::ipc::client::SearchHandle::*;
-                    match handler.handle().unwrap() {
+                    match handler.handle().friendly() {
                         Check { p, x } => {
                             let result = check(index_scan_state, p);
-                            handler = x.leave(result).unwrap();
+                            handler = x.leave(result).friendly();
                         }
                         Leave { result, x } => {
                             res = result.friendly();
@@ -163,17 +162,17 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         } else {
             client(|rpc| {
                 let k = K.get() as _;
-                let handler = rpc.search(id, (vector, k), false).unwrap();
+                let handler = rpc.search(id, (vector, k), false).friendly();
                 let mut res;
-                let rpc = loop {
+                let rpc = {
                     use crate::ipc::client::SearchHandle::*;
-                    match handler.handle().unwrap() {
+                    match handler.handle().friendly() {
                         Check { .. } => {
                             unreachable!()
                         }
                         Leave { result, x } => {
                             res = result.friendly();
-                            break x;
+                            x
                         }
                     }
                 };
