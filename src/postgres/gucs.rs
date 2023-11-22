@@ -21,7 +21,7 @@ pub static K: GucSetting<i32> = GucSetting::<i32>::new(64);
 
 pub static ENABLE_VECTOR_INDEX: GucSetting<bool> = GucSetting::<bool>::new(true);
 
-pub static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(false);
+pub static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(true);
 
 pub static TRANSPORT: GucSetting<Transport> = GucSetting::<Transport>::new(Transport::default());
 
