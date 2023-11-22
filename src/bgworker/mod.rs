@@ -3,19 +3,13 @@ pub mod worker;
 use self::worker::Worker;
 use crate::ipc::server::RpcHandler;
 use crate::ipc::IpcError;
-use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub fn main() {
     {
-        let logging = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open("vectors.log")
-            .unwrap();
         let mut builder = env_logger::builder();
-        builder.target(env_logger::Target::Pipe(Box::new(logging)));
+        builder.target(env_logger::Target::Stderr);
         #[cfg(not(debug_assertions))]
         {
             builder.filter(None, log::LevelFilter::Info);
