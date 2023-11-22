@@ -237,7 +237,7 @@ impl IndexView {
         &self,
         k: usize,
         vector: &[Scalar],
-        mut f: F,
+        mut filter: F,
     ) -> Result<Vec<Pointer>, IndexSearchError> {
         if self.options.vector.dims as usize != vector.len() {
             return Err(IndexSearchError::InvalidVector(vector.to_vec()));
@@ -267,7 +267,7 @@ impl IndexView {
 
         let mut filter = |payload| {
             if let Some(p) = self.delete.check(payload) {
-                f(p)
+                filter(p)
             } else {
                 false
             }

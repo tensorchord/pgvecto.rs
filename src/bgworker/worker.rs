@@ -80,7 +80,7 @@ impl Worker {
         &self,
         id: Id,
         search: (Vec<Scalar>, usize),
-        f: F,
+        filter: F,
     ) -> Result<Vec<Pointer>, FriendlyError>
     where
         F: FnMut(Pointer) -> bool,
@@ -88,7 +88,7 @@ impl Worker {
         let view = self.view.load_full();
         let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
         let view = index.view();
-        match view.search(search.1, &search.0, f) {
+        match view.search(search.1, &search.0, filter) {
             Ok(x) => Ok(x),
             Err(IndexSearchError::InvalidVector(x)) => Err(FriendlyError::BadVector(x)),
         }

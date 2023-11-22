@@ -415,13 +415,16 @@ pub fn entry(mmap: &HnswMmap, filter: &mut impl Filter) -> Option<u32> {
     }
     while shift != 0 {
         let mut i = 1u64;
-        while let Ok(e) = u32::try_from(i * shift - 1) {
-            if filter.check(mmap.raw.payload(e)) {
-                return Some(e);
-            }
-            count += 1;
-            if count >= 10000 {
-                return None;
+        while i * shift <= n as u64 {
+            let e = (i * shift - 1) as u32;
+            if i % m as u64 != 0 {
+                if filter.check(mmap.raw.payload(e)) {
+                    return Some(e);
+                }
+                count += 1;
+                if count >= 10000 {
+                    return None;
+                }
             }
             i += 1;
         }
@@ -472,8 +475,8 @@ pub fn local_search(
     let mut visited = visited.fetch();
     let mut candidates = BinaryHeap::<Reverse<(Scalar, u32)>>::new();
     let mut results = Heap::new(k);
-    let s_dis = mmap.quantization.distance(mmap.d, vector, s);
     visited.mark(s);
+    let s_dis = mmap.quantization.distance(mmap.d, vector, s);
     candidates.push(Reverse((s_dis, s)));
     results.push(HeapElement {
         distance: s_dis,
@@ -493,13 +496,14 @@ pub fn local_search(
                 continue;
             }
             let v_dis = mmap.quantization.distance(mmap.d, vector, v);
-            if results.check(v_dis) {
-                candidates.push(Reverse((v_dis, v)));
-                results.push(HeapElement {
-                    distance: v_dis,
-                    payload: mmap.raw.payload(v),
-                });
+            if !results.check(v_dis) {
+                continue;
             }
+            candidates.push(Reverse((v_dis, v)));
+            results.push(HeapElement {
+                distance: v_dis,
+                payload: mmap.raw.payload(v),
+            });
         }
     }
     results
