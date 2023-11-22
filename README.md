@@ -14,23 +14,21 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 ## Why use pgvecto.rs
 
 - 💃 **Easy to use**: pgvecto.rs is a Postgres extension, which means that you can use it directly within your existing database. This makes it easy to integrate into your existing workflows and applications.
+- 🔗 **Blazing fast indexing**: pgvecto.rs is fast not only at index creation, but also at insertion with an index. With async creation support, enjoy your search immediately.
 - 🥅 **Filtering**: pgvecto.rs supports filtering. You can set conditions when searching or retrieving points. This is the missing feature of other postgres extensions.
-- 🚀 **High Performance**: pgvecto.rs is designed to provide significant improvements compared to existing Postgres extensions. Benchmarks have shown that its HNSW index can deliver search performance up to 20 times faster than other indexes like ivfflat.
-- 🔧 **Extensible**: pgvecto.rs is designed to be extensible. It is easy to add new index structures and search algorithms. This flexibility ensures that pgvecto.rs can adapt to emerging vector search algorithms and meet diverse performance needs.
+- 🧮 **Quantization**: pgvecto.rs supports scalar quantization and product qutization up to 16x.
 - 🦀 **Rewrite in Rust**: Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
-- 🙋 **Community Driven**: We encourage community involvement and contributions, fostering innovation and continuous improvement.
 
 ## Comparison with pgvector
 
-|                                             | pgvecto.rs                        | pgvector                  |
-| ------------------------------------------- | --------------------------------- | ------------------------- |
-| Transaction support                         | ✅                                 | ⚠️                         |
-| Sufficient Result with Delete/Update/Filter | ✅                                 | ⚠️                         |
-| Vector Dimension Limit                      | 65535                             | 2000                      |
-| Prefilter on HNSW                           | ✅                                 | ❌                         |
-| Parallel Index build                        | ⚡️ Linearly faster with more cores | 🐌 Only single core used   |
-| Index Persistence                           | mmap file                         | Postgres internal storage |
-| WAL amplification                           | 2x 😃                              | 30x 🧐                     |
+|                                             | pgvecto.rs                          | pgvector                 |
+| ------------------------------------------- | ----------------------------------- | ------------------------ |
+| Transaction support                         | ✅                                  | ⚠️                       |
+| Sufficient Result with Delete/Update/Filter | ✅                                  | ⚠️                       |
+| Vector Dimension Limit                      | 65535                               | 2000                     |
+| Prefilter on HNSW                           | ✅                                  | ❌                       |
+| Parallel ans Async Index build              | ⚡️ Linearly faster with more cores | 🐌 Only single core used |
+| Quantization                                | Scalar/Product Quantization         | ❌                       |
 
 And based on our benchmark, pgvecto.rs can be up to 2x faster than pgvector on hnsw indexes with same configurations. Read more about the comparison at [here](./docs/comparison-pgvector.md).
 
@@ -39,7 +37,7 @@ And based on our benchmark, pgvecto.rs can be up to 2x faster than pgvector on h
 We recommend you to try pgvecto.rs using our pre-built docker, by running
 
 ```bash
-docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:latest
+docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:pg16-latest
 ```
 
 For more installation method (binary install or install from source), read more at [docs/install.md](./docs/install.md)
@@ -111,11 +109,19 @@ SELECT * FROM items WHERE embedding <-> '[3,2,1]' < 5;
 You can create an index, using squared Euclidean distance with the following SQL.
 
 ```sql
--- Using HNSW algorithm.
+-- Using HNSW algorithm with default settings.
 
 CREATE INDEX ON items USING vectors (embedding l2_ops);
 
---- Or using bruteforce with PQ.
+-- Or HNSW with custom settings
+CREATE INDEX ON items USING vectors (embedding l2_ops)
+WITH (options = $$
+[indexing.hnsw]
+ef_constuction = 64
+m = 16
+$$);
+
+--- Or using bruteforce with product quantization.
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
@@ -123,19 +129,12 @@ WITH (options = $$
 quantization = { product = { ratio = "x16" } }
 $$);
 
---- Or using IVFPQ algorithm.
+--- Or using IVF algorithm with scalar quantization.
 
 CREATE INDEX ON items USING vectors (embedding l2_ops)
 WITH (options = $$
+[indexing.ivf.quantization.scalar]
 [indexing.ivf]
-quantization = { product = { ratio = "x16" } }
-$$);
-
---- Or using Vamana algorithm.
-
-CREATE INDEX ON items USING vectors (embedding l2_ops)
-WITH (options = $$
-[indexing.vamana]
 $$);
 ```
 
@@ -146,8 +145,6 @@ SELECT *, embedding <-> '[0, 0, 0]' AS score
 FROM items
 ORDER BY embedding <-> '[0, 0, 0]' LIMIT 10;
 ```
-
-We planning to support more index types ([issue here](https://github.com/tensorchord/pgvecto.rs/issues/17)).
 
 Welcome to contribute if you are also interested!
 
@@ -174,20 +171,6 @@ We utilize TOML syntax to express the index's configuration. Here's what each ke
 | segment    | table | Options for segments.                  |
 | optimizing | table | Options for background optimizing.     |
 | indexing   | table | The algorithm to be used for indexing. |
-
-Options for table `segment`.
-
-| Key                      | Type    | Description                                                         |
-| ------------------------ | ------- | ------------------------------------------------------------------- |
-| max_growing_segment_size | integer | Maximum size of unindexed vectors. Default value is `20_000`.       |
-| min_sealed_segment_size  | integer | Minimum size of vectors for indexing. Default value is `1_000`.     |
-| max_sealed_segment_size  | integer | Maximum size of vectors for indexing. Default value is `1_000_000`. |
-
-Options for table `optimizing`.
-
-| Key                | Type    | Description                                                                 |
-| ------------------ | ------- | --------------------------------------------------------------------------- |
-| optimizing_threads | integer | Maximum threads for indexing. Default value is the sqrt of number of cores. |
 
 Options for table `indexing`.
 
@@ -220,7 +203,7 @@ Options for table `hnsw`.
 | Key             | Type    | Description                                        |
 | --------------- | ------- | -------------------------------------------------- |
 | m               | integer | Maximum degree of the node. Default value is `12`. |
-| ef_construction | integer | Search scope in building.  Default value is `300`. |
+| ef_construction | integer | Search scope in building. Default value is `300`.  |
 | quantization    | table   | The quantization algorithm to be used.             |
 
 Options for table `quantization`.
@@ -240,6 +223,23 @@ Options for table `product`.
 | sample | integer | Samples to be used for quantization. Default value is `65535`.                                                           |
 | ratio  | string  | Compression ratio for quantization. Only `"x4"`, `"x8"`, `"x16"`, `"x32"`, `"x64"` are allowed. Default value is `"x4"`. |
 
+<details>
+<summary>[Advanced] Segment and Optimization Settings</summary>
+Options for table `segment`.
+
+| Key                      | Type    | Description                                                         |
+| ------------------------ | ------- | ------------------------------------------------------------------- |
+| max_growing_segment_size | integer | Maximum size of unindexed vectors. Default value is `20_000`.       |
+| min_sealed_segment_size  | integer | Minimum size of vectors for indexing. Default value is `1_000`.     |
+| max_sealed_segment_size  | integer | Maximum size of vectors for indexing. Default value is `1_000_000`. |
+
+Options for table `optimizing`.
+
+| Key                | Type    | Description                                                                 |
+| ------------------ | ------- | --------------------------------------------------------------------------- |
+| optimizing_threads | integer | Maximum threads for indexing. Default value is the sqrt of number of cores. |
+</details>
+
 And you can change the number of expected result (such as `ef_search` in hnsw) by using the following SQL.
 
 ```sql
@@ -249,13 +249,13 @@ SET vectors.k = 32;
 SET LOCAL vectors.k = 32;
 ```
 
+
+### Filter in vector search
+
 If you want to disable vector indexing or prefilter, we also offer some GUC options:
 - `vectors.enable_vector_index`: Enable or disable the vector index. Default value is `on`.
 - `vectors.enable_prefilter`: Enable or disable the prefilter. Default value is `on`.
-
-## Limitations
-
-- The filtering process is not yet optimized. To achieve optimal performance, you may need to manually experiment with different strategies. For example, you can try searching without a vector index or implementing post-filtering techniques like the following query: `select * from (select * from items ORDER BY embedding <-> '[3,2,1]' LIMIT 100 ) where category = 1`. This involves using approximate nearest neighbor (ANN) search to obtain enough results and then applying filtering afterwards.
+More detailed doc at [./docs/filter.md] and issue [#113](https://github.com/tensorchord/pgvecto.rs/issues/113).
 
 ## Setting up the development environment
 
@@ -264,7 +264,7 @@ You could use [envd](https://github.com/tensorchord/envd) to set up the developm
 ```sh
 pip install envd
 envd up
-````
+```
 
 ## Contributing
 
