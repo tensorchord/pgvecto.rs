@@ -70,7 +70,7 @@ pub trait AbstractIndexing: Sized {
     fn len(&self) -> u32;
     fn vector(&self, i: u32) -> &[Scalar];
     fn payload(&self, i: u32) -> Payload;
-    fn search<F: FnMut(Payload) -> bool>(&self, k: usize, vector: &[Scalar], f: F) -> Heap;
+    fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap;
 }
 
 pub enum DynamicIndexing {
@@ -131,11 +131,11 @@ impl DynamicIndexing {
         }
     }
 
-    pub fn search<F: FnMut(Payload) -> bool>(&self, k: usize, vector: &[Scalar], f: F) -> Heap {
+    pub fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
         match self {
-            DynamicIndexing::Flat(x) => x.search(k, vector, f),
-            DynamicIndexing::Ivf(x) => x.search(k, vector, f),
-            DynamicIndexing::Hnsw(x) => x.search(k, vector, f),
+            DynamicIndexing::Flat(x) => x.search(k, vector, filter),
+            DynamicIndexing::Ivf(x) => x.search(k, vector, filter),
+            DynamicIndexing::Hnsw(x) => x.search(k, vector, filter),
         }
     }
 }

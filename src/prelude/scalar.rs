@@ -256,6 +256,8 @@ impl FromStr for Scalar {
 }
 
 impl FromDatum for Scalar {
+    const GET_TYPOID: bool = false;
+
     unsafe fn from_polymorphic_datum(datum: Datum, is_null: bool, typoid: Oid) -> Option<Self> {
         Float::from_polymorphic_datum(datum, is_null, typoid).map(Self)
     }

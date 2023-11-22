@@ -52,8 +52,8 @@ impl Hnsw {
         self.mmap.raw.payload(i)
     }
 
-    pub fn search<F: FnMut(Payload) -> bool>(&self, k: usize, vector: &[Scalar], f: F) -> Heap {
-        search(&self.mmap, k, vector, f)
+    pub fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
+        search(&self.mmap, k, vector, filter)
     }
 }
 
@@ -69,7 +69,6 @@ pub struct HnswRam {
     m: u32,
     // ----------------------
     graph: HnswRamGraph,
-    entry: Option<u32>,
     // ----------------------
     visited: Semaphore<Visited>,
 }
@@ -103,7 +102,6 @@ pub struct HnswMmap {
     edges: MmapArray<HnswMmapEdge>,
     by_layer_id: MmapArray<usize>,
     by_vertex_id: MmapArray<usize>,
-    entry: u32,
     // ----------------------
     visited: Semaphore<Visited>,
 }
@@ -342,7 +340,6 @@ pub fn make(
         d,
         m,
         graph,
-        entry: entry.into_inner(),
         visited: {
             let semaphore = Semaphore::<Visited>::new();
             for _ in 0..std::thread::available_parallelism().unwrap().get() * 2 {
@@ -382,7 +379,6 @@ pub fn save(mut ram: HnswRam, path: PathBuf) -> HnswMmap {
         edges,
         by_layer_id,
         by_vertex_id,
-        entry: ram.entry.unwrap(),
         visited: ram.visited,
     }
 }
@@ -401,7 +397,6 @@ pub fn load(path: PathBuf, options: IndexOptions) -> HnswMmap {
     let by_vertex_id = MmapArray::open(path.join("by_vertex_id"));
     let idx_opts = options.indexing.unwrap_hnsw();
     let n = raw.len();
-    let m = idx_opts.m;
     HnswMmap {
         raw,
         quantization,
@@ -410,7 +405,6 @@ pub fn load(path: PathBuf, options: IndexOptions) -> HnswMmap {
         edges,
         by_layer_id,
         by_vertex_id,
-        entry: entry_for_hnsw_graph(m, n),
         visited: {
             let semaphore = Semaphore::<Visited>::new();
             for _ in 0..std::thread::available_parallelism().unwrap().get() * 2 {
@@ -421,19 +415,47 @@ pub fn load(path: PathBuf, options: IndexOptions) -> HnswMmap {
     }
 }
 
-pub fn search<F: FnMut(Payload) -> bool>(
-    mmap: &HnswMmap,
-    k: usize,
-    vector: &[Scalar],
-    f: F,
-) -> Heap {
-    let s = mmap.entry;
+pub fn search(mmap: &HnswMmap, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
+    let Some(s) = entry(mmap, filter) else {
+        return Heap::new(k);
+    };
     let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
-    let u = fast_search(mmap, 1..=levels, s, vector);
-    local_search(mmap, k, u, vector, f)
+    let u = fast_search(mmap, 1..=levels, s, vector, filter);
+    local_search(mmap, k, u, vector, filter)
 }
 
-pub fn fast_search(mmap: &HnswMmap, levels: RangeInclusive<u8>, u: u32, vector: &[Scalar]) -> u32 {
+pub fn entry(mmap: &HnswMmap, filter: &mut impl Filter) -> Option<u32> {
+    let m = mmap.m;
+    let n = mmap.raw.len();
+    let mut shift = 1u64;
+    let mut count = 0u64;
+    while shift * m as u64 <= n as u64 {
+        shift *= m as u64;
+    }
+    while shift != 0 {
+        let mut i = 1u64;
+        while let Ok(e) = u32::try_from(i * shift - 1) {
+            if filter.check(mmap.raw.payload(e)) {
+                return Some(e);
+            }
+            count += 1;
+            if count >= 10000 {
+                return None;
+            }
+            i += 1;
+        }
+        shift /= m as u64;
+    }
+    None
+}
+
+pub fn fast_search(
+    mmap: &HnswMmap,
+    levels: RangeInclusive<u8>,
+    u: u32,
+    vector: &[Scalar],
+    filter: &mut impl Filter,
+) -> u32 {
     let mut u = u;
     let mut u_dis = mmap.quantization.distance(mmap.d, vector, u);
     for i in levels.rev() {
@@ -442,6 +464,9 @@ pub fn fast_search(mmap: &HnswMmap, levels: RangeInclusive<u8>, u: u32, vector: 
             changed = false;
             let edges = find_edges(mmap, u, i);
             for &HnswMmapEdge(_, v) in edges.iter() {
+                if !filter.check(mmap.raw.payload(v)) {
+                    continue;
+                }
                 let v_dis = mmap.quantization.distance(mmap.d, vector, v);
                 if v_dis < u_dis {
                     u = v;
@@ -454,12 +479,12 @@ pub fn fast_search(mmap: &HnswMmap, levels: RangeInclusive<u8>, u: u32, vector: 
     u
 }
 
-pub fn local_search<F: FnMut(Payload) -> bool>(
+pub fn local_search(
     mmap: &HnswMmap,
     k: usize,
     s: u32,
     vector: &[Scalar],
-    mut f: F,
+    filter: &mut impl Filter,
 ) -> Heap {
     assert!(k > 0);
     let mut visited = mmap.visited.acquire();
@@ -469,12 +494,10 @@ pub fn local_search<F: FnMut(Payload) -> bool>(
     let s_dis = mmap.quantization.distance(mmap.d, vector, s);
     visited.set(s as usize);
     candidates.push(Reverse((s_dis, s)));
-    if f(mmap.raw.payload(s)) {
-        results.push(HeapElement {
-            distance: s_dis,
-            payload: mmap.raw.payload(s),
-        });
-    }
+    results.push(HeapElement {
+        distance: s_dis,
+        payload: mmap.raw.payload(s),
+    });
     while let Some(Reverse((u_dis, u))) = candidates.pop() {
         if !results.check(u_dis) {
             break;
@@ -485,10 +508,13 @@ pub fn local_search<F: FnMut(Payload) -> bool>(
                 continue;
             }
             visited.set(v as usize);
+            if !filter.check(mmap.raw.payload(v)) {
+                continue;
+            }
             let v_dis = mmap.quantization.distance(mmap.d, vector, v);
             if results.check(v_dis) {
                 candidates.push(Reverse((v_dis, v)));
-                if f(mmap.raw.payload(v)) {
+                if filter.check(mmap.raw.payload(v)) {
                     results.push(HeapElement {
                         distance: v_dis,
                         payload: mmap.raw.payload(v),
@@ -498,14 +524,6 @@ pub fn local_search<F: FnMut(Payload) -> bool>(
         }
     }
     results
-}
-
-fn entry_for_hnsw_graph(m: u32, n: u32) -> u32 {
-    let mut ans = 1u64;
-    while ans * m as u64 <= n as u64 {
-        ans *= m as u64;
-    }
-    (ans - 1) as u32
 }
 
 fn count_layers_of_a_vertex(m: u32, i: u32) -> u8 {

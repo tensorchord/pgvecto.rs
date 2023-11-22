@@ -57,7 +57,7 @@ impl SealedSegment {
     pub fn payload(&self, i: u32) -> Payload {
         self.indexing.payload(i)
     }
-    pub fn search<F: FnMut(Payload) -> bool>(&self, k: usize, vector: &[Scalar], f: F) -> Heap {
-        self.indexing.search(k, vector, f)
+    pub fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
+        self.indexing.search(k, vector, filter)
     }
 }

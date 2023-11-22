@@ -70,10 +70,10 @@ impl Ivf {
         }
     }
 
-    pub fn search<F: FnMut(Payload) -> bool>(&self, k: usize, vector: &[Scalar], f: F) -> Heap {
+    pub fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
         match self {
-            Ivf::Naive(x) => x.search(k, vector, f),
-            Ivf::Pq(x) => x.search(k, vector, f),
+            Ivf::Naive(x) => x.search(k, vector, filter),
+            Ivf::Pq(x) => x.search(k, vector, filter),
         }
     }
 }

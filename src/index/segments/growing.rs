@@ -148,13 +148,13 @@ impl GrowingSegment {
         let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
         log.payload
     }
-    pub fn search<F: FnMut(Payload) -> bool>(&self, k: usize, vector: &[Scalar], mut f: F) -> Heap {
+    pub fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
         let n = self.len.load(Ordering::Acquire);
         let mut heap = Heap::new(k);
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
             let distance = self.options.d.distance(vector, &log.vector);
-            if heap.check(distance) && f(log.payload) {
+            if heap.check(distance) && filter.check(log.payload) {
                 heap.push(HeapElement {
                     distance,
                     payload: log.payload,
