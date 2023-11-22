@@ -39,11 +39,11 @@ impl Flat {
         self.mmap.raw.vector(i)
     }
 
-    pub fn data(&self, i: u32) -> u64 {
-        self.mmap.raw.data(i)
+    pub fn payload(&self, i: u32) -> Payload {
+        self.mmap.raw.payload(i)
     }
 
-    pub fn search<F: FnMut(u64) -> bool>(&self, k: usize, vector: &[Scalar], filter: F) -> Heap {
+    pub fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
         search(&self.mmap, k, vector, filter)
     }
 }
@@ -116,18 +116,13 @@ pub fn load(path: PathBuf, options: IndexOptions) -> FlatMmap {
     }
 }
 
-pub fn search<F: FnMut(u64) -> bool>(
-    mmap: &FlatMmap,
-    k: usize,
-    vector: &[Scalar],
-    mut filter: F,
-) -> Heap {
+pub fn search(mmap: &FlatMmap, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
     let mut result = Heap::new(k);
     for i in 0..mmap.raw.len() {
         let distance = mmap.quantization.distance(mmap.d, vector, i);
-        let data = mmap.raw.data(i);
-        if filter(data) {
-            result.push(HeapElement { distance, data });
+        let payload = mmap.raw.payload(i);
+        if filter.check(payload) {
+            result.push(HeapElement { distance, payload });
         }
     }
     result

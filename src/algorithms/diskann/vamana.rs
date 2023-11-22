@@ -182,12 +182,12 @@ impl VamanaImpl {
         new_vamana
     }
 
-    pub fn search<F>(&self, target: Box<[Scalar]>, k: usize, filter: F) -> Vec<(Scalar, u64)>
+    pub fn search<F>(&self, target: Box<[Scalar]>, k: usize, f: F) -> Vec<(Scalar, Payload)>
     where
-        F: FnMut(u64) -> bool,
+        F: FnMut(Payload) -> bool,
     {
         // TODO: filter
-        let state = self._greedy_search_with_filter(0, &target, k, k * 2, filter);
+        let state = self._greedy_search_with_filter(0, &target, k, k * 2, f);
 
         let mut results = BinaryHeap::<(Scalar, u32)>::new();
         for (distance, row) in state.candidates {
@@ -197,8 +197,10 @@ impl VamanaImpl {
 
             results.push((distance, row));
         }
-        let mut res_vec: Vec<(Scalar, u64)> =
-            results.iter().map(|x| (x.0, self.raw.data(x.1))).collect();
+        let mut res_vec: Vec<(Scalar, Payload)> = results
+            .iter()
+            .map(|x| (x.0, self.raw.payload(x.1)))
+            .collect();
         res_vec.sort();
         res_vec
     }
@@ -209,10 +211,10 @@ impl VamanaImpl {
         query: &[Scalar],
         k: usize,
         search_size: usize,
-        mut filter: F,
+        mut f: F,
     ) -> SearchState
     where
-        F: FnMut(u64) -> bool,
+        F: FnMut(Payload) -> bool,
     {
         let mut state = SearchState::new(k, search_size);
 
@@ -230,7 +232,7 @@ impl VamanaImpl {
                         continue;
                     }
 
-                    if filter(self.raw.data(neighbor_id)) {
+                    if f(self.raw.payload(neighbor_id)) {
                         let dist = self.d.distance(query, self.raw.vector(neighbor_id));
                         state.push(neighbor_id, dist); // push and retain closet l nodes
                     }

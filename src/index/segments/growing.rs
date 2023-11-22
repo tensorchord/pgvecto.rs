@@ -102,8 +102,12 @@ impl GrowingSegment {
     pub fn flush(&self) {
         self.wal.lock().sync_all();
     }
-    pub fn insert(&self, vector: Vec<Scalar>, data: u64) -> Result<(), GrowingSegmentInsertError> {
-        let log = Log { vector, data };
+    pub fn insert(
+        &self,
+        vector: Vec<Scalar>,
+        payload: Payload,
+    ) -> Result<(), GrowingSegmentInsertError> {
+        let log = Log { vector, payload };
         let i;
         {
             let mut pro = self.pro.lock();
@@ -136,29 +140,24 @@ impl GrowingSegment {
         let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
         log.vector.as_ref()
     }
-    pub fn data(&self, i: u32) -> u64 {
+    pub fn payload(&self, i: u32) -> Payload {
         let i = i as usize;
         if i >= self.len.load(Ordering::Acquire) {
             panic!("Out of bound.");
         }
         let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
-        log.data
+        log.payload
     }
-    pub fn search<F: FnMut(u64) -> bool>(
-        &self,
-        k: usize,
-        vector: &[Scalar],
-        mut filter: F,
-    ) -> Heap {
+    pub fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
         let n = self.len.load(Ordering::Acquire);
         let mut heap = Heap::new(k);
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
             let distance = self.options.d.distance(vector, &log.vector);
-            if heap.check(distance) && filter(log.data) {
+            if heap.check(distance) && filter.check(log.payload) {
                 heap.push(HeapElement {
                     distance,
-                    data: log.data,
+                    payload: log.payload,
                 });
             }
         }
@@ -183,7 +182,7 @@ impl Drop for GrowingSegment {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct Log {
     vector: Vec<Scalar>,
-    data: u64,
+    payload: Payload,
 }
 
 #[derive(Debug, Clone)]

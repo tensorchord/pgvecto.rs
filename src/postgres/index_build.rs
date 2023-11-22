@@ -20,7 +20,7 @@ pub unsafe fn build(
     flush_if_commit(id);
     let options = options(index);
     client(|mut rpc| {
-        rpc.create(id, options).unwrap();
+        rpc.create(id, options).friendly();
         rpc
     });
     if let Some((heap_relation, index_info, result)) = data {
@@ -63,7 +63,7 @@ unsafe extern "C" fn callback(
     let state = &mut *(state as *mut Builder);
     let pgvector = VectorInput::from_datum(*values.add(0), *is_null.add(0)).unwrap();
     let data = (pgvector.to_vec(), Pointer::from_sys(*ctid));
-    state.rpc.insert(id, data).unwrap().friendly();
+    state.rpc.insert(id, data).friendly().friendly();
     (*state.result).heap_tuples += 1.0;
     (*state.result).index_tuples += 1.0;
 }
@@ -86,7 +86,7 @@ unsafe extern "C" fn callback(
     let state = &mut *(state as *mut Builder);
     let pgvector = VectorInput::from_datum(*values.add(0), *is_null.add(0)).unwrap();
     let data = (pgvector.to_vec(), Pointer::from_sys(*ctid));
-    state.rpc.insert(id, data).unwrap().friendly();
+    state.rpc.insert(id, data).friendly().friendly();
     (*state.result).heap_tuples += 1.0;
     (*state.result).index_tuples += 1.0;
 }

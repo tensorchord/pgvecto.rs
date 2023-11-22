@@ -24,11 +24,11 @@ pub fn committing() {
         if flush_if_commit.len() != 0 || drop_if_commit.len() != 0 {
             client(|mut rpc| {
                 for id in flush_if_commit.iter().copied() {
-                    rpc.flush(id).unwrap().unwrap();
+                    rpc.flush(id).friendly().friendly();
                 }
 
                 for id in drop_if_commit.iter().copied() {
-                    rpc.destory(id).unwrap();
+                    rpc.destory(id).friendly();
                 }
 
                 rpc

@@ -3,19 +3,13 @@ pub mod worker;
 use self::worker::Worker;
 use crate::ipc::server::RpcHandler;
 use crate::ipc::IpcError;
-use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub fn main() {
     {
-        let logging = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open("vectors.log")
-            .unwrap();
         let mut builder = env_logger::builder();
-        builder.target(env_logger::Target::Pipe(Box::new(logging)));
+        builder.target(env_logger::Target::Stderr);
         #[cfg(not(debug_assertions))]
         {
             builder.filter(None, log::LevelFilter::Info);
@@ -45,11 +39,11 @@ pub fn main() {
     };
     std::thread::spawn({
         let worker = worker.clone();
-        move || thread_main_2(crate::ipc::listen_unix(), worker)
+        move || listen(crate::ipc::listen_unix(), worker)
     });
     std::thread::spawn({
         let worker = worker.clone();
-        move || thread_main_2(crate::ipc::listen_mmap(), worker)
+        move || listen(crate::ipc::listen_mmap(), worker)
     });
     loop {
         let mut sig: i32 = 0;
@@ -72,23 +66,20 @@ pub fn main() {
     }
 }
 
-fn thread_main_2<T>(listen: T, worker: Arc<Worker>)
-where
-    T: Iterator<Item = RpcHandler>,
-{
+fn listen(listen: impl Iterator<Item = RpcHandler>, worker: Arc<Worker>) {
     for rpc_handler in listen {
+        let worker = worker.clone();
         std::thread::spawn({
-            let worker = worker.clone();
             move || {
-                if let Err(e) = thread_session(worker, rpc_handler) {
-                    log::error!("Session exited. {}.", e);
-                }
+                log::trace!("Session established.");
+                let _ = session(worker, rpc_handler);
+                log::trace!("Session closed.");
             }
         });
     }
 }
 
-fn thread_session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError> {
+fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError> {
     use crate::ipc::server::RpcHandle;
     loop {
         match handler.handle()? {

@@ -1,7 +1,7 @@
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::segments::sealed::SealedSegment;
 use crate::index::IndexOptions;
-use crate::prelude::Scalar;
+use crate::prelude::*;
 use crate::utils::mmap_array::MmapArray;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -37,8 +37,8 @@ impl Raw {
         self.mmap.vector(i)
     }
 
-    pub fn data(&self, i: u32) -> u64 {
-        self.mmap.data(i)
+    pub fn payload(&self, i: u32) -> Payload {
+        self.mmap.payload(i)
     }
 }
 
@@ -71,16 +71,16 @@ impl RawRam {
         }
         panic!("Out of bound.")
     }
-    fn data(&self, mut index: u32) -> u64 {
+    fn payload(&self, mut index: u32) -> Payload {
         for x in self.sealed.iter() {
             if index < x.len() {
-                return x.data(index);
+                return x.payload(index);
             }
             index -= x.len();
         }
         for x in self.growing.iter() {
             if index < x.len() {
-                return x.data(index);
+                return x.payload(index);
             }
             index -= x.len();
         }
@@ -90,13 +90,13 @@ impl RawRam {
 
 struct RawMmap {
     vectors: MmapArray<Scalar>,
-    data: MmapArray<u64>,
+    payload: MmapArray<Payload>,
     dims: u16,
 }
 
 impl RawMmap {
     fn len(&self) -> u32 {
-        self.data.len() as u32
+        self.payload.len() as u32
     }
 
     fn vector(&self, i: u32) -> &[Scalar] {
@@ -105,8 +105,8 @@ impl RawMmap {
         &self.vectors[s..e]
     }
 
-    fn data(&self, i: u32) -> u64 {
-        self.data[i as usize]
+    fn payload(&self, i: u32) -> Payload {
+        self.payload[i as usize]
     }
 }
 
@@ -128,22 +128,22 @@ fn make(
 fn save(ram: RawRam, path: PathBuf) -> RawMmap {
     let n = ram.len();
     let vectors_iter = (0..n).flat_map(|i| ram.vector(i)).copied();
-    let data_iter = (0..n).map(|i| ram.data(i));
+    let payload_iter = (0..n).map(|i| ram.payload(i));
     let vectors = MmapArray::create(path.join("vectors"), vectors_iter);
-    let data = MmapArray::create(path.join("data"), data_iter);
+    let payload = MmapArray::create(path.join("payload"), payload_iter);
     RawMmap {
         vectors,
-        data,
+        payload,
         dims: ram.dims,
     }
 }
 
 fn load(path: PathBuf, options: IndexOptions) -> RawMmap {
     let vectors: MmapArray<Scalar> = MmapArray::open(path.join("vectors"));
-    let data = MmapArray::open(path.join("data"));
+    let payload = MmapArray::open(path.join("payload"));
     RawMmap {
         vectors,
-        data,
+        payload,
         dims: options.vector.dims,
     }
 }

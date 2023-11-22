@@ -13,6 +13,14 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+fn magic() -> &'static [u8] {
+    &[1, 4, 53, 23, 34, 92, 34, 23]
+}
+
+fn check(data: &[u8]) -> bool {
+    magic() == data
+}
+
 pub struct Worker {
     path: PathBuf,
     protect: Mutex<WorkerProtect>,
@@ -22,6 +30,7 @@ pub struct Worker {
 impl Worker {
     pub fn create(path: PathBuf) -> Arc<Self> {
         std::fs::create_dir(&path).unwrap();
+        std::fs::write(path.join("magic"), magic()).unwrap();
         std::fs::create_dir(path.join("indexes")).unwrap();
         let startup = FileAtomic::create(path.join("startup"), WorkerStartup::new());
         let indexes = HashMap::new();
@@ -38,6 +47,9 @@ impl Worker {
     }
     pub fn open(path: PathBuf) -> Arc<Self> {
         let startup = FileAtomic::<WorkerStartup>::open(path.join("startup"));
+        if !check(&std::fs::read(path.join("magic")).unwrap_or_default()) {
+            panic!("Please delete the directory pg_vectors in Postgresql data folder. The files are created by older versions of postgresql or broken.");
+        }
         clean(
             path.join("indexes"),
             startup.get().indexes.keys().map(|s| s.to_string()),
@@ -68,7 +80,7 @@ impl Worker {
         &self,
         id: Id,
         search: (Vec<Scalar>, usize),
-        f: F,
+        filter: F,
     ) -> Result<Vec<Pointer>, FriendlyError>
     where
         F: FnMut(Pointer) -> bool,
@@ -76,7 +88,7 @@ impl Worker {
         let view = self.view.load_full();
         let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
         let view = index.view();
-        match view.search(search.1, &search.0, f) {
+        match view.search(search.1, &search.0, filter) {
             Ok(x) => Ok(x),
             Err(IndexSearchError::InvalidVector(x)) => Err(FriendlyError::BadVector(x)),
         }
