@@ -20,22 +20,22 @@ class PGVectoRs:
     dimension: int
 
     def __init__(
-        self,
-        db_url: str,
-        collection_name: str,
-        dimension: int,
+        self, db_url: str, collection_name: str, dimension: int, recreate: bool = False
     ) -> None:
         """Connect to an existing table or create a new empty one.
+        If the `recreate=True`, the table will be dropped if it exists.
 
         Args:
         ----
             db_url (str): url to the database.
             table_name (str): name of the table.
             dimension (int): dimension of the embeddings.
+            recreate (bool): drop the table if it exists. Defaults to False.
         """
 
         class _Table(RecordORM):
             __tablename__ = f"collection_{collection_name}"
+            __table_args__ = {"extend_existing": True}  # noqa: RUF012
             id: Mapped[UUID] = mapped_column(
                 postgresql.UUID(as_uuid=True),
                 primary_key=True,
@@ -47,9 +47,11 @@ class PGVectoRs:
         self._engine = create_engine(db_url)
         with Session(self._engine) as session:
             session.execute(text("CREATE EXTENSION IF NOT EXISTS vectors"))
+            if recreate:
+                session.execute(text(f"DROP TABLE IF EXISTS {_Table.__tablename__}"))
             session.commit()
         self._table = _Table
-        self._table.__table__.create(self._engine)
+        self._table.__table__.create(self._engine, checkfirst=True)
         self.dimension = dimension
 
     def insert(self, records: List[Record]) -> None:
