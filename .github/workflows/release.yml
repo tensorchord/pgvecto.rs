@@ -229,6 +229,6 @@ jobs:
           platforms: "linux/amd64,linux/arm64"
           file: ./docker/pgvecto-rs.Dockerfile
           build-args: |
-            TAG=pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}    
+            TAG=pg${{ matrix.version }}-${{ needs.setup.outputs.version }}
             POSTGRES_VERSION=${{ matrix.version }}
           tags: tensorchord/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}, tensorchord/pgvecto-rs:latest
