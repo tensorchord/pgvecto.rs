@@ -14,7 +14,8 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 ## Why use pgvecto.rs
 
 - 💃 **Easy to use**: pgvecto.rs is a Postgres extension, which means that you can use it directly within your existing database. This makes it easy to integrate into your existing workflows and applications.
-- 🔗 **Blazing fast indexing**: pgvecto.rs is fast not only at index creation, but also at insertion with an index. With async creation support, enjoy your search immediately.
+- 🔗 **Async indexing**: pgvecto.rs's index is asynchronously constructed by the background threads. The search is performed by brute force before the async construction is completed. More details can be found [here](./docs/indexing.md)
+- 🌠 **Fast insertion**: New rows are not blocked by the index construction, with the help of async indexing. Enjoy your search immediately!
 - 🥅 **Filtering**: pgvecto.rs supports filtering. You can set conditions when searching or retrieving points. This is the missing feature of other postgres extensions.
 - 🧮 **Quantization**: pgvecto.rs supports scalar quantization and product qutization up to 64x.
 - 🦀 **Rewrite in Rust**: Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
