@@ -48,7 +48,7 @@ pub unsafe fn init() {
         "vectors.enable_vector_index",
         "Whether to enable vector index.",
         "When enabled, it will use existing vector index to speed up the search.",
-        &ENABLE_VECTOR_INDEX,
+        &ENABLE_PREFILTER,
         GucContext::Userset,
         GucFlags::default(),
     );
