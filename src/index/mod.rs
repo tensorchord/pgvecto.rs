@@ -19,14 +19,13 @@ use crate::utils::os::futex_wake;
 use arc_swap::ArcSwap;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicU32;
-use std::sync::atomic::Ordering::Relaxed;
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Weak};
 use thiserror::Error;
 use uuid::Uuid;
@@ -213,13 +212,13 @@ impl Index {
         );
         protect.write = Some((write_segment_uuid, write_segment));
         protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
-        self.state.fetch_or(0b10, Relaxed);
+        self.state.fetch_or(0b10, Ordering::Release);
         unsafe {
             futex_wake(&self.state);
         }
     }
     pub fn indexing(&self) -> bool {
-        self.state.load(Relaxed) != 0
+        self.state.load(Ordering::Acquire) != 0
     }
 }
 
@@ -272,13 +271,13 @@ impl IndexView {
         impl Eq for Comparer {}
 
         impl PartialOrd for Comparer {
-            fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
                 Some(self.cmp(other))
             }
         }
 
         impl Ord for Comparer {
-            fn cmp(&self, other: &Self) -> Ordering {
+            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
                 self.0.peek().cmp(&other.0.peek()).reverse()
             }
         }
@@ -418,10 +417,10 @@ impl IndexBackground {
             return;
         }
         while let Some(index) = self.index.upgrade() {
-            index.state.store(1, Relaxed);
+            index.state.store(1, Ordering::SeqCst);
             let done = pool.install(|| optimizing::indexing::optimizing_indexing(index.clone()));
             if done {
-                index.state.fetch_xor(1, Relaxed);
+                index.state.fetch_xor(1, Ordering::Release);
                 unsafe {
                     futex_wait(&index.state, 0);
                 }
