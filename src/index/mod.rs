@@ -428,8 +428,6 @@ impl IndexBackground {
             return;
         }
         while let Some(index) = self.index.upgrade() {
-            self.parker.unparker().unpark();
-            self.parker.park();
             let done = pool.install(|| optimizing::indexing::optimizing_indexing(index.clone()));
             if done {
                 *index.indexing.lock() = false;
