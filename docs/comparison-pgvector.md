@@ -1,15 +1,5 @@
 # Comparison with pgvector
 
-|                                             | pgvecto.rs                                             | pgvector                |
-| ------------------------------------------- | ------------------------------------------------------ | ----------------------- |
-| Transaction support                         | ✅                                                      | ⚠️                       |
-| Sufficient Result with Delete/Update/Filter | ✅                                                      | ⚠️                       |
-| Vector Dimension Limit                      | 65535                                                  | 2000                    |
-| Prefilter on HNSW                           | ✅                                                      | ❌                       |
-| Parallel Index build                        | ⚡️ Linearly faster with more cores                      | 🐌 Only single core used |
-| Async Index build                           | Ready for queries anytime and do not block insertions. | ❌                       |
-| Quantization                                | Scalar/Product Quantization                            | ❌                       |
-
 ## Delete and Transaction Support (Dead tuple problem)
 
 In the HNSW index, the `ef_search` parameter controls the number of candidates returned by the index. However, pgvector may not provide sufficient results in cases where data is updated or deleted. This occurs because pgvector does not handle invisible tuples, which can arise when data has already been deleted or is part of an uncommitted transaction. Consequently, pgvector may fail to return the desired number of results specified by `ef_search`, resulting in poorer recall rates and potentially affecting application performance.
