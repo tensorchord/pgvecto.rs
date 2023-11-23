@@ -32,19 +32,12 @@ class MockEmbedder:
 
 @pytest.fixture(scope="module")
 def client():
-    client = PGVectoRs(db_url=URL, collection_name="empty", dimension=3)
-    try:
-        records1 = [
-            Record.from_text(t, v, {"src": "src1"}) for t, v in MockTexts.items()
-        ]
-        records2 = [
-            Record.from_text(t, v, {"src": "src2"}) for t, v in MockTexts.items()
-        ]
-        client.insert(records1)
-        client.insert(records2)
-        yield client
-    finally:
-        client.drop()
+    client = PGVectoRs(db_url=URL, collection_name="empty", dimension=3, recreate=True)
+    records1 = [Record.from_text(t, v, {"src": "src1"}) for t, v in MockTexts.items()]
+    records2 = [Record.from_text(t, v, {"src": "src2"}) for t, v in MockTexts.items()]
+    client.insert(records1)
+    client.insert(records2)
+    return client
 
 
 filter_src1 = filters.meta_contains({"src": "src1"})
