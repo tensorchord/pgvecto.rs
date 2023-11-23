@@ -26,13 +26,16 @@ pub enum RpcPacket {
         search: (Vec<Scalar>, usize),
         prefilter: bool,
     },
-    StatIndexing {
-        id: Id,
-    },
     StatTuples {
         id: Id,
     },
     StatTuplesDone {
+        id: Id,
+    },
+    StatSealed {
+        id: Id,
+    },
+    StatGrowing {
         id: Id,
     },
     StatConfig {
@@ -100,6 +103,16 @@ pub enum StatTuplesPacket {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StatTuplesDonePacket {
     Leave { result: Result<u32, FriendlyError> },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum StatSealedPacket {
+    Leave { result: Result<Vec<u32>, FriendlyError> },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum StatGrowingPacket {
+    Leave { result: Result<Vec<u32>, FriendlyError> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]

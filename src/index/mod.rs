@@ -14,9 +14,9 @@ use crate::prelude::*;
 use crate::utils::clean::clean;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::file_atomic::FileAtomic;
-use crate::utils::os::futex_wait;
-use crate::utils::os::futex_wake;
 use arc_swap::ArcSwap;
+use crossbeam::sync::Parker;
+use crossbeam::sync::Unparker;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
@@ -24,8 +24,7 @@ use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::atomic::AtomicU32;
-use std::sync::atomic::Ordering;
+use std::sync::OnceLock;
 use std::sync::{Arc, Weak};
 use thiserror::Error;
 use uuid::Uuid;
@@ -72,9 +71,7 @@ pub struct Index {
     delete: Arc<Delete>,
     protect: Mutex<IndexProtect>,
     view: ArcSwap<IndexView>,
-    // the first bit represents whether it is indexing
-    // the second bit represents whether there is new data
-    state: AtomicU32,
+    optimize_unparker: OnceLock<Unparker>,
     _tracker: Arc<IndexTracker>,
 }
 
@@ -109,7 +106,7 @@ impl Index {
                 delete: delete.clone(),
                 write: None,
             })),
-            state: AtomicU32::new(0),
+            optimize_unparker: OnceLock::new(),
             _tracker: Arc::new(IndexTracker { path }),
         });
         IndexBackground {
@@ -180,7 +177,7 @@ impl Index {
                 growing,
                 write: None,
             })),
-            state: AtomicU32::new(0),
+            optimize_unparker: OnceLock::new(),
             _tracker: tracker,
         });
         IndexBackground {
@@ -212,13 +209,9 @@ impl Index {
         );
         protect.write = Some((write_segment_uuid, write_segment));
         protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
-        self.state.fetch_or(0b10, Ordering::Release);
-        unsafe {
-            futex_wake(&self.state);
+        if let Some(unparker) = self.optimize_unparker.get() {
+            unparker.unpark();
         }
-    }
-    pub fn indexing(&self) -> bool {
-        self.state.load(Ordering::Acquire) != 0
     }
 }
 
@@ -249,6 +242,12 @@ impl IndexView {
     }
     pub fn sealed_len(&self) -> u32 {
         self.sealed.values().map(|x| x.len()).sum::<u32>()
+    }
+    pub fn sealed_len_vec(&self) -> Vec<u32> {
+        self.sealed.values().map(|x| x.len()).collect()
+    }
+    pub fn growing_len_vec(&self) -> Vec<u32> {
+        self.growing.values().map(|x| x.len()).collect()
     }
     pub fn search<F: FnMut(Pointer) -> bool>(
         &self,
@@ -408,22 +407,23 @@ pub struct IndexBackground {
 impl IndexBackground {
     pub fn main(self) {
         let pool;
+        let parker = Parker::new();
+        let unparker = parker.unparker();
         if let Some(index) = self.index.upgrade() {
             pool = rayon::ThreadPoolBuilder::new()
                 .num_threads(index.options.optimizing.optimizing_threads)
                 .build()
                 .unwrap();
+            index.optimize_unparker.set(unparker.clone()).unwrap();
         } else {
             return;
         }
         while let Some(index) = self.index.upgrade() {
-            index.state.store(1, Ordering::SeqCst);
+            unparker.unpark();
+            parker.park();
             let done = pool.install(|| optimizing::indexing::optimizing_indexing(index.clone()));
             if done {
-                index.state.fetch_xor(1, Ordering::Release);
-                unsafe {
-                    futex_wait(&index.state, 0);
-                }
+                parker.park();
             }
         }
     }

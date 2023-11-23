@@ -127,12 +127,6 @@ impl Worker {
         protect.indexes.remove(&id);
         protect.maintain(&self.view);
     }
-    pub fn call_stat_indexing(&self, id: Id) -> Result<bool, FriendlyError> {
-        let view = self.view.load_full();
-        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
-        let indexing = index.indexing();
-        Ok(indexing)
-    }
     pub fn call_stat_tuples(&self, id: Id) -> Result<u32, FriendlyError> {
         let view = self.view.load_full();
         let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
@@ -144,6 +138,18 @@ impl Worker {
         let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
         let len = index.view().sealed_len();
         Ok(len)
+    }
+    pub fn call_stat_sealed(&self, id: Id) -> Result<Vec<u32>, FriendlyError> {
+        let view = self.view.load_full();
+        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
+        let indexing = index.view().sealed_len_vec();
+        Ok(indexing)
+    }
+    pub fn call_stat_growing(&self, id: Id) -> Result<Vec<u32>, FriendlyError> {
+        let view = self.view.load_full();
+        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
+        let indexing = index.view().growing_len_vec();
+        Ok(indexing)
     }
     pub fn call_stat_config(&self, id: Id) -> Result<String, FriendlyError> {
         let view = self.view.load_full();
