@@ -107,12 +107,16 @@ pub enum StatTuplesDonePacket {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StatSealedPacket {
-    Leave { result: Result<Vec<u32>, FriendlyError> },
+    Leave {
+        result: Result<Vec<u32>, FriendlyError>,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StatGrowingPacket {
-    Leave { result: Result<Vec<u32>, FriendlyError> },
+    Leave {
+        result: Result<Vec<u32>, FriendlyError>,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]

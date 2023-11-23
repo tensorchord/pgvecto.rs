@@ -277,7 +277,10 @@ pub struct StatSealed {
 }
 
 impl StatSealed {
-    pub fn leave(mut self, result: Result<Vec<u32>, FriendlyError>) -> Result<RpcHandler, IpcError> {
+    pub fn leave(
+        mut self,
+        result: Result<Vec<u32>, FriendlyError>,
+    ) -> Result<RpcHandler, IpcError> {
         let packet = StatSealedPacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
@@ -291,7 +294,10 @@ pub struct StatGrowing {
 }
 
 impl StatGrowing {
-    pub fn leave(mut self, result: Result<Vec<u32>, FriendlyError>) -> Result<RpcHandler, IpcError> {
+    pub fn leave(
+        mut self,
+        result: Result<Vec<u32>, FriendlyError>,
+    ) -> Result<RpcHandler, IpcError> {
         let packet = StatGrowingPacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
