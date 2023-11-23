@@ -41,13 +41,13 @@ pip install envd
 envd up
 ```
 
-|                                             | pgvecto.rs                                             | pgvector                |
-| ------------------------------------------- | ------------------------------------------------------ | ----------------------- |
-| Transaction support                         | ✅                                                      | ⚠️                       |
-| Sufficient Result with Delete/Update/Filter | ✅                                                      | ⚠️                       |
-| Vector Dimension Limit                      | 65535                                                  | 2000                    |
-| Prefilter on HNSW                           | ✅                                                      | ❌                       |
-| Parallel Index build                        | ⚡️ Linearly faster with more cores                      | 🐌 Only single core used |
+|                                             | pgvecto.rs                                             | pgvector                 |
+| ------------------------------------------- | ------------------------------------------------------ | ------------------------ |
+| Transaction support                         | ✅                                                     | ⚠️                       |
+| Sufficient Result with Delete/Update/Filter | ✅                                                     | ⚠️                       |
+| Vector Dimension Limit                      | 65535                                                  | 2000                     |
+| Prefilter on HNSW                           | ✅                                                     | ❌                       |
+| Parallel HNSW Index build                   | ⚡️ Linearly faster with more cores                    | 🐌 Only single core used |
 | Async Index build                           | Ready for queries anytime and do not block insertions. | ❌                       |
 | Quantization                                | Scalar/Product Quantization                            | ❌                       |
 
