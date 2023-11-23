@@ -131,12 +131,17 @@ impl Worker {
         let view = self.view.load_full();
         let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
         let view = index.view();
+        let idx_sealed_len = view.sealed_len();
+        let idx_growing_len = view.growing_len();
+        let idx_write = view.write_len();
         let res = VectorIndexInfo {
             indexing: index.indexing(),
-            idx_tuples: view.len().try_into().unwrap(),
-            idx_sealed_len: view.sealed_len().try_into().unwrap(),
-            idx_growing_len: view.growing_len().try_into().unwrap(),
-            idx_write: view.write_len().try_into().unwrap(),
+            idx_tuples: (idx_write + idx_sealed_len + idx_growing_len)
+                .try_into()
+                .unwrap(),
+            idx_sealed_len: idx_sealed_len.try_into().unwrap(),
+            idx_growing_len: idx_growing_len.try_into().unwrap(),
+            idx_write: idx_write.try_into().unwrap(),
             idx_sealed: view
                 .sealed_len_vec()
                 .into_iter()

@@ -242,9 +242,6 @@ pub struct IndexView {
 }
 
 impl IndexView {
-    pub fn len(&self) -> u32 {
-        self.sealed_len() + self.growing_len() + self.write_len()
-    }
     pub fn sealed_len(&self) -> u32 {
         self.sealed.values().map(|x| x.len()).sum::<u32>()
     }
