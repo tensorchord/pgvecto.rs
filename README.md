@@ -28,7 +28,7 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 - [Comparison with pgvector](./docs/comparison-pgvector.md)
 - [Why not a specialty vector database?](./docs/comparison-with-specialized-vectordb.md)
 
-For users, we recommend you to try pgvecto.rs using our pre-built docker, by running
+For users, we recommend you to try pgvecto.rs using our pre-built docker image, by running
 
 ```sh
 docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:pg16-latest
