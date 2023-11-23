@@ -99,7 +99,7 @@ Options for table `product`.
 ## Progress View
 
 We also provide a view `pg_vector_index_info` to monitor the progress of indexing.
-Note that whether idx_tuples_done is equal to idx_tuples doesn't relate to the completion of indexing.
+Note that whether idx_sealed_len is equal to idx_tuples doesn't relate to the completion of indexing.
 It may do further optimization after indexing. It may also stop indexing because there are too few tuples left.
 
 | Column          | Type   | Description                                   |
@@ -108,8 +108,11 @@ It may do further optimization after indexing. It may also stop indexing because
 | indexrelid      | oid    | The oid of the index.                         |
 | tablename       | name   | The name of the table.                        |
 | indexname       | name   | The name of the index.                        |
+| indexing        | bool   | Whether the background thread is indexing.    |
 | idx_tuples      | int4   | The number of tuples.                         |
-| idx_tuples_done | int4   | The number of tuples that have been indexed.  |
+| idx_sealed_len  | int4   | The number of tuples in sealed segments.      |
+| idx_growing_len | int4   | The number of tuples in growing segments.     |
+| idx_write       | int4   | The number of tuples in write buffer.         |
 | idx_sealed      | int4[] | The number of tuples in each sealed segment.  |
 | idx_growing     | int4[] | The number of tuples in each growing segment. |
 | idx_config      | text   | The configuration of the index.               |

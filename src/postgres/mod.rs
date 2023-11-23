@@ -1,6 +1,5 @@
 mod casts;
 pub mod datatype;
-mod functions;
 pub mod gucs;
 mod hook_executor;
 mod hook_transaction;
@@ -11,6 +10,7 @@ mod index_scan;
 mod index_setup;
 mod index_update;
 mod operators;
+mod stat;
 
 pub unsafe fn init() {
     self::gucs::init();

@@ -127,35 +127,29 @@ impl Worker {
         protect.indexes.remove(&id);
         protect.maintain(&self.view);
     }
-    pub fn call_stat_tuples(&self, id: Id) -> Result<u32, FriendlyError> {
+    pub fn call_stat(&self, id: Id) -> Result<VectorIndexInfo, FriendlyError> {
         let view = self.view.load_full();
         let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
-        let len = index.view().len();
-        Ok(len)
-    }
-    pub fn call_stat_tuples_done(&self, id: Id) -> Result<u32, FriendlyError> {
-        let view = self.view.load_full();
-        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
-        let len = index.view().sealed_len();
-        Ok(len)
-    }
-    pub fn call_stat_sealed(&self, id: Id) -> Result<Vec<u32>, FriendlyError> {
-        let view = self.view.load_full();
-        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
-        let indexing = index.view().sealed_len_vec();
-        Ok(indexing)
-    }
-    pub fn call_stat_growing(&self, id: Id) -> Result<Vec<u32>, FriendlyError> {
-        let view = self.view.load_full();
-        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
-        let indexing = index.view().growing_len_vec();
-        Ok(indexing)
-    }
-    pub fn call_stat_config(&self, id: Id) -> Result<String, FriendlyError> {
-        let view = self.view.load_full();
-        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
-        let config = serde_json::to_string(index.options()).unwrap();
-        Ok(config)
+        let view = index.view();
+        let res = VectorIndexInfo {
+            indexing: index.indexing(),
+            idx_tuples: view.len().try_into().unwrap(),
+            idx_sealed_len: view.sealed_len().try_into().unwrap(),
+            idx_growing_len: view.growing_len().try_into().unwrap(),
+            idx_write: view.write_len().try_into().unwrap(),
+            idx_sealed: view
+                .sealed_len_vec()
+                .into_iter()
+                .map(|x| x.try_into().unwrap())
+                .collect(),
+            idx_growing: view
+                .growing_len_vec()
+                .into_iter()
+                .map(|x| x.try_into().unwrap())
+                .collect(),
+            idx_config: serde_json::to_string(index.options()).unwrap(),
+        };
+        Ok(res)
     }
 }
 

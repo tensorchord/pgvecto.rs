@@ -58,33 +58,9 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::StatTuples { id } => RpcHandle::StatTuples {
+            RpcPacket::Stat { id } => RpcHandle::Stat {
                 id,
-                x: StatTuples {
-                    socket: self.socket,
-                },
-            },
-            RpcPacket::StatTuplesDone { id } => RpcHandle::StatTuplesDone {
-                id,
-                x: StatTuplesDone {
-                    socket: self.socket,
-                },
-            },
-            RpcPacket::StatSealed { id } => RpcHandle::StatSealed {
-                id,
-                x: StatSealed {
-                    socket: self.socket,
-                },
-            },
-            RpcPacket::StatGrowing { id } => RpcHandle::StatGrowing {
-                id,
-                x: StatGrowing {
-                    socket: self.socket,
-                },
-            },
-            RpcPacket::StatConfig { id } => RpcHandle::StatConfig {
-                id,
-                x: StatConfig {
+                x: Stat {
                     socket: self.socket,
                 },
             },
@@ -122,25 +98,9 @@ pub enum RpcHandle {
         id: Id,
         x: Destory,
     },
-    StatTuples {
+    Stat {
         id: Id,
-        x: StatTuples,
-    },
-    StatTuplesDone {
-        id: Id,
-        x: StatTuplesDone,
-    },
-    StatSealed {
-        id: Id,
-        x: StatSealed,
-    },
-    StatGrowing {
-        id: Id,
-        x: StatGrowing,
-    },
-    StatConfig {
-        id: Id,
-        x: StatConfig,
+        x: Stat,
     },
     Leave {},
 }
@@ -244,75 +204,16 @@ impl Destory {
     }
 }
 
-pub struct StatTuples {
+pub struct Stat {
     socket: Socket,
 }
 
-impl StatTuples {
-    pub fn leave(mut self, result: Result<u32, FriendlyError>) -> Result<RpcHandler, IpcError> {
-        let packet = StatTuplesPacket::Leave { result };
-        self.socket.send(packet)?;
-        Ok(RpcHandler {
-            socket: self.socket,
-        })
-    }
-}
-
-pub struct StatTuplesDone {
-    socket: Socket,
-}
-
-impl StatTuplesDone {
-    pub fn leave(mut self, result: Result<u32, FriendlyError>) -> Result<RpcHandler, IpcError> {
-        let packet = StatTuplesDonePacket::Leave { result };
-        self.socket.send(packet)?;
-        Ok(RpcHandler {
-            socket: self.socket,
-        })
-    }
-}
-
-pub struct StatSealed {
-    socket: Socket,
-}
-
-impl StatSealed {
+impl Stat {
     pub fn leave(
         mut self,
-        result: Result<Vec<u32>, FriendlyError>,
+        result: Result<VectorIndexInfo, FriendlyError>,
     ) -> Result<RpcHandler, IpcError> {
-        let packet = StatSealedPacket::Leave { result };
-        self.socket.send(packet)?;
-        Ok(RpcHandler {
-            socket: self.socket,
-        })
-    }
-}
-
-pub struct StatGrowing {
-    socket: Socket,
-}
-
-impl StatGrowing {
-    pub fn leave(
-        mut self,
-        result: Result<Vec<u32>, FriendlyError>,
-    ) -> Result<RpcHandler, IpcError> {
-        let packet = StatGrowingPacket::Leave { result };
-        self.socket.send(packet)?;
-        Ok(RpcHandler {
-            socket: self.socket,
-        })
-    }
-}
-
-pub struct StatConfig {
-    socket: Socket,
-}
-
-impl StatConfig {
-    pub fn leave(mut self, result: Result<String, FriendlyError>) -> Result<RpcHandler, IpcError> {
-        let packet = StatConfigPacket::Leave { result };
+        let packet = StatPacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
             socket: self.socket,

@@ -63,34 +63,10 @@ impl Rpc {
         let DestoryPacket::Leave {} = self.socket.recv::<DestoryPacket>()?;
         Ok(())
     }
-    pub fn stat_tuples(&mut self, id: Id) -> Result<Result<u32, FriendlyError>, IpcError> {
-        let packet = RpcPacket::StatTuples { id };
+    pub fn stat(&mut self, id: Id) -> Result<Result<VectorIndexInfo, FriendlyError>, IpcError> {
+        let packet = RpcPacket::Stat { id };
         self.socket.send(packet)?;
-        let StatTuplesPacket::Leave { result } = self.socket.recv::<StatTuplesPacket>()?;
-        Ok(result)
-    }
-    pub fn stat_tuples_done(&mut self, id: Id) -> Result<Result<u32, FriendlyError>, IpcError> {
-        let packet = RpcPacket::StatTuplesDone { id };
-        self.socket.send(packet)?;
-        let StatTuplesDonePacket::Leave { result } = self.socket.recv::<StatTuplesDonePacket>()?;
-        Ok(result)
-    }
-    pub fn stat_sealed(&mut self, id: Id) -> Result<Result<Vec<u32>, FriendlyError>, IpcError> {
-        let packet = RpcPacket::StatSealed { id };
-        self.socket.send(packet)?;
-        let StatSealedPacket::Leave { result } = self.socket.recv::<StatSealedPacket>()?;
-        Ok(result)
-    }
-    pub fn stat_growing(&mut self, id: Id) -> Result<Result<Vec<u32>, FriendlyError>, IpcError> {
-        let packet = RpcPacket::StatGrowing { id };
-        self.socket.send(packet)?;
-        let StatGrowingPacket::Leave { result } = self.socket.recv::<StatGrowingPacket>()?;
-        Ok(result)
-    }
-    pub fn stat_config(&mut self, id: Id) -> Result<Result<String, FriendlyError>, IpcError> {
-        let packet = RpcPacket::StatConfig { id };
-        self.socket.send(packet)?;
-        let StatConfigPacket::Leave { result } = self.socket.recv::<StatConfigPacket>()?;
+        let StatPacket::Leave { result } = self.socket.recv::<StatPacket>()?;
         Ok(result)
     }
 }

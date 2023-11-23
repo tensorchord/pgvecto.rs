@@ -72,6 +72,7 @@ pub struct Index {
     protect: Mutex<IndexProtect>,
     view: ArcSwap<IndexView>,
     optimize_unparker: OnceLock<Unparker>,
+    indexing: Mutex<bool>,
     _tracker: Arc<IndexTracker>,
 }
 
@@ -107,6 +108,7 @@ impl Index {
                 write: None,
             })),
             optimize_unparker: OnceLock::new(),
+            indexing: Mutex::new(true),
             _tracker: Arc::new(IndexTracker { path }),
         });
         IndexBackground {
@@ -178,6 +180,7 @@ impl Index {
                 write: None,
             })),
             optimize_unparker: OnceLock::new(),
+            indexing: Mutex::new(true),
             _tracker: tracker,
         });
         IndexBackground {
@@ -213,6 +216,9 @@ impl Index {
             unparker.unpark();
         }
     }
+    pub fn indexing(&self) -> bool {
+        *self.indexing.lock()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -236,12 +242,16 @@ pub struct IndexView {
 
 impl IndexView {
     pub fn len(&self) -> u32 {
-        self.sealed.values().map(|x| x.len()).sum::<u32>()
-            + self.growing.values().map(|x| x.len()).sum::<u32>()
-            + self.write.as_ref().map(|x| x.1.len()).unwrap_or(0)
+        self.sealed_len() + self.growing_len() + self.write_len()
     }
     pub fn sealed_len(&self) -> u32 {
         self.sealed.values().map(|x| x.len()).sum::<u32>()
+    }
+    pub fn growing_len(&self) -> u32 {
+        self.growing.values().map(|x| x.len()).sum::<u32>()
+    }
+    pub fn write_len(&self) -> u32 {
+        self.write.as_ref().map(|x| x.1.len()).unwrap_or(0)
     }
     pub fn sealed_len_vec(&self) -> Vec<u32> {
         self.sealed.values().map(|x| x.len()).collect()
@@ -423,7 +433,9 @@ impl IndexBackground {
             parker.park();
             let done = pool.install(|| optimizing::indexing::optimizing_indexing(index.clone()));
             if done {
+                *index.indexing.lock() = false;
                 parker.park();
+                *index.indexing.lock() = true;
             }
         }
     }
