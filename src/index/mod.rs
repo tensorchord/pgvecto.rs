@@ -24,7 +24,6 @@ use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::OnceLock;
 use std::sync::{Arc, Weak};
 use thiserror::Error;
 use uuid::Uuid;
@@ -71,7 +70,7 @@ pub struct Index {
     delete: Arc<Delete>,
     protect: Mutex<IndexProtect>,
     view: ArcSwap<IndexView>,
-    optimize_unparker: OnceLock<Unparker>,
+    optimize_unparker: Unparker,
     indexing: Mutex<bool>,
     _tracker: Arc<IndexTracker>,
 }
@@ -90,6 +89,7 @@ impl Index {
         );
         let delete = Delete::create(path.join("delete"));
         sync_dir(&path);
+        let parker = Parker::new();
         let index = Arc::new(Index {
             path: path.clone(),
             options: options.clone(),
@@ -107,12 +107,13 @@ impl Index {
                 delete: delete.clone(),
                 write: None,
             })),
-            optimize_unparker: OnceLock::new(),
+            optimize_unparker: parker.unparker().clone(),
             indexing: Mutex::new(true),
             _tracker: Arc::new(IndexTracker { path }),
         });
         IndexBackground {
             index: Arc::downgrade(&index),
+            parker,
         }
         .spawn();
         index
@@ -162,6 +163,7 @@ impl Index {
             })
             .collect::<HashMap<_, _>>();
         let delete = Delete::open(path.join("delete"));
+        let parker = Parker::new();
         let index = Arc::new(Index {
             path: path.clone(),
             options: options.clone(),
@@ -179,12 +181,13 @@ impl Index {
                 growing,
                 write: None,
             })),
-            optimize_unparker: OnceLock::new(),
+            optimize_unparker: parker.unparker().clone(),
             indexing: Mutex::new(true),
             _tracker: tracker,
         });
         IndexBackground {
             index: Arc::downgrade(&index),
+            parker,
         }
         .spawn();
         index
@@ -212,9 +215,7 @@ impl Index {
         );
         protect.write = Some((write_segment_uuid, write_segment));
         protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
-        if let Some(unparker) = self.optimize_unparker.get() {
-            unparker.unpark();
-        }
+        self.optimize_unparker.unpark();
     }
     pub fn indexing(&self) -> bool {
         *self.indexing.lock()
@@ -412,29 +413,27 @@ impl IndexProtect {
 
 pub struct IndexBackground {
     index: Weak<Index>,
+    parker: Parker,
 }
 
 impl IndexBackground {
     pub fn main(self) {
         let pool;
-        let parker = Parker::new();
-        let unparker = parker.unparker();
         if let Some(index) = self.index.upgrade() {
             pool = rayon::ThreadPoolBuilder::new()
                 .num_threads(index.options.optimizing.optimizing_threads)
                 .build()
                 .unwrap();
-            index.optimize_unparker.set(unparker.clone()).unwrap();
         } else {
             return;
         }
         while let Some(index) = self.index.upgrade() {
-            unparker.unpark();
-            parker.park();
+            self.parker.unparker().unpark();
+            self.parker.park();
             let done = pool.install(|| optimizing::indexing::optimizing_indexing(index.clone()));
             if done {
                 *index.indexing.lock() = false;
-                parker.park();
+                self.parker.park();
                 *index.indexing.lock() = true;
             }
         }
