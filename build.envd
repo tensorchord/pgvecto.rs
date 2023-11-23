@@ -26,10 +26,5 @@ def build():
             "clang",
         ]
     )
-    run(
-        [
-            "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
-        ]
-    )
     runtime.environ(extra_path=["/home/envd/.cargo/bin"])
-    run(commands=["bash pg.sh"], mount_host=True)
+    run(commands=["bash ./scripts/envd.sh"], mount_host=True)

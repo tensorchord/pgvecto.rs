@@ -1,4 +1,3 @@
-
 # Why not a specialty vector database?
 
 Read our complete blog at [modelz.ai/blog/pgvector](https://modelz.ai/blog/pgvector)

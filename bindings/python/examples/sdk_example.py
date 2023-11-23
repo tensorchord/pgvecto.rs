@@ -34,43 +34,41 @@ client = PGVectoRs(
     db_url=URL,
     collection_name="example",
     dimension=1536,
+    recreate=True,
 )
-try:
-    # Add some records
-    client.insert(records1)
-    client.insert(records2)
+# Add some records
+client.insert(records1)
+client.insert(records2)
 
-    # Query (With a filter from the filters module)
-    print("#################### First Query ####################")
-    for record, dis in client.search(
-        target,
-        filter=filters.meta_contains({"src": "one"}),
-    ):
-        print(f"DISTANCE SCORE: {dis}")
-        print(record)
+# Query (With a filter from the filters module)
+print("#################### First Query ####################")
+for record, dis in client.search(
+    target,
+    filter=filters.meta_contains({"src": "one"}),
+):
+    print(f"DISTANCE SCORE: {dis}")
+    print(record)
 
-    # Another Query (Equivalent to the first one, but with a lambda filter written by hand)
-    print("#################### Second Query ####################")
-    for record, dis in client.search(
-        target,
-        filter=lambda r: r.meta.contains({"src": "one"}),
-    ):
-        print(f"DISTANCE SCORE: {dis}")
-        print(record)
+# Another Query (Equivalent to the first one, but with a lambda filter written by hand)
+print("#################### Second Query ####################")
+for record, dis in client.search(
+    target,
+    filter=lambda r: r.meta.contains({"src": "one"}),
+):
+    print(f"DISTANCE SCORE: {dis}")
+    print(record)
 
-    # Yet Another Query (With a more complex filter)
-    print("#################### Third Query ####################")
+# Yet Another Query (With a more complex filter)
+print("#################### Third Query ####################")
 
-    def complex_filter(r: filters.FilterInput) -> filters.FilterOutput:
-        t1 = r.text.endswith("!") == False  # noqa: E712
-        t2 = r.meta.contains({"src": "two"})
-        t = t1 & t2
-        return t
 
-    for record, dis in client.search(target, filter=complex_filter):
-        print(f"DISTANCE SCORE: {dis}")
-        print(record)
+def complex_filter(r: filters.FilterInput) -> filters.FilterOutput:
+    t1 = r.text.endswith("!") == False  # noqa: E712
+    t2 = r.meta.contains({"src": "two"})
+    t = t1 & t2
+    return t
 
-finally:
-    # Clean up
-    client.drop()
+
+for record, dis in client.search(target, filter=complex_filter):
+    print(f"DISTANCE SCORE: {dis}")
+    print(record)

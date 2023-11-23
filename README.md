@@ -14,274 +14,48 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 ## Why use pgvecto.rs
 
 - 💃 **Easy to use**: pgvecto.rs is a Postgres extension, which means that you can use it directly within your existing database. This makes it easy to integrate into your existing workflows and applications.
+- 🔗 **Async indexing**: pgvecto.rs's index is asynchronously constructed by the background threads and does not block insertions and always ready for new queries.
 - 🥅 **Filtering**: pgvecto.rs supports filtering. You can set conditions when searching or retrieving points. This is the missing feature of other postgres extensions.
-- 🚀 **High Performance**: pgvecto.rs is designed to provide significant improvements compared to existing Postgres extensions. Benchmarks have shown that its HNSW index can deliver search performance up to 20 times faster than other indexes like ivfflat.
-- 🔧 **Extensible**: pgvecto.rs is designed to be extensible. It is easy to add new index structures and search algorithms. This flexibility ensures that pgvecto.rs can adapt to emerging vector search algorithms and meet diverse performance needs.
+- 🧮 **Quantization**: pgvecto.rs supports scalar quantization and product qutization up to 64x.
 - 🦀 **Rewrite in Rust**: Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
-- 🙋 **Community Driven**: We encourage community involvement and contributions, fostering innovation and continuous improvement.
 
 ## Comparison with pgvector
 
-|                                             | pgvecto.rs                        | pgvector                  |
-| ------------------------------------------- | --------------------------------- | ------------------------- |
-| Transaction support                         | ✅                                 | ⚠️                         |
-| Sufficient Result with Delete/Update/Filter | ✅                                 | ⚠️                         |
-| Vector Dimension Limit                      | 65535                             | 2000                      |
-| Prefilter on HNSW                           | ✅                                 | ❌                         |
-| Parallel Index build                        | ⚡️ Linearly faster with more cores | 🐌 Only single core used   |
-| Index Persistence                           | mmap file                         | Postgres internal storage |
-| WAL amplification                           | 2x 😃                              | 30x 🧐                     |
+|                                             | pgvecto.rs                                             | pgvector                 |
+| ------------------------------------------- | ------------------------------------------------------ | ------------------------ |
+| Transaction support                         | ✅                                                     | ⚠️                       |
+| Sufficient Result with Delete/Update/Filter | ✅                                                     | ⚠️                       |
+| Vector Dimension Limit                      | 65535                                                  | 2000                     |
+| Prefilter on HNSW                           | ✅                                                     | ❌                       |
+| Parallel HNSW Index build                   | ⚡️ Linearly faster with more cores                    | 🐌 Only single core used |
+| Async Index build                           | Ready for queries anytime and do not block insertions. | ❌                       |
+| Quantization                                | Scalar/Product Quantization                            | ❌                       |
 
-And based on our benchmark, pgvecto.rs can be up to 2x faster than pgvector on hnsw indexes with same configurations. Read more about the comparison at [here](./docs/comparison-pgvector.md).
+More details at [./docs/comparison-pgvector.md](./docs/comparison-pgvector.md)
 
-## Installation
+## Documentation
 
-We recommend you to try pgvecto.rs using our pre-built docker, by running
+- [Installation](./docs/installation.md)
+- [Get Started](./docs/get-started.md)
+- [Indexing](./docs/indexing.md)
+- [Searching](./docs/searching.md)
+- [Comparison with pgvector](./docs/comparison-pgvector.md)
+- [Why not a specialty vector database?](./docs/comparison-with-specialized-vectordb.md)
 
-```bash
-docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:latest
+For users, we recommend you to try pgvecto.rs using our pre-built docker image, by running
+
+```sh
+docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:pg16-latest
 ```
 
-For more installation method (binary install or install from source), read more at [docs/install.md](./docs/install.md)
+## Development with envd
 
-## Get started
-
-Run the following SQL to ensure the extension is enabled
-
-```sql
-DROP EXTENSION IF EXISTS vectors;
-CREATE EXTENSION vectors;
-```
-
-pgvecto.rs allows columns of a table to be defined as vectors.
-
-The data type `vector(n)` denotes an n-dimensional vector. The `n` within the brackets signifies the dimensions of the vector. For instance, `vector(1000)` would represent a vector with 1000 dimensions, so you could create a table like this.
-
-```sql
--- create table with a vector column
-
-CREATE TABLE items (
-  id bigserial PRIMARY KEY,
-  embedding vector(3) NOT NULL
-);
-```
-
-You can then populate the table with vector data as follows.
-
-```sql
--- insert values
-
-INSERT INTO items (embedding)
-VALUES ('[1,2,3]'), ('[4,5,6]');
-
--- or insert values using a casting from array to vector
-
-INSERT INTO items (embedding)
-VALUES (ARRAY[1, 2, 3]::real[]), (ARRAY[4, 5, 6]::real[]);
-```
-
-We support three operators to calculate the distance between two vectors.
-
-- `<->`: squared Euclidean distance, defined as $\Sigma (x_i - y_i) ^ 2$.
-- `<#>`: negative dot product distance, defined as $- \Sigma x_iy_i$.
-- `<=>`: negative cosine distance, defined as $- \frac{\Sigma x_iy_i}{\sqrt{\Sigma x_i^2 \Sigma y_i^2}}$.
-
-```sql
--- call the distance function through operators
-
--- squared Euclidean distance
-SELECT '[1, 2, 3]'::vector <-> '[3, 2, 1]'::vector;
--- negative dot product distance
-SELECT '[1, 2, 3]' <#> '[3, 2, 1]';
--- negative square cosine distance
-SELECT '[1, 2, 3]' <=> '[3, 2, 1]';
-```
-
-You can search for a vector simply like this.
-
-```sql
--- query the similar embeddings
-SELECT * FROM items ORDER BY embedding <-> '[3,2,1]' LIMIT 5;
--- query the neighbors within a certain distance
-SELECT * FROM items WHERE embedding <-> '[3,2,1]' < 5;
-```
-
-### Indexing
-
-You can create an index, using squared Euclidean distance with the following SQL.
-
-```sql
--- Using HNSW algorithm.
-
-CREATE INDEX ON items USING vectors (embedding l2_ops);
-
---- Or using bruteforce with PQ.
-
-CREATE INDEX ON items USING vectors (embedding l2_ops)
-WITH (options = $$
-[indexing.flat]
-quantization = { product = { ratio = "x16" } }
-$$);
-
---- Or using IVFPQ algorithm.
-
-CREATE INDEX ON items USING vectors (embedding l2_ops)
-WITH (options = $$
-[indexing.ivf]
-quantization = { product = { ratio = "x16" } }
-$$);
-
---- Or using Vamana algorithm.
-
-CREATE INDEX ON items USING vectors (embedding l2_ops)
-WITH (options = $$
-[indexing.vamana]
-$$);
-```
-
-Now you can perform a KNN search with the following SQL simply.
-
-```sql
-SELECT *, embedding <-> '[0, 0, 0]' AS score
-FROM items
-ORDER BY embedding <-> '[0, 0, 0]' LIMIT 10;
-```
-
-We planning to support more index types ([issue here](https://github.com/tensorchord/pgvecto.rs/issues/17)).
-
-Welcome to contribute if you are also interested!
-
-## Why not a specialized vector database?
-
-Read our blog at [modelz.ai/blog/pgvector](https://modelz.ai/blog/pgvector)
-
-## Reference
-
-### `vector` type
-
-`vector` and `vector(n)` are all legal data types, where `n` denotes dimensions of a vector.
-
-The current implementation ignores dimensions of a vector, i.e., the behavior is the same as for vectors of unspecified dimensions.
-
-There is only one exception: indexes cannot be created on columns without specified dimensions.
-
-### Indexing
-
-We utilize TOML syntax to express the index's configuration. Here's what each key in the configuration signifies:
-
-| Key        | Type  | Description                            |
-| ---------- | ----- | -------------------------------------- |
-| segment    | table | Options for segments.                  |
-| optimizing | table | Options for background optimizing.     |
-| indexing   | table | The algorithm to be used for indexing. |
-
-Options for table `segment`.
-
-| Key                      | Type    | Description                                                         |
-| ------------------------ | ------- | ------------------------------------------------------------------- |
-| max_growing_segment_size | integer | Maximum size of unindexed vectors. Default value is `20_000`.       |
-| min_sealed_segment_size  | integer | Minimum size of vectors for indexing. Default value is `1_000`.     |
-| max_sealed_segment_size  | integer | Maximum size of vectors for indexing. Default value is `1_000_000`. |
-
-Options for table `optimizing`.
-
-| Key                | Type    | Description                                                                 |
-| ------------------ | ------- | --------------------------------------------------------------------------- |
-| optimizing_threads | integer | Maximum threads for indexing. Default value is the sqrt of number of cores. |
-
-Options for table `indexing`.
-
-| Key  | Type  | Description                                                             |
-| ---- | ----- | ----------------------------------------------------------------------- |
-| flat | table | If this table is set, brute force algorithm will be used for the index. |
-| ivf  | table | If this table is set, IVF will be used for the index.                   |
-| hnsw | table | If this table is set, HNSW will be used for the index.                  |
-
-You can choose only one algorithm in above indexing algorithms. Default value is `hnsw`.
-
-Options for table `flat`.
-
-| Key          | Type  | Description                                |
-| ------------ | ----- | ------------------------------------------ |
-| quantization | table | The algorithm to be used for quantization. |
-
-Options for table `ivf`.
-
-| Key              | Type    | Description                                                     |
-| ---------------- | ------- | --------------------------------------------------------------- |
-| nlist            | integer | Number of cluster units. Default value is `1000`.               |
-| nprobe           | integer | Number of units to query. Default value is `10`.                |
-| least_iterations | integer | Least iterations for K-Means clustering. Default value is `16`. |
-| iterations       | integer | Max iterations for K-Means clustering. Default value is `500`.  |
-| quantization     | table   | The quantization algorithm to be used.                          |
-
-Options for table `hnsw`.
-
-| Key             | Type    | Description                                        |
-| --------------- | ------- | -------------------------------------------------- |
-| m               | integer | Maximum degree of the node. Default value is `12`. |
-| ef_construction | integer | Search scope in building.  Default value is `300`. |
-| quantization    | table   | The quantization algorithm to be used.             |
-
-Options for table `quantization`.
-
-| Key     | Type  | Description                                         |
-| ------- | ----- | --------------------------------------------------- |
-| trivial | table | If this table is set, no quantization is used.      |
-| scalar  | table | If this table is set, scalar quantization is used.  |
-| product | table | If this table is set, product quantization is used. |
-
-You can choose only one algorithm in above indexing algorithms. Default value is `trivial`.
-
-Options for table `product`.
-
-| Key    | Type    | Description                                                                                                              |
-| ------ | ------- | ------------------------------------------------------------------------------------------------------------------------ |
-| sample | integer | Samples to be used for quantization. Default value is `65535`.                                                           |
-| ratio  | string  | Compression ratio for quantization. Only `"x4"`, `"x8"`, `"x16"`, `"x32"`, `"x64"` are allowed. Default value is `"x4"`. |
-
-And you can change the number of expected result (such as `ef_search` in hnsw) by using the following SQL.
-
-```sql
----  (Optional) Expected number of candidates returned by index
-SET vectors.k = 32;
---- Or use local to set the value for the current session
-SET LOCAL vectors.k = 32;
-```
-
-If you want to disable vector indexing or prefilter, we also offer some GUC options:
-- `vectors.enable_vector_index`: Enable or disable the vector index. Default value is `on`.
-- `vectors.enable_prefilter`: Enable or disable the prefilter. Default value is `on`.
-
-We also provide a view `pg_vector_index_info` to monitor the progress of indexing.
-Note that whether idx_tuples_done is equal to idx_tuples doesn't relate to the completion of indexing.
-It may do further optimization after indexing. It may also stop indexing because there are too few tuples left.
-
-| Column          | Type   | Description                                   |
-| --------------- | ------ | --------------------------------------------- |
-| tablerelid      | oid    | The oid of the table.                         |
-| indexrelid      | oid    | The oid of the index.                         |
-| tablename       | name   | The name of the table.                        |
-| indexname       | name   | The name of the index.                        |
-| idx_tuples      | int4   | The number of tuples.                         |
-| idx_tuples_done | int4   | The number of tuples that have been indexed.  |
-| idx_sealed      | int4[] | The number of tuples in each sealed segment.  |
-| idx_growing     | int4[] | The number of tuples in each growing segment. |
-| idx_config      | text   | The configuration of the index.               |
- 
-## Limitations
-
-- The filtering process is not yet optimized. To achieve optimal performance, you may need to manually experiment with different strategies. For example, you can try searching without a vector index or implementing post-filtering techniques like the following query: `select * from (select * from items ORDER BY embedding <-> '[3,2,1]' LIMIT 100 ) where category = 1`. This involves using approximate nearest neighbor (ANN) search to obtain enough results and then applying filtering afterwards.
-
-## Setting up the development environment
-
-You could use [envd](https://github.com/tensorchord/envd) to set up the development environment with one command. It will create a docker container and install all the dependencies for you.
+For developers, you could use [envd](https://github.com/tensorchord/envd) to set up the development environment with one command. It will create a docker container and install all the dependencies for you.
 
 ```sh
 pip install envd
 envd up
-````
-
+```
 ## Contributing
 
 We need your help! Please check out the [issues](https://github.com/tensorchord/pgvecto.rs/issues).
