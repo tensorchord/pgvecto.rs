@@ -19,6 +19,20 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 - 🧮 **Quantization**: pgvecto.rs supports scalar quantization and product qutization up to 64x.
 - 🦀 **Rewrite in Rust**: Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
 
+## Comparison with pgvector
+
+|                                             | pgvecto.rs                                             | pgvector                 |
+| ------------------------------------------- | ------------------------------------------------------ | ------------------------ |
+| Transaction support                         | ✅                                                     | ⚠️                       |
+| Sufficient Result with Delete/Update/Filter | ✅                                                     | ⚠️                       |
+| Vector Dimension Limit                      | 65535                                                  | 2000                     |
+| Prefilter on HNSW                           | ✅                                                     | ❌                       |
+| Parallel HNSW Index build                   | ⚡️ Linearly faster with more cores                    | 🐌 Only single core used |
+| Async Index build                           | Ready for queries anytime and do not block insertions. | ❌                       |
+| Quantization                                | Scalar/Product Quantization                            | ❌                       |
+
+More details at [./docs/comparison-pgvector.md](./docs/comparison-pgvector.md)
+
 ## Documentation
 
 - [Installation](./docs/installation.md)
@@ -34,23 +48,14 @@ For users, we recommend you to try pgvecto.rs using our pre-built docker image, 
 docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:pg16-latest
 ```
 
+## Development with envd
+
 For developers, you could use [envd](https://github.com/tensorchord/envd) to set up the development environment with one command. It will create a docker container and install all the dependencies for you.
 
 ```sh
 pip install envd
 envd up
 ```
-
-|                                             | pgvecto.rs                                             | pgvector                 |
-| ------------------------------------------- | ------------------------------------------------------ | ------------------------ |
-| Transaction support                         | ✅                                                     | ⚠️                       |
-| Sufficient Result with Delete/Update/Filter | ✅                                                     | ⚠️                       |
-| Vector Dimension Limit                      | 65535                                                  | 2000                     |
-| Prefilter on HNSW                           | ✅                                                     | ❌                       |
-| Parallel HNSW Index build                   | ⚡️ Linearly faster with more cores                    | 🐌 Only single core used |
-| Async Index build                           | Ready for queries anytime and do not block insertions. | ❌                       |
-| Quantization                                | Scalar/Product Quantization                            | ❌                       |
-
 ## Contributing
 
 We need your help! Please check out the [issues](https://github.com/tensorchord/pgvecto.rs/issues).
