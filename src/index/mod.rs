@@ -15,16 +15,16 @@ use crate::utils::clean::clean;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::file_atomic::FileAtomic;
 use arc_swap::ArcSwap;
+use crossbeam::sync::Parker;
+use crossbeam::sync::Unparker;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::{Arc, Weak};
-use std::time::Duration;
 use thiserror::Error;
 use uuid::Uuid;
 use validator::Validate;
@@ -70,6 +70,8 @@ pub struct Index {
     delete: Arc<Delete>,
     protect: Mutex<IndexProtect>,
     view: ArcSwap<IndexView>,
+    optimize_unparker: Unparker,
+    indexing: Mutex<bool>,
     _tracker: Arc<IndexTracker>,
 }
 
@@ -87,6 +89,7 @@ impl Index {
         );
         let delete = Delete::create(path.join("delete"));
         sync_dir(&path);
+        let parker = Parker::new();
         let index = Arc::new(Index {
             path: path.clone(),
             options: options.clone(),
@@ -104,10 +107,13 @@ impl Index {
                 delete: delete.clone(),
                 write: None,
             })),
+            optimize_unparker: parker.unparker().clone(),
+            indexing: Mutex::new(true),
             _tracker: Arc::new(IndexTracker { path }),
         });
         IndexBackground {
             index: Arc::downgrade(&index),
+            parker,
         }
         .spawn();
         index
@@ -157,6 +163,7 @@ impl Index {
             })
             .collect::<HashMap<_, _>>();
         let delete = Delete::open(path.join("delete"));
+        let parker = Parker::new();
         let index = Arc::new(Index {
             path: path.clone(),
             options: options.clone(),
@@ -174,10 +181,13 @@ impl Index {
                 growing,
                 write: None,
             })),
+            optimize_unparker: parker.unparker().clone(),
+            indexing: Mutex::new(true),
             _tracker: tracker,
         });
         IndexBackground {
             index: Arc::downgrade(&index),
+            parker,
         }
         .spawn();
         index
@@ -205,6 +215,10 @@ impl Index {
         );
         protect.write = Some((write_segment_uuid, write_segment));
         protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
+        self.optimize_unparker.unpark();
+    }
+    pub fn indexing(&self) -> bool {
+        *self.indexing.lock()
     }
 }
 
@@ -228,10 +242,20 @@ pub struct IndexView {
 }
 
 impl IndexView {
-    #[allow(dead_code)]
-    pub fn len(&self) -> u32 {
+    pub fn sealed_len(&self) -> u32 {
         self.sealed.values().map(|x| x.len()).sum::<u32>()
-            + self.growing.values().map(|x| x.len()).sum::<u32>()
+    }
+    pub fn growing_len(&self) -> u32 {
+        self.growing.values().map(|x| x.len()).sum::<u32>()
+    }
+    pub fn write_len(&self) -> u32 {
+        self.write.as_ref().map(|x| x.1.len()).unwrap_or(0)
+    }
+    pub fn sealed_len_vec(&self) -> Vec<u32> {
+        self.sealed.values().map(|x| x.len()).collect()
+    }
+    pub fn growing_len_vec(&self) -> Vec<u32> {
+        self.growing.values().map(|x| x.len()).collect()
     }
     pub fn search<F: FnMut(Pointer) -> bool>(
         &self,
@@ -254,13 +278,13 @@ impl IndexView {
         impl Eq for Comparer {}
 
         impl PartialOrd for Comparer {
-            fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
                 Some(self.cmp(other))
             }
         }
 
         impl Ord for Comparer {
-            fn cmp(&self, other: &Self) -> Ordering {
+            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
                 self.0.peek().cmp(&other.0.peek()).reverse()
             }
         }
@@ -386,6 +410,7 @@ impl IndexProtect {
 
 pub struct IndexBackground {
     index: Weak<Index>,
+    parker: Parker,
 }
 
 impl IndexBackground {
@@ -400,10 +425,12 @@ impl IndexBackground {
             return;
         }
         while let Some(index) = self.index.upgrade() {
-            pool.install(|| {
-                optimizing::indexing::optimizing_indexing(index.clone());
-            });
-            std::thread::sleep(Duration::from_secs(60));
+            let done = pool.install(|| optimizing::indexing::optimizing_indexing(index.clone()));
+            if done {
+                *index.indexing.lock() = false;
+                self.parker.park();
+                *index.indexing.lock() = true;
+            }
         }
     }
     pub fn spawn(self) {

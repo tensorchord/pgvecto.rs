@@ -26,6 +26,9 @@ pub enum RpcPacket {
         search: (Vec<Scalar>, usize),
         prefilter: bool,
     },
+    Stat {
+        id: Id,
+    },
     Leave {},
 }
 
@@ -73,4 +76,11 @@ pub enum SearchPacket {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum SearchCheckPacket {
     Leave { result: bool },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum StatPacket {
+    Leave {
+        result: Result<VectorIndexInfo, FriendlyError>,
+    },
 }

@@ -63,6 +63,12 @@ impl Rpc {
         let DestoryPacket::Leave {} = self.socket.recv::<DestoryPacket>()?;
         Ok(())
     }
+    pub fn stat(&mut self, id: Id) -> Result<Result<VectorIndexInfo, FriendlyError>, IpcError> {
+        let packet = RpcPacket::Stat { id };
+        self.socket.send(packet)?;
+        let StatPacket::Leave { result } = self.socket.recv::<StatPacket>()?;
+        Ok(result)
+    }
 }
 
 pub enum SearchHandle {

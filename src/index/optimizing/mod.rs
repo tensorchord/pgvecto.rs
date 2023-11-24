@@ -6,10 +6,10 @@ use validator::Validate;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct OptimizingOptions {
-    #[serde(default = "OptimizingOptions::default_waiting_secs")]
+    #[serde(default = "OptimizingOptions::default_waiting_secs", skip)]
     #[validate(range(min = 0, max = 600))]
     pub waiting_secs: u64,
-    #[serde(default = "OptimizingOptions::default_deleted_threshold")]
+    #[serde(default = "OptimizingOptions::default_deleted_threshold", skip)]
     #[validate(range(min = 0.01, max = 1.00))]
     pub deleted_threshold: f64,
     #[serde(default = "OptimizingOptions::default_optimizing_threads")]

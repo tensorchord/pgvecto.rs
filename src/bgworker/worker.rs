@@ -127,6 +127,35 @@ impl Worker {
         protect.indexes.remove(&id);
         protect.maintain(&self.view);
     }
+    pub fn call_stat(&self, id: Id) -> Result<VectorIndexInfo, FriendlyError> {
+        let view = self.view.load_full();
+        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
+        let view = index.view();
+        let idx_sealed_len = view.sealed_len();
+        let idx_growing_len = view.growing_len();
+        let idx_write = view.write_len();
+        let res = VectorIndexInfo {
+            indexing: index.indexing(),
+            idx_tuples: (idx_write + idx_sealed_len + idx_growing_len)
+                .try_into()
+                .unwrap(),
+            idx_sealed_len: idx_sealed_len.try_into().unwrap(),
+            idx_growing_len: idx_growing_len.try_into().unwrap(),
+            idx_write: idx_write.try_into().unwrap(),
+            idx_sealed: view
+                .sealed_len_vec()
+                .into_iter()
+                .map(|x| x.try_into().unwrap())
+                .collect(),
+            idx_growing: view
+                .growing_len_vec()
+                .into_iter()
+                .map(|x| x.try_into().unwrap())
+                .collect(),
+            idx_config: serde_json::to_string(index.options()).unwrap(),
+        };
+        Ok(res)
+    }
 }
 
 struct WorkerView {
