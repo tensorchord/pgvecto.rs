@@ -71,6 +71,10 @@ impl Worker {
         })
     }
     pub fn call_create(&self, id: Id, options: IndexOptions) {
+        let view = self.view.load_full();
+        if view.indexes.contains_key(&id) {
+            return;
+        }
         let mut protect = self.protect.lock();
         let index = Index::create(self.path.join("indexes").join(id.to_string()), options);
         protect.indexes.insert(id, index);
