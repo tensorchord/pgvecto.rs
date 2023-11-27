@@ -83,7 +83,6 @@ impl Worker {
         })
     }
     pub fn call_create(&self, id: Id, options: IndexOptions) {
-        log::debug!("create index {}", id);
         let mut protect = self.protect.lock();
         match protect.indexes.entry(id) {
             // This happens when calling reindex without concurrent parameters.
@@ -154,13 +153,9 @@ impl Worker {
         let mut protect = self.protect.lock();
         for id in ids {
             if protect.delay_reindex.remove(&id) {
-                log::debug!("delay reindex {}", id);
                 continue;
             }
-            if protect.indexes.remove(&id).is_some() {
-                updated = true;
-                log::debug!("destory index {}", id);
-            }
+            updated |= protect.indexes.remove(&id).is_some();
         }
         if updated {
             protect.maintain(&self.view);

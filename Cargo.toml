@@ -49,7 +49,7 @@ serde_with = "3.4.0"
 multiversion = "0.7.3"
 
 [dev-dependencies]
-pgrx-tests = "0.11.0"
+pgrx-tests = { git = "https://github.com/tensorchord/pgrx.git", rev = "7c30e2023876c1efce613756f5ec81f3ab05696b" }
 httpmock = "0.6"
 mockall = "0.11.4"
 
