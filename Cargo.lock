@@ -1997,7 +1997,7 @@ dependencies = [
 [[package]]
 name = "pgrx"
 version = "0.11.0"
-source = "git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b#7c30e2023876c1efce613756f5ec81f3ab05696b"
+source = "git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b#7c30e2023876c1efce613756f5ec81f3ab05696b"
 dependencies = [
  "atomic-traits",
  "bitflags 2.4.1",
@@ -2006,9 +2006,9 @@ dependencies = [
  "heapless",
  "libc",
  "once_cell",
- "pgrx-macros 0.11.0 (git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
- "pgrx-pg-sys 0.11.0 (git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
- "pgrx-sql-entity-graph 0.11.0 (git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
+ "pgrx-macros 0.11.0 (git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
+ "pgrx-pg-sys 0.11.0 (git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
+ "pgrx-sql-entity-graph 0.11.0 (git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
  "seahash",
  "seq-macro",
  "serde",
@@ -2033,9 +2033,9 @@ dependencies = [
 [[package]]
 name = "pgrx-macros"
 version = "0.11.0"
-source = "git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b#7c30e2023876c1efce613756f5ec81f3ab05696b"
+source = "git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b#7c30e2023876c1efce613756f5ec81f3ab05696b"
 dependencies = [
- "pgrx-sql-entity-graph 0.11.0 (git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
+ "pgrx-sql-entity-graph 0.11.0 (git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
  "proc-macro2",
  "quote",
  "syn 1.0.109",
@@ -2062,7 +2062,7 @@ dependencies = [
 [[package]]
 name = "pgrx-pg-config"
 version = "0.11.0"
-source = "git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b#7c30e2023876c1efce613756f5ec81f3ab05696b"
+source = "git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b#7c30e2023876c1efce613756f5ec81f3ab05696b"
 dependencies = [
  "cargo_toml",
  "dirs",
@@ -2101,7 +2101,7 @@ dependencies = [
 [[package]]
 name = "pgrx-pg-sys"
 version = "0.11.0"
-source = "git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b#7c30e2023876c1efce613756f5ec81f3ab05696b"
+source = "git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b#7c30e2023876c1efce613756f5ec81f3ab05696b"
 dependencies = [
  "bindgen",
  "clang-sys",
@@ -2109,9 +2109,9 @@ dependencies = [
  "libc",
  "memoffset",
  "once_cell",
- "pgrx-macros 0.11.0 (git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
- "pgrx-pg-config 0.11.0 (git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
- "pgrx-sql-entity-graph 0.11.0 (git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
+ "pgrx-macros 0.11.0 (git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
+ "pgrx-pg-config 0.11.0 (git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
+ "pgrx-sql-entity-graph 0.11.0 (git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
  "proc-macro2",
  "quote",
  "serde",
@@ -2139,7 +2139,7 @@ dependencies = [
 [[package]]
 name = "pgrx-sql-entity-graph"
 version = "0.11.0"
-source = "git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b#7c30e2023876c1efce613756f5ec81f3ab05696b"
+source = "git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b#7c30e2023876c1efce613756f5ec81f3ab05696b"
 dependencies = [
  "convert_case",
  "eyre",
@@ -3488,7 +3488,7 @@ dependencies = [
  "multiversion",
  "openai_api_rust",
  "parking_lot",
- "pgrx 0.11.0 (git+https://github.com/silver-ymz/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
+ "pgrx 0.11.0 (git+https://github.com/tensorchord/pgrx.git?rev=7c30e2023876c1efce613756f5ec81f3ab05696b)",
  "pgrx-tests",
  "rand",
  "rayon",
