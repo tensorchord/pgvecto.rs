@@ -9,7 +9,9 @@ use crate::utils::file_atomic::FileAtomic;
 use arc_swap::ArcSwap;
 use parking_lot::Mutex;
 use serde_with::DisplayFromStr;
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -37,7 +39,12 @@ impl Worker {
         let view = Arc::new(WorkerView {
             indexes: indexes.clone(),
         });
-        let protect = WorkerProtect { startup, indexes };
+        let delay_reindex = HashSet::new();
+        let protect = WorkerProtect {
+            startup,
+            indexes,
+            delay_reindex,
+        };
         sync_dir(&path);
         Arc::new(Worker {
             path,
@@ -63,7 +70,12 @@ impl Worker {
         let view = Arc::new(WorkerView {
             indexes: indexes.clone(),
         });
-        let protect = WorkerProtect { startup, indexes };
+        let delay_reindex = HashSet::new();
+        let protect = WorkerProtect {
+            startup,
+            indexes,
+            delay_reindex,
+        };
         Arc::new(Worker {
             path,
             protect: Mutex::new(protect),
@@ -71,14 +83,25 @@ impl Worker {
         })
     }
     pub fn call_create(&self, id: Id, options: IndexOptions) {
-        let view = self.view.load_full();
-        if view.indexes.contains_key(&id) {
-            return;
-        }
+        log::debug!("create index {}", id);
         let mut protect = self.protect.lock();
-        let index = Index::create(self.path.join("indexes").join(id.to_string()), options);
-        protect.indexes.insert(id, index);
-        protect.maintain(&self.view);
+        match protect.indexes.entry(id) {
+            // This happens when calling reindex without concurrent parameters.
+            Entry::Occupied(x) => {
+                let old = x.remove();
+                // This maintenance operation is used to ensure that the reference count of the index is able to decrement to 0 in order to perform deletion.
+                protect.maintain(&self.view);
+                let index = Index::recreate(old, options);
+                protect.indexes.insert(id, index);
+                protect.maintain(&self.view);
+                protect.delay_reindex.insert(id);
+            }
+            Entry::Vacant(x) => {
+                let index = Index::create(self.path.join("indexes").join(id.to_string()), options);
+                x.insert(index);
+                protect.maintain(&self.view);
+            }
+        }
     }
     pub fn call_search<F>(
         &self,
@@ -126,10 +149,22 @@ impl Worker {
         view.flush().unwrap();
         Ok(())
     }
-    pub fn call_destory(&self, id: Id) {
+    pub fn call_destory(&self, ids: Vec<Id>) {
+        let mut updated = false;
         let mut protect = self.protect.lock();
-        protect.indexes.remove(&id);
-        protect.maintain(&self.view);
+        for id in ids {
+            if protect.delay_reindex.remove(&id) {
+                log::debug!("delay reindex {}", id);
+                continue;
+            }
+            if protect.indexes.remove(&id).is_some() {
+                updated = true;
+                log::debug!("destory index {}", id);
+            }
+        }
+        if updated {
+            protect.maintain(&self.view);
+        }
     }
     pub fn call_stat(&self, id: Id) -> Result<VectorIndexInfo, FriendlyError> {
         let view = self.view.load_full();
@@ -169,6 +204,8 @@ struct WorkerView {
 struct WorkerProtect {
     startup: FileAtomic<WorkerStartup>,
     indexes: HashMap<Id, Arc<Index>>,
+    // For reindex operation without concurrent param, postgres will call extra destory, so we need to record the all reindexed indexes.
+    delay_reindex: HashSet<Id>,
 }
 
 impl WorkerProtect {

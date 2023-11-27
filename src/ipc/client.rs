@@ -57,8 +57,8 @@ impl Rpc {
         let FlushPacket::Leave { result } = self.socket.recv::<FlushPacket>()?;
         Ok(result)
     }
-    pub fn destory(&mut self, id: Id) -> Result<(), IpcError> {
-        let packet = RpcPacket::Destory { id };
+    pub fn destory(&mut self, ids: Vec<Id>) -> Result<(), IpcError> {
+        let packet = RpcPacket::Destory { ids };
         self.socket.send(packet)?;
         let DestoryPacket::Leave {} = self.socket.recv::<DestoryPacket>()?;
         Ok(())

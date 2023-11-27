@@ -25,6 +25,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::{Arc, Weak};
+use std::thread::JoinHandle;
 use thiserror::Error;
 use uuid::Uuid;
 use validator::Validate;
@@ -72,6 +73,7 @@ pub struct Index {
     view: ArcSwap<IndexView>,
     optimize_unparker: Unparker,
     indexing: Mutex<bool>,
+    optimize_handle: Mutex<Option<JoinHandle<()>>>,
     _tracker: Arc<IndexTracker>,
 }
 
@@ -109,13 +111,15 @@ impl Index {
             })),
             optimize_unparker: parker.unparker().clone(),
             indexing: Mutex::new(true),
+            optimize_handle: Mutex::new(None),
             _tracker: Arc::new(IndexTracker { path }),
         });
-        IndexBackground {
+        let handle = IndexBackground {
             index: Arc::downgrade(&index),
             parker,
         }
         .spawn();
+        index.optimize_handle.lock().replace(handle);
         index
     }
     pub fn open(path: PathBuf, options: IndexOptions) -> Arc<Self> {
@@ -183,14 +187,28 @@ impl Index {
             })),
             optimize_unparker: parker.unparker().clone(),
             indexing: Mutex::new(true),
+            optimize_handle: Mutex::new(None),
             _tracker: tracker,
         });
-        IndexBackground {
+        let handle = IndexBackground {
             index: Arc::downgrade(&index),
             parker,
         }
         .spawn();
+        index.optimize_handle.lock().replace(handle);
         index
+    }
+    pub fn recreate(old: Arc<Self>, options: IndexOptions) -> Arc<Self> {
+        let path = old.path.clone();
+        let handle = old.optimize_handle.lock().take();
+        if Arc::strong_count(&old) > 2 {
+            panic!("recreate: strong_count > 2");
+        }
+        drop(old);
+        if let Some(handle) = handle {
+            handle.join().unwrap();
+        }
+        Self::create(path, options)
     }
     pub fn options(&self) -> &IndexOptions {
         &self.options
@@ -442,9 +460,9 @@ impl IndexBackground {
             }
         }
     }
-    pub fn spawn(self) {
+    pub fn spawn(self) -> JoinHandle<()> {
         std::thread::spawn(move || {
             self.main();
-        });
+        })
     }
 }
