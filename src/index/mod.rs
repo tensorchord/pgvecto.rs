@@ -201,9 +201,6 @@ impl Index {
     pub fn recreate(old: Arc<Self>, options: IndexOptions) -> Arc<Self> {
         let path = old.path.clone();
         let handle = old.optimize_handle.lock().take();
-        if Arc::strong_count(&old) > 2 {
-            panic!("recreate: strong_count > 2");
-        }
         drop(old);
         if let Some(handle) = handle {
             handle.join().unwrap();
