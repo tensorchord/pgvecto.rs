@@ -130,7 +130,10 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         else {
             unreachable!()
         };
+        #[cfg(any(feature = "pg12", feature = "pg13", feature = "pg14", feature = "pg15"))]
         let oid = (*(*scan).indexRelation).rd_node.relNode;
+        #[cfg(feature = "pg16")]
+        let oid = (*(*scan).indexRelation).rd_locator.relNumber;
         let id = Id::from_sys(oid);
         let vector = vector.expect("`rescan` is never called.");
         if index_scan_state.is_some() && ENABLE_PREFILTER.get() {

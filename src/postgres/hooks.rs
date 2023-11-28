@@ -36,17 +36,32 @@ pub unsafe fn init() {
     pgrx::pg_sys::RegisterXactCallback(Some(xact_callback), std::ptr::null_mut());
 }
 
+#[cfg(any(feature = "pg12", feature = "pg13", feature = "pg14", feature = "pg15"))]
 unsafe fn xact_delete() {
-    #[cfg(any(feature = "pg12", feature = "pg13", feature = "pg14", feature = "pg15"))]
     let mut ptr: *mut pgrx::pg_sys::RelFileNode = std::ptr::null_mut();
-    #[cfg(feature = "pg16")]
-    let mut ptr: *mut pgrx::pg_sys::RelFileLocator = std::ptr::null_mut();
     let n = pgrx::pg_sys::smgrGetPendingDeletes(true, &mut ptr as *mut _);
     if n > 0 {
         let nodes = std::slice::from_raw_parts(ptr, n as usize);
         let ids = nodes
             .iter()
             .map(|node| Id::from_sys(node.relNode))
+            .collect::<Vec<_>>();
+        client(|mut rpc| {
+            rpc.destory(ids).friendly();
+            rpc
+        });
+    }
+}
+
+#[cfg(feature = "pg16")]
+unsafe fn xact_delete() {
+    let mut ptr: *mut pgrx::pg_sys::RelFileLocator = std::ptr::null_mut();
+    let n = pgrx::pg_sys::smgrGetPendingDeletes(true, &mut ptr as *mut _);
+    if n > 0 {
+        let nodes = std::slice::from_raw_parts(ptr, n as usize);
+        let ids = nodes
+            .iter()
+            .map(|node| Id::from_sys(node.relNumber))
             .collect::<Vec<_>>();
         client(|mut rpc| {
             rpc.destory(ids).friendly();
