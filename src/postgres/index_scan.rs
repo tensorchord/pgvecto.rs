@@ -130,7 +130,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         else {
             unreachable!()
         };
-        let oid = (*(*scan).indexRelation).rd_id;
+        let oid = (*(*scan).indexRelation).rd_node.relNode;
         let id = Id::from_sys(oid);
         let vector = vector.expect("`rescan` is never called.");
         if index_scan_state.is_some() && ENABLE_PREFILTER.get() {

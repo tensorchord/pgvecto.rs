@@ -198,15 +198,6 @@ impl Index {
         index.optimize_handle.lock().replace(handle);
         index
     }
-    pub fn recreate(old: Arc<Self>, options: IndexOptions) -> Arc<Self> {
-        let path = old.path.clone();
-        let handle = old.optimize_handle.lock().take();
-        drop(old);
-        if let Some(handle) = handle {
-            handle.join().unwrap();
-        }
-        Self::create(path, options)
-    }
     pub fn options(&self) -> &IndexOptions {
         &self.options
     }
