@@ -52,8 +52,8 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Destory { id } => RpcHandle::Destory {
-                id,
+            RpcPacket::Destory { ids } => RpcHandle::Destory {
+                ids,
                 x: Destory {
                     socket: self.socket,
                 },
@@ -95,7 +95,7 @@ pub enum RpcHandle {
         x: Flush,
     },
     Destory {
-        id: Id,
+        ids: Vec<Id>,
         x: Destory,
     },
     Stat {

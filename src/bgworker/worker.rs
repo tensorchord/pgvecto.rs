@@ -73,7 +73,9 @@ impl Worker {
     pub fn call_create(&self, id: Id, options: IndexOptions) {
         let mut protect = self.protect.lock();
         let index = Index::create(self.path.join("indexes").join(id.to_string()), options);
-        protect.indexes.insert(id, index);
+        if protect.indexes.insert(id, index).is_some() {
+            panic!("index {} already exists", id)
+        }
         protect.maintain(&self.view);
     }
     pub fn call_search<F>(
@@ -122,10 +124,15 @@ impl Worker {
         view.flush().unwrap();
         Ok(())
     }
-    pub fn call_destory(&self, id: Id) {
+    pub fn call_destory(&self, ids: Vec<Id>) {
+        let mut updated = false;
         let mut protect = self.protect.lock();
-        protect.indexes.remove(&id);
-        protect.maintain(&self.view);
+        for id in ids {
+            updated |= protect.indexes.remove(&id).is_some();
+        }
+        if updated {
+            protect.maintain(&self.view);
+        }
     }
     pub fn call_stat(&self, id: Id) -> Result<VectorIndexInfo, FriendlyError> {
         let view = self.view.load_full();

@@ -113,8 +113,8 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                 let result = worker.call_flush(id);
                 handler = x.leave(result)?;
             }
-            RpcHandle::Destory { id, x } => {
-                worker.call_destory(id);
+            RpcHandle::Destory { ids, x } => {
+                worker.call_destory(ids);
                 handler = x.leave()?;
             }
             RpcHandle::Stat { id, x } => {

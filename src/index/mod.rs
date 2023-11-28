@@ -222,6 +222,12 @@ impl Index {
     }
 }
 
+impl Drop for Index {
+    fn drop(&mut self) {
+        self.optimize_unparker.unpark();
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct IndexTracker {
     path: PathBuf,
@@ -428,8 +434,11 @@ impl IndexBackground {
             let done = pool.install(|| optimizing::indexing::optimizing_indexing(index.clone()));
             if done {
                 *index.indexing.lock() = false;
+                drop(index);
                 self.parker.park();
-                *index.indexing.lock() = true;
+                if let Some(index) = self.index.upgrade() {
+                    *index.indexing.lock() = true;
+                }
             }
         }
     }

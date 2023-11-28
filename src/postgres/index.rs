@@ -206,7 +206,7 @@ pub unsafe extern "C" fn aminsert(
     _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
     use pgrx::FromDatum;
-    let oid = (*index_relation).rd_id;
+    let oid = (*index_relation).rd_node.relNode;
     let id = Id::from_sys(oid);
     let vector = VectorInput::from_datum(*values.add(0), *is_null.add(0)).unwrap();
     let vector = vector.data().to_vec();
@@ -227,7 +227,7 @@ pub unsafe extern "C" fn aminsert(
     _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
     use pgrx::FromDatum;
-    let oid = (*index_relation).rd_id;
+    let oid = (*index_relation).rd_node.relNode;
     let id = Id::from_sys(oid);
     let vector = VectorInput::from_datum(*values.add(0), *is_null.add(0)).unwrap();
     let vector = vector.data().to_vec();
@@ -274,7 +274,7 @@ pub unsafe extern "C" fn ambulkdelete(
     callback: pgrx::pg_sys::IndexBulkDeleteCallback,
     callback_state: *mut std::os::raw::c_void,
 ) -> *mut pgrx::pg_sys::IndexBulkDeleteResult {
-    let oid = (*(*info).index).rd_id;
+    let oid = (*(*info).index).rd_node.relNode;
     let id = Id::from_sys(oid);
     if let Some(callback) = callback {
         index_update::update_delete(id, |pointer| {

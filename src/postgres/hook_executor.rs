@@ -1,6 +1,4 @@
-use super::hook_transaction::drop_if_commit;
 use crate::postgres::index_scan::Scanner;
-use crate::prelude::*;
 use std::ptr::null_mut;
 
 pub unsafe fn post_executor_start(query_desc: *mut pgrx::pg_sys::QueryDesc) {
@@ -8,70 +6,6 @@ pub unsafe fn post_executor_start(query_desc: *mut pgrx::pg_sys::QueryDesc) {
     let planstate = (*query_desc).planstate;
     let context = null_mut();
     rewrite_plan_state(planstate, context);
-}
-
-pub unsafe fn pre_process_utility(pstmt: *mut pgrx::pg_sys::PlannedStmt) {
-    unsafe {
-        let utility_statement = pgrx::PgBox::from_pg((*pstmt).utilityStmt);
-
-        let is_drop = pgrx::is_a(
-            utility_statement.as_ptr(),
-            pgrx::pg_sys::NodeTag::T_DropStmt,
-        );
-
-        if is_drop {
-            let stat_drop =
-                pgrx::PgBox::from_pg(utility_statement.as_ptr() as *mut pgrx::pg_sys::DropStmt);
-
-            match stat_drop.removeType {
-                pgrx::pg_sys::ObjectType_OBJECT_TABLE | pgrx::pg_sys::ObjectType_OBJECT_INDEX => {
-                    let objects =
-                        pgrx::list::List::<*mut libc::c_void>::downcast_ptr(stat_drop.objects)
-                            .unwrap();
-                    for object in objects.iter().map(|&p| p as *mut pgrx::pg_sys::Node) {
-                        let mut rel = std::ptr::null_mut();
-                        let address = pgrx::pg_sys::get_object_address(
-                            stat_drop.removeType,
-                            object,
-                            &mut rel,
-                            pgrx::pg_sys::AccessExclusiveLock as pgrx::pg_sys::LOCKMODE,
-                            stat_drop.missing_ok,
-                        );
-
-                        if address.objectId == pgrx::pg_sys::InvalidOid {
-                            continue;
-                        }
-
-                        match stat_drop.removeType {
-                            pgrx::pg_sys::ObjectType_OBJECT_TABLE => {
-                                let list = pgrx::pg_sys::RelationGetIndexList(rel);
-                                let list =
-                                    pgrx::list::List::<pgrx::pg_sys::Oid>::downcast_ptr(list)
-                                        .unwrap();
-                                for &index in list.iter() {
-                                    drop_if_commit(Id::from_sys(index));
-                                }
-                                pgrx::pg_sys::relation_close(
-                                    rel,
-                                    pgrx::pg_sys::AccessExclusiveLock as _,
-                                );
-                            }
-                            pgrx::pg_sys::ObjectType_OBJECT_INDEX => {
-                                drop_if_commit(Id::from_sys((*rel).rd_id));
-                                pgrx::pg_sys::relation_close(
-                                    rel,
-                                    pgrx::pg_sys::AccessExclusiveLock as _,
-                                );
-                            }
-                            _ => unreachable!(),
-                        }
-                    }
-                }
-
-                _ => {}
-            }
-        }
-    }
 }
 
 #[pgrx::pg_guard]

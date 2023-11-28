@@ -12,7 +12,7 @@ pub enum RpcPacket {
         id: Id,
     },
     Destory {
-        id: Id,
+        ids: Vec<Id>,
     },
     Insert {
         id: Id,
