@@ -15,7 +15,10 @@ pub unsafe fn build(
     index: pgrx::pg_sys::Relation,
     data: Option<(*mut RelationData, *mut IndexInfo, *mut IndexBuildResult)>,
 ) {
+    #[cfg(any(feature = "pg12", feature = "pg13", feature = "pg14", feature = "pg15"))]
     let oid = (*index).rd_node.relNode;
+    #[cfg(feature = "pg16")]
+    let oid = (*index).rd_locator.relNumber;
     let id = Id::from_sys(oid);
     flush_if_commit(id);
     let options = options(index);
@@ -81,7 +84,10 @@ unsafe extern "C" fn callback(
     use super::datatype::VectorInput;
     use pgrx::FromDatum;
 
+    #[cfg(any(feature = "pg13", feature = "pg14", feature = "pg15"))]
     let oid = (*index_relation).rd_node.relNode;
+    #[cfg(feature = "pg16")]
+    let oid = (*index_relation).rd_locator.relNumber;
     let id = Id::from_sys(oid);
     let state = &mut *(state as *mut Builder);
     let pgvector = VectorInput::from_datum(*values.add(0), *is_null.add(0)).unwrap();
