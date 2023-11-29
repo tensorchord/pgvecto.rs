@@ -85,7 +85,7 @@ jobs:
           prerelease: ${{ needs.setup.outputs.prerelease }}
     outputs:
       upload_url: ${{ steps.create-release.outputs.upload_url }}
-  release:
+  upload_github_release:
     needs: ["setup", "create_github_release"]
     if: ${{ needs.setup.outputs.recheck == 'true' }}
     strategy:
@@ -157,8 +157,24 @@ jobs:
           asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
           asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
           asset_content_type: application/vnd.debian.binary-package
-      - name: Copy binary release
-        run: "cp vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb pgvecto-rs-binary-release.deb"
+  docker_binary_release:
+    needs: ["setup", "create_github_release", "upload_github_release"]
+    if: ${{ needs.setup.outputs.recheck == 'true' }}
+    strategy:
+      matrix:
+        include:
+          - { version: 14, arch: amd64, full_arch: x86_64 }
+          - { version: 14, arch: arm64, full_arch: aarch64 }
+          - { version: 15, arch: amd64, full_arch: x86_64 }
+          - { version: 15, arch: arm64, full_arch: aarch64 }
+          - { version: 16, arch: amd64, full_arch: x86_64 }
+          - { version: 16, arch: arm64, full_arch: aarch64 }
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Download
+        run: wget -O pgvecto-rs-binary-release.deb https://github.com/tensorchord/pgvecto.rs/releases/download/${{ needs.setup.outputs.version }}/vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -177,7 +193,7 @@ jobs:
           file: ./docker/binary_release.Dockerfile
           tags: tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}
   docker_release:
-    needs: ["setup", "create_github_release", "release"]
+    needs: ["setup", "create_github_release", "upload_github_release", "docker_binary_release"]
     if: ${{ needs.setup.outputs.recheck == 'true' }}
     runs-on: ubuntu-20.04
     strategy:
@@ -189,8 +205,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.setup.outputs.ref }}
       - name: Variables
         id: variables
         uses: actions/github-script@v6
