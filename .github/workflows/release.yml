@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
   schedule:
     # 00:00 UTC+8 -> 16:00
     - cron: "0 16 * * *"
@@ -13,14 +10,6 @@ on:
         type: string
         description: The version to be released.
         required: true
-      ref:
-        type: string
-        description: |
-          Ref to checkout.
-          For tags, use the prefix "refs/tags/".
-          For branchs, use the prefix "refs/heads/".
-        required: true
-        default: refs/heads/main
       prerelease:
         type: boolean
         description: Prerelease or not.
@@ -42,31 +31,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Check recents
-        id: check-recents
+      - id: check-nightly
         run: |
           commit_date=$(git log -1 --since="24 hours ago" --pretty=format:"%cI")
           if [[ -n "$commit_date" ]];
-          then echo "recents=true" >> $GITHUB_OUTPUT;
-          else echo "recents=false" >> $GITHUB_OUTPUT;
+          then echo "nightly=true" >> $GITHUB_OUTPUT;
+          else echo "nightly=false" >> $GITHUB_OUTPUT;
           fi
-        shell: bash
-      - name: Set version, recheck, ref, prerelease
-        id: sets
+      - name: Variables
+        id: variables
         uses: actions/github-script@v6
         with:
           script: |
-            if ("${{ github.event_name }}" == 'push') {
-              if (context.ref.startsWith("refs/tags/")) {
-                let version = context.ref.substring("refs/tags/".length);
-                core.setOutput('version', version);
-                core.setOutput('recheck', 'true');
-                core.setOutput('ref', context.ref);
-                core.setOutput('prerelease', false);
-              } else {
-                throw new Error("unreachable");
-              }
-            } else if ("${{ github.event_name }}" == 'schedule') {
+            if ("${{ github.event_name }}" == 'schedule') {
               let date = new Date();
               date.setHours(date.getHours() + 8);
               var yyyy = date.getUTCFullYear();
@@ -74,58 +51,56 @@ jobs:
               var dd = String(0 + date.getUTCDate()).padStart(2, '0');
               let version = `v0.0.0-nightly.${yyyy}${mm}${dd}`;
               core.setOutput('version', version);
-              if ("${{ steps.check-recents.outputs.recents }}" == "true") {
+              if ("${{ steps.check-nightly.outputs.nightly }}" == "true") {
                 core.setOutput('recheck', 'true');
               } else {
                 core.setOutput('recheck', 'false');
               }
-              core.setOutput('ref', 'refs/heads/main');
               core.setOutput('prerelease', true);
-            } else if ("${{ github.event_name }}" == 'workflow_dispatch') {
+            }
+            if ("${{ github.event_name }}" == 'workflow_dispatch') {
               let version = "${{ github.event.inputs.version }}";
-              let ref = "${{ github.event.inputs.ref }}";
               let prerelease = "${{ github.event.inputs.prerelease }}";
               core.setOutput('version', version);
               core.setOutput('recheck', 'true');
-              core.setOutput('ref', ref);
               core.setOutput('prerelease', prerelease);
-            } else {
-              throw new Error("unreachable");
             }
-      - name: Create Release
-        id: create_release
+    outputs:
+      version: ${{ steps.variables.outputs.version }}
+      recheck: ${{ steps.variables.outputs.recheck }}
+      prerelease: ${{ steps.variables.outputs.prerelease }}
+  create_github_release:
+    needs: ["setup"]
+    if: ${{ needs.setup.outputs.recheck == 'true' }}
+    runs-on: ubuntu-20.04
+    steps:
+      - id: create-release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.sets.outputs.version }}
-          release_name: ${{ steps.sets.outputs.version }}
+          tag_name: ${{ needs.setup.outputs.version }}
+          release_name: ${{ needs.setup.outputs.version }}
           draft: false
-          prerelease: ${{ steps.sets.outputs.prerelease }}
+          prerelease: ${{ needs.setup.outputs.prerelease }}
     outputs:
-      version: ${{ steps.sets.outputs.version }}
-      recheck: ${{ steps.sets.outputs.recheck }}
-      ref: ${{ steps.sets.outputs.ref }}
-      prerelease: ${{ steps.sets.outputs.prerelease }}
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-  release:
+      upload_url: ${{ steps.create-release.outputs.upload_url }}
+  upload_github_release:
+    needs: ["setup", "create_github_release"]
+    if: ${{ needs.setup.outputs.recheck == 'true' }}
     strategy:
       matrix:
-        arch: [amd64, arm64]
-        version: [14, 15, 16]
         include:
-          - arch: amd64
-            full_arch: x86_64
-          - arch: arm64
-            full_arch: aarch64
-    needs: setup
+          - { version: 14, arch: amd64, full_arch: x86_64 }
+          - { version: 14, arch: arm64, full_arch: aarch64 }
+          - { version: 15, arch: amd64, full_arch: x86_64 }
+          - { version: 15, arch: arm64, full_arch: aarch64 }
+          - { version: 16, arch: amd64, full_arch: x86_64 }
+          - { version: 16, arch: arm64, full_arch: aarch64 }
     runs-on: ubuntu-20.04
-    if: ${{ needs.setup.outputs.recheck == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.setup.outputs.ref }}
       - uses: actions/cache/restore@v3
         with:
           path: |
@@ -178,12 +153,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.setup.outputs.upload_url }}
+          upload_url: ${{ needs.create_github_release.outputs.upload_url }}
           asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
           asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
           asset_content_type: application/vnd.debian.binary-package
-      - name: Copy binary release
-        run: 'cp vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb pgvecto-rs-binary-release.deb'
+  docker_binary_release:
+    needs: ["setup", "create_github_release", "upload_github_release"]
+    if: ${{ needs.setup.outputs.recheck == 'true' }}
+    strategy:
+      matrix:
+        include:
+          - { version: 14, arch: amd64, full_arch: x86_64 }
+          - { version: 14, arch: arm64, full_arch: aarch64 }
+          - { version: 15, arch: amd64, full_arch: x86_64 }
+          - { version: 15, arch: arm64, full_arch: aarch64 }
+          - { version: 16, arch: amd64, full_arch: x86_64 }
+          - { version: 16, arch: arm64, full_arch: aarch64 }
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Download
+        run: wget -O pgvecto-rs-binary-release.deb https://github.com/tensorchord/pgvecto.rs/releases/download/${{ needs.setup.outputs.version }}/vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -193,7 +184,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERIO_USERNAME }}
           password: ${{ secrets.DOCKERIO_TOKEN }}
-      - name: Push binary release to Docker Registry        
+      - name: Push binary release to Docker Registry
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -201,17 +192,32 @@ jobs:
           platforms: "linux/${{ matrix.arch }}"
           file: ./docker/binary_release.Dockerfile
           tags: tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}
-  multi_platform_image:
-    needs: ['release', 'setup']
+  docker_release:
+    needs: ["setup", "create_github_release", "upload_github_release", "docker_binary_release"]
+    if: ${{ needs.setup.outputs.recheck == 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        version: [14, 15, 16]
-    steps:      
+        include:
+          - { version: 14, latest: false }
+          - { version: 15, latest: false }
+          - { version: 16, latest: true }
+    steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Variables
+        id: variables
+        uses: actions/github-script@v6
         with:
-          ref: ${{ needs.setup.outputs.ref }}
+          script: |
+            let tags = [
+              "tensorchord/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}",
+              "tensorchord/pgvecto-rs:pg${{ matrix.version }}-latest",
+            ];
+            if ("${{ matrix.latest }}" == "true") {
+              tags.push("tensorchord/pgvecto-rs:latest");
+            }
+            core.setOutput('tags', tags.join(", "));
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -221,25 +227,14 @@ jobs:
         with:
           username: ${{ secrets.DOCKERIO_USERNAME }}
           password: ${{ secrets.DOCKERIO_TOKEN }}
-      - name: Push postgres with pgvecto.rs to Docker Registry        
+      - name: Push postgres with pgvecto.rs to Docker Registry
         uses: docker/build-push-action@v4
         with:
-          context: .          
+          context: .
           push: true
           platforms: "linux/amd64,linux/arm64"
           file: ./docker/pgvecto-rs.Dockerfile
           build-args: |
             TAG=pg${{ matrix.version }}-${{ needs.setup.outputs.version }}
             POSTGRES_VERSION=${{ matrix.version }}
-          tags: tensorchord/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}, tensorchord/pgvecto-rs:pg${{ matrix.version }}-latest      
-      - name: Set postgres 16 image as the latest
-        uses: docker/build-push-action@v4
-        with:
-          context: .          
-          push: true
-          platforms: "linux/amd64,linux/arm64"
-          file: ./docker/pgvecto-rs.Dockerfile
-          build-args: |
-            TAG=pg16-${{ needs.setup.outputs.version }}
-            POSTGRES_VERSION=16
-          tags: tensorchord/pgvecto-rs:latest
+          tags: ${{ steps.variables.outputs.tags }}
