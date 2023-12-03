@@ -11,7 +11,7 @@ use bytemuck::{Pod, Zeroable};
 use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::cmp::Reverse;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, VecDeque};
 use std::fs::create_dir;
 use std::ops::RangeInclusive;
 use std::path::PathBuf;
@@ -581,7 +581,7 @@ fn local_search_vbase<'mmap, 'vector, 'filter>(
         mmap,
         candidates,
         visited: visited_guard,
-        results: results.into_sorted_vec().into_iter().rev().collect(),
+        results: results.into_sorted_vec().into(),
         vector,
         filter,
     }))
@@ -712,7 +712,7 @@ pub struct HnswIndexIter<'mmap, 'vector, 'filter>(
 pub struct HnswIndexIterInner<'mmap, 'vector, 'filter> {
     mmap: &'mmap HnswMmap,
     candidates: BinaryHeap<Reverse<(Scalar, u32)>>,
-    results: Vec<HeapElement>,
+    results: VecDeque<HeapElement>,
     visited: VisitedGuard<'mmap>,
     vector: &'vector [Scalar],
     filter: *mut (dyn Filter + 'filter),
@@ -728,7 +728,7 @@ impl Iterator for HnswIndexIter<'_, '_, '_> {
 impl Iterator for HnswIndexIterInner<'_, '_, '_> {
     type Item = HeapElement;
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(data) = self.results.pop() {
+        if let Some(data) = self.results.pop_front() {
             return Some(data);
         }
 
@@ -746,10 +746,13 @@ impl Iterator for HnswIndexIterInner<'_, '_, '_> {
                 }
                 let v_dis = self.mmap.quantization.distance(self.mmap.d, self.vector, v);
                 self.candidates.push(Reverse((v_dis, v)));
-                return Some(HeapElement {
+                self.results.push_back(HeapElement {
                     distance: v_dis,
                     payload: self.mmap.raw.payload(v),
                 });
+            }
+            if !self.results.is_empty() {
+                return self.results.pop_front();
             }
         }
 
