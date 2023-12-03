@@ -409,12 +409,12 @@ impl IndexView {
         }
         for (_, growing) in self.growing.iter() {
             let mut res = growing.search_all(vector, &mut filter);
-            res.sort_unstable_by(|a, b| a.cmp(b));
+            res.sort_unstable();
             heaps.push(from_iter(Growing(res.into_iter())));
         }
         if let Some((_, write)) = &self.write {
             let mut res = write.search_all(vector, &mut filter);
-            res.sort_unstable_by(|a, b| a.cmp(b));
+            res.sort_unstable();
             heaps.push(from_iter(Growing(res.into_iter())));
         }
         while let Some(mut iter) = heaps.pop() {

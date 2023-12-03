@@ -39,10 +39,7 @@ impl Rpc {
         id: Id,
         search: (Vec<Scalar>, usize),
     ) -> Result<SearchVbaseHandler, IpcError> {
-        let packet = RpcPacket::SearchVbase {
-            id,
-            search,
-        };
+        let packet = RpcPacket::SearchVbase { id, search };
         self.socket.send(packet)?;
         Ok(SearchVbaseHandler {
             socket: self.socket,

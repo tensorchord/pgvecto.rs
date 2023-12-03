@@ -46,10 +46,7 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::SearchVbase {
-                id,
-                search,
-            } => RpcHandle::SearchVbase {
+            RpcPacket::SearchVbase { id, search } => RpcHandle::SearchVbase {
                 id,
                 search,
                 x: SearchVbase {

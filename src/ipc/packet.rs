@@ -90,7 +90,7 @@ pub enum SearchVbasePacket {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum SearchVbaseNextPacket {
-    Leave { stop: bool},
+    Leave { stop: bool },
 }
 
 #[derive(Debug, Serialize, Deserialize)]

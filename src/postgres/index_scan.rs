@@ -160,20 +160,18 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
     let Iter { handler, guard } = std::mem::replace(&mut scanner.state, Stop) else {
         unreachable!()
     };
-    loop {
-        use crate::ipc::client::SearchVbaseHandle::*;
-        match handler.handle().friendly() {
-            Next { p, x } => {
-                (*scan).xs_heaptid = p.into_sys();
-                let handler = x.next().friendly();
-                scanner.state = ScannerState::Iter { handler, guard };
-                break true;
-            }
-            Leave { result, x } => {
-                result.friendly();
-                guard.reset(x);
-                break false;
-            }
+    use crate::ipc::client::SearchVbaseHandle::*;
+    match handler.handle().friendly() {
+        Next { p, x } => {
+            (*scan).xs_heaptid = p.into_sys();
+            let handler = x.next().friendly();
+            scanner.state = ScannerState::Iter { handler, guard };
+            true
+        }
+        Leave { result, x } => {
+            result.friendly();
+            guard.reset(x);
+            false
         }
     }
 }
