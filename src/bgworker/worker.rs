@@ -95,6 +95,21 @@ impl Worker {
             Err(IndexSearchError::InvalidVector(x)) => Err(FriendlyError::BadVector(x)),
         }
     }
+    pub fn call_search_vbase<F>(
+        &self,
+        id: Id,
+        search: (Vec<Scalar>, usize),
+        next: F,
+    ) -> Result<(), FriendlyError>
+    where
+        F: FnMut(Pointer) -> bool,
+    {
+        let view = self.view.load_full();
+        let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;
+        let view = index.view();
+        view.search_vbase(search.1, &search.0, next)
+            .map_err(|IndexSearchError::InvalidVector(x)| FriendlyError::BadVector(x))
+    }
     pub fn call_insert(&self, id: Id, insert: (Vec<Scalar>, Pointer)) -> Result<(), FriendlyError> {
         let view = self.view.load_full();
         let index = view.indexes.get(&id).ok_or(FriendlyError::Index404)?;

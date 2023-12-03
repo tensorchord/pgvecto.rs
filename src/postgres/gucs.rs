@@ -23,6 +23,8 @@ pub static ENABLE_VECTOR_INDEX: GucSetting<bool> = GucSetting::<bool>::new(true)
 
 pub static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(false);
 
+pub static VBASE_RANGE: GucSetting<i32> = GucSetting::<i32>::new(0);
+
 pub static TRANSPORT: GucSetting<Transport> = GucSetting::<Transport>::new(Transport::default());
 
 pub unsafe fn init() {
@@ -57,6 +59,16 @@ pub unsafe fn init() {
         "Whether to enable prefilter.",
         "When enabled, it will use prefilter to reduce the number of vectors to search.",
         &ENABLE_PREFILTER,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
+    GucRegistry::define_int_guc(
+        "vectors.vbase_range",
+        "The range of vbase.",
+        "The range of vbase.",
+        &VBASE_RANGE,
+        0,
+        u16::MAX as _,
         GucContext::Userset,
         GucFlags::default(),
     );

@@ -46,6 +46,16 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
+            RpcPacket::SearchVbase {
+                id,
+                search,
+            } => RpcHandle::SearchVbase {
+                id,
+                search,
+                x: SearchVbase {
+                    socket: self.socket,
+                },
+            },
             RpcPacket::Flush { id } => RpcHandle::Flush {
                 id,
                 x: Flush {
@@ -80,6 +90,11 @@ pub enum RpcHandle {
         search: (Vec<Scalar>, usize),
         prefilter: bool,
         x: Search,
+    },
+    SearchVbase {
+        id: Id,
+        search: (Vec<Scalar>, usize),
+        x: SearchVbase,
     },
     Insert {
         id: Id,
@@ -169,6 +184,26 @@ impl Search {
         result: Result<Vec<Pointer>, FriendlyError>,
     ) -> Result<RpcHandler, IpcError> {
         let packet = SearchPacket::Leave { result };
+        self.socket.send(packet)?;
+        Ok(RpcHandler {
+            socket: self.socket,
+        })
+    }
+}
+
+pub struct SearchVbase {
+    socket: Socket,
+}
+
+impl SearchVbase {
+    pub fn next(&mut self, p: Pointer) -> Result<bool, IpcError> {
+        let packet = SearchVbasePacket::Next { p };
+        self.socket.send(packet)?;
+        let SearchVbaseNextPacket::Leave { stop } = self.socket.recv::<SearchVbaseNextPacket>()?;
+        Ok(stop)
+    }
+    pub fn leave(mut self, result: Result<(), FriendlyError>) -> Result<RpcHandler, IpcError> {
+        let packet = SearchVbasePacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
             socket: self.socket,

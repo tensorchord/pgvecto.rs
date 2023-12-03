@@ -109,6 +109,10 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                     handler = x.leave(res)?;
                 }
             }
+            RpcHandle::SearchVbase { id, search, mut x } => {
+                let res = worker.call_search_vbase(id, search, |p| x.next(p).unwrap());
+                handler = x.leave(res)?;
+            }
             RpcHandle::Flush { id, x } => {
                 let result = worker.call_flush(id);
                 handler = x.leave(result)?;

@@ -1,4 +1,5 @@
 use super::AbstractIndexing;
+use crate::algorithms::hnsw::HnswIndexIter;
 use crate::algorithms::quantization::QuantizationOptions;
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::IndexOptions;
@@ -74,5 +75,16 @@ impl AbstractIndexing for HnswIndexing {
 
     fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
         self.raw.search(k, vector, filter)
+    }
+}
+
+impl HnswIndexing {
+    pub fn search_vbase<'index, 'vector, 'filter>(
+        &'index self,
+        range: usize,
+        vector: &'vector [Scalar],
+        filter: *mut (impl Filter + 'filter),
+    ) -> HnswIndexIter<'index, 'vector, 'filter> {
+        self.raw.search_vbase(range, vector, filter)
     }
 }

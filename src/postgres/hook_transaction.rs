@@ -4,6 +4,7 @@ use crate::ipc::client::Rpc;
 use crate::ipc::{connect_mmap, connect_unix};
 use crate::prelude::*;
 use crate::utils::cells::PgRefCell;
+use std::cell::RefMut;
 use std::collections::BTreeSet;
 
 static FLUSH_IF_COMMIT: PgRefCell<BTreeSet<Id>> = unsafe { PgRefCell::new(BTreeSet::new()) };
@@ -45,4 +46,29 @@ where
     });
     let client = f(client);
     *guard = Some(client);
+}
+
+pub struct ClientGuard(RefMut<'static, Option<Rpc>>);
+
+pub fn client_guard() -> (Rpc, ClientGuard) {
+    let mut guard = CLIENT.borrow_mut();
+    let client = guard.take().unwrap_or_else(|| match TRANSPORT.get() {
+        Transport::unix => connect_unix(),
+        Transport::mmap => connect_mmap(),
+    });
+    (client, ClientGuard(guard))
+}
+
+impl ClientGuard {
+    pub fn reset(mut self, client: Rpc) {
+        *self.0 = Some(client);
+    }
+}
+
+impl Drop for ClientGuard {
+    fn drop(&mut self) {
+        if self.0.is_none() {
+            panic!("ClientGuard was dropped without resetting the client");
+        }
+    }
 }
