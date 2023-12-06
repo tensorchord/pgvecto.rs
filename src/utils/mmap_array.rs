@@ -111,5 +111,5 @@ fn read_information(mut file: &File) -> Information {
 
 unsafe fn read_mmap(file: &File, len: usize) -> memmap2::Mmap {
     let len = len.next_multiple_of(4096);
-    memmap2::MmapOptions::new().len(len).map(file).unwrap()
+    memmap2::MmapOptions::new().populate().len(len).map(file).unwrap()
 }
