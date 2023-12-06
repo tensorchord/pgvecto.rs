@@ -417,7 +417,7 @@ pub fn search_vbase<'index, 'vector>(
     mmap: &'index HnswMmap,
     range: usize,
     vector: &'vector [Scalar],
-) -> HnswIndexIter<'index, 'vector,> {
+) -> HnswIndexIter<'index, 'vector> {
     let filter_fn = &mut |_| true;
     let Some(s) = entry(mmap, filter_fn) else {
         return HnswIndexIter(None);
@@ -698,9 +698,7 @@ impl VisitedBuffer {
     }
 }
 
-pub struct HnswIndexIter<'mmap, 'vector>(
-    Option<HnswIndexIterInner<'mmap, 'vector>>,
-);
+pub struct HnswIndexIter<'mmap, 'vector>(Option<HnswIndexIterInner<'mmap, 'vector>>);
 
 pub struct HnswIndexIterInner<'mmap, 'vector> {
     mmap: &'mmap HnswMmap,
