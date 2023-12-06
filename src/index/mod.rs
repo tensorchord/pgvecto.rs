@@ -343,37 +343,37 @@ impl IndexView {
             return Err(IndexSearchError::InvalidVector(vector.to_vec()));
         }
 
-        struct Comparer<'index, 'vector, 'filter> {
-            iter: ComparerIter<'index, 'vector, 'filter>,
+        struct Comparer<'index, 'vector> {
+            iter: ComparerIter<'index, 'vector>,
             item: Option<HeapElement>,
         }
 
-        enum ComparerIter<'index, 'vector, 'filter> {
-            Sealed(DynamicIndexIter<'index, 'vector, 'filter>),
+        enum ComparerIter<'index, 'vector> {
+            Sealed(DynamicIndexIter<'index, 'vector>),
             Growing(std::vec::IntoIter<HeapElement>),
         }
 
-        impl PartialEq for Comparer<'_, '_, '_> {
+        impl PartialEq for Comparer<'_, '_> {
             fn eq(&self, other: &Self) -> bool {
                 self.cmp(other).is_eq()
             }
         }
 
-        impl Eq for Comparer<'_, '_, '_> {}
+        impl Eq for Comparer<'_, '_> {}
 
-        impl PartialOrd for Comparer<'_, '_, '_> {
+        impl PartialOrd for Comparer<'_, '_> {
             fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
                 Some(self.cmp(other))
             }
         }
 
-        impl Ord for Comparer<'_, '_, '_> {
+        impl Ord for Comparer<'_, '_> {
             fn cmp(&self, other: &Self) -> std::cmp::Ordering {
                 self.item.cmp(&other.item).reverse()
             }
         }
 
-        impl Iterator for ComparerIter<'_, '_, '_> {
+        impl Iterator for ComparerIter<'_, '_> {
             type Item = HeapElement;
             fn next(&mut self) -> Option<Self::Item> {
                 match self {
@@ -383,7 +383,7 @@ impl IndexView {
             }
         }
 
-        impl Iterator for Comparer<'_, '_, '_> {
+        impl Iterator for Comparer<'_, '_> {
             type Item = HeapElement;
             fn next(&mut self) -> Option<Self::Item> {
                 let item = self.item.take();
@@ -392,33 +392,36 @@ impl IndexView {
             }
         }
 
-        fn from_iter<'index, 'vector, 'filter>(
-            mut iter: ComparerIter<'index, 'vector, 'filter>,
-        ) -> Comparer<'index, 'vector, 'filter> {
+        fn from_iter<'index, 'vector>(
+            mut iter: ComparerIter<'index, 'vector>,
+        ) -> Comparer<'index, 'vector> {
             let item = iter.next();
             Comparer { iter, item }
         }
 
         use ComparerIter::*;
-        let mut filter = |payload| self.delete.check(payload).is_some();
+        let filter = |payload| self.delete.check(payload).is_some();
         let n = self.sealed.len() + self.growing.len() + 1;
         let mut heaps: BinaryHeap<Comparer> = BinaryHeap::with_capacity(1 + n);
         for (_, sealed) in self.sealed.iter() {
-            let res = sealed.search_vbase(range, vector, &mut filter);
+            let res = sealed.search_vbase(range, vector);
             heaps.push(from_iter(Sealed(res)));
         }
         for (_, growing) in self.growing.iter() {
-            let mut res = growing.search_all(vector, &mut filter);
+            let mut res = growing.search_all(vector);
             res.sort_unstable();
             heaps.push(from_iter(Growing(res.into_iter())));
         }
         if let Some((_, write)) = &self.write {
-            let mut res = write.search_all(vector, &mut filter);
+            let mut res = write.search_all(vector);
             res.sort_unstable();
             heaps.push(from_iter(Growing(res.into_iter())));
         }
         while let Some(mut iter) = heaps.pop() {
             if let Some(x) = iter.next() {
+                if !filter(x.payload) {
+                    continue;
+                }
                 let stop = next(Pointer::from_u48(x.payload >> 16));
                 if stop {
                     break;

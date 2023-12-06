@@ -60,12 +60,11 @@ impl SealedSegment {
     pub fn search(&self, k: usize, vector: &[Scalar], filter: &mut impl Filter) -> Heap {
         self.indexing.search(k, vector, filter)
     }
-    pub fn search_vbase<'index, 'vector, 'filter>(
+    pub fn search_vbase<'index, 'vector>(
         &'index self,
         range: usize,
         vector: &'vector [Scalar],
-        filter: *mut (impl Filter + 'filter),
-    ) -> DynamicIndexIter<'index, 'vector, 'filter> {
-        self.indexing.search_vbase(range, vector, filter)
+    ) -> DynamicIndexIter<'index, 'vector> {
+        self.indexing.search_vbase(range, vector)
     }
 }

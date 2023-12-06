@@ -80,8 +80,8 @@ pub enum DynamicIndexing {
     Hnsw(HnswIndexing),
 }
 
-pub enum DynamicIndexIter<'index, 'vector, 'filter> {
-    Hnsw(HnswIndexIter<'index, 'vector, 'filter>),
+pub enum DynamicIndexIter<'index, 'vector> {
+    Hnsw(HnswIndexIter<'index, 'vector>),
 }
 
 impl DynamicIndexing {
@@ -144,21 +144,20 @@ impl DynamicIndexing {
         }
     }
 
-    pub fn search_vbase<'index, 'vector, 'filter>(
+    pub fn search_vbase<'index, 'vector>(
         &'index self,
         range: usize,
         vector: &'vector [Scalar],
-        filter: *mut (impl Filter + 'filter),
-    ) -> DynamicIndexIter<'index, 'vector, 'filter> {
+    ) -> DynamicIndexIter<'index, 'vector> {
         use DynamicIndexIter::*;
         match self {
-            DynamicIndexing::Hnsw(x) => Hnsw(x.search_vbase(range, vector, filter)),
+            DynamicIndexing::Hnsw(x) => Hnsw(x.search_vbase(range, vector)),
             _ => unimplemented!("search_vbase is only implemented for HNSW"),
         }
     }
 }
 
-impl Iterator for DynamicIndexIter<'_, '_, '_> {
+impl Iterator for DynamicIndexIter<'_, '_> {
     type Item = HeapElement;
     fn next(&mut self) -> Option<Self::Item> {
         use DynamicIndexIter::*;

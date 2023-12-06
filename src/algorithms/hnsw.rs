@@ -55,13 +55,12 @@ impl Hnsw {
         search(&self.mmap, k, vector, filter)
     }
 
-    pub fn search_vbase<'index, 'vector, 'filter>(
+    pub fn search_vbase<'index, 'vector>(
         &'index self,
         range: usize,
         vector: &'vector [Scalar],
-        filter: *mut (impl Filter + 'filter),
-    ) -> HnswIndexIter<'index, 'vector, 'filter> {
-        search_vbase(&self.mmap, range, vector, filter)
+    ) -> HnswIndexIter<'index, 'vector> {
+        search_vbase(&self.mmap, range, vector)
     }
 }
 
@@ -414,19 +413,18 @@ pub fn search(mmap: &HnswMmap, k: usize, vector: &[Scalar], filter: &mut impl Fi
     local_search(mmap, k, u, vector, filter)
 }
 
-pub fn search_vbase<'index, 'vector, 'filter>(
+pub fn search_vbase<'index, 'vector>(
     mmap: &'index HnswMmap,
     range: usize,
     vector: &'vector [Scalar],
-    filter: *mut (impl Filter + 'filter),
-) -> HnswIndexIter<'index, 'vector, 'filter> {
-    let filter_fn = unsafe { &mut *filter };
+) -> HnswIndexIter<'index, 'vector,> {
+    let filter_fn = &mut |_| true;
     let Some(s) = entry(mmap, filter_fn) else {
         return HnswIndexIter(None);
     };
     let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
     let u = fast_search(mmap, 1..=levels, s, vector, filter_fn);
-    local_search_vbase(mmap, range, u, vector, filter)
+    local_search_vbase(mmap, range, u, vector)
 }
 
 pub fn entry(mmap: &HnswMmap, filter: &mut impl Filter) -> Option<u32> {
@@ -533,13 +531,12 @@ pub fn local_search(
     results
 }
 
-fn local_search_vbase<'mmap, 'vector, 'filter>(
+fn local_search_vbase<'mmap, 'vector>(
     mmap: &'mmap HnswMmap,
     range: usize,
     s: u32,
     vector: &'vector [Scalar],
-    filter: *mut (impl Filter + 'filter),
-) -> HnswIndexIter<'mmap, 'vector, 'filter> {
+) -> HnswIndexIter<'mmap, 'vector> {
     assert!(range > 0);
     let mut visited_guard = mmap.visited.fetch();
     let mut visited = visited_guard.fetch();
@@ -552,7 +549,6 @@ fn local_search_vbase<'mmap, 'vector, 'filter>(
         distance: s_dis,
         payload: mmap.raw.payload(s),
     });
-    let filter_fn = unsafe { &mut *filter };
     while let Some(Reverse((u_dis, u))) = candidates.pop() {
         if !results.check(u_dis) {
             break;
@@ -563,9 +559,6 @@ fn local_search_vbase<'mmap, 'vector, 'filter>(
                 continue;
             }
             visited.mark(v);
-            if !filter_fn.check(mmap.raw.payload(v)) {
-                continue;
-            }
             let v_dis = mmap.quantization.distance(mmap.d, vector, v);
             if !results.check(v_dis) {
                 continue;
@@ -584,7 +577,6 @@ fn local_search_vbase<'mmap, 'vector, 'filter>(
         visited: visited_guard,
         results: results.into_reversed_heap(),
         vector,
-        filter,
     }))
 }
 
@@ -706,35 +698,33 @@ impl VisitedBuffer {
     }
 }
 
-pub struct HnswIndexIter<'mmap, 'vector, 'filter>(
-    Option<HnswIndexIterInner<'mmap, 'vector, 'filter>>,
+pub struct HnswIndexIter<'mmap, 'vector>(
+    Option<HnswIndexIterInner<'mmap, 'vector>>,
 );
 
-pub struct HnswIndexIterInner<'mmap, 'vector, 'filter> {
+pub struct HnswIndexIterInner<'mmap, 'vector> {
     mmap: &'mmap HnswMmap,
     range: usize,
     candidates: BinaryHeap<Reverse<(Scalar, u32)>>,
     results: BinaryHeap<Reverse<HeapElement>>,
     visited: VisitedGuard<'mmap>,
     vector: &'vector [Scalar],
-    filter: *mut (dyn Filter + 'filter),
 }
 
-impl Iterator for HnswIndexIter<'_, '_, '_> {
+impl Iterator for HnswIndexIter<'_, '_> {
     type Item = HeapElement;
     fn next(&mut self) -> Option<Self::Item> {
         self.0.as_mut()?.next()
     }
 }
 
-impl Iterator for HnswIndexIterInner<'_, '_, '_> {
+impl Iterator for HnswIndexIterInner<'_, '_> {
     type Item = HeapElement;
     fn next(&mut self) -> Option<Self::Item> {
         if self.results.len() > self.range {
             return self.results.pop().map(|x| x.0);
         }
 
-        let filter_fn = unsafe { &mut *self.filter };
         let mut visited = self.visited.fetch_current_version();
         while let Some(Reverse((_, u))) = self.candidates.pop() {
             let edges = find_edges(self.mmap, u, 0);
@@ -743,9 +733,6 @@ impl Iterator for HnswIndexIterInner<'_, '_, '_> {
                     continue;
                 }
                 visited.mark(v);
-                if !filter_fn.check(self.mmap.raw.payload(v)) {
-                    continue;
-                }
                 let v_dis = self.mmap.quantization.distance(self.mmap.d, self.vector, v);
                 self.candidates.push(Reverse((v_dis, v)));
                 self.results.push(Reverse(HeapElement {

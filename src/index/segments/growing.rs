@@ -163,18 +163,16 @@ impl GrowingSegment {
         }
         heap
     }
-    pub fn search_all(&self, vector: &[Scalar], filter: &mut impl Filter) -> Vec<HeapElement> {
+    pub fn search_all(&self, vector: &[Scalar]) -> Vec<HeapElement> {
         let n = self.len.load(Ordering::Acquire);
         let mut result = Vec::new();
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
             let distance = self.options.d.distance(vector, &log.vector);
-            if filter.check(log.payload) {
-                result.push(HeapElement {
-                    distance,
-                    payload: log.payload,
-                });
-            }
+            result.push(HeapElement {
+                distance,
+                payload: log.payload,
+            });
         }
         result
     }

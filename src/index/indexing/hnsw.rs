@@ -79,12 +79,11 @@ impl AbstractIndexing for HnswIndexing {
 }
 
 impl HnswIndexing {
-    pub fn search_vbase<'index, 'vector, 'filter>(
+    pub fn search_vbase<'index, 'vector>(
         &'index self,
         range: usize,
         vector: &'vector [Scalar],
-        filter: *mut (impl Filter + 'filter),
-    ) -> HnswIndexIter<'index, 'vector, 'filter> {
-        self.raw.search_vbase(range, vector, filter)
+    ) -> HnswIndexIter<'index, 'vector> {
+        self.raw.search_vbase(range, vector)
     }
 }
