@@ -542,7 +542,7 @@ fn local_search_vbase<'mmap, 'vector>(
     let mut visited = visited_guard.fetch();
     let mut candidates = BinaryHeap::<Reverse<(Scalar, u32)>>::new();
     let mut results = Heap::new(range);
-    let mut heap = BinaryHeap::<Reverse<HeapElement>>::new();
+    let mut heap = Vec::<Reverse<HeapElement>>::new();
     visited.mark(s);
     let s_dis = mmap.quantization.distance(mmap.d, vector, s);
     candidates.push(Reverse((s_dis, s)));
@@ -581,7 +581,7 @@ fn local_search_vbase<'mmap, 'vector>(
         range,
         candidates,
         visited: visited_guard,
-        heap,
+        heap: heap.into(),
         vector,
     }))
 }
