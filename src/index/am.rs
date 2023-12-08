@@ -2,8 +2,8 @@ use super::am_build;
 use super::am_scan;
 use super::am_setup;
 use super::am_update;
-use crate::datatype::vecf32::Vecf32Input;
 use crate::gucs::ENABLE_VECTOR_INDEX;
+use crate::index::utils::from_datum;
 use crate::prelude::*;
 use crate::utils::cells::PgCell;
 use service::prelude::*;
@@ -198,18 +198,16 @@ pub unsafe extern "C" fn ambuildempty(index_relation: pgrx::pg_sys::Relation) {
 pub unsafe extern "C" fn aminsert(
     index_relation: pgrx::pg_sys::Relation,
     values: *mut pgrx::pg_sys::Datum,
-    is_null: *mut bool,
+    _is_null: *mut bool,
     heap_tid: pgrx::pg_sys::ItemPointer,
     _heap_relation: pgrx::pg_sys::Relation,
     _check_unique: pgrx::pg_sys::IndexUniqueCheck,
     _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
-    use pgrx::FromDatum;
     let oid = (*index_relation).rd_node.relNode;
     let id = Id::from_sys(oid);
-    let vector = Vecf32Input::from_datum(*values.add(0), *is_null.add(0)).unwrap();
-    let vector = vector.data().to_vec();
-    am_update::update_insert(id, vector.into(), *heap_tid);
+    let vector = from_datum(*values.add(0));
+    am_update::update_insert(id, vector, *heap_tid);
     true
 }
 
@@ -218,22 +216,20 @@ pub unsafe extern "C" fn aminsert(
 pub unsafe extern "C" fn aminsert(
     index_relation: pgrx::pg_sys::Relation,
     values: *mut pgrx::pg_sys::Datum,
-    is_null: *mut bool,
+    _is_null: *mut bool,
     heap_tid: pgrx::pg_sys::ItemPointer,
     _heap_relation: pgrx::pg_sys::Relation,
     _check_unique: pgrx::pg_sys::IndexUniqueCheck,
     _index_unchanged: bool,
     _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
-    use pgrx::FromDatum;
     #[cfg(any(feature = "pg14", feature = "pg15"))]
     let oid = (*index_relation).rd_node.relNode;
     #[cfg(feature = "pg16")]
     let oid = (*index_relation).rd_locator.relNumber;
     let id = Id::from_sys(oid);
-    let vector = Vecf32Input::from_datum(*values.add(0), *is_null.add(0)).unwrap();
-    let vector = vector.data().to_vec();
-    am_update::update_insert(id, vector.into(), *heap_tid);
+    let vector = from_datum(*values.add(0));
+    am_update::update_insert(id, vector, *heap_tid);
     true
 }
 

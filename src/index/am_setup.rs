@@ -59,6 +59,12 @@ pub unsafe fn convert_opfamily_to_distance(opfamily: pgrx::pg_sys::Oid) -> (Dist
         result = (Distance::Dot, Kind::F32);
     } else if operator == regoperatorin("<=>(vector,vector)") {
         result = (Distance::Cos, Kind::F32);
+    } else if operator == regoperatorin("<->(vecf16,vecf16)") {
+        result = (Distance::L2, Kind::F16);
+    } else if operator == regoperatorin("<#>(vecf16,vecf16)") {
+        result = (Distance::Dot, Kind::F16);
+    } else if operator == regoperatorin("<=>(vecf16,vecf16)") {
+        result = (Distance::Cos, Kind::F16);
     } else {
         FriendlyError::BadOptions3.friendly();
     };

@@ -9,6 +9,7 @@ mod client;
 mod hook_executor;
 mod hook_transaction;
 mod hooks;
+mod utils;
 mod views;
 
 pub unsafe fn init() {

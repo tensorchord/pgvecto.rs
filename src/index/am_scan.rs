@@ -1,6 +1,6 @@
-use crate::datatype::vecf32::Vecf32Input;
 use crate::gucs::ENABLE_PREFILTER;
 use crate::gucs::K;
+use crate::index::utils::from_datum;
 use crate::prelude::*;
 use pgrx::FromDatum;
 use service::prelude::*;
@@ -9,7 +9,7 @@ use service::prelude::*;
 pub enum Scanner {
     Initial {
         // fields to be filled by amhandler and hook
-        vector: Option<Vec<F32>>,
+        vector: Option<DynamicVector>,
         index_scan_state: Option<*mut pgrx::pg_sys::IndexScanState>,
     },
     Type0 {
@@ -81,8 +81,7 @@ pub unsafe fn start_scan(
     }
     let orderby = orderbys.add(0);
     let argument = (*orderby).sk_argument;
-    let vector = Vecf32Input::from_datum(argument, false).unwrap();
-    let vector = vector.to_vec();
+    let vector = from_datum(argument);
 
     let last = (*((*scan).opaque as *mut Scanner)).clone();
     let scanner = (*scan).opaque as *mut Scanner;
@@ -153,12 +152,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
                 node: index_scan_state.unwrap(),
             };
 
-            let mut result = client.search(
-                id,
-                (vector.into(), k),
-                ENABLE_PREFILTER.get(),
-                client_search,
-            );
+            let mut result = client.search(id, (vector, k), ENABLE_PREFILTER.get(), client_search);
             result.reverse();
             *scanner = Scanner::Type1 {
                 index_scan_state: index_scan_state.unwrap(),
@@ -175,7 +169,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
 
             let client_search = ClientSearch {};
 
-            let mut result = client.search(id, (vector.into(), k), false, client_search);
+            let mut result = client.search(id, (vector, k), false, client_search);
             result.reverse();
             *scanner = Scanner::Type0 { data: result };
         }

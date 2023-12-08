@@ -33,8 +33,7 @@ impl<S: G> OptimizerIndexing<S> {
                 let Some(index) = weak_index.upgrade() else {
                     return;
                 };
-                let cont = pool.install(|| optimizing_indexing(index.clone()));
-                if cont {
+                if let Ok(()) = pool.install(|| optimizing_indexing(index.clone())) {
                     continue;
                 }
             }
@@ -77,36 +76,33 @@ impl<S: G> Seg<S> {
     }
 }
 
-pub fn optimizing_indexing<S: G>(index: Arc<Index<S>>) -> bool {
+pub fn optimizing_indexing<S: G>(index: Arc<Index<S>>) -> Result<(), ()> {
     use Seg::*;
     let segs = {
-        let mut all_segs = {
-            let protect = index.protect.lock();
-            let mut all_segs = Vec::new();
-            all_segs.extend(protect.growing.values().map(|x| Growing(x.clone())));
-            all_segs.extend(protect.sealed.values().map(|x| Sealed(x.clone())));
-            all_segs.sort_by_key(|case| Reverse(case.len()));
-            all_segs
-        };
-        let mut segs = Vec::new();
+        let protect = index.protect.lock();
+        let mut segs_0 = Vec::new();
+        segs_0.extend(protect.growing.values().map(|x| Growing(x.clone())));
+        segs_0.extend(protect.sealed.values().map(|x| Sealed(x.clone())));
+        segs_0.sort_by_key(|case| Reverse(case.len()));
+        let mut segs_1 = Vec::new();
         let mut total = 0u64;
         let mut count = 0;
-        while let Some(seg) = all_segs.pop() {
+        while let Some(seg) = segs_0.pop() {
             if total + seg.len() as u64 <= index.options.segment.max_sealed_segment_size as u64 {
                 total += seg.len() as u64;
                 if let Growing(_) = seg {
                     count += 1;
                 }
-                segs.push(seg);
+                segs_1.push(seg);
             } else {
                 break;
             }
         }
-        if segs.is_empty() || (segs.len() == 1 && count == 0) {
+        if segs_1.is_empty() || (segs_1.len() == 1 && count == 0) {
             index.instant_index.store(Instant::now());
-            return true;
+            return Err(());
         }
-        segs
+        segs_1
     };
     let sealed_segment = merge(&index, &segs);
     {
@@ -118,7 +114,7 @@ pub fn optimizing_indexing<S: G>(index: Arc<Index<S>>) -> bool {
             if protect.growing.contains_key(&seg.uuid()) {
                 continue;
             }
-            return false;
+            return Ok(());
         }
         for seg in segs.iter() {
             protect.sealed.remove(&seg.uuid());
@@ -127,7 +123,7 @@ pub fn optimizing_indexing<S: G>(index: Arc<Index<S>>) -> bool {
         protect.sealed.insert(sealed_segment.uuid(), sealed_segment);
         protect.maintain(index.options.clone(), index.delete.clone(), &index.view);
     }
-    false
+    Ok(())
 }
 
 fn merge<S: G>(index: &Arc<Index<S>>, segs: &[Seg<S>]) -> Arc<SealedSegment<S>> {

@@ -33,9 +33,9 @@ impl Instance {
             (Distance::Cos, Kind::F32) => Self::F32Cos(Index::open(path, options)),
             (Distance::Dot, Kind::F32) => Self::F32Dot(Index::open(path, options)),
             (Distance::L2, Kind::F32) => Self::F32L2(Index::open(path, options)),
-            (Distance::Cos, Kind::F16) => Self::F16Cos(Index::create(path, options)),
-            (Distance::Dot, Kind::F16) => Self::F16Dot(Index::create(path, options)),
-            (Distance::L2, Kind::F16) => Self::F16L2(Index::create(path, options)),
+            (Distance::Cos, Kind::F16) => Self::F16Cos(Index::open(path, options)),
+            (Distance::Dot, Kind::F16) => Self::F16Dot(Index::open(path, options)),
+            (Distance::L2, Kind::F16) => Self::F16L2(Index::open(path, options)),
         }
     }
     pub fn options(&self) -> &IndexOptions {
