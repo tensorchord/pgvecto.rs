@@ -16,10 +16,6 @@ impl G for F32Dot {
         dot(lhs, rhs) * (-1.0)
     }
 
-    fn l2_distance(lhs: &[F32], rhs: &[F32]) -> F32 {
-        super::f32_l2::distance_squared_l2(lhs, rhs)
-    }
-
     fn elkan_k_means_normalize(vector: &mut [F32]) {
         l2_normalize(vector)
     }

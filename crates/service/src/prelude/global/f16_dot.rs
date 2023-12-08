@@ -13,11 +13,7 @@ impl G for F16Dot {
     type L2 = F16L2;
 
     fn distance(lhs: &[F16], rhs: &[F16]) -> F32 {
-        dot(lhs, rhs) * (-1.0)
-    }
-
-    fn l2_distance(lhs: &[F16], rhs: &[F16]) -> F32 {
-        super::f16_l2::distance_squared_l2(lhs, rhs)
+        super::f16::dot(lhs, rhs) * (-1.0)
     }
 
     fn elkan_k_means_normalize(vector: &mut [F16]) {
@@ -25,7 +21,7 @@ impl G for F16Dot {
     }
 
     fn elkan_k_means_distance(lhs: &[F16], rhs: &[F16]) -> F32 {
-        super::f16_dot::dot(lhs, rhs).acos()
+        super::f16::dot(lhs, rhs).acos()
     }
 
     #[multiversion::multiversion(targets = "simd")]
@@ -77,7 +73,7 @@ impl G for F16Dot {
             let lhs = &lhs[(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            let _xy = dot(lhs, rhs);
+            let _xy = super::f16::dot(lhs, rhs);
             xy += _xy;
         }
         xy * (-1.0)
@@ -99,7 +95,7 @@ impl G for F16Dot {
             let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            let _xy = dot(lhs, rhs);
+            let _xy = super::f16::dot(lhs, rhs);
             xy += _xy;
         }
         xy * (-1.0)
@@ -148,34 +144,6 @@ fn l2_normalize(vector: &mut [F16]) {
     for i in 0..n {
         vector[i] /= l;
     }
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets = "simd")]
-fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
-    assert!(lhs.len() == rhs.len());
-    let n = lhs.len();
-    let mut xy = F32::zero();
-    let mut x2 = F32::zero();
-    let mut y2 = F32::zero();
-    for i in 0..n {
-        xy += lhs[i].to_f() * rhs[i].to_f();
-        x2 += lhs[i].to_f() * lhs[i].to_f();
-        y2 += rhs[i].to_f() * rhs[i].to_f();
-    }
-    xy / (x2 * y2).sqrt()
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets = "simd")]
-pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
-    assert!(lhs.len() == rhs.len());
-    let n = lhs.len();
-    let mut xy = F32::zero();
-    for i in 0..n {
-        xy += lhs[i].to_f() * rhs[i].to_f();
-    }
-    xy
 }
 
 #[inline(always)]

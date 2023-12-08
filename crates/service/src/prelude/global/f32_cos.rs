@@ -12,21 +12,14 @@ impl G for F32Cos {
 
     type L2 = F32L2;
 
-    #[multiversion::multiversion(targets = "simd")]
     fn distance(lhs: &[F32], rhs: &[F32]) -> F32 {
         cosine(lhs, rhs) * (-1.0)
     }
 
-    fn l2_distance(lhs: &[F32], rhs: &[F32]) -> F32 {
-        super::f32_l2::distance_squared_l2(lhs, rhs)
-    }
-
-    #[multiversion::multiversion(targets = "simd")]
     fn elkan_k_means_normalize(vector: &mut [F32]) {
         l2_normalize(vector)
     }
 
-    #[multiversion::multiversion(targets = "simd")]
     fn elkan_k_means_distance(lhs: &[F32], rhs: &[F32]) -> F32 {
         super::f32_dot::dot(lhs, rhs).acos()
     }

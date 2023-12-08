@@ -2794,6 +2794,7 @@ dependencies = [
  "bincode",
  "bytemuck",
  "byteorder",
+ "c",
  "crc32fast",
  "crossbeam",
  "dashmap",
@@ -2811,6 +2812,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with",
+ "std_detect",
  "tempfile",
  "thiserror",
  "ulock-sys",
@@ -2922,6 +2924,15 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
+
+[[package]]
+name = "std_detect"
+version = "0.1.5"
+source = "git+https://github.com/usamoi/stdarch.git?rev=067a6e889f0ca995a9fe4114061ced6f67acfb95#067a6e889f0ca995a9fe4114061ced6f67acfb95"
+dependencies = [
+ "cfg-if",
+ "libc",
+]
 
 [[package]]
 name = "string_cache"

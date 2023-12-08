@@ -1,3 +1,5 @@
+mod avx512fp16;
+mod f16;
 mod f16_cos;
 mod f16_dot;
 mod f16_l2;
@@ -35,7 +37,6 @@ pub trait G: Copy + std::fmt::Debug + 'static {
     type L2: G<Scalar = Self::Scalar>;
 
     fn distance(lhs: &[Self::Scalar], rhs: &[Self::Scalar]) -> F32;
-    fn l2_distance(lhs: &[Self::Scalar], rhs: &[Self::Scalar]) -> F32;
     fn elkan_k_means_normalize(vector: &mut [Self::Scalar]);
     fn elkan_k_means_distance(lhs: &[Self::Scalar], rhs: &[Self::Scalar]) -> F32;
     fn scalar_quantization_distance(

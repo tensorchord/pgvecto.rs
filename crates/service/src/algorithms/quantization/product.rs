@@ -176,7 +176,7 @@ impl<S: G> ProductQuantization<S> {
                 for j in 0u8..=255 {
                     let right = &centroids[j as usize * dims as usize..][(i * ratio) as usize..]
                         [..subdims as usize];
-                    let dis = S::l2_distance(left, right);
+                    let dis = S::L2::distance(left, right);
                     if dis < minimal {
                         minimal = dis;
                         target = j;

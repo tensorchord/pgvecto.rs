@@ -1,5 +1,5 @@
-pub mod sealing;
 pub mod indexing;
+pub mod sealing;
 pub mod vacuum;
 
 use serde::{Deserialize, Serialize};

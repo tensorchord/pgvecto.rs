@@ -6,6 +6,7 @@ on:
     paths:
       - ".cargo/**"
       - ".github/**"
+      - "crates/**"
       - "scripts/**"
       - "src/**"
       - "tests/**"
@@ -18,6 +19,7 @@ on:
     paths:
       - ".cargo/**"
       - ".github/**"
+      - "crates/**"
       - "scripts/**"
       - "src/**"
       - "tests/**"

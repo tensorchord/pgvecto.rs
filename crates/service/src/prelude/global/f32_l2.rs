@@ -16,10 +16,6 @@ impl G for F32L2 {
         distance_squared_l2(lhs, rhs)
     }
 
-    fn l2_distance(lhs: &[F32], rhs: &[F32]) -> F32 {
-        distance_squared_l2(lhs, rhs)
-    }
-
     fn elkan_k_means_normalize(_: &mut [F32]) {}
 
     fn elkan_k_means_distance(lhs: &[F32], rhs: &[F32]) -> F32 {
