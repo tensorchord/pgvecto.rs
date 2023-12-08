@@ -31,10 +31,19 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 Install PostgreSQL.
 
 ```sh
-sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 sudo apt-get update
 sudo apt-get -y install libpq-dev postgresql-15 postgresql-server-dev-15
+```
+
+Install clang-16.
+
+```sh
+sudo sh -c 'echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-16 main" >> /etc/apt/sources.list'
+wget --quiet -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+sudo apt-get update
+sudo apt-get -y install clang-16
 ```
 
 Clone the Repository.
