@@ -1,8 +1,8 @@
 CREATE CAST (real[] AS vector)
-    WITH FUNCTION vector_cast_array_to_vector(real[], integer, boolean) AS IMPLICIT;
+    WITH FUNCTION vecf32_cast_array_to_vector(real[], integer, boolean) AS IMPLICIT;
 
 CREATE CAST (vector AS real[])
-    WITH FUNCTION vector_cast_vector_to_array(vector, integer, boolean) AS IMPLICIT;
+    WITH FUNCTION vecf32_cast_vector_to_array(vector, integer, boolean) AS IMPLICIT;
 
 CREATE ACCESS METHOD vectors TYPE INDEX HANDLER vectors_amhandler;
 COMMENT ON ACCESS METHOD vectors IS 'pgvecto.rs index access method';
