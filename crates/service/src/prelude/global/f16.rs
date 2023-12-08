@@ -17,18 +17,17 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         xy / (x2 * y2).sqrt()
     }
     if super::avx512fp16::detect() {
+        assert!(lhs.len() == rhs.len());
+        let n = lhs.len();
         unsafe {
-            assert!(lhs.len() == rhs.len());
-            let n = lhs.len();
-            return c::vectors_f16_cosine_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n)
-                .into();
+            return c::v_f16_cosine_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
     if super::avx2::detect() {
+        assert!(lhs.len() == rhs.len());
+        let n = lhs.len();
         unsafe {
-            assert!(lhs.len() == rhs.len());
-            let n = lhs.len();
-            return c::vectors_f16_cosine_axv2(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
+            return c::v_f16_cosine_axv2(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
     cosine(lhs, rhs)
@@ -47,26 +46,26 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         xy
     }
     if super::avx512fp16::detect() {
+        assert!(lhs.len() == rhs.len());
+        let n = lhs.len();
         unsafe {
-            assert!(lhs.len() == rhs.len());
-            let n = lhs.len();
-            return c::vectors_f16_dot_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
+            return c::v_f16_dot_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
     if super::avx2::detect() {
+        assert!(lhs.len() == rhs.len());
+        let n = lhs.len();
         unsafe {
-            assert!(lhs.len() == rhs.len());
-            let n = lhs.len();
-            return c::vectors_f16_dot_axv2(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
+            return c::v_f16_dot_axv2(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
     cosine(lhs, rhs)
 }
 
-pub fn distance_squared_l2(lhs: &[F16], rhs: &[F16]) -> F32 {
+pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
     #[inline(always)]
     #[multiversion::multiversion(targets = "simd")]
-    pub fn distance_squared_l2(lhs: &[F16], rhs: &[F16]) -> F32 {
+    pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         let mut d2 = F32::zero();
@@ -77,28 +76,18 @@ pub fn distance_squared_l2(lhs: &[F16], rhs: &[F16]) -> F32 {
         d2
     }
     if super::avx512fp16::detect() {
+        assert!(lhs.len() == rhs.len());
+        let n = lhs.len();
         unsafe {
-            assert!(lhs.len() == rhs.len());
-            let n = lhs.len();
-            return c::vectors_f16_distance_squared_l2_axv512(
-                lhs.as_ptr().cast(),
-                rhs.as_ptr().cast(),
-                n,
-            )
-            .into();
+            return c::v_f16_sl2_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
     if super::avx2::detect() {
+        assert!(lhs.len() == rhs.len());
+        let n = lhs.len();
         unsafe {
-            assert!(lhs.len() == rhs.len());
-            let n = lhs.len();
-            return c::vectors_f16_distance_squared_l2_axv2(
-                lhs.as_ptr().cast(),
-                rhs.as_ptr().cast(),
-                n,
-            )
-            .into();
+            return c::v_f16_sl2_axv2(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
-    distance_squared_l2(lhs, rhs)
+    sl2(lhs, rhs)
 }

@@ -14,13 +14,13 @@ impl G for F16L2 {
     type L2 = F16L2;
 
     fn distance(lhs: &[F16], rhs: &[F16]) -> F32 {
-        super::f16::distance_squared_l2(lhs, rhs)
+        super::f16::sl2(lhs, rhs)
     }
 
     fn elkan_k_means_normalize(_: &mut [F16]) {}
 
     fn elkan_k_means_distance(lhs: &[F16], rhs: &[F16]) -> F32 {
-        super::f16::distance_squared_l2(lhs, rhs).sqrt()
+        super::f16::sl2(lhs, rhs).sqrt()
     }
 
     #[multiversion::multiversion(targets = "simd")]
@@ -72,7 +72,7 @@ impl G for F16L2 {
             let lhs = &lhs[(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            result += super::f16::distance_squared_l2(lhs, rhs);
+            result += super::f16::sl2(lhs, rhs);
         }
         result
     }
@@ -93,7 +93,7 @@ impl G for F16L2 {
             let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            result += super::f16::distance_squared_l2(lhs, rhs);
+            result += super::f16::sl2(lhs, rhs);
         }
         result
     }
