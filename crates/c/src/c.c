@@ -1,6 +1,11 @@
 #include "c.h"
-#include <immintrin.h>
 #include <math.h>
+
+#if defined(__x86_64__)
+#include <immintrin.h>
+#endif
+
+#if defined(__x86_64__)
 
 __attribute__((target("avx512fp16,bmi2"))) extern float
 v_f16_cosine_axv512(_Float16 const *restrict a, _Float16 const *restrict b,
@@ -115,3 +120,5 @@ v_f16_sl2_axv2(_Float16 const *restrict a, _Float16 const *restrict b,
   }
   return dd;
 }
+
+#endif
