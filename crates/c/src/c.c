@@ -8,8 +8,7 @@
 #if defined(__x86_64__)
 
 __attribute__((target("avx512fp16,bmi2"))) extern float
-v_f16_cosine_axv512(_Float16 const *restrict a, _Float16 const *restrict b,
-                    size_t n) {
+v_f16_cosine_axv512(_Float16 *a, _Float16 *b, size_t n) {
   __m512h xy = _mm512_set1_ph(0);
   __m512h xx = _mm512_set1_ph(0);
   __m512h yy = _mm512_set1_ph(0);
@@ -35,8 +34,7 @@ v_f16_cosine_axv512(_Float16 const *restrict a, _Float16 const *restrict b,
 }
 
 __attribute__((target("avx512fp16,bmi2"))) extern float
-v_f16_dot_axv512(_Float16 const *restrict a, _Float16 const *restrict b,
-                 size_t n) {
+v_f16_dot_axv512(_Float16 *a, _Float16 *b, size_t n) {
   __m512h xy = _mm512_set1_ph(0);
 
   while (n >= 32) {
@@ -55,8 +53,7 @@ v_f16_dot_axv512(_Float16 const *restrict a, _Float16 const *restrict b,
 }
 
 __attribute__((target("avx512fp16,bmi2"))) extern float
-v_f16_sl2_axv512(_Float16 const *restrict a, _Float16 const *restrict b,
-                 size_t n) {
+v_f16_sl2_axv512(_Float16 *a, _Float16 *b, size_t n) {
   __m512h dd = _mm512_set1_ph(0);
 
   while (n >= 32) {
@@ -78,8 +75,7 @@ v_f16_sl2_axv512(_Float16 const *restrict a, _Float16 const *restrict b,
 }
 
 __attribute__((target("avx2"))) extern float
-v_f16_cosine_axv2(_Float16 const *restrict a, _Float16 const *restrict b,
-                  size_t n) {
+v_f16_cosine_axv2(_Float16 *a, _Float16 *b, size_t n) {
   float xy = 0;
   float xx = 0;
   float yy = 0;
@@ -95,8 +91,7 @@ v_f16_cosine_axv2(_Float16 const *restrict a, _Float16 const *restrict b,
 }
 
 __attribute__((target("avx2"))) extern float
-v_f16_dot_axv2(_Float16 const *restrict a, _Float16 const *restrict b,
-               size_t n) {
+v_f16_dot_axv2(_Float16 *a, _Float16 *b, size_t n) {
   float xy = 0;
 #pragma clang loop vectorize_width(8)
   for (size_t i = 0; i < n; i++) {
@@ -108,8 +103,7 @@ v_f16_dot_axv2(_Float16 const *restrict a, _Float16 const *restrict b,
 }
 
 __attribute__((target("avx2"))) extern float
-v_f16_sl2_axv2(_Float16 const *restrict a, _Float16 const *restrict b,
-               size_t n) {
+v_f16_sl2_axv2(_Float16 *a, _Float16 *b, size_t n) {
   float dd = 0;
 #pragma clang loop vectorize_width(8)
   for (size_t i = 0; i < n; i++) {

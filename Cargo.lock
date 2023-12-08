@@ -486,6 +486,7 @@ name = "c"
 version = "0.0.0"
 dependencies = [
  "cc",
+ "half 2.3.1",
 ]
 
 [[package]]
