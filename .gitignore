@@ -7,3 +7,4 @@
 .ignore
 __pycache__
 .pytest_cache
+rustc-ice-*.txt

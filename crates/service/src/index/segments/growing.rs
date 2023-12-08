@@ -1,3 +1,5 @@
+#![allow(clippy::all)] // Clippy bug.
+
 use super::SegmentTracker;
 use crate::index::IndexOptions;
 use crate::index::IndexTracker;

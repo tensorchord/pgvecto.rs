@@ -102,7 +102,7 @@ pub fn optimizing_indexing<S: G>(index: Arc<Index<S>>) -> bool {
                 break;
             }
         }
-        if segs.len() == 0 || (segs.len() == 1 && count == 0) {
+        if segs.is_empty() || (segs.len() == 1 && count == 0) {
             index.instant_index.store(Instant::now());
             return true;
         }

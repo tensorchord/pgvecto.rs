@@ -374,8 +374,8 @@ impl num_traits::Float for F16 {
     }
 
     fn sin_cos(self) -> (Self, Self) {
-        let (_0, _1) = self.0.sin_cos();
-        (Self(_0), Self(_1))
+        let (_x, _y) = self.0.sin_cos();
+        (Self(_x), Self(_y))
     }
 
     fn exp_m1(self) -> Self {
