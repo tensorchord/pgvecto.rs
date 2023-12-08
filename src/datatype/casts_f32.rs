@@ -13,11 +13,11 @@ fn vecf32_cast_array_to_vector(
     assert!(!array.contains_nulls());
     let typmod = Typmod::parse_from_i32(typmod).unwrap();
     let len = typmod.dims().unwrap_or(array.len() as u16);
-    let mut data = Vecf32::new_zeroed_in_postgres(len as usize);
+    let mut data = vec![F32::zero(); len as usize];
     for (i, x) in array.iter().enumerate() {
         data[i] = F32(x.unwrap_or(f32::NAN));
     }
-    data
+    Vecf32::new_in_postgres(&data)
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]

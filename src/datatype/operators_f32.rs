@@ -14,11 +14,11 @@ fn vecf32_operator_add(lhs: Vecf32Input<'_>, rhs: Vecf32Input<'_>) -> Vecf32Outp
         .friendly();
     }
     let n = lhs.len();
-    let mut v = Vecf32::new_zeroed(n);
+    let mut v = vec![F32::zero(); n];
     for i in 0..n {
         v[i] = lhs[i] + rhs[i];
     }
-    v.copy_into_postgres()
+    Vecf32::new_in_postgres(&v)
 }
 
 #[pgrx::pg_operator(immutable, parallel_safe, requires = ["vecf32"])]
@@ -32,11 +32,11 @@ fn vecf32_operator_minus(lhs: Vecf32Input<'_>, rhs: Vecf32Input<'_>) -> Vecf32Ou
         .friendly();
     }
     let n = lhs.len();
-    let mut v = Vecf32::new_zeroed(n);
+    let mut v = vec![F32::zero(); n];
     for i in 0..n {
         v[i] = lhs[i] - rhs[i];
     }
-    v.copy_into_postgres()
+    Vecf32::new_in_postgres(&v)
 }
 
 #[pgrx::pg_operator(immutable, parallel_safe, requires = ["vecf32"])]

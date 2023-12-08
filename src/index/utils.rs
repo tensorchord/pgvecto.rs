@@ -6,6 +6,7 @@ use service::prelude::DynamicVector;
 struct Header {
     varlena: u32,
     kind: u8,
+    pad: u8,
     len: u16,
 }
 

@@ -14,11 +14,11 @@ fn vecf16_operator_add(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> Vecf16Outp
         .friendly();
     }
     let n = lhs.len();
-    let mut v = Vecf16::new_zeroed(n);
+    let mut v = vec![F16::zero(); n];
     for i in 0..n {
         v[i] = lhs[i] + rhs[i];
     }
-    v.copy_into_postgres()
+    Vecf16::new_in_postgres(&v)
 }
 
 #[pgrx::pg_operator(immutable, parallel_safe, requires = ["vecf16"])]
@@ -32,11 +32,11 @@ fn vecf16_operator_minus(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> Vecf16Ou
         .friendly();
     }
     let n = lhs.len();
-    let mut v = Vecf16::new_zeroed(n);
+    let mut v = vec![F16::zero(); n];
     for i in 0..n {
         v[i] = lhs[i] - rhs[i];
     }
-    v.copy_into_postgres()
+    Vecf16::new_in_postgres(&v)
 }
 
 #[pgrx::pg_operator(immutable, parallel_safe, requires = ["vecf16"])]

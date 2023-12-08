@@ -40,6 +40,7 @@ CREATE TYPE vecf16 (
 pub struct Vecf16 {
     varlena: u32,
     kind: u8,
+    pad: u8,
     len: u16,
     phantom: [F16; 0],
 }
@@ -55,50 +56,17 @@ impl Vecf16 {
         let layout = layout_alpha.extend(layout_beta).unwrap().0;
         layout.pad_to_align()
     }
-    pub fn new(slice: &[F16]) -> Box<Self> {
-        unsafe {
-            assert!(u16::try_from(slice.len()).is_ok());
-            let layout = Vecf16::layout(slice.len());
-            let ptr = std::alloc::alloc(layout) as *mut Vecf16;
-            std::ptr::addr_of_mut!((*ptr).varlena).write(Vecf16::varlena(layout.size()));
-            std::ptr::addr_of_mut!((*ptr).kind).write(16);
-            std::ptr::addr_of_mut!((*ptr).len).write(slice.len() as u16);
-            std::ptr::copy_nonoverlapping(slice.as_ptr(), (*ptr).phantom.as_mut_ptr(), slice.len());
-            Box::from_raw(ptr)
-        }
-    }
     pub fn new_in_postgres(slice: &[F16]) -> Vecf16Output {
         unsafe {
             assert!(u16::try_from(slice.len()).is_ok());
             let layout = Vecf16::layout(slice.len());
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut Vecf16;
+            ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
             std::ptr::addr_of_mut!((*ptr).varlena).write(Vecf16::varlena(layout.size()));
             std::ptr::addr_of_mut!((*ptr).kind).write(16);
+            std::ptr::addr_of_mut!((*ptr).pad).write(0);
             std::ptr::addr_of_mut!((*ptr).len).write(slice.len() as u16);
             std::ptr::copy_nonoverlapping(slice.as_ptr(), (*ptr).phantom.as_mut_ptr(), slice.len());
-            Vecf16Output(NonNull::new(ptr).unwrap())
-        }
-    }
-    pub fn new_zeroed(len: usize) -> Box<Self> {
-        unsafe {
-            assert!(u16::try_from(len).is_ok());
-            let layout = Vecf16::layout(len);
-            let ptr = std::alloc::alloc_zeroed(layout) as *mut Vecf16;
-            std::ptr::addr_of_mut!((*ptr).varlena).write(Vecf16::varlena(layout.size()));
-            std::ptr::addr_of_mut!((*ptr).kind).write(16);
-            std::ptr::addr_of_mut!((*ptr).len).write(len as u16);
-            Box::from_raw(ptr)
-        }
-    }
-    #[allow(dead_code)]
-    pub fn new_zeroed_in_postgres(len: usize) -> Vecf16Output {
-        unsafe {
-            assert!(u64::try_from(len).is_ok());
-            let layout = Vecf16::layout(len);
-            let ptr = pgrx::pg_sys::palloc0(layout.size()) as *mut Vecf16;
-            std::ptr::addr_of_mut!((*ptr).varlena).write(Vecf16::varlena(layout.size()));
-            std::ptr::addr_of_mut!((*ptr).kind).write(16);
-            std::ptr::addr_of_mut!((*ptr).len).write(len as u16);
             Vecf16Output(NonNull::new(ptr).unwrap())
         }
     }
@@ -114,13 +82,6 @@ impl Vecf16 {
         debug_assert_eq!(self.varlena & 3, 0);
         debug_assert_eq!(self.kind, 16);
         unsafe { std::slice::from_raw_parts_mut(self.phantom.as_mut_ptr(), self.len as usize) }
-    }
-    #[allow(dead_code)]
-    pub fn copy(&self) -> Box<Vecf16> {
-        Vecf16::new(self.data())
-    }
-    pub fn copy_into_postgres(&self) -> Vecf16Output {
-        Vecf16::new_in_postgres(self.data())
     }
 }
 
