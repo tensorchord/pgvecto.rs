@@ -1,0 +1,7 @@
+[package]
+name = "c"
+version.workspace = true
+edition.workspace = true
+
+[build-dependencies]
+cc = "1.0"

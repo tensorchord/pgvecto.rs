@@ -1,6 +1,7 @@
-use crate::index::IndexOptions;
-use crate::prelude::*;
 use serde::{Deserialize, Serialize};
+use service::index::IndexOptions;
+use service::index::IndexStat;
+use service::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum RpcPacket {
@@ -16,14 +17,14 @@ pub enum RpcPacket {
     },
     Insert {
         id: Id,
-        insert: (Vec<Scalar>, Pointer),
+        insert: (DynamicVector, Pointer),
     },
     Delete {
         id: Id,
     },
     Search {
         id: Id,
-        search: (Vec<Scalar>, usize),
+        search: (DynamicVector, usize),
         prefilter: bool,
     },
     Stat {
@@ -54,12 +55,12 @@ pub enum InsertPacket {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DeletePacket {
-    Next { p: Pointer },
+    Test { p: Pointer },
     Leave { result: Result<(), FriendlyError> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum DeleteNextPacket {
+pub enum DeleteTestPacket {
     Leave { delete: bool },
 }
 
@@ -81,6 +82,6 @@ pub enum SearchCheckPacket {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StatPacket {
     Leave {
-        result: Result<VectorIndexInfo, FriendlyError>,
+        result: Result<IndexStat, FriendlyError>,
     },
 }

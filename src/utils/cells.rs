@@ -1,4 +1,4 @@
-use std::cell::{Cell, RefCell, UnsafeCell};
+use std::cell::{Cell, RefCell};
 
 pub struct PgCell<T>(Cell<T>);
 
@@ -34,30 +34,5 @@ impl<T> PgRefCell<T> {
     }
     pub fn borrow(&self) -> std::cell::Ref<'_, T> {
         self.0.borrow()
-    }
-}
-
-#[repr(transparent)]
-pub struct SyncUnsafeCell<T: ?Sized> {
-    value: UnsafeCell<T>,
-}
-
-unsafe impl<T: ?Sized + Sync> Sync for SyncUnsafeCell<T> {}
-
-impl<T> SyncUnsafeCell<T> {
-    pub const fn new(value: T) -> Self {
-        Self {
-            value: UnsafeCell::new(value),
-        }
-    }
-}
-
-impl<T: ?Sized> SyncUnsafeCell<T> {
-    pub fn get(&self) -> *mut T {
-        self.value.get()
-    }
-
-    pub fn get_mut(&mut self) -> &mut T {
-        self.value.get_mut()
     }
 }

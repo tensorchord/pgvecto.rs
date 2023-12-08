@@ -1,8 +1,9 @@
-use crate::index::IndexOptions;
-use crate::ipc::packet::*;
-use crate::ipc::transport::Socket;
-use crate::ipc::IpcError;
-use crate::prelude::*;
+use super::packet::*;
+use super::transport::Socket;
+use super::IpcError;
+use service::index::IndexOptions;
+use service::index::IndexStat;
+use service::prelude::*;
 
 pub struct RpcHandler {
     socket: Socket,
@@ -77,13 +78,13 @@ pub enum RpcHandle {
     },
     Search {
         id: Id,
-        search: (Vec<Scalar>, usize),
+        search: (DynamicVector, usize),
         prefilter: bool,
         x: Search,
     },
     Insert {
         id: Id,
-        insert: (Vec<Scalar>, Pointer),
+        insert: (DynamicVector, Pointer),
         x: Insert,
     },
     Delete {
@@ -139,9 +140,9 @@ pub struct Delete {
 
 impl Delete {
     pub fn next(&mut self, p: Pointer) -> Result<bool, IpcError> {
-        let packet = DeletePacket::Next { p };
+        let packet = DeletePacket::Test { p };
         self.socket.send(packet)?;
-        let DeleteNextPacket::Leave { delete } = self.socket.recv::<DeleteNextPacket>()?;
+        let DeleteTestPacket::Leave { delete } = self.socket.recv::<DeleteTestPacket>()?;
         Ok(delete)
     }
     pub fn leave(mut self, result: Result<(), FriendlyError>) -> Result<RpcHandler, IpcError> {
@@ -211,7 +212,7 @@ pub struct Stat {
 impl Stat {
     pub fn leave(
         mut self,
-        result: Result<VectorIndexInfo, FriendlyError>,
+        result: Result<IndexStat, FriendlyError>,
     ) -> Result<RpcHandler, IpcError> {
         let packet = StatPacket::Leave { result };
         self.socket.send(packet)?;

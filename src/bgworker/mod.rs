@@ -1,10 +1,25 @@
-pub mod worker;
-
-use self::worker::Worker;
 use crate::ipc::server::RpcHandler;
 use crate::ipc::IpcError;
+use service::worker::Worker;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+
+pub unsafe fn init() {
+    use pgrx::bgworkers::BackgroundWorkerBuilder;
+    use pgrx::bgworkers::BgWorkerStartTime;
+    BackgroundWorkerBuilder::new("vectors")
+        .set_function("vectors_main")
+        .set_library("vectors")
+        .set_argument(None)
+        .enable_shmem_access(None)
+        .set_start_time(BgWorkerStartTime::PostmasterStart)
+        .load();
+}
+
+#[no_mangle]
+extern "C" fn vectors_main(_arg: pgrx::pg_sys::Datum) {
+    let _ = std::panic::catch_unwind(crate::bgworker::main);
+}
 
 pub fn main() {
     {
