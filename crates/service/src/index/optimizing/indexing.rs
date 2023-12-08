@@ -76,7 +76,11 @@ impl<S: G> Seg<S> {
     }
 }
 
-pub fn optimizing_indexing<S: G>(index: Arc<Index<S>>) -> Result<(), ()> {
+#[derive(Debug, thiserror::Error)]
+#[error("Interrupted, retry again.")]
+pub struct RetryError;
+
+pub fn optimizing_indexing<S: G>(index: Arc<Index<S>>) -> Result<(), RetryError> {
     use Seg::*;
     let segs = {
         let protect = index.protect.lock();
@@ -100,7 +104,7 @@ pub fn optimizing_indexing<S: G>(index: Arc<Index<S>>) -> Result<(), ()> {
         }
         if segs_1.is_empty() || (segs_1.len() == 1 && count == 0) {
             index.instant_index.store(Instant::now());
-            return Err(());
+            return Err(RetryError);
         }
         segs_1
     };
