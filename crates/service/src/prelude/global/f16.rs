@@ -20,7 +20,15 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         unsafe {
             assert!(lhs.len() == rhs.len());
             let n = lhs.len();
-            c::vectors_f16_cosine_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n);
+            return c::vectors_f16_cosine_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n)
+                .into();
+        }
+    }
+    if super::avx2::detect() {
+        unsafe {
+            assert!(lhs.len() == rhs.len());
+            let n = lhs.len();
+            return c::vectors_f16_cosine_axv2(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
     cosine(lhs, rhs)
@@ -42,7 +50,14 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         unsafe {
             assert!(lhs.len() == rhs.len());
             let n = lhs.len();
-            c::vectors_f16_dot_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n);
+            return c::vectors_f16_dot_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
+        }
+    }
+    if super::avx2::detect() {
+        unsafe {
+            assert!(lhs.len() == rhs.len());
+            let n = lhs.len();
+            return c::vectors_f16_dot_axv2(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
     cosine(lhs, rhs)
@@ -65,7 +80,24 @@ pub fn distance_squared_l2(lhs: &[F16], rhs: &[F16]) -> F32 {
         unsafe {
             assert!(lhs.len() == rhs.len());
             let n = lhs.len();
-            c::vectors_f16_distance_squared_l2_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n);
+            return c::vectors_f16_distance_squared_l2_axv512(
+                lhs.as_ptr().cast(),
+                rhs.as_ptr().cast(),
+                n,
+            )
+            .into();
+        }
+    }
+    if super::avx2::detect() {
+        unsafe {
+            assert!(lhs.len() == rhs.len());
+            let n = lhs.len();
+            return c::vectors_f16_distance_squared_l2_axv2(
+                lhs.as_ptr().cast(),
+                rhs.as_ptr().cast(),
+                n,
+            )
+            .into();
         }
     }
     distance_squared_l2(lhs, rhs)

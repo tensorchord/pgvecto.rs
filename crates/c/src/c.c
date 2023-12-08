@@ -25,8 +25,8 @@ vectors_f16_cosine_axv512(_Float16 const *restrict a,
     xx = _mm512_fmadd_ph(x, x, xx);
     yy = _mm512_fmadd_ph(y, y, yy);
   }
-  return (float)(_mm512_reduce_add_ps(xy) /
-                 sqrt(_mm512_reduce_add_ps(xx) * _mm512_reduce_add_ps(yy)));
+  return (float)(_mm512_reduce_add_ph(xy) /
+                 sqrt(_mm512_reduce_add_ph(xx) * _mm512_reduce_add_ph(yy)));
 }
 
 __attribute__((target("avx512fp16,bmi2"))) extern float
@@ -70,4 +70,48 @@ vectors_f16_distance_squared_l2_axv512(_Float16 const *restrict a,
   }
 
   return (float)_mm512_reduce_add_ph(dd);
+}
+
+__attribute__((target("avx2"))) extern float
+vectors_f16_cosine_axv2(_Float16 const *restrict a, _Float16 const *restrict b,
+                        size_t n) {
+  float xy = 0;
+  float xx = 0;
+  float yy = 0;
+#pragma clang loop vectorize_width(8)
+  for (size_t i = 0; i < n; i++) {
+    float x = a[i];
+    float y = b[i];
+    xy += x * y;
+    xx += x * x;
+    yy += y * y;
+  }
+  return xy / sqrt(xx * yy);
+}
+
+__attribute__((target("avx2"))) extern float
+vectors_f16_dot_axv2(_Float16 const *restrict a, _Float16 const *restrict b,
+                     size_t n) {
+  float xy = 0;
+#pragma clang loop vectorize_width(8)
+  for (size_t i = 0; i < n; i++) {
+    float x = a[i];
+    float y = b[i];
+    xy += x * y;
+  }
+  return xy;
+}
+
+__attribute__((target("avx2"))) extern float
+vectors_f16_distance_squared_l2_axv2(_Float16 const *restrict a,
+                                     _Float16 const *restrict b, size_t n) {
+  float dd = 0;
+#pragma clang loop vectorize_width(8)
+  for (size_t i = 0; i < n; i++) {
+    float x = a[i];
+    float y = b[i];
+    float d = x - y;
+    dd += d * d;
+  }
+  return dd;
 }
