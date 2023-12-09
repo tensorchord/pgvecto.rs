@@ -542,7 +542,7 @@ fn local_search_vbase<'mmap, 'vector>(
     let mut visited = visited_guard.fetch();
     let mut candidates = BinaryHeap::<Reverse<(Scalar, u32)>>::new();
     let mut results = Heap::new(range);
-    let mut heap = Vec::<Reverse<HeapElement>>::new();
+    let mut lost = Vec::<Reverse<HeapElement>>::new();
     visited.mark(s);
     let s_dis = mmap.quantization.distance(mmap.d, vector, s);
     candidates.push(Reverse((s_dis, s)));
@@ -566,22 +566,22 @@ fn local_search_vbase<'mmap, 'vector>(
                 continue;
             }
             candidates.push(Reverse((v_dis, v)));
-            heap.push(Reverse(HeapElement {
+            if let Some(val) = results.push(HeapElement {
                 distance: v_dis,
                 payload: mmap.raw.payload(v),
-            }));
-            results.push(HeapElement {
-                distance: v_dis,
-                payload: mmap.raw.payload(v),
-            });
+            }) {
+                lost.push(Reverse(val));
+            }
         }
     }
+    lost.sort_unstable();
     HnswIndexIter(Some(HnswIndexIterInner {
         mmap,
         range,
         candidates,
+        results: results.into_reversed_heap(),
+        lost,
         visited: visited_guard,
-        heap: heap.into(),
         vector,
     }))
 }
@@ -710,7 +710,9 @@ pub struct HnswIndexIterInner<'mmap, 'vector> {
     mmap: &'mmap HnswMmap,
     range: usize,
     candidates: BinaryHeap<Reverse<(Scalar, u32)>>,
-    heap: BinaryHeap<Reverse<HeapElement>>,
+    results: BinaryHeap<Reverse<HeapElement>>,
+    // The points lost in the first stage, we should keep it to the second stage.
+    lost: Vec<Reverse<HeapElement>>,
     visited: VisitedGuard<'mmap>,
     vector: &'vector [Scalar],
 }
@@ -725,8 +727,8 @@ impl Iterator for HnswIndexIter<'_, '_> {
 impl Iterator for HnswIndexIterInner<'_, '_> {
     type Item = HeapElement;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.heap.len() > self.range {
-            return self.heap.pop().map(|x| x.0);
+        if self.results.len() > self.range {
+            return self.pop();
         }
 
         let mut visited = self.visited.fetch_current_version();
@@ -739,16 +741,26 @@ impl Iterator for HnswIndexIterInner<'_, '_> {
                 visited.mark(v);
                 let v_dis = self.mmap.quantization.distance(self.mmap.d, self.vector, v);
                 self.candidates.push(Reverse((v_dis, v)));
-                self.heap.push(Reverse(HeapElement {
+                self.results.push(Reverse(HeapElement {
                     distance: v_dis,
                     payload: self.mmap.raw.payload(v),
                 }));
             }
-            if self.heap.len() > self.range {
-                return self.heap.pop().map(|x| x.0);
+            if self.results.len() > self.range {
+                return self.pop();
             }
         }
 
-        self.heap.pop().map(|x| x.0)
+        self.pop()
+    }
+}
+
+impl HnswIndexIterInner<'_, '_> {
+    fn pop(&mut self) -> Option<HeapElement> {
+        if self.results.peek() > self.lost.last() {
+            self.results.pop().map(|x| x.0)
+        } else {
+            self.lost.pop().map(|x| x.0)
+        }
     }
 }
