@@ -8,6 +8,7 @@ use self::ivf::{IvfIndexing, IvfIndexingOptions};
 use super::segments::growing::GrowingSegment;
 use super::segments::sealed::SealedSegment;
 use super::IndexOptions;
+use crate::algorithms::hnsw::HnswIndexIter;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -79,6 +80,10 @@ pub enum DynamicIndexing {
     Hnsw(HnswIndexing),
 }
 
+pub enum DynamicIndexIter<'index, 'vector> {
+    Hnsw(HnswIndexIter<'index, 'vector>),
+}
+
 impl DynamicIndexing {
     pub fn create(
         path: PathBuf,
@@ -136,6 +141,28 @@ impl DynamicIndexing {
             DynamicIndexing::Flat(x) => x.search(k, vector, filter),
             DynamicIndexing::Ivf(x) => x.search(k, vector, filter),
             DynamicIndexing::Hnsw(x) => x.search(k, vector, filter),
+        }
+    }
+
+    pub fn search_vbase<'index, 'vector>(
+        &'index self,
+        range: usize,
+        vector: &'vector [Scalar],
+    ) -> DynamicIndexIter<'index, 'vector> {
+        use DynamicIndexIter::*;
+        match self {
+            DynamicIndexing::Hnsw(x) => Hnsw(x.search_vbase(range, vector)),
+            _ => unimplemented!("search_vbase is only implemented for HNSW"),
+        }
+    }
+}
+
+impl Iterator for DynamicIndexIter<'_, '_> {
+    type Item = HeapElement;
+    fn next(&mut self) -> Option<Self::Item> {
+        use DynamicIndexIter::*;
+        match self {
+            Hnsw(x) => x.next(),
         }
     }
 }

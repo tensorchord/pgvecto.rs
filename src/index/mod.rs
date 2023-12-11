@@ -10,6 +10,7 @@ use self::segments::growing::GrowingSegment;
 use self::segments::growing::GrowingSegmentInsertError;
 use self::segments::sealed::SealedSegment;
 use self::segments::SegmentsOptions;
+use crate::index::indexing::DynamicIndexIter;
 use crate::prelude::*;
 use crate::utils::clean::clean;
 use crate::utils::dir_ops::sync_dir;
@@ -328,6 +329,107 @@ impl IndexView {
             .iter()
             .map(|x| Pointer::from_u48(x.payload >> 16))
             .collect())
+    }
+    pub fn search_vbase<F>(
+        &self,
+        range: usize,
+        vector: &[Scalar],
+        mut next: F,
+    ) -> Result<(), IndexSearchError>
+    where
+        F: FnMut(Pointer) -> bool,
+    {
+        if self.options.vector.dims as usize != vector.len() {
+            return Err(IndexSearchError::InvalidVector(vector.to_vec()));
+        }
+
+        struct Comparer<'index, 'vector> {
+            iter: ComparerIter<'index, 'vector>,
+            item: Option<HeapElement>,
+        }
+
+        enum ComparerIter<'index, 'vector> {
+            Sealed(DynamicIndexIter<'index, 'vector>),
+            Growing(std::vec::IntoIter<HeapElement>),
+        }
+
+        impl PartialEq for Comparer<'_, '_> {
+            fn eq(&self, other: &Self) -> bool {
+                self.cmp(other).is_eq()
+            }
+        }
+
+        impl Eq for Comparer<'_, '_> {}
+
+        impl PartialOrd for Comparer<'_, '_> {
+            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+                Some(self.cmp(other))
+            }
+        }
+
+        impl Ord for Comparer<'_, '_> {
+            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+                self.item.cmp(&other.item).reverse()
+            }
+        }
+
+        impl Iterator for ComparerIter<'_, '_> {
+            type Item = HeapElement;
+            fn next(&mut self) -> Option<Self::Item> {
+                match self {
+                    Self::Sealed(iter) => iter.next(),
+                    Self::Growing(iter) => iter.next(),
+                }
+            }
+        }
+
+        impl Iterator for Comparer<'_, '_> {
+            type Item = HeapElement;
+            fn next(&mut self) -> Option<Self::Item> {
+                let item = self.item.take();
+                self.item = self.iter.next();
+                item
+            }
+        }
+
+        fn from_iter<'index, 'vector>(
+            mut iter: ComparerIter<'index, 'vector>,
+        ) -> Comparer<'index, 'vector> {
+            let item = iter.next();
+            Comparer { iter, item }
+        }
+
+        use ComparerIter::*;
+        let filter = |payload| self.delete.check(payload).is_some();
+        let n = self.sealed.len() + self.growing.len() + 1;
+        let mut heaps: BinaryHeap<Comparer> = BinaryHeap::with_capacity(1 + n);
+        for (_, sealed) in self.sealed.iter() {
+            let res = sealed.search_vbase(range, vector);
+            heaps.push(from_iter(Sealed(res)));
+        }
+        for (_, growing) in self.growing.iter() {
+            let mut res = growing.search_all(vector);
+            res.sort_unstable();
+            heaps.push(from_iter(Growing(res.into_iter())));
+        }
+        if let Some((_, write)) = &self.write {
+            let mut res = write.search_all(vector);
+            res.sort_unstable();
+            heaps.push(from_iter(Growing(res.into_iter())));
+        }
+        while let Some(mut iter) = heaps.pop() {
+            if let Some(x) = iter.next() {
+                if !filter(x.payload) {
+                    continue;
+                }
+                let stop = next(Pointer::from_u48(x.payload >> 16));
+                if stop {
+                    break;
+                }
+                heaps.push(iter);
+            }
+        }
+        Ok(())
     }
     pub fn insert(&self, vector: Vec<Scalar>, pointer: Pointer) -> Result<(), IndexInsertError> {
         if self.options.vector.dims as usize != vector.len() {

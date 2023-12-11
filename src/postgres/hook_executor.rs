@@ -1,4 +1,5 @@
 use crate::postgres::index_scan::Scanner;
+use crate::postgres::index_scan::ScannerState;
 use std::ptr::null_mut;
 
 pub unsafe fn post_executor_start(query_desc: *mut pgrx::pg_sys::QueryDesc) {
@@ -43,13 +44,8 @@ unsafe extern "C" fn rewrite_plan_state(
                 }
                 // inject
                 let scanner = &mut *((*(*node).iss_ScanDesc).opaque as *mut Scanner);
-                let Scanner::Initial {
-                    index_scan_state, ..
-                } = scanner
-                else {
-                    unreachable!()
-                };
-                *index_scan_state = Some(node);
+                scanner.index_scan_state = node;
+                assert!(matches!(scanner.state, ScannerState::Initial { .. }));
             }
         }
     }

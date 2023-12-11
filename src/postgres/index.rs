@@ -268,7 +268,9 @@ pub unsafe extern "C" fn amgettuple(
 }
 
 #[pgrx::pg_guard]
-pub extern "C" fn amendscan(_scan: pgrx::pg_sys::IndexScanDesc) {}
+pub unsafe extern "C" fn amendscan(scan: pgrx::pg_sys::IndexScanDesc) {
+    index_scan::end_scan(scan);
+}
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn ambulkdelete(

@@ -1,24 +1,29 @@
 use super::gucs::ENABLE_PREFILTER;
-use super::hook_transaction::client;
+use super::hook_transaction::{client, ClientGuard};
+use crate::ipc::client::SearchVbaseHandler;
 use crate::postgres::datatype::VectorInput;
-use crate::postgres::gucs::K;
+use crate::postgres::gucs::{K, VBASE_RANGE};
+use crate::postgres::hook_transaction::client_guard;
 use crate::prelude::*;
 use pgrx::FromDatum;
 
-#[derive(Debug, Clone)]
-pub enum Scanner {
+pub struct Scanner {
+    pub index_scan_state: *mut pgrx::pg_sys::IndexScanState,
+    pub state: ScannerState,
+}
+
+pub enum ScannerState {
     Initial {
-        // fields to be filled by amhandler and hook
         vector: Option<Vec<Scalar>>,
-        index_scan_state: Option<*mut pgrx::pg_sys::IndexScanState>,
     },
-    Type0 {
+    Once {
         data: Vec<Pointer>,
     },
-    Type1 {
-        index_scan_state: *mut pgrx::pg_sys::IndexScanState,
-        data: Vec<Pointer>,
+    Iter {
+        handler: SearchVbaseHandler,
+        guard: ClientGuard,
     },
+    Stop,
 }
 
 pub unsafe fn make_scan(
@@ -36,9 +41,9 @@ pub unsafe fn make_scan(
     (*scan).xs_recheck = false;
     (*scan).xs_recheckorderby = false;
 
-    let scanner = Scanner::Initial {
-        vector: None,
-        index_scan_state: None,
+    let scanner = Scanner {
+        index_scan_state: std::ptr::null_mut(),
+        state: ScannerState::Initial { vector: None },
     };
 
     (*scan).opaque = PgMemoryContexts::CurrentMemoryContext.leak_and_drop_on_delete(scanner) as _;
@@ -53,7 +58,7 @@ pub unsafe fn start_scan(
     orderbys: pgrx::pg_sys::ScanKey,
     n_orderbys: std::os::raw::c_int,
 ) {
-    use Scanner::*;
+    use ScannerState::*;
 
     assert!((*scan).numberOfKeys == n_keys);
     assert!((*scan).numberOfOrderBys == n_orderbys);
@@ -84,63 +89,39 @@ pub unsafe fn start_scan(
     let vector = VectorInput::from_datum(argument, false).unwrap();
     let vector = vector.to_vec();
 
-    let last = (*((*scan).opaque as *mut Scanner)).clone();
-    let scanner = (*scan).opaque as *mut Scanner;
-
-    match last {
-        Initial {
-            index_scan_state, ..
-        } => {
-            *scanner = Initial {
-                vector: Some(vector),
-                index_scan_state,
-            };
-        }
-        Type0 { data: _ } => {
-            *scanner = Initial {
-                vector: Some(vector),
-                index_scan_state: None,
-            };
-        }
-        Type1 {
-            index_scan_state,
-            data: _,
-        } => {
-            *scanner = Initial {
-                vector: Some(vector),
-                index_scan_state: Some(index_scan_state),
-            };
-        }
-    }
+    let state = &mut (*((*scan).opaque as *mut Scanner)).state;
+    *state = Initial {
+        vector: Some(vector),
+    };
 }
 
 pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
+    use ScannerState::*;
+
     let scanner = &mut *((*scan).opaque as *mut Scanner);
-    if matches!(scanner, Scanner::Initial { .. }) {
-        let Scanner::Initial {
-            vector,
-            index_scan_state,
-        } = std::mem::replace(
-            scanner,
-            Scanner::Initial {
-                vector: None,
-                index_scan_state: None,
-            },
-        )
+    if matches!(scanner.state, Stop) {
+        return false;
+    }
+
+    if matches!(scanner.state, Initial { .. }) {
+        let Initial { vector } = std::mem::replace(&mut scanner.state, Initial { vector: None })
         else {
             unreachable!()
         };
+
         #[cfg(any(feature = "pg12", feature = "pg13", feature = "pg14", feature = "pg15"))]
         let oid = (*(*scan).indexRelation).rd_node.relNode;
         #[cfg(feature = "pg16")]
         let oid = (*(*scan).indexRelation).rd_locator.relNumber;
         let id = Id::from_sys(oid);
         let vector = vector.expect("`rescan` is never called.");
-        if index_scan_state.is_some() && ENABLE_PREFILTER.get() {
+        let index_scan_state = scanner.index_scan_state;
+
+        if VBASE_RANGE.get() == 0 {
+            let prefilter = !index_scan_state.is_null() && ENABLE_PREFILTER.get();
             client(|rpc| {
-                let index_scan_state = index_scan_state.unwrap();
                 let k = K.get() as _;
-                let mut handler = rpc.search(id, (vector, k), true).friendly();
+                let mut handler = rpc.search(id, (vector, k), prefilter).friendly();
                 let mut res;
                 let rpc = loop {
                     use crate::ipc::client::SearchHandle::*;
@@ -156,51 +137,60 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
                     }
                 };
                 res.reverse();
-                *scanner = Scanner::Type1 {
-                    index_scan_state,
-                    data: res,
-                };
+                scanner.state = Once { data: res };
                 rpc
             });
         } else {
-            client(|rpc| {
-                let k = K.get() as _;
-                let handler = rpc.search(id, (vector, k), false).friendly();
-                let mut res;
-                let rpc = {
-                    use crate::ipc::client::SearchHandle::*;
-                    match handler.handle().friendly() {
-                        Check { .. } => {
-                            unreachable!()
-                        }
-                        Leave { result, x } => {
-                            res = result.friendly();
-                            x
-                        }
-                    }
-                };
-                res.reverse();
-                *scanner = Scanner::Type0 { data: res };
-                rpc
-            });
+            let range = VBASE_RANGE.get() as _;
+            let (rpc, guard) = client_guard();
+            let handler = rpc.search_vbase(id, (vector, range)).friendly();
+            scanner.state = Iter { handler, guard };
         }
     }
-    match scanner {
-        Scanner::Initial { .. } => unreachable!(),
-        Scanner::Type0 { data } => {
-            if let Some(p) = data.pop() {
-                (*scan).xs_heaptid = p.into_sys();
-                true
-            } else {
-                false
-            }
+
+    if let Once { data } = &mut scanner.state {
+        if let Some(p) = data.pop() {
+            (*scan).xs_heaptid = p.into_sys();
+            return true;
         }
-        Scanner::Type1 { data, .. } => {
-            if let Some(p) = data.pop() {
+        scanner.state = Stop;
+        return false;
+    }
+
+    let Iter { handler, guard } = std::mem::replace(&mut scanner.state, Stop) else {
+        unreachable!()
+    };
+    use crate::ipc::client::SearchVbaseHandle::*;
+    match handler.handle().friendly() {
+        Next { p, x } => {
+            (*scan).xs_heaptid = p.into_sys();
+            let handler = x.next().friendly();
+            scanner.state = ScannerState::Iter { handler, guard };
+            true
+        }
+        Leave { result, x } => {
+            result.friendly();
+            guard.reset(x);
+            false
+        }
+    }
+}
+
+pub unsafe fn end_scan(scan: pgrx::pg_sys::IndexScanDesc) {
+    use ScannerState::*;
+
+    let scanner = &mut *((*scan).opaque as *mut Scanner);
+    if let Iter { handler, guard } = std::mem::replace(&mut scanner.state, Stop) {
+        use crate::ipc::client::SearchVbaseHandle::*;
+        match handler.handle().friendly() {
+            Next { p, x } => {
                 (*scan).xs_heaptid = p.into_sys();
-                true
-            } else {
-                false
+                let client = x.stop().friendly();
+                guard.reset(client);
+            }
+            Leave { result, x } => {
+                result.friendly();
+                guard.reset(x);
             }
         }
     }

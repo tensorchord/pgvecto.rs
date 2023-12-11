@@ -34,6 +34,17 @@ impl Rpc {
             socket: self.socket,
         })
     }
+    pub fn search_vbase(
+        mut self,
+        id: Id,
+        search: (Vec<Scalar>, usize),
+    ) -> Result<SearchVbaseHandler, IpcError> {
+        let packet = RpcPacket::SearchVbase { id, search };
+        self.socket.send(packet)?;
+        Ok(SearchVbaseHandler {
+            socket: self.socket,
+        })
+    }
     pub fn delete(mut self, id: Id) -> Result<DeleteHandler, IpcError> {
         let packet = RpcPacket::Delete { id };
         self.socket.send(packet)?;
@@ -114,6 +125,65 @@ impl SearchCheck {
         let packet = SearchCheckPacket::Leave { result };
         self.socket.send(packet)?;
         Ok(SearchHandler {
+            socket: self.socket,
+        })
+    }
+}
+
+pub enum SearchVbaseHandle {
+    Next {
+        p: Pointer,
+        x: SearchVbaseNext,
+    },
+    Leave {
+        result: Result<(), FriendlyError>,
+        x: Rpc,
+    },
+}
+
+pub struct SearchVbaseHandler {
+    socket: Socket,
+}
+
+impl SearchVbaseHandler {
+    pub fn handle(mut self) -> Result<SearchVbaseHandle, IpcError> {
+        Ok(match self.socket.recv::<SearchVbasePacket>()? {
+            SearchVbasePacket::Next { p } => SearchVbaseHandle::Next {
+                p,
+                x: SearchVbaseNext {
+                    socket: self.socket,
+                },
+            },
+            SearchVbasePacket::Leave { result } => SearchVbaseHandle::Leave {
+                result,
+                x: Rpc {
+                    socket: self.socket,
+                },
+            },
+        })
+    }
+}
+
+pub struct SearchVbaseNext {
+    socket: Socket,
+}
+
+impl SearchVbaseNext {
+    pub fn next(mut self) -> Result<SearchVbaseHandler, IpcError> {
+        let packet = SearchVbaseNextPacket::Leave { stop: false };
+        self.socket.send(packet)?;
+        Ok(SearchVbaseHandler {
+            socket: self.socket,
+        })
+    }
+    pub fn stop(mut self) -> Result<Rpc, IpcError> {
+        let packet = SearchVbaseNextPacket::Leave { stop: true };
+        self.socket.send(packet)?;
+        match self.socket.recv::<SearchVbasePacket>()? {
+            SearchVbasePacket::Leave { result } => result.friendly(),
+            _ => unreachable!(),
+        };
+        Ok(Rpc {
             socket: self.socket,
         })
     }

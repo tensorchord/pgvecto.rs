@@ -30,4 +30,6 @@ Search options are specified by PostgreSQL GUC. You can use `SET` command to app
 | vectors.k                   | integer | Expected number of candidates returned by index. The parameter will influence the recall if you use HNSW or quantization for indexing. Default value is `64`. |
 | vectors.enable_prefilter    | boolean | Enable prefiltering or not. Default value is `off`.                                                                                                           |
 | vectors.enable_vector_index | boolean | Enable vector indexes or not. This option is for debugging. Default value is `on`.                                                                            |
+| vectors.vbase_range         | int4    | The range size when using vbase optimization. When it is set to `0`, vbase optimization will be disabled. A recommended value is `86`. Default value is `0`.  |
 
+Note: When `vectors.vbase_range` is enabled, it will ignore `vectors.enable_prefilter`.
