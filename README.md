@@ -21,13 +21,13 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 
 ## Comparison with pgvector
 
-|                                             | pgvecto.rs                                             | pgvector                 |
-| ------------------------------------------- | ------------------------------------------------------ | ------------------------ |
-| Transaction support                         | ✅                                                     | ⚠️                       |
-| Sufficient Result with Delete/Update/Filter | ✅                                                     | ⚠️                       |
-| Vector Dimension Limit                      | 65535                                                  | 2000                     |
-| Prefilter on HNSW                           | ✅                                                     | ❌                       |
-| Parallel HNSW Index build                   | ⚡️ Linearly faster with more cores                    | 🐌 Only single core used |
+|                                             | pgvecto.rs                                             | pgvector                |
+| ------------------------------------------- | ------------------------------------------------------ | ----------------------- |
+| Transaction support                         | ✅                                                      | ⚠️                       |
+| Sufficient Result with Delete/Update/Filter | ✅                                                      | ⚠️                       |
+| Vector Dimension Limit                      | 65535                                                  | 2000                    |
+| Prefilter on HNSW                           | ✅                                                      | ❌                       |
+| Parallel HNSW Index build                   | ⚡️ Linearly faster with more cores                      | 🐌 Only single core used |
 | Async Index build                           | Ready for queries anytime and do not block insertions. | ❌                       |
 | Quantization                                | Scalar/Product Quantization                            | ❌                       |
 
@@ -45,7 +45,11 @@ More details at [./docs/comparison-pgvector.md](./docs/comparison-pgvector.md)
 For users, we recommend you to try pgvecto.rs using our pre-built docker image, by running
 
 ```sh
-docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:pg16-latest
+docker run \
+  --name pgvecto-rs-demo \
+  -e POSTGRES_PASSWORD=mysecretpassword \
+  -p 5432:5432 \
+  -d tensorchord/pgvecto-rs:pg16-latest
 ```
 
 ## Development with envd

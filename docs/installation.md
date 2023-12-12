@@ -19,12 +19,28 @@ To acheive full performance, please mount the volume to pg data directory by add
 
 You can configure PostgreSQL by the reference of the parent image in https://hub.docker.com/_/postgres/.
 
-## Build from source
+## Install from source
 
 Install Rust and base dependency.
 
 ```sh
-sudo apt install -y build-essential libpq-dev libssl-dev pkg-config gcc libreadline-dev flex bison libxml2-dev libxslt-dev libxml2-utils xsltproc zlib1g-dev ccache clang git
+sudo apt install -y \
+    build-essential \
+    libpq-dev \
+    libssl-dev \
+    pkg-config \
+    gcc \
+    libreadline-dev \
+    flex \
+    bison \
+    libxml2-dev \
+    libxslt-dev \
+    libxml2-utils \
+    xsltproc \
+    zlib1g-dev \
+    ccache \
+    clang \
+    git
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
@@ -63,7 +79,7 @@ cargo pgrx init --pg15=/usr/lib/postgresql/15/bin/pg_config
 Install pgvecto.rs.
 
 ```sh
-cargo pgrx install --release
+cargo pgrx install --sudo --release
 ```
 
 Configure your PostgreSQL by modifying the `shared_preload_libraries` to include `vectors.so`.

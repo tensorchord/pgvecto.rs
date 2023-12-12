@@ -362,6 +362,7 @@ dependencies = [
 [[package]]
 name = "bindgen"
 version = "0.68.1"
+source = "git+https://github.com/usamoi/rust-bindgen.git?rev=7e683d3cc6a0667232f821088b8d0ed7f4d4c31e#7e683d3cc6a0667232f821088b8d0ed7f4d4c31e"
 dependencies = [
  "bitflags 2.4.1",
  "cexpr",
@@ -2927,7 +2928,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 [[package]]
 name = "std_detect"
 version = "0.1.5"
-source = "git+https://github.com/usamoi/stdarch.git?rev=067a6e889f0ca995a9fe4114061ced6f67acfb95#067a6e889f0ca995a9fe4114061ced6f67acfb95"
+source = "git+https://github.com/usamoi/stdarch.git?rev=d934b65e47ce82ce4c20f0268dab01f71fb7b9c7#d934b65e47ce82ce4c20f0268dab01f71fb7b9c7"
 dependencies = [
  "cfg-if",
  "libc",
