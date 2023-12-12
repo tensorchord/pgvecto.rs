@@ -1,5 +1,4 @@
-mod avx2;
-mod avx512fp16;
+mod detect;
 mod f16;
 mod f16_cos;
 mod f16_dot;

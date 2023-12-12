@@ -13,6 +13,7 @@ extern "C" {
 // However C compilers links `__extendhfsf2` with floating calling convention.
 // The code should be removed once Rust offically supports `f16`.
 
+#[cfg(target_arch = "x86_64")]
 #[no_mangle]
 #[linkage = "external"]
 extern "C" fn __extendhfsf2(f: f64) -> f32 {

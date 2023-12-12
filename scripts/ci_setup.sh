@@ -5,6 +5,7 @@ if [ "$OS" == "ubuntu-latest" ]; then
     if [ $VERSION != 14 ]; then
         sudo pg_dropcluster 14 main
     fi
+    sudo apt-get -y install crossbuild-essential-arm64
     sudo apt-get remove -y '^postgres.*' '^libpq.*' '^clang.*' '^llvm.*' '^libclang.*' '^libllvm.*' '^mono-llvm.*'
     sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
     sudo sh -c 'echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-16 main" >> /etc/apt/sources.list'

@@ -16,14 +16,16 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
         xy / (x2 * y2).sqrt()
     }
-    if super::avx512fp16::detect() {
+    #[cfg(target_arch = "x86_64")]
+    if super::detect::detect_avx512fp16() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
             return c::v_f16_cosine_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
-    if super::avx2::detect() {
+    #[cfg(target_arch = "x86_64")]
+    if super::detect::detect_avx2() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -45,14 +47,16 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
         xy
     }
-    if super::avx512fp16::detect() {
+    #[cfg(target_arch = "x86_64")]
+    if super::detect::detect_avx512fp16() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
             return c::v_f16_dot_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
-    if super::avx2::detect() {
+    #[cfg(target_arch = "x86_64")]
+    if super::detect::detect_avx2() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -75,14 +79,16 @@ pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
         d2
     }
-    if super::avx512fp16::detect() {
+    #[cfg(target_arch = "x86_64")]
+    if super::detect::detect_avx512fp16() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
             return c::v_f16_sl2_axv512(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
-    if super::avx2::detect() {
+    #[cfg(target_arch = "x86_64")]
+    if super::detect::detect_avx2() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
