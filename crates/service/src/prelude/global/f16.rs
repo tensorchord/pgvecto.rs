@@ -2,7 +2,12 @@ use crate::prelude::*;
 
 pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
     #[inline(always)]
-    #[multiversion::multiversion(targets = "simd")]
+    #[multiversion::multiversion(targets(
+        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "aarch64+neon"
+    ))]
     pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
@@ -37,7 +42,12 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
 
 pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
     #[inline(always)]
-    #[multiversion::multiversion(targets = "simd")]
+    #[multiversion::multiversion(targets(
+        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "aarch64+neon"
+    ))]
     pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
@@ -68,7 +78,12 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
 
 pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
     #[inline(always)]
-    #[multiversion::multiversion(targets = "simd")]
+    #[multiversion::multiversion(targets(
+        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "aarch64+neon"
+    ))]
     pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();

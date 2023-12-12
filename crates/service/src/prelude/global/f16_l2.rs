@@ -23,7 +23,12 @@ impl G for F16L2 {
         super::f16::sl2(lhs, rhs).sqrt()
     }
 
-    #[multiversion::multiversion(targets = "simd")]
+    #[multiversion::multiversion(targets(
+        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "aarch64+neon"
+    ))]
     fn scalar_quantization_distance(
         dims: u16,
         max: &[F16],
@@ -40,7 +45,12 @@ impl G for F16L2 {
         result
     }
 
-    #[multiversion::multiversion(targets = "simd")]
+    #[multiversion::multiversion(targets(
+        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "aarch64+neon"
+    ))]
     fn scalar_quantization_distance2(
         dims: u16,
         max: &[F16],
@@ -57,7 +67,12 @@ impl G for F16L2 {
         result
     }
 
-    #[multiversion::multiversion(targets = "simd")]
+    #[multiversion::multiversion(targets(
+        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "aarch64+neon"
+    ))]
     fn product_quantization_distance(
         dims: u16,
         ratio: u16,
@@ -77,7 +92,12 @@ impl G for F16L2 {
         result
     }
 
-    #[multiversion::multiversion(targets = "simd")]
+    #[multiversion::multiversion(targets(
+        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "aarch64+neon"
+    ))]
     fn product_quantization_distance2(
         dims: u16,
         ratio: u16,
@@ -98,7 +118,12 @@ impl G for F16L2 {
         result
     }
 
-    #[multiversion::multiversion(targets = "simd")]
+    #[multiversion::multiversion(targets(
+        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "aarch64+neon"
+    ))]
     fn product_quantization_distance_with_delta(
         dims: u16,
         ratio: u16,
@@ -122,7 +147,12 @@ impl G for F16L2 {
 }
 
 #[inline(always)]
-#[multiversion::multiversion(targets = "simd")]
+#[multiversion::multiversion(targets(
+    "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+    "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
+    "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+    "aarch64+neon"
+))]
 fn distance_squared_l2_delta(lhs: &[F16], rhs: &[F16], del: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
