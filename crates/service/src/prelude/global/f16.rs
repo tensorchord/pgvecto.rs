@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use crate::utils::detect;
 
 pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
     #[inline(always)]
@@ -23,7 +22,7 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         xy / (x2 * y2).sqrt()
     }
     #[cfg(target_arch = "x86_64")]
-    if self::detect::detect_avx512fp16() {
+    if crate::utils::detect::x86_64::detect_avx512fp16() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -31,7 +30,7 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     #[cfg(target_arch = "x86_64")]
-    if self::detect::detect_v3() {
+    if crate::utils::detect::x86_64::detect_v3() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -59,7 +58,7 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         xy
     }
     #[cfg(target_arch = "x86_64")]
-    if self::detect::detect_avx512fp16() {
+    if crate::utils::detect::x86_64::detect_avx512fp16() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -67,7 +66,7 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     #[cfg(target_arch = "x86_64")]
-    if self::detect::detect_v3() {
+    if crate::utils::detect::x86_64::detect_v3() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -96,7 +95,7 @@ pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         d2
     }
     #[cfg(target_arch = "x86_64")]
-    if self::detect::detect_avx512fp16() {
+    if crate::utils::detect::x86_64::detect_avx512fp16() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -104,7 +103,7 @@ pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     #[cfg(target_arch = "x86_64")]
-    if self::detect::detect_v3() {
+    if crate::utils::detect::x86_64::detect_v3() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {

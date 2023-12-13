@@ -5,7 +5,6 @@ if [ "$OS" == "ubuntu-latest" ]; then
     if [ $VERSION != 14 ]; then
         sudo pg_dropcluster 14 main
     fi
-    sudo apt-get -y install crossbuild-essential-arm64
     sudo apt-get remove -y '^postgres.*' '^libpq.*' '^clang.*' '^llvm.*' '^libclang.*' '^libllvm.*' '^mono-llvm.*'
     sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
     sudo sh -c 'echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-16 main" >> /etc/apt/sources.list'
@@ -14,6 +13,7 @@ if [ "$OS" == "ubuntu-latest" ]; then
     sudo apt-get update
     sudo apt-get -y install build-essential libpq-dev postgresql-$VERSION postgresql-server-dev-$VERSION
     sudo apt-get -y install clang-16
+    sudo apt-get -y install crossbuild-essential-arm64
     echo "local all all trust" | sudo tee /etc/postgresql/$VERSION/main/pg_hba.conf
     echo "host all all 127.0.0.1/32 trust" | sudo tee -a /etc/postgresql/$VERSION/main/pg_hba.conf
     echo "host all all ::1/128 trust" | sudo tee -a /etc/postgresql/$VERSION/main/pg_hba.conf
