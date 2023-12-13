@@ -7,15 +7,15 @@ CREATE CAST (vector AS real[])
 CREATE ACCESS METHOD vectors TYPE INDEX HANDLER vectors_amhandler;
 COMMENT ON ACCESS METHOD vectors IS 'pgvecto.rs index access method';
 
-CREATE OPERATOR CLASS l2_ops
+CREATE OPERATOR CLASS vector_l2_ops
     FOR TYPE vector USING vectors AS
     OPERATOR 1 <-> (vector, vector) FOR ORDER BY float_ops;
 
-CREATE OPERATOR CLASS dot_ops
+CREATE OPERATOR CLASS vector_dot_ops
     FOR TYPE vector USING vectors AS
     OPERATOR 1 <#> (vector, vector) FOR ORDER BY float_ops;
 
-CREATE OPERATOR CLASS cosine_ops
+CREATE OPERATOR CLASS vector_cos_ops
     FOR TYPE vector USING vectors AS
     OPERATOR 1 <=> (vector, vector) FOR ORDER BY float_ops;
 
@@ -27,7 +27,7 @@ CREATE OPERATOR CLASS vecf16_dot_ops
     FOR TYPE vecf16 USING vectors AS
     OPERATOR 1 <#> (vecf16, vecf16) FOR ORDER BY float_ops;
 
-CREATE OPERATOR CLASS vecf16_cosine_ops
+CREATE OPERATOR CLASS vecf16_cos_ops
     FOR TYPE vecf16 USING vectors AS
     OPERATOR 1 <=> (vecf16, vecf16) FOR ORDER BY float_ops;
 

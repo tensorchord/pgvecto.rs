@@ -32,6 +32,7 @@ arc-swap = "1.6.0"
 bytemuck = { version = "1.14.0", features = ["extern_crate_alloc"] }
 serde_with = "3.4.0"
 multiversion = "0.7.3"
+ctor = "0.2.6"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 ulock-sys = "0.1.0"

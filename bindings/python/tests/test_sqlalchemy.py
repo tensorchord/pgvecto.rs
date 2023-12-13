@@ -68,7 +68,7 @@ def test_create_index(session: Session, index_name: str, index_setting: str):
         Document.embedding,
         postgresql_using="vectors",
         postgresql_with={"options": f"$${index_setting}$$"},
-        postgresql_ops={"embedding": "l2_ops"},
+        postgresql_ops={"embedding": "vector_l2_ops"},
     )
     index.create(session.bind)
     session.commit()

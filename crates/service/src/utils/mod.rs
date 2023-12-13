@@ -5,3 +5,4 @@ pub mod file_atomic;
 pub mod file_wal;
 pub mod mmap_array;
 pub mod vec2;
+pub mod detect;

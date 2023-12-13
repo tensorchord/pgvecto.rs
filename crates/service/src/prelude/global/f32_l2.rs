@@ -23,9 +23,9 @@ impl G for F32L2 {
     }
 
     #[multiversion::multiversion(targets(
-        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64/x86-64-v4",
+        "x86_64/x86-64-v3",
+        "x86_64/x86-64-v2",
         "aarch64+neon"
     ))]
     fn scalar_quantization_distance(
@@ -45,9 +45,9 @@ impl G for F32L2 {
     }
 
     #[multiversion::multiversion(targets(
-        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64/x86-64-v4",
+        "x86_64/x86-64-v3",
+        "x86_64/x86-64-v2",
         "aarch64+neon"
     ))]
     fn scalar_quantization_distance2(
@@ -67,9 +67,9 @@ impl G for F32L2 {
     }
 
     #[multiversion::multiversion(targets(
-        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64/x86-64-v4",
+        "x86_64/x86-64-v3",
+        "x86_64/x86-64-v2",
         "aarch64+neon"
     ))]
     fn product_quantization_distance(
@@ -92,9 +92,9 @@ impl G for F32L2 {
     }
 
     #[multiversion::multiversion(targets(
-        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64/x86-64-v4",
+        "x86_64/x86-64-v3",
+        "x86_64/x86-64-v2",
         "aarch64+neon"
     ))]
     fn product_quantization_distance2(
@@ -118,9 +118,9 @@ impl G for F32L2 {
     }
 
     #[multiversion::multiversion(targets(
-        "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-        "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-        "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+        "x86_64/x86-64-v4",
+        "x86_64/x86-64-v3",
+        "x86_64/x86-64-v2",
         "aarch64+neon"
     ))]
     fn product_quantization_distance_with_delta(
@@ -147,9 +147,9 @@ impl G for F32L2 {
 
 #[inline(always)]
 #[multiversion::multiversion(targets(
-    "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-    "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-    "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
 pub fn distance_squared_l2(lhs: &[F32], rhs: &[F32]) -> F32 {
@@ -165,9 +165,9 @@ pub fn distance_squared_l2(lhs: &[F32], rhs: &[F32]) -> F32 {
 
 #[inline(always)]
 #[multiversion::multiversion(targets(
-    "x86_64+avx512vl+avx512f+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-    "x86_64+avx2+avx+ssse3+sse4.1+sse3+sse2+sse+fma",
-    "x86_64+ssse3+sse4.1+sse3+sse2+sse+fma",
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
 fn distance_squared_l2_delta(lhs: &[F32], rhs: &[F32], del: &[F32]) -> F32 {
