@@ -2940,7 +2940,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 [[package]]
 name = "std_detect"
 version = "0.1.5"
-source = "git+https://github.com/usamoi/stdarch.git?rev=d934b65e47ce82ce4c20f0268dab01f71fb7b9c7#d934b65e47ce82ce4c20f0268dab01f71fb7b9c7"
+source = "git+https://github.com/tensorchord/stdarch.git?branch=avx512fp16#db0cdbc9b02074bfddabfd23a4a681f21640eada"
 dependencies = [
  "cfg-if",
  "libc",

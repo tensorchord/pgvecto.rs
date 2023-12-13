@@ -16,7 +16,7 @@ bincode.workspace = true
 half.workspace = true
 num-traits.workspace = true
 c = { path = "../c" }
-std_detect = { git = "https://github.com/usamoi/stdarch.git", rev = "d934b65e47ce82ce4c20f0268dab01f71fb7b9c7" }
+std_detect = { git = "https://github.com/tensorchord/stdarch.git", branch = "avx512fp16" }
 rand = "0.8.5"
 crc32fast = "1.3.2"
 crossbeam = "0.8.2"
