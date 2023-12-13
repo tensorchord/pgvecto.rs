@@ -14,28 +14,28 @@ impl RpcHandler {
         Self { socket }
     }
     pub fn handle(mut self) -> Result<RpcHandle, IpcError> {
-        Ok(match self.socket.recv::<RpcPacket>()? {
-            RpcPacket::Create { id, options } => RpcHandle::Create {
+        Ok(match self.socket.recv::<ClientPacket>()? {
+            ClientPacket::Create { id, options } => RpcHandle::Create {
                 id,
                 options,
                 x: Create {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Insert { id, insert } => RpcHandle::Insert {
+            ClientPacket::Insert { id, insert } => RpcHandle::Insert {
                 id,
                 insert,
                 x: Insert {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Delete { id } => RpcHandle::Delete {
+            ClientPacket::Delete { id } => RpcHandle::Delete {
                 id,
                 x: Delete {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Search {
+            ClientPacket::Search {
                 id,
                 search,
                 prefilter,
@@ -47,25 +47,25 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Flush { id } => RpcHandle::Flush {
+            ClientPacket::Flush { id } => RpcHandle::Flush {
                 id,
                 x: Flush {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Destory { ids } => RpcHandle::Destory {
+            ClientPacket::Destory { ids } => RpcHandle::Destory {
                 ids,
                 x: Destory {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Stat { id } => RpcHandle::Stat {
+            ClientPacket::Stat { id } => RpcHandle::Stat {
                 id,
                 x: Stat {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Leave {} => RpcHandle::Leave {},
+            ClientPacket::Vbase { id, search } => todo!(),
         })
     }
 }
@@ -103,7 +103,6 @@ pub enum RpcHandle {
         id: Id,
         x: Stat,
     },
-    Leave {},
 }
 
 pub struct Create {
@@ -112,7 +111,7 @@ pub struct Create {
 
 impl Create {
     pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
-        let packet = CreatePacket::Leave {};
+        let packet = create::ServerPacket::Leave {};
         self.socket.send(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
@@ -126,7 +125,7 @@ pub struct Insert {
 
 impl Insert {
     pub fn leave(mut self, result: Result<(), FriendlyError>) -> Result<RpcHandler, IpcError> {
-        let packet = InsertPacket::Leave { result };
+        let packet = insert::ServerPacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
@@ -140,13 +139,13 @@ pub struct Delete {
 
 impl Delete {
     pub fn next(&mut self, p: Pointer) -> Result<bool, IpcError> {
-        let packet = DeletePacket::Test { p };
+        let packet = delete::ServerPacket::Test { p };
         self.socket.send(packet)?;
-        let DeleteTestPacket::Leave { delete } = self.socket.recv::<DeleteTestPacket>()?;
+        let delete::ClientTestPacket { delete } = self.socket.recv::<delete::ClientTestPacket>()?;
         Ok(delete)
     }
     pub fn leave(mut self, result: Result<(), FriendlyError>) -> Result<RpcHandler, IpcError> {
-        let packet = DeletePacket::Leave { result };
+        let packet = delete::ServerPacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
@@ -160,16 +159,17 @@ pub struct Search {
 
 impl Search {
     pub fn check(&mut self, p: Pointer) -> Result<bool, IpcError> {
-        let packet = SearchPacket::Check { p };
+        let packet = search::ServerPacket::Check { p };
         self.socket.send(packet)?;
-        let SearchCheckPacket::Leave { result } = self.socket.recv::<SearchCheckPacket>()?;
+        let search::ClientCheckPacket { result } =
+            self.socket.recv::<search::ClientCheckPacket>()?;
         Ok(result)
     }
     pub fn leave(
         mut self,
         result: Result<Vec<Pointer>, FriendlyError>,
     ) -> Result<RpcHandler, IpcError> {
-        let packet = SearchPacket::Leave { result };
+        let packet = search::ServerPacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
@@ -183,7 +183,7 @@ pub struct Flush {
 
 impl Flush {
     pub fn leave(mut self, result: Result<(), FriendlyError>) -> Result<RpcHandler, IpcError> {
-        let packet = FlushPacket::Leave { result };
+        let packet = flush::ServerPacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
@@ -197,7 +197,7 @@ pub struct Destory {
 
 impl Destory {
     pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
-        let packet = DestoryPacket::Leave {};
+        let packet = destory::ServerPacket::Leave {};
         self.socket.send(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
@@ -214,7 +214,7 @@ impl Stat {
         mut self,
         result: Result<IndexStat, FriendlyError>,
     ) -> Result<RpcHandler, IpcError> {
-        let packet = StatPacket::Leave { result };
+        let packet = stat::ServerPacket::Leave { result };
         self.socket.send(packet)?;
         Ok(RpcHandler {
             socket: self.socket,

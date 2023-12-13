@@ -8,14 +8,10 @@ use service::prelude::*;
 #[derive(Debug, Clone)]
 pub enum Scanner {
     Initial {
-        // fields to be filled by amhandler and hook
         vector: Option<DynamicVector>,
         index_scan_state: Option<*mut pgrx::pg_sys::IndexScanState>,
     },
-    Type0 {
-        data: Vec<Pointer>,
-    },
-    Type1 {
+    Search {
         index_scan_state: *mut pgrx::pg_sys::IndexScanState,
         data: Vec<Pointer>,
     },
@@ -95,13 +91,7 @@ pub unsafe fn start_scan(
                 index_scan_state,
             };
         }
-        Type0 { data: _ } => {
-            *scanner = Initial {
-                vector: Some(vector),
-                index_scan_state: None,
-            };
-        }
-        Type1 {
+        Search {
             index_scan_state,
             data: _,
         } => {
@@ -137,54 +127,31 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         let vector = vector.expect("`rescan` is never called.");
         let mut client = super::client::borrow_mut();
         let k = K.get() as _;
-        if index_scan_state.is_some() {
-            struct ClientSearch {
-                node: *mut pgrx::pg_sys::IndexScanState,
-            }
-
-            impl crate::ipc::client::ClientSearch for ClientSearch {
-                fn check(&mut self, p: Pointer) -> bool {
-                    unsafe { check(self.node, p) }
-                }
-            }
-
-            let client_search = ClientSearch {
-                node: index_scan_state.unwrap(),
-            };
-
-            let mut result = client.search(id, (vector, k), ENABLE_PREFILTER.get(), client_search);
-            result.reverse();
-            *scanner = Scanner::Type1 {
-                index_scan_state: index_scan_state.unwrap(),
-                data: result,
-            };
-        } else {
-            struct ClientSearch {}
-
-            impl crate::ipc::client::ClientSearch for ClientSearch {
-                fn check(&mut self, _: Pointer) -> bool {
-                    unreachable!()
-                }
-            }
-
-            let client_search = ClientSearch {};
-
-            let mut result = client.search(id, (vector, k), false, client_search);
-            result.reverse();
-            *scanner = Scanner::Type0 { data: result };
+        assert!(index_scan_state.is_some());
+        struct ClientSearch {
+            node: *mut pgrx::pg_sys::IndexScanState,
         }
+
+        impl crate::ipc::client::ClientSearch for ClientSearch {
+            fn check(&mut self, p: Pointer) -> bool {
+                unsafe { check(self.node, p) }
+            }
+        }
+
+        let client_search = ClientSearch {
+            node: index_scan_state.unwrap(),
+        };
+
+        let mut result = client.search(id, (vector, k), ENABLE_PREFILTER.get(), client_search);
+        result.reverse();
+        *scanner = Scanner::Search {
+            index_scan_state: index_scan_state.unwrap(),
+            data: result,
+        };
     }
     match scanner {
         Scanner::Initial { .. } => unreachable!(),
-        Scanner::Type0 { data } => {
-            if let Some(p) = data.pop() {
-                (*scan).xs_heaptid = p.into_sys();
-                true
-            } else {
-                false
-            }
-        }
-        Scanner::Type1 { data, .. } => {
+        Scanner::Search { data, .. } => {
             if let Some(p) = data.pop() {
                 (*scan).xs_heaptid = p.into_sys();
                 true

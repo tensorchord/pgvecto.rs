@@ -136,11 +136,6 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                 let result = worker.call_stat(id);
                 handler = x.leave(result)?;
             }
-            RpcHandle::Leave {} => {
-                log::debug!("Handle leave rpc.");
-                break;
-            }
         }
     }
-    Ok(())
 }
