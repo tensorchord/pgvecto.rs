@@ -5,11 +5,19 @@ Indexing is the core ability of pgvecto.rs.
 Assuming there is a table `items` and there is a column named `embedding` of type `vector(n)`, you can create a vector index for squared Euclidean distance with the following SQL.
 
 ```sql
-CREATE INDEX ON items USING vectors (embedding l2_ops);
+CREATE INDEX ON items USING vectors (embedding vector_l2_ops);
 ```
 
-For negative dot product, replace `l2_ops` with `dot_ops`.
-For negative cosine similarity, replace `l2_ops` with `cosine_ops`.
+There is a table for you to choose a proper operator class for creating indexes.
+
+| Vector type | Distance type              | Operator class |
+| ----------- | -------------------------- | -------------- |
+| vector      | squared Euclidean distance | vector_l2_ops  |
+| vector      | negative dot product       | vector_dot_ops |
+| vector      | negative cosine similarity | vector_cos_ops |
+| vecf16      | squared Euclidean distance | vecf16_l2_ops  |
+| vecf16      | negative dot product       | vecf16_dot_ops |
+| vecf16      | negative cosine similarity | vecf16_cos_ops |
 
 Now you can perform a KNN search with the following SQL again, but this time the vector index is used for searching.
 
@@ -36,14 +44,15 @@ Options for table `segment`.
 | Key                      | Type    | Description                                                         |
 | ------------------------ | ------- | ------------------------------------------------------------------- |
 | max_growing_segment_size | integer | Maximum size of unindexed vectors. Default value is `20_000`.       |
-| min_sealed_segment_size  | integer | Minimum size of vectors for indexing. Default value is `1_000`.     |
 | max_sealed_segment_size  | integer | Maximum size of vectors for indexing. Default value is `1_000_000`. |
 
 Options for table `optimizing`.
 
-| Key                | Type    | Description                                                                 |
-| ------------------ | ------- | --------------------------------------------------------------------------- |
-| optimizing_threads | integer | Maximum threads for indexing. Default value is the sqrt of number of cores. |
+| Key                | Type    | Description                                                                                                                                                |
+| ------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| optimizing_threads | integer | Maximum threads for indexing. Default value is the sqrt of number of cores.                                                                                |
+| sealing_secs       | integer | If a writing segment larger than `sealing_size` do not accept new data for `sealing_secs` seconds, the writing segment will be turned to a sealed segment. |
+| sealing_size       | integer | See above.                                                                                                                                                 |
 
 Options for table `indexing`.
 
@@ -99,23 +108,19 @@ Options for table `product`.
 ## Progress View
 
 We also provide a view `pg_vector_index_info` to monitor the progress of indexing.
-Note that whether idx_sealed_len is equal to idx_tuples doesn't relate to the completion of indexing.
-It may do further optimization after indexing. It may also stop indexing because there are too few tuples left.
 
-| Column          | Type   | Description                                   |
-| --------------- | ------ | --------------------------------------------- |
-| tablerelid      | oid    | The oid of the table.                         |
-| indexrelid      | oid    | The oid of the index.                         |
-| tablename       | name   | The name of the table.                        |
-| indexname       | name   | The name of the index.                        |
-| indexing        | bool   | Whether the background thread is indexing.    |
-| idx_tuples      | int4   | The number of tuples.                         |
-| idx_sealed_len  | int4   | The number of tuples in sealed segments.      |
-| idx_growing_len | int4   | The number of tuples in growing segments.     |
-| idx_write       | int4   | The number of tuples in write buffer.         |
-| idx_sealed      | int4[] | The number of tuples in each sealed segment.  |
-| idx_growing     | int4[] | The number of tuples in each growing segment. |
-| idx_config      | text   | The configuration of the index.               |
+| Column       | Type   | Description                                   |
+| ------------ | ------ | --------------------------------------------- |
+| tablerelid   | oid    | The oid of the table.                         |
+| indexrelid   | oid    | The oid of the index.                         |
+| tablename    | name   | The name of the table.                        |
+| indexname    | name   | The name of the index.                        |
+| idx_indexing | bool   | Whether the background thread is indexing.    |
+| idx_tuples   | int8   | The number of tuples.                         |
+| idx_sealed   | int8[] | The number of tuples in each sealed segment.  |
+| idx_growing  | int8[] | The number of tuples in each growing segment. |
+| idx_write    | int8   | The number of tuples in write buffer.         |
+| idx_config   | text   | The configuration of the index.               |
 
 ## Examples
 
@@ -124,11 +129,11 @@ There are some examples.
 ```sql
 -- HNSW algorithm, default settings.
 
-CREATE INDEX ON items USING vectors (embedding l2_ops);
+CREATE INDEX ON items USING vectors (embedding vector_l2_ops);
 
 --- Or using bruteforce with PQ.
 
-CREATE INDEX ON items USING vectors (embedding l2_ops)
+CREATE INDEX ON items USING vectors (embedding vector_l2_ops)
 WITH (options = $$
 [indexing.flat]
 quantization.product.ratio = "x16"
@@ -136,7 +141,7 @@ $$);
 
 --- Or using IVFPQ algorithm.
 
-CREATE INDEX ON items USING vectors (embedding l2_ops)
+CREATE INDEX ON items USING vectors (embedding vector_l2_ops)
 WITH (options = $$
 [indexing.ivf]
 quantization.product.ratio = "x16"
@@ -144,14 +149,14 @@ $$);
 
 -- Use more threads for background building the index.
 
-CREATE INDEX ON items USING vectors (embedding l2_ops)
+CREATE INDEX ON items USING vectors (embedding vector_l2_ops)
 WITH (options = $$
 optimizing.optimizing_threads = 16
 $$);
 
 -- Prefer smaller HNSW graph.
 
-CREATE INDEX ON items USING vectors (embedding l2_ops)
+CREATE INDEX ON items USING vectors (embedding vector_l2_ops)
 WITH (options = $$
 segment.max_growing_segment_size = 200000
 $$);

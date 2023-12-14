@@ -1,14 +1,12 @@
 use super::openai::{EmbeddingCreator, OpenAIEmbedding};
 use super::Embedding;
-use crate::postgres::datatype::Vector;
-use crate::postgres::datatype::VectorOutput;
-use crate::postgres::gucs::OPENAI_API_KEY_GUC;
-use crate::prelude::Float;
-use crate::prelude::Scalar;
+use crate::datatype::vecf32::{Vecf32, Vecf32Output};
+use crate::gucs::OPENAI_API_KEY_GUC;
 use pgrx::prelude::*;
+use service::prelude::F32;
 
 #[pg_extern]
-fn ai_embedding_vector(input: String) -> VectorOutput {
+fn ai_embedding_vector(input: String) -> Vecf32Output {
     let api_key = match OPENAI_API_KEY_GUC.get() {
         Some(key) => key
             .to_str()
@@ -26,9 +24,9 @@ fn ai_embedding_vector(input: String) -> VectorOutput {
         Ok(embedding) => {
             let embedding = embedding
                 .into_iter()
-                .map(|x| Scalar(x as Float))
+                .map(|x| F32(x as f32))
                 .collect::<Vec<_>>();
-            Vector::new_in_postgres(&embedding)
+            Vecf32::new_in_postgres(&embedding)
         }
         Err(e) => {
             error!("{}", e)

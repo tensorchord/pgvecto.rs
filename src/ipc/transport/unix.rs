@@ -1,4 +1,4 @@
-use crate::ipc::IpcError;
+use super::IpcError;
 use crate::utils::file_socket::FileSocket;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use rustix::fd::AsFd;
@@ -40,10 +40,7 @@ macro_rules! resolve_closed {
 }
 
 impl Socket {
-    pub fn send<T>(&mut self, packet: T) -> Result<(), IpcError>
-    where
-        T: Serialize,
-    {
+    pub fn send<T: Serialize>(&mut self, packet: T) -> Result<(), IpcError> {
         use byteorder::NativeEndian as N;
         let buffer = bincode::serialize(&packet).expect("Failed to serialize");
         let len = u32::try_from(buffer.len()).expect("Packet is too large.");
@@ -51,10 +48,7 @@ impl Socket {
         resolve_closed!(self.stream.write_all(&buffer));
         Ok(())
     }
-    pub fn recv<T>(&mut self) -> Result<T, IpcError>
-    where
-        T: for<'a> Deserialize<'a>,
-    {
+    pub fn recv<T: for<'a> Deserialize<'a>>(&mut self) -> Result<T, IpcError> {
         use byteorder::NativeEndian as N;
         let len = resolve_closed!(self.stream.read_u32::<N>());
         let mut buffer = vec![0u8; len as usize];

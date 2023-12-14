@@ -6,6 +6,7 @@ on:
     paths:
       - ".cargo/**"
       - ".github/**"
+      - "crates/**"
       - "scripts/**"
       - "src/**"
       - "tests/**"
@@ -18,6 +19,7 @@ on:
     paths:
       - ".cargo/**"
       - ".github/**"
+      - "crates/**"
       - "scripts/**"
       - "src/**"
       - "tests/**"
@@ -90,11 +92,16 @@ jobs:
       - name: Format check
         run: cargo fmt --check
       - name: Semantic check
-        run: cargo clippy --no-default-features --features "pg${{ matrix.version }} pg_test"
+        run: |
+          cargo clippy --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu
+          cargo clippy --no-default-features --features "pg${{ matrix.version }} pg_test" --target aarch64-unknown-linux-gnu
       - name: Debug build
-        run: cargo build --no-default-features --features "pg${{ matrix.version }} pg_test"
+        run: |
+          cargo build --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu
+          cargo build --no-default-features --features "pg${{ matrix.version }} pg_test" --target aarch64-unknown-linux-gnu
       - name: Test
-        run: cargo test --all --no-default-features --features "pg${{ matrix.version }} pg_test" -- --nocapture
+        run: |
+          cargo test --all --no-fail-fast --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu
       - name: Install release
         run: ./scripts/ci_install.sh
       - name: Sqllogictest

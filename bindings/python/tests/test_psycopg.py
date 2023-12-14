@@ -38,7 +38,7 @@ def conn():
 @pytest.mark.parametrize(("index_name", "index_setting"), TOML_SETTINGS.items())
 def test_create_index(conn: Connection, index_name: str, index_setting: str):
     stat = sql.SQL(
-        "CREATE INDEX {} ON tb_test_item USING vectors (embedding l2_ops) WITH (options={});",
+        "CREATE INDEX {} ON tb_test_item USING vectors (embedding vector_l2_ops) WITH (options={});",
     ).format(sql.Identifier(index_name), index_setting)
 
     conn.execute(stat)

@@ -1,0 +1,10 @@
+[package]
+name = "c"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+half = { version = "~2.3", features = ["use-intrinsics"] }
+
+[build-dependencies]
+cc = "1.0"

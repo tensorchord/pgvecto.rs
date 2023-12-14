@@ -1,4 +1,4 @@
-use crate::ipc::IpcError;
+use super::IpcError;
 use crate::utils::file_socket::FileSocket;
 use crate::utils::os::{futex_wait, futex_wake, memfd_create, mmap_populate};
 use rustix::fd::{AsFd, OwnedFd};
@@ -65,10 +65,7 @@ impl Socket {
             Err(e) => panic!("{:?}", e),
         }
     }
-    pub fn send<T>(&mut self, packet: T) -> Result<(), IpcError>
-    where
-        T: Serialize,
-    {
+    pub fn send<T: Serialize>(&mut self, packet: T) -> Result<(), IpcError> {
         let buffer = bincode::serialize(&packet).expect("Failed to serialize");
         unsafe {
             if self.is_server {
@@ -79,10 +76,7 @@ impl Socket {
         }
         Ok(())
     }
-    pub fn recv<T>(&mut self) -> Result<T, IpcError>
-    where
-        T: for<'a> Deserialize<'a>,
-    {
+    pub fn recv<T: for<'a> Deserialize<'a>>(&mut self) -> Result<T, IpcError> {
         let buffer = unsafe {
             if self.is_server {
                 (*self.addr).server_recv(|| self.test())?
@@ -106,7 +100,7 @@ struct Channel {
     futex: AtomicU32,
 }
 
-static_assertions::assert_eq_size!(Channel, [u8; BUFFER_SIZE]);
+const _: () = assert!(std::mem::size_of::<Channel>() == BUFFER_SIZE);
 
 impl Channel {
     unsafe fn client_recv(&self, test: impl Fn() -> bool) -> Result<Vec<u8>, IpcError> {
@@ -132,30 +126,40 @@ impl Channel {
                     {
                         break;
                     }
-                    futex_wait(&self.futex, Y);
+                    unsafe {
+                        futex_wait(&self.futex, Y);
+                    }
                 }
                 Y => {
                     if !test() {
                         return Err(IpcError::Closed);
                     }
-                    futex_wait(&self.futex, Y);
+                    unsafe {
+                        futex_wait(&self.futex, Y);
+                    }
                 }
-                _ => std::hint::unreachable_unchecked(),
+                _ => unsafe { std::hint::unreachable_unchecked() },
             }
         }
-        let len = *self.len.get();
-        let res = (*self.bytes.get())[0..len as usize].to_vec();
-        Ok(res)
+        unsafe {
+            let len = *self.len.get();
+            let res = (*self.bytes.get())[0..len as usize].to_vec();
+            Ok(res)
+        }
     }
     unsafe fn client_send(&self, data: &[u8]) {
         const S: u32 = 0;
         const T: u32 = 1;
         const X: u32 = 2;
         debug_assert!(matches!(self.futex.load(Ordering::Relaxed), S | X));
-        *self.len.get() = data.len() as u32;
-        (*self.bytes.get())[0..data.len()].copy_from_slice(data);
+        unsafe {
+            *self.len.get() = data.len() as u32;
+            (*self.bytes.get())[0..data.len()].copy_from_slice(data);
+        }
         if X == self.futex.swap(T, Ordering::Release) {
-            futex_wake(&self.futex);
+            unsafe {
+                futex_wake(&self.futex);
+            }
         }
     }
     unsafe fn server_recv(&self, test: impl Fn() -> bool) -> Result<Vec<u8>, IpcError> {
@@ -181,30 +185,40 @@ impl Channel {
                     {
                         break;
                     }
-                    futex_wait(&self.futex, Y);
+                    unsafe {
+                        futex_wait(&self.futex, Y);
+                    }
                 }
                 Y => {
                     if !test() {
                         return Err(IpcError::Closed);
                     }
-                    futex_wait(&self.futex, Y);
+                    unsafe {
+                        futex_wait(&self.futex, Y);
+                    }
                 }
-                _ => std::hint::unreachable_unchecked(),
+                _ => unsafe { std::hint::unreachable_unchecked() },
             }
         }
-        let len = *self.len.get();
-        let res = (*self.bytes.get())[0..len as usize].to_vec();
-        Ok(res)
+        unsafe {
+            let len = *self.len.get();
+            let res = (*self.bytes.get())[0..len as usize].to_vec();
+            Ok(res)
+        }
     }
     unsafe fn server_send(&self, data: &[u8]) {
         const S: u32 = 1;
         const T: u32 = 0;
         const X: u32 = 3;
         debug_assert!(matches!(self.futex.load(Ordering::Relaxed), S | X));
-        *self.len.get() = data.len() as u32;
-        (*self.bytes.get())[0..data.len()].copy_from_slice(data);
+        unsafe {
+            *self.len.get() = data.len() as u32;
+            (*self.bytes.get())[0..data.len()].copy_from_slice(data);
+        }
         if X == self.futex.swap(T, Ordering::Release) {
-            futex_wake(&self.futex);
+            unsafe {
+                futex_wake(&self.futex);
+            }
         }
     }
 }

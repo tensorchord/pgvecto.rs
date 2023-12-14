@@ -19,14 +19,12 @@ URL = f"postgresql://{USER}:{PASS}@{HOST}:{PORT}/{DB_NAME}"
 TOML_SETTINGS = {
     "flat": toml.dumps(
         {
-            "capacity": 2097152,
-            "algorithm": {"flat": {}},
+            "indexing": {"flat": {}},
         },
     ),
     "hnsw": toml.dumps(
         {
-            "capacity": 2097152,
-            "algorithm": {"hnsw": {}},
+            "indexing": {"hnsw": {}},
         },
     ),
 }

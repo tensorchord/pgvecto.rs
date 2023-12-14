@@ -1,10 +1,25 @@
-pub mod worker;
-
-use self::worker::Worker;
 use crate::ipc::server::RpcHandler;
 use crate::ipc::IpcError;
+use service::worker::Worker;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+
+pub unsafe fn init() {
+    use pgrx::bgworkers::BackgroundWorkerBuilder;
+    use pgrx::bgworkers::BgWorkerStartTime;
+    BackgroundWorkerBuilder::new("vectors")
+        .set_function("vectors_main")
+        .set_library("vectors")
+        .set_argument(None)
+        .enable_shmem_access(None)
+        .set_start_time(BgWorkerStartTime::PostmasterStart)
+        .load();
+}
+
+#[no_mangle]
+extern "C" fn vectors_main(_arg: pgrx::pg_sys::Datum) {
+    let _ = std::panic::catch_unwind(crate::bgworker::main);
+}
 
 pub fn main() {
     {
@@ -109,10 +124,6 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                     handler = x.leave(res)?;
                 }
             }
-            RpcHandle::SearchVbase { id, search, mut x } => {
-                let res = worker.call_search_vbase(id, search, |p| x.next(p).unwrap());
-                handler = x.leave(res)?;
-            }
             RpcHandle::Flush { id, x } => {
                 let result = worker.call_flush(id);
                 handler = x.leave(result)?;
@@ -125,11 +136,36 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                 let result = worker.call_stat(id);
                 handler = x.leave(result)?;
             }
-            RpcHandle::Leave {} => {
-                log::debug!("Handle leave rpc.");
-                break;
+            RpcHandle::Vbase { id, vector, x } => {
+                use crate::ipc::server::VbaseHandle::*;
+                let instance = match worker.get_instance(id) {
+                    Ok(x) => x,
+                    Err(e) => {
+                        x.error(Err(e))?;
+                        break Ok(());
+                    }
+                };
+                let view = instance.view();
+                let mut it = match view.vbase(vector) {
+                    Ok(x) => x,
+                    Err(e) => {
+                        x.error(Err(e))?;
+                        break Ok(());
+                    }
+                };
+                let mut x = x.error(Ok(()))?;
+                loop {
+                    match x.handle()? {
+                        Next { x: y } => {
+                            x = y.leave(it.next())?;
+                        }
+                        Leave { x } => {
+                            handler = x;
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
-    Ok(())
 }

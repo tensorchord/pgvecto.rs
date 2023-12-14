@@ -9,7 +9,7 @@ statement ok
 INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM generate_series(1, 1000);
 
 statement ok
-CREATE INDEX ON t USING vectors (val l2_ops)
+CREATE INDEX ON t USING vectors (val vector_l2_ops)
 WITH (options = "[indexing.hnsw.quantization.product]");
 
 statement ok
@@ -41,7 +41,7 @@ statement ok
 INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM generate_series(1, 1000);
 
 statement ok
-CREATE INDEX ON t USING vectors (val l2_ops)
+CREATE INDEX ON t USING vectors (val vector_l2_ops)
 WITH (options = "[indexing.hnsw.quantization.scalar]");
 
 statement ok

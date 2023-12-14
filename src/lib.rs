@@ -1,14 +1,16 @@
 //! Postgres vector extension.
 //!
 //! Provides an easy-to-use extension for vector similarity search.
-#![feature(core_intrinsics)]
+#![feature(offset_of)]
+#![feature(arbitrary_self_types)]
+#![feature(try_blocks)]
 
-mod algorithms;
 mod bgworker;
+mod datatype;
 mod embedding;
+mod gucs;
 mod index;
 mod ipc;
-mod postgres;
 mod prelude;
 mod utils;
 
@@ -19,27 +21,16 @@ pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
 #[allow(non_snake_case)]
 #[pgrx::pg_guard]
 unsafe extern "C" fn _PG_init() {
-    use crate::prelude::*;
-    if pgrx::pg_sys::IsUnderPostmaster {
+    use service::prelude::*;
+    if unsafe { pgrx::pg_sys::IsUnderPostmaster } {
         FriendlyError::BadInit.friendly();
     }
-    use pgrx::bgworkers::BackgroundWorkerBuilder;
-    use pgrx::bgworkers::BgWorkerStartTime;
-    BackgroundWorkerBuilder::new("vectors")
-        .set_function("vectors_main")
-        .set_library("vectors")
-        .set_argument(None)
-        .enable_shmem_access(None)
-        .set_start_time(BgWorkerStartTime::PostmasterStart)
-        .load();
-    self::postgres::init();
-    self::ipc::transport::unix::init();
-    self::ipc::transport::mmap::init();
-}
-
-#[no_mangle]
-extern "C" fn vectors_main(_arg: pgrx::pg_sys::Datum) {
-    let _ = std::panic::catch_unwind(crate::bgworker::main);
+    unsafe {
+        self::gucs::init();
+        self::index::init();
+        self::ipc::init();
+        self::bgworker::init();
+    }
 }
 
 #[cfg(not(any(target_os = "linux", target_os = "macos")))]
