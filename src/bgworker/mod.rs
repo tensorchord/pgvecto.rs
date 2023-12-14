@@ -136,13 +136,26 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                 let result = worker.call_stat(id);
                 handler = x.leave(result)?;
             }
-            RpcHandle::Vbase { id, vector, mut x } => {
+            RpcHandle::Vbase { id, vector, x } => {
                 use crate::ipc::server::VbaseHandle::*;
-                let instance = worker.get_instance(id).expect("todo");
+                let instance = match worker.get_instance(id) {
+                    Ok(x) => x,
+                    Err(e) => {
+                        x.error(Err(e))?;
+                        break Ok(());
+                    }
+                };
                 let view = instance.view();
-                let mut it = view.vbase(vector).expect("todo");
+                let mut it = match view.vbase(vector) {
+                    Ok(x) => x,
+                    Err(e) => {
+                        x.error(Err(e))?;
+                        break Ok(());
+                    }
+                };
+                let mut x = x.error(Ok(()))?;
                 loop {
-                    match x.handle().expect("todo") {
+                    match x.handle()? {
                         Next { x: y } => {
                             x = y.leave(it.next())?;
                         }

@@ -123,7 +123,8 @@ impl Rpc {
     pub fn vbase(mut self: ClientGuard<Self>, id: Id, vector: DynamicVector) -> ClientGuard<Vbase> {
         let packet = RpcPacket::Vbase { id, vector };
         self.socket.client_send(packet).friendly();
-        let vbase::VbaseNopPacket {} = self.socket.client_recv().friendly();
+        let vbase::VbaseErrorPacket { result } = self.socket.client_recv().friendly();
+        result.friendly();
         ClientGuard::map(self)
     }
 }

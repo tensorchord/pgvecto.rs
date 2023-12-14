@@ -65,16 +65,13 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Vbase { id, vector } => {
-                self.socket.server_send(vbase::VbaseNopPacket {})?;
-                RpcHandle::Vbase {
-                    id,
-                    vector,
-                    x: VbaseHandler {
-                        socket: self.socket,
-                    },
-                }
-            }
+            RpcPacket::Vbase { id, vector } => RpcHandle::Vbase {
+                id,
+                vector,
+                x: Vbase {
+                    socket: self.socket,
+                },
+            },
         })
     }
 }
@@ -115,7 +112,7 @@ pub enum RpcHandle {
     Vbase {
         id: Id,
         vector: DynamicVector,
-        x: VbaseHandler,
+        x: Vbase,
     },
 }
 
@@ -232,6 +229,20 @@ impl Stat {
         let packet = stat::StatPacket::Leave { result };
         self.socket.server_send(packet)?;
         Ok(RpcHandler {
+            socket: self.socket,
+        })
+    }
+}
+
+pub struct Vbase {
+    socket: Socket,
+}
+
+impl Vbase {
+    pub fn error(mut self, result: Result<(), FriendlyError>) -> Result<VbaseHandler, IpcError> {
+        self.socket
+            .server_send(vbase::VbaseErrorPacket { result })?;
+        Ok(VbaseHandler {
             socket: self.socket,
         })
     }

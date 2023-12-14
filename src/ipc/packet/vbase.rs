@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use service::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct VbaseNopPacket {}
+pub struct VbaseErrorPacket {
+    pub result: Result<(), FriendlyError>,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum VbasePacket {
