@@ -81,7 +81,7 @@ SELECT '[1,]'::vector;
 ----
 [1]
 
-statement error Bad charactor
+statement error Bad number
 SELECT '[1a]'::vector;
 
 statement error Expect a number
