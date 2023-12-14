@@ -293,7 +293,7 @@ fn vecf16_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf16Output {
             (MatchingLeft, b'[') => {
                 state = Reading;
             }
-            (Reading, b'0'..=b'9' | b'.' | b'e' | b'+' | b'-') => {
+            (Reading, b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | b'.' | b'+' | b'-') => {
                 let token = token.get_or_insert(String::new());
                 token.push(char::from_u32(c as u32).unwrap());
             }
