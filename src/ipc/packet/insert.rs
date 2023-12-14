@@ -2,6 +2,6 @@ use serde::{Deserialize, Serialize};
 use service::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum ServerPacket {
+pub enum InsertPacket {
     Leave { result: Result<(), FriendlyError> },
 }

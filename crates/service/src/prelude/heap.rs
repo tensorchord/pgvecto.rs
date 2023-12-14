@@ -23,10 +23,12 @@ impl Heap {
     pub fn check(&self, distance: F32) -> bool {
         self.binary_heap.len() < self.k || distance < self.binary_heap.peek().unwrap().distance
     }
-    pub fn push(&mut self, element: HeapElement) {
+    pub fn push(&mut self, element: HeapElement) -> Option<HeapElement> {
         self.binary_heap.push(element);
         if self.binary_heap.len() == self.k + 1 {
-            self.binary_heap.pop();
+            self.binary_heap.pop()
+        } else {
+            None
         }
     }
     pub fn into_reversed_heap(self) -> BinaryHeap<Reverse<HeapElement>> {

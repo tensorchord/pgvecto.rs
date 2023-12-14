@@ -46,8 +46,8 @@ unsafe fn xact_delete() {
             .iter()
             .map(|node| Id::from_sys(node.relNode))
             .collect::<Vec<_>>();
-        let mut client = super::client::borrow_mut();
-        client.destory(ids);
+        let mut rpc = crate::ipc::client::borrow_mut();
+        rpc.destory(ids);
     }
 }
 
@@ -61,7 +61,7 @@ unsafe fn xact_delete() {
             .iter()
             .map(|node| Id::from_sys(node.relNumber))
             .collect::<Vec<_>>();
-        let mut client = super::client::borrow_mut();
-        client.destory(ids);
+        let mut rpc = crate::ipc::client::borrow_mut();
+        rpc.destory(ids);
     }
 }

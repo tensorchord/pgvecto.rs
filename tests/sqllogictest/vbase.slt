@@ -1,0 +1,26 @@
+statement ok
+DROP TABLE IF EXISTS t;
+
+statement ok
+CREATE TABLE t (val vector(3));
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM generate_series(1, 100000);
+
+statement ok
+CREATE INDEX ON t USING vectors (val vector_l2_ops)
+WITH (options = "[indexing.hnsw]");
+
+statement ok
+INSERT INTO t (val) VALUES ('[0.6,0.6,0.6]');
+
+statement ok
+SET vectors.enable_vbase=on;
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0.5,0.5,0.5]' limit 100) t2;
+----
+100
+
+statement ok
+DROP TABLE t;

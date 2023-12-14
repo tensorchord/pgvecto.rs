@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use service::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum ServerPacket {
+pub enum SearchPacket {
     Check {
         p: Pointer,
     },
@@ -12,6 +12,6 @@ pub enum ServerPacket {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ClientCheckPacket {
+pub struct SearchCheckPacket {
     pub result: bool,
 }

@@ -2,12 +2,12 @@ use serde::{Deserialize, Serialize};
 use service::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum ServerPacket {
+pub enum DeletePacket {
     Test { p: Pointer },
     Leave { result: Result<(), FriendlyError> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ClientTestPacket {
+pub struct DeleteTestPacket {
     pub delete: bool,
 }

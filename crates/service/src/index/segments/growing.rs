@@ -170,6 +170,19 @@ impl<S: G> GrowingSegment<S> {
         }
         heap
     }
+    pub fn vbase(&self, vector: &[S::Scalar]) -> Vec<HeapElement> {
+        let n = self.len.load(Ordering::Acquire);
+        let mut result = Vec::new();
+        for i in 0..n {
+            let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
+            let distance = S::distance(vector, &log.vector);
+            result.push(HeapElement {
+                distance,
+                payload: log.payload,
+            });
+        }
+        result
+    }
 }
 
 unsafe impl<S: G> Send for GrowingSegment<S> {}

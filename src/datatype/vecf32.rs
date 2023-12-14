@@ -39,9 +39,9 @@ CREATE TYPE vector (
 #[repr(C, align(8))]
 pub struct Vecf32 {
     varlena: u32,
-    kind: u8,
-    pad: u8,
     len: u16,
+    kind: u8,
+    reserved: u8,
     phantom: [F32; 0],
 }
 
@@ -63,8 +63,8 @@ impl Vecf32 {
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut Vecf32;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
             std::ptr::addr_of_mut!((*ptr).varlena).write(Vecf32::varlena(layout.size()));
-            std::ptr::addr_of_mut!((*ptr).kind).write(32);
-            std::ptr::addr_of_mut!((*ptr).pad).write(0);
+            std::ptr::addr_of_mut!((*ptr).kind).write(0);
+            std::ptr::addr_of_mut!((*ptr).reserved).write(0);
             std::ptr::addr_of_mut!((*ptr).len).write(slice.len() as u16);
             std::ptr::copy_nonoverlapping(slice.as_ptr(), (*ptr).phantom.as_mut_ptr(), slice.len());
             Vecf32Output(NonNull::new(ptr).unwrap())
@@ -75,12 +75,12 @@ impl Vecf32 {
     }
     pub fn data(&self) -> &[F32] {
         debug_assert_eq!(self.varlena & 3, 0);
-        debug_assert_eq!(self.kind, 32);
+        debug_assert_eq!(self.kind, 0);
         unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.len as usize) }
     }
     pub fn data_mut(&mut self) -> &mut [F32] {
         debug_assert_eq!(self.varlena & 3, 0);
-        debug_assert_eq!(self.kind, 32);
+        debug_assert_eq!(self.kind, 0);
         unsafe { std::slice::from_raw_parts_mut(self.phantom.as_mut_ptr(), self.len as usize) }
     }
 }

@@ -3,7 +3,6 @@ mod packet;
 pub mod server;
 pub mod transport;
 
-use self::client::Client;
 use self::server::RpcHandler;
 use service::prelude::*;
 use thiserror::Error;
@@ -39,14 +38,12 @@ pub fn listen_mmap() -> impl Iterator<Item = RpcHandler> {
     })
 }
 
-pub fn connect_unix() -> Client {
-    let socket = self::transport::Socket::Unix(self::transport::unix::connect());
-    Client::new(socket)
+pub fn connect_unix() -> self::transport::Socket {
+    self::transport::Socket::Unix(self::transport::unix::connect())
 }
 
-pub fn connect_mmap() -> Client {
-    let socket = self::transport::Socket::Mmap(self::transport::mmap::connect());
-    Client::new(socket)
+pub fn connect_mmap() -> self::transport::Socket {
+    self::transport::Socket::Mmap(self::transport::mmap::connect())
 }
 
 pub fn init() {

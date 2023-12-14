@@ -141,6 +141,11 @@ impl Worker {
         let index = view.indexes.get(&id).ok_or(FriendlyError::UnknownIndex)?;
         Ok(index.stat())
     }
+    pub fn get_instance(&self, id: Id) -> Result<Instance, FriendlyError> {
+        let view = self.view.load_full();
+        let index = view.indexes.get(&id).ok_or(FriendlyError::UnknownIndex)?;
+        Ok(index.clone())
+    }
 }
 
 struct WorkerView {

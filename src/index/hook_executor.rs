@@ -32,6 +32,13 @@ unsafe extern "C" fn rewrite_plan_state(
                     (*node).iss_NumScanKeys,
                     (*node).iss_NumOrderByKeys,
                 );
+
+                let scanner = &mut *((*(*node).iss_ScanDesc).opaque as *mut Scanner);
+                *scanner = Scanner::Initial {
+                    node: Some(node),
+                    vector: None,
+                };
+
                 if (*node).iss_NumRuntimeKeys == 0 || (*node).iss_RuntimeKeysReady {
                     pgrx::pg_sys::index_rescan(
                         (*node).iss_ScanDesc,
@@ -41,15 +48,6 @@ unsafe extern "C" fn rewrite_plan_state(
                         (*node).iss_NumOrderByKeys,
                     );
                 }
-                // inject
-                let scanner = &mut *((*(*node).iss_ScanDesc).opaque as *mut Scanner);
-                let Scanner::Initial {
-                    index_scan_state, ..
-                } = scanner
-                else {
-                    unreachable!()
-                };
-                *index_scan_state = Some(node);
             }
         }
     }

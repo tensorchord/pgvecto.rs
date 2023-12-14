@@ -1,12 +1,13 @@
-use super::{client::ClientGuard, hook_transaction::flush_if_commit};
-use crate::index::am_setup::options;
+use super::hook_transaction::flush_if_commit;
 use crate::index::utils::from_datum;
+use crate::ipc::client::ClientGuard;
 use crate::prelude::*;
+use crate::{index::am_setup::options, ipc::client::Rpc};
 use pgrx::pg_sys::{IndexBuildResult, IndexInfo, RelationData};
 use service::prelude::*;
 
 pub struct Builder {
-    pub client: ClientGuard,
+    pub rpc: ClientGuard<Rpc>,
     pub heap_relation: *mut RelationData,
     pub index_info: *mut IndexInfo,
     pub result: *mut IndexBuildResult,
@@ -23,11 +24,11 @@ pub unsafe fn build(
     let id = Id::from_sys(oid);
     flush_if_commit(id);
     let options = options(index);
-    let mut client = super::client::borrow_mut();
-    client.create(id, options);
+    let mut rpc = crate::ipc::client::borrow_mut();
+    rpc.create(id, options);
     if let Some((heap_relation, index_info, result)) = data {
         let mut builder = Builder {
-            client,
+            rpc,
             heap_relation,
             index_info,
             result,
@@ -58,7 +59,7 @@ unsafe extern "C" fn callback(
     let state = &mut *(state as *mut Builder);
     let vector = from_datum(*values.add(0));
     let data = (vector, Pointer::from_sys(*ctid));
-    state.client.insert(id, data);
+    state.rpc.insert(id, data);
     (*state.result).heap_tuples += 1.0;
     (*state.result).index_tuples += 1.0;
 }
@@ -81,7 +82,7 @@ unsafe extern "C" fn callback(
     let state = &mut *(state as *mut Builder);
     let vector = from_datum(*values.add(0));
     let data = (vector, Pointer::from_sys(*ctid));
-    state.client.insert(id, data);
+    state.rpc.insert(id, data);
     (*state.result).heap_tuples += 1.0;
     (*state.result).index_tuples += 1.0;
 }

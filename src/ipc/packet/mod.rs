@@ -12,7 +12,7 @@ use service::index::IndexOptions;
 use service::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum ClientPacket {
+pub enum RpcPacket {
     Create {
         id: Id,
         options: IndexOptions,
@@ -40,6 +40,6 @@ pub enum ClientPacket {
     },
     Vbase {
         id: Id,
-        search: (DynamicVector, usize),
+        vector: DynamicVector,
     },
 }

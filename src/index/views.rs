@@ -18,8 +18,8 @@ CREATE TYPE VectorIndexStat AS (
 fn vector_stat(oid: pgrx::pg_sys::Oid) -> pgrx::composite_type!("VectorIndexStat") {
     let id = Id::from_sys(oid);
     let mut res = pgrx::prelude::PgHeapTuple::new_composite_type("VectorIndexStat").unwrap();
-    let mut client = super::client::borrow_mut();
-    let stat = client.stat(id);
+    let mut rpc = crate::ipc::client::borrow_mut();
+    let stat = rpc.stat(id);
     res.set_by_name("idx_indexing", stat.indexing).unwrap();
     res.set_by_name("idx_tuples", {
         let mut tuples = 0;

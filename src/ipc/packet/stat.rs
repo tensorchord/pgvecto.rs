@@ -3,7 +3,7 @@ use service::index::IndexStat;
 use service::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum ServerPacket {
+pub enum StatPacket {
     Leave {
         result: Result<IndexStat, FriendlyError>,
     },

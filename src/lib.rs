@@ -2,6 +2,7 @@
 //!
 //! Provides an easy-to-use extension for vector similarity search.
 #![feature(offset_of)]
+#![feature(arbitrary_self_types)]
 
 mod bgworker;
 mod datatype;

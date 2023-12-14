@@ -2,20 +2,18 @@ use serde::{Deserialize, Serialize};
 use service::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum ServerPacket {
-    Leave {},
-}
+pub struct VbaseNopPacket {}
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum ClientPacket {
+pub enum VbasePacket {
     Next {},
     Leave {},
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ServerNextPacket {
-    pub p: Pointer,
+pub struct VbaseNextPacket {
+    pub p: Option<Pointer>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ServerLeavePacket {}
+pub struct VbaseLeavePacket {}

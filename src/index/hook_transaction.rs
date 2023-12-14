@@ -12,9 +12,9 @@ pub fn committing() {
     {
         let flush_if_commit = FLUSH_IF_COMMIT.borrow();
         if flush_if_commit.len() != 0 {
-            let mut client = super::client::borrow_mut();
+            let mut rpc = crate::ipc::client::borrow_mut();
             for id in flush_if_commit.iter().copied() {
-                client.flush(id);
+                rpc.flush(id);
             }
         }
     }

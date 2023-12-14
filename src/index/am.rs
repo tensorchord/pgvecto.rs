@@ -237,20 +237,26 @@ pub unsafe extern "C" fn aminsert(
 pub unsafe extern "C" fn ambeginscan(
     index_relation: pgrx::pg_sys::Relation,
     n_keys: std::os::raw::c_int,
-    n_order_bys: std::os::raw::c_int,
+    n_orderbys: std::os::raw::c_int,
 ) -> pgrx::pg_sys::IndexScanDesc {
-    am_scan::make_scan(index_relation, n_keys, n_order_bys)
+    assert!(n_keys == 0);
+    assert!(n_orderbys == 1);
+    am_scan::make_scan(index_relation)
 }
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn amrescan(
     scan: pgrx::pg_sys::IndexScanDesc,
-    keys: pgrx::pg_sys::ScanKey,
+    _keys: pgrx::pg_sys::ScanKey,
     n_keys: std::os::raw::c_int,
     orderbys: pgrx::pg_sys::ScanKey,
     n_orderbys: std::os::raw::c_int,
 ) {
-    am_scan::start_scan(scan, keys, n_keys, orderbys, n_orderbys);
+    assert!((*scan).numberOfKeys == n_keys);
+    assert!((*scan).numberOfOrderBys == n_orderbys);
+    assert!(n_keys == 0);
+    assert!(n_orderbys == 1);
+    am_scan::start_scan(scan, orderbys);
 }
 
 #[pgrx::pg_guard]
@@ -263,7 +269,9 @@ pub unsafe extern "C" fn amgettuple(
 }
 
 #[pgrx::pg_guard]
-pub extern "C" fn amendscan(_scan: pgrx::pg_sys::IndexScanDesc) {}
+pub unsafe extern "C" fn amendscan(scan: pgrx::pg_sys::IndexScanDesc) {
+    am_scan::end_scan(scan);
+}
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn ambulkdelete(

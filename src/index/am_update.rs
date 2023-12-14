@@ -5,16 +5,16 @@ use service::prelude::*;
 pub fn update_insert(id: Id, vector: DynamicVector, tid: pgrx::pg_sys::ItemPointerData) {
     flush_if_commit(id);
     let p = Pointer::from_sys(tid);
-    let mut client = super::client::borrow_mut();
-    client.insert(id, (vector, p));
+    let mut rpc = crate::ipc::client::borrow_mut();
+    rpc.insert(id, (vector, p));
 }
 
 pub fn update_delete(id: Id, hook: impl Fn(Pointer) -> bool) {
-    struct ClientDelete<H> {
+    struct Delete<H> {
         hook: H,
     }
 
-    impl<H> crate::ipc::client::ClientDelete for ClientDelete<H>
+    impl<H> crate::ipc::client::Delete for Delete<H>
     where
         H: Fn(Pointer) -> bool,
     {
@@ -23,9 +23,9 @@ pub fn update_delete(id: Id, hook: impl Fn(Pointer) -> bool) {
         }
     }
 
-    let client_delete = ClientDelete { hook };
+    let client_delete = Delete { hook };
 
     flush_if_commit(id);
-    let mut client = super::client::borrow_mut();
-    client.delete(id, client_delete);
+    let mut rpc = crate::ipc::client::borrow_mut();
+    rpc.delete(id, client_delete);
 }

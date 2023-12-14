@@ -2,6 +2,6 @@ use serde::Deserialize;
 use serde::Serialize;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum ServerPacket {
+pub enum CreatePacket {
     Leave {},
 }

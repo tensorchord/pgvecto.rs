@@ -1,6 +1,6 @@
 use super::growing::GrowingSegment;
 use super::SegmentTracker;
-use crate::index::indexing::DynamicIndexing;
+use crate::index::indexing::{DynamicIndexIter, DynamicIndexing};
 use crate::index::{IndexOptions, IndexTracker};
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
@@ -59,5 +59,8 @@ impl<S: G> SealedSegment<S> {
     }
     pub fn search(&self, k: usize, vector: &[S::Scalar], filter: &mut impl Filter) -> Heap {
         self.indexing.search(k, vector, filter)
+    }
+    pub fn vbase(&self, range: usize, vector: &[S::Scalar]) -> DynamicIndexIter<'_, S> {
+        self.indexing.vbase(range, vector)
     }
 }

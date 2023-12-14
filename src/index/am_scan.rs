@@ -1,153 +1,121 @@
 use crate::gucs::ENABLE_PREFILTER;
+use crate::gucs::ENABLE_VBASE;
 use crate::gucs::K;
 use crate::index::utils::from_datum;
+use crate::ipc::client::ClientGuard;
+use crate::ipc::client::Vbase;
 use crate::prelude::*;
 use pgrx::FromDatum;
 use service::prelude::*;
 
-#[derive(Debug, Clone)]
 pub enum Scanner {
     Initial {
+        node: Option<*mut pgrx::pg_sys::IndexScanState>,
         vector: Option<DynamicVector>,
-        index_scan_state: Option<*mut pgrx::pg_sys::IndexScanState>,
     },
     Search {
-        index_scan_state: *mut pgrx::pg_sys::IndexScanState,
+        node: *mut pgrx::pg_sys::IndexScanState,
         data: Vec<Pointer>,
+    },
+    Vbase {
+        node: *mut pgrx::pg_sys::IndexScanState,
+        vbase: ClientGuard<Vbase>,
     },
 }
 
-pub unsafe fn make_scan(
-    index_relation: pgrx::pg_sys::Relation,
-    n_keys: std::os::raw::c_int,
-    n_orderbys: std::os::raw::c_int,
-) -> pgrx::pg_sys::IndexScanDesc {
+impl Scanner {
+    fn node(&self) -> Option<*mut pgrx::pg_sys::IndexScanState> {
+        match self {
+            Scanner::Initial { node, .. } => *node,
+            Scanner::Search { node, .. } => Some(*node),
+            Scanner::Vbase { node, .. } => Some(*node),
+        }
+    }
+}
+
+pub unsafe fn make_scan(index_relation: pgrx::pg_sys::Relation) -> pgrx::pg_sys::IndexScanDesc {
     use pgrx::PgMemoryContexts;
 
-    assert!(n_keys == 0);
-    assert!(n_orderbys == 1);
-
-    let scan = pgrx::pg_sys::RelationGetIndexScan(index_relation, n_keys, n_orderbys);
+    let scan = pgrx::pg_sys::RelationGetIndexScan(index_relation, 0, 1);
 
     (*scan).xs_recheck = false;
     (*scan).xs_recheckorderby = false;
 
-    let scanner = Scanner::Initial {
-        vector: None,
-        index_scan_state: None,
-    };
+    (*scan).opaque =
+        PgMemoryContexts::CurrentMemoryContext.leak_and_drop_on_delete(Scanner::Initial {
+            vector: None,
+            node: None,
+        }) as _;
 
-    (*scan).opaque = PgMemoryContexts::CurrentMemoryContext.leak_and_drop_on_delete(scanner) as _;
+    (*scan).xs_orderbyvals = pgrx::pg_sys::palloc0(std::mem::size_of::<pgrx::pg_sys::Datum>()) as _;
+
+    (*scan).xs_orderbynulls = {
+        let data = pgrx::pg_sys::palloc(std::mem::size_of::<bool>()) as *mut bool;
+        data.write_bytes(1, 1);
+        data
+    };
 
     scan
 }
 
-pub unsafe fn start_scan(
-    scan: pgrx::pg_sys::IndexScanDesc,
-    keys: pgrx::pg_sys::ScanKey,
-    n_keys: std::os::raw::c_int,
-    orderbys: pgrx::pg_sys::ScanKey,
-    n_orderbys: std::os::raw::c_int,
-) {
-    use Scanner::*;
+pub unsafe fn start_scan(scan: pgrx::pg_sys::IndexScanDesc, orderbys: pgrx::pg_sys::ScanKey) {
+    std::ptr::copy(orderbys, (*scan).orderByData, 1);
 
-    assert!((*scan).numberOfKeys == n_keys);
-    assert!((*scan).numberOfOrderBys == n_orderbys);
-    assert!(n_keys == 0);
-    assert!(n_orderbys == 1);
+    let vector = from_datum((*orderbys.add(0)).sk_argument);
 
-    if n_keys > 0 {
-        std::ptr::copy(keys, (*scan).keyData, n_keys as usize);
-    }
-    if n_orderbys > 0 {
-        std::ptr::copy(orderbys, (*scan).orderByData, n_orderbys as usize);
-    }
-    if n_orderbys > 0 {
-        let size = std::mem::size_of::<pgrx::pg_sys::Datum>();
-        let size = size * (*scan).numberOfOrderBys as usize;
-        let data = pgrx::pg_sys::palloc0(size) as *mut _;
-        (*scan).xs_orderbyvals = data;
-    }
-    if n_orderbys > 0 {
-        let size = std::mem::size_of::<bool>();
-        let size = size * (*scan).numberOfOrderBys as usize;
-        let data = pgrx::pg_sys::palloc(size) as *mut bool;
-        data.write_bytes(1, (*scan).numberOfOrderBys as usize);
-        (*scan).xs_orderbynulls = data;
-    }
-    let orderby = orderbys.add(0);
-    let argument = (*orderby).sk_argument;
-    let vector = from_datum(argument);
+    let scanner = &mut *((*scan).opaque as *mut Scanner);
+    let scanner = std::mem::replace(
+        scanner,
+        Scanner::Initial {
+            node: scanner.node(),
+            vector: Some(vector),
+        },
+    );
 
-    let last = (*((*scan).opaque as *mut Scanner)).clone();
-    let scanner = (*scan).opaque as *mut Scanner;
-
-    match last {
-        Initial {
-            index_scan_state, ..
-        } => {
-            *scanner = Initial {
-                vector: Some(vector),
-                index_scan_state,
-            };
-        }
-        Search {
-            index_scan_state,
-            data: _,
-        } => {
-            *scanner = Initial {
-                vector: Some(vector),
-                index_scan_state: Some(index_scan_state),
-            };
+    match scanner {
+        Scanner::Initial { .. } => {}
+        Scanner::Search { .. } => {}
+        Scanner::Vbase { vbase, .. } => {
+            vbase.leave();
         }
     }
 }
 
 pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
     let scanner = &mut *((*scan).opaque as *mut Scanner);
-    if matches!(scanner, Scanner::Initial { .. }) {
-        let Scanner::Initial {
-            vector,
-            index_scan_state,
-        } = std::mem::replace(
-            scanner,
-            Scanner::Initial {
-                vector: None,
-                index_scan_state: None,
-            },
-        )
-        else {
-            unreachable!()
-        };
+    if let Scanner::Initial { node, vector } = scanner {
+        let node = node.expect("Hook failed.");
+        let vector = vector.as_ref().expect("Scan failed.");
+
         #[cfg(any(feature = "pg12", feature = "pg13", feature = "pg14", feature = "pg15"))]
         let oid = (*(*scan).indexRelation).rd_node.relNode;
         #[cfg(feature = "pg16")]
         let oid = (*(*scan).indexRelation).rd_locator.relNumber;
         let id = Id::from_sys(oid);
-        let vector = vector.expect("`rescan` is never called.");
-        let mut client = super::client::borrow_mut();
-        let k = K.get() as _;
-        assert!(index_scan_state.is_some());
-        struct ClientSearch {
-            node: *mut pgrx::pg_sys::IndexScanState,
-        }
 
-        impl crate::ipc::client::ClientSearch for ClientSearch {
-            fn check(&mut self, p: Pointer) -> bool {
-                unsafe { check(self.node, p) }
+        let mut rpc = crate::ipc::client::borrow_mut();
+
+        if ENABLE_VBASE.get() {
+            let vbase = rpc.vbase(id, vector.clone());
+            *scanner = Scanner::Vbase { node, vbase };
+        } else {
+            let k = K.get() as _;
+            struct Search {
+                node: *mut pgrx::pg_sys::IndexScanState,
             }
+
+            impl crate::ipc::client::Search for Search {
+                fn check(&mut self, p: Pointer) -> bool {
+                    unsafe { check(self.node, p) }
+                }
+            }
+
+            let search = Search { node };
+
+            let mut data = rpc.search(id, (vector.clone(), k), ENABLE_PREFILTER.get(), search);
+            data.reverse();
+            *scanner = Scanner::Search { node, data };
         }
-
-        let client_search = ClientSearch {
-            node: index_scan_state.unwrap(),
-        };
-
-        let mut result = client.search(id, (vector, k), ENABLE_PREFILTER.get(), client_search);
-        result.reverse();
-        *scanner = Scanner::Search {
-            index_scan_state: index_scan_state.unwrap(),
-            data: result,
-        };
     }
     match scanner {
         Scanner::Initial { .. } => unreachable!(),
@@ -158,6 +126,33 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
             } else {
                 false
             }
+        }
+        Scanner::Vbase { vbase, .. } => {
+            if let Some(p) = vbase.next() {
+                (*scan).xs_heaptid = p.into_sys();
+                true
+            } else {
+                false
+            }
+        }
+    }
+}
+
+pub unsafe fn end_scan(scan: pgrx::pg_sys::IndexScanDesc) {
+    let scanner = &mut *((*scan).opaque as *mut Scanner);
+    let scanner = std::mem::replace(
+        scanner,
+        Scanner::Initial {
+            node: scanner.node(),
+            vector: None,
+        },
+    );
+
+    match scanner {
+        Scanner::Initial { .. } => {}
+        Scanner::Search { .. } => {}
+        Scanner::Vbase { vbase, .. } => {
+            vbase.leave();
         }
     }
 }
