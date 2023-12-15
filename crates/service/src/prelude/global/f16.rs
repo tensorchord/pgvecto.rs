@@ -22,7 +22,7 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         xy / (x2 * y2).sqrt()
     }
     #[cfg(target_arch = "x86_64")]
-    if crate::utils::detect::x86_64::detect_avx512fp16() {
+    if detect::x86_64::detect_avx512fp16() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -30,7 +30,15 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     #[cfg(target_arch = "x86_64")]
-    if crate::utils::detect::x86_64::detect_v3() {
+    if detect::x86_64::detect_v4() {
+        assert!(lhs.len() == rhs.len());
+        let n = lhs.len();
+        unsafe {
+            return c::v_f16_cosine_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
+        }
+    }
+    #[cfg(target_arch = "x86_64")]
+    if detect::x86_64::detect_v3() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -58,7 +66,7 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         xy
     }
     #[cfg(target_arch = "x86_64")]
-    if crate::utils::detect::x86_64::detect_avx512fp16() {
+    if detect::x86_64::detect_avx512fp16() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -66,7 +74,15 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     #[cfg(target_arch = "x86_64")]
-    if crate::utils::detect::x86_64::detect_v3() {
+    if detect::x86_64::detect_v4() {
+        assert!(lhs.len() == rhs.len());
+        let n = lhs.len();
+        unsafe {
+            return c::v_f16_dot_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
+        }
+    }
+    #[cfg(target_arch = "x86_64")]
+    if detect::x86_64::detect_v3() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -95,7 +111,7 @@ pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         d2
     }
     #[cfg(target_arch = "x86_64")]
-    if crate::utils::detect::x86_64::detect_avx512fp16() {
+    if detect::x86_64::detect_avx512fp16() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -103,7 +119,15 @@ pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     #[cfg(target_arch = "x86_64")]
-    if crate::utils::detect::x86_64::detect_v3() {
+    if detect::x86_64::detect_v4() {
+        assert!(lhs.len() == rhs.len());
+        let n = lhs.len();
+        unsafe {
+            return c::v_f16_sl2_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
+        }
+    }
+    #[cfg(target_arch = "x86_64")]
+    if detect::x86_64::detect_v3() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
