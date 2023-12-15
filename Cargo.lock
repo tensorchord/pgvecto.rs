@@ -486,7 +486,9 @@ name = "c"
 version = "0.0.0"
 dependencies = [
  "cc",
+ "detect",
  "half 2.3.1",
+ "rand",
 ]
 
 [[package]]
@@ -835,6 +837,14 @@ checksum = "8eb30d70a07a3b04884d2677f06bec33509dc67ca60d92949e5535352d3191dc"
 dependencies = [
  "powerfmt",
  "serde",
+]
+
+[[package]]
+name = "detect"
+version = "0.0.0"
+dependencies = [
+ "ctor",
+ "std_detect",
 ]
 
 [[package]]
@@ -1263,6 +1273,8 @@ dependencies = [
  "cfg-if",
  "crunchy",
  "num-traits",
+ "rand",
+ "rand_distr",
  "serde",
 ]
 
@@ -2437,6 +2449,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rand_distr"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32cb0b9bc82b0a0876c2dd994a7e7a2683d3e7390ca40e6886785ef0c7e3ee31"
+dependencies = [
+ "num-traits",
+ "rand",
+]
+
+[[package]]
 name = "rand_xorshift"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2808,8 +2830,8 @@ dependencies = [
  "c",
  "crc32fast",
  "crossbeam",
- "ctor",
  "dashmap",
+ "detect",
  "half 2.3.1",
  "libc",
  "log",
@@ -2824,7 +2846,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with",
- "std_detect",
  "tempfile",
  "thiserror",
  "ulock-sys",

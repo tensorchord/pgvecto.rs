@@ -33,7 +33,7 @@ fn ctor_v4() {
     ATOMIC_V4.store(test_v4(), Ordering::Relaxed);
 }
 
-pub fn _detect_v4() -> bool {
+pub fn detect_v4() -> bool {
     ATOMIC_V4.load(Ordering::Relaxed)
 }
 

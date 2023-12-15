@@ -1,0 +1,8 @@
+[package]
+name = "detect"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+std_detect = { git = "https://github.com/tensorchord/stdarch.git", branch = "avx512fp16" }
+ctor = "0.2.6"

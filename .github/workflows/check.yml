@@ -101,7 +101,7 @@ jobs:
           cargo build --no-default-features --features "pg${{ matrix.version }} pg_test" --target aarch64-unknown-linux-gnu
       - name: Test
         run: |
-          cargo test --all --no-fail-fast --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu
+          cargo test --all --no-fail-fast --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu -- --nocapture
       - name: Install release
         run: ./scripts/ci_install.sh
       - name: Sqllogictest

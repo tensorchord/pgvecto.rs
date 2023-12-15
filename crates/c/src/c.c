@@ -29,8 +29,12 @@ v_f16_cosine_avx512fp16(_Float16 *a, _Float16 *b, size_t n) {
     xx = _mm512_fmadd_ph(x, x, xx);
     yy = _mm512_fmadd_ph(y, y, yy);
   }
-  return (float)(_mm512_reduce_add_ph(xy) /
-                 sqrt(_mm512_reduce_add_ph(xx) * _mm512_reduce_add_ph(yy)));
+  {
+    float rxy = _mm512_reduce_add_ph(xy);
+    float rxx = _mm512_reduce_add_ph(xx);
+    float ryy = _mm512_reduce_add_ph(yy);
+    return rxy / sqrt(rxx * ryy);
+  }
 }
 
 __attribute__((target("arch=x86-64-v4,avx512fp16"))) extern float
@@ -72,6 +76,76 @@ v_f16_sl2_avx512fp16(_Float16 *a, _Float16 *b, size_t n) {
   }
 
   return (float)_mm512_reduce_add_ph(dd);
+}
+
+__attribute__((target("arch=x86-64-v4"))) extern float
+v_f16_cosine_v4(_Float16 *a, _Float16 *b, size_t n) {
+  __m512 xy = _mm512_set1_ps(0);
+  __m512 xx = _mm512_set1_ps(0);
+  __m512 yy = _mm512_set1_ps(0);
+
+  while (n >= 16) {
+    __m512 x = _mm512_cvtph_ps(_mm256_loadu_epi16(a));
+    __m512 y = _mm512_cvtph_ps(_mm256_loadu_epi16(b));
+    a += 16, b += 16, n -= 16;
+    xy = _mm512_fmadd_ps(x, y, xy);
+    xx = _mm512_fmadd_ps(x, x, xx);
+    yy = _mm512_fmadd_ps(y, y, yy);
+  }
+  if (n > 0) {
+    __mmask16 mask = _bzhi_u32(0xFFFF, n);
+    __m512 x = _mm512_cvtph_ps(_mm256_maskz_loadu_epi16(mask, a));
+    __m512 y = _mm512_cvtph_ps(_mm256_maskz_loadu_epi16(mask, b));
+    xy = _mm512_fmadd_ps(x, y, xy);
+    xx = _mm512_fmadd_ps(x, x, xx);
+    yy = _mm512_fmadd_ps(y, y, yy);
+  }
+  {
+    float rxy = _mm512_reduce_add_ps(xy);
+    float rxx = _mm512_reduce_add_ps(xx);
+    float ryy = _mm512_reduce_add_ps(yy);
+    return rxy / sqrt(rxx * ryy);
+  }
+}
+
+__attribute__((target("arch=x86-64-v4"))) extern float
+v_f16_dot_v4(_Float16 *a, _Float16 *b, size_t n) {
+  __m512 xy = _mm512_set1_ps(0);
+
+  while (n >= 16) {
+    __m512 x = _mm512_cvtph_ps(_mm256_loadu_epi16(a));
+    __m512 y = _mm512_cvtph_ps(_mm256_loadu_epi16(b));
+    a += 16, b += 16, n -= 16;
+    xy = _mm512_fmadd_ps(x, y, xy);
+  }
+  if (n > 0) {
+    __mmask16 mask = _bzhi_u32(0xFFFF, n);
+    __m512 x = _mm512_cvtph_ps(_mm256_maskz_loadu_epi16(mask, a));
+    __m512 y = _mm512_cvtph_ps(_mm256_maskz_loadu_epi16(mask, b));
+    xy = _mm512_fmadd_ps(x, y, xy);
+  }
+  return _mm512_reduce_add_ps(xy);
+}
+
+__attribute__((target("arch=x86-64-v4"))) extern float
+v_f16_sl2_v4(_Float16 *a, _Float16 *b, size_t n) {
+  __m512 dd = _mm512_set1_ps(0);
+
+  while (n >= 16) {
+    __m512 x = _mm512_cvtph_ps(_mm256_loadu_epi16(a));
+    __m512 y = _mm512_cvtph_ps(_mm256_loadu_epi16(b));
+    a += 16, b += 16, n -= 16;
+    __m512 d = _mm512_sub_ps(x, y);
+    dd = _mm512_fmadd_ps(d, d, dd);
+  }
+  if (n > 0) {
+    __mmask16 mask = _bzhi_u32(0xFFFF, n);
+    __m512 x = _mm512_cvtph_ps(_mm256_maskz_loadu_epi16(mask, a));
+    __m512 y = _mm512_cvtph_ps(_mm256_maskz_loadu_epi16(mask, b));
+    __m512 d = _mm512_sub_ps(x, y);
+    dd = _mm512_fmadd_ps(d, d, dd);
+  }
+  return _mm512_reduce_add_ps(dd);
 }
 
 __attribute__((target("arch=x86-64-v3"))) extern float
