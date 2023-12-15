@@ -1,5 +1,5 @@
 use crate::datatype::typmod::Typmod;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use service::index::indexing::IndexingOptions;
 use service::index::optimizing::OptimizingOptions;
 use service::index::segments::SegmentsOptions;
@@ -118,7 +118,8 @@ unsafe fn get_parsed_from_varlena(helper: *const pgrx::pg_sys::varlena) -> Parse
     toml::from_str::<Parsed>(cstr.to_str().unwrap()).unwrap()
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
 struct Parsed {
     #[serde(default)]
     segment: SegmentsOptions,

@@ -37,6 +37,7 @@ use validator::Validate;
 pub struct OutdatedError(#[from] pub Option<GrowingSegmentInsertError>);
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct VectorOptions {
     #[validate(range(min = 1, max = 65535))]
     #[serde(rename = "dimensions")]
@@ -48,6 +49,7 @@ pub struct VectorOptions {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct IndexOptions {
     #[validate]
     pub vector: VectorOptions,
@@ -467,7 +469,7 @@ impl<S: G> IndexView<S> {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct IndexStartup {
     sealeds: HashSet<Uuid>,
     growings: HashSet<Uuid>,

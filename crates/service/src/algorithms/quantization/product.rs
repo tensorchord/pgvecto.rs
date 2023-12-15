@@ -16,6 +16,7 @@ use std::sync::Arc;
 use validator::Validate;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct ProductQuantizationOptions {
     #[serde(default = "ProductQuantizationOptions::default_sample")]
     pub sample: u32,
@@ -40,6 +41,7 @@ impl Default for ProductQuantizationOptions {
 
 #[repr(u16)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "snake_case")]
 pub enum ProductQuantizationOptionsRatio {
     X4 = 1,

@@ -10,6 +10,7 @@ use crate::utils::dir_ops::sync_dir;
 use crate::utils::file_atomic::FileAtomic;
 use arc_swap::ArcSwap;
 use parking_lot::Mutex;
+use serde::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -172,7 +173,7 @@ impl WorkerProtect {
 }
 
 #[serde_with::serde_as]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct WorkerStartup {
     #[serde_as(as = "HashMap<DisplayFromStr, _>")]
     indexes: HashMap<Id, IndexOptions>,

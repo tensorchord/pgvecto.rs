@@ -9,6 +9,7 @@ use validator::Validate;
 use validator::ValidationError;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
 #[validate(schema(function = "Self::validate_0"))]
 pub struct SegmentsOptions {
     #[serde(default = "SegmentsOptions::default_max_growing_segment_size")]
