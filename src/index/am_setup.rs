@@ -119,6 +119,7 @@ unsafe fn get_parsed_from_varlena(helper: *const pgrx::pg_sys::varlena) -> Parse
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
 struct Parsed {
     #[serde(default)]
     segment: SegmentsOptions,

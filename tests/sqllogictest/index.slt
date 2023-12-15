@@ -1,0 +1,12 @@
+statement ok
+DROP TABLE IF EXISTS t;
+
+statement ok
+CREATE TABLE t (val vector(3));
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM generate_series(1, 1000);
+
+statement error unknown
+CREATE INDEX ON t USING vectors (val vector_l2_ops)
+WITH (options = "unknown_field = 1");
