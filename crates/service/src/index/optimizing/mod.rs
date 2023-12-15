@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct OptimizingOptions {
     #[serde(default = "OptimizingOptions::default_sealing_secs")]
     #[validate(range(min = 0, max = 60))]

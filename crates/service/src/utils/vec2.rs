@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Vec2<S: G> {
     dims: u16,
     v: Vec<S::Scalar>,

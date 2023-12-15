@@ -7,6 +7,7 @@ use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::file_wal::FileWal;
 use parking_lot::Mutex;
+use serde::{Deserialize, Serialize};
 use std::cell::UnsafeCell;
 use std::mem::MaybeUninit;
 use std::path::PathBuf;
@@ -199,7 +200,7 @@ impl<S: G> Drop for GrowingSegment<S> {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct Log<S: G> {
     vector: Vec<S::Scalar>,
     payload: Payload,

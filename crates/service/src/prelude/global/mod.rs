@@ -87,7 +87,7 @@ pub trait FloatCast: Sized {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DynamicVector {
     F32(Vec<F32>),
     F16(Vec<F16>),

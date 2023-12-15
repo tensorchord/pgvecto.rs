@@ -11,6 +11,7 @@ use std::sync::Arc;
 use validator::Validate;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct ScalarQuantizationOptions {}
 
 impl Default for ScalarQuantizationOptions {

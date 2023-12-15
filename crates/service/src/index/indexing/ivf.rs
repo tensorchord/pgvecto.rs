@@ -11,6 +11,7 @@ use std::sync::Arc;
 use validator::Validate;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct IvfIndexingOptions {
     #[serde(default = "IvfIndexingOptions::default_least_iterations")]
     #[validate(range(min = 1, max = 1_000_000))]

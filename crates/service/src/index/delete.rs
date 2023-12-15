@@ -3,6 +3,7 @@ use crate::utils::file_wal::FileWal;
 use dashmap::mapref::entry::Entry;
 use dashmap::DashMap;
 use parking_lot::Mutex;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -79,7 +80,7 @@ impl Delete {
     }
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Log {
     key: Pointer,
 }

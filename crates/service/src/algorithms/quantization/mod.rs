@@ -15,6 +15,7 @@ use std::sync::Arc;
 use validator::Validate;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "snake_case")]
 pub enum QuantizationOptions {
     Trivial(TrivialQuantizationOptions),

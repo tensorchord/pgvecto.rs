@@ -10,6 +10,7 @@ use std::{path::PathBuf, sync::Arc};
 use validator::Validate;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct HnswIndexingOptions {
     #[serde(default = "HnswIndexingOptions::default_m")]
     #[validate(range(min = 4, max = 128))]
