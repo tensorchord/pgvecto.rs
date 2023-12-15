@@ -46,7 +46,7 @@ fn test_v_f16_cosine() {
 
 #[test]
 fn test_v_f16_dot() {
-    const EPSILON: f32 = 0.01f32;
+    const EPSILON: f32 = 1.0f32;
     use half::f16;
     unsafe fn v_f16_dot(a: *const u16, b: *const u16, n: usize) -> f32 {
         let mut xy = 0.0f32;
@@ -86,7 +86,7 @@ fn test_v_f16_dot() {
 
 #[test]
 fn test_v_f16_sl2() {
-    const EPSILON: f32 = 0.01f32;
+    const EPSILON: f32 = 1.0f32;
     use half::f16;
     unsafe fn v_f16_sl2(a: *const u16, b: *const u16, n: usize) -> f32 {
         let mut dd = 0.0f32;

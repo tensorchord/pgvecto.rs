@@ -29,8 +29,12 @@ v_f16_cosine_avx512fp16(_Float16 *a, _Float16 *b, size_t n) {
     xx = _mm512_fmadd_ph(x, x, xx);
     yy = _mm512_fmadd_ph(y, y, yy);
   }
-  return (float)(_mm512_reduce_add_ph(xy) /
-                 sqrt(_mm512_reduce_add_ph(xx) * _mm512_reduce_add_ph(yy)));
+  {
+    float rxy = _mm512_reduce_add_ph(xy);
+    float rxx = _mm512_reduce_add_ph(xx);
+    float ryy = _mm512_reduce_add_ph(yy);
+    return rxy / sqrt(rxx * ryy);
+  }
 }
 
 __attribute__((target("arch=x86-64-v4,avx512fp16"))) extern float
@@ -96,8 +100,12 @@ v_f16_cosine_v4(_Float16 *a, _Float16 *b, size_t n) {
     xx = _mm512_fmadd_ps(x, x, xx);
     yy = _mm512_fmadd_ps(y, y, yy);
   }
-  return _mm512_reduce_add_ps(xy) /
-         sqrt(_mm512_reduce_add_ps(xx) * _mm512_reduce_add_ps(yy));
+  {
+    float rxy = _mm512_reduce_add_ps(xy);
+    float rxx = _mm512_reduce_add_ps(xx);
+    float ryy = _mm512_reduce_add_ps(yy);
+    return rxy / sqrt(rxx * ryy);
+  }
 }
 
 __attribute__((target("arch=x86-64-v4"))) extern float
