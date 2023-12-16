@@ -1,0 +1,26 @@
+name: Nightly
+
+on:
+  schedule:
+    # 00:00 UTC+8 -> 16:00
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - run: |
+          commit_date=$(git log -1 --since="24 hours ago" --pretty=format:"%cI")
+          if [[ -n "$commit_date" ]]; then
+            TZ='Asia/Shanghai' gh workflow run release.yml \
+              -f version=$(date +"0.0.0-nightly.%Y%m%d") \
+              -f prerelease=true
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}

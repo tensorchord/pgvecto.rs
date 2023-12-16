@@ -1,20 +1,17 @@
 name: Release
 
 on:
-  schedule:
-    # 00:00 UTC+8 -> 16:00
-    - cron: "0 16 * * *"
   workflow_dispatch:
     inputs:
       version:
         type: string
-        description: The version to be released.
+        description: Version
         required: true
       prerelease:
         type: boolean
-        description: Prerelease or not.
+        description: Prerelease
         required: true
-        default: true
+        default: false
 
 permissions:
   contents: write
@@ -26,81 +23,52 @@ env:
   RUSTC_WRAPPER: sccache
 
 jobs:
-  setup:
+  release:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - id: check-nightly
-        run: |
-          commit_date=$(git log -1 --since="24 hours ago" --pretty=format:"%cI")
-          if [[ -n "$commit_date" ]];
-          then echo "nightly=true" >> $GITHUB_OUTPUT;
-          else echo "nightly=false" >> $GITHUB_OUTPUT;
-          fi
-      - name: Variables
-        id: variables
-        uses: actions/github-script@v6
+      - uses: actions/github-script@v7
         with:
           script: |
-            if ("${{ github.event_name }}" == 'schedule') {
-              let date = new Date();
-              date.setHours(date.getHours() + 8);
-              var yyyy = date.getUTCFullYear();
-              var mm = String(1 + date.getUTCMonth()).padStart(2, '0');
-              var dd = String(0 + date.getUTCDate()).padStart(2, '0');
-              let version = `v0.0.0-nightly.${yyyy}${mm}${dd}`;
-              core.setOutput('version', version);
-              if ("${{ steps.check-nightly.outputs.nightly }}" == "true") {
-                core.setOutput('recheck', 'true');
-              } else {
-                core.setOutput('recheck', 'false');
-              }
-              core.setOutput('prerelease', true);
+            const r = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?/;
+            if (!r.test("${{ github.event.inputs.version }}")) {
+              core.setFailed(`Action failed with an invalid semver.`);
             }
-            if ("${{ github.event_name }}" == 'workflow_dispatch') {
-              let version = "${{ github.event.inputs.version }}";
-              let prerelease = "${{ github.event.inputs.prerelease }}";
-              core.setOutput('version', version);
-              core.setOutput('recheck', 'true');
-              core.setOutput('prerelease', prerelease);
-            }
-    outputs:
-      version: ${{ steps.variables.outputs.version }}
-      recheck: ${{ steps.variables.outputs.recheck }}
-      prerelease: ${{ steps.variables.outputs.prerelease }}
-  create_github_release:
-    needs: ["setup"]
-    if: ${{ needs.setup.outputs.recheck == 'true' }}
-    runs-on: ubuntu-20.04
-    steps:
+      - run: |
+          git config --global user.email "ci@example.com"
+          git config --global user.name "CI"
+      - run: ./scripts/ci_release.sh
+        env:
+          SEMVER: ${{ github.event.inputs.version }}
       - id: create-release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ needs.setup.outputs.version }}
-          release_name: ${{ needs.setup.outputs.version }}
+          tag_name: v${{ github.event.inputs.version }}
+          release_name: v${{ github.event.inputs.version }}
           draft: false
-          prerelease: ${{ needs.setup.outputs.prerelease }}
+          prerelease: ${{ github.event.inputs.prerelease }}
     outputs:
       upload_url: ${{ steps.create-release.outputs.upload_url }}
-  upload_github_release:
-    needs: ["setup", "create_github_release"]
-    if: ${{ needs.setup.outputs.recheck == 'true' }}
+  binary:
+    needs: ["release"]
     strategy:
       matrix:
         include:
-          - { version: 14, arch: amd64, full_arch: x86_64 }
-          - { version: 14, arch: arm64, full_arch: aarch64 }
-          - { version: 15, arch: amd64, full_arch: x86_64 }
-          - { version: 15, arch: arm64, full_arch: aarch64 }
-          - { version: 16, arch: amd64, full_arch: x86_64 }
-          - { version: 16, arch: arm64, full_arch: aarch64 }
+          - { version: 14, platform: amd64, arch: x86_64 }
+          - { version: 14, platform: arm64, arch: aarch64 }
+          - { version: 15, platform: amd64, arch: x86_64 }
+          - { version: 15, platform: arm64, arch: aarch64 }
+          - { version: 16, platform: amd64, arch: x86_64 }
+          - { version: 16, platform: arm64, arch: aarch64 }
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: v${{ github.event.inputs.version }}
       - uses: actions/cache/restore@v3
         with:
           path: |
@@ -121,17 +89,16 @@ jobs:
           sudo apt-get -y install clang-16
           cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
           cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
-          if [[ "${{ matrix.arch }}" == "arm64" ]]; then
+          if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
             sudo apt-get -y install crossbuild-essential-arm64
           fi
       - name: Build Release
-        id: build_release
         run: |
           sudo apt-get -y install ruby-dev libarchive-tools
           sudo gem install --no-document fpm
           mkdir ./artifacts
           cargo pgrx package
-          if [[ "${{ matrix.arch }}" == "arm64" ]]; then
+          if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
             cargo build --target aarch64-unknown-linux-gnu --release --features "pg${{ matrix.version }}" --no-default-features
             mv ./target/aarch64-unknown-linux-gnu/release/libvectors.so ./target/release/vectors-pg${{ matrix.version }}/usr/lib/postgresql/${{ matrix.version }}/lib/vectors.so
           fi
@@ -141,40 +108,40 @@ jobs:
             --input-type dir \
             --output-type deb \
             --name vectors-pg${{ matrix.version }} \
-            --version ${{ needs.setup.outputs.version }} \
+            --version ${{ github.event.inputs.version }} \
             --license apache2 \
             --deb-no-default-config-files \
-            --package ../vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb \
-            --architecture ${{ matrix.arch }} \
+            --package ../vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb \
+            --architecture ${{ matrix.platform }} \
             .
-      - name: Upload Release / DEB
-        id: upload_release_deb
+      - name: Upload Release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.create_github_release.outputs.upload_url }}
-          asset_path: ./vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
-          asset_name: vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ./vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb
+          asset_name: vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb
           asset_content_type: application/vnd.debian.binary-package
   docker_binary_release:
-    needs: ["setup", "create_github_release", "upload_github_release"]
-    if: ${{ needs.setup.outputs.recheck == 'true' }}
+    needs: ["release", "binary"]
     strategy:
       matrix:
         include:
-          - { version: 14, arch: amd64, full_arch: x86_64 }
-          - { version: 14, arch: arm64, full_arch: aarch64 }
-          - { version: 15, arch: amd64, full_arch: x86_64 }
-          - { version: 15, arch: arm64, full_arch: aarch64 }
-          - { version: 16, arch: amd64, full_arch: x86_64 }
-          - { version: 16, arch: arm64, full_arch: aarch64 }
+          - { version: 14, platform: amd64, arch: x86_64 }
+          - { version: 14, platform: arm64, arch: aarch64 }
+          - { version: 15, platform: amd64, arch: x86_64 }
+          - { version: 15, platform: arm64, arch: aarch64 }
+          - { version: 16, platform: amd64, arch: x86_64 }
+          - { version: 16, platform: arm64, arch: aarch64 }
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: v${{ github.event.inputs.version }}
       - name: Download
-        run: wget -O pgvecto-rs-binary-release.deb https://github.com/tensorchord/pgvecto.rs/releases/download/${{ needs.setup.outputs.version }}/vectors-pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.full_arch }}-unknown-linux-gnu.deb
+        run: wget -O pgvecto-rs-binary-release.deb https://github.com/tensorchord/pgvecto.rs/releases/download/v${{ github.event.inputs.version }}/vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -189,12 +156,11 @@ jobs:
         with:
           context: .
           push: true
-          platforms: "linux/${{ matrix.arch }}"
+          platforms: "linux/${{ matrix.platform }}"
           file: ./docker/binary_release.Dockerfile
-          tags: tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}-${{ matrix.arch }}
+          tags: tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-${{ github.event.inputs.version }}-${{ matrix.platform }}
   docker_release:
-    needs: ["setup", "create_github_release", "upload_github_release", "docker_binary_release"]
-    if: ${{ needs.setup.outputs.recheck == 'true' }}
+    needs: ["docker_binary_release"]
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -205,13 +171,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: v${{ github.event.inputs.version }}
       - name: Variables
         id: variables
         uses: actions/github-script@v6
         with:
           script: |
             let tags = [
-              "tensorchord/pgvecto-rs:pg${{ matrix.version }}-${{ needs.setup.outputs.version }}",
+              "tensorchord/pgvecto-rs:pg${{ matrix.version }}-v${{ github.event.inputs.version }}",
               "tensorchord/pgvecto-rs:pg${{ matrix.version }}-latest",
             ];
             if ("${{ matrix.latest }}" == "true") {
@@ -235,6 +203,6 @@ jobs:
           platforms: "linux/amd64,linux/arm64"
           file: ./docker/pgvecto-rs.Dockerfile
           build-args: |
-            TAG=pg${{ matrix.version }}-${{ needs.setup.outputs.version }}
+            TAG=pg${{ matrix.version }}-v${{ github.event.inputs.version }}
             POSTGRES_VERSION=${{ matrix.version }}
           tags: ${{ steps.variables.outputs.tags }}
