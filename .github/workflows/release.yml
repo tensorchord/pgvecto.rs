@@ -158,7 +158,7 @@ jobs:
           push: true
           platforms: "linux/${{ matrix.platform }}"
           file: ./docker/binary_release.Dockerfile
-          tags: tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-${{ github.event.inputs.version }}-${{ matrix.platform }}
+          tags: tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-v${{ github.event.inputs.version }}-${{ matrix.platform }}
   docker_release:
     needs: ["docker_binary_release"]
     runs-on: ubuntu-20.04
