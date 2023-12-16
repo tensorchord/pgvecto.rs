@@ -36,8 +36,8 @@ jobs:
               core.setFailed(`Action failed with an invalid semver.`);
             }
       - run: |
-          git config --global user.email "ci@example.com"
-          git config --global user.name "CI"
+          git config --global user.email "support@tensorchord.ai"
+          git config --global user.name "CI[bot]"
       - run: ./scripts/ci_release.sh
         env:
           SEMVER: ${{ github.event.inputs.version }}
