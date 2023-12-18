@@ -101,6 +101,24 @@ DROP EXTENSION IF EXISTS vectors;
 CREATE EXTENSION vectors;
 ```
 
+### Cross compilation
+
+Assuming that you build target for aarch64 in a x86_64 host environment, you need to set right linker and sysroot for Rust.
+
+```sh
+sudo apt install crossbuild-essential-arm64
+```
+
+Add the following section to the end of `~/.cargo/config.toml`.
+
+```toml
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
+
+[env]
+BINDGEN_EXTRA_CLANG_ARGS_aarch64_unknown_linux_gnu = "-isystem /usr/aarch64-linux-gnu/include/ -ccc-gcc-name aarch64-linux-gnu-gcc"
+```
+
 ## Install from release
 
 Download the deb package in the release page, and type `sudo apt install vectors-pg15-*.deb` to install the deb package.
