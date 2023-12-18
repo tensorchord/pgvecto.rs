@@ -42,35 +42,15 @@ env:
   RUSTFLAGS: "-Dwarnings"
 
 jobs:
-  matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.main.outputs.matrix }}
-    steps:
-      - uses: actions/github-script@v7
-        id: main
-        with:
-          script: |
-            let matrix;
-            if ("${{ github.event_name }}" == "pull_request") {
-              matrix = [
-                { version: 15, os: "ubuntu-latest" },
-              ];
-            } else {
-              matrix = [
-                { version: 12, os: "ubuntu-latest" },
-                { version: 13, os: "ubuntu-latest" },
-                { version: 14, os: "ubuntu-latest" },
-                { version: 15, os: "ubuntu-latest" },
-                { version: 16, os: "ubuntu-latest" },
-              ];
-            }
-            core.setOutput('matrix', JSON.stringify(matrix));
   check:
-    needs: matrix
     strategy:
       matrix:
-        include: ${{ fromJson(needs.matrix.outputs.matrix) }}
+        include:
+          - { version: 12, os: "ubuntu-latest" }
+          - { version: 13, os: "ubuntu-latest" }
+          - { version: 14, os: "ubuntu-latest" }
+          - { version: 15, os: "ubuntu-latest" }
+          - { version: 16, os: "ubuntu-latest" }
     runs-on: ${{ matrix.os }}
     env:
       VERSION: ${{ matrix.version }}

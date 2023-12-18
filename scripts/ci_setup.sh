@@ -14,6 +14,8 @@ if [ "$OS" == "ubuntu-latest" ]; then
     sudo apt-get -y install build-essential libpq-dev postgresql-$VERSION postgresql-server-dev-$VERSION
     sudo apt-get -y install clang-16
     sudo apt-get -y install crossbuild-essential-arm64
+    echo 'target.aarch64-unknown-linux-gnu.linker = "aarch64-linux-gnu-gcc"' | tee ~/.cargo/config.toml
+    echo 'env.BINDGEN_EXTRA_CLANG_ARGS_aarch64_unknown_linux_gnu = "-isystem /usr/aarch64-linux-gnu/include/ -ccc-gcc-name aarch64-linux-gnu-gcc"' | tee -a ~/.cargo/config.toml
     echo "local all all trust" | sudo tee /etc/postgresql/$VERSION/main/pg_hba.conf
     echo "host all all 127.0.0.1/32 trust" | sudo tee -a /etc/postgresql/$VERSION/main/pg_hba.conf
     echo "host all all ::1/128 trust" | sudo tee -a /etc/postgresql/$VERSION/main/pg_hba.conf
