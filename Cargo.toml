@@ -33,6 +33,7 @@ pgrx = { git = "https://github.com/tensorchord/pgrx.git", rev = "7c30e2023876c1e
 openai_api_rust = { git = "https://github.com/tensorchord/openai-api.git", rev = "228d54b6002e98257b3c81501a054942342f585f" }
 env_logger = "0.10.0"
 toml = "0.8.8"
+rand = "0.8.5"
 
 [dev-dependencies]
 pgrx-tests = { git = "https://github.com/tensorchord/pgrx.git", rev = "7c30e2023876c1efce613756f5ec81f3ab05696b" }
