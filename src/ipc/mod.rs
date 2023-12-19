@@ -34,11 +34,17 @@ pub fn listen_mmap() -> impl Iterator<Item = RpcHandler> {
 }
 
 pub fn connect_unix() -> self::transport::ClientSocket {
-    self::transport::ClientSocket::Unix(self::transport::unix::connect())
+    self::transport::ClientSocket::Unix {
+        ok: true,
+        socket: self::transport::unix::connect(),
+    }
 }
 
 pub fn connect_mmap() -> self::transport::ClientSocket {
-    self::transport::ClientSocket::Mmap(self::transport::mmap::connect())
+    self::transport::ClientSocket::Mmap {
+        ok: true,
+        socket: self::transport::mmap::connect(),
+    }
 }
 
 pub fn init() {

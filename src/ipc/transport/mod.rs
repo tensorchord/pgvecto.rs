@@ -11,8 +11,8 @@ pub enum ServerSocket {
 }
 
 pub enum ClientSocket {
-    Unix(unix::Socket),
-    Mmap(mmap::Socket),
+    Unix { ok: bool, socket: unix::Socket },
+    Mmap { ok: bool, socket: mmap::Socket },
 }
 
 impl ServerSocket {
@@ -48,19 +48,31 @@ impl ClientSocket {
     pub fn send<T: Serialize>(&mut self, packet: T) -> Result<(), IpcError> {
         let buffer = bincode::serialize(&packet).expect("Failed to serialize");
         match self {
-            Self::Unix(x) => x.send(&buffer),
-            Self::Mmap(x) => x.send(&buffer),
+            Self::Unix { ok, socket } => socket.send(&buffer).inspect(|_| *ok = false),
+            Self::Mmap { ok, socket } => socket.send(&buffer).inspect(|_| *ok = false),
         }
     }
     pub fn recv<T: for<'a> Deserialize<'a>>(&mut self) -> Result<T, FriendlyError> {
         let buffer = match self {
-            Self::Unix(x) => x.recv().map_err(|_| FriendlyError::Ipc)?,
-            Self::Mmap(x) => x.recv().map_err(|_| FriendlyError::Ipc)?,
+            Self::Unix { ok, socket } => socket
+                .recv()
+                .inspect(|_| *ok = false)
+                .map_err(|_| FriendlyError::Ipc)?,
+            Self::Mmap { ok, socket } => socket
+                .recv()
+                .inspect(|_| *ok = false)
+                .map_err(|_| FriendlyError::Ipc)?,
         };
         match buffer[0] {
             0u8 => Ok(bincode::deserialize(&buffer[1..]).expect("Failed to deserialize.")),
             1u8 => Err(bincode::deserialize(&buffer[1..]).expect("Failed to deserialize.")),
             _ => unreachable!(),
+        }
+    }
+    pub fn test(&self) -> bool {
+        match self {
+            ClientSocket::Unix { ok, .. } => *ok,
+            ClientSocket::Mmap { ok, .. } => *ok,
         }
     }
 }

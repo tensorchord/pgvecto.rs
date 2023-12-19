@@ -221,10 +221,9 @@ impl<T: ClientLike> Drop for ClientGuard<T> {
         let mut x = CLIENT.borrow_mut();
         match *x {
             Status::Borrowed => {
-                if T::RESET {
-                    unsafe {
-                        *x = Status::Reset(ManuallyDrop::take(&mut self.0).to_socket());
-                    }
+                let socket = unsafe { ManuallyDrop::take(&mut self.0).to_socket() };
+                if T::RESET && socket.test() {
+                    *x = Status::Reset(socket);
                 } else {
                     *x = Status::Lost;
                 }
