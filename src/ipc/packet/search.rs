@@ -3,12 +3,8 @@ use service::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum SearchPacket {
-    Check {
-        p: Pointer,
-    },
-    Leave {
-        result: Result<Vec<Pointer>, FriendlyError>,
-    },
+    Check { p: Pointer },
+    Leave { result: Vec<Pointer> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -49,7 +49,7 @@ docker run \
   --name pgvecto-rs-demo \
   -e POSTGRES_PASSWORD=mysecretpassword \
   -p 5432:5432 \
-  -d tensorchord/pgvecto-rs:pg16-latest
+  -d tensorchord/pgvecto-rs:pg16-v0.1.13
 ```
 
 ## Development with envd

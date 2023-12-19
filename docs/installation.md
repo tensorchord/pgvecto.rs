@@ -5,7 +5,7 @@
 We have prebuild image at [tensorchord/pgvecto-rs](https://hub.docker.com/r/tensorchord/pgvecto-rs). You can try it with
 
 ```
-docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:pg16-latest
+docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:pg16-v0.1.13
 ```
 
 Connect to the database and enable the extension.

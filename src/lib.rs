@@ -4,6 +4,7 @@
 #![feature(offset_of)]
 #![feature(arbitrary_self_types)]
 #![feature(lazy_cell)]
+#![feature(never_type)]
 
 mod bgworker;
 mod datatype;

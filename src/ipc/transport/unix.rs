@@ -2,7 +2,6 @@ use super::IpcError;
 use crate::utils::file_socket::FileSocket;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use rustix::fd::AsFd;
-use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use std::os::unix::net::UnixStream;
 use std::sync::OnceLock;
@@ -40,20 +39,18 @@ macro_rules! resolve_closed {
 }
 
 impl Socket {
-    pub fn send<T: Serialize>(&mut self, packet: T) -> Result<(), IpcError> {
+    pub fn send(&mut self, packet: &[u8]) -> Result<(), IpcError> {
         use byteorder::NativeEndian as N;
-        let buffer = bincode::serialize(&packet).expect("Failed to serialize");
-        let len = u32::try_from(buffer.len()).expect("Packet is too large.");
+        let len = u32::try_from(packet.len()).expect("Packet is too large.");
         resolve_closed!(self.stream.write_u32::<N>(len));
-        resolve_closed!(self.stream.write_all(&buffer));
+        resolve_closed!(self.stream.write_all(packet));
         Ok(())
     }
-    pub fn recv<T: for<'a> Deserialize<'a>>(&mut self) -> Result<T, IpcError> {
+    pub fn recv(&mut self) -> Result<Vec<u8>, IpcError> {
         use byteorder::NativeEndian as N;
         let len = resolve_closed!(self.stream.read_u32::<N>());
-        let mut buffer = vec![0u8; len as usize];
-        resolve_closed!(self.stream.read_exact(&mut buffer));
-        let packet = bincode::deserialize(&buffer).expect("Failed to deserialize.");
+        let mut packet = vec![0u8; len as usize];
+        resolve_closed!(self.stream.read_exact(&mut packet));
         Ok(packet)
     }
 }

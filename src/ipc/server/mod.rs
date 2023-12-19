@@ -1,20 +1,20 @@
 use super::packet::*;
-use super::transport::Socket;
+use super::transport::ServerSocket;
 use super::IpcError;
 use service::index::IndexOptions;
 use service::index::IndexStat;
 use service::prelude::*;
 
 pub struct RpcHandler {
-    socket: Socket,
+    socket: ServerSocket,
 }
 
 impl RpcHandler {
-    pub(super) fn new(socket: Socket) -> Self {
+    pub(super) fn new(socket: ServerSocket) -> Self {
         Self { socket }
     }
     pub fn handle(mut self) -> Result<RpcHandle, IpcError> {
-        Ok(match self.socket.server_recv::<RpcPacket>()? {
+        Ok(match self.socket.recv::<RpcPacket>()? {
             RpcPacket::Create { id, options } => RpcHandle::Create {
                 id,
                 options,
@@ -117,151 +117,167 @@ pub enum RpcHandle {
 }
 
 pub struct Create {
-    socket: Socket,
+    socket: ServerSocket,
 }
 
 impl Create {
     pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
         let packet = create::CreatePacket::Leave {};
-        self.socket.server_send(packet)?;
+        self.socket.ok(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
         })
+    }
+    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+        self.socket.err(err)
     }
 }
 
 pub struct Insert {
-    socket: Socket,
+    socket: ServerSocket,
 }
 
 impl Insert {
-    pub fn leave(mut self, result: Result<(), FriendlyError>) -> Result<RpcHandler, IpcError> {
-        let packet = insert::InsertPacket::Leave { result };
-        self.socket.server_send(packet)?;
+    pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
+        let packet = insert::InsertPacket::Leave {};
+        self.socket.ok(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
         })
     }
+    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+        self.socket.err(err)
+    }
 }
 
 pub struct Delete {
-    socket: Socket,
+    socket: ServerSocket,
 }
 
 impl Delete {
     pub fn next(&mut self, p: Pointer) -> Result<bool, IpcError> {
         let packet = delete::DeletePacket::Test { p };
-        self.socket.server_send(packet)?;
-        let delete::DeleteTestPacket { delete } =
-            self.socket.server_recv::<delete::DeleteTestPacket>()?;
+        self.socket.ok(packet)?;
+        let delete::DeleteTestPacket { delete } = self.socket.recv::<delete::DeleteTestPacket>()?;
         Ok(delete)
     }
-    pub fn leave(mut self, result: Result<(), FriendlyError>) -> Result<RpcHandler, IpcError> {
-        let packet = delete::DeletePacket::Leave { result };
-        self.socket.server_send(packet)?;
+    pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
+        let packet = delete::DeletePacket::Leave {};
+        self.socket.ok(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
         })
     }
+    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+        self.socket.err(err)
+    }
 }
 
 pub struct Search {
-    socket: Socket,
+    socket: ServerSocket,
 }
 
 impl Search {
     pub fn check(&mut self, p: Pointer) -> Result<bool, IpcError> {
         let packet = search::SearchPacket::Check { p };
-        self.socket.server_send(packet)?;
+        self.socket.ok(packet)?;
         let search::SearchCheckPacket { result } =
-            self.socket.server_recv::<search::SearchCheckPacket>()?;
+            self.socket.recv::<search::SearchCheckPacket>()?;
         Ok(result)
     }
-    pub fn leave(
-        mut self,
-        result: Result<Vec<Pointer>, FriendlyError>,
-    ) -> Result<RpcHandler, IpcError> {
+    pub fn leave(mut self, result: Vec<Pointer>) -> Result<RpcHandler, IpcError> {
         let packet = search::SearchPacket::Leave { result };
-        self.socket.server_send(packet)?;
+        self.socket.ok(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
         })
+    }
+    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+        self.socket.err(err)
     }
 }
 
 pub struct Flush {
-    socket: Socket,
+    socket: ServerSocket,
 }
 
 impl Flush {
-    pub fn leave(mut self, result: Result<(), FriendlyError>) -> Result<RpcHandler, IpcError> {
-        let packet = flush::FlushPacket::Leave { result };
-        self.socket.server_send(packet)?;
+    pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
+        let packet = flush::FlushPacket::Leave {};
+        self.socket.ok(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
         })
     }
+    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+        self.socket.err(err)
+    }
 }
 
 pub struct Destory {
-    socket: Socket,
+    socket: ServerSocket,
 }
 
 impl Destory {
     pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
         let packet = destory::DestoryPacket::Leave {};
-        self.socket.server_send(packet)?;
+        self.socket.ok(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
         })
+    }
+    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+        self.socket.err(err)
     }
 }
 
 pub struct Stat {
-    socket: Socket,
+    socket: ServerSocket,
 }
 
 impl Stat {
-    pub fn leave(
-        mut self,
-        result: Result<IndexStat, FriendlyError>,
-    ) -> Result<RpcHandler, IpcError> {
+    pub fn leave(mut self, result: IndexStat) -> Result<RpcHandler, IpcError> {
         let packet = stat::StatPacket::Leave { result };
-        self.socket.server_send(packet)?;
+        self.socket.ok(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
         })
     }
+    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+        self.socket.err(err)
+    }
 }
 
 pub struct Vbase {
-    socket: Socket,
+    socket: ServerSocket,
 }
 
 impl Vbase {
-    pub fn error(mut self, result: Result<(), FriendlyError>) -> Result<VbaseHandler, IpcError> {
-        self.socket
-            .server_send(vbase::VbaseErrorPacket { result })?;
+    pub fn error(mut self) -> Result<VbaseHandler, IpcError> {
+        self.socket.ok(vbase::VbaseErrorPacket {})?;
         Ok(VbaseHandler {
             socket: self.socket,
         })
     }
+    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+        self.socket.err(err)
+    }
 }
 
 pub struct VbaseHandler {
-    socket: Socket,
+    socket: ServerSocket,
 }
 
 impl VbaseHandler {
     pub fn handle(mut self) -> Result<VbaseHandle, IpcError> {
-        Ok(match self.socket.server_recv::<vbase::VbasePacket>()? {
+        Ok(match self.socket.recv::<vbase::VbasePacket>()? {
             vbase::VbasePacket::Next {} => VbaseHandle::Next {
                 x: VbaseNext {
                     socket: self.socket,
                 },
             },
             vbase::VbasePacket::Leave {} => {
-                self.socket.server_send(vbase::VbaseLeavePacket {})?;
+                self.socket.ok(vbase::VbaseLeavePacket {})?;
                 VbaseHandle::Leave {
                     x: RpcHandler {
                         socket: self.socket,
@@ -278,13 +294,13 @@ pub enum VbaseHandle {
 }
 
 pub struct VbaseNext {
-    socket: Socket,
+    socket: ServerSocket,
 }
 
 impl VbaseNext {
     pub fn leave(mut self, p: Option<Pointer>) -> Result<VbaseHandler, IpcError> {
         let packet = vbase::VbaseNextPacket { p };
-        self.socket.server_send(packet)?;
+        self.socket.ok(packet)?;
         Ok(VbaseHandler {
             socket: self.socket,
         })
