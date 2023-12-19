@@ -3502,6 +3502,7 @@ dependencies = [
  "openai_api_rust",
  "pgrx",
  "pgrx-tests",
+ "rand",
  "rustix 0.38.28",
  "serde",
  "serde_json",
