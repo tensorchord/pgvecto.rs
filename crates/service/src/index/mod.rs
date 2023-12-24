@@ -330,10 +330,8 @@ impl<S: G> IndexView<S> {
             .map(|x| Pointer::from_u48(x.payload >> 16))
             .collect()
     }
-    pub fn vbase(&self, vector: &[S::Scalar]) -> impl Iterator<Item = Pointer> + '_ {
+    pub fn vbase(&self, vector: &[S::Scalar], range: usize) -> impl Iterator<Item = Pointer> + '_ {
         assert_eq!(self.options.vector.dims as usize, vector.len());
-
-        let range = 86;
 
         struct Comparer<'a, S: G> {
             iter: ComparerIter<'a, S>,

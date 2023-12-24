@@ -136,7 +136,7 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                 let result = worker.call_stat(id);
                 handler = x.leave(result)?;
             }
-            RpcHandle::Vbase { id, vector, x } => {
+            RpcHandle::Vbase { id, vbase, x } => {
                 use crate::ipc::server::VbaseHandle::*;
                 let instance = match worker.get_instance(id) {
                     Ok(x) => x,
@@ -146,7 +146,7 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                     }
                 };
                 let view = instance.view();
-                let mut it = match view.vbase(vector) {
+                let mut it = match view.vbase(vbase.0, vbase.1) {
                     Ok(x) => x,
                     Err(e) => {
                         x.error(Err(e))?;

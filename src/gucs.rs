@@ -23,7 +23,7 @@ pub static ENABLE_VECTOR_INDEX: GucSetting<bool> = GucSetting::<bool>::new(true)
 
 pub static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(false);
 
-pub static ENABLE_VBASE: GucSetting<bool> = GucSetting::<bool>::new(false);
+pub static VBASE_RANGE: GucSetting<i32> = GucSetting::<i32>::new(0);
 
 pub static TRANSPORT: GucSetting<Transport> = GucSetting::<Transport>::new(Transport::default());
 
@@ -62,11 +62,13 @@ pub unsafe fn init() {
         GucContext::Userset,
         GucFlags::default(),
     );
-    GucRegistry::define_bool_guc(
-        "vectors.enable_vbase",
+    GucRegistry::define_int_guc(
+        "vectors.vbase_range",
         "Whether to enable vbase.",
         "When enabled, it will use vbase for filtering.",
-        &ENABLE_VBASE,
+        &VBASE_RANGE,
+        0,
+        u16::MAX as _,
         GucContext::Userset,
         GucFlags::default(),
     );

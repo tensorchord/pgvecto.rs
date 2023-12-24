@@ -15,7 +15,7 @@ statement ok
 INSERT INTO t (val) VALUES ('[0.6,0.6,0.6]');
 
 statement ok
-SET vectors.enable_vbase=on;
+SET vectors.vbase_range=86;
 
 query I
 SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0.5,0.5,0.5]' limit 100) t2;

@@ -1,6 +1,6 @@
 use crate::gucs::ENABLE_PREFILTER;
-use crate::gucs::ENABLE_VBASE;
 use crate::gucs::K;
+use crate::gucs::VBASE_RANGE;
 use crate::index::utils::from_datum;
 use crate::ipc::client::ClientGuard;
 use crate::ipc::client::Vbase;
@@ -94,9 +94,10 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         let id = Id::from_sys(oid);
 
         let mut rpc = crate::ipc::client::borrow_mut();
+        let vbase_range = VBASE_RANGE.get() as _;
 
-        if ENABLE_VBASE.get() {
-            let vbase = rpc.vbase(id, vector.clone());
+        if vbase_range != 0 {
+            let vbase = rpc.vbase(id, (vector.clone(), vbase_range));
             *scanner = Scanner::Vbase { node, vbase };
         } else {
             let k = K.get() as _;

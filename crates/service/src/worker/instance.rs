@@ -139,43 +139,44 @@ impl InstanceView {
     pub fn vbase(
         &self,
         vector: DynamicVector,
+        range: usize,
     ) -> Result<impl Iterator<Item = Pointer> + '_, FriendlyError> {
         match (self, vector) {
             (InstanceView::F32Cos(x), DynamicVector::F32(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(Box::new(x.vbase(&vector)) as Box<dyn Iterator<Item = Pointer>>)
+                Ok(Box::new(x.vbase(&vector, range)) as Box<dyn Iterator<Item = Pointer>>)
             }
             (InstanceView::F32Dot(x), DynamicVector::F32(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(Box::new(x.vbase(&vector)))
+                Ok(Box::new(x.vbase(&vector, range)))
             }
             (InstanceView::F32L2(x), DynamicVector::F32(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(Box::new(x.vbase(&vector)))
+                Ok(Box::new(x.vbase(&vector, range)))
             }
             (InstanceView::F16Cos(x), DynamicVector::F16(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(Box::new(x.vbase(&vector)))
+                Ok(Box::new(x.vbase(&vector, range)))
             }
             (InstanceView::F16Dot(x), DynamicVector::F16(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(Box::new(x.vbase(&vector)))
+                Ok(Box::new(x.vbase(&vector, range)))
             }
             (InstanceView::F16L2(x), DynamicVector::F16(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(Box::new(x.vbase(&vector)))
+                Ok(Box::new(x.vbase(&vector, range)))
             }
             _ => Err(FriendlyError::Unmatched2),
         }

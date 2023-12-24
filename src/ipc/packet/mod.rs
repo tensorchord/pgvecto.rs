@@ -40,6 +40,6 @@ pub enum RpcPacket {
     },
     Vbase {
         id: Id,
-        vector: DynamicVector,
+        vbase: (DynamicVector, usize),
     },
 }
