@@ -20,7 +20,7 @@ There are four ways to solve the problem:
 * Set `vectors.k` larger. If you estimate that 20% of rows will satisfy the condition in `WHERE`, just set `vectors.k` to be 5 times than before.
 * Set `vectors.enable_vector_index` to `off`. If you estimate that 0.0001% of rows will satisfy the condition in `WHERE`, just do not use vector index. No alogrithms will be faster than brute force by PostgreSQL.
 * Set `vectors.enable_prefilter` to `on`. If you cannot estimate how many rows will satisfy the condition in `WHERE`, leave the job for the index. The index will check if the returned row can be accepted by PostgreSQL. However, it will make queries slower so the default value for this option is `off`.
-* Set `vectors.vbase_range` to a non-zero value. It will use vbase optimization, so that the index will pull rows as many as you need. It only works for HNSW algorithm.
+* Set `vectors.enable_vbase` to `on`. It will use vbase optimization, so that the index will pull rows as many as you need. It only works for HNSW algorithm.
 
 ## Options
 
@@ -31,6 +31,7 @@ Search options are specified by PostgreSQL GUC. You can use `SET` command to app
 | vectors.k                   | integer | Expected number of candidates returned by index. The parameter will influence the recall if you use HNSW or quantization for indexing. Default value is `64`. |
 | vectors.enable_prefilter    | boolean | Enable prefiltering or not. Default value is `off`.                                                                                                           |
 | vectors.enable_vector_index | boolean | Enable vector indexes or not. This option is for debugging. Default value is `on`.                                                                            |
-| vectors.vbase_range         | integer | Range size of vbase optimization. When it is set to `0`, vbase optimization will be disabled. A recommended value is `86`. Default value is `0`.              |
+| vectors.enable_vbase        | boolean | Enable vbase optimization or not. Default value is `off`.                                                                                                     |
+| vectors.vbase_range         | integer | Range size of vbase optimization. The larger the range, the more accurate the result, but the slower the speed. Default value is `100`.                       |
 
-Note: When `vectors.vbase_range` is a non-zero value, prefilter does not work.
+Note: When `vectors.enable_vbase` is enabled, prefilter does not work.
