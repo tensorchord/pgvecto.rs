@@ -27,9 +27,9 @@ pub unsafe fn init() {
 }
 
 #[pgrx::pg_extern(sql = "
-    CREATE OR REPLACE FUNCTION vectors_amhandler(internal) RETURNS index_am_handler
+    CREATE FUNCTION vectors_amhandler(internal) RETURNS index_am_handler
     PARALLEL SAFE IMMUTABLE STRICT LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';
-", requires = ["vecf32"])]
+")]
 fn vectors_amhandler(
     _fcinfo: pgrx::pg_sys::FunctionCallInfo,
 ) -> pgrx::PgBox<pgrx::pg_sys::IndexAmRoutine> {
