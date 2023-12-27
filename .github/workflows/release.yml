@@ -182,11 +182,14 @@ jobs:
           script: |
             let tags = [
               "tensorchord/pgvecto-rs:pg${{ matrix.version }}-v${{ github.event.inputs.version }}",
-              "tensorchord/pgvecto-rs:pg${{ matrix.version }}-latest",
             ];
-            if ("${{ matrix.latest }}" == "true") {
-              tags.push("tensorchord/pgvecto-rs:latest");
-            }
+            // const actor = context.actor;
+            // if (actor != "github-actions[bot]") {
+            //   tags.push("tensorchord/pgvecto-rs:pg${{ matrix.version }}-latest");
+            // }
+            // if ("${{ matrix.latest }}" == "true" && actor != "github-actions[bot]") {
+            //   tags.push("tensorchord/pgvecto-rs:latest");
+            // }
             core.setOutput('tags', tags.join(", "));
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
