@@ -120,8 +120,12 @@ impl Rpc {
         let stat::StatPacket::Leave { result } = self.socket.client_recv().friendly();
         result.friendly()
     }
-    pub fn vbase(mut self: ClientGuard<Self>, id: Id, vector: DynamicVector) -> ClientGuard<Vbase> {
-        let packet = RpcPacket::Vbase { id, vector };
+    pub fn vbase(
+        mut self: ClientGuard<Self>,
+        id: Id,
+        vbase: (DynamicVector, usize),
+    ) -> ClientGuard<Vbase> {
+        let packet = RpcPacket::Vbase { id, vbase };
         self.socket.client_send(packet).friendly();
         let vbase::VbaseErrorPacket { result } = self.socket.client_recv().friendly();
         result.friendly();

@@ -65,9 +65,9 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Vbase { id, vector } => RpcHandle::Vbase {
+            RpcPacket::Vbase { id, vbase } => RpcHandle::Vbase {
                 id,
-                vector,
+                vbase,
                 x: Vbase {
                     socket: self.socket,
                 },
@@ -111,7 +111,7 @@ pub enum RpcHandle {
     },
     Vbase {
         id: Id,
-        vector: DynamicVector,
+        vbase: (DynamicVector, usize),
         x: Vbase,
     },
 }
