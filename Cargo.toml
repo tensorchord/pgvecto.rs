@@ -28,6 +28,7 @@ bincode.workspace = true
 half.workspace = true
 num-traits.workspace = true
 service = { path = "crates/service" }
+detect = { path = "crates/detect" }
 pgrx = { git = "https://github.com/tensorchord/pgrx.git", rev = "7c30e2023876c1efce613756f5ec81f3ab05696b", default-features = false, features = [
 ] }
 openai_api_rust = { git = "https://github.com/tensorchord/openai-api.git", rev = "228d54b6002e98257b3c81501a054942342f585f" }
@@ -70,7 +71,7 @@ half = { version = "~2.3", features = [
 ] }
 num-traits = "~0.2"
 validator = { version = "~0.16", features = ["derive"] }
-rustix = { version = "~0.38", features = ["net", "mm"] }
+rustix = { version = "~0.38", features = ["fs", "net", "mm"] }
 
 [profile.dev]
 panic = "unwind"
