@@ -1,5 +1,3 @@
-#![feature(linkage)]
-
 mod c;
 
 #[allow(unused_imports)]
