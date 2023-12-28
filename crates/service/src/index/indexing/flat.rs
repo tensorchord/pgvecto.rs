@@ -1,6 +1,7 @@
 use super::AbstractIndexing;
 use crate::algorithms::quantization::QuantizationOptions;
 use crate::index::segments::growing::GrowingSegment;
+use crate::index::segments::sealed::SealedSearchGucs;
 use crate::index::IndexOptions;
 use crate::prelude::*;
 use crate::{algorithms::flat::Flat, index::segments::sealed::SealedSegment};
@@ -57,7 +58,13 @@ impl<S: G> AbstractIndexing<S> for FlatIndexing<S> {
         self.raw.payload(i)
     }
 
-    fn search(&self, k: usize, vector: &[S::Scalar], filter: &mut impl Filter) -> Heap {
+    fn search(
+        &self,
+        k: usize,
+        vector: &[S::Scalar],
+        _gucs: SealedSearchGucs,
+        filter: &mut impl Filter,
+    ) -> Heap {
         self.raw.search(k, vector, filter)
     }
 }

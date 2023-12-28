@@ -2,6 +2,7 @@ use super::packet::*;
 use super::transport::ClientSocket;
 use crate::gucs::{Transport, TRANSPORT};
 use crate::utils::cells::PgRefCell;
+use service::index::segments::SearchGucs;
 use service::index::IndexOptions;
 use service::index::IndexStat;
 use service::prelude::*;
@@ -60,12 +61,14 @@ impl Rpc {
         id: Id,
         search: (DynamicVector, usize),
         prefilter: bool,
+        gucs: SearchGucs,
         mut t: impl Search,
     ) -> Vec<Pointer> {
         let packet = RpcPacket::Search {
             id,
             search,
             prefilter,
+            gucs,
         };
         self.socket.send(packet).friendly();
         loop {

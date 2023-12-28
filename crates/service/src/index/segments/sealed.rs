@@ -4,9 +4,16 @@ use crate::index::indexing::{DynamicIndexIter, DynamicIndexing};
 use crate::index::{IndexOptions, IndexTracker};
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 use uuid::Uuid;
+use validator::Validate;
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Validate)]
+pub struct SealedSearchGucs {
+    pub ivf_nprob: u32,
+}
 
 pub struct SealedSegment<S: G> {
     uuid: Uuid,
@@ -57,8 +64,14 @@ impl<S: G> SealedSegment<S> {
     pub fn payload(&self, i: u32) -> Payload {
         self.indexing.payload(i)
     }
-    pub fn search(&self, k: usize, vector: &[S::Scalar], filter: &mut impl Filter) -> Heap {
-        self.indexing.search(k, vector, filter)
+    pub fn search(
+        &self,
+        k: usize,
+        vector: &[S::Scalar],
+        gucs: SealedSearchGucs,
+        filter: &mut impl Filter,
+    ) -> Heap {
+        self.indexing.search(k, vector, gucs, filter)
     }
     pub fn vbase(&self, range: usize, vector: &[S::Scalar]) -> DynamicIndexIter<'_, S> {
         self.indexing.vbase(range, vector)

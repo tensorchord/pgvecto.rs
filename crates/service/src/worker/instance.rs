@@ -1,3 +1,4 @@
+use crate::index::segments::SearchGucs;
 use crate::index::Index;
 use crate::index::IndexOptions;
 use crate::index::IndexStat;
@@ -94,6 +95,7 @@ impl InstanceView {
         &self,
         k: usize,
         vector: DynamicVector,
+        gucs: SearchGucs,
         filter: F,
     ) -> Result<Vec<Pointer>, FriendlyError> {
         match (self, vector) {
@@ -101,37 +103,37 @@ impl InstanceView {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(x.search(k, &vector, filter))
+                Ok(x.search(k, &vector, gucs, filter))
             }
             (InstanceView::F32Dot(x), DynamicVector::F32(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(x.search(k, &vector, filter))
+                Ok(x.search(k, &vector, gucs, filter))
             }
             (InstanceView::F32L2(x), DynamicVector::F32(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(x.search(k, &vector, filter))
+                Ok(x.search(k, &vector, gucs, filter))
             }
             (InstanceView::F16Cos(x), DynamicVector::F16(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(x.search(k, &vector, filter))
+                Ok(x.search(k, &vector, gucs, filter))
             }
             (InstanceView::F16Dot(x), DynamicVector::F16(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(x.search(k, &vector, filter))
+                Ok(x.search(k, &vector, gucs, filter))
             }
             (InstanceView::F16L2(x), DynamicVector::F16(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(x.search(k, &vector, filter))
+                Ok(x.search(k, &vector, gucs, filter))
             }
             _ => Err(FriendlyError::Unmatched2),
         }

@@ -1,5 +1,6 @@
 use crate::gucs::ENABLE_PREFILTER;
 use crate::gucs::ENABLE_VBASE;
+use crate::gucs::IVF_NPROBE;
 use crate::gucs::K;
 use crate::gucs::VBASE_RANGE;
 use crate::index::utils::from_datum;
@@ -7,6 +8,8 @@ use crate::ipc::client::ClientGuard;
 use crate::ipc::client::Vbase;
 use crate::prelude::*;
 use pgrx::FromDatum;
+use service::index::segments::sealed::SealedSearchGucs;
+use service::index::segments::SearchGucs;
 use service::prelude::*;
 
 pub enum Scanner {
@@ -112,8 +115,19 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
             }
 
             let search = Search { node };
+            let gucs = SearchGucs {
+                sealed: SealedSearchGucs {
+                    ivf_nprob: IVF_NPROBE.get() as _,
+                },
+            };
 
-            let mut data = rpc.search(id, (vector.clone(), k), ENABLE_PREFILTER.get(), search);
+            let mut data = rpc.search(
+                id,
+                (vector.clone(), k),
+                ENABLE_PREFILTER.get(),
+                gucs,
+                search,
+            );
             data.reverse();
             *scanner = Scanner::Search { node, data };
         }

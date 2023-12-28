@@ -19,6 +19,8 @@ pub static OPENAI_API_KEY_GUC: GucSetting<Option<&'static CStr>> =
 
 pub static K: GucSetting<i32> = GucSetting::<i32>::new(64);
 
+pub static IVF_NPROBE: GucSetting<i32> = GucSetting::<i32>::new(10);
+
 pub static ENABLE_VECTOR_INDEX: GucSetting<bool> = GucSetting::<bool>::new(true);
 
 pub static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(false);
@@ -45,6 +47,16 @@ pub unsafe fn init() {
         &K,
         1,
         u16::MAX as _,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
+    GucRegistry::define_int_guc(
+        "vectors.ivf_nporbe",
+        "The number of probes at ivf index.",
+        "The number of probes at ivf index.",
+        &IVF_NPROBE,
+        1,
+        1_000_000,
         GucContext::Userset,
         GucFlags::default(),
     );

@@ -1,6 +1,7 @@
 use super::packet::*;
 use super::transport::ServerSocket;
 use super::IpcError;
+use service::index::segments::SearchGucs;
 use service::index::IndexOptions;
 use service::index::IndexStat;
 use service::prelude::*;
@@ -39,10 +40,12 @@ impl RpcHandler {
                 id,
                 search,
                 prefilter,
+                gucs,
             } => RpcHandle::Search {
                 id,
                 search,
                 prefilter,
+                gucs,
                 x: Search {
                     socket: self.socket,
                 },
@@ -86,6 +89,7 @@ pub enum RpcHandle {
         id: Id,
         search: (DynamicVector, usize),
         prefilter: bool,
+        gucs: SearchGucs,
         x: Search,
     },
     Insert {
