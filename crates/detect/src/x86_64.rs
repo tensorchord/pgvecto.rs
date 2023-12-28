@@ -80,6 +80,6 @@ fn ctor_v2() {
     ATOMIC_V2.store(test_v2(), Ordering::Relaxed);
 }
 
-pub fn _detect_v2() -> bool {
+pub fn detect_v2() -> bool {
     ATOMIC_V2.load(Ordering::Relaxed)
 }
