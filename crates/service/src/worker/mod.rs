@@ -1,4 +1,5 @@
 pub mod instance;
+pub mod metadata;
 
 use self::instance::Instance;
 use crate::index::IndexOptions;
@@ -16,14 +17,6 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-fn magic() -> &'static [u8] {
-    &[1, 4, 53, 23, 34, 92, 34, 23]
-}
-
-fn check(data: &[u8]) -> bool {
-    magic() == data
-}
-
 pub struct Worker {
     path: PathBuf,
     protect: Mutex<WorkerProtect>,
@@ -33,7 +26,6 @@ pub struct Worker {
 impl Worker {
     pub fn create(path: PathBuf) -> Arc<Self> {
         std::fs::create_dir(&path).unwrap();
-        std::fs::write(path.join("magic"), magic()).unwrap();
         std::fs::create_dir(path.join("indexes")).unwrap();
         let startup = FileAtomic::create(path.join("startup"), WorkerStartup::new());
         let indexes = HashMap::new();
@@ -42,17 +34,18 @@ impl Worker {
         });
         let protect = WorkerProtect { startup, indexes };
         sync_dir(&path);
+        self::metadata::Metadata::write(path.join("metadata"));
         Arc::new(Worker {
             path,
             protect: Mutex::new(protect),
             view: ArcSwap::new(view),
         })
     }
+    pub fn check(path: PathBuf) -> bool {
+        self::metadata::Metadata::read(path.join("metadata")).is_ok()
+    }
     pub fn open(path: PathBuf) -> Arc<Self> {
         let startup = FileAtomic::<WorkerStartup>::open(path.join("startup"));
-        if !check(&std::fs::read(path.join("magic")).unwrap_or_default()) {
-            panic!("Please delete the directory pg_vectors in Postgresql data folder. The files are created by older versions of postgresql or broken.");
-        }
         clean(
             path.join("indexes"),
             startup.get().indexes.keys().map(|s| s.to_string()),

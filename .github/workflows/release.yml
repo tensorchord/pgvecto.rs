@@ -99,7 +99,7 @@ jobs:
           sudo apt-get -y install ruby-dev libarchive-tools
           sudo gem install --no-document fpm
           mkdir ./artifacts
-          cargo pgrx package
+          ./ci_package.sh
           if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
             cargo build --target aarch64-unknown-linux-gnu --release --features "pg${{ matrix.version }}" --no-default-features
             mv ./target/aarch64-unknown-linux-gnu/release/libvectors.so ./target/release/vectors-pg${{ matrix.version }}/usr/lib/postgresql/${{ matrix.version }}/lib/vectors.so
@@ -116,6 +116,8 @@ jobs:
             --package ../vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb \
             --architecture ${{ matrix.platform }} \
             .
+        env:
+          VERSION: ${{ matrix.version }}
       - name: Upload Release
         uses: actions/upload-release-asset@v1
         env:
@@ -167,9 +169,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - { version: 14, latest: false }
-          - { version: 15, latest: false }
-          - { version: 16, latest: true }
+          - { version: 14 }
+          - { version: 15 }
+          - { version: 16 }
     steps:
       - name: Checkout
         uses: actions/checkout@v3

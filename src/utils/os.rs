@@ -1,12 +1,11 @@
 use rustix::fd::{AsFd, OwnedFd};
 use rustix::mm::{MapFlags, ProtFlags};
-use std::io::ErrorKind;
 use std::sync::atomic::AtomicU32;
-use std::sync::LazyLock;
 
 #[cfg(target_os = "linux")]
-static SUPPORT_MEMFD: LazyLock<bool> = LazyLock::new(|| {
+static SUPPORT_MEMFD: std::sync::LazyLock<bool> = std::sync::LazyLock::new(|| {
     use rustix::fs::MemfdFlags;
+    use std::io::ErrorKind;
     match rustix::fs::memfd_create(".memfd.VECTORS.SUPPORT", MemfdFlags::empty()) {
         Ok(_) => true,
         Err(e) if e.kind() == ErrorKind::Unsupported => false,
@@ -126,6 +125,67 @@ pub fn memfd_create() -> std::io::Result<OwnedFd> {
 }
 
 #[cfg(target_os = "macos")]
+pub unsafe fn mmap_populate(len: usize, fd: impl AsFd) -> std::io::Result<*mut libc::c_void> {
+    use std::ptr::null_mut;
+    unsafe {
+        Ok(rustix::mm::mmap(
+            null_mut(),
+            len,
+            ProtFlags::READ | ProtFlags::WRITE,
+            MapFlags::SHARED,
+            fd,
+            0,
+        )?)
+    }
+}
+
+#[cfg(target_os = "freebsd")]
+pub unsafe fn futex_wait(futex: &AtomicU32, value: u32) {
+    let ptr: *const AtomicU32 = futex;
+    unsafe {
+        libc::_umtx_op(
+            ptr as *mut libc::c_void,
+            libc::UMTX_OP_WAIT_UINT,
+            value as libc::c_ulong,
+            core::ptr::null_mut(),
+            core::ptr::null_mut(),
+        );
+    };
+}
+
+#[cfg(target_os = "freebsd")]
+pub unsafe fn futex_wake(futex: &AtomicU32) {
+    let ptr: *const AtomicU32 = futex;
+    unsafe {
+        libc::_umtx_op(
+            ptr as *mut libc::c_void,
+            libc::UMTX_OP_WAKE,
+            i32::MAX as libc::c_ulong,
+            core::ptr::null_mut(),
+            core::ptr::null_mut(),
+        );
+    };
+}
+
+#[cfg(target_os = "freebsd")]
+pub fn memfd_create() -> std::io::Result<OwnedFd> {
+    use rustix::fs::Mode;
+    use rustix::fs::OFlags;
+    let name = format!(
+        ".shm.VECTORS.{:x}.{:x}",
+        std::process::id(),
+        rand::random::<u32>()
+    );
+    let fd = rustix::fs::open(
+        &name,
+        OFlags::RDWR | OFlags::CREATE | OFlags::EXCL,
+        Mode::RUSR | Mode::WUSR,
+    )?;
+    rustix::fs::unlink(&name)?;
+    Ok(fd)
+}
+
+#[cfg(target_os = "freebsd")]
 pub unsafe fn mmap_populate(len: usize, fd: impl AsFd) -> std::io::Result<*mut libc::c_void> {
     use std::ptr::null_mut;
     unsafe {

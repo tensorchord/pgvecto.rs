@@ -3,7 +3,6 @@ use crate::utils::file_socket::FileSocket;
 use crate::utils::os::{futex_wait, futex_wake, memfd_create, mmap_populate};
 use rustix::fd::{AsFd, OwnedFd};
 use rustix::fs::FlockOperation;
-use serde::{Deserialize, Serialize};
 use std::cell::UnsafeCell;
 use std::io::ErrorKind;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -65,27 +64,25 @@ impl Socket {
             Err(e) => panic!("{:?}", e),
         }
     }
-    pub fn send<T: Serialize>(&mut self, packet: T) -> Result<(), IpcError> {
-        let buffer = bincode::serialize(&packet).expect("Failed to serialize");
+    pub fn send(&mut self, packet: &[u8]) -> Result<(), IpcError> {
         unsafe {
             if self.is_server {
-                (*self.addr).server_send(&buffer);
+                (*self.addr).server_send(packet);
             } else {
-                (*self.addr).client_send(&buffer);
+                (*self.addr).client_send(packet);
             }
         }
         Ok(())
     }
-    pub fn recv<T: for<'a> Deserialize<'a>>(&mut self) -> Result<T, IpcError> {
-        let buffer = unsafe {
+    pub fn recv(&mut self) -> Result<Vec<u8>, IpcError> {
+        let packet = unsafe {
             if self.is_server {
                 (*self.addr).server_recv(|| self.test())?
             } else {
                 (*self.addr).client_recv(|| self.test())?
             }
         };
-        let result = bincode::deserialize::<T>(&buffer).expect("Failed to deserialize");
-        Ok(result)
+        Ok(packet)
     }
 }
 

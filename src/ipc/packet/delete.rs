@@ -4,7 +4,7 @@ use service::prelude::*;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DeletePacket {
     Test { p: Pointer },
-    Leave { result: Result<(), FriendlyError> },
+    Leave {},
 }
 
 #[derive(Debug, Serialize, Deserialize)]

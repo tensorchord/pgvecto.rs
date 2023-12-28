@@ -4,6 +4,7 @@
 #![feature(offset_of)]
 #![feature(arbitrary_self_types)]
 #![feature(lazy_cell)]
+#![feature(never_type)]
 
 mod bgworker;
 mod datatype;
@@ -33,7 +34,7 @@ unsafe extern "C" fn _PG_init() {
     }
 }
 
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "freebsd")))]
 compile_error!("Target is not supported.");
 
 #[cfg(not(target_endian = "little"))]

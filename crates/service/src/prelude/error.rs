@@ -62,15 +62,29 @@ The given vector is invalid for input.
 ADVICE: Check if dimensions and scalar type of the vector is matched with the index.\
 ")]
     Unmatched2,
+    #[error("\
+IPC connection is closed unexpected.
+ADVICE: The error is raisen by background worker errors. \
+Please check the full PostgreSQL log to get more information.\
+")]
+    Ipc,
+    #[error("\
+The extension is upgraded. However, the index files is outdated.
+ADVICE: Please read `https://github.com/tensorchord/pgvecto.rs/blob/main/docs/upgrade.md`.\
+")]
+    Upgrade,
 }
 
-pub trait FriendlyErrorLike {
-    fn friendly(self) -> !;
+pub trait FriendlyErrorLike: Sized {
+    fn convert(self) -> FriendlyError;
+    fn friendly(self) -> ! {
+        panic!("pgvecto.rs: {}", self.convert());
+    }
 }
 
 impl FriendlyErrorLike for FriendlyError {
-    fn friendly(self) -> ! {
-        panic!("pgvecto.rs: {}", self);
+    fn convert(self) -> FriendlyError {
+        self
     }
 }
 
