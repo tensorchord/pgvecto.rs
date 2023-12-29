@@ -77,8 +77,9 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                 id,
                 search,
                 prefilter: true,
+                gucs,
                 mut x,
-            } => match worker.call_search(id, search, |p| x.check(p).unwrap()) {
+            } => match worker.call_search(id, search, gucs, |p| x.check(p).unwrap()) {
                 Ok(res) => handler = x.leave(res)?,
                 Err(e) => x.reset(e)?,
             },
@@ -86,8 +87,9 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                 id,
                 search,
                 prefilter: false,
+                gucs,
                 x,
-            } => match worker.call_search(id, search, |_| true) {
+            } => match worker.call_search(id, search, gucs, |_| true) {
                 Ok(res) => handler = x.leave(res)?,
                 Err(e) => x.reset(e)?,
             },

@@ -9,6 +9,7 @@ use super::segments::growing::GrowingSegment;
 use super::segments::sealed::SealedSegment;
 use super::IndexOptions;
 use crate::algorithms::hnsw::HnswIndexIter;
+use crate::index::segments::sealed::SealedSearchGucs;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -72,7 +73,13 @@ pub trait AbstractIndexing<S: G>: Sized {
     fn len(&self) -> u32;
     fn vector(&self, i: u32) -> &[S::Scalar];
     fn payload(&self, i: u32) -> Payload;
-    fn search(&self, k: usize, vector: &[S::Scalar], filter: &mut impl Filter) -> Heap;
+    fn search(
+        &self,
+        k: usize,
+        vector: &[S::Scalar],
+        gucs: SealedSearchGucs,
+        filter: &mut impl Filter,
+    ) -> Heap;
 }
 
 pub enum DynamicIndexing<S: G> {
@@ -137,11 +144,17 @@ impl<S: G> DynamicIndexing<S> {
         }
     }
 
-    pub fn search(&self, k: usize, vector: &[S::Scalar], filter: &mut impl Filter) -> Heap {
+    pub fn search(
+        &self,
+        k: usize,
+        vector: &[S::Scalar],
+        gucs: SealedSearchGucs,
+        filter: &mut impl Filter,
+    ) -> Heap {
         match self {
-            DynamicIndexing::Flat(x) => x.search(k, vector, filter),
-            DynamicIndexing::Ivf(x) => x.search(k, vector, filter),
-            DynamicIndexing::Hnsw(x) => x.search(k, vector, filter),
+            DynamicIndexing::Flat(x) => x.search(k, vector, gucs, filter),
+            DynamicIndexing::Ivf(x) => x.search(k, vector, gucs, filter),
+            DynamicIndexing::Hnsw(x) => x.search(k, vector, gucs, filter),
         }
     }
 

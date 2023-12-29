@@ -55,8 +55,14 @@ impl<S: G> IvfPq<S> {
         self.mmap.raw.payload(i)
     }
 
-    pub fn search(&self, k: usize, vector: &[S::Scalar], filter: &mut impl Filter) -> Heap {
-        search(&self.mmap, k, vector, filter)
+    pub fn search(
+        &self,
+        k: usize,
+        vector: &[S::Scalar],
+        nprobe: u32,
+        filter: &mut impl Filter,
+    ) -> Heap {
+        search(&self.mmap, k, vector, nprobe, filter)
     }
 }
 
@@ -70,7 +76,6 @@ pub struct IvfRam<S: G> {
     dims: u16,
     // ----------------------
     nlist: u32,
-    nprobe: u32,
     // ----------------------
     centroids: Vec2<S>,
     heads: Vec<AtomicU32>,
@@ -87,7 +92,6 @@ pub struct IvfMmap<S: G> {
     dims: u16,
     // ----------------------
     nlist: u32,
-    nprobe: u32,
     // ----------------------
     centroids: MmapArray<S::Scalar>,
     heads: MmapArray<u32>,
@@ -116,7 +120,6 @@ pub fn make<S: G>(
         least_iterations,
         iterations,
         nlist,
-        nprobe,
         nsample,
         quantization: quantization_opts,
     } = options.indexing.clone().unwrap_ivf();
@@ -189,7 +192,6 @@ pub fn make<S: G>(
         centroids,
         heads,
         nexts,
-        nprobe,
         nlist,
         dims,
     }
@@ -215,7 +217,6 @@ pub fn save<S: G>(mut ram: IvfRam<S>, path: PathBuf) -> IvfMmap<S> {
         quantization: ram.quantization,
         dims: ram.dims,
         nlist: ram.nlist,
-        nprobe: ram.nprobe,
         centroids,
         heads,
         nexts,
@@ -233,13 +234,12 @@ pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> IvfMmap<S> {
     let centroids = MmapArray::open(path.join("centroids"));
     let heads = MmapArray::open(path.join("heads"));
     let nexts = MmapArray::open(path.join("nexts"));
-    let IvfIndexingOptions { nlist, nprobe, .. } = options.indexing.unwrap_ivf();
+    let IvfIndexingOptions { nlist, .. } = options.indexing.unwrap_ivf();
     IvfMmap {
         raw,
         quantization,
         dims: options.vector.dims,
         nlist,
-        nprobe,
         centroids,
         heads,
         nexts,
@@ -250,11 +250,12 @@ pub fn search<S: G>(
     mmap: &IvfMmap<S>,
     k: usize,
     vector: &[S::Scalar],
+    nprobe: u32,
     filter: &mut impl Filter,
 ) -> Heap {
     let mut target = vector.to_vec();
     S::elkan_k_means_normalize(&mut target);
-    let mut lists = Heap::new(mmap.nprobe as usize);
+    let mut lists = Heap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
         let distance = S::elkan_k_means_distance(&target, centroid);

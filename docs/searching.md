@@ -29,6 +29,7 @@ Search options are specified by PostgreSQL GUC. You can use `SET` command to app
 | Option                      | Type    | Description                                                                                                                                                   |
 | --------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | vectors.k                   | integer | Expected number of candidates returned by index. The parameter will influence the recall if you use HNSW or quantization for indexing. Default value is `64`. |
+| vectors.ivf_nprobe          | integer | Number of units to query for ivf index. Default value is `10`.  |
 | vectors.enable_prefilter    | boolean | Enable prefiltering or not. Default value is `off`.                                                                                                           |
 | vectors.enable_vector_index | boolean | Enable vector indexes or not. This option is for debugging. Default value is `on`.                                                                            |
 | vectors.enable_vbase        | boolean | Enable vbase optimization or not. Default value is `off`.                                                                                                     |

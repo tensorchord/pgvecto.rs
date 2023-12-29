@@ -75,7 +75,6 @@ Options for table `ivf`.
 | Key              | Type    | Description                                                     |
 | ---------------- | ------- | --------------------------------------------------------------- |
 | nlist            | integer | Number of cluster units. Default value is `1000`.               |
-| nprobe           | integer | Number of units to query. Default value is `10`.                |
 | least_iterations | integer | Least iterations for K-Means clustering. Default value is `16`. |
 | iterations       | integer | Max iterations for K-Means clustering. Default value is `500`.  |
 | quantization     | table   | The quantization algorithm to be used.                          |

@@ -13,6 +13,7 @@ use self::segments::SegmentsOptions;
 use crate::index::indexing::DynamicIndexIter;
 use crate::index::optimizing::indexing::OptimizerIndexing;
 use crate::index::optimizing::sealing::OptimizerSealing;
+use crate::index::segments::SearchGucs;
 use crate::prelude::*;
 use crate::utils::clean::clean;
 use crate::utils::dir_ops::sync_dir;
@@ -270,6 +271,7 @@ impl<S: G> IndexView<S> {
         &self,
         k: usize,
         vector: &[S::Scalar],
+        gucs: SearchGucs,
         mut filter: F,
     ) -> Vec<Pointer> {
         assert_eq!(self.options.vector.dims as usize, vector.len());
@@ -307,7 +309,9 @@ impl<S: G> IndexView<S> {
         let mut result = Heap::new(k);
         let mut heaps = BinaryHeap::with_capacity(1 + n);
         for (_, sealed) in self.sealed.iter() {
-            let p = sealed.search(k, vector, &mut filter).into_reversed_heap();
+            let p = sealed
+                .search(k, vector, gucs.sealed, &mut filter)
+                .into_reversed_heap();
             heaps.push(Comparer(p));
         }
         for (_, growing) in self.growing.iter() {

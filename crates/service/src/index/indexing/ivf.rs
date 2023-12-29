@@ -2,6 +2,7 @@ use super::AbstractIndexing;
 use crate::algorithms::ivf::Ivf;
 use crate::algorithms::quantization::QuantizationOptions;
 use crate::index::segments::growing::GrowingSegment;
+use crate::index::segments::sealed::SealedSearchGucs;
 use crate::index::segments::sealed::SealedSegment;
 use crate::index::IndexOptions;
 use crate::prelude::*;
@@ -22,9 +23,6 @@ pub struct IvfIndexingOptions {
     #[serde(default = "IvfIndexingOptions::default_nlist")]
     #[validate(range(min = 1, max = 1_000_000))]
     pub nlist: u32,
-    #[serde(default = "IvfIndexingOptions::default_nprobe")]
-    #[validate(range(min = 1, max = 1_000_000))]
-    pub nprobe: u32,
     #[serde(default = "IvfIndexingOptions::default_nsample")]
     #[validate(range(min = 1, max = 1_000_000))]
     pub nsample: u32,
@@ -43,9 +41,6 @@ impl IvfIndexingOptions {
     fn default_nlist() -> u32 {
         1000
     }
-    fn default_nprobe() -> u32 {
-        10
-    }
     fn default_nsample() -> u32 {
         65536
     }
@@ -57,7 +52,6 @@ impl Default for IvfIndexingOptions {
             least_iterations: Self::default_least_iterations(),
             iterations: Self::default_iterations(),
             nlist: Self::default_nlist(),
-            nprobe: Self::default_nprobe(),
             nsample: Self::default_nsample(),
             quantization: Default::default(),
         }
@@ -96,7 +90,13 @@ impl<S: G> AbstractIndexing<S> for IvfIndexing<S> {
         self.raw.payload(i)
     }
 
-    fn search(&self, k: usize, vector: &[S::Scalar], filter: &mut impl Filter) -> Heap {
-        self.raw.search(k, vector, filter)
+    fn search(
+        &self,
+        k: usize,
+        vector: &[S::Scalar],
+        gucs: SealedSearchGucs,
+        filter: &mut impl Filter,
+    ) -> Heap {
+        self.raw.search(k, vector, gucs.ivf_nprob, filter)
     }
 }
