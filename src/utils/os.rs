@@ -3,17 +3,6 @@ use rustix::mm::{MapFlags, ProtFlags};
 use std::sync::atomic::AtomicU32;
 
 #[cfg(target_os = "linux")]
-static SUPPORT_MEMFD: std::sync::LazyLock<bool> = std::sync::LazyLock::new(|| {
-    use rustix::fs::MemfdFlags;
-    use std::io::ErrorKind;
-    match rustix::fs::memfd_create(".memfd.VECTORS.SUPPORT", MemfdFlags::empty()) {
-        Ok(_) => true,
-        Err(e) if e.kind() == ErrorKind::Unsupported => false,
-        Err(_) => false,
-    }
-});
-
-#[cfg(target_os = "linux")]
 pub unsafe fn futex_wait(futex: &AtomicU32, value: u32) {
     const FUTEX_TIMEOUT: libc::timespec = libc::timespec {
         tv_sec: 15,
@@ -39,7 +28,7 @@ pub unsafe fn futex_wake(futex: &AtomicU32) {
 
 #[cfg(target_os = "linux")]
 pub fn memfd_create() -> std::io::Result<OwnedFd> {
-    if *SUPPORT_MEMFD {
+    if detect::linux::detect_memfd() {
         use rustix::fs::MemfdFlags;
         Ok(rustix::fs::memfd_create(
             format!(".memfd.VECTORS.{:x}", std::process::id()),
