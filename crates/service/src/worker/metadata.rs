@@ -38,7 +38,7 @@ impl Metadata {
         if Self::VERSION != metadata.version.ok_or(InvalidVersion)? {
             return Err(Box::new(InvalidVersion));
         }
-        if Self::SOFT_VERSION <= metadata.soft_version.ok_or(InvalidVersion)? {
+        if Self::SOFT_VERSION < metadata.soft_version.ok_or(InvalidVersion)? {
             return Err(Box::new(InvalidVersion));
         }
         Ok(())
