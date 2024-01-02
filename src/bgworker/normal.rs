@@ -1,9 +1,33 @@
-use crate::ipc::{server::RpcHandler, IpcError};
+use crate::gucs::OPTIMIZING_THREADS_LIMIT;
+use crate::ipc::server::RpcHandler;
+use crate::ipc::IpcError;
+use service::index::setting::RuntimeOptions;
 use service::worker::Worker;
 use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
 
 pub fn normal(worker: Arc<Worker>) {
     std::thread::scope(|scope| {
+        scope.spawn({
+            move || {
+                const INTERVAL: Duration = Duration::from_secs(60);
+                let mut rpc = crate::ipc::client::borrow_mut();
+                let mut old = RuntimeOptions {
+                    optimizing_threads: OPTIMIZING_THREADS_LIMIT.get() as _,
+                };
+                loop {
+                    thread::sleep(INTERVAL);
+                    let new = RuntimeOptions {
+                        optimizing_threads: OPTIMIZING_THREADS_LIMIT.get() as _,
+                    };
+                    if new != old {
+                        rpc.setting(new);
+                    }
+                    old = new;
+                }
+            }
+        });
         scope.spawn({
             let worker = worker.clone();
             move || {
@@ -58,6 +82,7 @@ pub fn normal(worker: Arc<Worker>) {
 
 fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError> {
     use crate::ipc::server::RpcHandle;
+
     loop {
         match handler.handle()? {
             RpcHandle::Create { handle, options, x } => {
@@ -138,6 +163,10 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                     }
                 }
             }
+            RpcHandle::Setting { opts, x } => match worker.call_setting(opts) {
+                Ok(()) => handler = x.leave()?,
+                Err(e) => x.reset(e)?,
+            },
         }
     }
 }

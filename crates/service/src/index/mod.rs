@@ -2,6 +2,7 @@ pub mod delete;
 pub mod indexing;
 pub mod optimizing;
 pub mod segments;
+pub mod setting;
 
 use self::delete::Delete;
 use self::indexing::IndexingOptions;
@@ -10,6 +11,8 @@ use self::segments::growing::GrowingSegment;
 use self::segments::growing::GrowingSegmentInsertError;
 use self::segments::sealed::SealedSegment;
 use self::segments::SegmentsOptions;
+use self::setting::NotifiedSetting;
+use self::setting::RuntimeOptions;
 use crate::index::optimizing::indexing::OptimizerIndexing;
 use crate::index::optimizing::sealing::OptimizerSealing;
 use crate::prelude::*;
@@ -99,6 +102,7 @@ pub struct Index<S: G> {
     view: ArcSwap<IndexView<S>>,
     instant_index: AtomicCell<Instant>,
     instant_write: AtomicCell<Instant>,
+    notified: NotifiedSetting,
     _tracker: Arc<IndexTracker>,
 }
 
@@ -140,6 +144,7 @@ impl<S: G> Index<S> {
             })),
             instant_index: AtomicCell::new(Instant::now()),
             instant_write: AtomicCell::new(Instant::now()),
+            notified: NotifiedSetting::default(),
             _tracker: Arc::new(IndexTracker { path }),
         });
         OptimizerIndexing::new(index.clone()).spawn();
@@ -210,6 +215,7 @@ impl<S: G> Index<S> {
                 growing,
                 write: None,
             })),
+            notified: NotifiedSetting::default(),
             instant_index: AtomicCell::new(Instant::now()),
             instant_write: AtomicCell::new(Instant::now()),
             _tracker: tracker,
@@ -278,6 +284,9 @@ impl<S: G> Index<S> {
                 segments
             },
         }
+    }
+    pub fn setting(&self, opts: RuntimeOptions) {
+        self.notified.update(opts)
     }
 }
 

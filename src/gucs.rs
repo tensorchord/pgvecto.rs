@@ -31,6 +31,8 @@ pub static VBASE_RANGE: GucSetting<i32> = GucSetting::<i32>::new(100);
 
 pub static TRANSPORT: GucSetting<Transport> = GucSetting::<Transport>::new(Transport::default());
 
+pub static OPTIMIZING_THREADS_LIMIT: GucSetting<i32> = GucSetting::<i32>::new(0);
+
 pub unsafe fn init() {
     GucRegistry::define_string_guc(
         "vectors.openai_api_key",
@@ -101,5 +103,15 @@ pub unsafe fn init() {
         &TRANSPORT,
         GucContext::Userset,
         GucFlags::default(),
-    )
+    );
+    GucRegistry::define_int_guc(
+        "vectors.optimizing_threads_limit",
+        "Maximum threads for index optimizing.",
+        "Maximum threads for optimizer of each index, 0 for no limit.",
+        &OPTIMIZING_THREADS_LIMIT,
+        0,
+        65535,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
 }

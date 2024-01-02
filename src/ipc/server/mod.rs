@@ -1,6 +1,7 @@
 use super::packet::*;
 use super::transport::ServerSocket;
 use super::IpcError;
+use service::index::setting::RuntimeOptions;
 use service::index::IndexOptions;
 use service::index::IndexStat;
 use service::index::SearchOptions;
@@ -68,6 +69,12 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
+            RpcPacket::Setting { opts } => RpcHandle::Setting {
+                opts,
+                x: Setting {
+                    socket: self.socket,
+                },
+            },
             RpcPacket::Vbase {
                 handle,
                 vector,
@@ -123,6 +130,10 @@ pub enum RpcHandle {
         vector: DynamicVector,
         opts: SearchOptions,
         x: Vbase,
+    },
+    Setting {
+        opts: RuntimeOptions,
+        x: Setting,
     },
 }
 
@@ -231,6 +242,23 @@ pub struct Destroy {
 impl Destroy {
     pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
         let packet = destroy::DestroyPacket::Leave {};
+        self.socket.ok(packet)?;
+        Ok(RpcHandler {
+            socket: self.socket,
+        })
+    }
+    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+        self.socket.err(err)
+    }
+}
+
+pub struct Setting {
+    socket: ServerSocket,
+}
+
+impl Setting {
+    pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
+        let packet = setting::SettingPacket::Leave {};
         self.socket.ok(packet)?;
         Ok(RpcHandler {
             socket: self.socket,

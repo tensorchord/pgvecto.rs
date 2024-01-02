@@ -1,5 +1,6 @@
 pub mod metadata;
 
+use crate::index::setting::RuntimeOptions;
 use crate::index::IndexOptions;
 use crate::index::IndexStat;
 use crate::index::OutdatedError;
@@ -145,6 +146,19 @@ impl Worker {
             .get(&handle)
             .ok_or(FriendlyError::UnknownIndex)?;
         index.stat()
+    }
+    pub fn call_setting(&self, opts: RuntimeOptions) -> Result<(), FriendlyError> {
+        let protect = self.protect.lock();
+        let errs: Vec<FriendlyError> = protect
+            .indexes
+            .values()
+            .map(|instance| instance.setting(opts))
+            .filter_map(|x| x.err())
+            .collect();
+        match errs.len() {
+            0 => Ok(()),
+            _ => Err(errs.into_iter().nth(0).unwrap()),
+        }
     }
     pub fn get_instance(&self, handle: Handle) -> Result<Instance, FriendlyError> {
         let view = self.view.load_full();

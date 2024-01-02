@@ -2,6 +2,7 @@ use super::packet::*;
 use super::transport::ClientSocket;
 use crate::gucs::{Transport, TRANSPORT};
 use crate::utils::cells::PgRefCell;
+use service::index::setting::RuntimeOptions;
 use service::index::IndexOptions;
 use service::index::IndexStat;
 use service::index::SearchOptions;
@@ -40,7 +41,6 @@ impl<T: ClientLike> DerefMut for ClientGuard<T> {
         &mut self.0
     }
 }
-
 pub struct Rpc {
     socket: ClientSocket,
 }
@@ -121,6 +121,11 @@ impl ClientGuard<Rpc> {
         self.socket.send(packet).friendly();
         let stat::StatPacket::Leave { result } = self.socket.recv().friendly();
         result
+    }
+    pub fn setting(&mut self, opts: RuntimeOptions) {
+        let packet = RpcPacket::Setting { opts };
+        self.socket.send(packet).friendly();
+        let setting::SettingPacket::Leave {} = self.socket.recv().friendly();
     }
     pub fn vbase(
         mut self,

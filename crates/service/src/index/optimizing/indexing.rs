@@ -22,17 +22,22 @@ impl<S: G> OptimizerIndexing<S> {
     }
     pub fn main(self) {
         let index = self.index;
-        let pool = rayon::ThreadPoolBuilder::new()
-            .num_threads(index.options.optimizing.optimizing_threads)
-            .build()
-            .unwrap();
         let weak_index = Arc::downgrade(&index);
+        let threads_plan = index.options.optimizing.optimizing_threads;
         std::mem::drop(index);
         loop {
             {
                 let Some(index) = weak_index.upgrade() else {
                     return;
                 };
+                let threads: usize = match index.notified.load().optimizing_threads {
+                    0 => threads_plan,
+                    threads_limit => std::cmp::min(threads_limit, threads_plan),
+                };
+                let pool = rayon::ThreadPoolBuilder::new()
+                    .num_threads(threads)
+                    .build()
+                    .unwrap();
                 if let Ok(()) = pool.install(|| optimizing_indexing(index.clone())) {
                     continue;
                 }

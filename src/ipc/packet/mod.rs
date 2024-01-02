@@ -4,10 +4,12 @@ pub mod destroy;
 pub mod flush;
 pub mod insert;
 pub mod search;
+pub mod setting;
 pub mod stat;
 pub mod vbase;
 
 use serde::{Deserialize, Serialize};
+use service::index::setting::RuntimeOptions;
 use service::index::IndexOptions;
 use service::index::SearchOptions;
 use service::prelude::*;
@@ -36,6 +38,9 @@ pub enum RpcPacket {
         vector: DynamicVector,
         prefilter: bool,
         opts: SearchOptions,
+    },
+    Setting {
+        opts: RuntimeOptions,
     },
     Stat {
         handle: Handle,

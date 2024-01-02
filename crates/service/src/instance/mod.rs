@@ -1,5 +1,6 @@
 pub mod metadata;
 
+use crate::index::setting::RuntimeOptions;
 use crate::index::Index;
 use crate::index::IndexOptions;
 use crate::index::IndexStat;
@@ -132,6 +133,35 @@ impl Instance {
             Instance::F16Dot(x) => Ok(x.stat()),
             Instance::F16L2(x) => Ok(x.stat()),
             Instance::Upgrade => Ok(IndexStat::Upgrade),
+        }
+    }
+    pub fn setting(&self, opts: RuntimeOptions) -> Result<(), FriendlyError> {
+        match self {
+            Instance::F32Cos(x) => {
+                x.setting(opts);
+                Ok(())
+            }
+            Instance::F32Dot(x) => {
+                x.setting(opts);
+                Ok(())
+            }
+            Instance::F32L2(x) => {
+                x.setting(opts);
+                Ok(())
+            }
+            Instance::F16Cos(x) => {
+                x.setting(opts);
+                Ok(())
+            }
+            Instance::F16Dot(x) => {
+                x.setting(opts);
+                Ok(())
+            }
+            Instance::F16L2(x) => {
+                x.setting(opts);
+                Ok(())
+            }
+            Instance::Upgrade => Err(FriendlyError::Upgrade2),
         }
     }
 }
