@@ -99,7 +99,7 @@ jobs:
           sudo apt-get -y install ruby-dev libarchive-tools
           sudo gem install --no-document fpm
           mkdir ./artifacts
-          ./ci_package.sh
+          ./scripts/ci_package.sh
           if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
             cargo build --target aarch64-unknown-linux-gnu --release --features "pg${{ matrix.version }}" --no-default-features
             mv ./target/aarch64-unknown-linux-gnu/release/libvectors.so ./target/release/vectors-pg${{ matrix.version }}/usr/lib/postgresql/${{ matrix.version }}/lib/vectors.so
