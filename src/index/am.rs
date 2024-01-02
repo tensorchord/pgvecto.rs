@@ -205,7 +205,7 @@ pub unsafe extern "C" fn aminsert(
     _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
     let oid = (*index_relation).rd_node.relNode;
-    let id = Id::from_sys(oid);
+    let id = Handle::from_sys(oid);
     let vector = from_datum(*values.add(0));
     am_update::update_insert(id, vector, *heap_tid);
     true
@@ -227,7 +227,7 @@ pub unsafe extern "C" fn aminsert(
     let oid = (*index_relation).rd_node.relNode;
     #[cfg(feature = "pg16")]
     let oid = (*index_relation).rd_locator.relNumber;
-    let id = Id::from_sys(oid);
+    let id = Handle::from_sys(oid);
     let vector = from_datum(*values.add(0));
     am_update::update_insert(id, vector, *heap_tid);
     true
@@ -284,7 +284,7 @@ pub unsafe extern "C" fn ambulkdelete(
     let oid = (*(*info).index).rd_node.relNode;
     #[cfg(feature = "pg16")]
     let oid = (*(*info).index).rd_locator.relNumber;
-    let id = Id::from_sys(oid);
+    let id = Handle::from_sys(oid);
     if let Some(callback) = callback {
         am_update::update_delete(id, |pointer| {
             callback(

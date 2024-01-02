@@ -9,7 +9,7 @@ use std::ffi::CStr;
 use validator::Validate;
 
 pub fn helper_offset() -> usize {
-    std::mem::offset_of!(Helper, offset)
+    bytemuck::offset_of!(Helper, offset)
 }
 
 pub fn helper_size() -> usize {
@@ -101,7 +101,7 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
     options
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 #[repr(C)]
 struct Helper {
     pub vl_len_: i32,

@@ -87,7 +87,7 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install libpq-dev postgresql-${{ matrix.version }} postgresql-server-dev-${{ matrix.version }}
           sudo apt-get -y install clang-16
-          cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
+          cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2)
           cargo pgrx init --pg${{ matrix.version }}=/usr/lib/postgresql/${{ matrix.version }}/bin/pg_config
           if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
             sudo apt-get -y install crossbuild-essential-arm64

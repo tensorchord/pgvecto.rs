@@ -16,33 +16,33 @@ impl RpcHandler {
     }
     pub fn handle(mut self) -> Result<RpcHandle, IpcError> {
         Ok(match self.socket.recv::<RpcPacket>()? {
-            RpcPacket::Create { id, options } => RpcHandle::Create {
-                id,
+            RpcPacket::Create { handle, options } => RpcHandle::Create {
+                handle,
                 options,
                 x: Create {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Insert { id, insert } => RpcHandle::Insert {
-                id,
+            RpcPacket::Insert { handle, insert } => RpcHandle::Insert {
+                handle,
                 insert,
                 x: Insert {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Delete { id } => RpcHandle::Delete {
-                id,
+            RpcPacket::Delete { handle } => RpcHandle::Delete {
+                handle,
                 x: Delete {
                     socket: self.socket,
                 },
             },
             RpcPacket::Search {
-                id,
+                handle,
                 search,
                 prefilter,
                 gucs,
             } => RpcHandle::Search {
-                id,
+                handle,
                 search,
                 prefilter,
                 gucs,
@@ -50,26 +50,26 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Flush { id } => RpcHandle::Flush {
-                id,
+            RpcPacket::Flush { handle } => RpcHandle::Flush {
+                handle,
                 x: Flush {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Destory { ids } => RpcHandle::Destory {
-                ids,
+            RpcPacket::Destory { handle } => RpcHandle::Destory {
+                handle,
                 x: Destory {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Stat { id } => RpcHandle::Stat {
-                id,
+            RpcPacket::Stat { handle } => RpcHandle::Stat {
+                handle,
                 x: Stat {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Vbase { id, vbase } => RpcHandle::Vbase {
-                id,
+            RpcPacket::Vbase { handle, vbase } => RpcHandle::Vbase {
+                handle,
                 vbase,
                 x: Vbase {
                     socket: self.socket,
@@ -81,40 +81,40 @@ impl RpcHandler {
 
 pub enum RpcHandle {
     Create {
-        id: Id,
+        handle: Handle,
         options: IndexOptions,
         x: Create,
     },
     Search {
-        id: Id,
+        handle: Handle,
         search: (DynamicVector, usize),
         prefilter: bool,
         gucs: SearchGucs,
         x: Search,
     },
     Insert {
-        id: Id,
+        handle: Handle,
         insert: (DynamicVector, Pointer),
         x: Insert,
     },
     Delete {
-        id: Id,
+        handle: Handle,
         x: Delete,
     },
     Flush {
-        id: Id,
+        handle: Handle,
         x: Flush,
     },
     Destory {
-        ids: Vec<Id>,
+        handle: Handle,
         x: Destory,
     },
     Stat {
-        id: Id,
+        handle: Handle,
         x: Stat,
     },
     Vbase {
-        id: Id,
+        handle: Handle,
         vbase: (DynamicVector, usize),
         x: Vbase,
     },

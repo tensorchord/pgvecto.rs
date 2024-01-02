@@ -60,58 +60,62 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
     use crate::ipc::server::RpcHandle;
     loop {
         match handler.handle()? {
-            RpcHandle::Create { id, options, x } => {
-                worker.call_create(id, options);
+            RpcHandle::Create { handle, options, x } => {
+                worker.call_create(handle, options);
                 handler = x.leave()?;
             }
-            RpcHandle::Insert { id, insert, x } => match worker.call_insert(id, insert) {
+            RpcHandle::Insert { handle, insert, x } => match worker.call_insert(handle, insert) {
                 Ok(()) => handler = x.leave()?,
                 Err(res) => x.reset(res)?,
             },
-            RpcHandle::Delete { id, mut x } => match worker.call_delete(id, |p| x.next(p).unwrap())
-            {
-                Ok(()) => handler = x.leave()?,
-                Err(res) => x.reset(res)?,
-            },
+            RpcHandle::Delete { handle, mut x } => {
+                match worker.call_delete(handle, |p| x.next(p).unwrap()) {
+                    Ok(()) => handler = x.leave()?,
+                    Err(res) => x.reset(res)?,
+                }
+            }
             RpcHandle::Search {
-                id,
+                handle,
                 search,
                 prefilter: true,
                 gucs,
                 mut x,
-            } => match worker.call_search(id, search, gucs, |p| x.check(p).unwrap()) {
+            } => match worker.call_search(handle, search, gucs, |p| x.check(p).unwrap()) {
                 Ok(res) => handler = x.leave(res)?,
                 Err(e) => x.reset(e)?,
             },
             RpcHandle::Search {
-                id,
+                handle,
                 search,
                 prefilter: false,
                 gucs,
                 x,
-            } => match worker.call_search(id, search, gucs, |_| true) {
+            } => match worker.call_search(handle, search, gucs, |_| true) {
                 Ok(res) => handler = x.leave(res)?,
                 Err(e) => x.reset(e)?,
             },
-            RpcHandle::Flush { id, x } => match worker.call_flush(id) {
+            RpcHandle::Flush { handle, x } => match worker.call_flush(handle) {
                 Ok(()) => handler = x.leave()?,
                 Err(e) => x.reset(e)?,
             },
-            RpcHandle::Destory { ids, x } => {
-                worker.call_destory(ids);
+            RpcHandle::Destory { handle, x } => {
+                worker.call_destory(handle);
                 handler = x.leave()?;
             }
-            RpcHandle::Stat { id, x } => match worker.call_stat(id) {
+            RpcHandle::Stat { handle, x } => match worker.call_stat(handle) {
                 Ok(res) => handler = x.leave(res)?,
                 Err(e) => x.reset(e)?,
             },
-            RpcHandle::Vbase { id, vbase, x } => {
+            RpcHandle::Vbase { handle, vbase, x } => {
                 use crate::ipc::server::VbaseHandle::*;
-                let instance = match worker.get_instance(id) {
+                let instance = match worker.get_instance(handle) {
                     Ok(x) => x,
                     Err(e) => x.reset(e)?,
                 };
-                let view = instance.view();
+                let view = match instance.view() {
+                    Ok(x) => x,
+                    Err(e) => x.reset(e)?,
+                };
                 let mut it = match view.vbase(vbase.0, vbase.1) {
                     Ok(x) => x,
                     Err(e) => x.reset(e)?,

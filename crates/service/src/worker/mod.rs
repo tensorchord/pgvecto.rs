@@ -1,11 +1,10 @@
-pub mod instance;
 pub mod metadata;
 
-use self::instance::Instance;
 use crate::index::segments::SearchGucs;
 use crate::index::IndexOptions;
 use crate::index::IndexStat;
 use crate::index::OutdatedError;
+use crate::instance::Instance;
 use crate::prelude::*;
 use crate::utils::clean::clean;
 use crate::utils::dir_ops::sync_dir;
@@ -13,8 +12,7 @@ use crate::utils::file_atomic::FileAtomic;
 use arc_swap::ArcSwap;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-use serde_with::DisplayFromStr;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -49,12 +47,12 @@ impl Worker {
         let startup = FileAtomic::<WorkerStartup>::open(path.join("startup"));
         clean(
             path.join("indexes"),
-            startup.get().indexes.keys().map(|s| s.to_string()),
+            startup.get().indexes.iter().map(|s| s.to_string()),
         );
         let mut indexes = HashMap::new();
-        for (&id, options) in startup.get().indexes.iter() {
+        for &id in startup.get().indexes.iter() {
             let path = path.join("indexes").join(id.to_string());
-            let index = Instance::open(path, options.clone());
+            let index = Instance::open(path);
             indexes.insert(id, index);
         }
         let view = Arc::new(WorkerView {
@@ -67,17 +65,17 @@ impl Worker {
             view: ArcSwap::new(view),
         })
     }
-    pub fn call_create(&self, id: Id, options: IndexOptions) {
+    pub fn call_create(&self, handle: Handle, options: IndexOptions) {
         let mut protect = self.protect.lock();
-        let index = Instance::create(self.path.join("indexes").join(id.to_string()), options);
-        if protect.indexes.insert(id, index).is_some() {
-            panic!("index {} already exists", id)
+        let index = Instance::create(self.path.join("indexes").join(handle.to_string()), options);
+        if protect.indexes.insert(handle, index).is_some() {
+            panic!("index {} already exists", handle)
         }
         protect.maintain(&self.view);
     }
     pub fn call_search<F>(
         &self,
-        id: Id,
+        handle: Handle,
         search: (DynamicVector, usize),
         gucs: SearchGucs,
         filter: F,
@@ -86,80 +84,90 @@ impl Worker {
         F: FnMut(Pointer) -> bool,
     {
         let view = self.view.load_full();
-        let index = view.indexes.get(&id).ok_or(FriendlyError::UnknownIndex)?;
-        let view = index.view();
+        let index = view
+            .indexes
+            .get(&handle)
+            .ok_or(FriendlyError::UnknownIndex)?;
+        let view = index.view()?;
         view.search(search.1, search.0, gucs, filter)
     }
     pub fn call_insert(
         &self,
-        id: Id,
+        handle: Handle,
         insert: (DynamicVector, Pointer),
     ) -> Result<(), FriendlyError> {
         let view = self.view.load_full();
-        let index = view.indexes.get(&id).ok_or(FriendlyError::UnknownIndex)?;
+        let index = view
+            .indexes
+            .get(&handle)
+            .ok_or(FriendlyError::UnknownIndex)?;
         loop {
-            let view = index.view();
+            let view = index.view()?;
             match view.insert(insert.0.clone(), insert.1)? {
                 Ok(()) => break Ok(()),
-                Err(OutdatedError(_)) => index.refresh(),
+                Err(OutdatedError(_)) => index.refresh()?,
             }
         }
     }
-    pub fn call_delete<F>(&self, id: Id, f: F) -> Result<(), FriendlyError>
+    pub fn call_delete<F>(&self, handle: Handle, f: F) -> Result<(), FriendlyError>
     where
         F: FnMut(Pointer) -> bool,
     {
         let view = self.view.load_full();
-        let index = view.indexes.get(&id).ok_or(FriendlyError::UnknownIndex)?;
-        let view = index.view();
+        let index = view
+            .indexes
+            .get(&handle)
+            .ok_or(FriendlyError::UnknownIndex)?;
+        let view = index.view()?;
         view.delete(f);
         Ok(())
     }
-    pub fn call_flush(&self, id: Id) -> Result<(), FriendlyError> {
+    pub fn call_flush(&self, handle: Handle) -> Result<(), FriendlyError> {
         let view = self.view.load_full();
-        let index = view.indexes.get(&id).ok_or(FriendlyError::UnknownIndex)?;
-        let view = index.view();
+        let index = view
+            .indexes
+            .get(&handle)
+            .ok_or(FriendlyError::UnknownIndex)?;
+        let view = index.view()?;
         view.flush();
         Ok(())
     }
-    pub fn call_destory(&self, ids: Vec<Id>) {
-        let mut updated = false;
+    pub fn call_destory(&self, handle: Handle) {
         let mut protect = self.protect.lock();
-        for id in ids {
-            updated |= protect.indexes.remove(&id).is_some();
-        }
-        if updated {
+        if protect.indexes.remove(&handle).is_some() {
             protect.maintain(&self.view);
         }
     }
-    pub fn call_stat(&self, id: Id) -> Result<IndexStat, FriendlyError> {
+    pub fn call_stat(&self, handle: Handle) -> Result<IndexStat, FriendlyError> {
         let view = self.view.load_full();
-        let index = view.indexes.get(&id).ok_or(FriendlyError::UnknownIndex)?;
-        Ok(index.stat())
+        let index = view
+            .indexes
+            .get(&handle)
+            .ok_or(FriendlyError::UnknownIndex)?;
+        index.stat()
     }
-    pub fn get_instance(&self, id: Id) -> Result<Instance, FriendlyError> {
+    pub fn get_instance(&self, handle: Handle) -> Result<Instance, FriendlyError> {
         let view = self.view.load_full();
-        let index = view.indexes.get(&id).ok_or(FriendlyError::UnknownIndex)?;
+        let index = view
+            .indexes
+            .get(&handle)
+            .ok_or(FriendlyError::UnknownIndex)?;
         Ok(index.clone())
     }
 }
 
 struct WorkerView {
-    indexes: HashMap<Id, Instance>,
+    indexes: HashMap<Handle, Instance>,
 }
 
 struct WorkerProtect {
     startup: FileAtomic<WorkerStartup>,
-    indexes: HashMap<Id, Instance>,
+    indexes: HashMap<Handle, Instance>,
 }
 
 impl WorkerProtect {
     fn maintain(&mut self, swap: &ArcSwap<WorkerView>) {
-        let indexes = self
-            .indexes
-            .iter()
-            .map(|(&k, v)| (k, v.options().clone()))
-            .collect();
+        let indexes = self.indexes.keys().copied().collect();
         self.startup.set(WorkerStartup { indexes });
         swap.swap(Arc::new(WorkerView {
             indexes: self.indexes.clone(),
@@ -167,17 +175,15 @@ impl WorkerProtect {
     }
 }
 
-#[serde_with::serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct WorkerStartup {
-    #[serde_as(as = "HashMap<DisplayFromStr, _>")]
-    indexes: HashMap<Id, IndexOptions>,
+    indexes: HashSet<Handle>,
 }
 
 impl WorkerStartup {
     pub fn new() -> Self {
         Self {
-            indexes: HashMap::new(),
+            indexes: HashSet::new(),
         }
     }
 }

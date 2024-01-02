@@ -1,3 +1,5 @@
+pub mod metadata;
+
 use crate::index::segments::SearchGucs;
 use crate::index::Index;
 use crate::index::IndexOptions;
@@ -16,67 +18,120 @@ pub enum Instance {
     F16Cos(Arc<Index<F16Cos>>),
     F16Dot(Arc<Index<F16Dot>>),
     F16L2(Arc<Index<F16L2>>),
+    Upgrade,
 }
 
 impl Instance {
     pub fn create(path: PathBuf, options: IndexOptions) -> Self {
         match (options.vector.d, options.vector.k) {
-            (Distance::Cos, Kind::F32) => Self::F32Cos(Index::create(path, options)),
-            (Distance::Dot, Kind::F32) => Self::F32Dot(Index::create(path, options)),
-            (Distance::L2, Kind::F32) => Self::F32L2(Index::create(path, options)),
-            (Distance::Cos, Kind::F16) => Self::F16Cos(Index::create(path, options)),
-            (Distance::Dot, Kind::F16) => Self::F16Dot(Index::create(path, options)),
-            (Distance::L2, Kind::F16) => Self::F16L2(Index::create(path, options)),
+            (Distance::Cos, Kind::F32) => {
+                let index = Index::create(path.clone(), options);
+                self::metadata::Metadata::write(path.join("metadata"));
+                Self::F32Cos(index)
+            }
+            (Distance::Dot, Kind::F32) => {
+                let index = Index::create(path.clone(), options);
+                self::metadata::Metadata::write(path.join("metadata"));
+                Self::F32Dot(index)
+            }
+            (Distance::L2, Kind::F32) => {
+                let index = Index::create(path.clone(), options);
+                self::metadata::Metadata::write(path.join("metadata"));
+                Self::F32L2(index)
+            }
+            (Distance::Cos, Kind::F16) => {
+                let index = Index::create(path.clone(), options);
+                self::metadata::Metadata::write(path.join("metadata"));
+                Self::F16Cos(index)
+            }
+            (Distance::Dot, Kind::F16) => {
+                let index = Index::create(path.clone(), options);
+                self::metadata::Metadata::write(path.join("metadata"));
+                Self::F16Dot(index)
+            }
+            (Distance::L2, Kind::F16) => {
+                let index = Index::create(path.clone(), options);
+                self::metadata::Metadata::write(path.join("metadata"));
+                Self::F16L2(index)
+            }
         }
     }
-    pub fn open(path: PathBuf, options: IndexOptions) -> Self {
+    pub fn open(path: PathBuf) -> Self {
+        if self::metadata::Metadata::read(path.join("metadata")).is_err() {
+            return Self::Upgrade;
+        }
+        let options =
+            serde_json::from_slice::<IndexOptions>(&std::fs::read(path.join("options")).unwrap())
+                .unwrap();
         match (options.vector.d, options.vector.k) {
-            (Distance::Cos, Kind::F32) => Self::F32Cos(Index::open(path, options)),
-            (Distance::Dot, Kind::F32) => Self::F32Dot(Index::open(path, options)),
-            (Distance::L2, Kind::F32) => Self::F32L2(Index::open(path, options)),
-            (Distance::Cos, Kind::F16) => Self::F16Cos(Index::open(path, options)),
-            (Distance::Dot, Kind::F16) => Self::F16Dot(Index::open(path, options)),
-            (Distance::L2, Kind::F16) => Self::F16L2(Index::open(path, options)),
+            (Distance::Cos, Kind::F32) => Self::F32Cos(Index::open(path)),
+            (Distance::Dot, Kind::F32) => Self::F32Dot(Index::open(path)),
+            (Distance::L2, Kind::F32) => Self::F32L2(Index::open(path)),
+            (Distance::Cos, Kind::F16) => Self::F16Cos(Index::open(path)),
+            (Distance::Dot, Kind::F16) => Self::F16Dot(Index::open(path)),
+            (Distance::L2, Kind::F16) => Self::F16L2(Index::open(path)),
         }
     }
-    pub fn options(&self) -> &IndexOptions {
+    pub fn options(&self) -> Result<&IndexOptions, FriendlyError> {
         match self {
-            Instance::F32Cos(x) => x.options(),
-            Instance::F32Dot(x) => x.options(),
-            Instance::F32L2(x) => x.options(),
-            Instance::F16Cos(x) => x.options(),
-            Instance::F16Dot(x) => x.options(),
-            Instance::F16L2(x) => x.options(),
+            Instance::F32Cos(x) => Ok(x.options()),
+            Instance::F32Dot(x) => Ok(x.options()),
+            Instance::F32L2(x) => Ok(x.options()),
+            Instance::F16Cos(x) => Ok(x.options()),
+            Instance::F16Dot(x) => Ok(x.options()),
+            Instance::F16L2(x) => Ok(x.options()),
+            Instance::Upgrade => Err(FriendlyError::Upgrade2),
         }
     }
-    pub fn refresh(&self) {
+    pub fn refresh(&self) -> Result<(), FriendlyError> {
         match self {
-            Instance::F32Cos(x) => x.refresh(),
-            Instance::F32Dot(x) => x.refresh(),
-            Instance::F32L2(x) => x.refresh(),
-            Instance::F16Cos(x) => x.refresh(),
-            Instance::F16Dot(x) => x.refresh(),
-            Instance::F16L2(x) => x.refresh(),
+            Instance::F32Cos(x) => {
+                x.refresh();
+                Ok(())
+            }
+            Instance::F32Dot(x) => {
+                x.refresh();
+                Ok(())
+            }
+            Instance::F32L2(x) => {
+                x.refresh();
+                Ok(())
+            }
+            Instance::F16Cos(x) => {
+                x.refresh();
+                Ok(())
+            }
+            Instance::F16Dot(x) => {
+                x.refresh();
+                Ok(())
+            }
+            Instance::F16L2(x) => {
+                x.refresh();
+                Ok(())
+            }
+            Instance::Upgrade => Err(FriendlyError::Upgrade2),
         }
     }
-    pub fn view(&self) -> InstanceView {
+    pub fn view(&self) -> Result<InstanceView, FriendlyError> {
         match self {
-            Instance::F32Cos(x) => InstanceView::F32Cos(x.view()),
-            Instance::F32Dot(x) => InstanceView::F32Dot(x.view()),
-            Instance::F32L2(x) => InstanceView::F32L2(x.view()),
-            Instance::F16Cos(x) => InstanceView::F16Cos(x.view()),
-            Instance::F16Dot(x) => InstanceView::F16Dot(x.view()),
-            Instance::F16L2(x) => InstanceView::F16L2(x.view()),
+            Instance::F32Cos(x) => Ok(InstanceView::F32Cos(x.view())),
+            Instance::F32Dot(x) => Ok(InstanceView::F32Dot(x.view())),
+            Instance::F32L2(x) => Ok(InstanceView::F32L2(x.view())),
+            Instance::F16Cos(x) => Ok(InstanceView::F16Cos(x.view())),
+            Instance::F16Dot(x) => Ok(InstanceView::F16Dot(x.view())),
+            Instance::F16L2(x) => Ok(InstanceView::F16L2(x.view())),
+            Instance::Upgrade => Err(FriendlyError::Upgrade2),
         }
     }
-    pub fn stat(&self) -> IndexStat {
+    pub fn stat(&self) -> Result<IndexStat, FriendlyError> {
         match self {
-            Instance::F32Cos(x) => x.stat(),
-            Instance::F32Dot(x) => x.stat(),
-            Instance::F32L2(x) => x.stat(),
-            Instance::F16Cos(x) => x.stat(),
-            Instance::F16Dot(x) => x.stat(),
-            Instance::F16L2(x) => x.stat(),
+            Instance::F32Cos(x) => Ok(x.stat()),
+            Instance::F32Dot(x) => Ok(x.stat()),
+            Instance::F32L2(x) => Ok(x.stat()),
+            Instance::F16Cos(x) => Ok(x.stat()),
+            Instance::F16Dot(x) => Ok(x.stat()),
+            Instance::F16L2(x) => Ok(x.stat()),
+            Instance::Upgrade => Err(FriendlyError::Upgrade2),
         }
     }
 }

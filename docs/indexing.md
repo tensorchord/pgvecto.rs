@@ -108,19 +108,20 @@ Options for table `product`.
 
 We also provide a view `pg_vector_index_info` to monitor the progress of indexing.
 
-| Column       | Type   | Description                                   |
-| ------------ | ------ | --------------------------------------------- |
-| tablerelid   | oid    | The oid of the table.                         |
-| indexrelid   | oid    | The oid of the index.                         |
-| tablename    | name   | The name of the table.                        |
-| indexname    | name   | The name of the index.                        |
-| idx_indexing | bool   | Whether the background thread is indexing.    |
-| idx_tuples   | int8   | The number of tuples.                         |
-| idx_sealed   | int8[] | The number of tuples in each sealed segment.  |
-| idx_growing  | int8[] | The number of tuples in each growing segment. |
-| idx_write    | int8   | The number of tuples in write buffer.         |
-| idx_size     | int8   | The byte size for all the segments.           |
-| idx_config   | text   | The configuration of the index.               |
+| Column       | Type   | Description                                                                         |
+| ------------ | ------ | ----------------------------------------------------------------------------------- |
+| tablerelid   | oid    | The oid of the table.                                                               |
+| indexrelid   | oid    | The oid of the index.                                                               |
+| tablename    | name   | The name of the table.                                                              |
+| indexname    | name   | The name of the index.                                                              |
+| idx_status   | text   | Its value is `NORMAL` or `UPGRADE`. Whether this index is normal or needs upgrade.  |
+| idx_indexing | bool   | Not null if `idx_status` is `NORMAL`. Whether the background thread is indexing.    |
+| idx_tuples   | int8   | Not null if `idx_status` is `NORMAL`. The number of tuples.                         |
+| idx_sealed   | int8[] | Not null if `idx_status` is `NORMAL`. The number of tuples in each sealed segment.  |
+| idx_growing  | int8[] | Not null if `idx_status` is `NORMAL`. The number of tuples in each growing segment. |
+| idx_write    | int8   | Not null if `idx_status` is `NORMAL`. The number of tuples in write buffer.         |
+| idx_size     | int8   | Not null if `idx_status` is `NORMAL`. The byte size for all the segments.           |
+| idx_config   | text   | Not null if `idx_status` is `NORMAL`. The configuration of the index.               |
 
 ## Examples
 

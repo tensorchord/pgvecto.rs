@@ -18,7 +18,7 @@ pub struct Metadata {
 }
 
 impl Metadata {
-    const VERSION: u64 = 2;
+    const VERSION: u64 = 1;
     const SOFT_VERSION: u64 = 1;
 }
 

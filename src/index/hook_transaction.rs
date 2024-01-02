@@ -2,7 +2,7 @@ use crate::utils::cells::PgRefCell;
 use service::prelude::*;
 use std::collections::BTreeSet;
 
-static FLUSH_IF_COMMIT: PgRefCell<BTreeSet<Id>> = unsafe { PgRefCell::new(BTreeSet::new()) };
+static FLUSH_IF_COMMIT: PgRefCell<BTreeSet<Handle>> = unsafe { PgRefCell::new(BTreeSet::new()) };
 
 pub fn aborting() {
     *FLUSH_IF_COMMIT.borrow_mut() = BTreeSet::new();
@@ -21,6 +21,6 @@ pub fn committing() {
     *FLUSH_IF_COMMIT.borrow_mut() = BTreeSet::new();
 }
 
-pub fn flush_if_commit(id: Id) {
-    FLUSH_IF_COMMIT.borrow_mut().insert(id);
+pub fn flush_if_commit(handle: Handle) {
+    FLUSH_IF_COMMIT.borrow_mut().insert(handle);
 }

@@ -15,33 +15,33 @@ use service::prelude::*;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum RpcPacket {
     Create {
-        id: Id,
+        handle: Handle,
         options: IndexOptions,
     },
     Delete {
-        id: Id,
+        handle: Handle,
     },
     Destory {
-        ids: Vec<Id>,
+        handle: Handle,
     },
     Flush {
-        id: Id,
+        handle: Handle,
     },
     Insert {
-        id: Id,
+        handle: Handle,
         insert: (DynamicVector, Pointer),
     },
     Search {
-        id: Id,
+        handle: Handle,
         search: (DynamicVector, usize),
         prefilter: bool,
         gucs: SearchGucs,
     },
     Stat {
-        id: Id,
+        handle: Handle,
     },
     Vbase {
-        id: Id,
+        handle: Handle,
         vbase: (DynamicVector, usize),
     },
 }

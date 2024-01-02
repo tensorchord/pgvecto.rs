@@ -95,7 +95,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         let oid = (*(*scan).indexRelation).rd_node.relNode;
         #[cfg(feature = "pg16")]
         let oid = (*(*scan).indexRelation).rd_locator.relNumber;
-        let id = Id::from_sys(oid);
+        let id = Handle::from_sys(oid);
 
         let mut rpc = crate::ipc::client::borrow_mut();
 
