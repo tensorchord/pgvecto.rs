@@ -131,7 +131,7 @@ impl Instance {
             Instance::F16Cos(x) => Ok(x.stat()),
             Instance::F16Dot(x) => Ok(x.stat()),
             Instance::F16L2(x) => Ok(x.stat()),
-            Instance::Upgrade => Err(FriendlyError::Upgrade2),
+            Instance::Upgrade => Ok(IndexStat::Upgrade),
         }
     }
 }
