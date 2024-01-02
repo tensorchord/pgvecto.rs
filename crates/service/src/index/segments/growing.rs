@@ -140,6 +140,9 @@ impl<S: G> GrowingSegment<S> {
     pub fn len(&self) -> u32 {
         self.len.load(Ordering::Acquire) as u32
     }
+    pub fn size(&self) -> u64 {
+        (self.len() as u64) * (std::mem::size_of::<Log<S>>() as u64)
+    }
     pub fn vector(&self, i: u32) -> &[S::Scalar] {
         let i = i as usize;
         if i >= self.len.load(Ordering::Acquire) {

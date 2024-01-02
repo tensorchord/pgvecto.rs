@@ -9,6 +9,7 @@ CREATE TYPE VectorIndexStat AS (
     idx_sealed BIGINT[],
     idx_growing BIGINT[],
     idx_write BIGINT,
+    idx_size BIGINT,
     idx_options TEXT
 );",
     name = "create_composites",
@@ -40,6 +41,7 @@ fn vector_stat(oid: pgrx::pg_sys::Oid) -> pgrx::composite_type!("VectorIndexStat
     })
     .unwrap();
     res.set_by_name("idx_write", stat.write as i64).unwrap();
+    res.set_by_name("idx_size", stat.size as i64).unwrap();
     res.set_by_name("idx_options", serde_json::to_string(&stat.options))
         .unwrap();
     res

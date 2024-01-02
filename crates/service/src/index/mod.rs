@@ -69,6 +69,7 @@ pub struct IndexStat {
     pub growing: Vec<u32>,
     pub write: u32,
     pub options: IndexOptions,
+    pub size: u64,
 }
 
 pub struct Index<S: G> {
@@ -239,6 +240,8 @@ impl<S: G> Index<S> {
             growing: view.growing.values().map(|x| x.len()).collect(),
             write: view.write.as_ref().map(|(_, x)| x.len()).unwrap_or(0),
             options: self.options().clone(),
+            size: view.growing.values().map(|x| x.size() as u64).sum::<u64>()
+                + view.sealed.values().map(|x| x.size() as u64).sum::<u64>(),
         }
     }
 }

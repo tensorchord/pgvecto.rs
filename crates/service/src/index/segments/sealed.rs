@@ -58,6 +58,10 @@ impl<S: G> SealedSegment<S> {
     pub fn len(&self) -> u32 {
         self.indexing.len()
     }
+    pub fn size(&self) -> u64 {
+        (self.indexing.len() as u64)
+            * (std::mem::size_of::<S::Scalar>() + std::mem::size_of::<Payload>()) as u64
+    }
     pub fn vector(&self, i: u32) -> &[S::Scalar] {
         self.indexing.vector(i)
     }
