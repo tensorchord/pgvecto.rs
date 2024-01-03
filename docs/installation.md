@@ -77,7 +77,7 @@ cd pgvecto.rs
 Install cargo-pgrx.
 
 ```sh
-cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
+cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2)
 cargo pgrx init --pg15=/usr/lib/postgresql/15/bin/pg_config
 ```
 

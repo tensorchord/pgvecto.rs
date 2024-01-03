@@ -9,5 +9,5 @@ sudo chmod 777 /usr/share/postgresql/15/extension/
 sudo chmod 777 /usr/lib/postgresql/15/lib/
 
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none
-cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev $(cat Cargo.toml | grep "pgrx =" | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
+cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2)
 cargo pgrx init --pg15=/usr/lib/postgresql/15/bin/pg_config

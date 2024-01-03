@@ -1,7 +1,6 @@
 //! Postgres vector extension.
 //!
 //! Provides an easy-to-use extension for vector similarity search.
-#![feature(offset_of)]
 #![feature(never_type)]
 
 mod bgworker;

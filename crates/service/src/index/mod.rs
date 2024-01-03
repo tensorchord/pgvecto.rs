@@ -64,7 +64,7 @@ pub struct IndexOptions {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct SegmentSizeInfo {
+pub struct SegmentStat {
     pub id: Uuid,
     #[serde(rename = "type")]
     pub typ: String,
@@ -73,13 +73,13 @@ pub struct SegmentSizeInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct IndexStat {
-    pub indexing: bool,
-    pub sealed: Vec<u32>,
-    pub growing: Vec<u32>,
-    pub write: u32,
-    pub options: IndexOptions,
-    pub sizes: Vec<SegmentSizeInfo>,
+pub enum IndexStat {
+    Normal {
+        indexing: bool,
+        segments: Vec<SegmentStat>,
+        options: IndexOptions,
+    },
+    Upgrade,
 }
 
 pub struct Index<S: G> {
@@ -97,6 +97,11 @@ impl<S: G> Index<S> {
     pub fn create(path: PathBuf, options: IndexOptions) -> Arc<Self> {
         assert!(options.validate().is_ok());
         std::fs::create_dir(&path).unwrap();
+        std::fs::write(
+            path.join("options"),
+            serde_json::to_string::<IndexOptions>(&options).unwrap(),
+        )
+        .unwrap();
         std::fs::create_dir(path.join("segments")).unwrap();
         let startup = FileAtomic::create(
             path.join("startup"),
@@ -132,7 +137,10 @@ impl<S: G> Index<S> {
         OptimizerSealing::new(index.clone()).spawn();
         index
     }
-    pub fn open(path: PathBuf, options: IndexOptions) -> Arc<Self> {
+    pub fn open(path: PathBuf) -> Arc<Self> {
+        let options =
+            serde_json::from_slice::<IndexOptions>(&std::fs::read(path.join("options")).unwrap())
+                .unwrap();
         let tracker = Arc::new(IndexTracker { path: path.clone() });
         let startup = FileAtomic::<IndexStartup>::open(path.join("startup"));
         clean(
@@ -244,18 +252,22 @@ impl<S: G> Index<S> {
     }
     pub fn stat(&self) -> IndexStat {
         let view = self.view();
-        IndexStat {
+        IndexStat::Normal {
             indexing: self.instant_index.load() < self.instant_write.load(),
-            sealed: view.sealed.values().map(|x| x.len()).collect(),
-            growing: view.growing.values().map(|x| x.len()).collect(),
-            write: view.write.as_ref().map(|(_, x)| x.len()).unwrap_or(0),
             options: self.options().clone(),
-            sizes: view
-                .sealed
-                .values()
-                .map(|x| x.size())
-                .chain(view.growing.values().map(|x| x.size()))
-                .collect(),
+            segments: {
+                let mut segments = Vec::new();
+                for sealed in view.sealed.values() {
+                    segments.push(sealed.stat_sealed());
+                }
+                for growing in view.growing.values() {
+                    segments.push(growing.stat_growing());
+                }
+                if let Some(write) = view.write.as_ref().map(|(_, x)| x) {
+                    segments.push(write.stat_write());
+                }
+                segments
+            },
         }
     }
 }

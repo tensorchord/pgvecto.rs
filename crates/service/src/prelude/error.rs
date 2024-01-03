@@ -69,10 +69,15 @@ Please check the full PostgreSQL log to get more information.\
 ")]
     Ipc,
     #[error("\
-The extension is upgraded. However, the index files is outdated.
-ADVICE: Please read `https://github.com/tensorchord/pgvecto.rs/blob/main/docs/upgrade.md`.\
+The extension is upgraded so all index files are outdated.
+ADVICE: Delete all index files. Please read `https://github.com/tensorchord/pgvecto.rs/blob/main/docs/upgrade.md`.\
 ")]
     Upgrade,
+    #[error("\
+The extension is upgraded so this index is outdated.
+ADVICE: Rebuild the index. Please read `https://github.com/tensorchord/pgvecto.rs/blob/main/docs/upgrade.md`.\
+")]
+    Upgrade2,
 }
 
 pub trait FriendlyErrorLike: Sized {

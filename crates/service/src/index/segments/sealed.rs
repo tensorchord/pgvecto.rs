@@ -1,7 +1,7 @@
 use super::growing::GrowingSegment;
 use super::SegmentTracker;
 use crate::index::indexing::{DynamicIndexIter, DynamicIndexing};
-use crate::index::{IndexOptions, IndexTracker, SegmentSizeInfo};
+use crate::index::{IndexOptions, IndexTracker, SegmentStat};
 use crate::prelude::*;
 use crate::utils::dir_ops::{dir_size, sync_dir};
 use serde::{Deserialize, Serialize};
@@ -58,21 +58,14 @@ impl<S: G> SealedSegment<S> {
     pub fn len(&self) -> u32 {
         self.indexing.len()
     }
-    pub fn size(&self) -> SegmentSizeInfo {
-        let mut info = SegmentSizeInfo {
+    pub fn stat_sealed(&self) -> SegmentStat {
+        let path = self._tracker.path.join("indexing");
+        SegmentStat {
             id: self.uuid,
             typ: "sealed".to_string(),
             length: self.len() as usize,
-            size: 0,
-        };
-        let path = self._tracker.path.join("indexing");
-        match dir_size(&path) {
-            Ok(size) => info.size = size as u64,
-            Err(e) => {
-                panic!("Failed to get size of {:?}: {}", path, e);
-            }
+            size: dir_size(&path).unwrap(),
         }
-        info
     }
     pub fn vector(&self, i: u32) -> &[S::Scalar] {
         self.indexing.vector(i)

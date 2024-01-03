@@ -3,6 +3,7 @@
 
 pub mod algorithms;
 pub mod index;
+pub mod instance;
 pub mod prelude;
 pub mod worker;
 

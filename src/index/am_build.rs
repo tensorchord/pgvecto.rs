@@ -21,7 +21,7 @@ pub unsafe fn build(
     let oid = (*index).rd_node.relNode;
     #[cfg(feature = "pg16")]
     let oid = (*index).rd_locator.relNumber;
-    let id = Id::from_sys(oid);
+    let id = Handle::from_sys(oid);
     flush_if_commit(id);
     let options = options(index);
     let mut rpc = crate::ipc::client::borrow_mut();
@@ -55,7 +55,7 @@ unsafe extern "C" fn callback(
 ) {
     let ctid = &(*htup).t_self;
     let oid = (*index_relation).rd_node.relNode;
-    let id = Id::from_sys(oid);
+    let id = Handle::from_sys(oid);
     let state = &mut *(state as *mut Builder);
     let vector = from_datum(*values.add(0));
     let data = (vector, Pointer::from_sys(*ctid));
@@ -78,7 +78,7 @@ unsafe extern "C" fn callback(
     let oid = (*index_relation).rd_node.relNode;
     #[cfg(feature = "pg16")]
     let oid = (*index_relation).rd_locator.relNumber;
-    let id = Id::from_sys(oid);
+    let id = Handle::from_sys(oid);
     let state = &mut *(state as *mut Builder);
     let vector = from_datum(*values.add(0));
     let data = (vector, Pointer::from_sys(*ctid));

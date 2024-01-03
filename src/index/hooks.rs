@@ -42,12 +42,14 @@ unsafe fn xact_delete() {
     let n = pgrx::pg_sys::smgrGetPendingDeletes(true, &mut ptr as *mut _);
     if n > 0 {
         let nodes = std::slice::from_raw_parts(ptr, n as usize);
-        let ids = nodes
+        let handles = nodes
             .iter()
-            .map(|node| Id::from_sys(node.relNode))
+            .map(|node| Handle::from_sys(node.relNode))
             .collect::<Vec<_>>();
         let mut rpc = crate::ipc::client::borrow_mut();
-        rpc.destory(ids);
+        for handle in handles {
+            rpc.destory(handle);
+        }
     }
 }
 
@@ -57,11 +59,13 @@ unsafe fn xact_delete() {
     let n = pgrx::pg_sys::smgrGetPendingDeletes(true, &mut ptr as *mut _);
     if n > 0 {
         let nodes = std::slice::from_raw_parts(ptr, n as usize);
-        let ids = nodes
+        let handles = nodes
             .iter()
-            .map(|node| Id::from_sys(node.relNumber))
+            .map(|node| Handle::from_sys(node.relNumber))
             .collect::<Vec<_>>();
         let mut rpc = crate::ipc::client::borrow_mut();
-        rpc.destory(ids);
+        for handle in handles {
+            rpc.destory(handle);
+        }
     }
 }

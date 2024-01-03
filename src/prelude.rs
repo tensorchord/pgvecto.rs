@@ -4,7 +4,7 @@ pub trait FromSys<T> {
     fn from_sys(sys: T) -> Self;
 }
 
-impl FromSys<pgrx::pg_sys::Oid> for Id {
+impl FromSys<pgrx::pg_sys::Oid> for Handle {
     fn from_sys(sys: pgrx::pg_sys::Oid) -> Self {
         Self {
             newtype: sys.as_u32(),

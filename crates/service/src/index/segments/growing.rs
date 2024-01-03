@@ -1,9 +1,7 @@
-#![allow(clippy::all)] // Clippy bug.
-
 use super::SegmentTracker;
 use crate::index::IndexOptions;
 use crate::index::IndexTracker;
-use crate::index::SegmentSizeInfo;
+use crate::index::SegmentStat;
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::file_wal::FileWal;
@@ -12,8 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::cell::UnsafeCell;
 use std::mem::MaybeUninit;
 use std::path::PathBuf;
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use thiserror::Error;
 use uuid::Uuid;
@@ -44,6 +41,7 @@ impl<S: G> GrowingSegment<S> {
         sync_dir(&path);
         Arc::new(Self {
             uuid,
+            #[allow(clippy::uninit_vec)]
             vec: unsafe {
                 let mut vec = Vec::with_capacity(capacity as usize);
                 vec.set_len(capacity as usize);
@@ -141,10 +139,18 @@ impl<S: G> GrowingSegment<S> {
     pub fn len(&self) -> u32 {
         self.len.load(Ordering::Acquire) as u32
     }
-    pub fn size(&self) -> SegmentSizeInfo {
-        SegmentSizeInfo {
+    pub fn stat_growing(&self) -> SegmentStat {
+        SegmentStat {
             id: self.uuid,
             typ: "growing".to_string(),
+            length: self.len() as usize,
+            size: (self.len() as u64) * (std::mem::size_of::<Log<S>>() as u64),
+        }
+    }
+    pub fn stat_write(&self) -> SegmentStat {
+        SegmentStat {
+            id: self.uuid,
+            typ: "write".to_string(),
             length: self.len() as usize,
             size: (self.len() as u64) * (std::mem::size_of::<Log<S>>() as u64),
         }

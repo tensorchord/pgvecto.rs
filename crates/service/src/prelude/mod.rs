@@ -11,6 +11,6 @@ pub use self::scalar::{F16, F32};
 
 pub use self::filter::{Filter, Payload};
 pub use self::heap::{Heap, HeapElement};
-pub use self::sys::{Id, Pointer};
+pub use self::sys::{Handle, Pointer};
 
 pub use num_traits::{Float, Zero};
