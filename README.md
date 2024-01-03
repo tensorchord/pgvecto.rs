@@ -39,8 +39,10 @@ More details at [./docs/comparison-pgvector.md](./docs/comparison-pgvector.md)
 - [Get Started](./docs/get-started.md)
 - [Indexing](./docs/indexing.md)
 - [Searching](./docs/searching.md)
+- [Configuration](./docs/configuration.md)
 - [Comparison with pgvector](./docs/comparison-pgvector.md)
 - [Why not a specialty vector database?](./docs/comparison-with-specialized-vectordb.md)
+- [Development](./docs/development.md)
 
 For users, we recommend you to try pgvecto.rs using our pre-built docker image, by running
 
@@ -52,14 +54,6 @@ docker run \
   -d tensorchord/pgvecto-rs:pg16-v0.1.13
 ```
 
-## Development with envd
-
-For developers, you could use [envd](https://github.com/tensorchord/envd) to set up the development environment with one command. It will create a docker container and install all the dependencies for you.
-
-```sh
-pip install envd
-envd up
-```
 ## Contributing
 
 We need your help! Please check out the [issues](https://github.com/tensorchord/pgvecto.rs/issues).
