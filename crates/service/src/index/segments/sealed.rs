@@ -69,7 +69,7 @@ impl<S: G> SealedSegment<S> {
         match dir_size(&path) {
             Ok(size) => info.size = size as u64,
             Err(e) => {
-                log::error!("Failed to get size of {:?}: {}", path, e);
+                panic!("Failed to get size of {:?}: {}", path, e);
             }
         }
         info

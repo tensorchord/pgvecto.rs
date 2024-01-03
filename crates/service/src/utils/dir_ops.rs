@@ -14,7 +14,11 @@ pub fn dir_size(dir: &Path) -> io::Result<usize> {
             let entry = entry?;
             let path = entry.path();
             let name = path.file_name().unwrap().to_string_lossy();
-            if path.is_dir() && !name.starts_with('.') {
+            if name.starts_with('.') {
+                // ignore hidden files
+                continue;
+            }
+            if path.is_dir() {
                 size += dir_size(&path)?;
             } else {
                 size += entry.metadata()?.len() as usize;
