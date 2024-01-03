@@ -63,13 +63,23 @@ pub struct IndexOptions {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SegmentSizeInfo {
+    pub id: Uuid,
+    #[serde(rename = "type")]
+    pub typ: String,
+    pub length: usize,
+    pub size: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct IndexStat {
     pub indexing: bool,
     pub sealed: Vec<u32>,
     pub growing: Vec<u32>,
     pub write: u32,
     pub options: IndexOptions,
-    pub size: u64,
+    pub size: Vec<SegmentSizeInfo>,
 }
 
 pub struct Index<S: G> {
@@ -240,8 +250,12 @@ impl<S: G> Index<S> {
             growing: view.growing.values().map(|x| x.len()).collect(),
             write: view.write.as_ref().map(|(_, x)| x.len()).unwrap_or(0),
             options: self.options().clone(),
-            size: view.growing.values().map(|x| x.size()).sum::<u64>()
-                + view.sealed.values().map(|x| x.size()).sum::<u64>(),
+            size: view
+                .sealed
+                .values()
+                .map(|x| x.size())
+                .chain(view.growing.values().map(|x| x.size()))
+                .collect(),
         }
     }
 }
