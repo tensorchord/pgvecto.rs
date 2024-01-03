@@ -119,7 +119,7 @@ We also provide a view `pg_vector_index_info` to monitor the progress of indexin
 | idx_sealed   | int8[] | The number of tuples in each sealed segment.  |
 | idx_growing  | int8[] | The number of tuples in each growing segment. |
 | idx_write    | int8   | The number of tuples in write buffer.         |
-| idx_size     | text   | The byte size for each segment in the index.  |
+| idx_size     | int8   | The byte size for all the segments.           |
 | idx_config   | text   | The configuration of the index.               |
 
 ## Examples
