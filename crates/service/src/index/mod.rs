@@ -64,7 +64,7 @@ pub struct IndexOptions {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct SegmentSizeInfo {
+pub struct SegmentStat {
     pub id: Uuid,
     #[serde(rename = "type")]
     pub typ: String,
@@ -76,10 +76,7 @@ pub struct SegmentSizeInfo {
 pub enum IndexStat {
     Normal {
         indexing: bool,
-        sealed: Vec<u32>,
-        growing: Vec<u32>,
-        write: u32,
-        sizes: Vec<SegmentSizeInfo>,
+        segments: Vec<SegmentStat>,
         options: IndexOptions,
     },
     Upgrade,
@@ -257,16 +254,20 @@ impl<S: G> Index<S> {
         let view = self.view();
         IndexStat::Normal {
             indexing: self.instant_index.load() < self.instant_write.load(),
-            sealed: view.sealed.values().map(|x| x.len()).collect(),
-            growing: view.growing.values().map(|x| x.len()).collect(),
-            write: view.write.as_ref().map(|(_, x)| x.len()).unwrap_or(0),
             options: self.options().clone(),
-            sizes: view
-                .sealed
-                .values()
-                .map(|x| x.size())
-                .chain(view.growing.values().map(|x| x.size()))
-                .collect(),
+            segments: {
+                let mut segments = Vec::new();
+                for sealed in view.sealed.values() {
+                    segments.push(sealed.stat_sealed());
+                }
+                for growing in view.growing.values() {
+                    segments.push(growing.stat_growing());
+                }
+                if let Some(write) = view.write.as_ref().map(|(_, x)| x) {
+                    segments.push(write.stat_write());
+                }
+                segments
+            },
         }
     }
 }

@@ -26,35 +26,48 @@ fn vector_stat(oid: pgrx::pg_sys::Oid) -> pgrx::composite_type!("VectorIndexStat
     match stat {
         IndexStat::Normal {
             indexing,
-            sealed,
-            growing,
-            write,
             options,
-            sizes,
+            segments,
         } => {
             res.set_by_name("idx_status", "NORMAL").unwrap();
             res.set_by_name("idx_indexing", indexing).unwrap();
-            res.set_by_name("idx_tuples", {
-                let mut tuples = 0;
-                tuples += sealed.iter().map(|x| *x as i64).sum::<i64>();
-                tuples += growing.iter().map(|x| *x as i64).sum::<i64>();
-                tuples += write as i64;
-                tuples
-            })
+            res.set_by_name(
+                "idx_tuples",
+                segments.iter().map(|x| x.length as i64).sum::<i64>(),
+            )
             .unwrap();
             res.set_by_name(
                 "idx_sealed",
-                sealed.into_iter().map(|x| x as i64).collect::<Vec<_>>(),
+                segments
+                    .iter()
+                    .filter(|x| x.typ == "sealed")
+                    .map(|x| x.length as i64)
+                    .collect::<Vec<_>>(),
             )
             .unwrap();
             res.set_by_name(
                 "idx_growing",
-                growing.into_iter().map(|x| x as i64).collect::<Vec<_>>(),
+                segments
+                    .iter()
+                    .filter(|x| x.typ == "growing")
+                    .map(|x| x.length as i64)
+                    .collect::<Vec<_>>(),
             )
             .unwrap();
-            res.set_by_name("idx_write", write as i64).unwrap();
-            res.set_by_name("idx_size", sizes.iter().map(|x| x.size as i64).sum::<i64>())
-                .unwrap();
+            res.set_by_name(
+                "idx_write",
+                segments
+                    .iter()
+                    .filter(|x| x.typ == "write")
+                    .map(|x| x.length as i64)
+                    .sum::<i64>(),
+            )
+            .unwrap();
+            res.set_by_name(
+                "idx_size",
+                segments.iter().map(|x| x.size as i64).sum::<i64>(),
+            )
+            .unwrap();
             res.set_by_name("idx_options", serde_json::to_string(&options))
                 .unwrap();
             res

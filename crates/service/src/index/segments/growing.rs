@@ -1,7 +1,7 @@
 use super::SegmentTracker;
 use crate::index::IndexOptions;
 use crate::index::IndexTracker;
-use crate::index::SegmentSizeInfo;
+use crate::index::SegmentStat;
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::file_wal::FileWal;
@@ -139,10 +139,18 @@ impl<S: G> GrowingSegment<S> {
     pub fn len(&self) -> u32 {
         self.len.load(Ordering::Acquire) as u32
     }
-    pub fn size(&self) -> SegmentSizeInfo {
-        SegmentSizeInfo {
+    pub fn stat_growing(&self) -> SegmentStat {
+        SegmentStat {
             id: self.uuid,
             typ: "growing".to_string(),
+            length: self.len() as usize,
+            size: (self.len() as u64) * (std::mem::size_of::<Log<S>>() as u64),
+        }
+    }
+    pub fn stat_write(&self) -> SegmentStat {
+        SegmentStat {
+            id: self.uuid,
+            typ: "write".to_string(),
             length: self.len() as usize,
             size: (self.len() as u64) * (std::mem::size_of::<Log<S>>() as u64),
         }

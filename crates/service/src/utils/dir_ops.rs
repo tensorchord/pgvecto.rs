@@ -7,7 +7,7 @@ pub fn sync_dir(path: impl AsRef<Path>) {
     file.sync_all().expect("Failed to sync dir.");
 }
 
-pub fn dir_size(dir: &Path) -> io::Result<usize> {
+pub fn dir_size(dir: &Path) -> io::Result<u64> {
     let mut size = 0;
     if dir.is_dir() {
         for entry in read_dir(dir)? {
@@ -21,7 +21,7 @@ pub fn dir_size(dir: &Path) -> io::Result<usize> {
             if path.is_dir() {
                 size += dir_size(&path)?;
             } else {
-                size += entry.metadata()?.len() as usize;
+                size += entry.metadata()?.len();
             }
         }
     }
