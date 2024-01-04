@@ -98,8 +98,8 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                 Ok(()) => handler = x.leave()?,
                 Err(e) => x.reset(e)?,
             },
-            RpcHandle::Destory { handle, x } => {
-                worker.call_destory(handle);
+            RpcHandle::Destroy { handle, x } => {
+                worker.call_destroy(handle);
                 handler = x.leave()?;
             }
             RpcHandle::Stat { handle, x } => match worker.call_stat(handle) {

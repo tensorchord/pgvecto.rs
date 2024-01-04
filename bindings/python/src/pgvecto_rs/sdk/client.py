@@ -86,7 +86,7 @@ class PGVectoRs:
 
         Returns:
         -------
-            List of records and coresponding distances.
+            List of records and corresponding distances.
 
         """
         with Session(self._engine) as session:

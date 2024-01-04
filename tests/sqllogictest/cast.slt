@@ -4,7 +4,7 @@ SELECT '[1,2,3]'::vector;
 ----
 [1, 2, 3]
 
-statement error Bad charactor
+statement error Bad character
 SELECT '{1,2,3}'::vector;
 
 # cast array to vector
@@ -61,10 +61,10 @@ SELECT '[]'::vector;
 statement error Bad sequence
 SELECT '[1,2,3'::vector;
 
-statement error Bad charactor
+statement error Bad character
 SELECT '[1,2,3]9'::vector;
 
-statement error Bad charactor
+statement error Bad character
 SELECT '1,2,3'::vector;
 
 statement error Bad sequence

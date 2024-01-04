@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum DestoryPacket {
+pub enum DestroyPacket {
     Leave {},
 }

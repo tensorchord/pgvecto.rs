@@ -15,7 +15,7 @@ DROP EXTENSION IF EXISTS vectors;
 CREATE EXTENSION vectors;
 ```
 
-To acheive full performance, please mount the volume to pg data directory by adding the option like `-v $PWD/pgdata:/var/lib/postgresql/data`
+To achieve full performance, please mount the volume to pg data directory by adding the option like `-v $PWD/pgdata:/var/lib/postgresql/data`
 
 You can configure PostgreSQL by the reference of the parent image in https://hub.docker.com/_/postgres/.
 

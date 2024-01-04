@@ -56,9 +56,9 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Destory { handle } => RpcHandle::Destory {
+            RpcPacket::Destroy { handle } => RpcHandle::Destroy {
                 handle,
-                x: Destory {
+                x: Destroy {
                     socket: self.socket,
                 },
             },
@@ -105,9 +105,9 @@ pub enum RpcHandle {
         handle: Handle,
         x: Flush,
     },
-    Destory {
+    Destroy {
         handle: Handle,
-        x: Destory,
+        x: Destroy,
     },
     Stat {
         handle: Handle,
@@ -218,13 +218,13 @@ impl Flush {
     }
 }
 
-pub struct Destory {
+pub struct Destroy {
     socket: ServerSocket,
 }
 
-impl Destory {
+impl Destroy {
     pub fn leave(mut self) -> Result<RpcHandler, IpcError> {
-        let packet = destory::DestoryPacket::Leave {};
+        let packet = destroy::DestroyPacket::Leave {};
         self.socket.ok(packet)?;
         Ok(RpcHandler {
             socket: self.socket,

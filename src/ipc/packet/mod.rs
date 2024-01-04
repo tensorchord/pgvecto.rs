@@ -1,6 +1,6 @@
 pub mod create;
 pub mod delete;
-pub mod destory;
+pub mod destroy;
 pub mod flush;
 pub mod insert;
 pub mod search;
@@ -21,7 +21,7 @@ pub enum RpcPacket {
     Delete {
         handle: Handle,
     },
-    Destory {
+    Destroy {
         handle: Handle,
     },
     Flush {

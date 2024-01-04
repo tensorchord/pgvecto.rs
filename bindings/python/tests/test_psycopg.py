@@ -45,7 +45,7 @@ def test_create_index(conn: Connection, index_name: str, index_setting: str):
     conn.commit()
 
 
-# The server cannot handle invalid vectors curently, see https://github.com/tensorchord/pgvecto.rs/issues/96
+# The server cannot handle invalid vectors currently, see https://github.com/tensorchord/pgvecto.rs/issues/96
 # def test_invalid_insert(conn: Connection):
 #     for i, e in enumerate(INVALID_VECTORS):
 #         try:

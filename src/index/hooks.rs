@@ -48,7 +48,7 @@ unsafe fn xact_delete() {
             .collect::<Vec<_>>();
         let mut rpc = crate::ipc::client::borrow_mut();
         for handle in handles {
-            rpc.destory(handle);
+            rpc.destroy(handle);
         }
     }
 }
@@ -65,7 +65,7 @@ unsafe fn xact_delete() {
             .collect::<Vec<_>>();
         let mut rpc = crate::ipc::client::borrow_mut();
         for handle in handles {
-            rpc.destory(handle);
+            rpc.destroy(handle);
         }
     }
 }
