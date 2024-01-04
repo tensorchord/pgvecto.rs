@@ -62,16 +62,13 @@ jobs:
       working-directory: bindings/python
       run: |
         pdm sync -G :all
-    
-    # - name: Install Docker for macOS
-    #   if: matrix.os == 'macos-latest'
-    #   run: |
-    #     brew install docker
-    #     colima start
 
     - name: Start Postgres
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
-        docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:latest
+        LATEST_STABLE_VERSION=$(gh release list --repo tensorchord/pgvecto.rs --exclude-drafts --exclude-pre-releases --limit 1 | awk '{print $3}')
+        docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:pg15-${LATEST_STABLE_VERSION}
     
     - name: Run Tests
       working-directory: bindings/python
