@@ -2,7 +2,7 @@ use crate::index::am_scan::Scanner;
 use std::ptr::null_mut;
 
 pub unsafe fn post_executor_start(query_desc: *mut pgrx::pg_sys::QueryDesc) {
-    // Before Postgres 16, type defination of `PlanstateTreeWalker` in the source code is incorrect.
+    // Before Postgres 16, type definition of `PlanstateTreeWalker` in the source code is incorrect.
     let planstate = (*query_desc).planstate;
     let context = null_mut();
     rewrite_plan_state(planstate, context);

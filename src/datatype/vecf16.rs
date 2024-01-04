@@ -310,7 +310,7 @@ fn vecf16_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf16Output {
             (_, b' ') => {}
             _ => {
                 FriendlyError::BadLiteral {
-                    hint: format!("Bad charactor with ascii {:#x}.", c),
+                    hint: format!("Bad character with ascii {:#x}.", c),
                 }
                 .friendly();
             }

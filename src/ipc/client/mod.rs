@@ -113,10 +113,10 @@ impl ClientGuard<Rpc> {
         self.socket.send(packet).friendly();
         let flush::FlushPacket::Leave {} = self.socket.recv().friendly();
     }
-    pub fn destory(&mut self, handle: Handle) {
-        let packet = RpcPacket::Destory { handle };
+    pub fn destroy(&mut self, handle: Handle) {
+        let packet = RpcPacket::Destroy { handle };
         self.socket.send(packet).friendly();
-        let destory::DestoryPacket::Leave {} = self.socket.recv().friendly();
+        let destroy::DestroyPacket::Leave {} = self.socket.recv().friendly();
     }
     pub fn stat(&mut self, handle: Handle) -> IndexStat {
         let packet = RpcPacket::Stat { handle };

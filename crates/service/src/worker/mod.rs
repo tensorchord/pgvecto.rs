@@ -132,7 +132,7 @@ impl Worker {
         view.flush();
         Ok(())
     }
-    pub fn call_destory(&self, handle: Handle) {
+    pub fn call_destroy(&self, handle: Handle) {
         let mut protect = self.protect.lock();
         if protect.indexes.remove(&handle).is_some() {
             protect.maintain(&self.view);

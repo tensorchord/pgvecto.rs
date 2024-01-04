@@ -60,7 +60,7 @@ fn session(handler: RpcHandler) -> Result<(), IpcError> {
         RpcHandle::Insert { x, .. } => x.reset(FriendlyError::Upgrade)?,
         RpcHandle::Delete { x, .. } => x.reset(FriendlyError::Upgrade)?,
         RpcHandle::Flush { x, .. } => x.reset(FriendlyError::Upgrade)?,
-        RpcHandle::Destory { x, .. } => x.reset(FriendlyError::Upgrade)?,
+        RpcHandle::Destroy { x, .. } => x.reset(FriendlyError::Upgrade)?,
         RpcHandle::Stat { x, .. } => x.reset(FriendlyError::Upgrade)?,
         RpcHandle::Vbase { x, .. } => x.reset(FriendlyError::Upgrade)?,
     }
