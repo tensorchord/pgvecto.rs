@@ -65,7 +65,7 @@ ADVICE: Check if dimensions and scalar type of the vector is matched with the in
     #[error("\
 IPC connection is closed unexpected.
 ADVICE: The error is raisen by background worker errors. \
-Please check the full PostgreSQL log to get more information.\
+Please check the full PostgreSQL log to get more information. Please read `https://github.com/tensorchord/pgvecto.rs/blob/main/docs/configuration.md`.\
 ")]
     Ipc,
     #[error("\

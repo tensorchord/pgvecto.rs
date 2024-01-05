@@ -16,7 +16,7 @@ You could create a table with the following SQL.
 
 CREATE TABLE items (
   id bigserial PRIMARY KEY,
-  embedding vector(3) NOT NULL -- 3 dimensions
+  embedding vector(3) NOT NULL  -- 3 dimensions
 );
 ```
 

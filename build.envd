@@ -6,24 +6,23 @@ def build():
     shell("zsh")
     install.apt_packages(
         name=[
-            "lsb-release",
-            "gnupg",
-            "tzdata",
-            "build-essential",
-            "libpq-dev",
-            "libssl-dev",
-            "pkg-config",
-            "gcc",
-            "libreadline-dev",
-            "flex",
-            "bison",
-            "libxml2-dev",
-            "libxslt-dev",
-            "libxml2-utils",
-            "xsltproc",
-            "zlib1g-dev",
-            "ccache",
-            "clang",
+            'bison',
+            'build-essential',
+            'ccache',
+            'flex',
+            'gcc',
+            'git',
+            'gnupg',
+            'libreadline-dev',
+            'libssl-dev',
+            'libxml2-dev',
+            'libxml2-utils',
+            'libxslt-dev',
+            'lsb-release',
+            'pkg-config',
+            'tzdata',
+            'xsltproc',
+            'zlib1g-dev'
         ]
     )
     runtime.environ(extra_path=["/home/envd/.cargo/bin"])

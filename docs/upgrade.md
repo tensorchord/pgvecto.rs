@@ -10,11 +10,12 @@ You can delete the folder with this command:
 
 ```shell
 rm -rf $(psql -U postgres -tAqX -c $'SELECT CONCAT(CURRENT_SETTING(\'data_directory\'), \'/pg_vectors\');')
+# You need restart the PostgreSQL cluster to take effects.
+sudo systemctl restart postgresql.service   # for pgvecto.rs running with systemd
+docker restart pgvecto-rs-demo  # for pgvecto.rs running in docker
 ```
 
 If you are using Docker, you can just delete `pg_vectors` folder under the volume directory too.
-
-You need to restart PostgreSQL.
 
 * Reindex.
 
