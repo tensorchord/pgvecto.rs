@@ -31,20 +31,25 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 | Async Index build                           | Ready for queries anytime and do not block insertions. | ❌                       |
 | Quantization                                | Scalar/Product Quantization                            | ❌                       |
 
-More details at [./docs/comparison-pgvector.md](./docs/comparison-pgvector.md)
+More details at [pgvecto.rs vs. pgvector](https://docs.pgvecto.rs/faqs/comparison-pgvector.html)
 
-## Documentation
+## [Documentation](https://docs.pgvecto.rs/getting-started/overview.html)
 
-- [Installation](./docs/installation.md)
-- [Get Started](./docs/get-started.md)
-- [Indexing](./docs/indexing.md)
-- [Searching](./docs/searching.md)
-- [Configuration](./docs/configuration.md)
-- [Comparison with pgvector](./docs/comparison-pgvector.md)
-- [Why not a specialty vector database?](./docs/comparison-with-specialized-vectordb.md)
-- [Development](./docs/development.md)
+- Getting Started
+  - [Overview](https://docs.pgvecto.rs/getting-started/overview.html)
+  - [Installation](https://docs.pgvecto.rs/getting-started/installation.html)
+- Usage
+  - [Indexing](https://docs.pgvecto.rs/usage/indexing.html)
+  - [Search](https://docs.pgvecto.rs/usage/search.html)
+- Administration
+  - [Configuration](https://docs.pgvecto.rs/admin/configuration.html)
+  - [Upgrading from older versions](https://docs.pgvecto.rs/admin/upgrading.html)
+- Developers
+  - [Development Tutorial](https://docs.pgvecto.rs/developers/development.html)
 
-For users, we recommend you to try pgvecto.rs using our pre-built docker image, by running
+## Quick start
+
+For new users, we recommend using the [Docker image](https://hub.docker.com/r/tensorchord/pgvecto-rs) to get started quickly.
 
 ```sh
 docker run \
@@ -54,9 +59,90 @@ docker run \
   -d tensorchord/pgvecto-rs:pg16-v0.1.13
 ```
 
-## Contributing
+Then you can connect to the database using the `psql` command line tool. The default username is `postgres`, and the default password is `mysecretpassword`.
 
-We need your help! Please check out the [issues](https://github.com/tensorchord/pgvecto.rs/issues).
+```sh
+psql -h localhost -p 5432 -U postgres
+```
+
+Run the following SQL to ensure the extension is enabled.
+
+```sql
+DROP EXTENSION IF EXISTS vectors;
+CREATE EXTENSION vectors;
+```
+
+pgvecto.rs introduces a new data type `vector(n)` denoting an n-dimensional vector. The `n` within the brackets signifies the dimensions of the vector.
+
+You could create a table with the following SQL. 
+
+```sql
+-- create table with a vector column
+
+CREATE TABLE items (
+  id bigserial PRIMARY KEY,
+  embedding vector(3) NOT NULL -- 3 dimensions
+);
+```
+
+> [!TIP]
+>`vector(n)` is a valid data type only if $1 \leq n \leq 65535$. Due to limits of PostgreSQL, it's possible to create a value of type `vector(3)` of $5$ dimensions and `vector` is also a valid data. However, you cannot still put $0$ scalar or more than $65535$ scalars to a vector. If you use `vector` for a column or there is some values mismatched with dimension denoted by the column, you won't able to create an index on it.
+
+You can then populate the table with vector data as follows.
+
+```sql
+-- insert values
+
+INSERT INTO items (embedding)
+VALUES ('[1,2,3]'), ('[4,5,6]');
+
+-- or insert values using a casting from array to vector
+
+INSERT INTO items (embedding)
+VALUES (ARRAY[1, 2, 3]::real[]), (ARRAY[4, 5, 6]::real[]);
+```
+
+We support three operators to calculate the distance between two vectors.
+
+- `<->`: squared Euclidean distance, defined as $\Sigma (x_i - y_i) ^ 2$.
+- `<#>`: negative dot product, defined as $- \Sigma x_iy_i$.
+- `<=>`: negative cosine similarity, defined as $- \frac{\Sigma x_iy_i}{\sqrt{\Sigma x_i^2 \Sigma y_i^2}}$.
+
+```sql
+-- call the distance function through operators
+
+-- squared Euclidean distance
+SELECT '[1, 2, 3]'::vector <-> '[3, 2, 1]'::vector;
+-- negative dot product
+SELECT '[1, 2, 3]'::vector <#> '[3, 2, 1]'::vector;
+-- negative cosine similarity
+SELECT '[1, 2, 3]'::vector <=> '[3, 2, 1]'::vector;
+```
+
+You can search for a vector simply like this.
+
+```sql
+-- query the similar embeddings
+SELECT * FROM items ORDER BY embedding <-> '[3,2,1]' LIMIT 5;
+```
+
+### Half-precision floating-point
+
+`vecf16` type is the same with `vector` in anything but the scalar type. It stores 16-bit floating point numbers. If you want to reduce the memory usage to get better performance, you can try to replace `vector` type with `vecf16` type.
+
+## Roadmap 🗂️
+
+Please check out [ROADMAP](https://docs.pgvecto.rs/community/roadmap.html). Want to jump in? Welcome discussions and contributions!
+
+- Chat with us on [💬 Discord](https://discord.gg/KqswhpVgdU)
+- Have a look at [`good first issue 💖`](https://github.com/tensorchord/pgvecto.rs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue+%E2%9D%A4%EF%B8%8F%22) issues!
+
+## Contribute 😊
+
+We welcome all kinds of contributions from the open-source community, individuals, and partners.
+
+- Join our [discord community](https://discord.gg/KqswhpVgdU)!
+- To build from the source, please read our [contributing documentation](https://docs.pgvecto.rs/community/contributing.html) and [development tutorial](https://docs.pgvecto.rs/developers/development.html).
 
 ## Contributors ✨
 
