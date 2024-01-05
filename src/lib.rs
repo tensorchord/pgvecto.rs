@@ -2,6 +2,7 @@
 //!
 //! Provides an easy-to-use extension for vector similarity search.
 #![feature(never_type)]
+#![feature(alloc_error_hook)]
 
 mod bgworker;
 mod datatype;
