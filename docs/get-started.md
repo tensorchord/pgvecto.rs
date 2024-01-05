@@ -38,7 +38,7 @@ We support three operators to calculate the distance between two vectors.
 
 - `<->`: squared Euclidean distance, defined as $\Sigma (x_i - y_i) ^ 2$.
 - `<#>`: negative dot product, defined as $- \Sigma x_iy_i$.
-- `<=>`: negative cosine similarity, defined as $- \frac{\Sigma x_iy_i}{\sqrt{\Sigma x_i^2 \Sigma y_i^2}}$.
+- `<=>`: cosine distance, defined as $1 - \frac{\Sigma x_iy_i}{\sqrt{\Sigma x_i^2 \Sigma y_i^2}}$.
 
 ```sql
 -- call the distance function through operators

@@ -13,7 +13,7 @@ impl G for F16Cos {
     type L2 = F16L2;
 
     fn distance(lhs: &[F16], rhs: &[F16]) -> F32 {
-        super::f16::cosine(lhs, rhs) * (-1.0)
+        F32(1.0) - super::f16::cosine(lhs, rhs)
     }
 
     fn elkan_k_means_normalize(vector: &mut [F16]) {
