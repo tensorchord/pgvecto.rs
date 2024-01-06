@@ -6,6 +6,7 @@ use self::ivf_pq::IvfPq;
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::segments::sealed::SealedSegment;
 use crate::index::IndexOptions;
+use crate::index::SearchOptions;
 use crate::prelude::*;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -72,14 +73,27 @@ impl<S: G> Ivf<S> {
 
     pub fn search(
         &self,
-        k: usize,
         vector: &[S::Scalar],
-        nprobe: u32,
+        opts: &SearchOptions,
         filter: &mut impl Filter,
     ) -> Heap {
         match self {
-            Ivf::Naive(x) => x.search(k, vector, nprobe, filter),
-            Ivf::Pq(x) => x.search(k, vector, nprobe, filter),
+            Ivf::Naive(x) => x.search(vector, opts, filter),
+            Ivf::Pq(x) => x.search(vector, opts, filter),
+        }
+    }
+
+    pub fn vbase<'a>(
+        &'a self,
+        vector: &'a [S::Scalar],
+        opts: &'a SearchOptions,
+    ) -> (
+        Vec<HeapElement>,
+        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
+    ) {
+        match self {
+            Ivf::Naive(x) => x.vbase(vector, opts),
+            Ivf::Pq(x) => x.vbase(vector, opts),
         }
     }
 }

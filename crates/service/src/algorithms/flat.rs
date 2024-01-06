@@ -43,8 +43,18 @@ impl<S: G> Flat<S> {
         self.mmap.raw.payload(i)
     }
 
-    pub fn search(&self, k: usize, vector: &[S::Scalar], filter: &mut impl Filter) -> Heap {
+    pub fn search(&self, vector: &[S::Scalar], k: usize, filter: &mut impl Filter) -> Heap {
         search(&self.mmap, k, vector, filter)
+    }
+
+    pub fn vbase<'a>(
+        &'a self,
+        vector: &'a [S::Scalar],
+    ) -> (
+        Vec<HeapElement>,
+        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
+    ) {
+        vbase(&self.mmap, vector)
     }
 }
 
@@ -120,4 +130,17 @@ pub fn search<S: G>(
         }
     }
     result
+}
+
+pub fn vbase<'a, S: G>(
+    mmap: &'a FlatMmap<S>,
+    vector: &'a [S::Scalar],
+) -> (Vec<HeapElement>, Box<dyn Iterator<Item = HeapElement> + 'a>) {
+    let mut result = Vec::new();
+    for i in 0..mmap.raw.len() {
+        let distance = mmap.quantization.distance(vector, i);
+        let payload = mmap.raw.payload(i);
+        result.push(HeapElement { distance, payload });
+    }
+    (result, Box::new(std::iter::empty()))
 }

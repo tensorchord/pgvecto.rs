@@ -2,9 +2,9 @@ use super::AbstractIndexing;
 use crate::algorithms::ivf::Ivf;
 use crate::algorithms::quantization::QuantizationOptions;
 use crate::index::segments::growing::GrowingSegment;
-use crate::index::segments::sealed::SealedSearchGucs;
 use crate::index::segments::sealed::SealedSegment;
 use crate::index::IndexOptions;
+use crate::index::SearchOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -90,13 +90,18 @@ impl<S: G> AbstractIndexing<S> for IvfIndexing<S> {
         self.raw.payload(i)
     }
 
-    fn search(
-        &self,
-        k: usize,
-        vector: &[S::Scalar],
-        gucs: SealedSearchGucs,
-        filter: &mut impl Filter,
-    ) -> Heap {
-        self.raw.search(k, vector, gucs.ivf_nprob, filter)
+    fn search(&self, vector: &[S::Scalar], opts: &SearchOptions, filter: &mut impl Filter) -> Heap {
+        self.raw.search(vector, opts, filter)
+    }
+
+    fn vbase<'a>(
+        &'a self,
+        vector: &'a [S::Scalar],
+        opts: &'a SearchOptions,
+    ) -> (
+        Vec<HeapElement>,
+        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
+    ) {
+        self.raw.vbase(vector, opts)
     }
 }

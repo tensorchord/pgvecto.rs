@@ -1,6 +1,7 @@
 use super::SegmentTracker;
 use crate::index::IndexOptions;
 use crate::index::IndexTracker;
+use crate::index::SearchOptions;
 use crate::index::SegmentStat;
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
@@ -171,9 +172,14 @@ impl<S: G> GrowingSegment<S> {
         let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
         log.payload
     }
-    pub fn search(&self, k: usize, vector: &[S::Scalar], filter: &mut impl Filter) -> Heap {
+    pub fn search(
+        &self,
+        vector: &[S::Scalar],
+        opts: &SearchOptions,
+        filter: &mut impl Filter,
+    ) -> Heap {
         let n = self.len.load(Ordering::Acquire);
-        let mut heap = Heap::new(k);
+        let mut heap = Heap::new(opts.search_k);
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
             let distance = S::distance(vector, &log.vector);
@@ -186,7 +192,10 @@ impl<S: G> GrowingSegment<S> {
         }
         heap
     }
-    pub fn vbase(&self, vector: &[S::Scalar]) -> Vec<HeapElement> {
+    pub fn vbase<'a>(
+        &'a self,
+        vector: &'a [S::Scalar],
+    ) -> (Vec<HeapElement>, Box<dyn Iterator<Item = HeapElement> + 'a>) {
         let n = self.len.load(Ordering::Acquire);
         let mut result = Vec::new();
         for i in 0..n {
@@ -197,7 +206,7 @@ impl<S: G> GrowingSegment<S> {
                 payload: log.payload,
             });
         }
-        result
+        (result, Box::new(std::iter::empty()))
     }
 }
 

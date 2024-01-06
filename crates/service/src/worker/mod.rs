@@ -1,9 +1,9 @@
 pub mod metadata;
 
-use crate::index::segments::SearchGucs;
 use crate::index::IndexOptions;
 use crate::index::IndexStat;
 use crate::index::OutdatedError;
+use crate::index::SearchOptions;
 use crate::instance::Instance;
 use crate::prelude::*;
 use crate::utils::clean::clean;
@@ -76,8 +76,8 @@ impl Worker {
     pub fn call_search<F>(
         &self,
         handle: Handle,
-        search: (DynamicVector, usize),
-        gucs: SearchGucs,
+        vector: DynamicVector,
+        opts: &SearchOptions,
         filter: F,
     ) -> Result<Vec<Pointer>, FriendlyError>
     where
@@ -89,7 +89,7 @@ impl Worker {
             .get(&handle)
             .ok_or(FriendlyError::UnknownIndex)?;
         let view = index.view()?;
-        view.search(search.1, search.0, gucs, filter)
+        view.search(&vector, opts, filter)
     }
     pub fn call_insert(
         &self,

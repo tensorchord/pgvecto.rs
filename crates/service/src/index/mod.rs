@@ -10,14 +10,13 @@ use self::segments::growing::GrowingSegment;
 use self::segments::growing::GrowingSegmentInsertError;
 use self::segments::sealed::SealedSegment;
 use self::segments::SegmentsOptions;
-use crate::index::indexing::DynamicIndexIter;
 use crate::index::optimizing::indexing::OptimizerIndexing;
 use crate::index::optimizing::sealing::OptimizerSealing;
-use crate::index::segments::SearchGucs;
 use crate::prelude::*;
 use crate::utils::clean::clean;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::file_atomic::FileAtomic;
+use crate::utils::iter::RefPeekable;
 use arc_swap::ArcSwap;
 use crossbeam::atomic::AtomicCell;
 use parking_lot::Mutex;
@@ -60,6 +59,16 @@ pub struct IndexOptions {
     pub optimizing: OptimizingOptions,
     #[validate]
     pub indexing: IndexingOptions,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct SearchOptions {
+    #[validate(range(min = 1, max = 65535))]
+    pub search_k: usize,
+    #[validate(range(min = 1, max = 65535))]
+    pub vbase_range: usize,
+    #[validate(range(min = 1, max = 1_000_000))]
+    pub ivf_nprobe: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -298,9 +307,8 @@ pub struct IndexView<S: G> {
 impl<S: G> IndexView<S> {
     pub fn search<F: FnMut(Pointer) -> bool>(
         &self,
-        k: usize,
         vector: &[S::Scalar],
-        gucs: SearchGucs,
+        opts: &SearchOptions,
         mut filter: F,
     ) -> Vec<Pointer> {
         assert_eq!(self.options.vector.dims as usize, vector.len());
@@ -335,20 +343,22 @@ impl<S: G> IndexView<S> {
             }
         };
         let n = self.sealed.len() + self.growing.len() + 1;
-        let mut result = Heap::new(k);
+        let mut result = Heap::new(opts.search_k);
         let mut heaps = BinaryHeap::with_capacity(1 + n);
         for (_, sealed) in self.sealed.iter() {
             let p = sealed
-                .search(k, vector, gucs.sealed, &mut filter)
+                .search(vector, opts, &mut filter)
                 .into_reversed_heap();
             heaps.push(Comparer(p));
         }
         for (_, growing) in self.growing.iter() {
-            let p = growing.search(k, vector, &mut filter).into_reversed_heap();
+            let p = growing
+                .search(vector, opts, &mut filter)
+                .into_reversed_heap();
             heaps.push(Comparer(p));
         }
         if let Some((_, write)) = &self.write {
-            let p = write.search(k, vector, &mut filter).into_reversed_heap();
+            let p = write.search(vector, opts, &mut filter).into_reversed_heap();
             heaps.push(Comparer(p));
         }
         while let Some(Comparer(mut heap)) = heaps.pop() {
@@ -363,88 +373,63 @@ impl<S: G> IndexView<S> {
             .map(|x| Pointer::from_u48(x.payload >> 16))
             .collect()
     }
-    pub fn vbase(&self, vector: &[S::Scalar], range: usize) -> impl Iterator<Item = Pointer> + '_ {
+    pub fn vbase<'a>(
+        &'a self,
+        vector: &'a [S::Scalar],
+        opts: &'a SearchOptions,
+    ) -> impl Iterator<Item = Pointer> + 'a {
         assert_eq!(self.options.vector.dims as usize, vector.len());
 
-        struct Comparer<'a, S: G> {
-            iter: ComparerIter<'a, S>,
-            item: Option<HeapElement>,
-        }
+        struct Comparer<'a>(RefPeekable<Box<dyn Iterator<Item = HeapElement> + 'a>>);
 
-        enum ComparerIter<'a, S: G> {
-            Sealed(DynamicIndexIter<'a, S>),
-            Growing(std::vec::IntoIter<HeapElement>),
-        }
-
-        impl<S: G> PartialEq for Comparer<'_, S> {
+        impl PartialEq for Comparer<'_> {
             fn eq(&self, other: &Self) -> bool {
                 self.cmp(other).is_eq()
             }
         }
 
-        impl<S: G> Eq for Comparer<'_, S> {}
+        impl Eq for Comparer<'_> {}
 
-        impl<S: G> PartialOrd for Comparer<'_, S> {
+        impl PartialOrd for Comparer<'_> {
             fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
                 Some(self.cmp(other))
             }
         }
 
-        impl<S: G> Ord for Comparer<'_, S> {
+        impl Ord for Comparer<'_> {
             fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-                self.item.cmp(&other.item).reverse()
+                self.0.peek().cmp(&other.0.peek()).reverse()
             }
         }
 
-        impl<S: G> Iterator for ComparerIter<'_, S> {
-            type Item = HeapElement;
-            fn next(&mut self) -> Option<Self::Item> {
-                match self {
-                    Self::Sealed(iter) => iter.next(),
-                    Self::Growing(iter) => iter.next(),
-                }
-            }
-        }
-
-        impl<S: G> Iterator for Comparer<'_, S> {
-            type Item = HeapElement;
-            fn next(&mut self) -> Option<Self::Item> {
-                let item = self.item.take();
-                self.item = self.iter.next();
-                item
-            }
-        }
-
-        fn from_iter<S: G>(mut iter: ComparerIter<'_, S>) -> Comparer<'_, S> {
-            let item = iter.next();
-            Comparer { iter, item }
-        }
-
-        use ComparerIter::*;
         let filter = |payload| self.delete.check(payload).is_some();
         let n = self.sealed.len() + self.growing.len() + 1;
-        let mut heaps: BinaryHeap<Comparer<S>> = BinaryHeap::with_capacity(1 + n);
+        let mut alpha = Vec::new();
+        let mut beta = BinaryHeap::with_capacity(1 + n);
         for (_, sealed) in self.sealed.iter() {
-            let res = sealed.vbase(range, vector);
-            heaps.push(from_iter(Sealed(res)));
+            let (stage1, stage2) = sealed.vbase(vector, opts);
+            alpha.extend(stage1);
+            beta.push(Comparer(RefPeekable::new(stage2)));
         }
         for (_, growing) in self.growing.iter() {
-            let mut res = growing.vbase(vector);
-            res.sort_unstable();
-            heaps.push(from_iter(Growing(res.into_iter())));
+            let (stage1, stage2) = growing.vbase(vector);
+            alpha.extend(stage1);
+            beta.push(Comparer(RefPeekable::new(stage2)));
         }
         if let Some((_, write)) = &self.write {
-            let mut res = write.vbase(vector);
-            res.sort_unstable();
-            heaps.push(from_iter(Growing(res.into_iter())));
+            let (stage1, stage2) = write.vbase(vector);
+            alpha.extend(stage1);
+            beta.push(Comparer(RefPeekable::new(stage2)));
         }
+        alpha.sort_unstable();
+        beta.push(Comparer(RefPeekable::new(Box::new(alpha.into_iter()))));
         std::iter::from_fn(move || {
-            while let Some(mut iter) = heaps.pop() {
-                if let Some(x) = iter.next() {
+            while let Some(mut iter) = beta.pop() {
+                if let Some(x) = iter.0.next() {
                     if !filter(x.payload) {
                         continue;
                     }
-                    heaps.push(iter);
+                    beta.push(iter);
                     return Some(Pointer::from_u48(x.payload >> 16));
                 }
             }

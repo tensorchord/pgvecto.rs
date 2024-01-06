@@ -8,8 +8,7 @@ use self::ivf::{IvfIndexing, IvfIndexingOptions};
 use super::segments::growing::GrowingSegment;
 use super::segments::sealed::SealedSegment;
 use super::IndexOptions;
-use crate::algorithms::hnsw::HnswIndexIter;
-use crate::index::segments::sealed::SealedSearchGucs;
+use crate::index::SearchOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -73,23 +72,18 @@ pub trait AbstractIndexing<S: G>: Sized {
     fn len(&self) -> u32;
     fn vector(&self, i: u32) -> &[S::Scalar];
     fn payload(&self, i: u32) -> Payload;
-    fn search(
-        &self,
-        k: usize,
-        vector: &[S::Scalar],
-        gucs: SealedSearchGucs,
-        filter: &mut impl Filter,
-    ) -> Heap;
+    fn search(&self, vector: &[S::Scalar], opts: &SearchOptions, filter: &mut impl Filter) -> Heap;
+    fn vbase<'a>(
+        &'a self,
+        vector: &'a [S::Scalar],
+        opts: &'a SearchOptions,
+    ) -> (Vec<HeapElement>, Box<dyn Iterator<Item = HeapElement> + 'a>);
 }
 
 pub enum DynamicIndexing<S: G> {
     Flat(FlatIndexing<S>),
     Ivf(IvfIndexing<S>),
     Hnsw(HnswIndexing<S>),
-}
-
-pub enum DynamicIndexIter<'a, S: G> {
-    Hnsw(HnswIndexIter<'a, S>),
 }
 
 impl<S: G> DynamicIndexing<S> {
@@ -146,33 +140,29 @@ impl<S: G> DynamicIndexing<S> {
 
     pub fn search(
         &self,
-        k: usize,
         vector: &[S::Scalar],
-        gucs: SealedSearchGucs,
+        opts: &SearchOptions,
         filter: &mut impl Filter,
     ) -> Heap {
         match self {
-            DynamicIndexing::Flat(x) => x.search(k, vector, gucs, filter),
-            DynamicIndexing::Ivf(x) => x.search(k, vector, gucs, filter),
-            DynamicIndexing::Hnsw(x) => x.search(k, vector, gucs, filter),
+            DynamicIndexing::Flat(x) => x.search(vector, opts, filter),
+            DynamicIndexing::Ivf(x) => x.search(vector, opts, filter),
+            DynamicIndexing::Hnsw(x) => x.search(vector, opts, filter),
         }
     }
 
-    pub fn vbase(&self, range: usize, vector: &[S::Scalar]) -> DynamicIndexIter<'_, S> {
-        use DynamicIndexIter::*;
+    pub fn vbase<'a>(
+        &'a self,
+        vector: &'a [S::Scalar],
+        opts: &'a SearchOptions,
+    ) -> (
+        Vec<HeapElement>,
+        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
+    ) {
         match self {
-            DynamicIndexing::Hnsw(x) => Hnsw(x.search_vbase(range, vector)),
-            _ => unimplemented!("search_vbase is only implemented for HNSW"),
-        }
-    }
-}
-
-impl<S: G> Iterator for DynamicIndexIter<'_, S> {
-    type Item = HeapElement;
-    fn next(&mut self) -> Option<Self::Item> {
-        use DynamicIndexIter::*;
-        match self {
-            Hnsw(x) => x.next(),
+            DynamicIndexing::Flat(x) => x.vbase(vector, opts),
+            DynamicIndexing::Ivf(x) => x.vbase(vector, opts),
+            DynamicIndexing::Hnsw(x) => x.vbase(vector, opts),
         }
     }
 }

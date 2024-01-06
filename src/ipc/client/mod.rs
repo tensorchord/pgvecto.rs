@@ -2,9 +2,9 @@ use super::packet::*;
 use super::transport::ClientSocket;
 use crate::gucs::{Transport, TRANSPORT};
 use crate::utils::cells::PgRefCell;
-use service::index::segments::SearchGucs;
 use service::index::IndexOptions;
 use service::index::IndexStat;
+use service::index::SearchOptions;
 use service::prelude::*;
 use std::mem::ManuallyDrop;
 use std::ops::Deref;
@@ -60,16 +60,16 @@ impl ClientGuard<Rpc> {
     pub fn search(
         &mut self,
         handle: Handle,
-        search: (DynamicVector, usize),
+        vector: DynamicVector,
         prefilter: bool,
-        gucs: SearchGucs,
+        opts: SearchOptions,
         mut t: impl Search,
     ) -> Vec<Pointer> {
         let packet = RpcPacket::Search {
             handle,
-            search,
+            vector,
             prefilter,
-            gucs,
+            opts,
         };
         self.socket.send(packet).friendly();
         loop {
@@ -122,8 +122,17 @@ impl ClientGuard<Rpc> {
         let stat::StatPacket::Leave { result } = self.socket.recv().friendly();
         result
     }
-    pub fn vbase(mut self, handle: Handle, vbase: (DynamicVector, usize)) -> ClientGuard<Vbase> {
-        let packet = RpcPacket::Vbase { handle, vbase };
+    pub fn vbase(
+        mut self,
+        handle: Handle,
+        vector: DynamicVector,
+        opts: SearchOptions,
+    ) -> ClientGuard<Vbase> {
+        let packet = RpcPacket::Vbase {
+            handle,
+            vector,
+            opts,
+        };
         self.socket.send(packet).friendly();
         let vbase::VbaseErrorPacket {} = self.socket.recv().friendly();
         ClientGuard::map(self)

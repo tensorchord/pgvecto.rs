@@ -1,8 +1,8 @@
 use super::AbstractIndexing;
 use crate::algorithms::quantization::QuantizationOptions;
 use crate::index::segments::growing::GrowingSegment;
-use crate::index::segments::sealed::SealedSearchGucs;
 use crate::index::IndexOptions;
+use crate::index::SearchOptions;
 use crate::prelude::*;
 use crate::{algorithms::flat::Flat, index::segments::sealed::SealedSegment};
 use serde::{Deserialize, Serialize};
@@ -58,13 +58,18 @@ impl<S: G> AbstractIndexing<S> for FlatIndexing<S> {
         self.raw.payload(i)
     }
 
-    fn search(
-        &self,
-        k: usize,
-        vector: &[S::Scalar],
-        _gucs: SealedSearchGucs,
-        filter: &mut impl Filter,
-    ) -> Heap {
-        self.raw.search(k, vector, filter)
+    fn search(&self, vector: &[S::Scalar], opts: &SearchOptions, filter: &mut impl Filter) -> Heap {
+        self.raw.search(vector, opts.search_k, filter)
+    }
+
+    fn vbase<'a>(
+        &'a self,
+        vector: &'a [S::Scalar],
+        _opts: &'a SearchOptions,
+    ) -> (
+        Vec<HeapElement>,
+        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
+    ) {
+        self.raw.vbase(vector)
     }
 }

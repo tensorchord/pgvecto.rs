@@ -6,6 +6,7 @@ use crate::index::indexing::ivf::IvfIndexingOptions;
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::segments::sealed::SealedSegment;
 use crate::index::IndexOptions;
+use crate::index::SearchOptions;
 use crate::index::VectorOptions;
 use crate::prelude::*;
 use crate::utils::cells::SyncUnsafeCell;
@@ -57,12 +58,22 @@ impl<S: G> IvfPq<S> {
 
     pub fn search(
         &self,
-        k: usize,
         vector: &[S::Scalar],
-        nprobe: u32,
+        opts: &SearchOptions,
         filter: &mut impl Filter,
     ) -> Heap {
-        search(&self.mmap, k, vector, nprobe, filter)
+        search(&self.mmap, vector, opts.search_k, opts.ivf_nprobe, filter)
+    }
+
+    pub fn vbase<'a>(
+        &'a self,
+        vector: &'a [S::Scalar],
+        opts: &'a SearchOptions,
+    ) -> (
+        Vec<HeapElement>,
+        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
+    ) {
+        vbase(&self.mmap, vector, opts.ivf_nprobe)
     }
 }
 
@@ -248,8 +259,8 @@ pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> IvfMmap<S> {
 
 pub fn search<S: G>(
     mmap: &IvfMmap<S>,
-    k: usize,
     vector: &[S::Scalar],
+    k: usize,
     nprobe: u32,
     filter: &mut impl Filter,
 ) -> Heap {
@@ -282,4 +293,41 @@ pub fn search<S: G>(
         }
     }
     result
+}
+
+pub fn vbase<'a, S: G>(
+    mmap: &'a IvfMmap<S>,
+    vector: &'a [S::Scalar],
+    nprobe: u32,
+) -> (
+    Vec<HeapElement>,
+    Box<(dyn Iterator<Item = HeapElement> + 'a)>,
+) {
+    let mut target = vector.to_vec();
+    S::elkan_k_means_normalize(&mut target);
+    let mut lists = Heap::new(nprobe as usize);
+    for i in 0..mmap.nlist {
+        let centroid = mmap.centroids(i);
+        let distance = S::elkan_k_means_distance(&target, centroid);
+        if lists.check(distance) {
+            lists.push(HeapElement {
+                distance,
+                payload: i as Payload,
+            });
+        }
+    }
+    let lists = lists.into_sorted_vec();
+    let mut result = Vec::new();
+    for i in lists.iter().map(|e| e.payload as u32) {
+        let mut j = mmap.heads[i as usize];
+        while u32::MAX != j {
+            let distance = mmap
+                .quantization
+                .distance_with_delta(vector, j, mmap.centroids(i));
+            let payload = mmap.raw.payload(j);
+            result.push(HeapElement { distance, payload });
+            j = mmap.nexts[j as usize];
+        }
+    }
+    (result, Box::new(std::iter::empty()))
 }

@@ -1,11 +1,11 @@
 pub mod metadata;
 
-use crate::index::segments::SearchGucs;
 use crate::index::Index;
 use crate::index::IndexOptions;
 use crate::index::IndexStat;
 use crate::index::IndexView;
 use crate::index::OutdatedError;
+use crate::index::SearchOptions;
 use crate::prelude::*;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -148,9 +148,8 @@ pub enum InstanceView {
 impl InstanceView {
     pub fn search<F: FnMut(Pointer) -> bool>(
         &self,
-        k: usize,
-        vector: DynamicVector,
-        gucs: SearchGucs,
+        vector: &DynamicVector,
+        opts: &SearchOptions,
         filter: F,
     ) -> Result<Vec<Pointer>, FriendlyError> {
         match (self, vector) {
@@ -158,82 +157,82 @@ impl InstanceView {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(x.search(k, &vector, gucs, filter))
+                Ok(x.search(vector, opts, filter))
             }
             (InstanceView::F32Dot(x), DynamicVector::F32(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(x.search(k, &vector, gucs, filter))
+                Ok(x.search(vector, opts, filter))
             }
             (InstanceView::F32L2(x), DynamicVector::F32(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(x.search(k, &vector, gucs, filter))
+                Ok(x.search(vector, opts, filter))
             }
             (InstanceView::F16Cos(x), DynamicVector::F16(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(x.search(k, &vector, gucs, filter))
+                Ok(x.search(vector, opts, filter))
             }
             (InstanceView::F16Dot(x), DynamicVector::F16(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(x.search(k, &vector, gucs, filter))
+                Ok(x.search(vector, opts, filter))
             }
             (InstanceView::F16L2(x), DynamicVector::F16(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(x.search(k, &vector, gucs, filter))
+                Ok(x.search(vector, opts, filter))
             }
             _ => Err(FriendlyError::Unmatched2),
         }
     }
-    pub fn vbase(
-        &self,
-        vector: DynamicVector,
-        range: usize,
+    pub fn vbase<'a>(
+        &'a self,
+        vector: &'a DynamicVector,
+        opts: &'a SearchOptions,
     ) -> Result<impl Iterator<Item = Pointer> + '_, FriendlyError> {
         match (self, vector) {
             (InstanceView::F32Cos(x), DynamicVector::F32(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(Box::new(x.vbase(&vector, range)) as Box<dyn Iterator<Item = Pointer>>)
+                Ok(Box::new(x.vbase(vector, opts)) as Box<dyn Iterator<Item = Pointer>>)
             }
             (InstanceView::F32Dot(x), DynamicVector::F32(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(Box::new(x.vbase(&vector, range)))
+                Ok(Box::new(x.vbase(vector, opts)))
             }
             (InstanceView::F32L2(x), DynamicVector::F32(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(Box::new(x.vbase(&vector, range)))
+                Ok(Box::new(x.vbase(vector, opts)))
             }
             (InstanceView::F16Cos(x), DynamicVector::F16(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(Box::new(x.vbase(&vector, range)))
+                Ok(Box::new(x.vbase(vector, opts)))
             }
             (InstanceView::F16Dot(x), DynamicVector::F16(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(Box::new(x.vbase(&vector, range)))
+                Ok(Box::new(x.vbase(vector, opts)))
             }
             (InstanceView::F16L2(x), DynamicVector::F16(vector)) => {
                 if x.options.vector.dims as usize != vector.len() {
                     return Err(FriendlyError::Unmatched2);
                 }
-                Ok(Box::new(x.vbase(&vector, range)))
+                Ok(Box::new(x.vbase(vector, opts)))
             }
             _ => Err(FriendlyError::Unmatched2),
         }
