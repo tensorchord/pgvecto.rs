@@ -7,7 +7,7 @@ pub enum FriendlyError {
     #[error("\
 pgvecto.rs must be loaded via shared_preload_libraries.
 ADVICE: If you encounter this error for your first use of pgvecto.rs, \
-please read `https://github.com/tensorchord/pgvecto.rs/blob/main/docs/install.md`. \
+please read `https://docs.pgvecto.rs/getting-started/installation.html`. \
 You should edit `shared_preload_libraries` in `postgresql.conf` to include `vectors.so`, \
 or simply run the command `psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = \"vectors.so\"'`.\
 ")]
@@ -65,17 +65,17 @@ ADVICE: Check if dimensions and scalar type of the vector is matched with the in
     #[error("\
 IPC connection is closed unexpected.
 ADVICE: The error is raisen by background worker errors. \
-Please check the full PostgreSQL log to get more information.\
+Please check the full PostgreSQL log to get more information. Please read `https://docs.pgvecto.rs/admin/configuration.html`.\
 ")]
     Ipc,
     #[error("\
 The extension is upgraded so all index files are outdated.
-ADVICE: Delete all index files. Please read `https://github.com/tensorchord/pgvecto.rs/blob/main/docs/upgrade.md`.\
+ADVICE: Delete all index files. Please read `https://docs.pgvecto.rs/admin/upgrading.html`.\
 ")]
     Upgrade,
     #[error("\
 The extension is upgraded so this index is outdated.
-ADVICE: Rebuild the index. Please read `https://github.com/tensorchord/pgvecto.rs/blob/main/docs/upgrade.md`.\
+ADVICE: Rebuild the index. Please read `https://docs.pgvecto.rs/admin/upgrading.html`.\
 ")]
     Upgrade2,
 }
