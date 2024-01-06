@@ -198,7 +198,6 @@ pub fn make<S: G>(
             k: usize,
             i: u8,
         ) -> Vec<(F32, u32)> {
-            assert!(k > 0);
             let mut visited = visited.fetch();
             let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
             let mut results = BinaryHeap::new();
@@ -406,14 +405,33 @@ pub fn search<S: G>(
 }
 
 pub fn vbase<'a, S: G>(
-    _mmap: &'a HnswMmap<S>,
-    _vector: &'a [S::Scalar],
-    _range: usize,
+    mmap: &'a HnswMmap<S>,
+    vector: &'a [S::Scalar],
+    range: usize,
 ) -> (
     Vec<HeapElement>,
     Box<(dyn Iterator<Item = HeapElement> + 'a)>,
 ) {
-    todo!()
+    let Some(s) = entry(mmap, &mut |_| true) else {
+        return (Vec::new(), Box::new(std::iter::empty()));
+    };
+    let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
+    let u = fast_search(mmap, 1..=levels, s, vector, &mut |_| true);
+    let mut iter = local_search_vbase(mmap, u, vector);
+    let mut queue = BinaryHeap::<HeapElement>::with_capacity(1 + range);
+    let mut stage1 = Vec::new();
+    for x in &mut iter {
+        if queue.len() == range && queue.peek().unwrap().distance < x.distance {
+            stage1.push(x);
+            break;
+        }
+        if queue.len() == range {
+            queue.pop();
+        }
+        queue.push(x);
+        stage1.push(x);
+    }
+    (stage1, Box::new(iter))
 }
 
 pub fn entry<S: G>(mmap: &HnswMmap<S>, filter: &mut impl Filter) -> Option<u32> {
@@ -481,7 +499,6 @@ pub fn local_search<S: G>(
     vector: &[S::Scalar],
     filter: &mut impl Filter,
 ) -> Heap {
-    assert!(k > 0);
     let mut visited = mmap.visited.fetch();
     let mut visited = visited.fetch();
     let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
@@ -518,6 +535,36 @@ pub fn local_search<S: G>(
         }
     }
     results
+}
+
+pub fn local_search_vbase<'a, S: G>(
+    mmap: &'a HnswMmap<S>,
+    s: u32,
+    vector: &'a [S::Scalar],
+) -> impl Iterator<Item = HeapElement> + 'a {
+    let mut visited = mmap.visited.fetch2();
+    let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
+    visited.mark(s);
+    let s_dis = mmap.quantization.distance(vector, s);
+    candidates.push(Reverse((s_dis, s)));
+    std::iter::from_fn(move || {
+        let Reverse((u_dis, u)) = candidates.pop()?;
+        {
+            let edges = find_edges(mmap, u, 0);
+            for &HnswMmapEdge(_, v) in edges.iter() {
+                if !visited.check(v) {
+                    continue;
+                }
+                visited.mark(v);
+                let v_dis = mmap.quantization.distance(vector, v);
+                candidates.push(Reverse((v_dis, v)));
+            }
+        }
+        Some(HeapElement {
+            distance: u_dis,
+            payload: mmap.raw.payload(u),
+        })
+    })
 }
 
 fn count_layers_of_a_vertex(m: u32, i: u32) -> u8 {
@@ -576,6 +623,21 @@ impl VisitedPool {
             .unwrap_or_else(|| VisitedBuffer::new(self.n as _));
         VisitedGuard { buffer, pool: self }
     }
+
+    fn fetch2(&self) -> VisitedGuardChecker {
+        let mut buffer = self
+            .locked_buffers
+            .lock()
+            .pop()
+            .unwrap_or_else(|| VisitedBuffer::new(self.n as _));
+        {
+            buffer.version = buffer.version.wrapping_add(1);
+            if buffer.version == 0 {
+                buffer.data.fill(0);
+            }
+        }
+        VisitedGuardChecker { buffer, pool: self }
+    }
 }
 
 struct VisitedGuard<'a> {
@@ -616,6 +678,31 @@ impl<'a> VisitedChecker<'a> {
     }
     fn mark(&mut self, i: u32) {
         self.buffer.data[i as usize] = self.buffer.version;
+    }
+}
+
+struct VisitedGuardChecker<'a> {
+    buffer: VisitedBuffer,
+    pool: &'a VisitedPool,
+}
+
+impl<'a> VisitedGuardChecker<'a> {
+    fn check(&mut self, i: u32) -> bool {
+        self.buffer.data[i as usize] != self.buffer.version
+    }
+    fn mark(&mut self, i: u32) {
+        self.buffer.data[i as usize] = self.buffer.version;
+    }
+}
+
+impl<'a> Drop for VisitedGuardChecker<'a> {
+    fn drop(&mut self) {
+        let src = VisitedBuffer {
+            version: 0,
+            data: Vec::new(),
+        };
+        let buffer = std::mem::replace(&mut self.buffer, src);
+        self.pool.locked_buffers.lock().push(buffer);
     }
 }
 
