@@ -13,7 +13,7 @@ impl G for F32Cos {
     type L2 = F32L2;
 
     fn distance(lhs: &[F32], rhs: &[F32]) -> F32 {
-        cosine(lhs, rhs) * (-1.0)
+        F32(1.0) - cosine(lhs, rhs)
     }
 
     fn elkan_k_means_normalize(vector: &mut [F32]) {
@@ -47,7 +47,7 @@ impl G for F32Cos {
             x2 += _x * _x;
             y2 += _y * _y;
         }
-        xy / (x2 * y2).sqrt() * (-1.0)
+        F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
     #[multiversion::multiversion(targets(
@@ -73,7 +73,7 @@ impl G for F32Cos {
             x2 += _x * _x;
             y2 += _y * _y;
         }
-        xy / (x2 * y2).sqrt() * (-1.0)
+        F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
     #[multiversion::multiversion(targets(
@@ -103,7 +103,7 @@ impl G for F32Cos {
             x2 += _x2;
             y2 += _y2;
         }
-        xy / (x2 * y2).sqrt() * (-1.0)
+        F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
     #[multiversion::multiversion(targets(
@@ -134,7 +134,7 @@ impl G for F32Cos {
             x2 += _x2;
             y2 += _y2;
         }
-        xy / (x2 * y2).sqrt() * (-1.0)
+        F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
     #[multiversion::multiversion(targets(
@@ -166,7 +166,7 @@ impl G for F32Cos {
             x2 += _x2;
             y2 += _y2;
         }
-        xy / (x2 * y2).sqrt() * (-1.0)
+        F32(1.0) - xy / (x2 * y2).sqrt()
     }
 }
 
