@@ -69,10 +69,4 @@ impl ClientSocket {
             _ => unreachable!(),
         }
     }
-    pub fn test(&self) -> bool {
-        match self {
-            ClientSocket::Unix { ok, .. } => *ok,
-            ClientSocket::Mmap { ok, .. } => *ok,
-        }
-    }
 }
