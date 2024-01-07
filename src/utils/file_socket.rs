@@ -32,30 +32,48 @@ impl FileSocket {
 
 fn send_fd(tx: BorrowedFd<'_>, fd: BorrowedFd<'_>) -> std::io::Result<()> {
     let fds = [fd];
-    let mut buffer = vec![0u8; 128];
-    let mut control = SendAncillaryBuffer::new(&mut buffer);
-    control.push(SendAncillaryMessage::ScmRights(&fds));
+    let mut buffer = AncillaryBuffer([0u8; rustix::cmsg_space!(ScmRights(1))]);
+    let mut control = SendAncillaryBuffer::new(&mut buffer.0);
+    let pushed = control.push(SendAncillaryMessage::ScmRights(&fds));
+    assert!(pushed);
     let ios = IoSlice::new(&[b'$']);
     rustix::net::sendmsg(tx, &[ios], &mut control, SendFlags::empty())?;
     Ok(())
 }
 
 fn recv_fd(rx: BorrowedFd<'_>) -> std::io::Result<OwnedFd> {
-    let mut buffer = vec![0u8; 128];
-    let mut control = RecvAncillaryBuffer::new(&mut buffer);
-    let mut buffer_ios = [b'.'];
-    let ios = IoSliceMut::new(&mut buffer_ios);
-    rustix::net::recvmsg(rx, &mut [ios], &mut control, RecvFlags::empty())?;
-    assert!(buffer_ios[0] == b'$');
-    let mut fds = vec![];
-    for message in control.drain() {
-        match message {
-            RecvAncillaryMessage::ScmRights(iter) => {
-                fds.extend(iter);
-            }
-            _ => unreachable!(),
+    loop {
+        let mut buffer = AncillaryBuffer([0u8; rustix::cmsg_space!(ScmRights(1))]);
+        let mut control = RecvAncillaryBuffer::new(&mut buffer.0);
+        let mut buffer_ios = [b'.'];
+        let ios = IoSliceMut::new(&mut buffer_ios);
+        let returned = rustix::net::recvmsg(rx, &mut [ios], &mut control, RecvFlags::CMSG_CLOEXEC)?;
+        if returned.flags.bits() & libc::MSG_CTRUNC as u32 != 0 {
+            log::warn!("Ancillary is truncated.");
         }
+        // it's impossible for a graceful shutdown since we opened the other end
+        assert_eq!(returned.bytes, 1);
+        assert_eq!(buffer_ios[0], b'$');
+        let mut fds = vec![];
+        for message in control.drain() {
+            match message {
+                RecvAncillaryMessage::ScmRights(iter) => {
+                    fds.extend(iter);
+                }
+                _ => {
+                    // impossible to receive other than one file descriptor since we do not send
+                    unreachable!()
+                }
+            }
+        }
+        // it's impossible for more than one file descriptor since the buffer can only contain one
+        assert!(fds.len() <= 1);
+        if let Some(fd) = fds.pop() {
+            return Ok(fd);
+        }
+        log::warn!("Ancillary is expected.");
     }
-    assert!(fds.len() == 1);
-    Ok(fds.pop().unwrap())
 }
+
+#[repr(C, align(32))]
+struct AncillaryBuffer([u8; rustix::cmsg_space!(ScmRights(1))]);
