@@ -8,8 +8,8 @@ pub mod stat;
 pub mod vbase;
 
 use serde::{Deserialize, Serialize};
-use service::index::segments::SearchGucs;
 use service::index::IndexOptions;
+use service::index::SearchOptions;
 use service::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -33,15 +33,16 @@ pub enum RpcPacket {
     },
     Search {
         handle: Handle,
-        search: (DynamicVector, usize),
+        vector: DynamicVector,
         prefilter: bool,
-        gucs: SearchGucs,
+        opts: SearchOptions,
     },
     Stat {
         handle: Handle,
     },
     Vbase {
         handle: Handle,
-        vbase: (DynamicVector, usize),
+        vector: DynamicVector,
+        opts: SearchOptions,
     },
 }

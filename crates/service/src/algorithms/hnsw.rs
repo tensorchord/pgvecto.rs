@@ -4,6 +4,7 @@ use crate::index::indexing::hnsw::HnswIndexingOptions;
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::segments::sealed::SealedSegment;
 use crate::index::IndexOptions;
+use crate::index::SearchOptions;
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::mmap_array::MmapArray;
@@ -51,12 +52,24 @@ impl<S: G> Hnsw<S> {
         self.mmap.raw.payload(i)
     }
 
-    pub fn search(&self, k: usize, vector: &[S::Scalar], filter: &mut impl Filter) -> Heap {
-        search(&self.mmap, k, vector, filter)
+    pub fn search(
+        &self,
+        vector: &[S::Scalar],
+        opts: &SearchOptions,
+        filter: &mut impl Filter,
+    ) -> Heap {
+        search(&self.mmap, vector, opts.search_k, filter)
     }
 
-    pub fn search_vbase(&self, range: usize, vector: &[S::Scalar]) -> HnswIndexIter<'_, S> {
-        search_vbase(&self.mmap, range, vector)
+    pub fn vbase<'a>(
+        &'a self,
+        vector: &'a [S::Scalar],
+        opts: &'a SearchOptions,
+    ) -> (
+        Vec<HeapElement>,
+        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
+    ) {
+        vbase(&self.mmap, vector, opts.vbase_range)
     }
 }
 
@@ -185,7 +198,6 @@ pub fn make<S: G>(
             k: usize,
             i: u8,
         ) -> Vec<(F32, u32)> {
-            assert!(k > 0);
             let mut visited = visited.fetch();
             let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
             let mut results = BinaryHeap::new();
@@ -380,8 +392,8 @@ pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> HnswMmap<S> {
 
 pub fn search<S: G>(
     mmap: &HnswMmap<S>,
-    k: usize,
     vector: &[S::Scalar],
+    k: usize,
     filter: &mut impl Filter,
 ) -> Heap {
     let Some(s) = entry(mmap, filter) else {
@@ -392,18 +404,34 @@ pub fn search<S: G>(
     local_search(mmap, k, u, vector, filter)
 }
 
-pub fn search_vbase<'a, S: G>(
+pub fn vbase<'a, S: G>(
     mmap: &'a HnswMmap<S>,
+    vector: &'a [S::Scalar],
     range: usize,
-    vector: &[S::Scalar],
-) -> HnswIndexIter<'a, S> {
-    let filter_fn = &mut |_| true;
-    let Some(s) = entry(mmap, filter_fn) else {
-        return HnswIndexIter(None);
+) -> (
+    Vec<HeapElement>,
+    Box<(dyn Iterator<Item = HeapElement> + 'a)>,
+) {
+    let Some(s) = entry(mmap, &mut |_| true) else {
+        return (Vec::new(), Box::new(std::iter::empty()));
     };
     let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
-    let u = fast_search(mmap, 1..=levels, s, vector, filter_fn);
-    local_search_vbase(mmap, range, u, vector)
+    let u = fast_search(mmap, 1..=levels, s, vector, &mut |_| true);
+    let mut iter = local_search_vbase(mmap, u, vector);
+    let mut queue = BinaryHeap::<HeapElement>::with_capacity(1 + range);
+    let mut stage1 = Vec::new();
+    for x in &mut iter {
+        if queue.len() == range && queue.peek().unwrap().distance < x.distance {
+            stage1.push(x);
+            break;
+        }
+        if queue.len() == range {
+            queue.pop();
+        }
+        queue.push(x);
+        stage1.push(x);
+    }
+    (stage1, Box::new(iter))
 }
 
 pub fn entry<S: G>(mmap: &HnswMmap<S>, filter: &mut impl Filter) -> Option<u32> {
@@ -471,7 +499,6 @@ pub fn local_search<S: G>(
     vector: &[S::Scalar],
     filter: &mut impl Filter,
 ) -> Heap {
-    assert!(k > 0);
     let mut visited = mmap.visited.fetch();
     let mut visited = visited.fetch();
     let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
@@ -510,59 +537,34 @@ pub fn local_search<S: G>(
     results
 }
 
-fn local_search_vbase<'a, S: G>(
+pub fn local_search_vbase<'a, S: G>(
     mmap: &'a HnswMmap<S>,
-    range: usize,
     s: u32,
-    vector: &[S::Scalar],
-) -> HnswIndexIter<'a, S> {
-    assert!(range > 0);
-    let mut visited_guard = mmap.visited.fetch();
-    let mut visited = visited_guard.fetch();
+    vector: &'a [S::Scalar],
+) -> impl Iterator<Item = HeapElement> + 'a {
+    let mut visited = mmap.visited.fetch2();
     let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
-    let mut results = Heap::new(range);
-    let mut lost = Vec::<Reverse<HeapElement>>::new();
     visited.mark(s);
     let s_dis = mmap.quantization.distance(vector, s);
     candidates.push(Reverse((s_dis, s)));
-    results.push(HeapElement {
-        distance: s_dis,
-        payload: mmap.raw.payload(s),
-    });
-    while let Some(Reverse((u_dis, u))) = candidates.pop() {
-        if !results.check(u_dis) {
-            candidates.push(Reverse((u_dis, u)));
-            break;
-        }
-        let edges = find_edges(mmap, u, 0);
-        for &HnswMmapEdge(_, v) in edges.iter() {
-            if !visited.check(v) {
-                continue;
-            }
-            visited.mark(v);
-            let v_dis = mmap.quantization.distance(vector, v);
-            if !results.check(v_dis) {
-                continue;
-            }
-            candidates.push(Reverse((v_dis, v)));
-            if let Some(val) = results.push(HeapElement {
-                distance: v_dis,
-                payload: mmap.raw.payload(v),
-            }) {
-                lost.push(Reverse(val));
+    std::iter::from_fn(move || {
+        let Reverse((u_dis, u)) = candidates.pop()?;
+        {
+            let edges = find_edges(mmap, u, 0);
+            for &HnswMmapEdge(_, v) in edges.iter() {
+                if !visited.check(v) {
+                    continue;
+                }
+                visited.mark(v);
+                let v_dis = mmap.quantization.distance(vector, v);
+                candidates.push(Reverse((v_dis, v)));
             }
         }
-    }
-    lost.sort_unstable();
-    HnswIndexIter(Some(HnswIndexIterInner {
-        mmap,
-        range,
-        candidates,
-        results: results.into_reversed_heap(),
-        lost,
-        visited: visited_guard,
-        vector: vector.to_vec(),
-    }))
+        Some(HeapElement {
+            distance: u_dis,
+            payload: mmap.raw.payload(u),
+        })
+    })
 }
 
 fn count_layers_of_a_vertex(m: u32, i: u32) -> u8 {
@@ -621,6 +623,21 @@ impl VisitedPool {
             .unwrap_or_else(|| VisitedBuffer::new(self.n as _));
         VisitedGuard { buffer, pool: self }
     }
+
+    fn fetch2(&self) -> VisitedGuardChecker {
+        let mut buffer = self
+            .locked_buffers
+            .lock()
+            .pop()
+            .unwrap_or_else(|| VisitedBuffer::new(self.n as _));
+        {
+            buffer.version = buffer.version.wrapping_add(1);
+            if buffer.version == 0 {
+                buffer.data.fill(0);
+            }
+        }
+        VisitedGuardChecker { buffer, pool: self }
+    }
 }
 
 struct VisitedGuard<'a> {
@@ -634,11 +651,6 @@ impl<'a> VisitedGuard<'a> {
         if self.buffer.version == 0 {
             self.buffer.data.fill(0);
         }
-        VisitedChecker {
-            buffer: &mut self.buffer,
-        }
-    }
-    fn fetch_current_version(&mut self) -> VisitedChecker {
         VisitedChecker {
             buffer: &mut self.buffer,
         }
@@ -669,6 +681,31 @@ impl<'a> VisitedChecker<'a> {
     }
 }
 
+struct VisitedGuardChecker<'a> {
+    buffer: VisitedBuffer,
+    pool: &'a VisitedPool,
+}
+
+impl<'a> VisitedGuardChecker<'a> {
+    fn check(&mut self, i: u32) -> bool {
+        self.buffer.data[i as usize] != self.buffer.version
+    }
+    fn mark(&mut self, i: u32) {
+        self.buffer.data[i as usize] = self.buffer.version;
+    }
+}
+
+impl<'a> Drop for VisitedGuardChecker<'a> {
+    fn drop(&mut self) {
+        let src = VisitedBuffer {
+            version: 0,
+            data: Vec::new(),
+        };
+        let buffer = std::mem::replace(&mut self.buffer, src);
+        self.pool.locked_buffers.lock().push(buffer);
+    }
+}
+
 struct VisitedBuffer {
     version: usize,
     data: Vec<usize>,
@@ -679,67 +716,6 @@ impl VisitedBuffer {
         Self {
             version: 0,
             data: bytemuck::zeroed_vec(capacity),
-        }
-    }
-}
-
-pub struct HnswIndexIter<'mmap, S: G>(Option<HnswIndexIterInner<'mmap, S>>);
-
-pub struct HnswIndexIterInner<'mmap, S: G> {
-    mmap: &'mmap HnswMmap<S>,
-    range: usize,
-    candidates: BinaryHeap<Reverse<(F32, u32)>>,
-    results: BinaryHeap<Reverse<HeapElement>>,
-    // The points lost in the first stage, we should keep it to the second stage.
-    lost: Vec<Reverse<HeapElement>>,
-    visited: VisitedGuard<'mmap>,
-    vector: Vec<S::Scalar>,
-}
-
-impl<S: G> Iterator for HnswIndexIter<'_, S> {
-    type Item = HeapElement;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.as_mut()?.next()
-    }
-}
-
-impl<S: G> Iterator for HnswIndexIterInner<'_, S> {
-    type Item = HeapElement;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.results.len() > self.range {
-            return self.pop();
-        }
-
-        let mut visited = self.visited.fetch_current_version();
-        while let Some(Reverse((_, u))) = self.candidates.pop() {
-            let edges = find_edges(self.mmap, u, 0);
-            for &HnswMmapEdge(_, v) in edges.iter() {
-                if !visited.check(v) {
-                    continue;
-                }
-                visited.mark(v);
-                let v_dis = self.mmap.quantization.distance(&self.vector, v);
-                self.candidates.push(Reverse((v_dis, v)));
-                self.results.push(Reverse(HeapElement {
-                    distance: v_dis,
-                    payload: self.mmap.raw.payload(v),
-                }));
-            }
-            if self.results.len() > self.range {
-                return self.pop();
-            }
-        }
-
-        self.pop()
-    }
-}
-
-impl<S: G> HnswIndexIterInner<'_, S> {
-    fn pop(&mut self) -> Option<HeapElement> {
-        if self.results.peek() > self.lost.last() {
-            self.results.pop().map(|x| x.0)
-        } else {
-            self.lost.pop().map(|x| x.0)
         }
     }
 }

@@ -1,19 +1,12 @@
 use super::growing::GrowingSegment;
 use super::SegmentTracker;
-use crate::index::indexing::{DynamicIndexIter, DynamicIndexing};
-use crate::index::{IndexOptions, IndexTracker, SegmentStat};
+use crate::index::indexing::DynamicIndexing;
+use crate::index::{IndexOptions, IndexTracker, SearchOptions, SegmentStat};
 use crate::prelude::*;
 use crate::utils::dir_ops::{dir_size, sync_dir};
-use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 use uuid::Uuid;
-use validator::Validate;
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Validate)]
-pub struct SealedSearchGucs {
-    pub ivf_nprob: u32,
-}
 
 pub struct SealedSegment<S: G> {
     uuid: Uuid,
@@ -75,14 +68,17 @@ impl<S: G> SealedSegment<S> {
     }
     pub fn search(
         &self,
-        k: usize,
         vector: &[S::Scalar],
-        gucs: SealedSearchGucs,
+        opts: &SearchOptions,
         filter: &mut impl Filter,
     ) -> Heap {
-        self.indexing.search(k, vector, gucs, filter)
+        self.indexing.search(vector, opts, filter)
     }
-    pub fn vbase(&self, range: usize, vector: &[S::Scalar]) -> DynamicIndexIter<'_, S> {
-        self.indexing.vbase(range, vector)
+    pub fn vbase<'a>(
+        &'a self,
+        vector: &'a [S::Scalar],
+        opts: &'a SearchOptions,
+    ) -> (Vec<HeapElement>, Box<dyn Iterator<Item = HeapElement> + 'a>) {
+        self.indexing.vbase(vector, opts)
     }
 }

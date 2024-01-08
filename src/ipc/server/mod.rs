@@ -1,9 +1,9 @@
 use super::packet::*;
 use super::transport::ServerSocket;
 use super::IpcError;
-use service::index::segments::SearchGucs;
 use service::index::IndexOptions;
 use service::index::IndexStat;
+use service::index::SearchOptions;
 use service::prelude::*;
 
 pub struct RpcHandler {
@@ -38,14 +38,14 @@ impl RpcHandler {
             },
             RpcPacket::Search {
                 handle,
-                search,
+                vector,
                 prefilter,
-                gucs,
+                opts,
             } => RpcHandle::Search {
                 handle,
-                search,
+                vector,
                 prefilter,
-                gucs,
+                opts,
                 x: Search {
                     socket: self.socket,
                 },
@@ -68,9 +68,14 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Vbase { handle, vbase } => RpcHandle::Vbase {
+            RpcPacket::Vbase {
                 handle,
-                vbase,
+                vector,
+                opts,
+            } => RpcHandle::Vbase {
+                handle,
+                vector,
+                opts,
                 x: Vbase {
                     socket: self.socket,
                 },
@@ -87,9 +92,9 @@ pub enum RpcHandle {
     },
     Search {
         handle: Handle,
-        search: (DynamicVector, usize),
+        vector: DynamicVector,
         prefilter: bool,
-        gucs: SearchGucs,
+        opts: SearchOptions,
         x: Search,
     },
     Insert {
@@ -115,7 +120,8 @@ pub enum RpcHandle {
     },
     Vbase {
         handle: Handle,
-        vbase: (DynamicVector, usize),
+        vector: DynamicVector,
+        opts: SearchOptions,
         x: Vbase,
     },
 }

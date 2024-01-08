@@ -2,17 +2,11 @@ pub mod growing;
 pub mod sealed;
 
 use super::IndexTracker;
-use crate::index::segments::sealed::SealedSearchGucs;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 use validator::Validate;
 use validator::ValidationError;
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Validate)]
-pub struct SearchGucs {
-    pub sealed: SealedSearchGucs,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]

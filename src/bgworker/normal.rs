@@ -76,21 +76,21 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
             }
             RpcHandle::Search {
                 handle,
-                search,
+                vector,
                 prefilter: true,
-                gucs,
+                opts,
                 mut x,
-            } => match worker.call_search(handle, search, gucs, |p| x.check(p).unwrap()) {
+            } => match worker.call_search(handle, vector, &opts, |p| x.check(p).unwrap()) {
                 Ok(res) => handler = x.leave(res)?,
                 Err(e) => x.reset(e)?,
             },
             RpcHandle::Search {
                 handle,
-                search,
+                vector,
                 prefilter: false,
-                gucs,
+                opts,
                 x,
-            } => match worker.call_search(handle, search, gucs, |_| true) {
+            } => match worker.call_search(handle, vector, &opts, |_| true) {
                 Ok(res) => handler = x.leave(res)?,
                 Err(e) => x.reset(e)?,
             },
@@ -106,7 +106,12 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                 Ok(res) => handler = x.leave(res)?,
                 Err(e) => x.reset(e)?,
             },
-            RpcHandle::Vbase { handle, vbase, x } => {
+            RpcHandle::Vbase {
+                handle,
+                vector,
+                opts,
+                x,
+            } => {
                 use crate::ipc::server::VbaseHandle::*;
                 let instance = match worker.get_instance(handle) {
                     Ok(x) => x,
@@ -116,7 +121,7 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                     Ok(x) => x,
                     Err(e) => x.reset(e)?,
                 };
-                let mut it = match view.vbase(vbase.0, vbase.1) {
+                let mut it = match view.vbase(&vector, &opts) {
                     Ok(x) => x,
                     Err(e) => x.reset(e)?,
                 };

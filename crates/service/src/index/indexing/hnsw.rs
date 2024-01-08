@@ -1,11 +1,11 @@
 use super::AbstractIndexing;
-use crate::algorithms::hnsw::HnswIndexIter;
+use crate::algorithms::hnsw::Hnsw;
 use crate::algorithms::quantization::QuantizationOptions;
 use crate::index::segments::growing::GrowingSegment;
-use crate::index::segments::sealed::SealedSearchGucs;
+use crate::index::segments::sealed::SealedSegment;
 use crate::index::IndexOptions;
+use crate::index::SearchOptions;
 use crate::prelude::*;
-use crate::{algorithms::hnsw::Hnsw, index::segments::sealed::SealedSegment};
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, sync::Arc};
 use validator::Validate;
@@ -75,19 +75,18 @@ impl<S: G> AbstractIndexing<S> for HnswIndexing<S> {
         self.raw.payload(i)
     }
 
-    fn search(
-        &self,
-        k: usize,
-        vector: &[S::Scalar],
-        _gucs: SealedSearchGucs,
-        filter: &mut impl Filter,
-    ) -> Heap {
-        self.raw.search(k, vector, filter)
+    fn search(&self, vector: &[S::Scalar], opts: &SearchOptions, filter: &mut impl Filter) -> Heap {
+        self.raw.search(vector, opts, filter)
     }
-}
 
-impl<S: G> HnswIndexing<S> {
-    pub fn search_vbase(&self, range: usize, vector: &[S::Scalar]) -> HnswIndexIter<'_, S> {
-        self.raw.search_vbase(range, vector)
+    fn vbase<'a>(
+        &'a self,
+        vector: &'a [S::Scalar],
+        opts: &'a SearchOptions,
+    ) -> (
+        Vec<HeapElement>,
+        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
+    ) {
+        self.raw.vbase(vector, opts)
     }
 }

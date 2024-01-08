@@ -8,8 +8,7 @@ use crate::ipc::client::ClientGuard;
 use crate::ipc::client::Vbase;
 use crate::prelude::*;
 use pgrx::FromDatum;
-use service::index::segments::sealed::SealedSearchGucs;
-use service::index::segments::SearchGucs;
+use service::index::SearchOptions;
 use service::prelude::*;
 
 pub enum Scanner {
@@ -100,10 +99,14 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         let mut rpc = crate::ipc::client::borrow_mut();
 
         if ENABLE_VBASE.get() {
-            let vbase = rpc.vbase(id, (vector.clone(), VBASE_RANGE.get() as _));
+            let opts = SearchOptions {
+                search_k: K.get() as _,
+                vbase_range: VBASE_RANGE.get() as _,
+                ivf_nprobe: IVF_NPROBE.get() as _,
+            };
+            let vbase = rpc.vbase(id, vector.clone(), opts);
             *scanner = Scanner::Vbase { node, vbase };
         } else {
-            let k = K.get() as _;
             struct Search {
                 node: *mut pgrx::pg_sys::IndexScanState,
             }
@@ -115,19 +118,13 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
             }
 
             let search = Search { node };
-            let gucs = SearchGucs {
-                sealed: SealedSearchGucs {
-                    ivf_nprob: IVF_NPROBE.get() as _,
-                },
+            let opts = SearchOptions {
+                search_k: K.get() as _,
+                vbase_range: VBASE_RANGE.get() as _,
+                ivf_nprobe: IVF_NPROBE.get() as _,
             };
 
-            let mut data = rpc.search(
-                id,
-                (vector.clone(), k),
-                ENABLE_PREFILTER.get(),
-                gucs,
-                search,
-            );
+            let mut data = rpc.search(id, vector.clone(), ENABLE_PREFILTER.get(), opts, search);
             data.reverse();
             *scanner = Scanner::Search { node, data };
         }
