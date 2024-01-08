@@ -87,7 +87,17 @@ jobs:
       - name: Sqllogictest
         run: |
           psql -f ./tests/init.sql
-          sqllogictest -u runner -d runner './tests/**/*.slt'
+          sqllogictest -u runner -d runner './tests/sqllogictest/*.slt'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' 
+      - name: Crash Recovery test
+        run: |
+          pip install psutil==5.9.7
+          psql -f ./tests/init.sql
+          sqllogictest -u runner -d runner './tests/crash/create.slt'
+          sudo python ./tests/crash/kill.py
+          sqllogictest -u runner -d runner './tests/crash/restore.slt'
       - uses: actions/cache/save@v3
         with:
           path: |
