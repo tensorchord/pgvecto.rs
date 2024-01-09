@@ -1,0 +1,14 @@
+query I
+SELECT EXISTS(SELECT 1 FROM pg_tables WHERE tablename = 't');
+----
+t
+
+query I
+SELECT EXISTS(SELECT 1 from pg_indexes where indexname = 'i');
+----
+t
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0.5,0.5,0.5]' limit 10) t2;
+----
+10
