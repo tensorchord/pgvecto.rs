@@ -1,26 +1,27 @@
-from functools import reduce
 import logging
 import time
-from typing import Callable
 
 import psutil
 
 TIMEOUT = 30
-AND_FILTERS = ["postgres", "vectors"]
+FILTERS = ["postgres", "vectors"]
 logging.getLogger().setLevel(logging.INFO)
 
 
-def process_filter(p: psutil.Process):
+def process_filter(p: psutil.Process) -> bool:
     cmdline = "".join(p.cmdline())
-    filter_func: Callable[[bool, str], bool] = lambda ans, e: ans and (e in cmdline)
-    return reduce(filter_func, AND_FILTERS, True)
+    for case in FILTERS:
+        if case not in cmdline:
+            return False
+    return True
 
 
 if __name__ == "__main__":
     # Send kill signal to vectors process
-    timeout_start = time.time()
+    endpoint = time.monotonic() + TIMEOUT
+    last_pids = set()
     while True:
-        if time.time() > timeout_start + TIMEOUT:
+        if time.monotonic() > endpoint:
             raise TimeoutError(f"Background worker not found in {TIMEOUT}s")
         procs = [p for p in psutil.process_iter() if process_filter(p)]
         last_pids = set(p.pid for p in procs)
@@ -32,23 +33,24 @@ if __name__ == "__main__":
         time.sleep(1)
 
     # Wait until process is not exist or recreated
-    timeout_start = time.time()
+    endpoint = time.monotonic() + TIMEOUT
     while True:
-        if time.time() > timeout_start + TIMEOUT:
+        if time.monotonic() > endpoint:
             raise TimeoutError(f"Background worker not killed in {TIMEOUT}s")
         procs = [p for p in psutil.process_iter() if process_filter(p)]
         pids = set(p.pid for p in procs)
-        if len(procs) == 0 or pids != last_pids:
+        if len(pids & last_pids) == 0:
             logging.info(f"Background worker killed {last_pids}, now {pids}")
             break
 
     # Wait until process is recreated
-    timeout_start = time.time()
+    endpoint = time.monotonic() + TIMEOUT
     while True:
-        if time.time() > timeout_start + TIMEOUT:
+        if time.monotonic() > endpoint:
             raise TimeoutError(f"Background worker not recreated in {TIMEOUT}s")
         procs = [p for p in psutil.process_iter() if process_filter(p)]
+        pids = set(p.pid for p in procs)
         if len(procs) == 1:
-            logging.info(f"Background worker recreated {[p.pid for p in procs]}")
+            logging.info(f"Background worker recreated {pids}")
             break
         time.sleep(1)
