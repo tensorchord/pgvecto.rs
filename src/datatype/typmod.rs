@@ -1,6 +1,6 @@
+use crate::prelude::*;
 use pgrx::Array;
 use serde::{Deserialize, Serialize};
-use service::prelude::*;
 use std::ffi::{CStr, CString};
 use std::num::NonZeroU16;
 
@@ -59,11 +59,11 @@ fn typmod_in(list: Array<&CStr>) -> i32 {
     } else if list.len() == 1 {
         let s = list.get(0).unwrap().unwrap().to_str().unwrap();
         let typmod = Typmod::parse_from_str(s)
-            .ok_or(FriendlyError::BadTypeDimensions)
+            .ok_or(SessionError::BadTypeDimensions)
             .friendly();
         typmod.into_i32()
     } else {
-        FriendlyError::BadTypeDimensions.friendly();
+        SessionError::BadTypeDimensions.friendly();
     }
 }
 

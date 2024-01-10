@@ -1,9 +1,9 @@
+pub mod basic;
 pub mod create;
 pub mod delete;
 pub mod destroy;
 pub mod flush;
 pub mod insert;
-pub mod search;
 pub mod stat;
 pub mod vbase;
 
@@ -31,10 +31,9 @@ pub enum RpcPacket {
         handle: Handle,
         insert: (DynamicVector, Pointer),
     },
-    Search {
+    Basic {
         handle: Handle,
         vector: DynamicVector,
-        prefilter: bool,
         opts: SearchOptions,
     },
     Stat {

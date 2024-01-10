@@ -4,20 +4,20 @@ pub mod server;
 pub mod transport;
 
 use self::server::RpcHandler;
-use service::prelude::*;
+use crate::prelude::*;
 use thiserror::Error;
 
 #[derive(Debug, Clone, Error)]
 pub enum IpcError {
-    #[error("IPC connection is closed unexpected.")]
+    #[error("\
+IPC connection is closed unexpected.
+ADVICE: The error is raisen by background worker errors. \
+Please check the full PostgreSQL log to get more information. Please read `https://docs.pgvecto.rs/admin/configuration.html`.\
+")]
     Closed,
 }
 
-impl FriendlyErrorLike for IpcError {
-    fn convert(self) -> FriendlyError {
-        FriendlyError::Ipc
-    }
-}
+impl FriendlyError for IpcError {}
 
 pub fn listen_unix() -> impl Iterator<Item = RpcHandler> {
     std::iter::from_fn(move || {
@@ -35,14 +35,12 @@ pub fn listen_mmap() -> impl Iterator<Item = RpcHandler> {
 
 pub fn connect_unix() -> self::transport::ClientSocket {
     self::transport::ClientSocket::Unix {
-        ok: true,
         socket: self::transport::unix::connect(),
     }
 }
 
 pub fn connect_mmap() -> self::transport::ClientSocket {
     self::transport::ClientSocket::Mmap {
-        ok: true,
         socket: self::transport::mmap::connect(),
     }
 }

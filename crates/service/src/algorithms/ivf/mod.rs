@@ -8,6 +8,8 @@ use crate::index::segments::sealed::SealedSegment;
 use crate::index::IndexOptions;
 use crate::index::SearchOptions;
 use crate::prelude::*;
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -71,15 +73,15 @@ impl<S: G> Ivf<S> {
         }
     }
 
-    pub fn search(
+    pub fn basic(
         &self,
         vector: &[S::Scalar],
         opts: &SearchOptions,
-        filter: &mut impl Filter,
-    ) -> Heap {
+        filter: impl Filter,
+    ) -> BinaryHeap<Reverse<Element>> {
         match self {
-            Ivf::Naive(x) => x.search(vector, opts, filter),
-            Ivf::Pq(x) => x.search(vector, opts, filter),
+            Ivf::Naive(x) => x.basic(vector, opts, filter),
+            Ivf::Pq(x) => x.basic(vector, opts, filter),
         }
     }
 
@@ -87,13 +89,11 @@ impl<S: G> Ivf<S> {
         &'a self,
         vector: &'a [S::Scalar],
         opts: &'a SearchOptions,
-    ) -> (
-        Vec<HeapElement>,
-        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
-    ) {
+        filter: impl Filter + 'a,
+    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
         match self {
-            Ivf::Naive(x) => x.vbase(vector, opts),
-            Ivf::Pq(x) => x.vbase(vector, opts),
+            Ivf::Naive(x) => x.vbase(vector, opts, filter),
+            Ivf::Pq(x) => x.vbase(vector, opts, filter),
         }
     }
 }

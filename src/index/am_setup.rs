@@ -1,4 +1,5 @@
 use crate::datatype::typmod::Typmod;
+use crate::prelude::*;
 use serde::Deserialize;
 use service::index::indexing::IndexingOptions;
 use service::index::optimizing::OptimizingOptions;
@@ -6,7 +7,6 @@ use service::index::segments::SegmentsOptions;
 use service::index::{IndexOptions, VectorOptions};
 use service::prelude::*;
 use std::ffi::CStr;
-use validator::Validate;
 
 pub fn helper_offset() -> usize {
     bytemuck::offset_of!(Helper, offset)
@@ -66,7 +66,7 @@ pub unsafe fn convert_opfamily_to_distance(opfamily: pgrx::pg_sys::Oid) -> (Dist
     } else if operator == regoperatorin("<=>(vecf16,vecf16)") {
         result = (Distance::Cos, Kind::F16);
     } else {
-        FriendlyError::BadOptions3.friendly();
+        SessionError::BadOptions2.friendly();
     };
     pgrx::pg_sys::ReleaseCatCacheList(list);
     pgrx::pg_sys::ReleaseSysCache(tuple);
@@ -83,22 +83,15 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
     let attrs = (*(*index_relation).rd_att).attrs.as_slice(1);
     let attr = &attrs[0];
     let typmod = Typmod::parse_from_i32(attr.type_mod()).unwrap();
-    let dims = typmod.dims().ok_or(FriendlyError::BadOption2).friendly();
+    let dims = typmod.dims().ok_or(SessionError::BadOption1).friendly();
     // get other options
     let parsed = get_parsed_from_varlena((*index_relation).rd_options);
-    let options = IndexOptions {
+    IndexOptions {
         vector: VectorOptions { dims, d, k },
         segment: parsed.segment,
         optimizing: parsed.optimizing,
         indexing: parsed.indexing,
-    };
-    if let Err(errors) = options.validate() {
-        FriendlyError::BadOption {
-            validation: errors.to_string(),
-        }
-        .friendly();
     }
-    options
 }
 
 #[derive(Copy, Clone, Debug, Default)]

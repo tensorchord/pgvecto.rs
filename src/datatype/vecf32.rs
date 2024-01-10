@@ -1,4 +1,5 @@
 use crate::datatype::typmod::Typmod;
+use crate::prelude::*;
 use pgrx::pg_sys::Datum;
 use pgrx::pg_sys::Oid;
 use pgrx::pgrx_sql_entity_graph::metadata::ArgumentError;
@@ -270,7 +271,7 @@ fn vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
         if let Some(x) = option {
             x
         } else {
-            FriendlyError::BadLiteral {
+            SessionError::BadLiteral {
                 hint: hint.to_string(),
             }
             .friendly()
@@ -309,7 +310,7 @@ fn vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
             }
             (_, b' ') => {}
             _ => {
-                FriendlyError::BadLiteral {
+                SessionError::BadLiteral {
                     hint: format!("Bad character with ascii {:#x}.", c),
                 }
                 .friendly();
@@ -317,13 +318,13 @@ fn vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
         }
     }
     if state != MatchedRight {
-        FriendlyError::BadLiteral {
+        SessionError::BadLiteral {
             hint: "Bad sequence.".to_string(),
         }
         .friendly();
     }
     if vector.is_empty() || vector.len() > 65535 {
-        FriendlyError::BadValueDimensions.friendly();
+        SessionError::BadValueDimensions.friendly();
     }
     Vecf32::new_in_postgres(&vector)
 }

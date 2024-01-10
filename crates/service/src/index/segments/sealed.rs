@@ -4,6 +4,8 @@ use crate::index::indexing::DynamicIndexing;
 use crate::index::{IndexOptions, IndexTracker, SearchOptions, SegmentStat};
 use crate::prelude::*;
 use crate::utils::dir_ops::{dir_size, sync_dir};
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -66,19 +68,20 @@ impl<S: G> SealedSegment<S> {
     pub fn payload(&self, i: u32) -> Payload {
         self.indexing.payload(i)
     }
-    pub fn search(
+    pub fn basic(
         &self,
         vector: &[S::Scalar],
         opts: &SearchOptions,
-        filter: &mut impl Filter,
-    ) -> Heap {
-        self.indexing.search(vector, opts, filter)
+        filter: impl Filter,
+    ) -> BinaryHeap<Reverse<Element>> {
+        self.indexing.basic(vector, opts, filter)
     }
     pub fn vbase<'a>(
         &'a self,
         vector: &'a [S::Scalar],
         opts: &'a SearchOptions,
-    ) -> (Vec<HeapElement>, Box<dyn Iterator<Item = HeapElement> + 'a>) {
-        self.indexing.vbase(vector, opts)
+        filter: impl Filter + 'a,
+    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
+        self.indexing.vbase(vector, opts, filter)
     }
 }

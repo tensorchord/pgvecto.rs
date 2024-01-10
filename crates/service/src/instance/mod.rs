@@ -22,37 +22,37 @@ pub enum Instance {
 }
 
 impl Instance {
-    pub fn create(path: PathBuf, options: IndexOptions) -> Self {
+    pub fn create(path: PathBuf, options: IndexOptions) -> Result<Self, ServiceError> {
         match (options.vector.d, options.vector.k) {
             (Distance::Cos, Kind::F32) => {
-                let index = Index::create(path.clone(), options);
+                let index = Index::create(path.clone(), options)?;
                 self::metadata::Metadata::write(path.join("metadata"));
-                Self::F32Cos(index)
+                Ok(Self::F32Cos(index))
             }
             (Distance::Dot, Kind::F32) => {
-                let index = Index::create(path.clone(), options);
+                let index = Index::create(path.clone(), options)?;
                 self::metadata::Metadata::write(path.join("metadata"));
-                Self::F32Dot(index)
+                Ok(Self::F32Dot(index))
             }
             (Distance::L2, Kind::F32) => {
-                let index = Index::create(path.clone(), options);
+                let index = Index::create(path.clone(), options)?;
                 self::metadata::Metadata::write(path.join("metadata"));
-                Self::F32L2(index)
+                Ok(Self::F32L2(index))
             }
             (Distance::Cos, Kind::F16) => {
-                let index = Index::create(path.clone(), options);
+                let index = Index::create(path.clone(), options)?;
                 self::metadata::Metadata::write(path.join("metadata"));
-                Self::F16Cos(index)
+                Ok(Self::F16Cos(index))
             }
             (Distance::Dot, Kind::F16) => {
-                let index = Index::create(path.clone(), options);
+                let index = Index::create(path.clone(), options)?;
                 self::metadata::Metadata::write(path.join("metadata"));
-                Self::F16Dot(index)
+                Ok(Self::F16Dot(index))
             }
             (Distance::L2, Kind::F16) => {
-                let index = Index::create(path.clone(), options);
+                let index = Index::create(path.clone(), options)?;
                 self::metadata::Metadata::write(path.join("metadata"));
-                Self::F16L2(index)
+                Ok(Self::F16L2(index))
             }
         }
     }
@@ -72,7 +72,7 @@ impl Instance {
             (Distance::L2, Kind::F16) => Self::F16L2(Index::open(path)),
         }
     }
-    pub fn options(&self) -> Result<&IndexOptions, FriendlyError> {
+    pub fn options(&self) -> Result<&IndexOptions, ServiceError> {
         match self {
             Instance::F32Cos(x) => Ok(x.options()),
             Instance::F32Dot(x) => Ok(x.options()),
@@ -80,39 +80,21 @@ impl Instance {
             Instance::F16Cos(x) => Ok(x.options()),
             Instance::F16Dot(x) => Ok(x.options()),
             Instance::F16L2(x) => Ok(x.options()),
-            Instance::Upgrade => Err(FriendlyError::Upgrade2),
+            Instance::Upgrade => Err(ServiceError::Upgrade2),
         }
     }
-    pub fn refresh(&self) -> Result<(), FriendlyError> {
+    pub fn refresh(&self) -> Result<(), ServiceError> {
         match self {
-            Instance::F32Cos(x) => {
-                x.refresh();
-                Ok(())
-            }
-            Instance::F32Dot(x) => {
-                x.refresh();
-                Ok(())
-            }
-            Instance::F32L2(x) => {
-                x.refresh();
-                Ok(())
-            }
-            Instance::F16Cos(x) => {
-                x.refresh();
-                Ok(())
-            }
-            Instance::F16Dot(x) => {
-                x.refresh();
-                Ok(())
-            }
-            Instance::F16L2(x) => {
-                x.refresh();
-                Ok(())
-            }
-            Instance::Upgrade => Err(FriendlyError::Upgrade2),
+            Instance::F32Cos(x) => Ok(x.refresh()),
+            Instance::F32Dot(x) => Ok(x.refresh()),
+            Instance::F32L2(x) => Ok(x.refresh()),
+            Instance::F16Cos(x) => Ok(x.refresh()),
+            Instance::F16Dot(x) => Ok(x.refresh()),
+            Instance::F16L2(x) => Ok(x.refresh()),
+            Instance::Upgrade => Err(ServiceError::Upgrade2),
         }
     }
-    pub fn view(&self) -> Result<InstanceView, FriendlyError> {
+    pub fn view(&self) -> Result<InstanceView, ServiceError> {
         match self {
             Instance::F32Cos(x) => Ok(InstanceView::F32Cos(x.view())),
             Instance::F32Dot(x) => Ok(InstanceView::F32Dot(x.view())),
@@ -120,10 +102,10 @@ impl Instance {
             Instance::F16Cos(x) => Ok(InstanceView::F16Cos(x.view())),
             Instance::F16Dot(x) => Ok(InstanceView::F16Dot(x.view())),
             Instance::F16L2(x) => Ok(InstanceView::F16L2(x.view())),
-            Instance::Upgrade => Err(FriendlyError::Upgrade2),
+            Instance::Upgrade => Err(ServiceError::Upgrade2),
         }
     }
-    pub fn stat(&self) -> Result<IndexStat, FriendlyError> {
+    pub fn stat(&self) -> Result<IndexStat, ServiceError> {
         match self {
             Instance::F32Cos(x) => Ok(x.stat()),
             Instance::F32Dot(x) => Ok(x.stat()),
@@ -146,140 +128,75 @@ pub enum InstanceView {
 }
 
 impl InstanceView {
-    pub fn search<F: FnMut(Pointer) -> bool>(
-        &self,
-        vector: &DynamicVector,
-        opts: &SearchOptions,
-        filter: F,
-    ) -> Result<Vec<Pointer>, FriendlyError> {
-        match (self, vector) {
-            (InstanceView::F32Cos(x), DynamicVector::F32(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(x.search(vector, opts, filter))
-            }
-            (InstanceView::F32Dot(x), DynamicVector::F32(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(x.search(vector, opts, filter))
-            }
-            (InstanceView::F32L2(x), DynamicVector::F32(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(x.search(vector, opts, filter))
-            }
-            (InstanceView::F16Cos(x), DynamicVector::F16(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(x.search(vector, opts, filter))
-            }
-            (InstanceView::F16Dot(x), DynamicVector::F16(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(x.search(vector, opts, filter))
-            }
-            (InstanceView::F16L2(x), DynamicVector::F16(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(x.search(vector, opts, filter))
-            }
-            _ => Err(FriendlyError::Unmatched2),
-        }
-    }
-    pub fn vbase<'a>(
+    pub fn basic<'a, F: Fn(Pointer) -> bool + Clone + 'a>(
         &'a self,
         vector: &'a DynamicVector,
         opts: &'a SearchOptions,
-    ) -> Result<impl Iterator<Item = Pointer> + '_, FriendlyError> {
+        filter: F,
+    ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
         match (self, vector) {
             (InstanceView::F32Cos(x), DynamicVector::F32(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(Box::new(x.vbase(vector, opts)) as Box<dyn Iterator<Item = Pointer>>)
+                Ok(Box::new(x.basic(vector, opts, filter)?) as Box<dyn Iterator<Item = Pointer>>)
             }
             (InstanceView::F32Dot(x), DynamicVector::F32(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(Box::new(x.vbase(vector, opts)))
+                Ok(Box::new(x.basic(vector, opts, filter)?))
             }
             (InstanceView::F32L2(x), DynamicVector::F32(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(Box::new(x.vbase(vector, opts)))
+                Ok(Box::new(x.basic(vector, opts, filter)?))
             }
             (InstanceView::F16Cos(x), DynamicVector::F16(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(Box::new(x.vbase(vector, opts)))
+                Ok(Box::new(x.basic(vector, opts, filter)?))
             }
             (InstanceView::F16Dot(x), DynamicVector::F16(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(Box::new(x.vbase(vector, opts)))
+                Ok(Box::new(x.basic(vector, opts, filter)?))
             }
             (InstanceView::F16L2(x), DynamicVector::F16(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(Box::new(x.vbase(vector, opts)))
+                Ok(Box::new(x.basic(vector, opts, filter)?))
             }
-            _ => Err(FriendlyError::Unmatched2),
+            _ => Err(ServiceError::Unmatched),
+        }
+    }
+    pub fn vbase<'a, F: FnMut(Pointer) -> bool + Clone + 'a>(
+        &'a self,
+        vector: &'a DynamicVector,
+        opts: &'a SearchOptions,
+        filter: F,
+    ) -> Result<impl Iterator<Item = Pointer> + '_, ServiceError> {
+        match (self, vector) {
+            (InstanceView::F32Cos(x), DynamicVector::F32(vector)) => {
+                Ok(Box::new(x.vbase(vector, opts, filter)?) as Box<dyn Iterator<Item = Pointer>>)
+            }
+            (InstanceView::F32Dot(x), DynamicVector::F32(vector)) => {
+                Ok(Box::new(x.vbase(vector, opts, filter)?))
+            }
+            (InstanceView::F32L2(x), DynamicVector::F32(vector)) => {
+                Ok(Box::new(x.vbase(vector, opts, filter)?))
+            }
+            (InstanceView::F16Cos(x), DynamicVector::F16(vector)) => {
+                Ok(Box::new(x.vbase(vector, opts, filter)?))
+            }
+            (InstanceView::F16Dot(x), DynamicVector::F16(vector)) => {
+                Ok(Box::new(x.vbase(vector, opts, filter)?))
+            }
+            (InstanceView::F16L2(x), DynamicVector::F16(vector)) => {
+                Ok(Box::new(x.vbase(vector, opts, filter)?))
+            }
+            _ => Err(ServiceError::Unmatched),
         }
     }
     pub fn insert(
         &self,
         vector: DynamicVector,
         pointer: Pointer,
-    ) -> Result<Result<(), OutdatedError>, FriendlyError> {
+    ) -> Result<Result<(), OutdatedError>, ServiceError> {
         match (self, vector) {
-            (InstanceView::F32Cos(x), DynamicVector::F32(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(x.insert(vector, pointer))
-            }
-            (InstanceView::F32Dot(x), DynamicVector::F32(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(x.insert(vector, pointer))
-            }
-            (InstanceView::F32L2(x), DynamicVector::F32(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(x.insert(vector, pointer))
-            }
-            (InstanceView::F16Cos(x), DynamicVector::F16(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(x.insert(vector, pointer))
-            }
-            (InstanceView::F16Dot(x), DynamicVector::F16(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(x.insert(vector, pointer))
-            }
-            (InstanceView::F16L2(x), DynamicVector::F16(vector)) => {
-                if x.options.vector.dims as usize != vector.len() {
-                    return Err(FriendlyError::Unmatched2);
-                }
-                Ok(x.insert(vector, pointer))
-            }
-            _ => Err(FriendlyError::Unmatched2),
+            (InstanceView::F32Cos(x), DynamicVector::F32(vector)) => x.insert(vector, pointer),
+            (InstanceView::F32Dot(x), DynamicVector::F32(vector)) => x.insert(vector, pointer),
+            (InstanceView::F32L2(x), DynamicVector::F32(vector)) => x.insert(vector, pointer),
+            (InstanceView::F16Cos(x), DynamicVector::F16(vector)) => x.insert(vector, pointer),
+            (InstanceView::F16Dot(x), DynamicVector::F16(vector)) => x.insert(vector, pointer),
+            (InstanceView::F16L2(x), DynamicVector::F16(vector)) => x.insert(vector, pointer),
+            _ => Err(ServiceError::Unmatched),
         }
     }
     pub fn delete<F: FnMut(Pointer) -> bool>(&self, f: F) {
