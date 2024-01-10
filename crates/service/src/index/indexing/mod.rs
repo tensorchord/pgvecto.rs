@@ -11,6 +11,8 @@ use super::IndexOptions;
 use crate::index::SearchOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use validator::Validate;
@@ -72,12 +74,18 @@ pub trait AbstractIndexing<S: G>: Sized {
     fn len(&self) -> u32;
     fn vector(&self, i: u32) -> &[S::Scalar];
     fn payload(&self, i: u32) -> Payload;
-    fn search(&self, vector: &[S::Scalar], opts: &SearchOptions, filter: &mut impl Filter) -> Heap;
+    fn basic(
+        &self,
+        vector: &[S::Scalar],
+        opts: &SearchOptions,
+        filter: impl Filter,
+    ) -> BinaryHeap<Reverse<Element>>;
     fn vbase<'a>(
         &'a self,
         vector: &'a [S::Scalar],
         opts: &'a SearchOptions,
-    ) -> (Vec<HeapElement>, Box<dyn Iterator<Item = HeapElement> + 'a>);
+        filter: impl Filter + 'a,
+    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>);
 }
 
 pub enum DynamicIndexing<S: G> {
@@ -138,16 +146,16 @@ impl<S: G> DynamicIndexing<S> {
         }
     }
 
-    pub fn search(
+    pub fn basic(
         &self,
         vector: &[S::Scalar],
         opts: &SearchOptions,
-        filter: &mut impl Filter,
-    ) -> Heap {
+        filter: impl Filter,
+    ) -> BinaryHeap<Reverse<Element>> {
         match self {
-            DynamicIndexing::Flat(x) => x.search(vector, opts, filter),
-            DynamicIndexing::Ivf(x) => x.search(vector, opts, filter),
-            DynamicIndexing::Hnsw(x) => x.search(vector, opts, filter),
+            DynamicIndexing::Flat(x) => x.basic(vector, opts, filter),
+            DynamicIndexing::Ivf(x) => x.basic(vector, opts, filter),
+            DynamicIndexing::Hnsw(x) => x.basic(vector, opts, filter),
         }
     }
 
@@ -155,14 +163,12 @@ impl<S: G> DynamicIndexing<S> {
         &'a self,
         vector: &'a [S::Scalar],
         opts: &'a SearchOptions,
-    ) -> (
-        Vec<HeapElement>,
-        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
-    ) {
+        filter: impl Filter + 'a,
+    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
         match self {
-            DynamicIndexing::Flat(x) => x.vbase(vector, opts),
-            DynamicIndexing::Ivf(x) => x.vbase(vector, opts),
-            DynamicIndexing::Hnsw(x) => x.vbase(vector, opts),
+            DynamicIndexing::Flat(x) => x.vbase(vector, opts, filter),
+            DynamicIndexing::Ivf(x) => x.vbase(vector, opts, filter),
+            DynamicIndexing::Hnsw(x) => x.vbase(vector, opts, filter),
         }
     }
 }

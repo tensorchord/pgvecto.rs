@@ -2,7 +2,7 @@ use super::am_build;
 use super::am_scan;
 use super::am_setup;
 use super::am_update;
-use crate::gucs::ENABLE_VECTOR_INDEX;
+use crate::gucs::planning::ENABLE_INDEX;
 use crate::index::utils::from_datum;
 use crate::prelude::*;
 use crate::utils::cells::PgCell;
@@ -159,7 +159,7 @@ pub unsafe extern "C" fn amcostestimate(
     index_correlation: *mut f64,
     index_pages: *mut f64,
 ) {
-    if (*path).indexorderbys.is_null() || !ENABLE_VECTOR_INDEX.get() {
+    if (*path).indexorderbys.is_null() || !ENABLE_INDEX.get() {
         *index_startup_cost = f64::MAX;
         *index_total_cost = f64::MAX;
         *index_selectivity = 0.0;

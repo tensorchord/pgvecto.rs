@@ -2,9 +2,11 @@ use super::quantization::Quantization;
 use super::raw::Raw;
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::segments::sealed::SealedSegment;
-use crate::index::IndexOptions;
+use crate::index::{IndexOptions, SearchOptions};
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::fs::create_dir;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -43,18 +45,22 @@ impl<S: G> Flat<S> {
         self.mmap.raw.payload(i)
     }
 
-    pub fn search(&self, vector: &[S::Scalar], k: usize, filter: &mut impl Filter) -> Heap {
-        search(&self.mmap, k, vector, filter)
+    pub fn basic(
+        &self,
+        vector: &[S::Scalar],
+        _opts: &SearchOptions,
+        filter: impl Filter,
+    ) -> BinaryHeap<Reverse<Element>> {
+        basic(&self.mmap, vector, filter)
     }
 
     pub fn vbase<'a>(
         &'a self,
         vector: &'a [S::Scalar],
-    ) -> (
-        Vec<HeapElement>,
-        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
-    ) {
-        vbase(&self.mmap, vector)
+        _opts: &'a SearchOptions,
+        filter: impl Filter + 'a,
+    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
+        vbase(&self.mmap, vector, filter)
     }
 }
 
@@ -115,18 +121,17 @@ pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> FlatMmap<S> {
     FlatMmap { raw, quantization }
 }
 
-pub fn search<S: G>(
+pub fn basic<S: G>(
     mmap: &FlatMmap<S>,
-    k: usize,
     vector: &[S::Scalar],
-    filter: &mut impl Filter,
-) -> Heap {
-    let mut result = Heap::new(k);
+    mut filter: impl Filter,
+) -> BinaryHeap<Reverse<Element>> {
+    let mut result = BinaryHeap::new();
     for i in 0..mmap.raw.len() {
         let distance = mmap.quantization.distance(vector, i);
         let payload = mmap.raw.payload(i);
         if filter.check(payload) {
-            result.push(HeapElement { distance, payload });
+            result.push(Reverse(Element { distance, payload }));
         }
     }
     result
@@ -135,12 +140,15 @@ pub fn search<S: G>(
 pub fn vbase<'a, S: G>(
     mmap: &'a FlatMmap<S>,
     vector: &'a [S::Scalar],
-) -> (Vec<HeapElement>, Box<dyn Iterator<Item = HeapElement> + 'a>) {
+    mut filter: impl Filter + 'a,
+) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
     let mut result = Vec::new();
     for i in 0..mmap.raw.len() {
         let distance = mmap.quantization.distance(vector, i);
         let payload = mmap.raw.payload(i);
-        result.push(HeapElement { distance, payload });
+        if filter.check(payload) {
+            result.push(Element { distance, payload });
+        }
     }
     (result, Box::new(std::iter::empty()))
 }

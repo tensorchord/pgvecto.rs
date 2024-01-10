@@ -1,6 +1,7 @@
 use super::packet::*;
 use super::transport::ClientSocket;
-use crate::gucs::{Transport, TRANSPORT};
+use crate::gucs::internal::{Transport, TRANSPORT};
+use crate::prelude::*;
 use crate::utils::cells::PgRefCell;
 use service::index::IndexOptions;
 use service::index::IndexStat;
@@ -57,33 +58,20 @@ impl ClientGuard<Rpc> {
         self.socket.send(packet).friendly();
         let create::CreatePacket::Leave {} = self.socket.recv().friendly();
     }
-    pub fn search(
-        &mut self,
+    pub fn basic(
+        mut self,
         handle: Handle,
         vector: DynamicVector,
-        prefilter: bool,
         opts: SearchOptions,
-        mut t: impl Search,
-    ) -> Vec<Pointer> {
-        let packet = RpcPacket::Search {
+    ) -> ClientGuard<Basic> {
+        let packet = RpcPacket::Basic {
             handle,
             vector,
-            prefilter,
             opts,
         };
         self.socket.send(packet).friendly();
-        loop {
-            match self.socket.recv().friendly() {
-                search::SearchPacket::Check { p } => {
-                    self.socket
-                        .send(search::SearchCheckPacket { result: t.check(p) })
-                        .friendly();
-                }
-                search::SearchPacket::Leave { result } => {
-                    return result;
-                }
-            }
-        }
+        let vbase::VbaseErrorPacket {} = self.socket.recv().friendly();
+        ClientGuard::map(self)
     }
     pub fn delete(&mut self, handle: Handle, mut t: impl Delete) {
         let packet = RpcPacket::Delete { handle };
@@ -149,10 +137,6 @@ impl ClientLike for Rpc {
     }
 }
 
-pub trait Search {
-    fn check(&mut self, p: Pointer) -> bool;
-}
-
 pub trait Delete {
     fn test(&mut self, p: Pointer) -> bool;
 }
@@ -189,35 +173,50 @@ impl ClientLike for Vbase {
     }
 }
 
-enum Status {
-    Borrowed,
-    Lost,
-    Reuse(ClientSocket),
+pub struct Basic {
+    socket: ClientSocket,
 }
 
-static CLIENT: PgRefCell<Status> = unsafe { PgRefCell::new(Status::Lost) };
+impl Basic {
+    pub fn next(&mut self) -> Option<Pointer> {
+        let packet = basic::BasicPacket::Next {};
+        self.socket.send(packet).friendly();
+        let basic::BasicNextPacket { p } = self.socket.recv().friendly();
+        p
+    }
+}
+
+impl ClientGuard<Basic> {
+    pub fn leave(mut self) -> ClientGuard<Rpc> {
+        let packet = basic::BasicPacket::Leave {};
+        self.socket.send(packet).friendly();
+        let basic::BasicLeavePacket {} = self.socket.recv().friendly();
+        ClientGuard::map(self)
+    }
+}
+
+impl ClientLike for Basic {
+    fn from_socket(socket: ClientSocket) -> Self {
+        Self { socket }
+    }
+
+    fn to_socket(self) -> ClientSocket {
+        self.socket
+    }
+}
+
+static CLIENTS: PgRefCell<Vec<ClientSocket>> = unsafe { PgRefCell::new(Vec::new()) };
 
 pub fn borrow_mut() -> ClientGuard<Rpc> {
-    let mut x = CLIENT.borrow_mut();
-    match &mut *x {
-        Status::Borrowed => {
-            panic!("borrowed when borrowed");
-        }
-        Status::Lost => {
-            let socket = match TRANSPORT.get() {
-                Transport::unix => crate::ipc::connect_unix(),
-                Transport::mmap => crate::ipc::connect_mmap(),
-            };
-            *x = Status::Borrowed;
-            ClientGuard::new(Rpc::new(socket))
-        }
-        x @ Status::Reuse(_) => {
-            let Status::Reuse(socket) = std::mem::replace(x, Status::Borrowed) else {
-                unreachable!()
-            };
-            ClientGuard::new(Rpc::new(socket))
-        }
+    let mut x = CLIENTS.borrow_mut();
+    if let Some(socket) = x.pop() {
+        return ClientGuard::new(Rpc::new(socket));
     }
+    let socket = match TRANSPORT.get() {
+        Transport::unix => crate::ipc::connect_unix(),
+        Transport::mmap => crate::ipc::connect_mmap(),
+    };
+    ClientGuard::new(Rpc::new(socket))
 }
 
 impl<T: ClientLike> ClientGuard<T> {
@@ -228,20 +227,11 @@ impl<T: ClientLike> ClientGuard<T> {
 
 impl<T: ClientLike> Drop for ClientGuard<T> {
     fn drop(&mut self) {
-        let mut x = CLIENT.borrow_mut();
-        match *x {
-            Status::Borrowed => {
-                let socket = unsafe { ManuallyDrop::take(&mut self.0).to_socket() };
-                if !std::thread::panicking()
-                    && std::any::TypeId::of::<T>() == std::any::TypeId::of::<Rpc>()
-                {
-                    *x = Status::Reuse(socket);
-                } else {
-                    *x = Status::Lost;
-                }
-            }
-            Status::Lost => unreachable!(),
-            Status::Reuse(_) => unreachable!(),
+        let socket = unsafe { ManuallyDrop::take(&mut self.0).to_socket() };
+        if !std::thread::panicking() && std::any::TypeId::of::<T>() == std::any::TypeId::of::<Rpc>()
+        {
+            let mut x = CLIENTS.borrow_mut();
+            x.push(socket);
         }
     }
 }

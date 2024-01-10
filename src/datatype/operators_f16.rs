@@ -1,4 +1,5 @@
 use crate::datatype::vecf16::{Vecf16, Vecf16Input, Vecf16Output};
+use crate::prelude::*;
 use service::prelude::*;
 use std::ops::Deref;
 
@@ -7,7 +8,7 @@ use std::ops::Deref;
 #[pgrx::commutator(+)]
 fn vecf16_operator_add(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> Vecf16Output {
     if lhs.len() != rhs.len() {
-        FriendlyError::Unmatched {
+        SessionError::Unmatched {
             left_dimensions: lhs.len() as _,
             right_dimensions: rhs.len() as _,
         }
@@ -25,7 +26,7 @@ fn vecf16_operator_add(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> Vecf16Outp
 #[pgrx::opname(-)]
 fn vecf16_operator_minus(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> Vecf16Output {
     if lhs.len() != rhs.len() {
-        FriendlyError::Unmatched {
+        SessionError::Unmatched {
             left_dimensions: lhs.len() as _,
             right_dimensions: rhs.len() as _,
         }
@@ -47,7 +48,7 @@ fn vecf16_operator_minus(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> Vecf16Ou
 #[pgrx::join(scalarltjoinsel)]
 fn vecf16_operator_lt(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     if lhs.len() != rhs.len() {
-        FriendlyError::Unmatched {
+        SessionError::Unmatched {
             left_dimensions: lhs.len() as _,
             right_dimensions: rhs.len() as _,
         }
@@ -64,7 +65,7 @@ fn vecf16_operator_lt(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
 #[pgrx::join(scalarltjoinsel)]
 fn vecf16_operator_lte(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     if lhs.len() != rhs.len() {
-        FriendlyError::Unmatched {
+        SessionError::Unmatched {
             left_dimensions: lhs.len() as _,
             right_dimensions: rhs.len() as _,
         }
@@ -81,7 +82,7 @@ fn vecf16_operator_lte(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
 #[pgrx::join(scalargtjoinsel)]
 fn vecf16_operator_gt(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     if lhs.len() != rhs.len() {
-        FriendlyError::Unmatched {
+        SessionError::Unmatched {
             left_dimensions: lhs.len() as _,
             right_dimensions: rhs.len() as _,
         }
@@ -98,7 +99,7 @@ fn vecf16_operator_gt(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
 #[pgrx::join(scalargtjoinsel)]
 fn vecf16_operator_gte(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     if lhs.len() != rhs.len() {
-        FriendlyError::Unmatched {
+        SessionError::Unmatched {
             left_dimensions: lhs.len() as _,
             right_dimensions: rhs.len() as _,
         }
@@ -115,7 +116,7 @@ fn vecf16_operator_gte(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
 #[pgrx::join(eqjoinsel)]
 fn vecf16_operator_eq(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     if lhs.len() != rhs.len() {
-        FriendlyError::Unmatched {
+        SessionError::Unmatched {
             left_dimensions: lhs.len() as _,
             right_dimensions: rhs.len() as _,
         }
@@ -132,7 +133,7 @@ fn vecf16_operator_eq(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
 #[pgrx::join(eqjoinsel)]
 fn vecf16_operator_neq(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     if lhs.len() != rhs.len() {
-        FriendlyError::Unmatched {
+        SessionError::Unmatched {
             left_dimensions: lhs.len() as _,
             right_dimensions: rhs.len() as _,
         }
@@ -146,7 +147,7 @@ fn vecf16_operator_neq(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
 #[pgrx::commutator(<=>)]
 fn vecf16_operator_cosine(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> f32 {
     if lhs.len() != rhs.len() {
-        FriendlyError::Unmatched {
+        SessionError::Unmatched {
             left_dimensions: lhs.len() as _,
             right_dimensions: rhs.len() as _,
         }
@@ -160,7 +161,7 @@ fn vecf16_operator_cosine(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> f32 {
 #[pgrx::commutator(<#>)]
 fn vecf16_operator_dot(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> f32 {
     if lhs.len() != rhs.len() {
-        FriendlyError::Unmatched {
+        SessionError::Unmatched {
             left_dimensions: lhs.len() as _,
             right_dimensions: rhs.len() as _,
         }
@@ -174,7 +175,7 @@ fn vecf16_operator_dot(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> f32 {
 #[pgrx::commutator(<->)]
 fn vecf16_operator_l2(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> f32 {
     if lhs.len() != rhs.len() {
-        FriendlyError::Unmatched {
+        SessionError::Unmatched {
             left_dimensions: lhs.len() as _,
             right_dimensions: rhs.len() as _,
         }

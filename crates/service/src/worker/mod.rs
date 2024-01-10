@@ -3,7 +3,6 @@ pub mod metadata;
 use crate::index::IndexOptions;
 use crate::index::IndexStat;
 use crate::index::OutdatedError;
-use crate::index::SearchOptions;
 use crate::instance::Instance;
 use crate::prelude::*;
 use crate::utils::clean::clean;
@@ -65,42 +64,25 @@ impl Worker {
             view: ArcSwap::new(view),
         })
     }
-    pub fn call_create(&self, handle: Handle, options: IndexOptions) {
+    pub fn call_create(&self, handle: Handle, options: IndexOptions) -> Result<(), ServiceError> {
         let mut protect = self.protect.lock();
-        let index = Instance::create(self.path.join("indexes").join(handle.to_string()), options);
+        let index = Instance::create(self.path.join("indexes").join(handle.to_string()), options)?;
         if protect.indexes.insert(handle, index).is_some() {
             panic!("index {} already exists", handle)
         }
         protect.maintain(&self.view);
-    }
-    pub fn call_search<F>(
-        &self,
-        handle: Handle,
-        vector: DynamicVector,
-        opts: &SearchOptions,
-        filter: F,
-    ) -> Result<Vec<Pointer>, FriendlyError>
-    where
-        F: FnMut(Pointer) -> bool,
-    {
-        let view = self.view.load_full();
-        let index = view
-            .indexes
-            .get(&handle)
-            .ok_or(FriendlyError::UnknownIndex)?;
-        let view = index.view()?;
-        view.search(&vector, opts, filter)
+        Ok(())
     }
     pub fn call_insert(
         &self,
         handle: Handle,
         insert: (DynamicVector, Pointer),
-    ) -> Result<(), FriendlyError> {
+    ) -> Result<(), ServiceError> {
         let view = self.view.load_full();
         let index = view
             .indexes
             .get(&handle)
-            .ok_or(FriendlyError::UnknownIndex)?;
+            .ok_or(ServiceError::UnknownIndex)?;
         loop {
             let view = index.view()?;
             match view.insert(insert.0.clone(), insert.1)? {
@@ -109,7 +91,7 @@ impl Worker {
             }
         }
     }
-    pub fn call_delete<F>(&self, handle: Handle, f: F) -> Result<(), FriendlyError>
+    pub fn call_delete<F>(&self, handle: Handle, f: F) -> Result<(), ServiceError>
     where
         F: FnMut(Pointer) -> bool,
     {
@@ -117,17 +99,17 @@ impl Worker {
         let index = view
             .indexes
             .get(&handle)
-            .ok_or(FriendlyError::UnknownIndex)?;
+            .ok_or(ServiceError::UnknownIndex)?;
         let view = index.view()?;
         view.delete(f);
         Ok(())
     }
-    pub fn call_flush(&self, handle: Handle) -> Result<(), FriendlyError> {
+    pub fn call_flush(&self, handle: Handle) -> Result<(), ServiceError> {
         let view = self.view.load_full();
         let index = view
             .indexes
             .get(&handle)
-            .ok_or(FriendlyError::UnknownIndex)?;
+            .ok_or(ServiceError::UnknownIndex)?;
         let view = index.view()?;
         view.flush();
         Ok(())
@@ -138,20 +120,20 @@ impl Worker {
             protect.maintain(&self.view);
         }
     }
-    pub fn call_stat(&self, handle: Handle) -> Result<IndexStat, FriendlyError> {
+    pub fn call_stat(&self, handle: Handle) -> Result<IndexStat, ServiceError> {
         let view = self.view.load_full();
         let index = view
             .indexes
             .get(&handle)
-            .ok_or(FriendlyError::UnknownIndex)?;
+            .ok_or(ServiceError::UnknownIndex)?;
         index.stat()
     }
-    pub fn get_instance(&self, handle: Handle) -> Result<Instance, FriendlyError> {
+    pub fn get_instance(&self, handle: Handle) -> Result<Instance, ServiceError> {
         let view = self.view.load_full();
         let index = view
             .indexes
             .get(&handle)
-            .ok_or(FriendlyError::UnknownIndex)?;
+            .ok_or(ServiceError::UnknownIndex)?;
         Ok(index.clone())
     }
 }

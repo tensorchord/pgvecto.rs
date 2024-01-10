@@ -20,9 +20,9 @@ pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
 #[allow(non_snake_case)]
 #[pgrx::pg_guard]
 unsafe extern "C" fn _PG_init() {
-    use service::prelude::*;
+    use crate::prelude::*;
     if unsafe { pgrx::pg_sys::IsUnderPostmaster } {
-        FriendlyError::BadInit.friendly();
+        SessionError::BadInit.friendly();
     }
     unsafe {
         self::gucs::init();

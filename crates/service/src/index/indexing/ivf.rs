@@ -7,6 +7,8 @@ use crate::index::IndexOptions;
 use crate::index::SearchOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use validator::Validate;
@@ -90,18 +92,21 @@ impl<S: G> AbstractIndexing<S> for IvfIndexing<S> {
         self.raw.payload(i)
     }
 
-    fn search(&self, vector: &[S::Scalar], opts: &SearchOptions, filter: &mut impl Filter) -> Heap {
-        self.raw.search(vector, opts, filter)
+    fn basic(
+        &self,
+        vector: &[S::Scalar],
+        opts: &SearchOptions,
+        filter: impl Filter,
+    ) -> BinaryHeap<Reverse<Element>> {
+        self.raw.basic(vector, opts, filter)
     }
 
     fn vbase<'a>(
         &'a self,
         vector: &'a [S::Scalar],
         opts: &'a SearchOptions,
-    ) -> (
-        Vec<HeapElement>,
-        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
-    ) {
-        self.raw.vbase(vector, opts)
+        filter: impl Filter + 'a,
+    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
+        self.raw.vbase(vector, opts, filter)
     }
 }

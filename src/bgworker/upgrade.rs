@@ -55,13 +55,13 @@ pub fn upgrade() {
 fn session(handler: RpcHandler) -> Result<(), IpcError> {
     use crate::ipc::server::RpcHandle;
     match handler.handle()? {
-        RpcHandle::Create { x, .. } => x.reset(FriendlyError::Upgrade)?,
-        RpcHandle::Search { x, .. } => x.reset(FriendlyError::Upgrade)?,
-        RpcHandle::Insert { x, .. } => x.reset(FriendlyError::Upgrade)?,
-        RpcHandle::Delete { x, .. } => x.reset(FriendlyError::Upgrade)?,
-        RpcHandle::Flush { x, .. } => x.reset(FriendlyError::Upgrade)?,
-        RpcHandle::Destroy { x, .. } => x.reset(FriendlyError::Upgrade)?,
-        RpcHandle::Stat { x, .. } => x.reset(FriendlyError::Upgrade)?,
-        RpcHandle::Vbase { x, .. } => x.reset(FriendlyError::Upgrade)?,
+        RpcHandle::Create { x, .. } => x.reset(ServiceError::Upgrade)?,
+        RpcHandle::Basic { x, .. } => x.reset(ServiceError::Upgrade)?,
+        RpcHandle::Insert { x, .. } => x.reset(ServiceError::Upgrade)?,
+        RpcHandle::Delete { x, .. } => x.reset(ServiceError::Upgrade)?,
+        RpcHandle::Flush { x, .. } => x.reset(ServiceError::Upgrade)?,
+        RpcHandle::Destroy { x, .. } => x.reset(ServiceError::Upgrade)?,
+        RpcHandle::Stat { x, .. } => x.reset(ServiceError::Upgrade)?,
+        RpcHandle::Vbase { x, .. } => x.reset(ServiceError::Upgrade)?,
     }
 }
