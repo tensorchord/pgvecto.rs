@@ -53,7 +53,7 @@ impl Typmod {
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn typmod_in(list: Array<&CStr>) -> i32 {
+fn _vectors_typmod_in(list: Array<&CStr>) -> i32 {
     if list.is_empty() {
         -1
     } else if list.len() == 1 {
@@ -68,7 +68,7 @@ fn typmod_in(list: Array<&CStr>) -> i32 {
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn typmod_out(typmod: i32) -> CString {
+fn _vectors_typmod_out(typmod: i32) -> CString {
     let typmod = Typmod::parse_from_i32(typmod).unwrap();
     match typmod.into_option_string() {
         Some(s) => CString::new(format!("({})", s)).unwrap(),

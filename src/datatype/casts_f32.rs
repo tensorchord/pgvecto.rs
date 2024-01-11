@@ -3,7 +3,7 @@ use crate::datatype::vecf32::{Vecf32, Vecf32Input, Vecf32Output};
 use service::prelude::*;
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn vecf32_cast_array_to_vector(
+fn _vectors_cast_array_to_vecf32(
     array: pgrx::Array<f32>,
     typmod: i32,
     _explicit: bool,
@@ -21,6 +21,10 @@ fn vecf32_cast_array_to_vector(
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn vecf32_cast_vector_to_array(vector: Vecf32Input<'_>, _typmod: i32, _explicit: bool) -> Vec<f32> {
+fn _vectors_cast_vecf32_to_array(
+    vector: Vecf32Input<'_>,
+    _typmod: i32,
+    _explicit: bool,
+) -> Vec<f32> {
     vector.data().iter().map(|x| x.to_f32()).collect()
 }

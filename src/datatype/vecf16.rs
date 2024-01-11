@@ -20,23 +20,6 @@ use std::ops::Index;
 use std::ops::IndexMut;
 use std::ptr::NonNull;
 
-pgrx::extension_sql!(
-    r#"
-CREATE TYPE vecf16 (
-    INPUT     = vecf16_in,
-    OUTPUT    = vecf16_out,
-    TYPMOD_IN = typmod_in,
-    TYPMOD_OUT = typmod_out,
-    STORAGE   = EXTENDED,
-    INTERNALLENGTH = VARIABLE,
-    ALIGNMENT = double
-);
-"#,
-    name = "vecf16",
-    creates = [Type(Vecf16)],
-    requires = [vecf16_in, vecf16_out, typmod_in, typmod_out],
-);
-
 #[repr(C, align(8))]
 pub struct Vecf16 {
     varlena: u32,
@@ -266,7 +249,7 @@ unsafe impl SqlTranslatable for Vecf16Output {
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn vecf16_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf16Output {
+fn _vectors_vecf16_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf16Output {
     fn solve<T>(option: Option<T>, hint: &str) -> T {
         if let Some(x) = option {
             x
@@ -330,7 +313,7 @@ fn vecf16_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf16Output {
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn vecf16_out(vector: Vecf16Input<'_>) -> CString {
+fn _vectors_vecf16_out(vector: Vecf16Input<'_>) -> CString {
     let mut buffer = String::new();
     buffer.push('[');
     if let Some(&x) = vector.data().first() {
