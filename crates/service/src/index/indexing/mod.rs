@@ -1,10 +1,12 @@
 pub mod flat;
 pub mod hnsw;
 pub mod ivf;
+pub mod diskann;
 
 use self::flat::{FlatIndexing, FlatIndexingOptions};
 use self::hnsw::{HnswIndexing, HnswIndexingOptions};
 use self::ivf::{IvfIndexing, IvfIndexingOptions};
+use self::diskann::{DiskANNIndexing, DiskANNIndexingOptions};
 use super::segments::growing::GrowingSegment;
 use super::segments::sealed::SealedSegment;
 use super::IndexOptions;
@@ -24,6 +26,7 @@ pub enum IndexingOptions {
     Flat(FlatIndexingOptions),
     Ivf(IvfIndexingOptions),
     Hnsw(HnswIndexingOptions),
+    DiskANN(DiskANNIndexingOptions),
 }
 
 impl IndexingOptions {
@@ -45,6 +48,12 @@ impl IndexingOptions {
         };
         x
     }
+    pub fn unwrap_diskann(self) -> DiskANNIndexingOptions {
+        let IndexingOptions::DiskANN(x) = self else {
+            unreachable!()
+        };
+        x
+    }
 }
 
 impl Default for IndexingOptions {
@@ -59,6 +68,7 @@ impl Validate for IndexingOptions {
             Self::Flat(x) => x.validate(),
             Self::Ivf(x) => x.validate(),
             Self::Hnsw(x) => x.validate(),
+            Self::DiskANN(x) => x.validate(),
         }
     }
 }
@@ -92,6 +102,7 @@ pub enum DynamicIndexing<S: G> {
     Flat(FlatIndexing<S>),
     Ivf(IvfIndexing<S>),
     Hnsw(HnswIndexing<S>),
+    DiskANN(DiskANNIndexing<S>),
 }
 
 impl<S: G> DynamicIndexing<S> {
@@ -111,6 +122,9 @@ impl<S: G> DynamicIndexing<S> {
             IndexingOptions::Hnsw(_) => {
                 Self::Hnsw(HnswIndexing::create(path, options, sealed, growing))
             }
+            IndexingOptions::DiskANN(_) => {
+                Self::DiskANN(DiskANNIndexing::create(path, options, sealed, growing))
+            }
         }
     }
 
@@ -119,6 +133,7 @@ impl<S: G> DynamicIndexing<S> {
             IndexingOptions::Flat(_) => Self::Flat(FlatIndexing::open(path, options)),
             IndexingOptions::Ivf(_) => Self::Ivf(IvfIndexing::open(path, options)),
             IndexingOptions::Hnsw(_) => Self::Hnsw(HnswIndexing::open(path, options)),
+            IndexingOptions::DiskANN(_) => Self::DiskANN(DiskANNIndexing::open(path, options)),
         }
     }
 
@@ -127,6 +142,7 @@ impl<S: G> DynamicIndexing<S> {
             DynamicIndexing::Flat(x) => x.len(),
             DynamicIndexing::Ivf(x) => x.len(),
             DynamicIndexing::Hnsw(x) => x.len(),
+            DynamicIndexing::DiskANN(x) => x.len(),
         }
     }
 
@@ -135,6 +151,7 @@ impl<S: G> DynamicIndexing<S> {
             DynamicIndexing::Flat(x) => x.vector(i),
             DynamicIndexing::Ivf(x) => x.vector(i),
             DynamicIndexing::Hnsw(x) => x.vector(i),
+            DynamicIndexing::DiskANN(x) => x.vector(i),
         }
     }
 
@@ -143,6 +160,7 @@ impl<S: G> DynamicIndexing<S> {
             DynamicIndexing::Flat(x) => x.payload(i),
             DynamicIndexing::Ivf(x) => x.payload(i),
             DynamicIndexing::Hnsw(x) => x.payload(i),
+            DynamicIndexing::DiskANN(x) => x.payload(i),
         }
     }
 
@@ -156,6 +174,7 @@ impl<S: G> DynamicIndexing<S> {
             DynamicIndexing::Flat(x) => x.basic(vector, opts, filter),
             DynamicIndexing::Ivf(x) => x.basic(vector, opts, filter),
             DynamicIndexing::Hnsw(x) => x.basic(vector, opts, filter),
+            DynamicIndexing::DiskANN(x) => x.basic(vector, opts, filter),
         }
     }
 
