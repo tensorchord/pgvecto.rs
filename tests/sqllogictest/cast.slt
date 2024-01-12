@@ -105,3 +105,9 @@ query I
 SELECT '{"[1,2,3]"}'::vector[];
 ----
 {"[1, 2, 3]"}
+
+# vector to vecf16
+query I
+SELECT '[1,2,3]'::vector::vecf16;
+----
+{1,2,3}

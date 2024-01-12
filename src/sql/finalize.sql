@@ -233,6 +233,9 @@ CREATE CAST (real[] AS vector)
 CREATE CAST (vector AS real[])
     WITH FUNCTION _vectors_cast_vecf32_to_array(vector, integer, boolean) AS IMPLICIT;
 
+CREATE CAST (vector AS vecf16)
+    WITH FUNCTION _vectors_cast_vecf32_to_vecf16(vector, integer, boolean) AS IMPLICIT;
+
 -- List of access methods
 
 CREATE ACCESS METHOD vectors TYPE INDEX HANDLER _vectors_amhandler;

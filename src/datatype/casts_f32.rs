@@ -1,5 +1,8 @@
 use crate::datatype::typmod::Typmod;
+use crate::datatype::vecf16::{Vecf16, Vecf16Output};
 use crate::datatype::vecf32::{Vecf32, Vecf32Input, Vecf32Output};
+
+use half::f16;
 use service::prelude::*;
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
@@ -27,4 +30,15 @@ fn _vectors_cast_vecf32_to_array(
     _explicit: bool,
 ) -> Vec<f32> {
     vector.data().iter().map(|x| x.to_f32()).collect()
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_cast_vecf32_to_vecf16(
+    vector: Vecf32Input<'_>,
+    _typmod: i32,
+    _explicit: bool,
+) -> Vecf16Output {
+    let data = vector.data().iter().map(|x| f16::from_f32(x)).collect();
+
+    Vecf16::new_in_postgres(data)
 }
