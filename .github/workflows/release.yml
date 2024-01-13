@@ -59,8 +59,8 @@ jobs:
         include:
           - { version: 14, platform: amd64, arch: x86_64 }
           - { version: 14, platform: arm64, arch: aarch64 }
-          - { version: 14.5 platform: amd64, arch: x86_64 }
-          - { version: 14.5 platform: arm64, arch: aarch64 }
+          - { version: 14.5, platform: amd64, arch: x86_64 }
+          - { version: 14.5, platform: arm64, arch: aarch64 }
           - { version: 15, platform: amd64, arch: x86_64 }
           - { version: 15, platform: arm64, arch: aarch64 }
           - { version: 16, platform: amd64, arch: x86_64 }
@@ -136,8 +136,8 @@ jobs:
         include:
           - { version: 14, platform: amd64, arch: x86_64 }
           - { version: 14, platform: arm64, arch: aarch64 }
-          - { version: 14.5 platform: amd64, arch: x86_64 }
-          - { version: 14.5 platform: arm64, arch: aarch64 }
+          - { version: 14.5, platform: amd64, arch: x86_64 }
+          - { version: 14.5, platform: arm64, arch: aarch64 }
           - { version: 15, platform: amd64, arch: x86_64 }
           - { version: 15, platform: arm64, arch: aarch64 }
           - { version: 16, platform: amd64, arch: x86_64 }
