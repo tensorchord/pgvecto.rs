@@ -18,7 +18,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --defaul
 
 # 6
 cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2)
-cargo pgrx init --pg15=/usr/lib/postgresql/15/bin/pg_config
+cargo pgrx init
 
 # 7
 sudo chmod 777 /usr/share/postgresql/15/extension/
