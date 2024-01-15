@@ -53,17 +53,17 @@ pub unsafe fn convert_opfamily_to_distance(opfamily: pgrx::pg_sys::Oid) -> (Dist
     assert!((*amop).amoppurpose == pgrx::pg_sys::AMOP_ORDER as libc::c_char);
     let operator = (*amop).amopopr;
     let result;
-    if operator == regoperatorin("<->(vectors.vector,vectors.vector)") {
+    if operator == regoperatorin("vectors.<->(vectors.vector,vectors.vector)") {
         result = (Distance::L2, Kind::F32);
-    } else if operator == regoperatorin("<#>(vectors.vector,vectors.vector)") {
+    } else if operator == regoperatorin("vectors.<#>(vectors.vector,vectors.vector)") {
         result = (Distance::Dot, Kind::F32);
-    } else if operator == regoperatorin("<=>(vectors.vector,vectors.vector)") {
+    } else if operator == regoperatorin("vectors.<=>(vectors.vector,vectors.vector)") {
         result = (Distance::Cos, Kind::F32);
-    } else if operator == regoperatorin("<->(vectors.vecf16,vectors.vecf16)") {
+    } else if operator == regoperatorin("vectors.<->(vectors.vecf16,vectors.vecf16)") {
         result = (Distance::L2, Kind::F16);
-    } else if operator == regoperatorin("<#>(vectors.vecf16,vectors.vecf16)") {
+    } else if operator == regoperatorin("vectors.<#>(vectors.vecf16,vectors.vecf16)") {
         result = (Distance::Dot, Kind::F16);
-    } else if operator == regoperatorin("<=>(vectors.vecf16,vectors.vecf16)") {
+    } else if operator == regoperatorin("vectors.<=>(vectors.vecf16,vectors.vecf16)") {
         result = (Distance::Cos, Kind::F16);
     } else {
         SessionError::BadOptions2.friendly();

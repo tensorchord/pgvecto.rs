@@ -232,19 +232,19 @@ impl IntoDatum for Vecf16Output {
 
 unsafe impl SqlTranslatable for Vecf16Input<'_> {
     fn argument_sql() -> Result<SqlMapping, ArgumentError> {
-        Ok(SqlMapping::As(String::from("vectors.vecf16")))
+        Ok(SqlMapping::As(String::from("vecf16")))
     }
     fn return_sql() -> Result<Returns, ReturnsError> {
-        Ok(Returns::One(SqlMapping::As(String::from("vectors.vecf16"))))
+        Ok(Returns::One(SqlMapping::As(String::from("vecf16"))))
     }
 }
 
 unsafe impl SqlTranslatable for Vecf16Output {
     fn argument_sql() -> Result<SqlMapping, ArgumentError> {
-        Ok(SqlMapping::As(String::from("vectors.vecf16")))
+        Ok(SqlMapping::As(String::from("vecf16")))
     }
     fn return_sql() -> Result<Returns, ReturnsError> {
-        Ok(Returns::One(SqlMapping::As(String::from("vectors.vecf16"))))
+        Ok(Returns::One(SqlMapping::As(String::from("vecf16"))))
     }
 }
 
