@@ -36,17 +36,15 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Search {
+            RpcPacket::Basic {
                 handle,
                 vector,
-                prefilter,
                 opts,
-            } => RpcHandle::Search {
+            } => RpcHandle::Basic {
                 handle,
                 vector,
-                prefilter,
                 opts,
-                x: Search {
+                x: Basic {
                     socket: self.socket,
                 },
             },
@@ -90,12 +88,11 @@ pub enum RpcHandle {
         options: IndexOptions,
         x: Create,
     },
-    Search {
+    Basic {
         handle: Handle,
         vector: DynamicVector,
-        prefilter: bool,
         opts: SearchOptions,
-        x: Search,
+        x: Basic,
     },
     Insert {
         handle: Handle,
@@ -138,7 +135,7 @@ impl Create {
             socket: self.socket,
         })
     }
-    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+    pub fn reset(mut self, err: ServiceError) -> Result<!, IpcError> {
         self.socket.err(err)
     }
 }
@@ -155,7 +152,7 @@ impl Insert {
             socket: self.socket,
         })
     }
-    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+    pub fn reset(mut self, err: ServiceError) -> Result<!, IpcError> {
         self.socket.err(err)
     }
 }
@@ -178,32 +175,67 @@ impl Delete {
             socket: self.socket,
         })
     }
-    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+    pub fn reset(mut self, err: ServiceError) -> Result<!, IpcError> {
         self.socket.err(err)
     }
 }
 
-pub struct Search {
+pub struct Basic {
     socket: ServerSocket,
 }
 
-impl Search {
-    pub fn check(&mut self, p: Pointer) -> Result<bool, IpcError> {
-        let packet = search::SearchPacket::Check { p };
-        self.socket.ok(packet)?;
-        let search::SearchCheckPacket { result } =
-            self.socket.recv::<search::SearchCheckPacket>()?;
-        Ok(result)
-    }
-    pub fn leave(mut self, result: Vec<Pointer>) -> Result<RpcHandler, IpcError> {
-        let packet = search::SearchPacket::Leave { result };
-        self.socket.ok(packet)?;
-        Ok(RpcHandler {
+impl Basic {
+    pub fn error(mut self) -> Result<BasicHandler, IpcError> {
+        self.socket.ok(basic::BasicErrorPacket {})?;
+        Ok(BasicHandler {
             socket: self.socket,
         })
     }
-    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+    pub fn reset(mut self, err: ServiceError) -> Result<!, IpcError> {
         self.socket.err(err)
+    }
+}
+
+pub struct BasicHandler {
+    socket: ServerSocket,
+}
+
+impl BasicHandler {
+    pub fn handle(mut self) -> Result<BasicHandle, IpcError> {
+        Ok(match self.socket.recv::<basic::BasicPacket>()? {
+            basic::BasicPacket::Next {} => BasicHandle::Next {
+                x: BasicNext {
+                    socket: self.socket,
+                },
+            },
+            basic::BasicPacket::Leave {} => {
+                self.socket.ok(basic::BasicLeavePacket {})?;
+                BasicHandle::Leave {
+                    x: RpcHandler {
+                        socket: self.socket,
+                    },
+                }
+            }
+        })
+    }
+}
+
+pub enum BasicHandle {
+    Next { x: BasicNext },
+    Leave { x: RpcHandler },
+}
+
+pub struct BasicNext {
+    socket: ServerSocket,
+}
+
+impl BasicNext {
+    pub fn leave(mut self, p: Option<Pointer>) -> Result<BasicHandler, IpcError> {
+        let packet = basic::BasicNextPacket { p };
+        self.socket.ok(packet)?;
+        Ok(BasicHandler {
+            socket: self.socket,
+        })
     }
 }
 
@@ -219,7 +251,7 @@ impl Flush {
             socket: self.socket,
         })
     }
-    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+    pub fn reset(mut self, err: ServiceError) -> Result<!, IpcError> {
         self.socket.err(err)
     }
 }
@@ -236,7 +268,7 @@ impl Destroy {
             socket: self.socket,
         })
     }
-    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+    pub fn reset(mut self, err: ServiceError) -> Result<!, IpcError> {
         self.socket.err(err)
     }
 }
@@ -253,7 +285,7 @@ impl Stat {
             socket: self.socket,
         })
     }
-    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+    pub fn reset(mut self, err: ServiceError) -> Result<!, IpcError> {
         self.socket.err(err)
     }
 }
@@ -269,7 +301,7 @@ impl Vbase {
             socket: self.socket,
         })
     }
-    pub fn reset(mut self, err: FriendlyError) -> Result<!, IpcError> {
+    pub fn reset(mut self, err: ServiceError) -> Result<!, IpcError> {
         self.socket.err(err)
     }
 }

@@ -7,6 +7,7 @@ use crate::index::IndexOptions;
 use crate::index::SearchOptions;
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
+use crate::utils::element_heap::ElementHeap;
 use crate::utils::mmap_array::MmapArray;
 use bytemuck::{Pod, Zeroable};
 use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
@@ -52,24 +53,22 @@ impl<S: G> Hnsw<S> {
         self.mmap.raw.payload(i)
     }
 
-    pub fn search(
+    pub fn basic(
         &self,
         vector: &[S::Scalar],
         opts: &SearchOptions,
-        filter: &mut impl Filter,
-    ) -> Heap {
-        search(&self.mmap, vector, opts.search_k, filter)
+        filter: impl Filter,
+    ) -> BinaryHeap<Reverse<Element>> {
+        basic(&self.mmap, vector, opts.hnsw_ef_search, filter)
     }
 
     pub fn vbase<'a>(
         &'a self,
         vector: &'a [S::Scalar],
         opts: &'a SearchOptions,
-    ) -> (
-        Vec<HeapElement>,
-        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
-    ) {
-        vbase(&self.mmap, vector, opts.vbase_range)
+        filter: impl Filter + 'a,
+    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
+        vbase(&self.mmap, vector, opts.hnsw_ef_search, filter)
     }
 }
 
@@ -390,35 +389,33 @@ pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> HnswMmap<S> {
     }
 }
 
-pub fn search<S: G>(
+pub fn basic<S: G>(
     mmap: &HnswMmap<S>,
     vector: &[S::Scalar],
-    k: usize,
-    filter: &mut impl Filter,
-) -> Heap {
-    let Some(s) = entry(mmap, filter) else {
-        return Heap::new(k);
+    ef_search: usize,
+    filter: impl Filter,
+) -> BinaryHeap<Reverse<Element>> {
+    let Some(s) = entry(mmap, filter.clone()) else {
+        return BinaryHeap::new();
     };
     let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
-    let u = fast_search(mmap, 1..=levels, s, vector, filter);
-    local_search(mmap, k, u, vector, filter)
+    let u = fast_search(mmap, 1..=levels, s, vector, filter.clone());
+    local_search_basic(mmap, ef_search, u, vector, filter).into_reversed_heap()
 }
 
 pub fn vbase<'a, S: G>(
     mmap: &'a HnswMmap<S>,
     vector: &'a [S::Scalar],
     range: usize,
-) -> (
-    Vec<HeapElement>,
-    Box<(dyn Iterator<Item = HeapElement> + 'a)>,
-) {
-    let Some(s) = entry(mmap, &mut |_| true) else {
+    filter: impl Filter + 'a,
+) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
+    let Some(s) = entry(mmap, filter.clone()) else {
         return (Vec::new(), Box::new(std::iter::empty()));
     };
     let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
-    let u = fast_search(mmap, 1..=levels, s, vector, &mut |_| true);
-    let mut iter = local_search_vbase(mmap, u, vector);
-    let mut queue = BinaryHeap::<HeapElement>::with_capacity(1 + range);
+    let u = fast_search(mmap, 1..=levels, s, vector, filter.clone());
+    let mut iter = local_search_vbase(mmap, u, vector, filter.clone());
+    let mut queue = BinaryHeap::<Element>::with_capacity(1 + range);
     let mut stage1 = Vec::new();
     for x in &mut iter {
         if queue.len() == range && queue.peek().unwrap().distance < x.distance {
@@ -434,7 +431,7 @@ pub fn vbase<'a, S: G>(
     (stage1, Box::new(iter))
 }
 
-pub fn entry<S: G>(mmap: &HnswMmap<S>, filter: &mut impl Filter) -> Option<u32> {
+pub fn entry<S: G>(mmap: &HnswMmap<S>, mut filter: impl Filter) -> Option<u32> {
     let m = mmap.m;
     let n = mmap.raw.len();
     let mut shift = 1u64;
@@ -467,7 +464,7 @@ pub fn fast_search<S: G>(
     levels: RangeInclusive<u8>,
     u: u32,
     vector: &[S::Scalar],
-    filter: &mut impl Filter,
+    mut filter: impl Filter,
 ) -> u32 {
     let mut u = u;
     let mut u_dis = mmap.quantization.distance(vector, u);
@@ -492,21 +489,21 @@ pub fn fast_search<S: G>(
     u
 }
 
-pub fn local_search<S: G>(
+pub fn local_search_basic<S: G>(
     mmap: &HnswMmap<S>,
     k: usize,
     s: u32,
     vector: &[S::Scalar],
-    filter: &mut impl Filter,
-) -> Heap {
+    mut filter: impl Filter,
+) -> ElementHeap {
     let mut visited = mmap.visited.fetch();
     let mut visited = visited.fetch();
     let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
-    let mut results = Heap::new(k);
+    let mut results = ElementHeap::new(k);
     visited.mark(s);
     let s_dis = mmap.quantization.distance(vector, s);
     candidates.push(Reverse((s_dis, s)));
-    results.push(HeapElement {
+    results.push(Element {
         distance: s_dis,
         payload: mmap.raw.payload(s),
     });
@@ -528,7 +525,7 @@ pub fn local_search<S: G>(
                 continue;
             }
             candidates.push(Reverse((v_dis, v)));
-            results.push(HeapElement {
+            results.push(Element {
                 distance: v_dis,
                 payload: mmap.raw.payload(v),
             });
@@ -541,7 +538,8 @@ pub fn local_search_vbase<'a, S: G>(
     mmap: &'a HnswMmap<S>,
     s: u32,
     vector: &'a [S::Scalar],
-) -> impl Iterator<Item = HeapElement> + 'a {
+    mut filter: impl Filter + 'a,
+) -> impl Iterator<Item = Element> + 'a {
     let mut visited = mmap.visited.fetch2();
     let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
     visited.mark(s);
@@ -556,11 +554,13 @@ pub fn local_search_vbase<'a, S: G>(
                     continue;
                 }
                 visited.mark(v);
-                let v_dis = mmap.quantization.distance(vector, v);
-                candidates.push(Reverse((v_dis, v)));
+                if filter.check(mmap.raw.payload(v)) {
+                    let v_dis = mmap.quantization.distance(vector, v);
+                    candidates.push(Reverse((v_dis, v)));
+                }
             }
         }
-        Some(HeapElement {
+        Some(Element {
             distance: u_dis,
             payload: mmap.raw.payload(u),
         })

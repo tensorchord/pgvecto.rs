@@ -1,6 +1,6 @@
+use crate::prelude::*;
 use pgrx::Array;
 use serde::{Deserialize, Serialize};
-use service::prelude::*;
 use std::ffi::{CStr, CString};
 use std::num::NonZeroU16;
 
@@ -53,22 +53,22 @@ impl Typmod {
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn typmod_in(list: Array<&CStr>) -> i32 {
+fn _vectors_typmod_in(list: Array<&CStr>) -> i32 {
     if list.is_empty() {
         -1
     } else if list.len() == 1 {
         let s = list.get(0).unwrap().unwrap().to_str().unwrap();
         let typmod = Typmod::parse_from_str(s)
-            .ok_or(FriendlyError::BadTypeDimensions)
+            .ok_or(SessionError::BadTypeDimensions)
             .friendly();
         typmod.into_i32()
     } else {
-        FriendlyError::BadTypeDimensions.friendly();
+        SessionError::BadTypeDimensions.friendly();
     }
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn typmod_out(typmod: i32) -> CString {
+fn _vectors_typmod_out(typmod: i32) -> CString {
     let typmod = Typmod::parse_from_i32(typmod).unwrap();
     match typmod.into_option_string() {
         Some(s) => CString::new(format!("({})", s)).unwrap(),

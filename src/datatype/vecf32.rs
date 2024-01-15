@@ -1,4 +1,5 @@
 use crate::datatype::typmod::Typmod;
+use crate::prelude::*;
 use pgrx::pg_sys::Datum;
 use pgrx::pg_sys::Oid;
 use pgrx::pgrx_sql_entity_graph::metadata::ArgumentError;
@@ -18,23 +19,6 @@ use std::ops::DerefMut;
 use std::ops::Index;
 use std::ops::IndexMut;
 use std::ptr::NonNull;
-
-pgrx::extension_sql!(
-    r#"
-CREATE TYPE vector (
-    INPUT     = vecf32_in,
-    OUTPUT    = vecf32_out,
-    TYPMOD_IN = typmod_in,
-    TYPMOD_OUT = typmod_out,
-    STORAGE   = EXTENDED,
-    INTERNALLENGTH = VARIABLE,
-    ALIGNMENT = double
-);
-"#,
-    name = "vecf32",
-    creates = [Type(Vecf32)],
-    requires = [vecf32_in, vecf32_out, typmod_in, typmod_out],
-);
 
 #[repr(C, align(8))]
 pub struct Vecf32 {
@@ -265,12 +249,12 @@ unsafe impl SqlTranslatable for Vecf32Output {
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
+fn _vectors_vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
     fn solve<T>(option: Option<T>, hint: &str) -> T {
         if let Some(x) = option {
             x
         } else {
-            FriendlyError::BadLiteral {
+            SessionError::BadLiteral {
                 hint: hint.to_string(),
             }
             .friendly()
@@ -309,7 +293,7 @@ fn vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
             }
             (_, b' ') => {}
             _ => {
-                FriendlyError::BadLiteral {
+                SessionError::BadLiteral {
                     hint: format!("Bad character with ascii {:#x}.", c),
                 }
                 .friendly();
@@ -317,19 +301,19 @@ fn vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
         }
     }
     if state != MatchedRight {
-        FriendlyError::BadLiteral {
+        SessionError::BadLiteral {
             hint: "Bad sequence.".to_string(),
         }
         .friendly();
     }
     if vector.is_empty() || vector.len() > 65535 {
-        FriendlyError::BadValueDimensions.friendly();
+        SessionError::BadValueDimensions.friendly();
     }
     Vecf32::new_in_postgres(&vector)
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn vecf32_out(vector: Vecf32Input<'_>) -> CString {
+fn _vectors_vecf32_out(vector: Vecf32Input<'_>) -> CString {
     let mut buffer = String::new();
     buffer.push('[');
     if let Some(&x) = vector.data().first() {

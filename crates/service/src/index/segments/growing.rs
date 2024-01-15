@@ -9,6 +9,8 @@ use crate::utils::file_wal::FileWal;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::cell::UnsafeCell;
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::mem::MaybeUninit;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -172,39 +174,43 @@ impl<S: G> GrowingSegment<S> {
         let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
         log.payload
     }
-    pub fn search(
+    pub fn basic(
         &self,
         vector: &[S::Scalar],
-        opts: &SearchOptions,
-        filter: &mut impl Filter,
-    ) -> Heap {
+        _opts: &SearchOptions,
+        mut filter: impl Filter,
+    ) -> BinaryHeap<Reverse<Element>> {
         let n = self.len.load(Ordering::Acquire);
-        let mut heap = Heap::new(opts.search_k);
+        let mut result = BinaryHeap::new();
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
-            let distance = S::distance(vector, &log.vector);
-            if heap.check(distance) && filter.check(log.payload) {
-                heap.push(HeapElement {
+            if filter.check(log.payload) {
+                let distance = S::distance(vector, &log.vector);
+                result.push(Reverse(Element {
                     distance,
                     payload: log.payload,
-                });
+                }));
             }
         }
-        heap
+        result
     }
     pub fn vbase<'a>(
         &'a self,
         vector: &'a [S::Scalar],
-    ) -> (Vec<HeapElement>, Box<dyn Iterator<Item = HeapElement> + 'a>) {
+        _opts: &SearchOptions,
+        mut filter: impl Filter + 'a,
+    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
         let n = self.len.load(Ordering::Acquire);
         let mut result = Vec::new();
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
-            let distance = S::distance(vector, &log.vector);
-            result.push(HeapElement {
-                distance,
-                payload: log.payload,
-            });
+            if filter.check(log.payload) {
+                let distance = S::distance(vector, &log.vector);
+                result.push(Element {
+                    distance,
+                    payload: log.payload,
+                });
+            }
         }
         (result, Box::new(std::iter::empty()))
     }

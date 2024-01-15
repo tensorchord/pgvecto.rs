@@ -10,11 +10,14 @@ use crate::index::VectorOptions;
 use crate::prelude::*;
 use crate::utils::cells::SyncUnsafeCell;
 use crate::utils::dir_ops::sync_dir;
+use crate::utils::element_heap::ElementHeap;
 use crate::utils::mmap_array::MmapArray;
 use crate::utils::vec2::Vec2;
 use rand::seq::index::sample;
 use rand::thread_rng;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::fs::create_dir;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicU32;
@@ -56,24 +59,22 @@ impl<S: G> IvfNaive<S> {
         self.mmap.raw.payload(i)
     }
 
-    pub fn search(
+    pub fn basic(
         &self,
         vector: &[S::Scalar],
         opts: &SearchOptions,
-        filter: &mut impl Filter,
-    ) -> Heap {
-        search(&self.mmap, vector, opts.search_k, opts.ivf_nprobe, filter)
+        filter: impl Filter,
+    ) -> BinaryHeap<Reverse<Element>> {
+        basic(&self.mmap, vector, opts.ivf_nprobe, filter)
     }
 
     pub fn vbase<'a>(
         &'a self,
         vector: &'a [S::Scalar],
         opts: &'a SearchOptions,
-    ) -> (
-        Vec<HeapElement>,
-        Box<(dyn Iterator<Item = HeapElement> + 'a)>,
-    ) {
-        vbase(&self.mmap, vector, opts.ivf_nprobe)
+        filter: impl Filter + 'a,
+    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
+        vbase(&self.mmap, vector, opts.ivf_nprobe, filter)
     }
 }
 
@@ -254,35 +255,34 @@ pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> IvfMmap<S> {
     }
 }
 
-pub fn search<S: G>(
+pub fn basic<S: G>(
     mmap: &IvfMmap<S>,
     vector: &[S::Scalar],
-    k: usize,
     nprobe: u32,
-    filter: &mut impl Filter,
-) -> Heap {
+    mut filter: impl Filter,
+) -> BinaryHeap<Reverse<Element>> {
     let mut target = vector.to_vec();
     S::elkan_k_means_normalize(&mut target);
-    let mut lists = Heap::new(nprobe as usize);
+    let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
         let distance = S::elkan_k_means_distance(&target, centroid);
         if lists.check(distance) {
-            lists.push(HeapElement {
+            lists.push(Element {
                 distance,
                 payload: i as Payload,
             });
         }
     }
     let lists = lists.into_sorted_vec();
-    let mut result = Heap::new(k);
+    let mut result = BinaryHeap::new();
     for i in lists.iter().map(|e| e.payload as usize) {
         let mut j = mmap.heads[i];
         while u32::MAX != j {
-            let distance = mmap.quantization.distance(vector, j);
             let payload = mmap.raw.payload(j);
-            if result.check(distance) && filter.check(payload) {
-                result.push(HeapElement { distance, payload });
+            if filter.check(payload) {
+                let distance = mmap.quantization.distance(vector, j);
+                result.push(Reverse(Element { distance, payload }));
             }
             j = mmap.nexts[j as usize];
         }
@@ -294,18 +294,16 @@ pub fn vbase<'a, S: G>(
     mmap: &'a IvfMmap<S>,
     vector: &'a [S::Scalar],
     nprobe: u32,
-) -> (
-    Vec<HeapElement>,
-    Box<(dyn Iterator<Item = HeapElement> + 'a)>,
-) {
+    mut filter: impl Filter + 'a,
+) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
     let mut target = vector.to_vec();
     S::elkan_k_means_normalize(&mut target);
-    let mut lists = Heap::new(nprobe as usize);
+    let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
         let distance = S::elkan_k_means_distance(&target, centroid);
         if lists.check(distance) {
-            lists.push(HeapElement {
+            lists.push(Element {
                 distance,
                 payload: i as Payload,
             });
@@ -316,9 +314,11 @@ pub fn vbase<'a, S: G>(
     for i in lists.iter().map(|e| e.payload as u32) {
         let mut j = mmap.heads[i as usize];
         while u32::MAX != j {
-            let distance = mmap.quantization.distance(vector, j);
             let payload = mmap.raw.payload(j);
-            result.push(HeapElement { distance, payload });
+            if filter.check(payload) {
+                let distance = mmap.quantization.distance(vector, j);
+                result.push(Element { distance, payload });
+            }
             j = mmap.nexts[j as usize];
         }
     }

@@ -140,6 +140,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "JoePassanante",
+      "name": "Joe Passanante",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28711605?v=4",
+      "profile": "https://github.com/JoePassanante",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

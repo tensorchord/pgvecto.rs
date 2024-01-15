@@ -2,10 +2,11 @@ use super::am_build;
 use super::am_scan;
 use super::am_setup;
 use super::am_update;
-use crate::gucs::ENABLE_VECTOR_INDEX;
+use crate::gucs::planning::ENABLE_INDEX;
 use crate::index::utils::from_datum;
 use crate::prelude::*;
 use crate::utils::cells::PgCell;
+use pgrx::pg_sys::Datum;
 use service::prelude::*;
 
 static RELOPT_KIND: PgCell<pgrx::pg_sys::relopt_kind> = unsafe { PgCell::new(0) };
@@ -26,17 +27,16 @@ pub unsafe fn init() {
     );
 }
 
-#[pgrx::pg_extern(sql = "
-    CREATE FUNCTION vectors_amhandler(internal) RETURNS index_am_handler
-    PARALLEL SAFE IMMUTABLE STRICT LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';
-")]
-fn vectors_amhandler(
-    _fcinfo: pgrx::pg_sys::FunctionCallInfo,
-) -> pgrx::PgBox<pgrx::pg_sys::IndexAmRoutine> {
+#[pgrx::pg_extern(sql = "\
+CREATE FUNCTION _vectors_amhandler(internal) RETURNS index_am_handler
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
+fn _vectors_amhandler(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> pgrx::Internal {
+    type T = pgrx::pg_sys::IndexAmRoutine;
     unsafe {
-        let mut am_routine = pgrx::PgBox::<pgrx::pg_sys::IndexAmRoutine>::alloc0();
-        *am_routine = AM_HANDLER;
-        am_routine.into_pg_boxed()
+        use pgrx::FromDatum;
+        let index_am_routine = pgrx::pg_sys::palloc0(std::mem::size_of::<T>()) as *mut T;
+        index_am_routine.write(AM_HANDLER);
+        pgrx::Internal::from_datum(Datum::from(index_am_routine), false).unwrap()
     }
 }
 
@@ -90,10 +90,7 @@ pub unsafe extern "C" fn amvalidate(opclass_oid: pgrx::pg_sys::Oid) -> bool {
 
 #[cfg(feature = "pg12")]
 #[pgrx::pg_guard]
-pub unsafe extern "C" fn amoptions(
-    reloptions: pgrx::pg_sys::Datum,
-    validate: bool,
-) -> *mut pgrx::pg_sys::bytea {
+pub unsafe extern "C" fn amoptions(reloptions: Datum, validate: bool) -> *mut pgrx::pg_sys::bytea {
     use pgrx::pg_sys::AsPgCStr;
     let tab: &[pgrx::pg_sys::relopt_parse_elt] = &[pgrx::pg_sys::relopt_parse_elt {
         optname: "options".as_pg_cstr(),
@@ -126,10 +123,7 @@ pub unsafe extern "C" fn amoptions(
 
 #[cfg(any(feature = "pg13", feature = "pg14", feature = "pg15", feature = "pg16"))]
 #[pgrx::pg_guard]
-pub unsafe extern "C" fn amoptions(
-    reloptions: pgrx::pg_sys::Datum,
-    validate: bool,
-) -> *mut pgrx::pg_sys::bytea {
+pub unsafe extern "C" fn amoptions(reloptions: Datum, validate: bool) -> *mut pgrx::pg_sys::bytea {
     use pgrx::pg_sys::AsPgCStr;
 
     let tab: &[pgrx::pg_sys::relopt_parse_elt] = &[pgrx::pg_sys::relopt_parse_elt {
@@ -159,7 +153,7 @@ pub unsafe extern "C" fn amcostestimate(
     index_correlation: *mut f64,
     index_pages: *mut f64,
 ) {
-    if (*path).indexorderbys.is_null() || !ENABLE_VECTOR_INDEX.get() {
+    if (*path).indexorderbys.is_null() || !ENABLE_INDEX.get() {
         *index_startup_cost = f64::MAX;
         *index_total_cost = f64::MAX;
         *index_selectivity = 0.0;
@@ -197,7 +191,7 @@ pub unsafe extern "C" fn ambuildempty(index_relation: pgrx::pg_sys::Relation) {
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn aminsert(
     index_relation: pgrx::pg_sys::Relation,
-    values: *mut pgrx::pg_sys::Datum,
+    values: *mut Datum,
     _is_null: *mut bool,
     heap_tid: pgrx::pg_sys::ItemPointer,
     _heap_relation: pgrx::pg_sys::Relation,
@@ -215,7 +209,7 @@ pub unsafe extern "C" fn aminsert(
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn aminsert(
     index_relation: pgrx::pg_sys::Relation,
-    values: *mut pgrx::pg_sys::Datum,
+    values: *mut Datum,
     _is_null: *mut bool,
     heap_tid: pgrx::pg_sys::ItemPointer,
     _heap_relation: pgrx::pg_sys::Relation,
