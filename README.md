@@ -14,24 +14,13 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 ## Why use pgvecto.rs
 
 - 💃 **Easy to use**: pgvecto.rs is a Postgres extension, which means that you can use it directly within your existing database. This makes it easy to integrate into your existing workflows and applications.
+- 🥅 **Filtering**: pgvecto.rs supports vbase filtering. With Vbase, you can search with any filters and joins, and still get high recall rate and low latency. This is the missing feature of other vector databases.
+- 🌓 **FP16 vector type and index**: pgvecto.rs supports storing your data using half type. This can save memory  and storage usage by 50% and increase the throughput.
+- 🧮 **Quantization**: pgvecto.rs supports scalar quantization and product qutization up to 64x. Save up to 4x memory using scalar quantization with less than 2% recall loss.
+- 🔍 **Hybrid Search**: With full-text search in PostgreSQL, you can search for both text and vector data in one query.
 - 🔗 **Async indexing**: pgvecto.rs's index is asynchronously constructed by the background threads and does not block insertions and always ready for new queries.
-- 🥅 **Filtering**: pgvecto.rs supports filtering. You can set conditions when searching or retrieving points. This is the missing feature of other postgres extensions.
-- 🧮 **Quantization**: pgvecto.rs supports scalar quantization and product qutization up to 64x.
+- ⬆️ **Unlimited Vector Length**: pgvecto.rs supports vector length up to 65535, to accomendate any latest models.
 - 🦀 **Rewrite in Rust**: Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
-
-## Comparison with pgvector
-
-|                                             | pgvecto.rs                                             | pgvector                |
-| ------------------------------------------- | ------------------------------------------------------ | ----------------------- |
-| Transaction support                         | ✅                                                      | ⚠️                       |
-| Sufficient Result with Delete/Update/Filter | ✅                                                      | ⚠️                       |
-| Vector Dimension Limit                      | 65535                                                  | 2000                    |
-| Prefilter on HNSW                           | ✅                                                      | ❌                       |
-| Parallel HNSW Index build                   | ⚡️ Linearly faster with more cores                      | 🐌 Only single core used |
-| Async Index build                           | Ready for queries anytime and do not block insertions. | ❌                       |
-| Quantization                                | Scalar/Product Quantization                            | ❌                       |
-
-More details at [pgvecto.rs vs. pgvector](https://docs.pgvecto.rs/faqs/comparison-pgvector.html)
 
 ## [Documentation](https://docs.pgvecto.rs/getting-started/overview.html)
 
@@ -56,7 +45,7 @@ docker run \
   --name pgvecto-rs-demo \
   -e POSTGRES_PASSWORD=mysecretpassword \
   -p 5432:5432 \
-  -d tensorchord/pgvecto-rs:pg16-v0.1.13
+  -d tensorchord/pgvecto-rs:pg16-v0.1.14-beta
 ```
 
 Then you can connect to the database using the `psql` command line tool. The default username is `postgres`, and the default password is `mysecretpassword`.
@@ -74,7 +63,7 @@ CREATE EXTENSION vectors;
 
 pgvecto.rs introduces a new data type `vector(n)` denoting an n-dimensional vector. The `n` within the brackets signifies the dimensions of the vector.
 
-You could create a table with the following SQL. 
+You could create a table with the following SQL.
 
 ```sql
 -- create table with a vector column
@@ -85,8 +74,7 @@ CREATE TABLE items (
 );
 ```
 
-> [!TIP]
->`vector(n)` is a valid data type only if $1 \leq n \leq 65535$. Due to limits of PostgreSQL, it's possible to create a value of type `vector(3)` of $5$ dimensions and `vector` is also a valid data type. However, you cannot still put $0$ scalar or more than $65535$ scalars to a vector. If you use `vector` for a column or there is some values mismatched with dimension denoted by the column, you won't able to create an index on it.
+> [!TIP] >`vector(n)` is a valid data type only if $1 \leq n \leq 65535$. Due to limits of PostgreSQL, it's possible to create a value of type `vector(3)` of $5$ dimensions and `vector` is also a valid data type. However, you cannot still put $0$ scalar or more than $65535$ scalars to a vector. If you use `vector` for a column or there is some values mismatched with dimension denoted by the column, you won't able to create an index on it.
 
 You can then populate the table with vector data as follows.
 
