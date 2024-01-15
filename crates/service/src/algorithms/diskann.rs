@@ -218,9 +218,9 @@ impl<S: G> DiskANNRam<S> {
         guard: &mut RwLockWriteGuard<VertexNeighbor>,
     ) {
         assert!(neighbor_ids.len() <= self.max_degree as usize);
-        (*guard).neighbors.clear();
+        guard.neighbors.clear();
         for item in neighbor_ids.iter() {
-            (*guard).neighbors.push(*item);
+            guard.neighbors.push(*item);
         }
     }
 
@@ -281,8 +281,8 @@ impl<S: G> DiskANNRam<S> {
         let mut new_neighbor_ids: HashSet<u32> = HashSet::new();
         {
             let mut guard = self.vertexs[id as usize].write();
-            let neighbor_ids = &(*guard).neighbors;
-            state.visited.extend(neighbor_ids.iter().map(|x| *x));
+            let neighbor_ids = &guard.neighbors;
+            state.visited.extend(neighbor_ids.iter().copied());
             let neighbor_ids = self._robust_prune(id, state.visited, alpha, r);
             let neighbor_ids: HashSet<u32> = neighbor_ids.into_iter().collect();
             self._set_neighbors_with_write_guard(&neighbor_ids, &mut guard);
@@ -292,8 +292,8 @@ impl<S: G> DiskANNRam<S> {
         for &neighbor_id in new_neighbor_ids.iter() {
             {
                 let mut guard = self.vertexs[neighbor_id as usize].write();
-                let old_neighbors = &(*guard).neighbors;
-                let mut old_neighbors: HashSet<u32> = old_neighbors.iter().map(|x| *x).collect();
+                let old_neighbors = &guard.neighbors;
+                let mut old_neighbors: HashSet<u32> = old_neighbors.iter().copied().collect();
                 old_neighbors.insert(id);
                 if old_neighbors.len() > r as usize {
                     // need robust prune
@@ -455,12 +455,7 @@ pub fn make<S: G>(
 pub fn save<S: G>(ram: DiskANNRam<S>, path: PathBuf) -> DiskANNMmap<S> {
     let neighbors_iter = ram.vertexs.iter().flat_map(|vertex| {
         let vertex = vertex.read();
-        vertex
-            .neighbors
-            .iter()
-            .copied()
-            .collect::<Vec<_>>()
-            .into_iter()
+        vertex.neighbors.to_vec().into_iter()
     });
 
     // Create the neighbors array using MmapArray::create.
@@ -541,7 +536,7 @@ pub fn basic<S: G>(
     let mut results = ElementHeap::new(k as usize);
     for (distance, id) in state.candidates {
         results.push(Element {
-            distance: distance,
+            distance,
             payload: mmap.raw.payload(id),
         });
     }

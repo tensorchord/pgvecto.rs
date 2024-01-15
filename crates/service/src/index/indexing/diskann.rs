@@ -23,7 +23,7 @@ pub struct DiskANNIndexingOptions {
     // Current design is to let users define the ratio of PQ for in memory index.
     //
     // Besides, it is hard to estimate current memory usage as sealed segment and
-    // growing segement are passed to RawMmap and RawRam. Different from the direct
+    // growing segments are passed to RawMmap and RawRam. Different from the direct
     // calculation of the vector layout.
 
     // #[serde(default = "DiskANNIndexingOptions::default_index_path_prefix")]
@@ -49,7 +49,7 @@ pub struct DiskANNIndexingOptions {
     // // Limit on the memory allowed for building the index in GB.
     // // If you specify a value less than what is required to build the index
     // // in one pass, the index is  built using a divide and conquer approach so
-    // // that sub-graphs will fit in the RAM budget. The sub-graphs are overlayed
+    // // that sub-graphs will fit in the RAM budget. The sub-graphs are overlaid
     // // to build the overall index. This approach can be upto 1.5 times slower than
     // // building the index in one shot. Allocate as much memory as your RAM allows.
     // #[serde(default = "DiskANNIndexingOptions::default_build_DRAM_budget")]
