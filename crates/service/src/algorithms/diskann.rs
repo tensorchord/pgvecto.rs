@@ -102,18 +102,16 @@ pub struct SearchState {
     heap: BinaryHeap<Reverse<VertexWithDistance>>,
     heap_visited: HashSet<u32>,
     l: usize,
-    k: usize,
 }
 
 impl SearchState {
     /// Creates a new search state.
-    pub(crate) fn new(k: usize, l: usize) -> Self {
+    pub(crate) fn new(l: usize) -> Self {
         Self {
             visited: HashSet::new(),
             candidates: BTreeMap::new(),
             heap: BinaryHeap::new(),
             heap_visited: HashSet::new(),
-            k,
             l,
         }
     }
@@ -172,7 +170,6 @@ pub struct DiskANNRam<S: G> {
     medoid: u32,
     dims: u16,
     max_degree: u32,
-    alpha: f32,
     l_build: u32,
 }
 
@@ -181,8 +178,6 @@ pub struct DiskANNMmap<S: G> {
     neighbors: MmapArray<u32>,
     neighbor_offset: MmapArray<usize>,
     medoid: MmapArray<u32>,
-    r: u32,
-    alpha: f32,
     l: u32,
 }
 
@@ -278,9 +273,10 @@ impl<S: G> DiskANNRam<S> {
             .for_each(|id| self.search_and_prune_for_one_vertex(id, alpha, r, l));
     }
 
+    #[allow(unused_assignments)]
     fn search_and_prune_for_one_vertex(&self, id: u32, alpha: f32, r: u32, l: u32) {
         let query = self.raw.vector(id);
-        let mut state = self._greedy_search(self.medoid, query, 1, l as usize);
+        let mut state = self._greedy_search(self.medoid, query, l as usize);
         state.visited.remove(&id); // in case visited has id itself
         let mut new_neighbor_ids: HashSet<u32> = HashSet::new();
         {
@@ -311,14 +307,8 @@ impl<S: G> DiskANNRam<S> {
         }
     }
 
-    fn _greedy_search(
-        &self,
-        start: u32,
-        query: &[S::Scalar],
-        k: usize,
-        search_size: usize,
-    ) -> SearchState {
-        let mut state = SearchState::new(k, search_size);
+    fn _greedy_search(&self, start: u32, query: &[S::Scalar], search_size: usize) -> SearchState {
+        let mut state = SearchState::new(search_size);
 
         let dist = S::distance(query, self.raw.vector(start));
         state.push(start, dist);
@@ -444,7 +434,6 @@ pub fn make<S: G>(
         medoid,
         dims,
         max_degree: idx_opts.max_degree,
-        alpha: idx_opts.alpha,
         l_build: idx_opts.l_build,
     };
 
@@ -497,8 +486,6 @@ pub fn save<S: G>(ram: DiskANNRam<S>, path: PathBuf) -> DiskANNMmap<S> {
         neighbors,
         neighbor_offset,
         medoid,
-        r: ram.max_degree,
-        alpha: ram.alpha,
         l: ram.l_build,
     }
 }
@@ -516,8 +503,6 @@ pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> DiskANNMmap<S> {
         neighbors,
         neighbor_offset,
         medoid,
-        r: idx_opts.max_degree,
-        alpha: idx_opts.alpha,
         l: idx_opts.l_build,
     }
 }
@@ -528,7 +513,7 @@ pub fn basic<S: G>(
     k: u32,
     mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
-    let mut state = SearchState::new(k as usize, mmap.l as usize);
+    let mut state = SearchState::new(mmap.l as usize);
 
     let start = mmap.medoid[0];
     let dist = S::distance(vector, mmap.raw.vector(start));
