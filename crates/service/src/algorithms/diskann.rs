@@ -4,17 +4,17 @@ use crate::index::segments::sealed::SealedSegment;
 use crate::index::{IndexOptions, SearchOptions, VectorOptions};
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
-use crate::utils::mmap_array::MmapArray;
 use crate::utils::element_heap::ElementHeap;
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use crate::utils::mmap_array::MmapArray;
+use parking_lot::{RwLock, RwLockWriteGuard};
 use rand::distributions::Uniform;
+use rand::prelude::SliceRandom;
 use rand::Rng;
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
-use std::fs::create_dir;
 use std::collections::{BTreeMap, HashSet};
-use rand::prelude::SliceRandom;
-use parking_lot::{RwLock, RwLockWriteGuard};
+use std::fs::create_dir;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -157,12 +157,12 @@ impl SearchState {
     }
 }
 
-struct VertexNeighbor{
+struct VertexNeighbor {
     neighbors: Vec<u32>,
 }
 
 // DiskANNRam is for constructing the index
-// it stores the intermediate structure when constructing 
+// it stores the intermediate structure when constructing
 // the index and these data are stored in memory
 pub struct DiskANNRam<S: G> {
     raw: Arc<Raw<S>>,
@@ -186,7 +186,7 @@ pub struct DiskANNMmap<S: G> {
     l: u32,
 }
 
-impl<S:G> DiskANNRam<S>{
+impl<S: G> DiskANNRam<S> {
     fn _init_graph(&self, n: u32, mut rng: impl Rng) {
         let distribution = Uniform::new(0, n);
         for i in 0..n {
@@ -206,11 +206,7 @@ impl<S:G> DiskANNRam<S>{
         }
     }
 
-    fn _set_neighbors(
-        &self,
-        vertex_index: u32,
-        neighbor_ids: &HashSet<u32>,
-    ) {
+    fn _set_neighbors(&self, vertex_index: u32, neighbor_ids: &HashSet<u32>) {
         assert!(neighbor_ids.len() <= self.max_degree as usize);
         assert!((vertex_index as usize) < self.vertexs.len());
 
@@ -224,7 +220,7 @@ impl<S:G> DiskANNRam<S>{
     fn _set_neighbors_with_write_guard(
         &self,
         neighbor_ids: &HashSet<u32>,
-        guard: &RwLockWriteGuard<VertexNeighbor>,
+        guard: &mut RwLockWriteGuard<VertexNeighbor>,
     ) {
         assert!(neighbor_ids.len() <= self.max_degree as usize);
         (*guard).neighbors.clear();
@@ -233,12 +229,11 @@ impl<S:G> DiskANNRam<S>{
         }
     }
 
-    fn _get_neighbors(
-        &self,
-        vertex_index: u32,
-    ) -> VertexNeighbor {
+    fn _get_neighbors(&self, vertex_index: u32) -> VertexNeighbor {
         let vertex = self.vertexs[vertex_index as usize].read();
-        *vertex
+        VertexNeighbor {
+            neighbors: vertex.neighbors.clone(),
+        }
     }
 
     fn _find_medoid(&self, n: u32) -> u32 {
@@ -290,7 +285,7 @@ impl<S:G> DiskANNRam<S>{
         let mut new_neighbor_ids: HashSet<u32> = HashSet::new();
         {
             let mut guard = self.vertexs[id as usize].write();
-            let neighbor_ids : Vec<u32> = (*guard).neighbors;
+            let neighbor_ids = &(*guard).neighbors;
             state.visited.extend(neighbor_ids.iter().map(|x| *x));
             let neighbor_ids = self._robust_prune(id, state.visited, alpha, r);
             let neighbor_ids: HashSet<u32> = neighbor_ids.into_iter().collect();
@@ -301,9 +296,8 @@ impl<S:G> DiskANNRam<S>{
         for &neighbor_id in new_neighbor_ids.iter() {
             {
                 let mut guard = self.vertexs[neighbor_id as usize].write();
-                let old_neighbors : Vec<u32> = (*guard).neighbors;
-                let mut old_neighbors: HashSet<u32> =
-                    old_neighbors.iter().map(|x| *x).collect();
+                let old_neighbors = &(*guard).neighbors;
+                let mut old_neighbors: HashSet<u32> = old_neighbors.iter().map(|x| *x).collect();
                 old_neighbors.insert(id);
                 if old_neighbors.len() > r as usize {
                     // need robust prune
@@ -395,8 +389,8 @@ impl<S:G> DiskANNRam<S>{
     }
 }
 
-impl<S:G> DiskANNMmap<S>{
-    fn _get_neighbors(self, id: u32) -> Vec<u32>{
+impl<S: G> DiskANNMmap<S> {
+    fn _get_neighbors(&self, id: u32) -> Vec<u32> {
         let start = self.neighbor_offset[id as usize];
         let end = self.neighbor_offset[id as usize + 1];
         self.neighbors[start..end].to_vec()
@@ -434,9 +428,13 @@ pub fn make<S: G>(
     let r = idx_opts.max_degree;
     let VectorOptions { dims, .. } = options.vector;
 
-    let vertexs: Vec<RwLock<VertexNeighbor>> = (0..n).map(|_| {
-        RwLock::new(VertexNeighbor { neighbors: Vec::new() })
-    }).collect();
+    let vertexs: Vec<RwLock<VertexNeighbor>> = (0..n)
+        .map(|_| {
+            RwLock::new(VertexNeighbor {
+                neighbors: Vec::new(),
+            })
+        })
+        .collect();
 
     let medoid = 0;
 
@@ -461,25 +459,27 @@ pub fn make<S: G>(
     new_vamana._one_pass(n, 1.0, r, idx_opts.l_build, rng.clone());
 
     new_vamana._one_pass(n, idx_opts.alpha, r, idx_opts.max_degree, rng.clone());
-    
+
     new_vamana
 }
 
 pub fn save<S: G>(ram: DiskANNRam<S>, path: PathBuf) -> DiskANNMmap<S> {
-
-    let neighbors_iter = ram.vertexs.iter()
-        .flat_map(|vertex| {
-            let vertex = vertex.read();
-            vertex.neighbors.iter().cloned()
-        });
+    let neighbors_iter = ram.vertexs.iter().flat_map(|vertex| {
+        let vertex = vertex.read();
+        vertex
+            .neighbors
+            .iter()
+            .copied()
+            .collect::<Vec<_>>()
+            .into_iter()
+    });
 
     // Create the neighbors array using MmapArray::create.
     let neighbors = MmapArray::create(path.join("neighbors"), neighbors_iter);
 
     // Create an iterator for the size of each neighbor list.
-    let neighbor_offset_iter = { 
-        let iter = ram.vertexs.iter()
-        .map(|vertex| {
+    let neighbor_offset_iter = {
+        let iter = ram.vertexs.iter().map(|vertex| {
             let vertex = vertex.read();
             vertex.neighbors.len()
         });
@@ -492,14 +492,14 @@ pub fn save<S: G>(ram: DiskANNRam<S>, path: PathBuf) -> DiskANNMmap<S> {
     let medoid_vec = vec![ram.medoid];
     let medoid = MmapArray::create(path.join("medoid"), medoid_vec.into_iter());
 
-    DiskANNMmap{
+    DiskANNMmap {
         raw: ram.raw,
         neighbors,
         neighbor_offset,
         medoid,
         r: ram.max_degree,
         alpha: ram.alpha,
-        l: ram.l_build
+        l: ram.l_build,
     }
 }
 
@@ -510,15 +510,15 @@ pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> DiskANNMmap<S> {
     let neighbor_offset = MmapArray::open(path.join("neighbor_offset"));
     let medoid = MmapArray::open(path.join("medoid"));
     assert!(medoid.len() == 1);
-    
-    DiskANNMmap{
+
+    DiskANNMmap {
         raw,
         neighbors,
         neighbor_offset,
         medoid,
         r: idx_opts.max_degree,
         alpha: idx_opts.alpha,
-        l: idx_opts.l_build
+        l: idx_opts.l_build,
     }
 }
 

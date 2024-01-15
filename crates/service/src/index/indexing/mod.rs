@@ -1,12 +1,12 @@
+pub mod diskann;
 pub mod flat;
 pub mod hnsw;
 pub mod ivf;
-pub mod diskann;
 
+use self::diskann::{DiskANNIndexing, DiskANNIndexingOptions};
 use self::flat::{FlatIndexing, FlatIndexingOptions};
 use self::hnsw::{HnswIndexing, HnswIndexingOptions};
 use self::ivf::{IvfIndexing, IvfIndexingOptions};
-use self::diskann::{DiskANNIndexing, DiskANNIndexingOptions};
 use super::segments::growing::GrowingSegment;
 use super::segments::sealed::SealedSegment;
 use super::IndexOptions;

@@ -7,11 +7,11 @@ use crate::index::IndexOptions;
 use crate::index::SearchOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use validator::Validate;
-use std::cmp::Reverse;
-use std::collections::BinaryHeap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
@@ -21,8 +21,8 @@ pub struct DiskANNIndexingOptions {
     // memory and the given memory to decide the quantization options.
     //
     // Current design is to let users define the ratio of PQ for in memory index.
-    // 
-    // Besides, it is hard to estimate current memory usage as sealed segment and 
+    //
+    // Besides, it is hard to estimate current memory usage as sealed segment and
     // growing segement are passed to RawMmap and RawRam. Different from the direct
     // calculation of the vector layout.
 
@@ -32,16 +32,16 @@ pub struct DiskANNIndexingOptions {
     // #[serde(default = "DiskANNIndexingOptions::default_data_path")]
     // pub data_path: PathBuf,
 
-    // // DRAM budget in GB for searching the index to set the compressed level 
+    // // DRAM budget in GB for searching the index to set the compressed level
     // // for data while search happens
-    
+
     // // bound on the memory footprint of the index at search time in GB. Once built,
     // // the index will use up only the specified RAM limit, the rest will reside on disk.
     // // This will dictate how aggressively we compress the data vectors to store in memory.
-    // // Larger will yield better performance at search time. For an n point index, to use 
+    // // Larger will yield better performance at search time. For an n point index, to use
     // // b byte PQ compressed representation in memory, use `B = ((n * b) / 2^30  + (250000*(4*R + sizeof(T)*ndim)) / 2^30)`.
     // // The second term in the summation is to allow some buffer for caching about 250,000 nodes from the graph in memory while serving.
-    // // If you are not sure about this term, add 0.25GB to the first term. 
+    // // If you are not sure about this term, add 0.25GB to the first term.
     // #[serde(default = "DiskANNIndexingOptions::default_search_DRAM_budget")]
     // pub search_DRAM_budget: u32,
 
@@ -54,7 +54,6 @@ pub struct DiskANNIndexingOptions {
     // // building the index in one shot. Allocate as much memory as your RAM allows.
     // #[serde(default = "DiskANNIndexingOptions::default_build_DRAM_budget")]
     // pub build_DRAM_budget: u32,
-
     #[serde(default = "DiskANNIndexingOptions::default_num_threads")]
     pub num_threads: u32,
 
@@ -81,7 +80,6 @@ pub struct DiskANNIndexingOptions {
     // TODO: filtered Lbuild (for filtered diskANN)
     // TODO: filter threshold (for filtered diskANN)
     // TODO: label type (for filtered diskANN)
-
     #[serde(default)]
     #[validate]
     pub quantization: QuantizationOptions,
@@ -172,9 +170,10 @@ impl<S: G> AbstractIndexing<S> for DiskANNIndexing<S> {
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
-        self.raw.search()
+        self.raw.basic(vector, opts, filter)
     }
 
+    #[allow(unused_variables)]
     fn vbase<'a>(
         &'a self,
         vector: &'a [S::Scalar],
