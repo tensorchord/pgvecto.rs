@@ -1,5 +1,5 @@
 comment = 'vectors: Vector database plugin for Postgres, written in Rust, specifically designed for LLM'
-default_version = '@CARGO_VERSION@'
+default_version = '0.0.0-nightly.20240116'
 module_pathname = '$libdir/vectors'
 relocatable = false
 superuser = true
