@@ -13,14 +13,14 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 
 ## Why use pgvecto.rs
 
-- 💃 **Easy to use**: pgvecto.rs is a Postgres extension, which means that you can use it directly within your existing database. This makes it easy to integrate into your existing workflows and applications.
-- 🥅 **Filtering**: pgvecto.rs supports vbase filtering. With Vbase, you can search with any filters and joins, and still get high recall rate and low latency. This is the missing feature of other vector databases.
-- 🌓 **FP16 vector type and index**: pgvecto.rs supports storing your data using half type. This can save memory  and storage usage by 50% and increase the throughput.
-- 🧮 **Quantization**: pgvecto.rs supports scalar quantization and product qutization up to 64x. Save up to 4x memory using scalar quantization with less than 2% recall loss.
-- 🔍 **Hybrid Search**: With full-text search in PostgreSQL, you can search for both text and vector data in one query.
-- 🔗 **Async indexing**: pgvecto.rs's index is asynchronously constructed by the background threads and does not block insertions and always ready for new queries.
-- ⬆️ **Unlimited Vector Length**: pgvecto.rs supports vector length up to 65535, to accomendate any latest models.
-- 🦀 **Rewrite in Rust**: Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
+- 💃 **User-Friendly**: Effortlessly incorporate pgvecto.rs into your existing database as a Postgres extension, streamlining integration with your current workflows and applications.
+- 🥅 **Comprehensive Join and Filter Support**: Elevate your search capabilities in pgvecto.rs with VBASE filtering. Apply any filter conditions and join with other tables, achieving high recall and low latency, a distinctive edge over other vector databases.
+- 🌓 **Efficient FP16 Support**: Optimize your data storage with pgvecto.rs, supporting FP16 vector type to cut memory and storage usage by half, and boosting throughput.
+- 🧮 **Advanced Quantization**: Utilize scalar and product quantization in pgvecto.rs for up to 64x compression. Achieve up to 4x memory savings with less than 2% recall loss with scalar quantization.
+- 🔍 **Hybrid Search**: Leverage the full-text search functionality in PostgreSQL with pgvecto.rs to search text and vector data within a single query.
+- 🔗 **Async indexing**: The pgvecto.rs index is built asynchronously by background threads, allowing non-blocking inserts and always ready for new queries.
+- ⬆️ **Extended Vector Length**: pgvecto.rs supports vector length up to 65535, suitable for the latest models.
+- 🦀 **Rust-Powered Reliability**: Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
 
 ## [Documentation](https://docs.pgvecto.rs/getting-started/overview.html)
 
