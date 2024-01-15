@@ -188,6 +188,7 @@ impl<S: G> DynamicIndexing<S> {
             DynamicIndexing::Flat(x) => x.vbase(vector, opts, filter),
             DynamicIndexing::Ivf(x) => x.vbase(vector, opts, filter),
             DynamicIndexing::Hnsw(x) => x.vbase(vector, opts, filter),
+            DynamicIndexing::DiskANN(x) => x.vbase(vector, opts, filter),
         }
     }
 }

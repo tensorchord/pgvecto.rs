@@ -4,3 +4,4 @@ pub mod hnsw;
 pub mod ivf;
 pub mod quantization;
 pub mod raw;
+pub mod diskann;
