@@ -226,25 +226,25 @@ impl IntoDatum for Vecf32Output {
     }
 
     fn type_oid() -> Oid {
-        pgrx::wrappers::regtypein("vector")
+        pgrx::wrappers::regtypein("vectors.vector")
     }
 }
 
 unsafe impl SqlTranslatable for Vecf32Input<'_> {
     fn argument_sql() -> Result<SqlMapping, ArgumentError> {
-        Ok(SqlMapping::As(String::from("vector")))
+        Ok(SqlMapping::As(String::from("vectors.vector")))
     }
     fn return_sql() -> Result<Returns, ReturnsError> {
-        Ok(Returns::One(SqlMapping::As(String::from("vector"))))
+        Ok(Returns::One(SqlMapping::As(String::from("vectors.vector"))))
     }
 }
 
 unsafe impl SqlTranslatable for Vecf32Output {
     fn argument_sql() -> Result<SqlMapping, ArgumentError> {
-        Ok(SqlMapping::As(String::from("vector")))
+        Ok(SqlMapping::As(String::from("vectors.vector")))
     }
     fn return_sql() -> Result<Returns, ReturnsError> {
-        Ok(Returns::One(SqlMapping::As(String::from("vector"))))
+        Ok(Returns::One(SqlMapping::As(String::from("vectors.vector"))))
     }
 }
 

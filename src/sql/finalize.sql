@@ -282,4 +282,8 @@ CREATE VIEW pg_vector_index_stat AS
          pg_am A ON A.oid = I.relam
     WHERE A.amname = 'vectors';
 
+-- schema
+
+SELECT set_config('search_path', 'vectors, ' || current_setting('search_path'), false);
+
 -- finalize end
