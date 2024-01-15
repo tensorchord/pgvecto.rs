@@ -1,0 +1,51 @@
+statement ok
+DROP TABLE IF EXISTS items;
+
+# partition table
+statement ok
+CREATE TABLE items (val vector(3), category_id int) PARTITION BY LIST(category_id);
+
+statement ok
+CREATE TABLE id_123 PARTITION OF items FOR VALUES IN (1, 2, 3);
+
+statement ok
+CREATE TABLE id_456 PARTITION OF items FOR VALUES IN (4, 5, 6);
+
+statement ok
+CREATE TABLE id_789 PARTITION OF items FOR VALUES IN (7, 8, 9);
+
+statement ok
+INSERT INTO items (val, category_id)
+SELECT
+  ARRAY[random(), random(), random()]::real[],
+  (random() * 6 + 1)::int
+FROM generate_series(1, 1000);
+
+statement ok
+CREATE INDEX ON items USING vectors (val vector_l2_ops)
+WITH (options = "[indexing.hnsw]");
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM items ORDER BY val <-> '[0.5,0.5,0.5]' limit 10) t2;
+----
+10
+
+statement ok
+CREATE INDEX ON id_123 USING vectors (val vector_cos_ops)
+WITH (options = "[indexing.ivf]");
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM items ORDER BY val <=> '[0.5,0.5,0.5]' limit 10) t2;
+----
+10
+
+# partial index
+statement ok
+CREATE INDEX ON items USING vectors (val vector_dot_ops)
+WITH (options = "[indexing.ivf]") WHERE (category_id = 1);
+
+query I
+SELECT COUNT(1) FROM
+(SELECT 1 FROM items WHERE (category_id = 1) ORDER BY val <#> '[0.5,0.5,0.5]' limit 10) t2;
+----
+10
