@@ -14,7 +14,7 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 ## Why use pgvecto.rs
 
 - 💃 **User-Friendly**: Effortlessly incorporate pgvecto.rs into your existing database as a Postgres extension, streamlining integration with your current workflows and applications.
-- 🥅 **Comprehensive Join and Filter Support**: Elevate your search capabilities in pgvecto.rs with VBASE filtering. Apply any filter conditions and join with other tables, achieving high recall and low latency, a distinctive edge over other vector databases.
+- 🥅 **Join and Filter without Limitation**: Elevate your search capabilities in pgvecto.rs with VBASE filtering. Apply any filter conditions and join with other tables, achieving high recall and low latency, a distinctive edge over other vector databases.
 - 🌓 **Efficient FP16 Support**: Optimize your data storage with pgvecto.rs, supporting FP16 vector type to cut memory and storage usage by half, and boosting throughput.
 - 🧮 **Advanced Quantization**: Utilize scalar and product quantization in pgvecto.rs for up to 64x compression. Achieve up to 4x memory savings with less than 2% recall loss with scalar quantization.
 - 🔍 **Hybrid Search**: Leverage the full-text search functionality in PostgreSQL with pgvecto.rs to search text and vector data within a single query.
