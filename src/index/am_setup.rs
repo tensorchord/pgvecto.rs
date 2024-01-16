@@ -21,7 +21,7 @@ pub unsafe fn convert_opclass_to_distance(opclass: pgrx::pg_sys::Oid) -> (Distan
     let tuple = pgrx::pg_sys::SearchSysCache1(opclass_cache_id, opclass.into());
     assert!(
         !tuple.is_null(),
-        "cache lookup failed for operator class {opclass}"
+        "cache lookup failed for operator class {opclass:?}"
     );
     let classform = pgrx::pg_sys::GETSTRUCT(tuple).cast::<pgrx::pg_sys::FormData_pg_opclass>();
     let opfamily = (*classform).opcfamily;
@@ -36,7 +36,7 @@ pub unsafe fn convert_opfamily_to_distance(opfamily: pgrx::pg_sys::Oid) -> (Dist
     let tuple = pgrx::pg_sys::SearchSysCache1(opfamily_cache_id, opfamily.into());
     assert!(
         !tuple.is_null(),
-        "cache lookup failed for operator family {opfamily}"
+        "cache lookup failed for operator family {opfamily:?}"
     );
     let list = pgrx::pg_sys::SearchSysCacheList(
         opstrategy_cache_id,
@@ -53,17 +53,17 @@ pub unsafe fn convert_opfamily_to_distance(opfamily: pgrx::pg_sys::Oid) -> (Dist
     assert!((*amop).amoppurpose == pgrx::pg_sys::AMOP_ORDER as libc::c_char);
     let operator = (*amop).amopopr;
     let result;
-    if operator == regoperatorin("<->(vector,vector)") {
+    if operator == regoperatorin("vectors.<->(vectors.vector,vectors.vector)") {
         result = (Distance::L2, Kind::F32);
-    } else if operator == regoperatorin("<#>(vector,vector)") {
+    } else if operator == regoperatorin("vectors.<#>(vectors.vector,vectors.vector)") {
         result = (Distance::Dot, Kind::F32);
-    } else if operator == regoperatorin("<=>(vector,vector)") {
+    } else if operator == regoperatorin("vectors.<=>(vectors.vector,vectors.vector)") {
         result = (Distance::Cos, Kind::F32);
-    } else if operator == regoperatorin("<->(vecf16,vecf16)") {
+    } else if operator == regoperatorin("vectors.<->(vectors.vecf16,vectors.vecf16)") {
         result = (Distance::L2, Kind::F16);
-    } else if operator == regoperatorin("<#>(vecf16,vecf16)") {
+    } else if operator == regoperatorin("vectors.<#>(vectors.vecf16,vectors.vecf16)") {
         result = (Distance::Dot, Kind::F16);
-    } else if operator == regoperatorin("<=>(vecf16,vecf16)") {
+    } else if operator == regoperatorin("vectors.<=>(vectors.vecf16,vectors.vecf16)") {
         result = (Distance::Cos, Kind::F16);
     } else {
         SessionError::BadOptions2.friendly();

@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "lib"]
 
 [features]
 default = ["pg15"]

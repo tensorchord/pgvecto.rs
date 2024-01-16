@@ -226,7 +226,7 @@ impl IntoDatum for Vecf32Output {
     }
 
     fn type_oid() -> Oid {
-        pgrx::wrappers::regtypein("vector")
+        pgrx::wrappers::regtypein("vectors.vector")
     }
 }
 
