@@ -1,9 +1,7 @@
 statement ok
-DROP TABLE IF EXISTS t;
+SET search_path TO pg_temp, vectors;
 
-# ivf native
-statement ok
-DROP TABLE IF EXISTS t;
+# ivf
 
 statement ok
 CREATE TABLE t (val vector(3));
@@ -37,8 +35,6 @@ statement ok
 DROP TABLE t;
 
 # ivfpq
-statement ok
-DROP TABLE IF EXISTS t;
 
 statement ok
 CREATE TABLE t (val vector(3));
