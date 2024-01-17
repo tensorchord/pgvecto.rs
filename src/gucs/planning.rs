@@ -11,6 +11,8 @@ pub static ENABLE_INDEX: GucSetting<bool> = GucSetting::<bool>::new(true);
 
 pub static SEARCH_MODE: GucSetting<Mode> = GucSetting::<Mode>::new(Mode::basic);
 
+pub static ENABLE_PGVECTOR_COMPATIBILITY: GucSetting<bool> = GucSetting::<bool>::new(false);
+
 pub unsafe fn init() {
     GucRegistry::define_bool_guc(
         "vectors.enable_index",
@@ -28,4 +30,12 @@ pub unsafe fn init() {
         GucContext::Userset,
         GucFlags::default(),
     );
+    GucRegistry::define_bool_guc(
+        "vectors.pgvector_compatibility",
+        "Enables or disables pgvector compatibility mode.",
+        "https://docs.pgvecto.rs/usage/compatibility.html",
+        &ENABLE_PGVECTOR_COMPATIBILITY,
+        GucContext::Userset,
+        GucFlags::default(),
+    )
 }
