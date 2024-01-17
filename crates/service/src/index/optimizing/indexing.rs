@@ -27,7 +27,7 @@ impl<S: G> OptimizerIndexing<S> {
             .build()
             .unwrap();
         let weak_index = Arc::downgrade(&index);
-        std::mem::drop(index);
+        drop(index);
         loop {
             {
                 let Some(index) = weak_index.upgrade() else {

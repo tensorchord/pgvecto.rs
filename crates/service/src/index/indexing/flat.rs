@@ -29,7 +29,7 @@ impl Default for FlatIndexingOptions {
 }
 
 pub struct FlatIndexing<S: G> {
-    raw: crate::algorithms::flat::Flat<S>,
+    raw: Flat<S>,
 }
 
 impl<S: G> AbstractIndexing<S> for FlatIndexing<S> {

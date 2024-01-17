@@ -7,7 +7,6 @@ use self::delete::Delete;
 use self::indexing::IndexingOptions;
 use self::optimizing::OptimizingOptions;
 use self::segments::growing::GrowingSegment;
-use self::segments::growing::GrowingSegmentInsertError;
 use self::segments::sealed::SealedSegment;
 use self::segments::SegmentsOptions;
 use crate::index::optimizing::indexing::OptimizerIndexing;
@@ -34,7 +33,7 @@ use validator::Validate;
 
 #[derive(Debug, Error)]
 #[error("The index view is outdated.")]
-pub struct OutdatedError(#[from] pub Option<GrowingSegmentInsertError>);
+pub struct OutdatedError;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
@@ -103,7 +102,6 @@ pub struct Index<S: G> {
 
 impl<S: G> Index<S> {
     pub fn create(path: PathBuf, options: IndexOptions) -> Result<Arc<Self>, ServiceError> {
-        assert!(options.validate().is_ok());
         if let Err(err) = options.validate() {
             return Err(ServiceError::BadOption {
                 validation: err.to_string(),
@@ -501,12 +499,13 @@ impl<S: G> IndexView<S> {
         }
         let payload = (pointer.as_u48() << 16) | self.delete.version(pointer) as Payload;
         if let Some((_, growing)) = self.write.as_ref() {
-            if let Err(e) = growing.insert(vector, payload) {
-                return Ok(Err(OutdatedError(Some(e))));
+            use crate::index::segments::growing::GrowingSegmentInsertError;
+            if let Err(GrowingSegmentInsertError) = growing.insert(vector, payload) {
+                return Ok(Err(OutdatedError));
             }
             Ok(Ok(()))
         } else {
-            Ok(Err(OutdatedError(None)))
+            Ok(Err(OutdatedError))
         }
     }
     pub fn delete<F: FnMut(Pointer) -> bool>(&self, mut f: F) {

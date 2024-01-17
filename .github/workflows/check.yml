@@ -84,20 +84,11 @@ jobs:
           cargo test --all --no-fail-fast --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu -- --nocapture
       - name: Install release
         run: ./scripts/ci_install.sh
-      - name: Sqllogictest
-        run: |
-          psql -f ./tests/init.sql
-          sqllogictest -u runner -d runner './tests/sqllogictest/*.slt'
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.10' 
-      - name: Crash Recovery test
-        run: |
-          sudo pip install psutil==5.9.7
-          psql -f ./tests/init.sql
-          sqllogictest -u runner -d runner './tests/crash/create.slt'
-          sudo python ./tests/crash/kill.py
-          sqllogictest -u runner -d runner './tests/crash/restore.slt'
+          python-version: "3.10"
+      - name: Test 2
+        run: ./tests/tests.sh
       - uses: actions/cache/save@v3
         with:
           path: |

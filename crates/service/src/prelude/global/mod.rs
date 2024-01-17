@@ -15,20 +15,21 @@ pub use f32_l2::F32L2;
 
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
-pub trait G: Copy + std::fmt::Debug + 'static {
+pub trait G: Copy + Debug + 'static {
     type Scalar: Copy
         + Send
         + Sync
-        + std::fmt::Debug
-        + std::fmt::Display
-        + serde::Serialize
-        + for<'a> serde::Deserialize<'a>
+        + Debug
+        + Display
+        + Serialize
+        + for<'a> Deserialize<'a>
         + Ord
         + bytemuck::Zeroable
         + bytemuck::Pod
-        + num_traits::Float
+        + Float
+        + Zero
         + num_traits::NumOps
         + num_traits::NumAssignOps
         + FloatCast;

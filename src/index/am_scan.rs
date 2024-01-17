@@ -1,3 +1,5 @@
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use crate::gucs::executing::search_options;
 use crate::gucs::planning::Mode;
 use crate::gucs::planning::SEARCH_MODE;

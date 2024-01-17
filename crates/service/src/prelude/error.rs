@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[must_use]
-#[derive(Debug, Error, Serialize, Deserialize)]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
 #[rustfmt::skip]
 pub enum ServiceError {
     #[error("\
@@ -15,6 +15,10 @@ The index is not existing in the background worker.
 ADVICE: Drop or rebuild the index.\
 ")]
     UnknownIndex,
+#[error("\
+The index is already existing in the background worker.\
+")]
+    KnownIndex,
     #[error("\
 The given vector is invalid for input.
 ADVICE: Check if dimensions and scalar type of the vector is matched with the index.\

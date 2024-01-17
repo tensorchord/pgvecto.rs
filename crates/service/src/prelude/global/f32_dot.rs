@@ -21,7 +21,7 @@ impl G for F32Dot {
     }
 
     fn elkan_k_means_distance(lhs: &[F32], rhs: &[F32]) -> F32 {
-        super::f32_dot::dot(lhs, rhs).acos()
+        dot(lhs, rhs).acos()
     }
 
     #[multiversion::multiversion(targets(

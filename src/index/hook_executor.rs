@@ -1,3 +1,5 @@
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use crate::index::am_scan::Scanner;
 use std::ptr::null_mut;
 

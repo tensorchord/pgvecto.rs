@@ -21,7 +21,7 @@ impl<S: G> OptimizerSealing<S> {
         let dur = Duration::from_secs(index.options.optimizing.sealing_secs);
         let least = index.options.optimizing.sealing_size;
         let weak_index = Arc::downgrade(&index);
-        std::mem::drop(index);
+        drop(index);
         let mut check = None;
         loop {
             {
