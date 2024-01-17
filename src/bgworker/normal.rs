@@ -76,7 +76,9 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
                 }
                 for handle in pending_dirty {
                     if let Some(instance) = view.get(handle) {
-                        instance.refresh();
+                        if let Some(view) = instance.view() {
+                            view.flush();
+                        }
                     }
                 }
                 handler = x.leave()?;
@@ -107,8 +109,8 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
                 };
                 loop {
                     let instance_view = match instance.view() {
-                        Ok(x) => x,
-                        Err(e) => x.reset(e)?,
+                        Some(x) => x,
+                        None => x.reset(ServiceError::Upgrade2)?,
                     };
                     match instance_view.insert(vector.clone(), pointer) {
                         Ok(Ok(())) => break,
@@ -124,8 +126,8 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
                     x.reset(ServiceError::UnknownIndex)?;
                 };
                 let instance_view = match instance.view() {
-                    Ok(x) => x,
-                    Err(e) => x.reset(e)?,
+                    Some(x) => x,
+                    None => x.reset(ServiceError::Upgrade2)?,
                 };
                 instance_view.delete(|p| x.next(p).expect("Panic in VACUUM."));
                 handler = x.leave()?;
@@ -150,8 +152,8 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
                     x.reset(ServiceError::UnknownIndex)?;
                 };
                 let view = match instance.view() {
-                    Ok(x) => x,
-                    Err(e) => x.reset(e)?,
+                    Some(x) => x,
+                    None => x.reset(ServiceError::Upgrade2)?,
                 };
                 let mut it = match view.basic(&vector, &opts, |_| true) {
                     Ok(x) => x,
@@ -182,8 +184,8 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
                     x.reset(ServiceError::UnknownIndex)?;
                 };
                 let view = match instance.view() {
-                    Ok(x) => x,
-                    Err(e) => x.reset(e)?,
+                    Some(x) => x,
+                    None => x.reset(ServiceError::Upgrade2)?,
                 };
                 let mut it = match view.vbase(&vector, &opts, |_| true) {
                     Ok(x) => x,
