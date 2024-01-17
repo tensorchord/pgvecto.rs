@@ -83,15 +83,15 @@ impl Instance {
             Instance::Upgrade => (),
         }
     }
-    pub fn view(&self) -> Result<InstanceView, ServiceError> {
+    pub fn view(&self) -> Option<InstanceView> {
         match self {
-            Instance::F32Cos(x) => Ok(InstanceView::F32Cos(x.view())),
-            Instance::F32Dot(x) => Ok(InstanceView::F32Dot(x.view())),
-            Instance::F32L2(x) => Ok(InstanceView::F32L2(x.view())),
-            Instance::F16Cos(x) => Ok(InstanceView::F16Cos(x.view())),
-            Instance::F16Dot(x) => Ok(InstanceView::F16Dot(x.view())),
-            Instance::F16L2(x) => Ok(InstanceView::F16L2(x.view())),
-            Instance::Upgrade => Err(ServiceError::Upgrade2),
+            Instance::F32Cos(x) => Some(InstanceView::F32Cos(x.view())),
+            Instance::F32Dot(x) => Some(InstanceView::F32Dot(x.view())),
+            Instance::F32L2(x) => Some(InstanceView::F32L2(x.view())),
+            Instance::F16Cos(x) => Some(InstanceView::F16Cos(x.view())),
+            Instance::F16Dot(x) => Some(InstanceView::F16Dot(x.view())),
+            Instance::F16L2(x) => Some(InstanceView::F16L2(x.view())),
+            Instance::Upgrade => None,
         }
     }
     pub fn stat(&self) -> IndexStat {
