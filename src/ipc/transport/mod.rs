@@ -1,10 +1,25 @@
 pub mod mmap;
 pub mod unix;
 
-use super::IpcError;
-use crate::prelude::*;
+use super::{ConnectionError, GraceError};
 use serde::{Deserialize, Serialize};
 use service::prelude::ServiceError;
+use std::fmt::Debug;
+
+pub trait Bincode: Debug {
+    fn serialize(&self) -> Vec<u8>;
+    fn deserialize(_: &[u8]) -> Self;
+}
+
+impl<T: Debug + Serialize + for<'a> Deserialize<'a>> Bincode for T {
+    fn serialize(&self) -> Vec<u8> {
+        bincode::serialize(self).unwrap()
+    }
+
+    fn deserialize(bytes: &[u8]) -> Self {
+        bincode::deserialize(bytes).unwrap()
+    }
+}
 
 pub enum ServerSocket {
     Unix(unix::Socket),
@@ -12,61 +27,70 @@ pub enum ServerSocket {
 }
 
 pub enum ClientSocket {
-    Unix { socket: unix::Socket },
-    Mmap { socket: mmap::Socket },
+    Unix(unix::Socket),
+    Mmap(mmap::Socket),
 }
 
 impl ServerSocket {
-    pub fn ok<T: Serialize>(&mut self, packet: T) -> Result<(), IpcError> {
-        let mut buffer = Vec::new();
-        buffer.push(0u8);
-        buffer.extend(bincode::serialize(&packet).expect("Failed to serialize"));
+    pub fn ok<T: Bincode>(&mut self, packet: T) -> Result<(), ConnectionError> {
+        let mut buffer = vec![0u8];
+        buffer.extend(packet.serialize());
         match self {
             Self::Unix(x) => x.send(&buffer),
             Self::Mmap(x) => x.send(&buffer),
         }
     }
-    pub fn err(&mut self, err: ServiceError) -> Result<!, IpcError> {
-        let mut buffer = Vec::new();
-        buffer.push(1u8);
-        buffer.extend(bincode::serialize(&err).expect("Failed to serialize"));
+    pub fn err(&mut self, packet: ServiceError) -> Result<!, ConnectionError> {
+        let mut buffer = vec![1u8];
+        buffer.extend(Bincode::serialize(&packet));
         match self {
             Self::Unix(x) => x.send(&buffer)?,
             Self::Mmap(x) => x.send(&buffer)?,
         }
-        Err(IpcError::Closed)
+        Err(ConnectionError::Service(packet))
     }
-    pub fn recv<T: for<'a> Deserialize<'a>>(&mut self) -> Result<T, IpcError> {
+    pub fn recv<T: Bincode>(&mut self) -> Result<T, ConnectionError> {
         let buffer = match self {
             Self::Unix(x) => x.recv()?,
             Self::Mmap(x) => x.recv()?,
         };
-        Ok(bincode::deserialize(&buffer).expect("Failed to deserialize."))
+        let c = &buffer[1..];
+        match buffer[0] {
+            0u8 => Ok(T::deserialize(c)),
+            1u8 => Err(ConnectionError::Grace(bincode::deserialize(c).unwrap())),
+            _ => unreachable!(),
+        }
     }
 }
 
 impl ClientSocket {
-    pub fn send<T: Serialize>(&mut self, packet: T) -> Result<(), IpcError> {
-        let buffer = bincode::serialize(&packet).expect("Failed to serialize");
+    pub fn ok<T: Bincode>(&mut self, packet: T) -> Result<(), ConnectionError> {
+        let mut buffer = vec![0u8];
+        buffer.extend(packet.serialize());
         match self {
-            Self::Unix { socket } => socket.send(&buffer),
-            Self::Mmap { socket } => socket.send(&buffer),
+            Self::Unix(x) => x.send(&buffer),
+            Self::Mmap(x) => x.send(&buffer),
         }
     }
-    pub fn recv<T: for<'a> Deserialize<'a>>(&mut self) -> Result<T, Box<dyn FriendlyError>> {
+    #[allow(unused)]
+    pub fn err(&mut self, packet: GraceError) -> Result<!, ConnectionError> {
+        let mut buffer = vec![1u8];
+        buffer.extend(Bincode::serialize(&packet));
+        match self {
+            Self::Unix(x) => x.send(&buffer)?,
+            Self::Mmap(x) => x.send(&buffer)?,
+        }
+        Err(ConnectionError::Grace(packet))
+    }
+    pub fn recv<T: Bincode>(&mut self) -> Result<T, ConnectionError> {
         let buffer = match self {
-            Self::Unix { socket } => socket
-                .recv()
-                .map_err(|e| Box::new(e) as Box<dyn FriendlyError>)?,
-            Self::Mmap { socket } => socket
-                .recv()
-                .map_err(|e| Box::new(e) as Box<dyn FriendlyError>)?,
+            Self::Unix(x) => x.recv()?,
+            Self::Mmap(x) => x.recv()?,
         };
+        let c = &buffer[1..];
         match buffer[0] {
-            0u8 => Ok(bincode::deserialize::<T>(&buffer[1..]).expect("Failed to deserialize.")),
-            1u8 => Err(Box::new(
-                bincode::deserialize::<ServiceError>(&buffer[1..]).expect("Failed to deserialize."),
-            )),
+            0u8 => Ok(T::deserialize(c)),
+            1u8 => Err(ConnectionError::Service(bincode::deserialize(c).unwrap())),
             _ => unreachable!(),
         }
     }

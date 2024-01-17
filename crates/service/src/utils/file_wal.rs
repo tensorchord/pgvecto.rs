@@ -55,7 +55,7 @@ impl FileWal {
             ($t: expr) => {
                 match $t {
                     Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
-                        self.status = WalStatus::Truncate;
+                        self.status = Truncate;
                         return None;
                     }
                     Err(e) => panic!("{}", e),
@@ -68,7 +68,7 @@ impl FileWal {
         let mut data = vec![0u8; len as usize];
         resolve_eof!(self.file.read_exact(&mut data));
         if crc32(&data) != crc {
-            self.status = WalStatus::Truncate;
+            self.status = Truncate;
             return None;
         }
         self.offset += 4 + 4 + data.len();
@@ -83,7 +83,7 @@ impl FileWal {
             .set_len(self.offset as _)
             .expect("Failed to truncate wal.");
         self.file.sync_all().expect("Failed to flush wal.");
-        self.status = WalStatus::Flush;
+        self.status = Flush;
     }
     pub fn write(&mut self, bytes: &[u8]) {
         use byteorder::WriteBytesExt;
@@ -100,7 +100,7 @@ impl FileWal {
             .expect("Failed to write wal.");
         self.file.write_all(bytes).expect("Failed to write wal.");
         self.offset += 4 + 4 + bytes.len();
-        self.status = WalStatus::Write;
+        self.status = Write;
     }
     pub fn sync_all(&mut self) {
         use WalStatus::*;
@@ -108,7 +108,7 @@ impl FileWal {
             panic!("Operation not permitted.")
         };
         self.file.sync_all().expect("Failed to flush wal.");
-        self.status = WalStatus::Flush;
+        self.status = Flush;
     }
 }
 

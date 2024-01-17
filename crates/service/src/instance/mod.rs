@@ -72,26 +72,15 @@ impl Instance {
             (Distance::L2, Kind::F16) => Self::F16L2(Index::open(path)),
         }
     }
-    pub fn options(&self) -> Result<&IndexOptions, ServiceError> {
+    pub fn refresh(&self) {
         match self {
-            Instance::F32Cos(x) => Ok(x.options()),
-            Instance::F32Dot(x) => Ok(x.options()),
-            Instance::F32L2(x) => Ok(x.options()),
-            Instance::F16Cos(x) => Ok(x.options()),
-            Instance::F16Dot(x) => Ok(x.options()),
-            Instance::F16L2(x) => Ok(x.options()),
-            Instance::Upgrade => Err(ServiceError::Upgrade2),
-        }
-    }
-    pub fn refresh(&self) -> Result<(), ServiceError> {
-        match self {
-            Instance::F32Cos(x) => Ok(x.refresh()),
-            Instance::F32Dot(x) => Ok(x.refresh()),
-            Instance::F32L2(x) => Ok(x.refresh()),
-            Instance::F16Cos(x) => Ok(x.refresh()),
-            Instance::F16Dot(x) => Ok(x.refresh()),
-            Instance::F16L2(x) => Ok(x.refresh()),
-            Instance::Upgrade => Err(ServiceError::Upgrade2),
+            Instance::F32Cos(x) => x.refresh(),
+            Instance::F32Dot(x) => x.refresh(),
+            Instance::F32L2(x) => x.refresh(),
+            Instance::F16Cos(x) => x.refresh(),
+            Instance::F16Dot(x) => x.refresh(),
+            Instance::F16L2(x) => x.refresh(),
+            Instance::Upgrade => (),
         }
     }
     pub fn view(&self) -> Result<InstanceView, ServiceError> {
@@ -105,15 +94,15 @@ impl Instance {
             Instance::Upgrade => Err(ServiceError::Upgrade2),
         }
     }
-    pub fn stat(&self) -> Result<IndexStat, ServiceError> {
+    pub fn stat(&self) -> IndexStat {
         match self {
-            Instance::F32Cos(x) => Ok(x.stat()),
-            Instance::F32Dot(x) => Ok(x.stat()),
-            Instance::F32L2(x) => Ok(x.stat()),
-            Instance::F16Cos(x) => Ok(x.stat()),
-            Instance::F16Dot(x) => Ok(x.stat()),
-            Instance::F16L2(x) => Ok(x.stat()),
-            Instance::Upgrade => Ok(IndexStat::Upgrade),
+            Instance::F32Cos(x) => x.stat(),
+            Instance::F32Dot(x) => x.stat(),
+            Instance::F32L2(x) => x.stat(),
+            Instance::F16Cos(x) => x.stat(),
+            Instance::F16Dot(x) => x.stat(),
+            Instance::F16L2(x) => x.stat(),
+            Instance::Upgrade => IndexStat::Upgrade,
         }
     }
 }

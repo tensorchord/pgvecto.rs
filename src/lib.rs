@@ -43,6 +43,9 @@ pub mod pg_test {
     pub fn setup(_options: Vec<&str>) {}
 
     pub fn postgresql_conf_options() -> Vec<&'static str> {
-        vec!["shared_preload_libraries = 'vectors'"]
+        vec![
+            "shared_preload_libraries=vectors.so",
+            "search_path=\"$user\", public, vectors",
+        ]
     }
 }

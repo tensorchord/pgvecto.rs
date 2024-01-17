@@ -1,3 +1,5 @@
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use crate::datatype::vecf16::Vecf16;
 use crate::datatype::vecf32::Vecf32;
 use service::prelude::DynamicVector;

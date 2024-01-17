@@ -1,15 +1,18 @@
-use crate::index::hook_transaction::flush_if_commit;
+use crate::index::hook_transaction::callback_dirty;
 use crate::prelude::*;
 use service::prelude::*;
 
 pub fn update_insert(handle: Handle, vector: DynamicVector, tid: pgrx::pg_sys::ItemPointerData) {
-    flush_if_commit(handle);
-    let p = Pointer::from_sys(tid);
+    callback_dirty(handle);
+
+    let pointer = Pointer::from_sys(tid);
     let mut rpc = crate::ipc::client::borrow_mut();
-    rpc.insert(handle, (vector, p));
+    rpc.insert(handle, vector, pointer);
 }
 
 pub fn update_delete(handle: Handle, hook: impl Fn(Pointer) -> bool) {
+    callback_dirty(handle);
+
     struct Delete<H> {
         hook: H,
     }
@@ -25,7 +28,6 @@ pub fn update_delete(handle: Handle, hook: impl Fn(Pointer) -> bool) {
 
     let client_delete = Delete { hook };
 
-    flush_if_commit(handle);
     let mut rpc = crate::ipc::client::borrow_mut();
     rpc.delete(handle, client_delete);
 }

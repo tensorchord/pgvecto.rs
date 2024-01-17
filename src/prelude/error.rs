@@ -8,8 +8,6 @@ pub trait FriendlyError: Display {
     }
 }
 
-impl FriendlyError for Box<dyn FriendlyError> {}
-
 impl FriendlyError for ServiceError {}
 
 pub trait Friendly<T> {

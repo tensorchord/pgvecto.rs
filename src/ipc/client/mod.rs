@@ -53,9 +53,22 @@ impl Rpc {
 }
 
 impl ClientGuard<Rpc> {
+    pub fn commit(&mut self, pending_deletes: Vec<Handle>, pending_dirty: Vec<Handle>) {
+        let packet = RpcPacket::Commit {
+            pending_deletes,
+            pending_dirty,
+        };
+        self.socket.ok(packet).friendly();
+        let commit::CommitPacket::Leave {} = self.socket.recv().friendly();
+    }
+    pub fn abort(&mut self, pending_deletes: Vec<Handle>) {
+        let packet = RpcPacket::Abort { pending_deletes };
+        self.socket.ok(packet).friendly();
+        let abort::AbortPacket::Leave {} = self.socket.recv().friendly();
+    }
     pub fn create(&mut self, handle: Handle, options: IndexOptions) {
         let packet = RpcPacket::Create { handle, options };
-        self.socket.send(packet).friendly();
+        self.socket.ok(packet).friendly();
         let create::CreatePacket::Leave {} = self.socket.recv().friendly();
     }
     pub fn basic(
@@ -69,18 +82,18 @@ impl ClientGuard<Rpc> {
             vector,
             opts,
         };
-        self.socket.send(packet).friendly();
+        self.socket.ok(packet).friendly();
         let vbase::VbaseErrorPacket {} = self.socket.recv().friendly();
         ClientGuard::map(self)
     }
     pub fn delete(&mut self, handle: Handle, mut t: impl Delete) {
         let packet = RpcPacket::Delete { handle };
-        self.socket.send(packet).friendly();
+        self.socket.ok(packet).friendly();
         loop {
             match self.socket.recv().friendly() {
                 delete::DeletePacket::Test { p } => {
                     self.socket
-                        .send(delete::DeleteTestPacket { delete: t.test(p) })
+                        .ok(delete::DeleteTestPacket { delete: t.test(p) })
                         .friendly();
                 }
                 delete::DeletePacket::Leave {} => {
@@ -89,24 +102,18 @@ impl ClientGuard<Rpc> {
             }
         }
     }
-    pub fn insert(&mut self, handle: Handle, insert: (DynamicVector, Pointer)) {
-        let packet = RpcPacket::Insert { handle, insert };
-        self.socket.send(packet).friendly();
+    pub fn insert(&mut self, handle: Handle, vector: DynamicVector, pointer: Pointer) {
+        let packet = RpcPacket::Insert {
+            handle,
+            vector,
+            pointer,
+        };
+        self.socket.ok(packet).friendly();
         let insert::InsertPacket::Leave {} = self.socket.recv().friendly();
-    }
-    pub fn flush(&mut self, handle: Handle) {
-        let packet = RpcPacket::Flush { handle };
-        self.socket.send(packet).friendly();
-        let flush::FlushPacket::Leave {} = self.socket.recv().friendly();
-    }
-    pub fn destroy(&mut self, handle: Handle) {
-        let packet = RpcPacket::Destroy { handle };
-        self.socket.send(packet).friendly();
-        let destroy::DestroyPacket::Leave {} = self.socket.recv().friendly();
     }
     pub fn stat(&mut self, handle: Handle) -> IndexStat {
         let packet = RpcPacket::Stat { handle };
-        self.socket.send(packet).friendly();
+        self.socket.ok(packet).friendly();
         let stat::StatPacket::Leave { result } = self.socket.recv().friendly();
         result
     }
@@ -121,7 +128,7 @@ impl ClientGuard<Rpc> {
             vector,
             opts,
         };
-        self.socket.send(packet).friendly();
+        self.socket.ok(packet).friendly();
         let vbase::VbaseErrorPacket {} = self.socket.recv().friendly();
         ClientGuard::map(self)
     }
@@ -148,7 +155,7 @@ pub struct Vbase {
 impl Vbase {
     pub fn next(&mut self) -> Option<Pointer> {
         let packet = vbase::VbasePacket::Next {};
-        self.socket.send(packet).friendly();
+        self.socket.ok(packet).friendly();
         let vbase::VbaseNextPacket { p } = self.socket.recv().friendly();
         p
     }
@@ -157,7 +164,7 @@ impl Vbase {
 impl ClientGuard<Vbase> {
     pub fn leave(mut self) -> ClientGuard<Rpc> {
         let packet = vbase::VbasePacket::Leave {};
-        self.socket.send(packet).friendly();
+        self.socket.ok(packet).friendly();
         let vbase::VbaseLeavePacket {} = self.socket.recv().friendly();
         ClientGuard::map(self)
     }
@@ -180,7 +187,7 @@ pub struct Basic {
 impl Basic {
     pub fn next(&mut self) -> Option<Pointer> {
         let packet = basic::BasicPacket::Next {};
-        self.socket.send(packet).friendly();
+        self.socket.ok(packet).friendly();
         let basic::BasicNextPacket { p } = self.socket.recv().friendly();
         p
     }
@@ -189,7 +196,7 @@ impl Basic {
 impl ClientGuard<Basic> {
     pub fn leave(mut self) -> ClientGuard<Rpc> {
         let packet = basic::BasicPacket::Leave {};
-        self.socket.send(packet).friendly();
+        self.socket.ok(packet).friendly();
         let basic::BasicLeavePacket {} = self.socket.recv().friendly();
         ClientGuard::map(self)
     }

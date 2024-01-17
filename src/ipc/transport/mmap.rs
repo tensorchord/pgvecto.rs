@@ -1,4 +1,4 @@
-use super::IpcError;
+use super::ConnectionError;
 use crate::utils::file_socket::FileSocket;
 use crate::utils::os::{futex_wait, futex_wake, memfd_create, mmap_populate};
 use rustix::fd::{AsFd, OwnedFd};
@@ -64,7 +64,7 @@ impl Socket {
             Err(e) => panic!("{:?}", e),
         }
     }
-    pub fn send(&mut self, packet: &[u8]) -> Result<(), IpcError> {
+    pub fn send(&mut self, packet: &[u8]) -> Result<(), ConnectionError> {
         unsafe {
             if self.is_server {
                 (*self.addr).server_send(packet);
@@ -74,7 +74,7 @@ impl Socket {
         }
         Ok(())
     }
-    pub fn recv(&mut self) -> Result<Vec<u8>, IpcError> {
+    pub fn recv(&mut self) -> Result<Vec<u8>, ConnectionError> {
         let packet = unsafe {
             if self.is_server {
                 (*self.addr).server_recv(|| self.test())?
@@ -100,7 +100,7 @@ struct Channel {
 const _: () = assert!(std::mem::size_of::<Channel>() == BUFFER_SIZE);
 
 impl Channel {
-    unsafe fn client_recv(&self, test: impl Fn() -> bool) -> Result<Vec<u8>, IpcError> {
+    unsafe fn client_recv(&self, test: impl Fn() -> bool) -> Result<Vec<u8>, ConnectionError> {
         const S: u32 = 0;
         const T: u32 = 1;
         const X: u32 = 2;
@@ -129,7 +129,7 @@ impl Channel {
                 }
                 Y => {
                     if !test() {
-                        return Err(IpcError::Closed);
+                        return Err(ConnectionError::Unexpected);
                     }
                     unsafe {
                         futex_wait(&self.futex, Y);
@@ -159,7 +159,7 @@ impl Channel {
             }
         }
     }
-    unsafe fn server_recv(&self, test: impl Fn() -> bool) -> Result<Vec<u8>, IpcError> {
+    unsafe fn server_recv(&self, test: impl Fn() -> bool) -> Result<Vec<u8>, ConnectionError> {
         const S: u32 = 1;
         const T: u32 = 0;
         const X: u32 = 3;
@@ -188,7 +188,7 @@ impl Channel {
                 }
                 Y => {
                     if !test() {
-                        return Err(IpcError::Closed);
+                        return Err(ConnectionError::Unexpected);
                     }
                     unsafe {
                         futex_wait(&self.futex, Y);

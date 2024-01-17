@@ -1,5 +1,5 @@
 statement ok
-DROP TABLE IF EXISTS items;
+SET search_path TO pg_temp, vectors;
 
 # partition table
 statement ok

@@ -5,19 +5,31 @@ pub mod transport;
 
 use self::server::RpcHandler;
 use crate::prelude::*;
+use serde::{Deserialize, Serialize};
+use service::prelude::ServiceError;
 use thiserror::Error;
 
 #[derive(Debug, Clone, Error)]
-pub enum IpcError {
+pub enum ConnectionError {
     #[error("\
 IPC connection is closed unexpected.
 ADVICE: The error is raisen by background worker errors. \
 Please check the full PostgreSQL log to get more information. Please read `https://docs.pgvecto.rs/admin/configuration.html`.\
 ")]
-    Closed,
+    Unexpected,
+    #[error(transparent)]
+    Service(#[from] ServiceError),
+    #[error(transparent)]
+    Grace(#[from] GraceError),
 }
 
-impl FriendlyError for IpcError {}
+impl FriendlyError for ConnectionError {}
+
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+#[error("Client performs a graceful shutdown.")]
+pub struct GraceError;
+
+impl FriendlyError for GraceError {}
 
 pub fn listen_unix() -> impl Iterator<Item = RpcHandler> {
     std::iter::from_fn(move || {
@@ -34,15 +46,11 @@ pub fn listen_mmap() -> impl Iterator<Item = RpcHandler> {
 }
 
 pub fn connect_unix() -> self::transport::ClientSocket {
-    self::transport::ClientSocket::Unix {
-        socket: self::transport::unix::connect(),
-    }
+    self::transport::ClientSocket::Unix(self::transport::unix::connect())
 }
 
 pub fn connect_mmap() -> self::transport::ClientSocket {
-    self::transport::ClientSocket::Mmap {
-        socket: self::transport::mmap::connect(),
-    }
+    self::transport::ClientSocket::Mmap(self::transport::mmap::connect())
 }
 
 pub fn init() {

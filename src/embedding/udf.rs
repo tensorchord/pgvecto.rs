@@ -2,7 +2,6 @@ use super::openai::{EmbeddingCreator, OpenAIEmbedding};
 use super::Embedding;
 use crate::datatype::vecf32::{Vecf32, Vecf32Output};
 use crate::gucs::OPENAI_API_KEY_GUC;
-use pgrx::prelude::*;
 use service::prelude::F32;
 
 #[pgrx::pg_extern(volatile, strict)]
@@ -13,7 +12,7 @@ fn _vectors_ai_embedding_vector(input: String) -> Vecf32Output {
             .expect("openai_api_key is not valid")
             .to_string(),
         None => {
-            error!("openai_api_key is not set");
+            panic!("openai_api_key is not set");
         }
     };
 
@@ -29,7 +28,7 @@ fn _vectors_ai_embedding_vector(input: String) -> Vecf32Output {
             Vecf32::new_in_postgres(&embedding)
         }
         Err(e) => {
-            error!("{}", e)
+            panic!("{}", e)
         }
     }
 }

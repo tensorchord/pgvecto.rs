@@ -1,4 +1,4 @@
-use super::IpcError;
+use super::ConnectionError;
 use crate::utils::file_socket::FileSocket;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use rustix::fd::AsFd;
@@ -31,7 +31,9 @@ pub struct Socket {
 macro_rules! resolve_closed {
     ($t: expr) => {
         match $t {
-            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => return Err(IpcError::Closed),
+            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
+                return Err(ConnectionError::Unexpected)
+            }
             Err(e) => panic!("{}", e),
             Ok(e) => e,
         }
@@ -39,14 +41,14 @@ macro_rules! resolve_closed {
 }
 
 impl Socket {
-    pub fn send(&mut self, packet: &[u8]) -> Result<(), IpcError> {
+    pub fn send(&mut self, packet: &[u8]) -> Result<(), ConnectionError> {
         use byteorder::NativeEndian as N;
         let len = u32::try_from(packet.len()).expect("Packet is too large.");
         resolve_closed!(self.stream.write_u32::<N>(len));
         resolve_closed!(self.stream.write_all(packet));
         Ok(())
     }
-    pub fn recv(&mut self) -> Result<Vec<u8>, IpcError> {
+    pub fn recv(&mut self) -> Result<Vec<u8>, ConnectionError> {
         use byteorder::NativeEndian as N;
         let len = resolve_closed!(self.stream.read_u32::<N>());
         let mut packet = vec![0u8; len as usize];

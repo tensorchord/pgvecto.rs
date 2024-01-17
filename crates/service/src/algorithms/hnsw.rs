@@ -118,7 +118,9 @@ pub struct HnswMmap<S: G> {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-struct HnswMmapEdge(F32, u32);
+struct HnswMmapEdge(#[allow(dead_code)] F32, u32);
+// we may convert a memory-mapped graph to a memory graph
+// so that it speeds merging sealed segments
 
 unsafe impl<S: G> Send for HnswMmap<S> {}
 unsafe impl<S: G> Sync for HnswMmap<S> {}

@@ -5,9 +5,10 @@ use service::prelude::*;
 fn _vectors_index_stat(
     oid: pgrx::pg_sys::Oid,
 ) -> pgrx::composite_type!('static, "vector_index_stat") {
+    use pgrx::heap_tuple::PgHeapTuple;
     use service::index::IndexStat;
     let id = Handle::from_sys(oid);
-    let mut res = pgrx::prelude::PgHeapTuple::new_composite_type("vector_index_stat").unwrap();
+    let mut res = PgHeapTuple::new_composite_type("vector_index_stat").unwrap();
     let mut rpc = crate::ipc::client::borrow_mut();
     let stat = rpc.stat(id);
     match stat {

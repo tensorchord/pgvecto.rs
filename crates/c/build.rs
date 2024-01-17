@@ -6,5 +6,5 @@ fn main() {
         .file("./src/c.c")
         .opt_level(3)
         .debug(true)
-        .compile("pgvectorsc");
+        .compile("vectorsc");
 }

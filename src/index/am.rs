@@ -1,3 +1,5 @@
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use super::am_build;
 use super::am_scan;
 use super::am_setup;
