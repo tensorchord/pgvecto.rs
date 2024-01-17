@@ -1,3 +1,5 @@
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use crate::datatype::typmod::Typmod;
 use crate::prelude::*;
 use serde::Deserialize;

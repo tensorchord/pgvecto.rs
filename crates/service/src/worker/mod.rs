@@ -1,8 +1,6 @@
 pub mod metadata;
 
 use crate::index::IndexOptions;
-use crate::index::IndexStat;
-use crate::index::OutdatedError;
 use crate::instance::Instance;
 use crate::prelude::*;
 use crate::utils::clean::clean;
@@ -64,82 +62,43 @@ impl Worker {
             view: ArcSwap::new(view),
         })
     }
-    pub fn call_create(&self, handle: Handle, options: IndexOptions) -> Result<(), ServiceError> {
-        let mut protect = self.protect.lock();
-        let index = Instance::create(self.path.join("indexes").join(handle.to_string()), options)?;
-        if protect.indexes.insert(handle, index).is_some() {
-            panic!("index {} already exists", handle)
-        }
-        protect.maintain(&self.view);
-        Ok(())
+    pub fn view(&self) -> Arc<WorkerView> {
+        self.view.load_full()
     }
-    pub fn call_insert(
+    pub fn instance_create(
         &self,
         handle: Handle,
-        insert: (DynamicVector, Pointer),
+        options: IndexOptions,
     ) -> Result<(), ServiceError> {
-        let view = self.view.load_full();
-        let index = view
-            .indexes
-            .get(&handle)
-            .ok_or(ServiceError::UnknownIndex)?;
-        loop {
-            let view = index.view()?;
-            match view.insert(insert.0.clone(), insert.1)? {
-                Ok(()) => break Ok(()),
-                Err(OutdatedError(_)) => index.refresh()?,
+        use std::collections::hash_map::Entry;
+        let mut protect = self.protect.lock();
+        match protect.indexes.entry(handle) {
+            Entry::Vacant(o) => {
+                let index =
+                    Instance::create(self.path.join("indexes").join(handle.to_string()), options)?;
+                o.insert(index);
+                protect.maintain(&self.view);
+                Ok(())
             }
+            Entry::Occupied(_) => Err(ServiceError::KnownIndex),
         }
     }
-    pub fn call_delete<F>(&self, handle: Handle, f: F) -> Result<(), ServiceError>
-    where
-        F: FnMut(Pointer) -> bool,
-    {
-        let view = self.view.load_full();
-        let index = view
-            .indexes
-            .get(&handle)
-            .ok_or(ServiceError::UnknownIndex)?;
-        let view = index.view()?;
-        view.delete(f);
-        Ok(())
-    }
-    pub fn call_flush(&self, handle: Handle) -> Result<(), ServiceError> {
-        let view = self.view.load_full();
-        let index = view
-            .indexes
-            .get(&handle)
-            .ok_or(ServiceError::UnknownIndex)?;
-        let view = index.view()?;
-        view.flush();
-        Ok(())
-    }
-    pub fn call_destroy(&self, handle: Handle) {
+    pub fn instance_destroy(&self, handle: Handle) {
         let mut protect = self.protect.lock();
         if protect.indexes.remove(&handle).is_some() {
             protect.maintain(&self.view);
         }
     }
-    pub fn call_stat(&self, handle: Handle) -> Result<IndexStat, ServiceError> {
-        let view = self.view.load_full();
-        let index = view
-            .indexes
-            .get(&handle)
-            .ok_or(ServiceError::UnknownIndex)?;
-        index.stat()
-    }
-    pub fn get_instance(&self, handle: Handle) -> Result<Instance, ServiceError> {
-        let view = self.view.load_full();
-        let index = view
-            .indexes
-            .get(&handle)
-            .ok_or(ServiceError::UnknownIndex)?;
-        Ok(index.clone())
-    }
 }
 
-struct WorkerView {
+pub struct WorkerView {
     indexes: HashMap<Handle, Instance>,
+}
+
+impl WorkerView {
+    pub fn get(&self, handle: Handle) -> Option<&Instance> {
+        self.indexes.get(&handle)
+    }
 }
 
 struct WorkerProtect {

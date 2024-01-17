@@ -1,4 +1,7 @@
-use crate::ipc::{server::RpcHandler, IpcError};
+use crate::ipc::server::RpcHandler;
+use crate::ipc::ConnectionError;
+use service::index::OutdatedError;
+use service::prelude::ServiceError;
 use service::worker::Worker;
 use std::sync::Arc;
 
@@ -56,23 +59,84 @@ pub fn normal(worker: Arc<Worker>) {
     });
 }
 
-fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError> {
+fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionError> {
     use crate::ipc::server::RpcHandle;
+    let mut handler = handler;
     loop {
         match handler.handle()? {
-            RpcHandle::Create { handle, options, x } => match worker.call_create(handle, options) {
-                Ok(()) => handler = x.leave()?,
-                Err(res) => x.reset(res)?,
-            },
-            RpcHandle::Insert { handle, insert, x } => match worker.call_insert(handle, insert) {
-                Ok(()) => handler = x.leave()?,
-                Err(res) => x.reset(res)?,
-            },
-            RpcHandle::Delete { handle, mut x } => {
-                match worker.call_delete(handle, |p| x.next(p).unwrap()) {
-                    Ok(()) => handler = x.leave()?,
-                    Err(res) => x.reset(res)?,
+            // transaction
+            RpcHandle::Commit {
+                pending_deletes,
+                pending_dirty,
+                x,
+            } => {
+                let view = worker.view();
+                for handle in pending_deletes {
+                    worker.instance_destroy(handle);
                 }
+                for handle in pending_dirty {
+                    if let Some(instance) = view.get(handle) {
+                        instance.refresh();
+                    }
+                }
+                handler = x.leave()?;
+            }
+            RpcHandle::Abort { pending_deletes, x } => {
+                for handle in pending_deletes {
+                    worker.instance_destroy(handle);
+                }
+                handler = x.leave()?;
+            }
+            RpcHandle::Create { handle, options, x } => {
+                match worker.instance_create(handle, options) {
+                    Ok(()) => (),
+                    Err(e) => x.reset(e)?,
+                };
+                handler = x.leave()?;
+            }
+            // instance
+            RpcHandle::Insert {
+                handle,
+                vector,
+                pointer,
+                x,
+            } => {
+                let view = worker.view();
+                let Some(instance) = view.get(handle) else {
+                    x.reset(ServiceError::UnknownIndex)?;
+                };
+                loop {
+                    let instance_view = match instance.view() {
+                        Ok(x) => x,
+                        Err(e) => x.reset(e)?,
+                    };
+                    match instance_view.insert(vector.clone(), pointer) {
+                        Ok(Ok(())) => break,
+                        Ok(Err(OutdatedError)) => instance.refresh(),
+                        Err(e) => x.reset(e)?,
+                    }
+                }
+                handler = x.leave()?;
+            }
+            RpcHandle::Delete { handle, mut x } => {
+                let view = worker.view();
+                let Some(instance) = view.get(handle) else {
+                    x.reset(ServiceError::UnknownIndex)?;
+                };
+                let instance_view = match instance.view() {
+                    Ok(x) => x,
+                    Err(e) => x.reset(e)?,
+                };
+                instance_view.delete(|p| x.next(p).expect("Panic in VACUUM."));
+                handler = x.leave()?;
+            }
+            RpcHandle::Stat { handle, x } => {
+                let view = worker.view();
+                let Some(instance) = view.get(handle) else {
+                    x.reset(ServiceError::UnknownIndex)?;
+                };
+                let r = instance.stat();
+                handler = x.leave(r)?
             }
             RpcHandle::Basic {
                 handle,
@@ -81,9 +145,9 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                 x,
             } => {
                 use crate::ipc::server::BasicHandle::*;
-                let instance = match worker.get_instance(handle) {
-                    Ok(x) => x,
-                    Err(e) => x.reset(e)?,
+                let view = worker.view();
+                let Some(instance) = view.get(handle) else {
+                    x.reset(ServiceError::UnknownIndex)?;
                 };
                 let view = match instance.view() {
                     Ok(x) => x,
@@ -106,18 +170,6 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                     }
                 }
             }
-            RpcHandle::Flush { handle, x } => match worker.call_flush(handle) {
-                Ok(()) => handler = x.leave()?,
-                Err(e) => x.reset(e)?,
-            },
-            RpcHandle::Destroy { handle, x } => {
-                worker.call_destroy(handle);
-                handler = x.leave()?;
-            }
-            RpcHandle::Stat { handle, x } => match worker.call_stat(handle) {
-                Ok(res) => handler = x.leave(res)?,
-                Err(e) => x.reset(e)?,
-            },
             RpcHandle::Vbase {
                 handle,
                 vector,
@@ -125,9 +177,9 @@ fn session(worker: Arc<Worker>, mut handler: RpcHandler) -> Result<(), IpcError>
                 x,
             } => {
                 use crate::ipc::server::VbaseHandle::*;
-                let instance = match worker.get_instance(handle) {
-                    Ok(x) => x,
-                    Err(e) => x.reset(e)?,
+                let view = worker.view();
+                let Some(instance) = view.get(handle) else {
+                    x.reset(ServiceError::UnknownIndex)?;
                 };
                 let view = match instance.view() {
                     Ok(x) => x,

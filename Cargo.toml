@@ -43,9 +43,9 @@ mockall = "0.12"
 
 [lints]
 clippy.too_many_arguments = "allow"
-clippy.unnecessary_literal_unwrap = "allow"
-clippy.unnecessary_unwrap = "allow"
-rust.unsafe_op_in_unsafe_fn = "warn"
+rust.unsafe_op_in_unsafe_fn = "deny"
+rust.unused_lifetimes = "warn"
+rust.unused_qualifications = "warn"
 
 [workspace]
 resolver = "2"

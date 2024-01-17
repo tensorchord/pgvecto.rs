@@ -6,8 +6,8 @@ pub unsafe fn init() {
     use pgrx::bgworkers::BgWorkerStartTime;
     use std::time::Duration;
     BackgroundWorkerBuilder::new("vectors")
-        .set_function("vectors_main")
         .set_library("vectors")
+        .set_function("_vectors_main")
         .set_argument(None)
         .enable_shmem_access(None)
         .set_start_time(BgWorkerStartTime::PostmasterStart)
@@ -16,11 +16,11 @@ pub unsafe fn init() {
 }
 
 #[no_mangle]
-extern "C" fn vectors_main(_arg: pgrx::pg_sys::Datum) {
-    let _ = std::panic::catch_unwind(crate::bgworker::main);
+extern "C" fn _vectors_main(_arg: pgrx::pg_sys::Datum) {
+    let _ = std::panic::catch_unwind(main);
 }
 
-pub fn main() {
+fn main() {
     pub struct AllocErrorPanicPayload {
         pub layout: std::alloc::Layout,
     }

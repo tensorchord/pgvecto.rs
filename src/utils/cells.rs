@@ -32,6 +32,7 @@ impl<T> PgRefCell<T> {
     pub fn borrow_mut(&self) -> std::cell::RefMut<'_, T> {
         self.0.borrow_mut()
     }
+    #[allow(unused)]
     pub fn borrow(&self) -> std::cell::Ref<'_, T> {
         self.0.borrow()
     }

@@ -22,7 +22,6 @@ where
         let file = std::fs::OpenOptions::new()
             .create_new(true)
             .read(true)
-            .write(true)
             .append(true)
             .open(path)
             .unwrap();

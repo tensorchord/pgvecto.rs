@@ -1,5 +1,5 @@
 use crate::ipc::server::RpcHandler;
-use crate::ipc::IpcError;
+use crate::ipc::ConnectionError;
 use service::prelude::*;
 
 pub fn upgrade() {
@@ -52,16 +52,16 @@ pub fn upgrade() {
     });
 }
 
-fn session(handler: RpcHandler) -> Result<(), IpcError> {
+fn session(handler: RpcHandler) -> Result<(), ConnectionError> {
     use crate::ipc::server::RpcHandle;
     match handler.handle()? {
+        RpcHandle::Commit { x, .. } => x.reset(ServiceError::Upgrade)?,
+        RpcHandle::Abort { x, .. } => x.reset(ServiceError::Upgrade)?,
         RpcHandle::Create { x, .. } => x.reset(ServiceError::Upgrade)?,
-        RpcHandle::Basic { x, .. } => x.reset(ServiceError::Upgrade)?,
         RpcHandle::Insert { x, .. } => x.reset(ServiceError::Upgrade)?,
         RpcHandle::Delete { x, .. } => x.reset(ServiceError::Upgrade)?,
-        RpcHandle::Flush { x, .. } => x.reset(ServiceError::Upgrade)?,
-        RpcHandle::Destroy { x, .. } => x.reset(ServiceError::Upgrade)?,
         RpcHandle::Stat { x, .. } => x.reset(ServiceError::Upgrade)?,
+        RpcHandle::Basic { x, .. } => x.reset(ServiceError::Upgrade)?,
         RpcHandle::Vbase { x, .. } => x.reset(ServiceError::Upgrade)?,
     }
 }

@@ -1,4 +1,5 @@
-use super::hook_transaction::flush_if_commit;
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use crate::index::utils::from_datum;
 use crate::ipc::client::ClientGuard;
 use crate::prelude::*;
@@ -22,7 +23,6 @@ pub unsafe fn build(
     #[cfg(feature = "pg16")]
     let oid = (*index).rd_locator.relNumber;
     let id = Handle::from_sys(oid);
-    flush_if_commit(id);
     let options = options(index);
     let mut rpc = crate::ipc::client::borrow_mut();
     rpc.create(id, options);
@@ -58,8 +58,8 @@ unsafe extern "C" fn callback(
     let id = Handle::from_sys(oid);
     let state = &mut *(state as *mut Builder);
     let vector = from_datum(*values.add(0));
-    let data = (vector, Pointer::from_sys(*ctid));
-    state.rpc.insert(id, data);
+    let pointer = Pointer::from_sys(*ctid);
+    state.rpc.insert(id, vector, pointer);
     (*state.result).heap_tuples += 1.0;
     (*state.result).index_tuples += 1.0;
 }
@@ -81,8 +81,8 @@ unsafe extern "C" fn callback(
     let id = Handle::from_sys(oid);
     let state = &mut *(state as *mut Builder);
     let vector = from_datum(*values.add(0));
-    let data = (vector, Pointer::from_sys(*ctid));
-    state.rpc.insert(id, data);
+    let pointer = Pointer::from_sys(*ctid);
+    state.rpc.insert(id, vector, pointer);
     (*state.result).heap_tuples += 1.0;
     (*state.result).index_tuples += 1.0;
 }

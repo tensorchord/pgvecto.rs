@@ -1,5 +1,3 @@
-#![allow(unsafe_op_in_unsafe_fn)]
-
 mod am;
 mod am_build;
 mod am_scan;
@@ -12,6 +10,8 @@ mod utils;
 mod views;
 
 pub unsafe fn init() {
-    self::hooks::init();
-    self::am::init();
+    unsafe {
+        self::hooks::init();
+        self::am::init();
+    }
 }
