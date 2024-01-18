@@ -1,0 +1,19 @@
+statement ok
+SET search_path TO pg_temp, vectors;
+
+statement ok
+CREATE TABLE t (val vector(10));
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random(), random(), random(), random(), random(), random(), random(), random()]::real[] FROM generate_series(1, 100000);
+
+statement ok
+CREATE INDEX ON t USING vectors (val vector_l2_ops)
+WITH (options = "[indexing.hnsw]");
+
+statement ok
+DROP INDEX t_val_idx;
+
+statement ok
+DROP TABLE t;
+
