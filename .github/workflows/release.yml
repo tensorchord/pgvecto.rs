@@ -151,10 +151,8 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        include:
-          - { version: 14 }
-          - { version: 15 }
-          - { version: 16 }
+        version: [14, 15, 16]
+        rootless: [true, false]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -163,17 +161,11 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            let tags = [
-              "tensorchord/pgvecto-rs:pg${{ matrix.version }}-v${{ needs.semver.outputs.version }}",
-            ];
-            // const actor = context.actor;
-            // if (actor != "github-actions[bot]") {
-            //   tags.push("tensorchord/pgvecto-rs:pg${{ matrix.version }}-latest");
-            // }
-            // if ("${{ matrix.latest }}" == "true" && actor != "github-actions[bot]") {
-            //   tags.push("tensorchord/pgvecto-rs:latest");
-            // }
-            core.setOutput('tags', tags.join(", "));
+            if ("${{ matrix.rootless }}" == "true") {
+              core.setOutput('tags', "tensorchord/pgvecto-rs:pg${{ matrix.version }}-v${{ needs.semver.outputs.version }}-rootless");
+            } else {
+              core.setOutput('tags', "tensorchord/pgvecto-rs:pg${{ matrix.version }}-v${{ needs.semver.outputs.version }}");
+            }
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -183,7 +175,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERIO_USERNAME }}
           password: ${{ secrets.DOCKERIO_TOKEN }}
-      - name: Push postgres with pgvecto.rs to Docker Registry
+      - name: Push postgres with pgvecto.rs to Docker Registry(rootful)
+        if: matrix.rootless == false
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -191,6 +184,18 @@ jobs:
           platforms: "linux/amd64,linux/arm64"
           file: ./docker/pgvecto-rs.Dockerfile
           build-args: |
-            TAG=pg${{ matrix.version }}-v${{ needs.semver.outputs.version }}
+            FROM_TAG=pg${{ matrix.version }}-v${{ needs.semver.outputs.version }}
+            POSTGRES_VERSION=${{ matrix.version }}
+          tags: ${{ steps.variables.outputs.tags }}
+      - name: Push postgres with pgvecto.rs to Docker Registry(rootless)
+        if: matrix.rootless == true
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          platforms: "linux/amd64,linux/arm64"
+          file: ./docker/pgvecto-rs-rootless.Dockerfile
+          build-args: |
+            FROM_TAG=pg${{ matrix.version }}-v${{ needs.semver.outputs.version }}
             POSTGRES_VERSION=${{ matrix.version }}
           tags: ${{ steps.variables.outputs.tags }}
