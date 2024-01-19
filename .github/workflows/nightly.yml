@@ -19,9 +19,9 @@ jobs:
           commit_date=$(git log -1 --since="24 hours ago" --pretty=format:"%cI")
           if [[ -n "$commit_date" ]]; then
             if $(gh release view nightly); then
-              gh release edit nightly --target main
+              gh release edit 0.0.0-nightly --target main
             else
-              gh release create nightly --generate-notes --prerelease
+              gh release create 0.0.0-nightly --generate-notes --prerelease
             fi
           fi
         env:

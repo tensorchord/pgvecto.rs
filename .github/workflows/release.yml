@@ -20,6 +20,16 @@ env:
   RUSTC_WRAPPER: sccache
 
 jobs:
+  semver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const r = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?/;
+            if (!r.test("${{ github.event.release.tag_name }}")) {
+              core.setFailed(`invalid semver`);
+            }
   binary:
     strategy:
       matrix:
@@ -31,6 +41,7 @@ jobs:
           - { version: 16, platform: amd64, arch: x86_64 }
           - { version: 16, platform: arm64, arch: aarch64 }
     runs-on: ubuntu-20.04
+    needs: ["semver"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -140,8 +151,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: v${{ github.event.release.tag_name }}
       - name: Variables
         id: variables
         uses: actions/github-script@v6
