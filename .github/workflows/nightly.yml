@@ -14,13 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - run: |
           commit_date=$(git log -1 --since="24 hours ago" --pretty=format:"%cI")
           if [[ -n "$commit_date" ]]; then
-            gh workflow run release.yml \
-              -f version=$(TZ='Asia/Shanghai' date +"0.0.0-nightly.%Y%m%d") \
-              -f prerelease=true
+            if $(gh release view nightly); then
+              gh release edit nightly --target main
+            else
+              gh release create nightly --generate-notes --prerelease
+            fi
           fi
         env:
           GH_TOKEN: ${{ github.token }}
