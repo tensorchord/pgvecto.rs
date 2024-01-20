@@ -89,7 +89,7 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
             return c::v_f16_dot_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
-    cosine(lhs, rhs)
+    dot(lhs, rhs)
 }
 
 pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
