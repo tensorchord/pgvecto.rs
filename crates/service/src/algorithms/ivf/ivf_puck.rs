@@ -1,8 +1,8 @@
 use crate::algorithms::clustering::elkan_k_means::ElkanKMeans;
-use crate::algorithms::quantization::QuantizationOptions;
 use crate::algorithms::quantization::product::ProductQuantization;
-use crate::algorithms::quantization::Quan;
 use crate::algorithms::quantization::product::ProductQuantizationOptions;
+use crate::algorithms::quantization::Quan;
+use crate::algorithms::quantization::QuantizationOptions;
 use crate::algorithms::raw::Raw;
 use crate::index::indexing::ivf::IvfIndexingOptions;
 use crate::index::segments::growing::GrowingSegment;
@@ -145,6 +145,7 @@ pub fn make<S: G>(
         iterations,
         nlist,
         nsample,
+        is_puck: _,
         quantization: quantization_opts,
     } = options.indexing.clone().unwrap_ivf();
     let raw = Arc::new(Raw::create(
@@ -214,7 +215,7 @@ pub fn make<S: G>(
             coarse_result.push(Reverse((dis, i)));
         }
         for _ in 0..coarse_search_count {
-            let coarse_id = coarse_result.pop().unwrap().0.1;
+            let coarse_id = coarse_result.pop().unwrap().0 .1;
             for j in 0..nlist {
                 let mut centroid = coarse_centroids[coarse_id as usize].to_vec();
                 for k in 0..dims {
@@ -224,7 +225,7 @@ pub fn make<S: G>(
                 result.push(Reverse((dis, (coarse_id, j))));
             }
         }
-        result.peek().unwrap().0.1
+        result.peek().unwrap().0 .1
     };
     for i in 0..n {
         let (coarse_id, fine_id) = assigner(i);
@@ -359,7 +360,10 @@ pub fn basic<S: G>(
     for i in 0..mmap.nlist {
         let distance = S::elkan_k_means_distance(&target, &mmap.coarse_centroids(i));
         if coarse_result.check(distance) {
-            coarse_result.push(Element{distance, payload: i as Payload});
+            coarse_result.push(Element {
+                distance,
+                payload: i as Payload,
+            });
         }
     }
     let coarse_result = coarse_result.into_sorted_vec();
@@ -405,7 +409,10 @@ pub fn basic<S: G>(
     while result.len() > 0 {
         let (_, (id, delta)) = result.pop().unwrap();
         let distance = mmap.quantization2.distance_with_delta(vector, id, &delta);
-        rerank_result.push(Reverse(Element { distance, payload: id as Payload }));
+        rerank_result.push(Reverse(Element {
+            distance,
+            payload: id as Payload,
+        }));
     }
     rerank_result
 }
@@ -424,7 +431,10 @@ pub fn vbase<'a, S: G>(
     for i in 0..mmap.nlist {
         let distance = S::elkan_k_means_distance(&target, &mmap.coarse_centroids(i));
         if coarse_result.check(distance) {
-            coarse_result.push(Element{distance, payload: i as Payload});
+            coarse_result.push(Element {
+                distance,
+                payload: i as Payload,
+            });
         }
     }
     let coarse_result = coarse_result.into_sorted_vec();
@@ -470,7 +480,10 @@ pub fn vbase<'a, S: G>(
     while result.len() > 0 {
         let (_, (id, delta)) = result.pop().unwrap();
         let distance = mmap.quantization2.distance_with_delta(vector, id, &delta);
-        rerank_result.push(Element { distance, payload: id as Payload });
+        rerank_result.push(Element {
+            distance,
+            payload: id as Payload,
+        });
     }
     (rerank_result, Box::new(std::iter::empty()))
 }

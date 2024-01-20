@@ -28,7 +28,9 @@ impl<S: G> Ivf<S> {
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
     ) -> Self {
-        if options
+        if options.indexing.clone().unwrap_ivf().is_puck {
+            Self::Puck(IvfPuck::create(path, options, sealed, growing))
+        } else if options
             .indexing
             .clone()
             .unwrap_ivf()

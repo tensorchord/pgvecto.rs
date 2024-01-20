@@ -133,6 +133,7 @@ pub fn make<S: G>(
         iterations,
         nlist,
         nsample,
+        is_puck: _,
         quantization: quantization_opts,
     } = options.indexing.clone().unwrap_ivf();
     let raw = Arc::new(Raw::create(
