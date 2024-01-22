@@ -18,7 +18,7 @@ pub unsafe fn init() {
         GucFlags::default(),
     );
     GucRegistry::define_int_guc(
-        "vectors.ivf_nporbe",
+        "vectors.ivf_nprobe",
         "`nprobe` argument of HNSW algorithm.",
         "https://docs.pgvecto.rs/usage/search.html",
         &IVF_NPROBE,
