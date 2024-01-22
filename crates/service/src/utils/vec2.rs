@@ -22,7 +22,7 @@ impl<S: G> Vec2<S> {
     }
     pub fn argsort(&self) -> Vec<usize> {
         let mut index: Vec<usize> = (0..self.len()).collect();
-        index.sort_by_key(|i| self[*i].to_vec());
+        index.sort_by_key(|i| &self[*i]);
         index
     }
     pub fn copy_within(&mut self, i: usize, j: usize) {

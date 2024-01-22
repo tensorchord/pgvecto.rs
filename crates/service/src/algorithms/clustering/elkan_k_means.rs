@@ -94,7 +94,7 @@ impl<S: G> ElkanKMeans<S> {
         let sorted_index = samples.argsort();
         for i in 0..n {
             let index = sorted_index.get(i).unwrap();
-            let last = sorted_index.get(std::cmp::max(i - 1, 0)).unwrap();
+            let last = sorted_index.get(std::cmp::max(i, 1) - 1).unwrap();
             if *index == 0 || samples[*last] != samples[*index] {
                 centroids[i].copy_from_slice(&samples[*index]);
             } else {
