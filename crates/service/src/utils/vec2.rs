@@ -20,6 +20,11 @@ impl<S: G> Vec2<S> {
     pub fn len(&self) -> usize {
         self.v.len() / self.dims as usize
     }
+    pub fn argsort(&self) -> Vec<usize> {
+        let mut index: Vec<usize> = (0..self.len()).collect();
+        index.sort_by_key(|i| &self[*i]);
+        index
+    }
     pub fn copy_within(&mut self, i: usize, j: usize) {
         assert!(i < self.len() && j < self.len());
         unsafe {
