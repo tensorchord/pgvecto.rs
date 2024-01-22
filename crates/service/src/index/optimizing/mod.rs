@@ -9,7 +9,7 @@ use validator::Validate;
 #[serde(deny_unknown_fields)]
 pub struct OptimizingOptions {
     #[serde(default = "OptimizingOptions::default_sealing_secs")]
-    #[validate(range(min = 0, max = 60))]
+    #[validate(range(min = 1, max = 60))]
     pub sealing_secs: u64,
     #[serde(default = "OptimizingOptions::default_sealing_size")]
     #[validate(range(min = 1, max = 4_000_000_000))]
@@ -18,7 +18,7 @@ pub struct OptimizingOptions {
     #[validate(range(min = 0.01, max = 1.00))]
     pub deleted_threshold: f64,
     #[serde(default = "OptimizingOptions::default_optimizing_threads")]
-    #[validate(range(min = 0, max = 65535))]
+    #[validate(range(min = 1, max = 65535))]
     pub optimizing_threads: usize,
 }
 
