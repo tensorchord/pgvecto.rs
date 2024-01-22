@@ -1,0 +1,93 @@
+statement ok
+SET vectors.pgvector_compatibility=off;
+
+query I
+SHOW vectors.pgvector_compatibility;
+----
+off
+
+statement ok
+SET ivfflat.probes=40;
+
+query I
+SHOW vectors.ivf_nprobe;
+----
+10
+
+query I
+SHOW ivfflat.probes;
+----
+40
+
+statement ok
+SET hnsw.ef_search=400;
+
+query I
+SHOW vectors.hnsw_ef_search;
+----
+100
+
+query I
+SHOW hnsw.ef_search;
+----
+400
+
+statement ok
+SET vectors.pgvector_compatibility=on;
+
+query I
+SHOW vectors.pgvector_compatibility;
+----
+on
+
+statement ok
+SET ivfflat.probes=50;
+
+query I
+SHOW vectors.ivf_nprobe;
+----
+50
+
+query I
+SHOW ivfflat.probes;
+----
+50
+
+statement ok
+SET hnsw.ef_search=500;
+
+query I
+SHOW vectors.hnsw_ef_search;
+----
+500
+
+query I
+SHOW hnsw.ef_search;
+----
+500
+
+statement ok
+SET ivfflat.probes=60;
+
+query I
+SHOW vectors.ivf_nprobe;
+----
+60
+
+query I
+SHOW ivfflat.probes;
+----
+60
+
+statement ok
+SET vectors.hnsw_ef_search=600;
+
+query I
+SHOW vectors.hnsw_ef_search;
+----
+600
+
+query I
+SHOW hnsw.ef_search;
+----
+600

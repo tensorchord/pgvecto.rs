@@ -102,6 +102,5 @@ statement ok
 CREATE INDEX ON t USING vectors (val vector_l2_ops)
 WITH (options = "[indexing.hnsw]");
 
-
 statement ok
 DROP TABLE t;
