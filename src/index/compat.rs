@@ -22,18 +22,48 @@ pub unsafe fn pgvector_stmt_rewrite(pstmt: *mut pgrx::pg_sys::PlannedStmt) {
     }
     unsafe {
         let utility_statement = (*pstmt).utilityStmt;
+        if utility_statement.is_null() {
+            return;
+        }
         let is_index = pgrx::is_a(utility_statement, pgrx::pg_sys::NodeTag::T_IndexStmt);
+        let is_variable_set =
+            pgrx::is_a(utility_statement, pgrx::pg_sys::NodeTag::T_VariableSetStmt);
+        let is_variable_show =
+            pgrx::is_a(utility_statement, pgrx::pg_sys::NodeTag::T_VariableShowStmt);
 
         if is_index {
             let istmt: *mut pgrx::pg_sys::IndexStmt = utility_statement.cast();
-            if istmt.is_null() {
-                return;
-            }
             let method = CStr::from_ptr((*istmt).accessMethod).to_str();
             if method == Ok("hnsw") || method == Ok("ivfflat") {
                 rewrite_type_options(istmt, method.unwrap());
                 rewrite_opclass(istmt);
                 swap_destroy(&mut (*istmt).accessMethod, "vectors".as_pg_cstr());
+            }
+        } else if is_variable_set {
+            let vstmt: *mut pgrx::pg_sys::VariableSetStmt = utility_statement.cast();
+            let name = CStr::from_ptr((*vstmt).name).to_str();
+            match name {
+                Ok("ivfflat.probes") => {
+                    swap_destroy(&mut (*vstmt).name, "vectors.ivf_nprobe".as_pg_cstr());
+                }
+                Ok("hnsw.ef_search") => {
+                    swap_destroy(&mut (*vstmt).name, "vectors.hnsw_ef_search".as_pg_cstr());
+                }
+                Ok(_) => {}
+                Err(_) => {}
+            }
+        } else if is_variable_show {
+            let vstmt: *mut pgrx::pg_sys::VariableShowStmt = utility_statement.cast();
+            let name = CStr::from_ptr((*vstmt).name).to_str();
+            match name {
+                Ok("ivfflat.probes") => {
+                    swap_destroy(&mut (*vstmt).name, "vectors.ivf_nprobe".as_pg_cstr());
+                }
+                Ok("hnsw.ef_search") => {
+                    swap_destroy(&mut (*vstmt).name, "vectors.hnsw_ef_search".as_pg_cstr());
+                }
+                Ok(_) => {}
+                Err(_) => {}
             }
         }
     }
@@ -110,8 +140,8 @@ unsafe fn rewrite_opclass(istmt: *mut pgrx::pg_sys::IndexStmt) {
                     );
                     return;
                 }
-                Err(e) => {
-                    pgrx::warning!("Operator class parse failed, will not be overwritten: {e}");
+                Err(_) => {
+                    pgrx::warning!("Operator class parse failed, will not be overwritten");
                     return;
                 }
             };
