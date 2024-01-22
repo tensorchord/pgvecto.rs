@@ -241,6 +241,20 @@ CREATE CAST (vector AS vecf16)
 CREATE ACCESS METHOD vectors TYPE INDEX HANDLER _vectors_amhandler;
 COMMENT ON ACCESS METHOD vectors IS 'pgvecto.rs index access method';
 
+-- List of operator families
+
+CREATE OPERATOR FAMILY vector_l2_ops USING vectors;
+
+CREATE OPERATOR FAMILY vector_dot_ops USING vectors;
+
+CREATE OPERATOR FAMILY vector_cos_ops USING vectors;
+
+CREATE OPERATOR FAMILY vecf16_l2_ops USING vectors;
+
+CREATE OPERATOR FAMILY vecf16_dot_ops USING vectors;
+
+CREATE OPERATOR FAMILY vecf16_cos_ops USING vectors;
+
 -- List of operator classes
 
 CREATE OPERATOR CLASS vector_l2_ops

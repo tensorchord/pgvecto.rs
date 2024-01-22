@@ -1,8 +1,10 @@
-\echo Use "ALTER EXTENSION vectors UPDATE TO '0.1.4'" to load this file. \quit
+\echo Use "ALTER EXTENSION vectors UPDATE TO '0.2.0'" to load this file. \quit
 
 DO LANGUAGE plpgsql $$
     DECLARE
     BEGIN
-        RAISE EXCEPTION 'Upgrade from version 0.1.3 is not supported.';
+        IF '@extschema@' != 'vectors' THEN
+            RAISE EXCEPTION 'Please read upgrade document in https://docs.pgvecto.rs/admin/upgrading.html#upgrade-from-0-1-x.';
+        END IF;
     END;
 $$;
