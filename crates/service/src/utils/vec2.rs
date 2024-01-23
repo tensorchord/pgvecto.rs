@@ -7,7 +7,7 @@ pub struct Vec2<T> {
     v: Vec<T>,
 }
 
-impl<T: Zeroable> Vec2<T> {
+impl<T: Zeroable + Ord> Vec2<T> {
     pub fn new(dims: u16, n: usize) -> Self {
         Self {
             dims,
