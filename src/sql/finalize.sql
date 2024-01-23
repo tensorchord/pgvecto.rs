@@ -343,13 +343,13 @@ CREATE CAST (vector AS vecf16)
     WITH FUNCTION _vectors_cast_vecf32_to_vecf16(vector, integer, boolean);
 
 CREATE CAST (vecf16 AS vector)
-    WITH FUNCTION _vectors_cast_vecf16_to_vecf32(vecf16, integer, boolean) AS IMPLICIT;
+    WITH FUNCTION _vectors_cast_vecf16_to_vecf32(vecf16, integer, boolean);
 
 CREATE CAST (vector AS svector)
     WITH FUNCTION _vectors_cast_vecf32_to_svecf32(vector, integer, boolean);
 
 CREATE CAST (svector AS vector)
-    WITH FUNCTION _vectors_cast_svecf32_to_vecf32(svector, integer, boolean) AS IMPLICIT;
+    WITH FUNCTION _vectors_cast_svecf32_to_vecf32(svector, integer, boolean);
 
 -- List of access methods
 
