@@ -99,7 +99,7 @@ jobs:
           VERSION: ${{ matrix.version }}
       - name: Upload Release
         run: |
-          gh release upload --clobber ./vectors-pg${{ matrix.version }}_${{ github.event.release.tag_name }}_${{ matrix.platform }}.deb
+          gh release upload --clobber ${{ github.event.release.tag_name }} ./vectors-pg${{ matrix.version }}_${{ github.event.release.tag_name }}_${{ matrix.platform }}.deb
         env:
           GH_TOKEN: ${{ github.token }}
   docker_binary_release:
