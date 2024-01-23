@@ -48,7 +48,7 @@ impl<S: G> IvfNaive<S> {
     }
 
     pub fn dims(&self) -> u16 {
-        self.mmap.raw.dims()
+        self.mmap.dims
     }
 
     pub fn len(&self) -> u32 {
@@ -181,11 +181,11 @@ pub fn make<S: G>(
         nexts
     };
     (0..n).into_par_iter().for_each(|i| {
-        let mut vector = S::Storage::vector(dims, raw.content(i)).to_vec();
-        S::elkan_k_means_normalize(&mut vector);
+        let mut vector = raw.content(i).to_vec();
+        S::elkan_k_means_normalize2(&mut vector);
         let mut result = (F32::infinity(), 0);
         for i in 0..nlist {
-            let dis = S::elkan_k_means_distance(&vector, &centroids[i as usize]);
+            let dis = S::elkan_k_means_distance2(&vector, &centroids[i as usize]);
             result = std::cmp::min(result, (dis, i));
         }
         let centroid_id = result.1;
@@ -266,13 +266,12 @@ pub fn basic<S: G>(
     nprobe: u32,
     mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
-    let dims = mmap.raw.dims();
-    let mut target = S::Storage::vector(dims, vector).to_vec();
-    S::elkan_k_means_normalize(&mut target);
+    let mut target = vector.to_vec();
+    S::elkan_k_means_normalize2(&mut target);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::elkan_k_means_distance(&target, centroid);
+        let distance = S::elkan_k_means_distance2(&target, centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,
@@ -302,13 +301,12 @@ pub fn vbase<'a, S: G>(
     nprobe: u32,
     mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-    let dims = mmap.raw.dims();
-    let mut target = S::Storage::vector(dims, vector).to_vec();
-    S::elkan_k_means_normalize(&mut target);
+    let mut target = vector.to_vec();
+    S::elkan_k_means_normalize2(&mut target);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::elkan_k_means_distance(&target, centroid);
+        let distance = S::elkan_k_means_distance2(&target, centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,

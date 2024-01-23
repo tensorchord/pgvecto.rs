@@ -29,7 +29,7 @@ pub fn expand_sparse(sparse: &[SparseF32Element]) -> impl Iterator<Item = F32> +
 
 impl Display for SparseF32Element {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{index: {}, value: {}}}", self.index, self.value)
+        write!(f, "{{{}: {}}}", self.index, self.value)
     }
 }
 

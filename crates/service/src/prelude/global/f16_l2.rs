@@ -18,7 +18,13 @@ impl G for F16L2 {
 
     fn elkan_k_means_normalize(_: &mut [F16]) {}
 
+    fn elkan_k_means_normalize2(_: &mut [F16]) {}
+
     fn elkan_k_means_distance(lhs: &[F16], rhs: &[F16]) -> F32 {
+        super::f16::sl2(lhs, rhs).sqrt()
+    }
+
+    fn elkan_k_means_distance2(lhs: &[F16], rhs: &[F16]) -> F32 {
         super::f16::sl2(lhs, rhs).sqrt()
     }
 

@@ -54,6 +54,10 @@ where
 {
     type Scalar = T;
 
+    fn check_dims(dims: u16, vector: &[Self::Element]) -> bool {
+        vector.len() == dims as usize
+    }
+
     fn vector(_: u16, contents: &[Self::Element]) -> Cow<'_, [Self::Scalar]> {
         Cow::Borrowed(contents)
     }

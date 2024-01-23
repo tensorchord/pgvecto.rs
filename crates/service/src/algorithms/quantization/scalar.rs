@@ -45,6 +45,10 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         _: QuantizationOptions,
         raw: &Arc<Raw<S::Storage>>,
     ) -> Self {
+        if options.vector.k == Kind::SparseF32 {
+            panic!("Scalar quantization is not supported for sparse vectors");
+        }
+
         std::fs::create_dir(path).unwrap();
         let dims = options.vector.dims;
         let mut max = vec![S::Scalar::neg_infinity(); dims as usize];

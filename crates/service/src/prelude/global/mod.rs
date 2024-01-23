@@ -56,7 +56,9 @@ pub trait G: Copy + Debug + 'static {
     fn distance(lhs: &[Self::Element], rhs: &[Self::Element]) -> F32;
 
     fn elkan_k_means_normalize(vector: &mut [Self::Scalar]);
+    fn elkan_k_means_normalize2(vector: &mut [Self::Element]);
     fn elkan_k_means_distance(lhs: &[Self::Scalar], rhs: &[Self::Scalar]) -> F32;
+    fn elkan_k_means_distance2(lhs: &[Self::Element], rhs: &[Self::Scalar]) -> F32;
 
     fn scalar_quantization_distance(
         dims: u16,

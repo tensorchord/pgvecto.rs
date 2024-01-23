@@ -28,6 +28,7 @@ pub trait Storage {
 pub trait AtomicStorage: Storage {
     type Scalar: Copy;
 
+    fn check_dims(dims: u16, vector: &[Self::Element]) -> bool;
     fn vector(dims: u16, contents: &[Self::Element]) -> Cow<'_, [Self::Scalar]>;
     fn save(path: &Path, other: impl Storage<Element = Self::Element>) -> Self
     where

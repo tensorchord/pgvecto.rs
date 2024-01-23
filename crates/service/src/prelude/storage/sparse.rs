@@ -51,6 +51,10 @@ impl Storage for SparseMmap {
 impl AtomicStorage for SparseMmap {
     type Scalar = F32;
 
+    fn check_dims(dims: u16, vector: &[Self::Element]) -> bool {
+        vector.last().map_or(true, |e| e.index < dims as u32)
+    }
+
     fn vector(dims: u16, contents: &[Self::Element]) -> Cow<'_, [Self::Scalar]> {
         let mut vec: Vec<F32> = expand_sparse(contents).collect();
         vec.resize(dims as usize, F32::zero());

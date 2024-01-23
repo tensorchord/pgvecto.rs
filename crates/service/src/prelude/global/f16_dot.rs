@@ -20,7 +20,15 @@ impl G for F16Dot {
         super::f16::l2_normalize(vector)
     }
 
+    fn elkan_k_means_normalize2(vector: &mut [F16]) {
+        super::f16::l2_normalize(vector)
+    }
+
     fn elkan_k_means_distance(lhs: &[F16], rhs: &[F16]) -> F32 {
+        super::f16::dot(lhs, rhs).acos()
+    }
+
+    fn elkan_k_means_distance2(lhs: &[F16], rhs: &[F16]) -> F32 {
         super::f16::dot(lhs, rhs).acos()
     }
 

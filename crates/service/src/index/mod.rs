@@ -314,9 +314,7 @@ impl<S: G> IndexView<S> {
         opts: &'a SearchOptions,
         filter: F,
     ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
-        if self.options.vector.k != Kind::SparseF32
-            && self.options.vector.dims as usize != vector.len()
-        {
+        if !S::Storage::check_dims(self.options.vector.dims, vector) {
             return Err(ServiceError::Unmatched);
         }
 
@@ -404,9 +402,7 @@ impl<S: G> IndexView<S> {
         opts: &'a SearchOptions,
         filter: F,
     ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
-        if self.options.vector.k != Kind::SparseF32
-            && self.options.vector.dims as usize != vector.len()
-        {
+        if !S::Storage::check_dims(self.options.vector.dims, vector) {
             return Err(ServiceError::Unmatched);
         }
 
@@ -499,11 +495,10 @@ impl<S: G> IndexView<S> {
         vector: Vec<S::Element>,
         pointer: Pointer,
     ) -> Result<Result<(), OutdatedError>, ServiceError> {
-        if self.options.vector.k != Kind::SparseF32
-            && self.options.vector.dims as usize != vector.len()
-        {
+        if !S::Storage::check_dims(self.options.vector.dims, &vector) {
             return Err(ServiceError::Unmatched);
         }
+
         let payload = (pointer.as_u48() << 16) | self.delete.version(pointer) as Payload;
         if let Some((_, growing)) = self.write.as_ref() {
             use crate::index::segments::growing::GrowingSegmentInsertError;

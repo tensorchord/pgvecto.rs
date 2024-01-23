@@ -48,7 +48,7 @@ impl<S: G> IvfPq<S> {
     }
 
     pub fn dims(&self) -> u16 {
-        self.mmap.raw.dims()
+        self.mmap.dims
     }
 
     pub fn len(&self) -> u32 {
@@ -269,13 +269,12 @@ pub fn basic<S: G>(
     nprobe: u32,
     mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
-    let dims = mmap.dims;
-    let mut target = S::Storage::vector(dims, vector).to_vec();
-    S::elkan_k_means_normalize(&mut target);
+    let mut target = vector.to_vec();
+    S::elkan_k_means_normalize2(&mut target);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::elkan_k_means_distance(&target, centroid);
+        let distance = S::elkan_k_means_distance2(&target, centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,
@@ -307,13 +306,12 @@ pub fn vbase<'a, S: G>(
     nprobe: u32,
     mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-    let dims = mmap.dims;
-    let mut target = S::Storage::vector(dims, vector).to_vec();
-    S::elkan_k_means_normalize(&mut target);
+    let mut target = vector.to_vec();
+    S::elkan_k_means_normalize2(&mut target);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::elkan_k_means_distance(&target, centroid);
+        let distance = S::elkan_k_means_distance2(&target, centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,

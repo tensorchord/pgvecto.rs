@@ -18,62 +18,63 @@ impl G for SparseF32L2 {
 
     fn elkan_k_means_normalize(_: &mut [Self::Scalar]) {}
 
+    fn elkan_k_means_normalize2(_: &mut [Self::Element]) {}
+
     fn elkan_k_means_distance(lhs: &[Self::Scalar], rhs: &[Self::Scalar]) -> F32 {
         super::f32::sl2(lhs, rhs).sqrt()
     }
 
-    #[allow(unused_variables)]
+    fn elkan_k_means_distance2(lhs: &[Self::Element], rhs: &[Self::Scalar]) -> F32 {
+        super::sparse_f32::sl2_2(lhs, rhs).sqrt()
+    }
+
     fn scalar_quantization_distance(
-        dims: u16,
-        max: &[Self::Scalar],
-        min: &[Self::Scalar],
-        lhs: &[Self::Element],
-        rhs: &[u8],
+        _dims: u16,
+        _max: &[Self::Scalar],
+        _min: &[Self::Scalar],
+        _lhs: &[Self::Element],
+        _rhs: &[u8],
     ) -> F32 {
         unimplemented!()
     }
 
-    #[allow(unused_variables)]
     fn scalar_quantization_distance2(
-        dims: u16,
-        max: &[Self::Scalar],
-        min: &[Self::Scalar],
-        lhs: &[u8],
-        rhs: &[u8],
+        _dims: u16,
+        _max: &[Self::Scalar],
+        _min: &[Self::Scalar],
+        _lhs: &[u8],
+        _rhs: &[u8],
     ) -> F32 {
         unimplemented!()
     }
 
-    #[allow(unused_variables)]
     fn product_quantization_distance(
-        dims: u16,
-        ratio: u16,
-        centroids: &[Self::Scalar],
-        lhs: &[Self::Element],
-        rhs: &[u8],
+        _dims: u16,
+        _ratio: u16,
+        _centroids: &[Self::Scalar],
+        _lhs: &[Self::Element],
+        _rhs: &[u8],
     ) -> F32 {
         unimplemented!()
     }
 
-    #[allow(unused_variables)]
     fn product_quantization_distance2(
-        dims: u16,
-        ratio: u16,
-        centroids: &[Self::Scalar],
-        lhs: &[u8],
-        rhs: &[u8],
+        _dims: u16,
+        _ratio: u16,
+        _centroids: &[Self::Scalar],
+        _lhs: &[u8],
+        _rhs: &[u8],
     ) -> F32 {
         unimplemented!()
     }
 
-    #[allow(unused_variables)]
     fn product_quantization_distance_with_delta(
-        dims: u16,
-        ratio: u16,
-        centroids: &[Self::Scalar],
-        lhs: &[Self::Element],
-        rhs: &[u8],
-        delta: &[Self::Scalar],
+        _dims: u16,
+        _ratio: u16,
+        _centroids: &[Self::Scalar],
+        _lhs: &[Self::Element],
+        _rhs: &[u8],
+        _delta: &[Self::Scalar],
     ) -> F32 {
         unimplemented!()
     }

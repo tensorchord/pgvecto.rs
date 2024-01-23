@@ -20,7 +20,15 @@ impl G for F32Cos {
         super::f32::l2_normalize(vector)
     }
 
+    fn elkan_k_means_normalize2(vector: &mut [F32]) {
+        super::f32::l2_normalize(vector)
+    }
+
     fn elkan_k_means_distance(lhs: &[F32], rhs: &[F32]) -> F32 {
+        super::f32::dot(lhs, rhs).acos()
+    }
+
+    fn elkan_k_means_distance2(lhs: &[F32], rhs: &[F32]) -> F32 {
         super::f32::dot(lhs, rhs).acos()
     }
 
