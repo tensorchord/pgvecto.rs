@@ -32,7 +32,11 @@ jobs:
               core.setFailed(`invalid semver`);
             }
             const matches = "${{ github.event.release.tag_name }}".match(r);
+            console.log(matches);
             core.setOutput('semver', matches[0]);
+      - run: |
+          echo ${{ steps.version.outputs.semver }}
+          exit 1
   binary:
     strategy:
       matrix:
