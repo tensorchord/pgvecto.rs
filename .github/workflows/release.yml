@@ -1,17 +1,14 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        type: string
-        description: Version
-        required: true
-      prerelease:
-        type: boolean
-        description: Prerelease
-        required: true
-        default: false
+  release:
+    types:
+      - created
+      - edited
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -23,37 +20,17 @@ env:
   RUSTC_WRAPPER: sccache
 
 jobs:
-  release:
-    runs-on: ubuntu-20.04
+  semver:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
       - uses: actions/github-script@v7
         with:
           script: |
             const r = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?/;
-            if (!r.test("${{ github.event.inputs.version }}")) {
-              core.setFailed(`Action failed with an invalid semver.`);
+            if (!r.test("${{ github.event.release.tag_name }}")) {
+              core.setFailed(`invalid semver`);
             }
-      - run: |
-          git config --global user.email "support@tensorchord.ai"
-          git config --global user.name "CI[bot]"
-      - run: ./scripts/ci_release.sh
-        env:
-          SEMVER: ${{ github.event.inputs.version }}
-      - id: create-release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ github.event.inputs.version }}
-          release_name: v${{ github.event.inputs.version }}
-          draft: false
-          prerelease: ${{ github.event.inputs.prerelease }}
-    outputs:
-      upload_url: ${{ steps.create-release.outputs.upload_url }}
   binary:
-    needs: ["release"]
     strategy:
       matrix:
         include:
@@ -64,11 +41,13 @@ jobs:
           - { version: 16, platform: amd64, arch: x86_64 }
           - { version: 16, platform: arm64, arch: aarch64 }
     runs-on: ubuntu-20.04
+    needs: ["semver"]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: v${{ github.event.inputs.version }}
+        uses: actions/checkout@v4
+      - name: Update release tag
+        run: |
+          sed -i "s/@CARGO_VERSION@/${{ github.event.release.tag_name }}/g" ./vectors.control
       - uses: actions/cache/restore@v3
         with:
           path: |
@@ -110,25 +89,21 @@ jobs:
             --input-type dir \
             --output-type deb \
             --name vectors-pg${{ matrix.version }} \
-            --version ${{ github.event.inputs.version }} \
+            --version ${{ github.event.release.tag_name }} \
             --license apache2 \
             --deb-no-default-config-files \
-            --package ../vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb \
+            --package ../vectors-pg${{ matrix.version }}_${{ github.event.release.tag_name }}_${{ matrix.platform }}.deb \
             --architecture ${{ matrix.platform }} \
             .
         env:
           VERSION: ${{ matrix.version }}
       - name: Upload Release
-        uses: actions/upload-release-asset@v1
+        run: |
+          gh release upload --clobber ./vectors-pg${{ matrix.version }}_${{ github.event.release.tag_name }}_${{ matrix.platform }}.deb
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ./vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb
-          asset_name: vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb
-          asset_content_type: application/vnd.debian.binary-package
+          GH_TOKEN: ${{ github.token }}
   docker_binary_release:
-    needs: ["release", "binary"]
+    needs: ["binary"]
     strategy:
       matrix:
         include:
@@ -141,11 +116,12 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: v${{ github.event.inputs.version }}
+        uses: actions/checkout@v4
       - name: Download
-        run: wget -O pgvecto-rs-binary-release.deb https://github.com/tensorchord/pgvecto.rs/releases/download/v${{ github.event.inputs.version }}/vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download ${{ github.event.release.tag_name }} --pattern "vectors-pg${{ matrix.version }}_${{ github.event.release.tag_name }}_${{ matrix.platform }}.deb" --output pgvecto-rs-binary-release.deb
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -162,7 +138,7 @@ jobs:
           push: true
           platforms: "linux/${{ matrix.platform }}"
           file: ./docker/binary_release.Dockerfile
-          tags: tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-v${{ github.event.inputs.version }}-${{ matrix.platform }}
+          tags: tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-v${{ github.event.release.tag_name }}-${{ matrix.platform }}
   docker_release:
     needs: ["docker_binary_release"]
     runs-on: ubuntu-20.04
@@ -174,16 +150,14 @@ jobs:
           - { version: 16 }
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: v${{ github.event.inputs.version }}
+        uses: actions/checkout@v4
       - name: Variables
         id: variables
         uses: actions/github-script@v6
         with:
           script: |
             let tags = [
-              "tensorchord/pgvecto-rs:pg${{ matrix.version }}-v${{ github.event.inputs.version }}",
+              "tensorchord/pgvecto-rs:pg${{ matrix.version }}-v${{ github.event.release.tag_name }}",
             ];
             // const actor = context.actor;
             // if (actor != "github-actions[bot]") {
@@ -210,6 +184,6 @@ jobs:
           platforms: "linux/amd64,linux/arm64"
           file: ./docker/pgvecto-rs.Dockerfile
           build-args: |
-            TAG=pg${{ matrix.version }}-v${{ github.event.inputs.version }}
+            TAG=pg${{ matrix.version }}-v${{ github.event.release.tag_name }}
             POSTGRES_VERSION=${{ matrix.version }}
           tags: ${{ steps.variables.outputs.tags }}
