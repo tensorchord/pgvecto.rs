@@ -25,10 +25,10 @@ pub fn cosine(lhs: &[SparseF32Element], rhs: &[SparseF32Element]) -> F32 {
             }
         }
     }
-    while let Some(&lhs) = lhs_iter.next() {
+    for lhs in lhs_iter {
         x2 += lhs.value * lhs.value;
     }
-    while let Some(&rhs) = rhs_iter.next() {
+    for rhs in rhs_iter {
         y2 += rhs.value * rhs.value;
     }
     xy / (x2 * y2).sqrt()

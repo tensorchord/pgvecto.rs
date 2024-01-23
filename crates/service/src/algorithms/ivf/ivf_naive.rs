@@ -38,7 +38,7 @@ impl<S: G> IvfNaive<S> {
         create_dir(path).unwrap();
         let ram = make(path, sealed, growing, options);
         let mmap = save(ram, path);
-        sync_dir(&path);
+        sync_dir(path);
         Self { mmap }
     }
 

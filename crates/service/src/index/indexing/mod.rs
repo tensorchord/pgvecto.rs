@@ -63,9 +63,7 @@ impl Validate for IndexingOptions {
     }
 }
 
-pub trait AbstractIndexing<S: G>:
-    Storage<Element = S::Element> + Sized
-{
+pub trait AbstractIndexing<S: G>: Storage<Element = S::Element> + Sized {
     fn create(
         path: &Path,
         options: IndexOptions,

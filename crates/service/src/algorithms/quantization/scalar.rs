@@ -45,7 +45,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         _: QuantizationOptions,
         raw: &Arc<Raw<S::Storage>>,
     ) -> Self {
-        std::fs::create_dir(&path).unwrap();
+        std::fs::create_dir(path).unwrap();
         let dims = options.vector.dims;
         let mut max = vec![S::Scalar::neg_infinity(); dims as usize];
         let mut min = vec![S::Scalar::infinity(); dims as usize];
@@ -69,7 +69,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
             result.into_iter()
         });
         let codes = MmapArray::create(&path.join("codes"), codes_iter);
-        sync_dir(&path);
+        sync_dir(path);
         Self {
             dims,
             max,
@@ -78,7 +78,12 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         }
     }
 
-    fn open(path: &Path, options: IndexOptions, _: QuantizationOptions, _: &Arc<Raw<S::Storage>>) -> Self {
+    fn open(
+        path: &Path,
+        options: IndexOptions,
+        _: QuantizationOptions,
+        _: &Arc<Raw<S::Storage>>,
+    ) -> Self {
         let dims = options.vector.dims;
         let max = serde_json::from_slice(&std::fs::read("max").unwrap()).unwrap();
         let min = serde_json::from_slice(&std::fs::read("min").unwrap()).unwrap();

@@ -72,7 +72,6 @@ pub fn length(vector: &[F32]) -> F32 {
     dot.sqrt()
 }
 
-
 #[inline(always)]
 #[multiversion::multiversion(targets(
     "x86_64/x86-64-v4",

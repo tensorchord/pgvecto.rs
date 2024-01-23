@@ -30,7 +30,7 @@ impl<S: G> Hnsw<S> {
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
     ) -> Self {
-        create_dir(&path).unwrap();
+        create_dir(path).unwrap();
         let ram = make(path, sealed, growing, options);
         let mmap = save(ram, path);
         sync_dir(path);
@@ -300,7 +300,7 @@ pub fn make<S: G>(
                 &quantization,
                 &graph,
                 &mut visited,
-                &target,
+                target,
                 u,
                 ef_construction,
                 j,

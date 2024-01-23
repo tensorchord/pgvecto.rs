@@ -130,7 +130,7 @@ impl<S: G> ProductQuantization<S> {
     where
         F: Fn(u32, &mut [S::Scalar]),
     {
-        std::fs::create_dir(&path).unwrap();
+        std::fs::create_dir(path).unwrap();
         let quantization_options = quantization_options.unwrap_product_quantization();
         let dims = options.vector.dims;
         let ratio = quantization_options.ratio as u16;
@@ -140,8 +140,9 @@ impl<S: G> ProductQuantization<S> {
             let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
             let mut samples = Vec2::<S::Scalar>::new(options.vector.dims, m as usize);
             for i in 0..m {
-                samples[i as usize]
-                    .copy_from_slice(S::Storage::vector(dims, raw.content(f[i as usize] as u32)).as_ref());
+                samples[i as usize].copy_from_slice(
+                    S::Storage::vector(dims, raw.content(f[i as usize] as u32)).as_ref(),
+                );
             }
             samples
         };
@@ -189,7 +190,7 @@ impl<S: G> ProductQuantization<S> {
             }
             result.into_iter()
         });
-        sync_dir(&path);
+        sync_dir(path);
         std::fs::write(
             path.join("centroids"),
             serde_json::to_string(&centroids).unwrap(),

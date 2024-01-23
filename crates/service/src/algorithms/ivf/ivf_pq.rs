@@ -35,10 +35,10 @@ impl<S: G> IvfPq<S> {
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
     ) -> Self {
-        create_dir(&path).unwrap();
+        create_dir(path).unwrap();
         let ram = make(path, sealed, growing, options);
         let mmap = save(ram, path);
-        sync_dir(&path);
+        sync_dir(path);
         Self { mmap }
     }
 

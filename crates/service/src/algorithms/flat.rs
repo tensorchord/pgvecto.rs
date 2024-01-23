@@ -22,16 +22,16 @@ impl<S: G> Flat<S> {
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
     ) -> Self {
-        create_dir(&path).unwrap();
+        create_dir(path).unwrap();
         let ram = make(path, sealed, growing, options);
-        let mmap = save(&path, ram);
-        sync_dir(&path);
+        let mmap = save(path, ram);
+        sync_dir(path);
         Self { mmap }
     }
 
     pub fn load(path: &Path, options: IndexOptions) -> Self {
         let mmap = load(path, options);
-        Self { mmap: mmap }
+        Self { mmap }
     }
 
     pub fn basic(
