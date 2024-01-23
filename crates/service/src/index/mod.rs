@@ -357,7 +357,7 @@ impl<S: G> IndexView<S> {
 
         impl<'a, F: FnMut(Pointer) -> bool + Clone> Filter for Filtering<'a, F> {
             fn check(&mut self, payload: Payload) -> bool {
-                self.enable
+                !self.enable
                     || (self.delete.check(payload).is_some()
                         && (self.external)(Pointer::from_u48(payload >> 16)))
             }
@@ -445,7 +445,7 @@ impl<S: G> IndexView<S> {
 
         impl<'a, F: FnMut(Pointer) -> bool + Clone + 'a> Filter for Filtering<'a, F> {
             fn check(&mut self, payload: Payload) -> bool {
-                self.enable
+                !self.enable
                     || (self.delete.check(payload).is_some()
                         && (self.external)(Pointer::from_u48(payload >> 16)))
             }
