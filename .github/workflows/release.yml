@@ -110,7 +110,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
   docker_binary_release:
-    needs: ["binary"]
+    needs: ["binary", "semver"]
     strategy:
       matrix:
         include:
@@ -147,7 +147,7 @@ jobs:
           file: ./docker/binary_release.Dockerfile
           tags: tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-v${{ needs.semver.outputs.version }}-${{ matrix.platform }}
   docker_release:
-    needs: ["docker_binary_release"]
+    needs: ["docker_binary_release", "semver"]
     runs-on: ubuntu-20.04
     strategy:
       matrix:
