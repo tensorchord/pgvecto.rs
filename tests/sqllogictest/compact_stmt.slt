@@ -1,0 +1,106 @@
+statement ok
+DROP TABLE IF EXISTS t;
+
+statement ok
+SET vectors.pgvector_compatibility=on;
+
+statement ok
+CREATE TABLE t (val vector(3));
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM generate_series(1, 1000);
+
+# HNSW compatible Test
+statement ok
+CREATE INDEX hnsw_l2_index ON t USING hnsw (val vector_l2_ops);
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0.5,0.5,0.5]' limit 10) t2;
+----
+10
+
+statement ok
+DROP INDEX hnsw_l2_index;
+
+statement ok
+CREATE INDEX hnsw_ip_index ON t USING hnsw (val vector_ip_ops) WITH (ef_construction = 80);
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0.5,0.5,0.5]' limit 10) t2;
+----
+10
+
+statement ok
+DROP INDEX hnsw_ip_index;
+
+statement ok
+CREATE INDEX hnsw_cosine_index ON t USING hnsw (val vector_cosine_ops) WITH (m = 12, ef_construction = 80);
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <=> '[0.5,0.5,0.5]' limit 10) t2;
+----
+10
+
+statement ok
+DROP INDEX hnsw_cosine_index;
+
+# IVF compatible Test
+statement ok
+CREATE INDEX ivf_l2_index ON t USING ivfflat (val vector_l2_ops) WITH (lists = 100);
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0.5,0.5,0.5]' limit 10) t2;
+----
+10
+
+statement ok
+DROP INDEX ivf_l2_index;
+
+statement ok
+CREATE INDEX ivf_ip_index ON t USING ivfflat (val vector_ip_ops);
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0.5,0.5,0.5]' limit 10) t2;
+----
+10
+
+statement ok
+DROP INDEX ivf_ip_index;
+
+statement ok
+CREATE INDEX ivf_cosine_index ON t USING ivfflat (val vector_cosine_ops);
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <=> '[0.5,0.5,0.5]' limit 10) t2;
+----
+10
+
+statement ok
+DROP INDEX ivf_cosine_index;
+
+# Native statement
+statement ok
+CREATE INDEX ON t USING vectors (val vector_l2_ops)
+WITH (options = "[indexing.hnsw]");
+
+# Btree index Test - not supported yet
+statement error data type vector has no default operator class for access method "btree"
+CREATE INDEX ON t (val);
+
+statement error could not identify an ordering operator for type vector
+SELECT COUNT(1) FROM (SELECT * FROM t ORDER BY val LIMIT 1) t2;
+
+# Crash Test
+statement error access method "wrong_type" does not exist
+CREATE INDEX ivf_cosine_index ON t USING wrong_type (val vector_cosine_ops);
+
+statement error operator class "wrong_operator" does not exist for access method "vectors"
+CREATE INDEX ivf_cosine_index ON t USING ivfflat (val wrong_operator);
+
+# original statement
+statement ok
+CREATE INDEX ON t USING vectors (val vector_l2_ops)
+WITH (options = "[indexing.hnsw]");
+
+statement ok
+DROP TABLE t;

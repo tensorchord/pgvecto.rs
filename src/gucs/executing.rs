@@ -11,15 +11,15 @@ static HNSW_EF_SEARCH: GucSetting<i32> = GucSetting::<i32>::new(100);
 pub unsafe fn init() {
     GucRegistry::define_bool_guc(
         "vectors.enable_prefilter",
-        "Enables or disables the prfiltering.",
+        "Enables or disables the prefiltering.",
         "https://docs.pgvecto.rs/usage/search.html",
         &ENABLE_PREFILTER,
         GucContext::Userset,
         GucFlags::default(),
     );
     GucRegistry::define_int_guc(
-        "vectors.ivf_nporbe",
-        "`nprobe` argument of HNSW algorithm.",
+        "vectors.ivf_nprobe",
+        "`nprobe` argument of IVF algorithm.",
         "https://docs.pgvecto.rs/usage/search.html",
         &IVF_NPROBE,
         1,

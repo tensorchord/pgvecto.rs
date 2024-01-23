@@ -19,6 +19,7 @@ use validator::Validate;
 #[serde(deny_unknown_fields)]
 pub struct ProductQuantizationOptions {
     #[serde(default = "ProductQuantizationOptions::default_sample")]
+    #[validate(range(min = 1, max = 1_000_000))]
     pub sample: u32,
     #[serde(default)]
     pub ratio: ProductQuantizationOptionsRatio,
