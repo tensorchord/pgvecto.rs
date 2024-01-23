@@ -1,13 +1,13 @@
-use crate::prelude::*;
+use bytemuck::Zeroable;
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 #[derive(Debug, Clone)]
-pub struct Vec2<S: G> {
+pub struct Vec2<T> {
     dims: u16,
-    v: Vec<S::Scalar>,
+    v: Vec<T>,
 }
 
-impl<S: G> Vec2<S> {
+impl<T: Zeroable> Vec2<T> {
     pub fn new(dims: u16, n: usize) -> Self {
         Self {
             dims,
@@ -32,29 +32,29 @@ impl<S: G> Vec2<S> {
     }
 }
 
-impl<S: G> Index<usize> for Vec2<S> {
-    type Output = [S::Scalar];
+impl<T> Index<usize> for Vec2<T> {
+    type Output = [T];
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.v[self.dims as usize * index..][..self.dims as usize]
     }
 }
 
-impl<S: G> IndexMut<usize> for Vec2<S> {
+impl<T> IndexMut<usize> for Vec2<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.v[self.dims as usize * index..][..self.dims as usize]
     }
 }
 
-impl<S: G> Deref for Vec2<S> {
-    type Target = [S::Scalar];
+impl<T> Deref for Vec2<T> {
+    type Target = [T];
 
     fn deref(&self) -> &Self::Target {
         self.v.deref()
     }
 }
 
-impl<S: G> DerefMut for Vec2<S> {
+impl<T> DerefMut for Vec2<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.v.deref_mut()
     }

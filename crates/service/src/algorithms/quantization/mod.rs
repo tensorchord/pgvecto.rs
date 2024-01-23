@@ -10,7 +10,7 @@ use crate::index::IndexOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use validator::Validate;
 
@@ -59,18 +59,18 @@ impl QuantizationOptions {
 
 pub trait Quan<S: G> {
     fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        raw: &Arc<Raw<S>>,
+        raw: &Arc<Raw<S::Storage>>,
     ) -> Self;
     fn open(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        raw: &Arc<Raw<S>>,
+        raw: &Arc<Raw<S::Storage>>,
     ) -> Self;
-    fn distance(&self, lhs: &[S::Scalar], rhs: u32) -> F32;
+    fn distance(&self, lhs: &[S::Element], rhs: u32) -> F32;
     fn distance2(&self, lhs: u32, rhs: u32) -> F32;
 }
 
@@ -82,10 +82,10 @@ pub enum Quantization<S: G> {
 
 impl<S: G> Quantization<S> {
     pub fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        raw: &Arc<Raw<S>>,
+        raw: &Arc<Raw<S::Storage>>,
     ) -> Self {
         match quantization_options {
             QuantizationOptions::Trivial(_) => Self::Trivial(TrivialQuantization::create(
@@ -110,10 +110,10 @@ impl<S: G> Quantization<S> {
     }
 
     pub fn open(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        raw: &Arc<Raw<S>>,
+        raw: &Arc<Raw<S::Storage>>,
     ) -> Self {
         match quantization_options {
             QuantizationOptions::Trivial(_) => Self::Trivial(TrivialQuantization::open(
@@ -137,7 +137,7 @@ impl<S: G> Quantization<S> {
         }
     }
 
-    pub fn distance(&self, lhs: &[S::Scalar], rhs: u32) -> F32 {
+    pub fn distance(&self, lhs: &[S::Element], rhs: u32) -> F32 {
         use Quantization::*;
         match self {
             Trivial(x) => x.distance(lhs, rhs),

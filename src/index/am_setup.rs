@@ -67,6 +67,12 @@ pub unsafe fn convert_opfamily_to_distance(opfamily: pgrx::pg_sys::Oid) -> (Dist
         result = (Distance::Dot, Kind::F16);
     } else if operator == regoperatorin("vectors.<=>(vectors.vecf16,vectors.vecf16)") {
         result = (Distance::Cos, Kind::F16);
+    } else if operator == regoperatorin("vectors.<->(vectors.svector,vectors.svector)") {
+        result = (Distance::L2, Kind::SparseF32);
+    } else if operator == regoperatorin("vectors.<#>(vectors.svector,vectors.svector)") {
+        result = (Distance::Dot, Kind::SparseF32);
+    } else if operator == regoperatorin("vectors.<=>(vectors.svector,vectors.svector)") {
+        result = (Distance::Cos, Kind::SparseF32);
     } else {
         SessionError::BadOptions2.friendly();
     };

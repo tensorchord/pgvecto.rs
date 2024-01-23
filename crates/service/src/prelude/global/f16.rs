@@ -89,7 +89,7 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
             return c::v_f16_dot_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
         }
     }
-    cosine(lhs, rhs)
+    dot(lhs, rhs)
 }
 
 pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
@@ -135,4 +135,35 @@ pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     sl2(lhs, rhs)
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+fn length(vector: &[F16]) -> F16 {
+    let n = vector.len();
+    let mut dot = F16::zero();
+    for i in 0..n {
+        dot += vector[i] * vector[i];
+    }
+    dot.sqrt()
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn l2_normalize(vector: &mut [F16]) {
+    let n = vector.len();
+    let l = length(vector);
+    for i in 0..n {
+        vector[i] /= l;
+    }
 }

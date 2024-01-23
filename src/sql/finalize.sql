@@ -22,6 +22,16 @@ CREATE TYPE vecf16 (
     ALIGNMENT = double
 );
 
+CREATE TYPE svector (
+    INPUT = _vectors_svecf32_in,
+    OUTPUT = _vectors_svecf32_out,
+    TYPMOD_IN = _vectors_typmod_in,
+    TYPMOD_OUT = _vectors_typmod_out,
+    STORAGE = EXTENDED,
+    INTERNALLENGTH = VARIABLE,
+    ALIGNMENT = double
+);
+
 CREATE TYPE vector_index_stat AS (
     idx_status TEXT,
     idx_indexing BOOL,
@@ -49,6 +59,13 @@ CREATE OPERATOR + (
 	COMMUTATOR = +
 );
 
+CREATE OPERATOR + (
+	PROCEDURE = _vectors_svecf32_operator_add,
+	LEFTARG = svector,
+	RIGHTARG = svector,
+	COMMUTATOR = +
+);
+
 CREATE OPERATOR - (
 	PROCEDURE = _vectors_vecf32_operator_minus,
 	LEFTARG = vector,
@@ -59,6 +76,12 @@ CREATE OPERATOR - (
 	PROCEDURE = _vectors_vecf16_operator_minus,
 	LEFTARG = vecf16,
 	RIGHTARG = vecf16
+);
+
+CREATE OPERATOR - (
+	PROCEDURE = _vectors_svecf32_operator_minus,
+	LEFTARG = svector,
+	RIGHTARG = svector
 );
 
 CREATE OPERATOR = (
@@ -75,6 +98,16 @@ CREATE OPERATOR = (
 	PROCEDURE = _vectors_vecf16_operator_eq,
 	LEFTARG = vecf16,
 	RIGHTARG = vecf16,
+	COMMUTATOR = =,
+	NEGATOR = <>,
+	RESTRICT = eqsel,
+	JOIN = eqjoinsel
+);
+
+CREATE OPERATOR = (
+	PROCEDURE = _vectors_svecf32_operator_eq,
+	LEFTARG = svector,
+	RIGHTARG = svector,
 	COMMUTATOR = =,
 	NEGATOR = <>,
 	RESTRICT = eqsel,
@@ -101,6 +134,16 @@ CREATE OPERATOR <> (
 	JOIN = eqjoinsel
 );
 
+CREATE OPERATOR <> (
+	PROCEDURE = _vectors_svecf32_operator_neq,
+	LEFTARG = svector,
+	RIGHTARG = svector,
+	COMMUTATOR = <>,
+	NEGATOR = =,
+	RESTRICT = eqsel,
+	JOIN = eqjoinsel
+);
+
 CREATE OPERATOR < (
 	PROCEDURE = _vectors_vecf32_operator_lt,
 	LEFTARG = vector,
@@ -115,6 +158,16 @@ CREATE OPERATOR < (
 	PROCEDURE = _vectors_vecf16_operator_lt,
 	LEFTARG = vecf16,
 	RIGHTARG = vecf16,
+	COMMUTATOR = >,
+	NEGATOR = >=,
+	RESTRICT = scalarltsel,
+	JOIN = scalarltjoinsel
+);
+
+CREATE OPERATOR < (
+	PROCEDURE = _vectors_svecf32_operator_lt,
+	LEFTARG = svector,
+	RIGHTARG = svector,
 	COMMUTATOR = >,
 	NEGATOR = >=,
 	RESTRICT = scalarltsel,
@@ -141,6 +194,17 @@ CREATE OPERATOR > (
 	JOIN = scalargtjoinsel
 );
 
+CREATE OPERATOR > (
+	PROCEDURE = _vectors_svecf32_operator_gt,
+	LEFTARG = svector,
+	RIGHTARG = svector,
+	COMMUTATOR = <,
+	NEGATOR = <=,
+	RESTRICT = scalargtsel,
+	JOIN = scalargtjoinsel
+);
+
+
 CREATE OPERATOR <= (
 	PROCEDURE = _vectors_vecf32_operator_lte,
 	LEFTARG = vector,
@@ -155,6 +219,16 @@ CREATE OPERATOR <= (
 	PROCEDURE = _vectors_vecf16_operator_lte,
 	LEFTARG = vecf16,
 	RIGHTARG = vecf16,
+	COMMUTATOR = >=,
+	NEGATOR = >,
+	RESTRICT = scalarltsel,
+	JOIN = scalarltjoinsel
+);
+
+CREATE OPERATOR <= (
+	PROCEDURE = _vectors_svecf32_operator_lte,
+	LEFTARG = svector,
+	RIGHTARG = svector,
 	COMMUTATOR = >=,
 	NEGATOR = >,
 	RESTRICT = scalarltsel,
@@ -181,6 +255,16 @@ CREATE OPERATOR >= (
 	JOIN = scalargtjoinsel
 );
 
+CREATE OPERATOR >= (
+	PROCEDURE = _vectors_svecf32_operator_gte,
+	LEFTARG = svector,
+	RIGHTARG = svector,
+	COMMUTATOR = <=,
+	NEGATOR = <,
+	RESTRICT = scalargtsel,
+	JOIN = scalargtjoinsel
+);
+
 CREATE OPERATOR <-> (
 	PROCEDURE = _vectors_vecf32_operator_l2,
 	LEFTARG = vector,
@@ -195,6 +279,14 @@ CREATE OPERATOR <-> (
 	COMMUTATOR = <->
 );
 
+CREATE OPERATOR <-> (
+	PROCEDURE = _vectors_svecf32_operator_l2,
+	LEFTARG = svector,
+	RIGHTARG = svector,
+	COMMUTATOR = <->
+);
+
+
 CREATE OPERATOR <#> (
 	PROCEDURE = _vectors_vecf32_operator_dot,
 	LEFTARG = vector,
@@ -206,6 +298,13 @@ CREATE OPERATOR <#> (
 	PROCEDURE = _vectors_vecf16_operator_dot,
 	LEFTARG = vecf16,
 	RIGHTARG = vecf16,
+	COMMUTATOR = <#>
+);
+
+CREATE OPERATOR <#> (
+	PROCEDURE = _vectors_svecf32_operator_dot,
+	LEFTARG = svector,
+	RIGHTARG = svector,
 	COMMUTATOR = <#>
 );
 
@@ -223,6 +322,13 @@ CREATE OPERATOR <=> (
 	COMMUTATOR = <=>
 );
 
+CREATE OPERATOR <=> (
+	PROCEDURE = _vectors_svecf32_operator_cosine,
+	LEFTARG = svector,
+	RIGHTARG = svector,
+	COMMUTATOR = <=>
+);
+
 -- List of functions
 
 -- List of casts
@@ -235,6 +341,15 @@ CREATE CAST (vector AS real[])
 
 CREATE CAST (vector AS vecf16)
     WITH FUNCTION _vectors_cast_vecf32_to_vecf16(vector, integer, boolean);
+
+CREATE CAST (vecf16 AS vector)
+    WITH FUNCTION _vectors_cast_vecf16_to_vecf32(vecf16, integer, boolean) AS IMPLICIT;
+
+CREATE CAST (vector AS svector)
+    WITH FUNCTION _vectors_cast_vecf32_to_svecf32(vector, integer, boolean);
+
+CREATE CAST (svector AS vector)
+    WITH FUNCTION _vectors_cast_svecf32_to_vecf32(svector, integer, boolean) AS IMPLICIT;
 
 -- List of access methods
 
@@ -266,6 +381,18 @@ CREATE OPERATOR CLASS vecf16_dot_ops
 CREATE OPERATOR CLASS vecf16_cos_ops
     FOR TYPE vecf16 USING vectors AS
     OPERATOR 1 <=> (vecf16, vecf16) FOR ORDER BY float_ops;
+
+CREATE OPERATOR CLASS svector_l2_ops
+    FOR TYPE svector USING vectors AS
+    OPERATOR 1 <-> (svector, svector) FOR ORDER BY float_ops;
+
+CREATE OPERATOR CLASS svector_dot_ops
+    FOR TYPE svector USING vectors AS
+    OPERATOR 1 <#> (svector, svector) FOR ORDER BY float_ops;
+
+CREATE OPERATOR CLASS svector_cos_ops
+    FOR TYPE svector USING vectors AS
+    OPERATOR 1 <=> (svector, svector) FOR ORDER BY float_ops;
 
 -- List of views
 

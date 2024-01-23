@@ -1,8 +1,9 @@
+use crate::datatype::svecf32::{SVecf32, SVecf32Input, SVecf32Output};
 use crate::datatype::typmod::Typmod;
-use crate::datatype::vecf16::{Vecf16, Vecf16Output};
+use crate::datatype::vecf16::{Vecf16, Vecf16Input, Vecf16Output};
 use crate::datatype::vecf32::{Vecf32, Vecf32Input, Vecf32Output};
+use crate::prelude::{FriendlyError, SessionError};
 
-use half::f16;
 use service::prelude::*;
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
@@ -38,13 +39,56 @@ fn _vectors_cast_vecf32_to_vecf16(
     _typmod: i32,
     _explicit: bool,
 ) -> Vecf16Output {
-    let data: Vec<F16> = vector
-        .data()
-        .iter()
-        .map(|x| x.to_f32())
-        .map(f16::from_f32)
-        .map(F16::from)
-        .collect();
+    let data: Vec<F16> = vector.data().iter().map(|&x| F16::from_f(x)).collect();
 
     Vecf16::new_in_postgres(&data)
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_cast_vecf16_to_vecf32(
+    vector: Vecf16Input<'_>,
+    _typmod: i32,
+    _explicit: bool,
+) -> Vecf32Output {
+    let data: Vec<F32> = vector.data().iter().map(|&x| x.to_f()).collect();
+
+    Vecf32::new_in_postgres(&data)
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_cast_vecf32_to_svecf32(
+    vector: Vecf32Input<'_>,
+    _typmod: i32,
+    _explicit: bool,
+) -> SVecf32Output {
+    let data: Vec<_> = vector
+        .data()
+        .iter()
+        .enumerate()
+        .filter(|(_, x)| !x.is_zero())
+        .map(|(i, &x)| SparseF32Element {
+            index: i as u32,
+            value: x,
+        })
+        .collect();
+
+    SVecf32::new_in_postgres(&data)
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_cast_svecf32_to_vecf32(
+    vector: SVecf32Input<'_>,
+    typmod: i32,
+    _explicit: bool,
+) -> Vecf32Output {
+    let n = if let Some(n) = Typmod::parse_from_i32(typmod).unwrap().dims() {
+        n
+    } else {
+        SessionError::BadTypeDimensions.friendly()
+    };
+
+    let mut data: Vec<F32> = expand_sparse(&vector).collect();
+    data.resize(n as usize, F32::zero());
+
+    Vecf32::new_in_postgres(&data)
 }

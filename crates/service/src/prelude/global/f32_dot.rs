@@ -1,27 +1,27 @@
-use super::G;
-use crate::prelude::scalar::F32;
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum F32Dot {}
 
 impl G for F32Dot {
+    type Element = F32;
+
     type Scalar = F32;
 
-    const DISTANCE: Distance = Distance::Dot;
+    type Storage = DenseMmap<F32>;
 
     type L2 = F32L2;
 
     fn distance(lhs: &[F32], rhs: &[F32]) -> F32 {
-        dot(lhs, rhs) * (-1.0)
+        super::f32::dot(lhs, rhs) * (-1.0)
     }
 
     fn elkan_k_means_normalize(vector: &mut [F32]) {
-        l2_normalize(vector)
+        super::f32::l2_normalize(vector)
     }
 
     fn elkan_k_means_distance(lhs: &[F32], rhs: &[F32]) -> F32 {
-        dot(lhs, rhs).acos()
+        super::f32::dot(lhs, rhs).acos()
     }
 
     #[multiversion::multiversion(targets(
@@ -88,7 +88,7 @@ impl G for F32Dot {
             let lhs = &lhs[(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            let _xy = dot(lhs, rhs);
+            let _xy = super::f32::dot(lhs, rhs);
             xy += _xy;
         }
         xy * (-1.0)
@@ -115,7 +115,7 @@ impl G for F32Dot {
             let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            let _xy = dot(lhs, rhs);
+            let _xy = super::f32::dot(lhs, rhs);
             xy += _xy;
         }
         xy * (-1.0)
@@ -148,75 +148,6 @@ impl G for F32Dot {
         }
         xy * (-1.0)
     }
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-fn length(vector: &[F32]) -> F32 {
-    let n = vector.len();
-    let mut dot = F32::zero();
-    for i in 0..n {
-        dot += vector[i] * vector[i];
-    }
-    dot.sqrt()
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-fn l2_normalize(vector: &mut [F32]) {
-    let n = vector.len();
-    let l = length(vector);
-    for i in 0..n {
-        vector[i] /= l;
-    }
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-fn cosine(lhs: &[F32], rhs: &[F32]) -> F32 {
-    assert!(lhs.len() == rhs.len());
-    let n = lhs.len();
-    let mut xy = F32::zero();
-    let mut x2 = F32::zero();
-    let mut y2 = F32::zero();
-    for i in 0..n {
-        xy += lhs[i] * rhs[i];
-        x2 += lhs[i] * lhs[i];
-        y2 += rhs[i] * rhs[i];
-    }
-    xy / (x2 * y2).sqrt()
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-pub fn dot(lhs: &[F32], rhs: &[F32]) -> F32 {
-    assert!(lhs.len() == rhs.len());
-    let n = lhs.len();
-    let mut xy = F32::zero();
-    for i in 0..n {
-        xy += lhs[i] * rhs[i];
-    }
-    xy
 }
 
 #[inline(always)]

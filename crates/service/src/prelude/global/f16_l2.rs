@@ -1,15 +1,14 @@
-use super::G;
-use crate::prelude::scalar::F16;
-use crate::prelude::scalar::F32;
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum F16L2 {}
 
 impl G for F16L2 {
+    type Element = F16;
+
     type Scalar = F16;
 
-    const DISTANCE: Distance = Distance::L2;
+    type Storage = DenseMmap<F16>;
 
     type L2 = F16L2;
 

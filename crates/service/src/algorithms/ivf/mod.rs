@@ -10,7 +10,7 @@ use crate::index::SearchOptions;
 use crate::prelude::*;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 
 pub enum Ivf<S: G> {
@@ -20,7 +20,7 @@ pub enum Ivf<S: G> {
 
 impl<S: G> Ivf<S> {
     pub fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
@@ -38,7 +38,7 @@ impl<S: G> Ivf<S> {
         }
     }
 
-    pub fn open(path: PathBuf, options: IndexOptions) -> Self {
+    pub fn load(path: &Path, options: IndexOptions) -> Self {
         if options
             .indexing
             .clone()
@@ -46,9 +46,16 @@ impl<S: G> Ivf<S> {
             .quantization
             .is_product_quantization()
         {
-            Self::Pq(IvfPq::open(path, options))
+            Self::Pq(IvfPq::load(path, options))
         } else {
-            Self::Naive(IvfNaive::open(path, options))
+            Self::Naive(IvfNaive::load(path, options))
+        }
+    }
+
+    pub fn dims(&self) -> u16 {
+        match self {
+            Ivf::Naive(x) => x.dims(),
+            Ivf::Pq(x) => x.dims(),
         }
     }
 
@@ -59,10 +66,10 @@ impl<S: G> Ivf<S> {
         }
     }
 
-    pub fn vector(&self, i: u32) -> &[S::Scalar] {
+    pub fn content(&self, i: u32) -> &[S::Element] {
         match self {
-            Ivf::Naive(x) => x.vector(i),
-            Ivf::Pq(x) => x.vector(i),
+            Ivf::Naive(x) => x.content(i),
+            Ivf::Pq(x) => x.content(i),
         }
     }
 
@@ -75,7 +82,7 @@ impl<S: G> Ivf<S> {
 
     pub fn basic(
         &self,
-        vector: &[S::Scalar],
+        vector: &[S::Element],
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -87,7 +94,7 @@ impl<S: G> Ivf<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: &'a [S::Element],
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {

@@ -13,7 +13,7 @@ use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use validator::Validate;
 
@@ -63,26 +63,24 @@ impl Validate for IndexingOptions {
     }
 }
 
-pub trait AbstractIndexing<S: G>: Sized {
+pub trait AbstractIndexing<S: G>:
+    Storage<Element = S::Element> + Sized
+{
     fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
     ) -> Self;
-    fn open(path: PathBuf, options: IndexOptions) -> Self;
-    fn len(&self) -> u32;
-    fn vector(&self, i: u32) -> &[S::Scalar];
-    fn payload(&self, i: u32) -> Payload;
     fn basic(
         &self,
-        vector: &[S::Scalar],
+        vector: &[S::Element],
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>>;
     fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: &'a [S::Element],
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>);
@@ -96,7 +94,7 @@ pub enum DynamicIndexing<S: G> {
 
 impl<S: G> DynamicIndexing<S> {
     pub fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
@@ -114,41 +112,9 @@ impl<S: G> DynamicIndexing<S> {
         }
     }
 
-    pub fn open(path: PathBuf, options: IndexOptions) -> Self {
-        match options.indexing {
-            IndexingOptions::Flat(_) => Self::Flat(FlatIndexing::open(path, options)),
-            IndexingOptions::Ivf(_) => Self::Ivf(IvfIndexing::open(path, options)),
-            IndexingOptions::Hnsw(_) => Self::Hnsw(HnswIndexing::open(path, options)),
-        }
-    }
-
-    pub fn len(&self) -> u32 {
-        match self {
-            DynamicIndexing::Flat(x) => x.len(),
-            DynamicIndexing::Ivf(x) => x.len(),
-            DynamicIndexing::Hnsw(x) => x.len(),
-        }
-    }
-
-    pub fn vector(&self, i: u32) -> &[S::Scalar] {
-        match self {
-            DynamicIndexing::Flat(x) => x.vector(i),
-            DynamicIndexing::Ivf(x) => x.vector(i),
-            DynamicIndexing::Hnsw(x) => x.vector(i),
-        }
-    }
-
-    pub fn payload(&self, i: u32) -> Payload {
-        match self {
-            DynamicIndexing::Flat(x) => x.payload(i),
-            DynamicIndexing::Ivf(x) => x.payload(i),
-            DynamicIndexing::Hnsw(x) => x.payload(i),
-        }
-    }
-
     pub fn basic(
         &self,
-        vector: &[S::Scalar],
+        vector: &[S::Element],
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -161,7 +127,7 @@ impl<S: G> DynamicIndexing<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: &'a [S::Element],
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -169,6 +135,50 @@ impl<S: G> DynamicIndexing<S> {
             DynamicIndexing::Flat(x) => x.vbase(vector, opts, filter),
             DynamicIndexing::Ivf(x) => x.vbase(vector, opts, filter),
             DynamicIndexing::Hnsw(x) => x.vbase(vector, opts, filter),
+        }
+    }
+}
+
+impl<S: G> Storage for DynamicIndexing<S> {
+    type Element = S::Element;
+
+    fn dims(&self) -> u16 {
+        match self {
+            DynamicIndexing::Flat(x) => x.dims(),
+            DynamicIndexing::Ivf(x) => x.dims(),
+            DynamicIndexing::Hnsw(x) => x.dims(),
+        }
+    }
+
+    fn len(&self) -> u32 {
+        match self {
+            DynamicIndexing::Flat(x) => x.len(),
+            DynamicIndexing::Ivf(x) => x.len(),
+            DynamicIndexing::Hnsw(x) => x.len(),
+        }
+    }
+
+    fn content(&self, i: u32) -> &[Self::Element] {
+        match self {
+            DynamicIndexing::Flat(x) => x.content(i),
+            DynamicIndexing::Ivf(x) => x.content(i),
+            DynamicIndexing::Hnsw(x) => x.content(i),
+        }
+    }
+
+    fn payload(&self, i: u32) -> Payload {
+        match self {
+            DynamicIndexing::Flat(x) => x.payload(i),
+            DynamicIndexing::Ivf(x) => x.payload(i),
+            DynamicIndexing::Hnsw(x) => x.payload(i),
+        }
+    }
+
+    fn load(path: &Path, options: IndexOptions) -> Self {
+        match options.indexing {
+            IndexingOptions::Flat(_) => Self::Flat(FlatIndexing::load(path, options)),
+            IndexingOptions::Ivf(_) => Self::Ivf(IvfIndexing::load(path, options)),
+            IndexingOptions::Hnsw(_) => Self::Hnsw(HnswIndexing::load(path, options)),
         }
     }
 }

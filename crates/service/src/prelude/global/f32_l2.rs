@@ -1,25 +1,25 @@
-use super::G;
-use crate::prelude::scalar::F32;
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum F32L2 {}
 
 impl G for F32L2 {
+    type Element = F32;
+
     type Scalar = F32;
 
-    const DISTANCE: Distance = Distance::L2;
+    type Storage = DenseMmap<F32>;
 
     type L2 = F32L2;
 
     fn distance(lhs: &[F32], rhs: &[F32]) -> F32 {
-        distance_squared_l2(lhs, rhs)
+        super::f32::sl2(lhs, rhs)
     }
 
     fn elkan_k_means_normalize(_: &mut [F32]) {}
 
     fn elkan_k_means_distance(lhs: &[F32], rhs: &[F32]) -> F32 {
-        distance_squared_l2(lhs, rhs).sqrt()
+        super::f32::sl2(lhs, rhs).sqrt()
     }
 
     #[multiversion::multiversion(targets(
@@ -86,7 +86,7 @@ impl G for F32L2 {
             let lhs = &lhs[(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            result += distance_squared_l2(lhs, rhs);
+            result += super::f32::sl2(lhs, rhs);
         }
         result
     }
@@ -112,7 +112,7 @@ impl G for F32L2 {
             let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            result += distance_squared_l2(lhs, rhs);
+            result += super::f32::sl2(lhs, rhs);
         }
         result
     }
@@ -143,24 +143,6 @@ impl G for F32L2 {
         }
         result
     }
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-pub fn distance_squared_l2(lhs: &[F32], rhs: &[F32]) -> F32 {
-    assert!(lhs.len() == rhs.len());
-    let n = lhs.len();
-    let mut d2 = F32::zero();
-    for i in 0..n {
-        let d = lhs[i] - rhs[i];
-        d2 += d * d;
-    }
-    d2
 }
 
 #[inline(always)]

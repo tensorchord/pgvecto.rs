@@ -148,6 +148,7 @@ impl<S: G> Index<S> {
         OptimizerSealing::new(index.clone()).spawn();
         Ok(index)
     }
+
     pub fn open(path: PathBuf) -> Arc<Self> {
         let options =
             serde_json::from_slice::<IndexOptions>(&std::fs::read(path.join("options")).unwrap())
@@ -309,11 +310,13 @@ pub struct IndexView<S: G> {
 impl<S: G> IndexView<S> {
     pub fn basic<'a, F: Fn(Pointer) -> bool + Clone + 'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: &'a [S::Element],
         opts: &'a SearchOptions,
         filter: F,
     ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
-        if self.options.vector.dims as usize != vector.len() {
+        if self.options.vector.k != Kind::SparseF32
+            && self.options.vector.dims as usize != vector.len()
+        {
             return Err(ServiceError::Unmatched);
         }
 
@@ -397,11 +400,13 @@ impl<S: G> IndexView<S> {
     }
     pub fn vbase<'a, F: FnMut(Pointer) -> bool + Clone + 'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: &'a [S::Element],
         opts: &'a SearchOptions,
         filter: F,
     ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
-        if self.options.vector.dims as usize != vector.len() {
+        if self.options.vector.k != Kind::SparseF32
+            && self.options.vector.dims as usize != vector.len()
+        {
             return Err(ServiceError::Unmatched);
         }
 
@@ -491,10 +496,12 @@ impl<S: G> IndexView<S> {
     }
     pub fn insert(
         &self,
-        vector: Vec<S::Scalar>,
+        vector: Vec<S::Element>,
         pointer: Pointer,
     ) -> Result<Result<(), OutdatedError>, ServiceError> {
-        if self.options.vector.dims as usize != vector.len() {
+        if self.options.vector.k != Kind::SparseF32
+            && self.options.vector.dims as usize != vector.len()
+        {
             return Err(ServiceError::Unmatched);
         }
         let payload = (pointer.as_u48() << 16) | self.delete.version(pointer) as Payload;

@@ -1,14 +1,14 @@
-use super::G;
-use crate::prelude::scalar::F32;
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum F16Dot {}
 
 impl G for F16Dot {
+    type Element = F16;
+
     type Scalar = F16;
 
-    const DISTANCE: Distance = Distance::Dot;
+    type Storage = DenseMmap<F16>;
 
     type L2 = F16L2;
 
@@ -17,7 +17,7 @@ impl G for F16Dot {
     }
 
     fn elkan_k_means_normalize(vector: &mut [F16]) {
-        l2_normalize(vector)
+        super::f16::l2_normalize(vector)
     }
 
     fn elkan_k_means_distance(lhs: &[F16], rhs: &[F16]) -> F32 {
@@ -147,37 +147,6 @@ impl G for F16Dot {
             xy += _xy;
         }
         xy * (-1.0)
-    }
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-fn length(vector: &[F16]) -> F16 {
-    let n = vector.len();
-    let mut dot = F16::zero();
-    for i in 0..n {
-        dot += vector[i] * vector[i];
-    }
-    dot.sqrt()
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-fn l2_normalize(vector: &mut [F16]) {
-    let n = vector.len();
-    let l = length(vector);
-    for i in 0..n {
-        vector[i] /= l;
     }
 }
 

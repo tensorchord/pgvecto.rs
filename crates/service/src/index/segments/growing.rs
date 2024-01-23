@@ -59,6 +59,7 @@ impl<S: G> GrowingSegment<S> {
             _tracker: Arc::new(SegmentTracker { path, _tracker }),
         })
     }
+
     pub fn open(_tracker: Arc<IndexTracker>, path: PathBuf, uuid: Uuid) -> Arc<Self> {
         let mut wal = FileWal::open(path.join("wal"));
         let mut vec = Vec::new();
@@ -80,9 +81,11 @@ impl<S: G> GrowingSegment<S> {
             _tracker: Arc::new(SegmentTracker { path, _tracker }),
         })
     }
+
     pub fn uuid(&self) -> Uuid {
         self.uuid
     }
+
     pub fn is_full(&self) -> bool {
         let n;
         {
@@ -97,6 +100,7 @@ impl<S: G> GrowingSegment<S> {
         }
         true
     }
+
     pub fn seal(&self) {
         let n;
         {
@@ -109,12 +113,14 @@ impl<S: G> GrowingSegment<S> {
         }
         self.wal.lock().sync_all();
     }
+
     pub fn flush(&self) {
         self.wal.lock().sync_all();
     }
+
     pub fn insert(
         &self,
-        vector: Vec<S::Scalar>,
+        vector: Vec<S::Element>,
         payload: Payload,
     ) -> Result<(), GrowingSegmentInsertError> {
         let log = Log { vector, payload };
@@ -139,9 +145,11 @@ impl<S: G> GrowingSegment<S> {
             .write(&bincode::serialize::<Log<S>>(&log).unwrap());
         Ok(())
     }
+
     pub fn len(&self) -> u32 {
         self.len.load(Ordering::Acquire) as u32
     }
+
     pub fn stat_growing(&self) -> SegmentStat {
         SegmentStat {
             id: self.uuid,
@@ -150,6 +158,7 @@ impl<S: G> GrowingSegment<S> {
             size: (self.len() as u64) * (std::mem::size_of::<Log<S>>() as u64),
         }
     }
+
     pub fn stat_write(&self) -> SegmentStat {
         SegmentStat {
             id: self.uuid,
@@ -158,7 +167,8 @@ impl<S: G> GrowingSegment<S> {
             size: (self.len() as u64) * (std::mem::size_of::<Log<S>>() as u64),
         }
     }
-    pub fn vector(&self, i: u32) -> &[S::Scalar] {
+
+    pub fn content(&self, i: u32) -> &[S::Element] {
         let i = i as usize;
         if i >= self.len.load(Ordering::Acquire) {
             panic!("Out of bound.");
@@ -166,6 +176,7 @@ impl<S: G> GrowingSegment<S> {
         let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
         log.vector.as_ref()
     }
+
     pub fn payload(&self, i: u32) -> Payload {
         let i = i as usize;
         if i >= self.len.load(Ordering::Acquire) {
@@ -174,9 +185,10 @@ impl<S: G> GrowingSegment<S> {
         let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
         log.payload
     }
+
     pub fn basic(
         &self,
-        vector: &[S::Scalar],
+        vector: &[S::Element],
         _opts: &SearchOptions,
         mut filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -194,9 +206,10 @@ impl<S: G> GrowingSegment<S> {
         }
         result
     }
+
     pub fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: &'a [S::Element],
         _opts: &SearchOptions,
         mut filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
@@ -232,7 +245,7 @@ impl<S: G> Drop for GrowingSegment<S> {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Log<S: G> {
-    vector: Vec<S::Scalar>,
+    vector: Vec<S::Element>,
     payload: Payload,
 }
 

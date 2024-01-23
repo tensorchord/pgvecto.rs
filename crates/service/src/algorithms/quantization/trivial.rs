@@ -4,7 +4,7 @@ use crate::algorithms::raw::Raw;
 use crate::index::IndexOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use validator::Validate;
 
@@ -19,23 +19,28 @@ impl Default for TrivialQuantizationOptions {
 }
 
 pub struct TrivialQuantization<S: G> {
-    raw: Arc<Raw<S>>,
+    raw: Arc<Raw<S::Storage>>,
 }
 
 impl<S: G> Quan<S> for TrivialQuantization<S> {
-    fn create(_: PathBuf, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S>>) -> Self {
+    fn create(
+        _: &Path,
+        _: IndexOptions,
+        _: QuantizationOptions,
+        raw: &Arc<Raw<S::Storage>>,
+    ) -> Self {
         Self { raw: raw.clone() }
     }
 
-    fn open(_: PathBuf, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S>>) -> Self {
+    fn open(_: &Path, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S::Storage>>) -> Self {
         Self { raw: raw.clone() }
     }
 
-    fn distance(&self, lhs: &[S::Scalar], rhs: u32) -> F32 {
-        S::distance(lhs, self.raw.vector(rhs))
+    fn distance(&self, lhs: &[S::Element], rhs: u32) -> F32 {
+        S::distance(lhs, self.raw.content(rhs))
     }
 
     fn distance2(&self, lhs: u32, rhs: u32) -> F32 {
-        S::distance(self.raw.vector(lhs), self.raw.vector(rhs))
+        S::distance(self.raw.content(lhs), self.raw.content(rhs))
     }
 }

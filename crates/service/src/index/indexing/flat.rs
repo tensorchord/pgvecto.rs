@@ -8,7 +8,7 @@ use crate::{algorithms::flat::Flat, index::segments::sealed::SealedSegment};
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use validator::Validate;
 
@@ -34,7 +34,7 @@ pub struct FlatIndexing<S: G> {
 
 impl<S: G> AbstractIndexing<S> for FlatIndexing<S> {
     fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
@@ -43,26 +43,9 @@ impl<S: G> AbstractIndexing<S> for FlatIndexing<S> {
         Self { raw }
     }
 
-    fn open(path: PathBuf, options: IndexOptions) -> Self {
-        let raw = Flat::open(path, options);
-        Self { raw }
-    }
-
-    fn len(&self) -> u32 {
-        self.raw.len()
-    }
-
-    fn vector(&self, i: u32) -> &[S::Scalar] {
-        self.raw.vector(i)
-    }
-
-    fn payload(&self, i: u32) -> Payload {
-        self.raw.payload(i)
-    }
-
     fn basic(
         &self,
-        vector: &[S::Scalar],
+        vector: &[S::Element],
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -71,10 +54,36 @@ impl<S: G> AbstractIndexing<S> for FlatIndexing<S> {
 
     fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: &'a [S::Element],
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
         self.raw.vbase(vector, opts, filter)
+    }
+}
+
+impl<S: G> Storage for FlatIndexing<S> {
+    type Element = S::Element;
+
+    fn dims(&self) -> u16 {
+        self.raw.dims()
+    }
+
+    fn len(&self) -> u32 {
+        self.raw.len()
+    }
+
+    fn content(&self, i: u32) -> &[Self::Element] {
+        self.raw.content(i)
+    }
+
+    fn payload(&self, i: u32) -> Payload {
+        self.raw.payload(i)
+    }
+
+    fn load(path: &Path, options: IndexOptions) -> Self {
+        Self {
+            raw: Flat::load(path, options),
+        }
     }
 }
