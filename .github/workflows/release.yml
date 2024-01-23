@@ -24,12 +24,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v7
+        id: version
         with:
           script: |
-            const r = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?/;
+            const r = /(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
             if (!r.test("${{ github.event.release.tag_name }}")) {
               core.setFailed(`invalid semver`);
             }
+            const matches = "${{ github.event.release.tag_name }}".match(r);
+            core.setOutput('semver', matches[0]);
   binary:
     strategy:
       matrix:
@@ -47,7 +50,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Update release tag
         run: |
-          sed -i "s/@CARGO_VERSION@/${{ github.event.release.tag_name }}/g" ./vectors.control
+          sed -i "s/@CARGO_VERSION@/${{ steps.version.outputs.semver }}/g" ./vectors.control
       - uses: actions/cache/restore@v3
         with:
           path: |
@@ -89,17 +92,17 @@ jobs:
             --input-type dir \
             --output-type deb \
             --name vectors-pg${{ matrix.version }} \
-            --version ${{ github.event.release.tag_name }} \
+            --version ${{ steps.version.outputs.semver }} \
             --license apache2 \
             --deb-no-default-config-files \
-            --package ../vectors-pg${{ matrix.version }}_${{ github.event.release.tag_name }}_${{ matrix.platform }}.deb \
+            --package ../vectors-pg${{ matrix.version }}_${{ steps.version.outputs.semver }}_${{ matrix.platform }}.deb \
             --architecture ${{ matrix.platform }} \
             .
         env:
           VERSION: ${{ matrix.version }}
       - name: Upload Release
         run: |
-          gh release upload --clobber ${{ github.event.release.tag_name }} ./vectors-pg${{ matrix.version }}_${{ github.event.release.tag_name }}_${{ matrix.platform }}.deb
+          gh release upload --clobber ${{ github.event.release.tag_name }} ./vectors-pg${{ matrix.version }}_${{ steps.version.outputs.semver }}_${{ matrix.platform }}.deb
         env:
           GH_TOKEN: ${{ github.token }}
   docker_binary_release:
@@ -121,7 +124,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download ${{ github.event.release.tag_name }} --pattern "vectors-pg${{ matrix.version }}_${{ github.event.release.tag_name }}_${{ matrix.platform }}.deb" --output pgvecto-rs-binary-release.deb
+          gh release download ${{ github.event.release.tag_name }} --pattern "vectors-pg${{ matrix.version }}_${{ steps.version.outputs.semver }}_${{ matrix.platform }}.deb" --output pgvecto-rs-binary-release.deb
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -138,7 +141,7 @@ jobs:
           push: true
           platforms: "linux/${{ matrix.platform }}"
           file: ./docker/binary_release.Dockerfile
-          tags: tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-v${{ github.event.release.tag_name }}-${{ matrix.platform }}
+          tags: tensorchord/pgvecto-rs-binary:pg${{ matrix.version }}-v${{ steps.version.outputs.semver }}-${{ matrix.platform }}
   docker_release:
     needs: ["docker_binary_release"]
     runs-on: ubuntu-20.04
@@ -157,7 +160,7 @@ jobs:
         with:
           script: |
             let tags = [
-              "tensorchord/pgvecto-rs:pg${{ matrix.version }}-v${{ github.event.release.tag_name }}",
+              "tensorchord/pgvecto-rs:pg${{ matrix.version }}-v${{ steps.version.outputs.semver }}",
             ];
             // const actor = context.actor;
             // if (actor != "github-actions[bot]") {
@@ -184,6 +187,6 @@ jobs:
           platforms: "linux/amd64,linux/arm64"
           file: ./docker/pgvecto-rs.Dockerfile
           build-args: |
-            TAG=pg${{ matrix.version }}-v${{ github.event.release.tag_name }}
+            TAG=pg${{ matrix.version }}-v${{ steps.version.outputs.semver }}
             POSTGRES_VERSION=${{ matrix.version }}
           tags: ${{ steps.variables.outputs.tags }}
