@@ -358,7 +358,7 @@ pub fn basic<S: G>(
     S::elkan_k_means_normalize(&mut target);
     let mut coarse_result = ElementHeap::new(coarse_search_count as usize);
     for i in 0..mmap.nlist {
-        let distance = S::elkan_k_means_distance(&target, &mmap.coarse_centroids(i));
+        let distance = S::elkan_k_means_distance(&target, mmap.coarse_centroids(i));
         if coarse_result.check(distance) {
             coarse_result.push(Element {
                 distance,
@@ -406,7 +406,7 @@ pub fn basic<S: G>(
         }
     }
     let mut rerank_result = BinaryHeap::new();
-    while result.len() > 0 {
+    while !result.is_empty() {
         let (_, (id, delta)) = result.pop().unwrap();
         let distance = mmap.quantization2.distance_with_delta(vector, id, &delta);
         rerank_result.push(Reverse(Element {
@@ -429,7 +429,7 @@ pub fn vbase<'a, S: G>(
     S::elkan_k_means_normalize(&mut target);
     let mut coarse_result = ElementHeap::new(coarse_search_count as usize);
     for i in 0..mmap.nlist {
-        let distance = S::elkan_k_means_distance(&target, &mmap.coarse_centroids(i));
+        let distance = S::elkan_k_means_distance(&target, mmap.coarse_centroids(i));
         if coarse_result.check(distance) {
             coarse_result.push(Element {
                 distance,
@@ -477,7 +477,7 @@ pub fn vbase<'a, S: G>(
         }
     }
     let mut rerank_result = Vec::new();
-    while result.len() > 0 {
+    while !result.is_empty() {
         let (_, (id, delta)) = result.pop().unwrap();
         let distance = mmap.quantization2.distance_with_delta(vector, id, &delta);
         rerank_result.push(Element {
