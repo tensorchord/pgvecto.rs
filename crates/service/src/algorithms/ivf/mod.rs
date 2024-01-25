@@ -1,8 +1,10 @@
 pub mod ivf_naive;
 pub mod ivf_pq;
+pub mod ivf_puck;
 
 use self::ivf_naive::IvfNaive;
 use self::ivf_pq::IvfPq;
+use self::ivf_puck::IvfPuck;
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::segments::sealed::SealedSegment;
 use crate::index::IndexOptions;
@@ -16,6 +18,7 @@ use std::sync::Arc;
 pub enum Ivf<S: G> {
     Naive(IvfNaive<S>),
     Pq(IvfPq<S>),
+    Puck(IvfPuck<S>),
 }
 
 impl<S: G> Ivf<S> {
@@ -25,7 +28,9 @@ impl<S: G> Ivf<S> {
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
     ) -> Self {
-        if options
+        if options.indexing.clone().unwrap_ivf().is_puck {
+            Self::Puck(IvfPuck::create(path, options, sealed, growing))
+        } else if options
             .indexing
             .clone()
             .unwrap_ivf()
@@ -56,6 +61,7 @@ impl<S: G> Ivf<S> {
         match self {
             Ivf::Naive(x) => x.len(),
             Ivf::Pq(x) => x.len(),
+            Ivf::Puck(x) => x.len(),
         }
     }
 
@@ -63,6 +69,7 @@ impl<S: G> Ivf<S> {
         match self {
             Ivf::Naive(x) => x.vector(i),
             Ivf::Pq(x) => x.vector(i),
+            Ivf::Puck(x) => x.vector(i),
         }
     }
 
@@ -70,6 +77,7 @@ impl<S: G> Ivf<S> {
         match self {
             Ivf::Naive(x) => x.payload(i),
             Ivf::Pq(x) => x.payload(i),
+            Ivf::Puck(x) => x.payload(i),
         }
     }
 
@@ -82,6 +90,7 @@ impl<S: G> Ivf<S> {
         match self {
             Ivf::Naive(x) => x.basic(vector, opts, filter),
             Ivf::Pq(x) => x.basic(vector, opts, filter),
+            Ivf::Puck(x) => x.basic(vector, opts, filter),
         }
     }
 
@@ -94,6 +103,7 @@ impl<S: G> Ivf<S> {
         match self {
             Ivf::Naive(x) => x.vbase(vector, opts, filter),
             Ivf::Pq(x) => x.vbase(vector, opts, filter),
+            Ivf::Puck(x) => x.vbase(vector, opts, filter),
         }
     }
 }

@@ -28,6 +28,8 @@ pub struct IvfIndexingOptions {
     #[serde(default = "IvfIndexingOptions::default_nsample")]
     #[validate(range(min = 1, max = 1_000_000))]
     pub nsample: u32,
+    #[serde(default = "IvfIndexingOptions::default_is_puck")]
+    pub is_puck: bool,
     #[serde(default)]
     #[validate]
     pub quantization: QuantizationOptions,
@@ -46,6 +48,9 @@ impl IvfIndexingOptions {
     fn default_nsample() -> u32 {
         65536
     }
+    fn default_is_puck() -> bool {
+        false
+    }
 }
 
 impl Default for IvfIndexingOptions {
@@ -55,6 +60,7 @@ impl Default for IvfIndexingOptions {
             iterations: Self::default_iterations(),
             nlist: Self::default_nlist(),
             nsample: Self::default_nsample(),
+            is_puck: Self::default_is_puck(),
             quantization: Default::default(),
         }
     }
