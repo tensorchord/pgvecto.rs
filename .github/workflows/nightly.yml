@@ -17,6 +17,7 @@ jobs:
       - name: trigger
         env:
           GH_TOKEN: ${{ secrets.NIGHTLY_TOKEN }}
+          TZ: Asia/Shanghai
         run: |
           commit_date=$(git log -1 --since="24 hours ago" --pretty=format:"%cI")
           if [[ -n "$commit_date" ]]; then
