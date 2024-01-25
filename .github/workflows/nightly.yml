@@ -9,14 +9,15 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.NIGHTLY_TOKEN }}
     permissions:
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - run: |
+      - name: trigger
+        env:
+          GH_TOKEN: ${{ secrets.NIGHTLY_TOKEN }}
+        run: |
           commit_date=$(git log -1 --since="24 hours ago" --pretty=format:"%cI")
           if [[ -n "$commit_date" ]]; then
             if gh release view v0.0.0-nightly --json name; then
