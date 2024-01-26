@@ -2,7 +2,10 @@ use crate::prelude::*;
 use crate::utils::vec2::Vec2;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use rayon::slice::ParallelSliceMut;
 use std::ops::{Index, IndexMut};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct ElkanKMeans<S: G> {
     dims: u16,
@@ -122,7 +125,7 @@ impl<S: G> ElkanKMeans<S> {
         let centroids = &mut self.centroids;
         let lowerbound = &mut self.lowerbound;
         let upperbound = &mut self.upperbound;
-        let mut change = 0;
+        let change = AtomicUsize::new(0);
         let n = samples.len();
         if n <= c {
             return self.quick_centroids();
@@ -131,11 +134,16 @@ impl<S: G> ElkanKMeans<S> {
         // Step 1
         let mut dist0 = Square::new(c, c);
         let mut sp = vec![F32::zero(); c];
-        for i in 0..c {
-            for j in i + 1..c {
-                let dis = S::elkan_k_means_distance(&centroids[i], &centroids[j]) * 0.5;
-                dist0[(i, j)] = dis;
-                dist0[(j, i)] = dis;
+        dist0.v.par_iter_mut().enumerate().for_each(|(ii, v)| {
+            let i = ii / c;
+            let j = ii % c;
+            if i <= j {
+                *v = S::elkan_k_means_distance(&centroids[i], &centroids[j]) * 0.5;
+            }
+        });
+        for i in 1..c {
+            for j in 0..i - 1 {
+                dist0[(i, j)] = dist0[(j, i)];
             }
         }
         for i in 0..c {
@@ -152,37 +160,41 @@ impl<S: G> ElkanKMeans<S> {
             sp[i] = minimal;
         }
 
-        for i in 0..n {
-            // Step 2
-            if upperbound[i] <= sp[assign[i]] {
-                continue;
-            }
-            let mut minimal = S::elkan_k_means_distance(&samples[i], &centroids[assign[i]]);
-            lowerbound[(i, assign[i])] = minimal;
-            upperbound[i] = minimal;
-            // Step 3
-            for j in 0..c {
-                if j == assign[i] {
-                    continue;
-                }
-                if upperbound[i] <= lowerbound[(i, j)] {
-                    continue;
-                }
-                if upperbound[i] <= dist0[(assign[i], j)] {
-                    continue;
-                }
-                if minimal > lowerbound[(i, j)] || minimal > dist0[(assign[i], j)] {
-                    let dis = S::elkan_k_means_distance(&samples[i], &centroids[j]);
-                    lowerbound[(i, j)] = dis;
-                    if dis < minimal {
-                        minimal = dis;
-                        assign[i] = j;
-                        upperbound[i] = dis;
-                        change += 1;
+        upperbound
+            .par_iter_mut()
+            .zip(assign.par_iter_mut())
+            .zip(lowerbound.v.par_chunks_mut(c))
+            .enumerate()
+            .for_each(|(i, ((upperboundi, assigni), lowerboundi))| {
+                // Step 2
+                if *upperboundi > sp[*assigni] {
+                    let mut minimal = S::elkan_k_means_distance(&samples[i], &centroids[*assigni]);
+                    lowerboundi[*assigni] = minimal;
+                    *upperboundi = minimal;
+                    // Step 3
+                    for j in 0..c {
+                        if j == *assigni {
+                            continue;
+                        }
+                        if *upperboundi <= lowerboundi[j] {
+                            continue;
+                        }
+                        if *upperboundi <= dist0[(*assigni, j)] {
+                            continue;
+                        }
+                        if minimal > lowerboundi[j] || minimal > dist0[(*assigni, j)] {
+                            let dis = S::elkan_k_means_distance(&samples[i], &centroids[j]);
+                            lowerboundi[j] = dis;
+                            if dis < minimal {
+                                minimal = dis;
+                                *assigni = j;
+                                *upperboundi = dis;
+                                change.fetch_add(1, Ordering::Relaxed);
+                            }
+                        }
                     }
                 }
-            }
-        }
+            });
 
         // Step 4, 7
         let old = std::mem::replace(centroids, Vec2::new(dims, c));
@@ -228,15 +240,15 @@ impl<S: G> ElkanKMeans<S> {
             count[i] = count[o] / 2.0;
             count[o] = count[o] - count[i];
         }
-        for i in 0..c {
-            S::elkan_k_means_normalize(&mut centroids[i]);
-        }
+        centroids.par_chunks_mut(dims as usize).for_each(|v| {
+            S::elkan_k_means_normalize(v);
+        });
 
         // Step 5, 6
         let mut dist1 = vec![F32::zero(); c];
-        for i in 0..c {
-            dist1[i] = S::elkan_k_means_distance(&old[i], &centroids[i]);
-        }
+        dist1.par_iter_mut().enumerate().for_each(|(i, v)| {
+            *v = S::elkan_k_means_distance(&old[i], &centroids[i]);
+        });
         for i in 0..n {
             for j in 0..c {
                 lowerbound[(i, j)] = std::cmp::max(lowerbound[(i, j)] - dist1[j], F32::zero());
@@ -246,7 +258,7 @@ impl<S: G> ElkanKMeans<S> {
             upperbound[i] += dist1[assign[i]];
         }
 
-        change == 0
+        change.load(Ordering::Relaxed) == 0
     }
 
     pub fn finish(self) -> Vec2<S> {
