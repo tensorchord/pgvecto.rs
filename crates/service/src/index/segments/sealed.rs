@@ -89,7 +89,7 @@ impl<S: G> SealedSegment<S> {
         self.indexing.len()
     }
 
-    pub fn content(&self, i: u32) -> &[S::Element] {
+    pub fn content(&self, i: u32) -> <S::Storage as Storage>::VectorRef<'_> {
         self.indexing.content(i)
     }
 

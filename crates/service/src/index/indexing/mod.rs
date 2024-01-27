@@ -63,7 +63,7 @@ impl Validate for IndexingOptions {
     }
 }
 
-pub trait AbstractIndexing<S: G>: Storage<Element = S::Element> + Sized {
+pub trait AbstractIndexing<S: G> {
     fn create(
         path: &Path,
         options: IndexOptions,
@@ -135,12 +135,8 @@ impl<S: G> DynamicIndexing<S> {
             DynamicIndexing::Hnsw(x) => x.vbase(vector, opts, filter),
         }
     }
-}
 
-impl<S: G> Storage for DynamicIndexing<S> {
-    type Element = S::Element;
-
-    fn dims(&self) -> u16 {
+    pub fn dims(&self) -> u16 {
         match self {
             DynamicIndexing::Flat(x) => x.dims(),
             DynamicIndexing::Ivf(x) => x.dims(),
@@ -148,7 +144,7 @@ impl<S: G> Storage for DynamicIndexing<S> {
         }
     }
 
-    fn len(&self) -> u32 {
+    pub fn len(&self) -> u32 {
         match self {
             DynamicIndexing::Flat(x) => x.len(),
             DynamicIndexing::Ivf(x) => x.len(),
@@ -156,7 +152,7 @@ impl<S: G> Storage for DynamicIndexing<S> {
         }
     }
 
-    fn content(&self, i: u32) -> &[Self::Element] {
+    pub fn content(&self, i: u32) -> <S::Storage as Storage>::VectorRef<'_> {
         match self {
             DynamicIndexing::Flat(x) => x.content(i),
             DynamicIndexing::Ivf(x) => x.content(i),
@@ -164,7 +160,7 @@ impl<S: G> Storage for DynamicIndexing<S> {
         }
     }
 
-    fn payload(&self, i: u32) -> Payload {
+    pub fn payload(&self, i: u32) -> Payload {
         match self {
             DynamicIndexing::Flat(x) => x.payload(i),
             DynamicIndexing::Ivf(x) => x.payload(i),
@@ -172,7 +168,7 @@ impl<S: G> Storage for DynamicIndexing<S> {
         }
     }
 
-    fn load(path: &Path, options: IndexOptions) -> Self {
+    pub fn load(path: &Path, options: IndexOptions) -> Self {
         match options.indexing {
             IndexingOptions::Flat(_) => Self::Flat(FlatIndexing::load(path, options)),
             IndexingOptions::Ivf(_) => Self::Ivf(IvfIndexing::load(path, options)),

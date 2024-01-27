@@ -68,7 +68,7 @@ impl<S: G> Hnsw<S> {
         self.mmap.raw.len()
     }
 
-    pub fn content(&self, i: u32) -> &[S::Element] {
+    pub fn content(&self, i: u32) -> <S::Storage as Storage>::VectorRef<'_> {
         self.mmap.raw.content(i)
     }
 
@@ -256,7 +256,7 @@ pub fn make<S: G>(
             *input = res;
         }
         let mut visited = visited.fetch();
-        let target = raw.content(i);
+        let target = (raw.content(i) as <S::Storage as Storage>::VectorRef<'_>).vector();
         let levels = graph.vertexs[i as usize].levels();
         let local_entry;
         let update_entry;

@@ -15,6 +15,9 @@ where
     T: Copy + bytemuck::Pod,
 {
     type Element = T;
+    type Scalar = T;
+    type Vector = Vec<T>;
+    type VectorRef<'a> = &'a [T];
 
     fn dims(&self) -> u16 {
         self.dims
@@ -24,7 +27,7 @@ where
         self.payload.len() as u32
     }
 
-    fn content(&self, i: u32) -> &[Self::Element] {
+    fn content(&self, i: u32) -> &[T] {
         let s = i as usize * self.dims as usize;
         let e = (i + 1) as usize * self.dims as usize;
         &self.vectors[s..e]
@@ -32,6 +35,10 @@ where
 
     fn payload(&self, i: u32) -> Payload {
         self.payload[i as usize]
+    }
+
+    fn full_vector(contents: Self::VectorRef<'_>) -> Cow<'_, [Self::Scalar]> {
+        Cow::Borrowed(contents)
     }
 
     fn load(path: &Path, options: IndexOptions) -> Self
@@ -46,23 +53,8 @@ where
             dims: options.vector.dims,
         }
     }
-}
 
-impl<T> AtomicStorage for DenseMmap<T>
-where
-    T: Copy + bytemuck::Pod,
-{
-    type Scalar = T;
-
-    fn check_dims(dims: u16, vector: &[Self::Element]) -> bool {
-        vector.len() == dims as usize
-    }
-
-    fn vector(_: u16, contents: &[Self::Element]) -> Cow<'_, [Self::Scalar]> {
-        Cow::Borrowed(contents)
-    }
-
-    fn save(path: &Path, ram: impl Storage<Element = Self::Element>) -> Self
+    fn save(path: &Path, ram: impl Ram<Element = Self::Element>) -> Self
     where
         Self: Sized,
     {

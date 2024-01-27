@@ -176,13 +176,13 @@ impl InstanceView {
                 Ok(Box::new(x.basic(vector, opts, filter)?))
             }
             (InstanceView::SparseF32Cos(x), DynamicVector::SparseF32(vector)) => {
-                Ok(Box::new(x.basic(vector, opts, filter)?))
+                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
             }
             (InstanceView::SparseF32Dot(x), DynamicVector::SparseF32(vector)) => {
-                Ok(Box::new(x.basic(vector, opts, filter)?))
+                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
             }
             (InstanceView::SparseF32L2(x), DynamicVector::SparseF32(vector)) => {
-                Ok(Box::new(x.basic(vector, opts, filter)?))
+                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
             }
             _ => Err(ServiceError::Unmatched),
         }
@@ -213,13 +213,13 @@ impl InstanceView {
                 Ok(Box::new(x.vbase(vector, opts, filter)?))
             }
             (InstanceView::SparseF32Cos(x), DynamicVector::SparseF32(vector)) => {
-                Ok(Box::new(x.vbase(vector, opts, filter)?))
+                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
             }
             (InstanceView::SparseF32Dot(x), DynamicVector::SparseF32(vector)) => {
-                Ok(Box::new(x.vbase(vector, opts, filter)?))
+                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
             }
             (InstanceView::SparseF32L2(x), DynamicVector::SparseF32(vector)) => {
-                Ok(Box::new(x.vbase(vector, opts, filter)?))
+                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
             }
             _ => Err(ServiceError::Unmatched),
         }

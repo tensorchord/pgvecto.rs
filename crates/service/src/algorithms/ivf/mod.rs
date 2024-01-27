@@ -66,7 +66,7 @@ impl<S: G> Ivf<S> {
         }
     }
 
-    pub fn content(&self, i: u32) -> &[S::Element] {
+    pub fn content(&self, i: u32) -> <S::Storage as Storage>::VectorRef<'_> {
         match self {
             Ivf::Naive(x) => x.content(i),
             Ivf::Pq(x) => x.content(i),

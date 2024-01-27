@@ -146,7 +146,7 @@ impl<S: G> ProductQuantization<S> {
             let mut samples = Vec2::<S::Scalar>::new(options.vector.dims, m as usize);
             for i in 0..m {
                 samples[i as usize].copy_from_slice(
-                    S::Storage::vector(dims, raw.content(f[i as usize] as u32)).as_ref(),
+                    S::Storage::full_vector(raw.content(f[i as usize] as u32)).as_ref(),
                 );
             }
             samples
@@ -173,7 +173,7 @@ impl<S: G> ProductQuantization<S> {
             }
         }
         let codes_iter = (0..n).flat_map(|i| {
-            let mut vector = S::Storage::vector(dims, raw.content(i)).to_vec();
+            let mut vector = S::Storage::full_vector(raw.content(i)).to_vec();
             normalizer(i, &mut vector);
             let width = dims.div_ceil(ratio);
             let mut result = Vec::with_capacity(width as usize);

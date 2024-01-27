@@ -9,7 +9,7 @@ pub struct Raw<S> {
     mmap: S,
 }
 
-impl<S: AtomicStorage> Raw<S> {
+impl<S: Storage> Raw<S> {
     pub fn create<I: G<Element = S::Element>>(
         path: &Path,
         options: IndexOptions,
@@ -24,34 +24,32 @@ impl<S: AtomicStorage> Raw<S> {
     }
 }
 
-impl<S: AtomicStorage> Storage for Raw<S> {
-    type Element = S::Element;
-
-    fn dims(&self) -> u16 {
+impl<S: Storage> Raw<S> {
+    pub fn dims(&self) -> u16 {
         self.mmap.dims()
     }
 
-    fn len(&self) -> u32 {
+    pub fn len(&self) -> u32 {
         self.mmap.len()
     }
 
-    fn content(&self, i: u32) -> &[Self::Element] {
+    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
         self.mmap.content(i)
     }
 
-    fn payload(&self, i: u32) -> Payload {
+    pub fn payload(&self, i: u32) -> Payload {
         self.mmap.payload(i)
     }
 
-    fn load(path: &Path, options: IndexOptions) -> Self {
+    pub fn load(path: &Path, options: IndexOptions) -> Self {
         Self {
             mmap: S::load(path, options),
         }
     }
 }
 
-unsafe impl<S: AtomicStorage> Send for Raw<S> {}
-unsafe impl<S: AtomicStorage> Sync for Raw<S> {}
+unsafe impl<S: Storage> Send for Raw<S> {}
+unsafe impl<S: Storage> Sync for Raw<S> {}
 
 struct RawRam<S: G> {
     sealed: Vec<Arc<SealedSegment<S>>>,
@@ -59,7 +57,7 @@ struct RawRam<S: G> {
     dims: u16,
 }
 
-impl<S: G> Storage for RawRam<S> {
+impl<S: G> Ram for RawRam<S> {
     type Element = S::Element;
 
     fn dims(&self) -> u16 {
@@ -71,10 +69,10 @@ impl<S: G> Storage for RawRam<S> {
             + self.growing.iter().map(|x| x.len()).sum::<u32>()
     }
 
-    fn content(&self, mut index: u32) -> &[S::Element] {
+    fn content(&self, mut index: u32) -> &[Self::Element] {
         for x in self.sealed.iter() {
             if index < x.len() {
-                return x.content(index);
+                return x.content(index).vector();
             }
             index -= x.len();
         }

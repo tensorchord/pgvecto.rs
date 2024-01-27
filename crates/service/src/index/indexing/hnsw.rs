@@ -80,26 +80,24 @@ impl<S: G> AbstractIndexing<S> for HnswIndexing<S> {
     }
 }
 
-impl<S: G> Storage for HnswIndexing<S> {
-    type Element = S::Element;
-
-    fn dims(&self) -> u16 {
+impl<S: G> HnswIndexing<S> {
+    pub fn dims(&self) -> u16 {
         self.raw.dims()
     }
 
-    fn len(&self) -> u32 {
+    pub fn len(&self) -> u32 {
         self.raw.len()
     }
 
-    fn content(&self, i: u32) -> &[Self::Element] {
+    pub fn content(&self, i: u32) -> <S::Storage as Storage>::VectorRef<'_> {
         self.raw.content(i)
     }
 
-    fn payload(&self, i: u32) -> Payload {
+    pub fn payload(&self, i: u32) -> Payload {
         self.raw.payload(i)
     }
 
-    fn load(path: &Path, options: IndexOptions) -> Self {
+    pub fn load(path: &Path, options: IndexOptions) -> Self {
         Self {
             raw: Hnsw::load(path, options),
         }

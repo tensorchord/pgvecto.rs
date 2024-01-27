@@ -3,7 +3,7 @@
 use crate::datatype::svecf32::SVecf32;
 use crate::datatype::vecf16::Vecf16;
 use crate::datatype::vecf32::Vecf32;
-use service::prelude::DynamicVector;
+use service::prelude::*;
 
 #[repr(C, align(8))]
 struct Header {
@@ -19,7 +19,13 @@ pub unsafe fn from_datum(datum: pgrx::pg_sys::Datum) -> DynamicVector {
     let vector = match (*q.cast::<Header>()).kind {
         0 => DynamicVector::F32((*q.cast::<Vecf32>()).data().to_vec()),
         1 => DynamicVector::F16((*q.cast::<Vecf16>()).data().to_vec()),
-        2 => DynamicVector::SparseF32((*q.cast::<SVecf32>()).data().to_vec()),
+        2 => {
+            let svec = &*q.cast::<SVecf32>();
+            DynamicVector::SparseF32(SparseF32 {
+                dims: svec.dims(),
+                elements: svec.data().to_vec(),
+            })
+        }
         _ => unreachable!(),
     };
     if p != q {

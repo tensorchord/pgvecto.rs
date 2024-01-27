@@ -55,7 +55,7 @@ impl<S: G> IvfPq<S> {
         self.mmap.raw.len()
     }
 
-    pub fn content(&self, i: u32) -> &[S::Element] {
+    pub fn content(&self, i: u32) -> <S::Storage as Storage>::VectorRef<'_> {
         self.mmap.raw.content(i)
     }
 
@@ -151,7 +151,7 @@ pub fn make<S: G>(
     let mut samples = Vec2::new(dims, m as usize);
     for i in 0..m {
         samples[i as usize]
-            .copy_from_slice(S::Storage::vector(dims, raw.content(f[i as usize] as u32)).as_ref());
+            .copy_from_slice(S::Storage::full_vector(raw.content(f[i as usize] as u32)).as_ref());
         S::elkan_k_means_normalize(&mut samples[i as usize]);
     }
     let mut k_means = ElkanKMeans::<S>::new(nlist as usize, samples);

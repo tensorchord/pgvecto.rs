@@ -2,7 +2,6 @@ use crate::datatype::svecf32::{SVecf32, SVecf32Input, SVecf32Output};
 use crate::datatype::typmod::Typmod;
 use crate::datatype::vecf16::{Vecf16, Vecf16Input, Vecf16Output};
 use crate::datatype::vecf32::{Vecf32, Vecf32Input, Vecf32Output};
-use crate::prelude::{FriendlyError, SessionError};
 
 use service::prelude::*;
 
@@ -72,23 +71,17 @@ fn _vectors_cast_vecf32_to_svecf32(
         })
         .collect();
 
-    SVecf32::new_in_postgres(&data)
+    SVecf32::new_in_postgres(&data, vector.len() as u16)
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_cast_svecf32_to_vecf32(
     vector: SVecf32Input<'_>,
-    typmod: i32,
+    _typmod: i32,
     _explicit: bool,
 ) -> Vecf32Output {
-    let n = if let Some(n) = Typmod::parse_from_i32(typmod).unwrap().dims() {
-        n
-    } else {
-        SessionError::BadTypeDimensions.friendly()
-    };
-
     let mut data: Vec<F32> = expand_sparse(&vector).collect();
-    data.resize(n as usize, F32::zero());
+    data.resize(vector.dims() as usize, F32::zero());
 
     Vecf32::new_in_postgres(&data)
 }

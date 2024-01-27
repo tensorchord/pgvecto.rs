@@ -25,6 +25,7 @@ pub struct SVecf32 {
     len: u16,
     kind: u8,
     reserved: u8,
+    dims: u16,
     phantom: [SparseF32Element; 0],
 }
 
@@ -39,19 +40,23 @@ impl SVecf32 {
         let layout = layout_alpha.extend(layout_beta).unwrap().0;
         layout.pad_to_align()
     }
-    pub fn new_in_postgres(slice: &[SparseF32Element]) -> SVecf32Output {
+    pub fn new_in_postgres(slice: &[SparseF32Element], dims: u16) -> SVecf32Output {
         unsafe {
             assert!(u16::try_from(slice.len()).is_ok());
             let layout = SVecf32::layout(slice.len());
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut SVecf32;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
             std::ptr::addr_of_mut!((*ptr).varlena).write(SVecf32::varlena(layout.size()));
+            std::ptr::addr_of_mut!((*ptr).dims).write(dims);
             std::ptr::addr_of_mut!((*ptr).kind).write(2);
             std::ptr::addr_of_mut!((*ptr).reserved).write(0);
             std::ptr::addr_of_mut!((*ptr).len).write(slice.len() as u16);
             std::ptr::copy_nonoverlapping(slice.as_ptr(), (*ptr).phantom.as_mut_ptr(), slice.len());
             SVecf32Output(NonNull::new(ptr).unwrap())
         }
+    }
+    pub fn dims(&self) -> u16 {
+        self.dims
     }
     pub fn len(&self) -> usize {
         self.len as usize
@@ -302,7 +307,7 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
     if index > 65535 {
         SessionError::BadValueDimensions.friendly();
     }
-    SVecf32::new_in_postgres(&vector)
+    SVecf32::new_in_postgres(&vector, index as u16)
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]

@@ -60,7 +60,7 @@ impl<S: G> Flat<S> {
         self.mmap.raw.len()
     }
 
-    pub fn content(&self, i: u32) -> &[S::Element] {
+    pub fn content(&self, i: u32) -> <S::Storage as Storage>::VectorRef<'_> {
         self.mmap.raw.content(i)
     }
 

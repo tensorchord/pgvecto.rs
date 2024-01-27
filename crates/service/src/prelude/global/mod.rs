@@ -50,7 +50,7 @@ pub trait G: Copy + Debug + 'static {
         + num_traits::NumOps
         + num_traits::NumAssignOps
         + FloatCast;
-    type Storage: AtomicStorage<Element = Self::Element, Scalar = Self::Scalar>;
+    type Storage: Storage<Element = Self::Element, Scalar = Self::Scalar>;
     type L2: G<Element = Self::Scalar, Scalar = Self::Scalar>;
 
     fn distance(lhs: &[Self::Element], rhs: &[Self::Element]) -> F32;
@@ -114,7 +114,7 @@ pub trait FloatCast: Sized {
 pub enum DynamicVector {
     F32(Vec<F32>),
     F16(Vec<F16>),
-    SparseF32(Vec<SparseF32Element>),
+    SparseF32(SparseF32),
 }
 
 impl From<Vec<F32>> for DynamicVector {
@@ -129,8 +129,8 @@ impl From<Vec<F16>> for DynamicVector {
     }
 }
 
-impl From<Vec<SparseF32Element>> for DynamicVector {
-    fn from(value: Vec<SparseF32Element>) -> Self {
+impl From<SparseF32> for DynamicVector {
+    fn from(value: SparseF32) -> Self {
         Self::SparseF32(value)
     }
 }

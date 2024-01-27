@@ -8,6 +8,54 @@ pub struct SparseF32Element {
     pub value: F32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SparseF32 {
+    pub dims: u16,
+    pub elements: Vec<SparseF32Element>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SparseF32Ref<'a> {
+    pub dims: u16,
+    pub elements: &'a [SparseF32Element],
+}
+
+impl<'a> From<&'a SparseF32> for SparseF32Ref<'a> {
+    fn from(value: &'a SparseF32) -> SparseF32Ref<'a> {
+        Self {
+            dims: value.dims,
+            elements: value.elements.as_slice(),
+        }
+    }
+}
+
+impl Vector for SparseF32 {
+    type Element = SparseF32Element;
+
+    fn dims(&self) -> u16 {
+        self.dims
+    }
+
+    fn vector(self) -> Vec<Self::Element> {
+        self.elements
+    }
+}
+
+impl<'c> VectorRef for SparseF32Ref<'c> {
+    type Element = SparseF32Element;
+
+    fn dims(&self) -> u16 {
+        self.dims
+    }
+
+    fn vector<'a, 'b>(&'a self) -> &'b [Self::Element]
+    where
+        'c: 'b,
+    {
+        self.elements
+    }
+}
+
 pub fn expand_sparse(sparse: &[SparseF32Element]) -> impl Iterator<Item = F32> + '_ {
     let mut data = RefPeekable::new(sparse.iter());
     let mut i = 0;
