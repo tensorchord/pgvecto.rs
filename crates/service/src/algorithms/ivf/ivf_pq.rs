@@ -16,6 +16,9 @@ use crate::utils::mmap_array::MmapArray;
 use crate::utils::vec2::Vec2;
 use rand::seq::index::sample;
 use rand::thread_rng;
+use rayon::iter::IntoParallelRefMutIterator;
+use rayon::iter::{IndexedParallelIterator, ParallelIterator};
+use rayon::slice::ParallelSliceMut;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::create_dir;
@@ -145,10 +148,13 @@ pub fn make<S: G>(
     let m = std::cmp::min(nsample, n);
     let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
     let mut samples = Vec2::new(dims, m as usize);
-    for i in 0..m {
-        samples[i as usize].copy_from_slice(raw.vector(f[i as usize] as u32));
-        S::elkan_k_means_normalize(&mut samples[i as usize]);
-    }
+    samples
+        .par_chunks_mut(dims as usize)
+        .enumerate()
+        .for_each(|(i, v)| {
+            v.copy_from_slice(raw.vector(f[i] as u32));
+            S::elkan_k_means_normalize(v);
+        });
     let mut k_means = ElkanKMeans::new(nlist as usize, samples);
     for _ in 0..least_iterations {
         k_means.iterate();
@@ -169,34 +175,45 @@ pub fn make<S: G>(
         nexts.resize_with(n as usize, || SyncUnsafeCell::new(u32::MAX));
         nexts
     };
-    let quantization = ProductQuantization::with_normalizer(
+    let mut coarse_idx = vec![0usize; n as usize];
+    coarse_idx.par_iter_mut().enumerate().for_each(|(i, v)| {
+        let mut vector = raw.vector(i as u32).to_vec();
+        S::elkan_k_means_normalize(&mut vector);
+        let mut result = (F32::infinity(), 0);
+        for i in 0..nlist {
+            let dis = S::elkan_k_means_distance(&vector, &centroids[i as usize]);
+            result = std::cmp::min(result, (dis, i));
+        }
+        *v = result.1 as usize;
+        loop {
+            let next = heads[*v].load(Acquire);
+            unsafe {
+                nexts[i].get().write(next);
+            }
+            let o = &heads[*v];
+            if o.compare_exchange(next, i as u32, Release, Relaxed).is_ok() {
+                break;
+            }
+        }
+    });
+    let residuals = {
+        let mut residuals = Vec2::<S>::new(options.vector.dims, n as usize);
+        residuals
+            .par_chunks_mut(dims as usize)
+            .enumerate()
+            .for_each(|(i, v)| {
+                for j in 0..dims {
+                    v[j as usize] =
+                        raw.vector(i as u32)[j as usize] - centroids[coarse_idx[i]][j as usize];
+                }
+            });
+        residuals
+    };
+    let quantization = ProductQuantization::encode(
         path.join("quantization"),
         options.clone(),
         quantization_opts,
-        &raw,
-        |i, target| {
-            let mut vector = target.to_vec();
-            S::elkan_k_means_normalize(&mut vector);
-            let mut result = (F32::infinity(), 0);
-            for i in 0..nlist {
-                let dis = S::elkan_k_means_distance(&vector, &centroids[i as usize]);
-                result = std::cmp::min(result, (dis, i));
-            }
-            let centroid_id = result.1;
-            loop {
-                let next = heads[centroid_id as usize].load(Acquire);
-                unsafe {
-                    nexts[i as usize].get().write(next);
-                }
-                let o = &heads[centroid_id as usize];
-                if o.compare_exchange(next, i, Release, Relaxed).is_ok() {
-                    break;
-                }
-            }
-            for i in 0..dims {
-                target[i as usize] -= centroids[centroid_id as usize][i as usize];
-            }
-        },
+        &residuals,
     );
     IvfRam {
         raw,

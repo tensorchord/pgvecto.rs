@@ -9,6 +9,9 @@ use crate::utils::mmap_array::MmapArray;
 use crate::utils::vec2::Vec2;
 use rand::seq::index::sample;
 use rand::thread_rng;
+use rayon::iter::IndexedParallelIterator;
+use rayon::iter::ParallelIterator;
+use rayon::slice::ParallelSliceMut;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::path::PathBuf;
@@ -196,6 +199,86 @@ impl<S: G> ProductQuantization<S> {
         )
         .unwrap();
         let codes = MmapArray::create(path.join("codes"), codes_iter);
+        Self {
+            dims,
+            ratio,
+            centroids,
+            codes,
+        }
+    }
+
+    pub fn encode(
+        path: PathBuf,
+        options: IndexOptions,
+        quantization_options: QuantizationOptions,
+        raw: &Vec2<S>,
+    ) -> Self {
+        std::fs::create_dir(&path).unwrap();
+        let quantization_options = quantization_options.unwrap_product_quantization();
+        let dims = options.vector.dims;
+        let ratio = quantization_options.ratio as u16;
+        let n = raw.len();
+        let m = std::cmp::min(n, quantization_options.sample as usize);
+        let samples = {
+            let f = sample(&mut thread_rng(), n, m).into_vec();
+            let mut samples = Vec2::<S>::new(options.vector.dims, m);
+            for i in 0..m {
+                samples[i].copy_from_slice(&raw[f[i]]);
+            }
+            samples
+        };
+        let width = dims.div_ceil(ratio);
+        let mut centroids = vec![S::Scalar::zero(); 256 * dims as usize];
+        for i in 0..width {
+            let subdims = std::cmp::min(ratio, dims - ratio * i);
+            let mut subsamples = Vec2::<S::L2>::new(subdims, m as usize);
+            for j in 0..m {
+                let src = &samples[j][(i * ratio) as usize..][..subdims as usize];
+                subsamples[j].copy_from_slice(src);
+            }
+            let mut k_means = ElkanKMeans::<S::L2>::new(256, subsamples);
+            for _ in 0..25 {
+                if k_means.iterate() {
+                    break;
+                }
+            }
+            let centroid = k_means.finish();
+            for j in 0u8..=255 {
+                centroids[j as usize * dims as usize..][(i * ratio) as usize..][..subdims as usize]
+                    .copy_from_slice(&centroid[j as usize]);
+            }
+        }
+        let mut codes = vec![0u8; n * width as usize];
+        codes
+            .par_chunks_mut(width as usize)
+            .enumerate()
+            .for_each(|(id, v)| {
+                let vector = raw[id].to_vec();
+                let width = dims.div_ceil(ratio);
+                for i in 0..width {
+                    let subdims = std::cmp::min(ratio, dims - ratio * i);
+                    let mut minimal = F32::infinity();
+                    let mut target = 0u8;
+                    let left = &vector[(i * ratio) as usize..][..subdims as usize];
+                    for j in 0u8..=255 {
+                        let right = &centroids[j as usize * dims as usize..]
+                            [(i * ratio) as usize..][..subdims as usize];
+                        let dis = S::L2::distance(left, right);
+                        if dis < minimal {
+                            minimal = dis;
+                            target = j;
+                        }
+                    }
+                    v[i as usize] = target;
+                }
+            });
+        sync_dir(&path);
+        std::fs::write(
+            path.join("centroids"),
+            serde_json::to_string(&centroids).unwrap(),
+        )
+        .unwrap();
+        let codes = MmapArray::create(path.join("codes"), codes.into_iter());
         Self {
             dims,
             ratio,

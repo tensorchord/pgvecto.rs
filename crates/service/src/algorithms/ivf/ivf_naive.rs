@@ -15,7 +15,8 @@ use crate::utils::mmap_array::MmapArray;
 use crate::utils::vec2::Vec2;
 use rand::seq::index::sample;
 use rand::thread_rng;
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
+use rayon::slice::ParallelSliceMut;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::create_dir;
@@ -151,10 +152,13 @@ pub fn make<S: G>(
     let m = std::cmp::min(nsample, n);
     let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
     let mut samples = Vec2::new(dims, m as usize);
-    for i in 0..m {
-        samples[i as usize].copy_from_slice(raw.vector(f[i as usize] as u32));
-        S::elkan_k_means_normalize(&mut samples[i as usize]);
-    }
+    samples
+        .par_chunks_mut(dims as usize)
+        .enumerate()
+        .for_each(|(i, v)| {
+            v.copy_from_slice(raw.vector(f[i] as u32));
+            S::elkan_k_means_normalize(v);
+        });
     let mut k_means = ElkanKMeans::new(nlist as usize, samples);
     for _ in 0..least_iterations {
         k_means.iterate();
