@@ -87,6 +87,11 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
+            RpcPacket::Upgrade {} => RpcHandle::Upgrade {
+                x: Upgrade {
+                    socket: self.socket,
+                },
+            },
         })
     }
 }
@@ -131,6 +136,9 @@ pub enum RpcHandle {
         vector: DynamicVector,
         opts: SearchOptions,
         x: Vbase,
+    },
+    Upgrade {
+        x: Upgrade,
     },
 }
 
@@ -357,5 +365,23 @@ impl VbaseNext {
         Ok(VbaseHandler {
             socket: self.socket,
         })
+    }
+}
+
+pub struct Upgrade {
+    socket: ServerSocket,
+}
+
+impl Upgrade {
+    pub fn leave(mut self) -> Result<RpcHandler, ConnectionError> {
+        let packet = upgrade::UpgradePacket::Leave {};
+        self.socket.ok(packet)?;
+        Ok(RpcHandler {
+            socket: self.socket,
+        })
+    }
+    #[allow(dead_code)]
+    pub fn reset(mut self, err: ServiceError) -> Result<!, ConnectionError> {
+        self.socket.err(err)
     }
 }

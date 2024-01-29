@@ -292,6 +292,13 @@ IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
 AS 'MODULE_PATHNAME', '_vectors_typmod_in_wrapper';
 
+-- src/index/functions.rs:4
+-- vectors::index::functions::_vectors_pgvectors_upgrade
+CREATE  FUNCTION vectors."_vectors_pgvectors_upgrade"() RETURNS void
+IMMUTABLE STRICT PARALLEL SAFE
+LANGUAGE c /* Rust */
+AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
+
 -- src/index/views.rs:5
 -- vectors::index::views::_vectors_index_stat
 CREATE  FUNCTION vectors."_vectors_index_stat"(
@@ -576,6 +583,9 @@ CREATE OPERATOR <=> (
 );
 
 -- List of functions
+
+CREATE FUNCTION pgvectors_upgrade() RETURNS void
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 
 -- List of casts
 

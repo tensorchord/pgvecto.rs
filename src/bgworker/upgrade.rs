@@ -54,14 +54,21 @@ pub fn upgrade() {
 
 fn session(handler: RpcHandler) -> Result<(), ConnectionError> {
     use crate::ipc::server::RpcHandle;
-    match handler.handle()? {
-        RpcHandle::Commit { x, .. } => x.reset(ServiceError::Upgrade)?,
-        RpcHandle::Abort { x, .. } => x.reset(ServiceError::Upgrade)?,
-        RpcHandle::Create { x, .. } => x.reset(ServiceError::Upgrade)?,
-        RpcHandle::Insert { x, .. } => x.reset(ServiceError::Upgrade)?,
-        RpcHandle::Delete { x, .. } => x.reset(ServiceError::Upgrade)?,
-        RpcHandle::Stat { x, .. } => x.reset(ServiceError::Upgrade)?,
-        RpcHandle::Basic { x, .. } => x.reset(ServiceError::Upgrade)?,
-        RpcHandle::Vbase { x, .. } => x.reset(ServiceError::Upgrade)?,
+    let mut handler = handler;
+    loop {
+        match handler.handle()? {
+            RpcHandle::Commit { x, .. } => x.reset(ServiceError::Upgrade)?,
+            RpcHandle::Abort { x, .. } => x.reset(ServiceError::Upgrade)?,
+            RpcHandle::Create { x, .. } => x.reset(ServiceError::Upgrade)?,
+            RpcHandle::Insert { x, .. } => x.reset(ServiceError::Upgrade)?,
+            RpcHandle::Delete { x, .. } => x.reset(ServiceError::Upgrade)?,
+            RpcHandle::Stat { x, .. } => x.reset(ServiceError::Upgrade)?,
+            RpcHandle::Basic { x, .. } => x.reset(ServiceError::Upgrade)?,
+            RpcHandle::Vbase { x, .. } => x.reset(ServiceError::Upgrade)?,
+            RpcHandle::Upgrade { x } => {
+                let _ = std::fs::remove_dir_all("./pg_vectors");
+                handler = x.leave()?;
+            }
+        }
     }
 }

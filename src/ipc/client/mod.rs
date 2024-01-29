@@ -132,6 +132,11 @@ impl ClientGuard<Rpc> {
         let vbase::VbaseErrorPacket {} = self.socket.recv().friendly();
         ClientGuard::map(self)
     }
+    pub fn upgrade(&mut self) {
+        let packet = RpcPacket::Upgrade {};
+        self.socket.ok(packet).friendly();
+        let upgrade::UpgradePacket::Leave {} = self.socket.recv().friendly();
+    }
 }
 
 impl ClientLike for Rpc {

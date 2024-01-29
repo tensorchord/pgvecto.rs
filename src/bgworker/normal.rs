@@ -204,6 +204,10 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
                     }
                 }
             }
+            // admin
+            RpcHandle::Upgrade { x } => {
+                handler = x.leave()?;
+            }
         }
     }
 }
