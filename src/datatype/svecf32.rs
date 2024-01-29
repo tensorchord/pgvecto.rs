@@ -434,7 +434,7 @@ fn svector_from_kv_string(dims: i32, input: &str) -> SVecf32Output {
         Ok(x) => x,
         Err(_) => SessionError::BadValueDimensions.friendly(),
     };
-    if vector.len() > 0 && vector[vector.len() - 1].index >= dims as u32 {
+    if !vector.is_empty() && vector[vector.len() - 1].index >= dims as u32 {
         SessionError::BadValueDimensions.friendly();
     }
     SVecf32::new_in_postgres(&vector, dims)
