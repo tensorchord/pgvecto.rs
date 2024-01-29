@@ -8,6 +8,7 @@ use self::ivf::{IvfIndexing, IvfIndexingOptions};
 use super::segments::growing::GrowingSegment;
 use super::segments::sealed::SealedSegment;
 use super::IndexOptions;
+use crate::algorithms::quantization::QuantizationOptions;
 use crate::index::SearchOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -44,6 +45,14 @@ impl IndexingOptions {
             unreachable!()
         };
         x
+    }
+    pub fn has_quantization(&self) -> bool {
+        let option = match self {
+            Self::Flat(x) => &x.quantization,
+            Self::Ivf(x) => &x.quantization,
+            Self::Hnsw(x) => &x.quantization,
+        };
+        !matches!(option, QuantizationOptions::Trivial(_))
     }
 }
 

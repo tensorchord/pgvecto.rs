@@ -26,6 +26,7 @@ pub struct SVecf32 {
     kind: u8,
     reserved: u8,
     dims: u16,
+    padding: u16,
     phantom: [SparseF32Element; 0],
 }
 
@@ -50,6 +51,7 @@ impl SVecf32 {
             std::ptr::addr_of_mut!((*ptr).dims).write(dims);
             std::ptr::addr_of_mut!((*ptr).kind).write(2);
             std::ptr::addr_of_mut!((*ptr).reserved).write(0);
+            std::ptr::addr_of_mut!((*ptr).padding).write(0);
             std::ptr::addr_of_mut!((*ptr).len).write(slice.len() as u16);
             std::ptr::copy_nonoverlapping(slice.as_ptr(), (*ptr).phantom.as_mut_ptr(), slice.len());
             SVecf32Output(NonNull::new(ptr).unwrap())
@@ -216,7 +218,7 @@ impl IntoDatum for SVecf32Output {
     }
 
     fn type_oid() -> Oid {
-        pgrx::wrappers::regtypein("vectors.svecf32")
+        pgrx::wrappers::regtypein("vectors.svector")
     }
 }
 
@@ -314,13 +316,175 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
 fn _vectors_svecf32_out(vector: SVecf32Input<'_>) -> CString {
     let mut buffer = String::new();
     buffer.push('[');
-    let mut iter = vector.iter();
+    let mut index = 0;
+    let mut iter = expand_sparse(&vector);
     if let Some(x) = iter.next() {
         buffer.push_str(format!("{}", x).as_str());
+        index += 1;
     }
     for x in iter {
         buffer.push_str(format!(", {}", x).as_str());
+        index += 1;
+    }
+    while index < vector.dims() {
+        buffer.push_str(", 0");
+        index += 1;
     }
     buffer.push(']');
     CString::new(buffer).unwrap()
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn svector_from_kv_string(dims: i32, input: &str) -> SVecf32Output {
+    fn solve<T>(option: Option<T>, hint: &str) -> T {
+        if let Some(x) = option {
+            x
+        } else {
+            SessionError::BadLiteral {
+                hint: hint.to_string(),
+            }
+            .friendly()
+        }
+    }
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    enum State {
+        Start,
+        Stop,
+        MatchingLeftBracket,
+        MatchingComma,
+        MatchingKey,
+        MatchingValue(u16),
+    }
+    use State::*;
+    let input = input.as_bytes();
+    let mut vector = Vec::<SparseF32Element>::new();
+    let mut state = Start;
+    let mut token: Option<String> = None;
+    for &c in input {
+        match (state, c) {
+            (Start, b'[') => {
+                state = MatchingLeftBracket;
+            }
+            (MatchingLeftBracket, b'{') => {
+                state = MatchingKey;
+            }
+            (
+                MatchingKey | MatchingValue(_),
+                b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | b'.' | b'+' | b'-',
+            ) => {
+                let token = token.get_or_insert(String::new());
+                token.push(char::from_u32(c as u32).unwrap());
+            }
+            (MatchingKey, b':') => {
+                let token = solve(token.take(), "Expect a number.");
+                let key: u16 = solve(token.parse().ok(), "Bad number.");
+                state = MatchingValue(key);
+            }
+            (MatchingValue(key), b'}') => {
+                let token = solve(token.take(), "Expect a number.");
+                let value: F32 = solve(token.parse().ok(), "Bad number.");
+                if !value.is_zero() {
+                    vector.push(SparseF32Element {
+                        index: key as u32,
+                        value,
+                    });
+                }
+                state = MatchingComma;
+            }
+            (MatchingComma, b',') => {
+                state = MatchingLeftBracket;
+            }
+            (MatchingComma, b']') => {
+                if let Some(token) = token.take() {
+                    SessionError::BadLiteral {
+                        hint: format!("Unexpected token {}.", token),
+                    }
+                    .friendly()
+                }
+                state = Stop;
+            }
+            (_, b' ') => {}
+            _ => {
+                SessionError::BadLiteral {
+                    hint: format!("Bad character with ascii {:#x}.", c),
+                }
+                .friendly();
+            }
+        }
+    }
+    if state != Stop {
+        SessionError::BadLiteral {
+            hint: "Bad sequence.".to_string(),
+        }
+        .friendly();
+    }
+
+    vector.sort_unstable_by_key(|x| x.index);
+    if vector.len() > 1 {
+        for i in 0..vector.len() - 2 {
+            if vector[i].index == vector[i + 1].index {
+                SessionError::Custom {
+                    message: "Duplicated index.",
+                }
+                .friendly();
+            }
+        }
+    }
+    let dims: u16 = match dims.try_into() {
+        Ok(x) => x,
+        Err(_) => SessionError::BadValueDimensions.friendly(),
+    };
+    if vector.len() > 0 && vector[vector.len() - 1].index >= dims as u32 {
+        SessionError::BadValueDimensions.friendly();
+    }
+    SVecf32::new_in_postgres(&vector, dims)
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn svector_from_split_array(
+    dims: i32,
+    index: pgrx::Array<i32>,
+    value: pgrx::Array<f32>,
+) -> SVecf32Output {
+    let dims: u16 = match dims.try_into() {
+        Ok(x) => x,
+        Err(_) => SessionError::BadValueDimensions.friendly(),
+    };
+    if index.len() != value.len() {
+        SessionError::Custom {
+            message: "Lengths of index and value are not matched.",
+        }
+        .friendly();
+    }
+    if index.contains_nulls() || value.contains_nulls() {
+        SessionError::Custom {
+            message: "Index or value contains nulls.",
+        }
+        .friendly();
+    }
+    let mut vector: Vec<SparseF32Element> = index
+        .iter_deny_null()
+        .zip(value.iter_deny_null())
+        .map(|(index, value)| {
+            if index < 0 || index >= dims as i32 {
+                SessionError::BadValueDimensions.friendly();
+            }
+            SparseF32Element {
+                index: index as u32,
+                value: F32(value),
+            }
+        })
+        .collect();
+    vector.sort_unstable_by_key(|x| x.index);
+    if vector.len() > 1 {
+        for i in 0..vector.len() - 2 {
+            if vector[i].index == vector[i + 1].index {
+                SessionError::Custom {
+                    message: "Duplicated index.",
+                }
+                .friendly();
+            }
+        }
+    }
+    SVecf32::new_in_postgres(&vector, dims)
 }

@@ -11,6 +11,11 @@ INFORMATION: reason = {validation:?}\
 ")]
     BadOption { validation: String },
     #[error("\
+The given index option is conflicted.
+INFORMATION: reason = {message:?}\
+")]
+    ConflictOption { message: String },
+    #[error("\
 The index is not existing in the background worker.
 ADVICE: Drop or rebuild the index.\
 ")]

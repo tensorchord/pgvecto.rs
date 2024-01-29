@@ -16,8 +16,8 @@ fn _vectors_svecf32_operator_add(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -
     }
 
     let mut v = Vec::<SparseF32Element>::with_capacity(std::cmp::max(lhs.len(), rhs.len()));
-    let mut lhs_iter = lhs.data().iter().peekable();
-    let mut rhs_iter = rhs.data().iter().peekable();
+    let mut lhs_iter = lhs.iter().peekable();
+    let mut rhs_iter = rhs.iter().peekable();
     while let (Some(&lhs), Some(&rhs)) = (lhs_iter.peek(), rhs_iter.peek()) {
         match lhs.index.cmp(&rhs.index) {
             std::cmp::Ordering::Less => {
@@ -58,8 +58,8 @@ fn _vectors_svecf32_operator_minus(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>)
     }
 
     let mut v = Vec::<SparseF32Element>::with_capacity(std::cmp::max(lhs.len(), rhs.len()));
-    let mut lhs_iter = lhs.data().iter().peekable();
-    let mut rhs_iter = rhs.data().iter().peekable();
+    let mut lhs_iter = lhs.iter().peekable();
+    let mut rhs_iter = rhs.iter().peekable();
     while let (Some(&lhs), Some(&rhs)) = (lhs_iter.peek(), rhs_iter.peek()) {
         match lhs.index.cmp(&rhs.index) {
             std::cmp::Ordering::Less => {
@@ -78,7 +78,10 @@ fn _vectors_svecf32_operator_minus(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>)
                 rhs_iter.next();
             }
             std::cmp::Ordering::Greater => {
-                v.push(*rhs);
+                v.push(SparseF32Element {
+                    index: rhs.index,
+                    value: -rhs.value,
+                });
                 rhs_iter.next();
             }
         }

@@ -70,6 +70,10 @@ INFORMATION: left_dimensions = {left_dimensions}, right_dimensions = {right_dime
         left_dimensions: u16,
         right_dimensions: u16,
     },
+    #[error("{message}")]
+    Custom {
+        message: &'static str,
+    },
 }
 
 impl FriendlyError for SessionError {}

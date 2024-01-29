@@ -131,9 +131,10 @@ impl<S: G> ProductQuantization<S> {
     where
         F: Fn(u32, &mut [S::Scalar]),
     {
-        if options.vector.k == Kind::SparseF32 {
-            panic!("Scalar quantization is not supported for sparse vectors");
-        }
+        debug_assert!(
+            options.vector.k != Kind::SparseF32,
+            "Product quantization is not supported for sparse vectors."
+        );
 
         std::fs::create_dir(path).unwrap();
         let quantization_options = quantization_options.unwrap_product_quantization();
