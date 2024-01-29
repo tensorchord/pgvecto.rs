@@ -149,6 +149,10 @@ CREATE FUNCTION "_vectors_ai_embedding_vector"(
 STRICT VOLATILE
 LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_ai_embedding_vector_wrapper';
 
+CREATE FUNCTION "_vectors_pgvectors_upgrade"() RETURNS void
+IMMUTABLE STRICT PARALLEL SAFE
+LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
+
 CREATE FUNCTION "_vectors_index_stat"(
     "oid" oid
 ) RETURNS vector_index_stat
@@ -382,6 +386,9 @@ CREATE OPERATOR <=> (
 );
 
 -- List of functions
+
+CREATE FUNCTION pgvectors_upgrade() RETURNS void
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 
 -- List of casts
 
