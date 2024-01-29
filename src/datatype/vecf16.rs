@@ -54,6 +54,19 @@ impl Vecf16 {
             Vecf16Output(NonNull::new(ptr).unwrap())
         }
     }
+    pub fn new_zeroed_in_postgres(size: usize) -> Vecf16Output {
+        unsafe {
+            assert!(u16::try_from(size).is_ok());
+            let layout = Vecf16::layout(size);
+            let ptr = pgrx::pg_sys::palloc0(layout.size()) as *mut Vecf16;
+            ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
+            std::ptr::addr_of_mut!((*ptr).varlena).write(Vecf16::varlena(layout.size()));
+            std::ptr::addr_of_mut!((*ptr).kind).write(1);
+            std::ptr::addr_of_mut!((*ptr).reserved).write(0);
+            std::ptr::addr_of_mut!((*ptr).len).write(size as u16);
+            Vecf16Output(NonNull::new(ptr).unwrap())
+        }
+    }
     pub fn len(&self) -> usize {
         self.len as usize
     }
@@ -465,4 +478,36 @@ CREATE FUNCTION _vectors_vecf16_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
 fn _vectors_vecf16_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
     unreachable!()
+}
+
+#[pgrx::pg_extern(sql = "\
+CREATE FUNCTION _vectors_vecf16_send(vecf16) RETURNS bytea
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
+fn _vectors_vecf16_send(vector: Vecf16Input<'_>) -> Datum {
+    use pgrx::pg_sys::StringInfoData;
+    unsafe {
+        let mut buf = StringInfoData::default();
+        let len = vector.len;
+        let bytes = std::mem::size_of::<F16>() * len as usize;
+        pgrx::pg_sys::pq_begintypsend(&mut buf);
+        pgrx::pg_sys::pq_sendbytes(&mut buf, (&len) as *const u16 as _, 2);
+        pgrx::pg_sys::pq_sendbytes(&mut buf, vector.data().as_ptr() as _, bytes as _);
+        Datum::from(pgrx::pg_sys::pq_endtypsend(&mut buf))
+    }
+}
+
+#[pgrx::pg_extern(sql = "\
+CREATE FUNCTION _vectors_vecf16_recv(internal, oid, integer) RETURNS vecf16
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
+fn _vectors_vecf16_recv(internal: pgrx::Internal, _oid: Oid, _typmod: i32) -> Vecf16Output {
+    use pgrx::pg_sys::StringInfo;
+    unsafe {
+        let buf: StringInfo = internal.into_datum().unwrap().cast_mut_ptr();
+        let len = (pgrx::pg_sys::pq_getmsgbytes(buf, 2) as *const u16).read_unaligned();
+        let bytes = std::mem::size_of::<F16>() * len as usize;
+        let ptr = pgrx::pg_sys::pq_getmsgbytes(buf, bytes as _);
+        let mut output = Vecf16::new_zeroed_in_postgres(len as usize);
+        std::ptr::copy(ptr, output.data_mut().as_mut_ptr() as _, bytes);
+        output
+    }
 }
