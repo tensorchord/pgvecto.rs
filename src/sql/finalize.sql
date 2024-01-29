@@ -225,6 +225,9 @@ CREATE OPERATOR <=> (
 
 -- List of functions
 
+CREATE FUNCTION pgvectors_upgrade() RETURNS void
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
+
 -- List of casts
 
 CREATE CAST (real[] AS vector)

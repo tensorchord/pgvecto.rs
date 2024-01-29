@@ -51,6 +51,10 @@ CREATE FUNCTION "_vectors_ai_embedding_vector"(
 STRICT VOLATILE
 LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_ai_embedding_vector_wrapper';
 
+CREATE FUNCTION "_vectors_pgvectors_upgrade"() RETURNS void
+IMMUTABLE STRICT PARALLEL SAFE
+LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
+
 -- List of data types
 
 ALTER FUNCTION typmod_in(cstring[]) RENAME TO _vectors_typmod_in;
@@ -300,6 +304,9 @@ IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_cosine_wrapper';
 
 -- List of functions
+
+CREATE FUNCTION pgvectors_upgrade() RETURNS void
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 
 -- List of casts
 

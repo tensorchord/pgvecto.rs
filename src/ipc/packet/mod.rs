@@ -5,6 +5,7 @@ pub mod create;
 pub mod delete;
 pub mod insert;
 pub mod stat;
+pub mod upgrade;
 pub mod vbase;
 
 use serde::{Deserialize, Serialize};
@@ -48,4 +49,6 @@ pub enum RpcPacket {
         vector: DynamicVector,
         opts: SearchOptions,
     },
+    // admin
+    Upgrade {},
 }

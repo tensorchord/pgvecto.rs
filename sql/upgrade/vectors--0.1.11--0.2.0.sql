@@ -149,6 +149,10 @@ CREATE FUNCTION "_vectors_cast_array_to_vecf32"(
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_cast_array_to_vecf32_wrapper';
 
+CREATE FUNCTION "_vectors_pgvectors_upgrade"() RETURNS void
+IMMUTABLE STRICT PARALLEL SAFE
+LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
+
 CREATE FUNCTION "_vectors_ai_embedding_vector"(
     "input" TEXT
 ) RETURNS vector
@@ -389,6 +393,9 @@ CREATE OPERATOR <=> (
 );
 
 -- List of functions
+
+CREATE FUNCTION pgvectors_upgrade() RETURNS void
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 
 -- List of casts
 
