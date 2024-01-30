@@ -4,11 +4,13 @@ use crate::index::Index;
 use crate::index::IndexOptions;
 use crate::index::IndexStat;
 use crate::index::IndexView;
-use crate::index::OutdatedError;
 use crate::index::SearchOptions;
 use crate::prelude::*;
 use std::path::PathBuf;
 use std::sync::Arc;
+
+#[cfg(test)]
+use mockall::mock;
 
 #[derive(Clone)]
 pub enum Instance {
@@ -19,6 +21,21 @@ pub enum Instance {
     F16Dot(Arc<Index<F16Dot>>),
     F16L2(Arc<Index<F16L2>>),
     Upgrade,
+}
+
+// #[derive(Clone)] is not supported by automock
+#[cfg(test)]
+mock! {
+    pub Instance {
+        pub fn create(path: PathBuf, options: IndexOptions) -> Result<Self, ServiceError>;
+        pub fn open(path: PathBuf) -> Self;
+        pub fn refresh(&self);
+        pub fn view(&self) -> Option<InstanceView>;
+        pub fn stat(&self) -> IndexStat;
+    }
+    impl Clone for Instance {
+        fn clone(&self) -> Self;
+    }
 }
 
 impl Instance {
@@ -116,16 +133,39 @@ pub enum InstanceView {
     F16L2(Arc<IndexView<F16L2>>),
 }
 
+// `generic lifetime as part of the return type` is not supported by mockall
+// rewrite its lifetime for test
+#[cfg(test)]
+mock! {
+    pub InstanceView {
+        pub fn basic<F: Fn(Pointer) -> bool + Clone + 'static>(
+            &self,
+            vector: &DynamicVector,
+            opts: &SearchOptions,
+            filter: F,
+        ) -> Result<Box<dyn Iterator<Item = Pointer>>, ServiceError>;
+        pub fn vbase<F: FnMut(Pointer) -> bool + Clone + 'static>(
+            &self,
+            vector: &DynamicVector,
+            opts: &SearchOptions,
+            filter: F,
+        ) -> Result<Box<dyn Iterator<Item = Pointer>>, ServiceError>;
+        pub fn insert(&self, vector: DynamicVector, pointer: Pointer) -> Result<(), ServiceError>;
+        pub fn delete<F: FnMut(Pointer) -> bool + 'static>(&self, f: F);
+        pub fn flush(&self);
+    }
+}
+
 impl InstanceView {
     pub fn basic<'a, F: Fn(Pointer) -> bool + Clone + 'a>(
         &'a self,
         vector: &'a DynamicVector,
         opts: &'a SearchOptions,
         filter: F,
-    ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
+    ) -> Result<Box<dyn Iterator<Item = Pointer> + 'a>, ServiceError> {
         match (self, vector) {
             (InstanceView::F32Cos(x), DynamicVector::F32(vector)) => {
-                Ok(Box::new(x.basic(vector, opts, filter)?) as Box<dyn Iterator<Item = Pointer>>)
+                Ok(Box::new(x.basic(vector, opts, filter)?))
             }
             (InstanceView::F32Dot(x), DynamicVector::F32(vector)) => {
                 Ok(Box::new(x.basic(vector, opts, filter)?))
@@ -150,7 +190,7 @@ impl InstanceView {
         vector: &'a DynamicVector,
         opts: &'a SearchOptions,
         filter: F,
-    ) -> Result<impl Iterator<Item = Pointer> + '_, ServiceError> {
+    ) -> Result<Box<dyn Iterator<Item = Pointer> + 'a>, ServiceError> {
         match (self, vector) {
             (InstanceView::F32Cos(x), DynamicVector::F32(vector)) => {
                 Ok(Box::new(x.vbase(vector, opts, filter)?) as Box<dyn Iterator<Item = Pointer>>)
@@ -173,11 +213,7 @@ impl InstanceView {
             _ => Err(ServiceError::Unmatched),
         }
     }
-    pub fn insert(
-        &self,
-        vector: DynamicVector,
-        pointer: Pointer,
-    ) -> Result<Result<(), OutdatedError>, ServiceError> {
+    pub fn insert(&self, vector: DynamicVector, pointer: Pointer) -> Result<(), ServiceError> {
         match (self, vector) {
             (InstanceView::F32Cos(x), DynamicVector::F32(vector)) => x.insert(vector, pointer),
             (InstanceView::F32Dot(x), DynamicVector::F32(vector)) => x.insert(vector, pointer),

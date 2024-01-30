@@ -34,4 +34,6 @@ The extension is upgraded so this index is outdated.
 ADVICE: Rebuild the index. Please read `https://docs.pgvecto.rs/admin/upgrading.html`.\
 ")]
     Upgrade2,
+    #[error("Recoverable: The index view is outdated.")]
+    OutdatedError,
 }

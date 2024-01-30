@@ -1,6 +1,5 @@
 use crate::ipc::server::RpcHandler;
 use crate::ipc::ConnectionError;
-use service::index::OutdatedError;
 use service::prelude::ServiceError;
 use service::worker::Worker;
 use std::sync::Arc;
@@ -72,7 +71,7 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
             } => {
                 let view = worker.view();
                 for handle in pending_deletes {
-                    worker.instance_destroy(handle);
+                    worker.index_destroy(handle);
                 }
                 for handle in pending_dirty {
                     if let Some(instance) = view.get(handle) {
@@ -85,12 +84,12 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
             }
             RpcHandle::Abort { pending_deletes, x } => {
                 for handle in pending_deletes {
-                    worker.instance_destroy(handle);
+                    worker.index_destroy(handle);
                 }
                 handler = x.leave()?;
             }
             RpcHandle::Create { handle, options, x } => {
-                match worker.instance_create(handle, options) {
+                match worker.index_create(handle, options) {
                     Ok(()) => (),
                     Err(e) => x.reset(e)?,
                 };
@@ -113,8 +112,8 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
                         None => x.reset(ServiceError::Upgrade2)?,
                     };
                     match instance_view.insert(vector.clone(), pointer) {
-                        Ok(Ok(())) => break,
-                        Ok(Err(OutdatedError)) => instance.refresh(),
+                        Ok(()) => break,
+                        Err(ServiceError::OutdatedError) => instance.refresh(),
                         Err(e) => x.reset(e)?,
                     }
                 }

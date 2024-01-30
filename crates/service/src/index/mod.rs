@@ -26,13 +26,8 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
-use thiserror::Error;
 use uuid::Uuid;
 use validator::Validate;
-
-#[derive(Debug, Error)]
-#[error("The index view is outdated.")]
-pub struct OutdatedError;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
@@ -448,11 +443,7 @@ impl<S: G> IndexView<S> {
             }
         }))
     }
-    pub fn insert(
-        &self,
-        vector: Vec<S::Scalar>,
-        pointer: Pointer,
-    ) -> Result<Result<(), OutdatedError>, ServiceError> {
+    pub fn insert(&self, vector: Vec<S::Scalar>, pointer: Pointer) -> Result<(), ServiceError> {
         if self.options.vector.dims as usize != vector.len() {
             return Err(ServiceError::Unmatched);
         }
@@ -460,11 +451,11 @@ impl<S: G> IndexView<S> {
         if let Some((_, growing)) = self.write.as_ref() {
             use crate::index::segments::growing::GrowingSegmentInsertError;
             if let Err(GrowingSegmentInsertError) = growing.insert(vector, payload) {
-                return Ok(Err(OutdatedError));
+                return Err(ServiceError::OutdatedError);
             }
-            Ok(Ok(()))
+            Ok(())
         } else {
-            Ok(Err(OutdatedError))
+            Err(ServiceError::OutdatedError)
         }
     }
     pub fn delete<F: FnMut(Pointer) -> bool>(&self, mut f: F) {

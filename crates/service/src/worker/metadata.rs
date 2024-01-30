@@ -3,6 +3,9 @@ use std::error::Error;
 use std::path::Path;
 use thiserror::Error;
 
+#[cfg(test)]
+use mockall::automock;
+
 #[derive(Debug, Error)]
 pub enum MetadataError {
     #[error("Invalid version.")]
@@ -22,8 +25,9 @@ impl Metadata {
     const SOFT_VERSION: u64 = 1;
 }
 
+#[cfg_attr(test, automock)]
 impl Metadata {
-    pub fn write(path: impl AsRef<Path>) {
+    pub fn write<P: AsRef<Path> + 'static>(path: P) {
         let metadata = Metadata {
             version: Some(Self::VERSION),
             soft_version: Some(Self::SOFT_VERSION),
@@ -31,7 +35,7 @@ impl Metadata {
         let contents = serde_json::to_string(&metadata).unwrap();
         std::fs::write(path, contents).unwrap();
     }
-    pub fn read(path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
+    pub fn read<P: AsRef<Path> + 'static>(path: P) -> Result<(), Box<dyn Error>> {
         use MetadataError::*;
         let contents = std::fs::read_to_string(path)?;
         let metadata = serde_json::from_str::<Metadata>(&contents)?;
