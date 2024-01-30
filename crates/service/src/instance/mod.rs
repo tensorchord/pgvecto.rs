@@ -4,6 +4,7 @@ use crate::index::Index;
 use crate::index::IndexOptions;
 use crate::index::IndexStat;
 use crate::index::IndexView;
+use crate::index::InsertError;
 use crate::index::SearchOptions;
 use crate::prelude::*;
 use std::path::PathBuf;
@@ -150,7 +151,7 @@ mock! {
             opts: &SearchOptions,
             filter: F,
         ) -> Result<Box<dyn Iterator<Item = Pointer>>, ServiceError>;
-        pub fn insert(&self, vector: DynamicVector, pointer: Pointer) -> Result<(), ServiceError>;
+        pub fn insert(&self, vector: DynamicVector, pointer: Pointer) -> Result<(), InsertError>;
         pub fn delete<F: FnMut(Pointer) -> bool + 'static>(&self, f: F);
         pub fn flush(&self);
     }
@@ -213,7 +214,7 @@ impl InstanceView {
             _ => Err(ServiceError::Unmatched),
         }
     }
-    pub fn insert(&self, vector: DynamicVector, pointer: Pointer) -> Result<(), ServiceError> {
+    pub fn insert(&self, vector: DynamicVector, pointer: Pointer) -> Result<(), InsertError> {
         match (self, vector) {
             (InstanceView::F32Cos(x), DynamicVector::F32(vector)) => x.insert(vector, pointer),
             (InstanceView::F32Dot(x), DynamicVector::F32(vector)) => x.insert(vector, pointer),
@@ -221,7 +222,7 @@ impl InstanceView {
             (InstanceView::F16Cos(x), DynamicVector::F16(vector)) => x.insert(vector, pointer),
             (InstanceView::F16Dot(x), DynamicVector::F16(vector)) => x.insert(vector, pointer),
             (InstanceView::F16L2(x), DynamicVector::F16(vector)) => x.insert(vector, pointer),
-            _ => Err(ServiceError::Unmatched),
+            _ => Err(InsertError::Service(ServiceError::Unmatched)),
         }
     }
     pub fn delete<F: FnMut(Pointer) -> bool>(&self, f: F) {

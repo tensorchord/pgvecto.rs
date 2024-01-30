@@ -26,8 +26,17 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
+use thiserror::Error;
 use uuid::Uuid;
 use validator::Validate;
+
+#[derive(Debug, Error)]
+pub enum InsertError {
+    #[error("Recoverable: the index view is outdated.")]
+    Outdated,
+    #[error("The service is unavailable.")]
+    Service(ServiceError),
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
@@ -443,19 +452,19 @@ impl<S: G> IndexView<S> {
             }
         }))
     }
-    pub fn insert(&self, vector: Vec<S::Scalar>, pointer: Pointer) -> Result<(), ServiceError> {
+    pub fn insert(&self, vector: Vec<S::Scalar>, pointer: Pointer) -> Result<(), InsertError> {
         if self.options.vector.dims as usize != vector.len() {
-            return Err(ServiceError::Unmatched);
+            return Err(InsertError::Service(ServiceError::Unmatched));
         }
         let payload = (pointer.as_u48() << 16) | self.delete.version(pointer) as Payload;
         if let Some((_, growing)) = self.write.as_ref() {
             use crate::index::segments::growing::GrowingSegmentInsertError;
             if let Err(GrowingSegmentInsertError) = growing.insert(vector, payload) {
-                return Err(ServiceError::OutdatedError);
+                return Err(InsertError::Outdated);
             }
             Ok(())
         } else {
-            Err(ServiceError::OutdatedError)
+            Err(InsertError::Outdated)
         }
     }
     pub fn delete<F: FnMut(Pointer) -> bool>(&self, mut f: F) {

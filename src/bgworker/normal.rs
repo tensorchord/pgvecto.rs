@@ -1,5 +1,6 @@
 use crate::ipc::server::RpcHandler;
 use crate::ipc::ConnectionError;
+use service::index::InsertError;
 use service::prelude::ServiceError;
 use service::worker::Worker;
 use std::sync::Arc;
@@ -113,8 +114,8 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
                     };
                     match instance_view.insert(vector.clone(), pointer) {
                         Ok(()) => break,
-                        Err(ServiceError::OutdatedError) => instance.refresh(),
-                        Err(e) => x.reset(e)?,
+                        Err(InsertError::Outdated) => instance.refresh(),
+                        Err(InsertError::Service(e)) => x.reset(e)?,
                     }
                 }
                 handler = x.leave()?;
