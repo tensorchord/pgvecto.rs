@@ -1,0 +1,28 @@
+statement ok
+CREATE SCHEMA IF NOT EXISTS sqllogictest_out_of_search_path;
+
+statement ok
+SET search_path TO sqllogictest_out_of_search_path, vectors;
+
+statement ok
+CREATE TABLE t (val vectors.vector(3));
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM generate_series(1, 1000);
+
+statement ok
+CREATE INDEX sqllogictest_out_of_search_path_idx ON t USING vectors (val vectors.vector_l2_ops);
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0.5,0.5,0.5]' limit 10) t2;
+----
+10
+
+query T
+SELECT idx_status FROM vectors.pg_vector_index_stat WHERE indexname = 'sqllogictest_out_of_search_path_idx';
+----
+NORMAL
+
+statement ok
+DROP TABLE t;
+
