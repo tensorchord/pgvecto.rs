@@ -57,8 +57,12 @@ fn session(handler: RpcHandler) -> Result<(), ConnectionError> {
     let mut handler = handler;
     loop {
         match handler.handle()? {
-            RpcHandle::Commit { x, .. } => x.reset(ServiceError::Upgrade)?,
-            RpcHandle::Abort { x, .. } => x.reset(ServiceError::Upgrade)?,
+            RpcHandle::Commit { x, .. } => {
+                handler = x.leave()?;
+            }
+            RpcHandle::Abort { x, .. } => {
+                handler = x.leave()?;
+            }
             RpcHandle::Create { x, .. } => x.reset(ServiceError::Upgrade)?,
             RpcHandle::Insert { x, .. } => x.reset(ServiceError::Upgrade)?,
             RpcHandle::Delete { x, .. } => x.reset(ServiceError::Upgrade)?,

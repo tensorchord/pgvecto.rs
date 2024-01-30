@@ -154,6 +154,7 @@ impl Commit {
             socket: self.socket,
         })
     }
+    #[allow(dead_code)]
     pub fn reset(mut self, err: ServiceError) -> Result<!, ConnectionError> {
         self.socket.err(err)
     }
@@ -171,6 +172,7 @@ impl Abort {
             socket: self.socket,
         })
     }
+    #[allow(dead_code)]
     pub fn reset(mut self, err: ServiceError) -> Result<!, ConnectionError> {
         self.socket.err(err)
     }
