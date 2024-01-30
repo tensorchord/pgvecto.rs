@@ -37,9 +37,10 @@ SELECT '[1,2,3]'::vector::int[];
 statement error cannot cast type vector to numeric\[\]
 SELECT '[1,2,3]'::vector::numeric[];
 
-# cast unusual value to vector
-statement error assertion failed: !array.contains_nulls()
+query I
 SELECT '{NULL}'::real[]::vector;
+----
+[NaN]
 
 query I
 SELECT '{NaN, Infinity, -Infinity}'::real[]::vector;
@@ -51,7 +52,7 @@ SELECT '[3.4e38, -3.4e38, 3.5e38, -3.5e38]'::vector
 ----
 [340000000000000000000000000000000000000, -340000000000000000000000000000000000000, inf, -inf]
 
-statement error assertion failed: !array.is_empty()
+statement error dimensions of the vector are among 1 and 65535.
 SELECT '{}'::real[]::vector;
 
 statement error dimensions of the vector are among 1 and 65535.
