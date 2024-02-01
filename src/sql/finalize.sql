@@ -12,6 +12,13 @@ CREATE TYPE vector (
     ALIGNMENT = double
 );
 
+DO $$
+BEGIN
+    IF current_setting('server_version_num')::int >= 140000 THEN
+        ALTER TYPE vector SET (SUBSCRIPT = _vectors_vecf32_subscript);
+    END IF;
+END $$;
+
 CREATE TYPE vecf16 (
     INPUT = _vectors_vecf16_in,
     OUTPUT = _vectors_vecf16_out,
@@ -21,6 +28,13 @@ CREATE TYPE vecf16 (
     INTERNALLENGTH = VARIABLE,
     ALIGNMENT = double
 );
+
+DO $$
+BEGIN
+    IF current_setting('server_version_num')::int >= 140000 THEN
+		ALTER TYPE vecf16 SET (SUBSCRIPT = _vectors_vecf16_subscript);
+    END IF;
+END $$;
 
 CREATE TYPE vector_index_stat AS (
     idx_status TEXT,
