@@ -9,7 +9,7 @@ pub enum Mode {
 
 pub static ENABLE_INDEX: GucSetting<bool> = GucSetting::<bool>::new(true);
 
-pub static SEARCH_MODE: GucSetting<Mode> = GucSetting::<Mode>::new(Mode::basic);
+pub static SEARCH_MODE: GucSetting<Mode> = GucSetting::<Mode>::new(Mode::vbase);
 
 pub static ENABLE_PGVECTOR_COMPATIBILITY: GucSetting<bool> = GucSetting::<bool>::new(false);
 
