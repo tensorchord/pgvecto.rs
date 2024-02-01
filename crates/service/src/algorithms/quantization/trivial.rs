@@ -22,6 +22,16 @@ pub struct TrivialQuantization<S: G> {
     raw: Arc<Raw<S>>,
 }
 
+impl<S: G> TrivialQuantization<S> {
+    pub fn codes(&self, i: u32) -> &[S::Scalar] {
+        self.raw.vector(i)
+    }
+
+    pub fn set_codes(&mut self, raw: Arc<Raw<S>>) {
+        self.raw = raw;
+    }
+}
+
 impl<S: G> Quan<S> for TrivialQuantization<S> {
     fn create(_: PathBuf, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S>>) -> Self {
         Self { raw: raw.clone() }

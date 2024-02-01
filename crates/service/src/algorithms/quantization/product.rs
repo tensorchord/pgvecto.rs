@@ -72,11 +72,15 @@ unsafe impl<S: G> Send for ProductQuantization<S> {}
 unsafe impl<S: G> Sync for ProductQuantization<S> {}
 
 impl<S: G> ProductQuantization<S> {
-    fn codes(&self, i: u32) -> &[u8] {
+    pub fn codes(&self, i: u32) -> &[u8] {
         let width = self.dims.div_ceil(self.ratio);
         let s = i as usize * width as usize;
         let e = (i + 1) as usize * width as usize;
         &self.codes[s..e]
+    }
+
+    pub fn set_codes(&mut self, codes: MmapArray<u8>) {
+        self.codes = codes;
     }
 }
 
