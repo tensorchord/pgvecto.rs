@@ -1,8 +1,11 @@
 use crate::prelude::*;
+use crate::utils::cells::SyncUnsafeCell;
 use crate::utils::vec2::Vec2;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::{
+    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefMutIterator, ParallelIterator,
+};
 use rayon::slice::ParallelSliceMut;
 use std::ops::{Index, IndexMut};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -27,22 +30,28 @@ impl<S: G> ElkanKMeans<S> {
 
         let mut rand = StdRng::from_entropy();
         let mut centroids = Vec2::new(dims, c);
-        let mut lowerbound = Square::new(n, c);
+        let lowerbound = SyncUnsafeCell::new(Square::new(n, c));
         let mut upperbound = vec![F32::zero(); n];
         let mut assign = vec![0usize; n];
 
         centroids[0].copy_from_slice(&samples[rand.gen_range(0..n)]);
 
-        let mut weight = vec![F32::infinity(); n];
+        let weight = SyncUnsafeCell::new(vec![F32::infinity(); n]);
         for i in 0..c {
             let mut sum = F32::zero();
-            for j in 0..n {
+            (0..n).into_par_iter().for_each(|j| {
                 let dis = S::elkan_k_means_distance(&samples[j], &centroids[i]);
-                lowerbound[(j, i)] = dis;
-                if dis * dis < weight[j] {
-                    weight[j] = dis * dis;
+                unsafe {
+                    (&mut *lowerbound.get())[(j, i)] = dis;
                 }
-                sum += weight[j];
+                if dis * dis < weight.get_ref()[j] {
+                    unsafe {
+                        (&mut *weight.get())[j] = dis * dis;
+                    }
+                }
+            });
+            for j in 0..n {
+                sum += weight.get_ref()[j];
             }
             if i + 1 == c {
                 break;
@@ -50,7 +59,7 @@ impl<S: G> ElkanKMeans<S> {
             let index = 'a: {
                 let mut choice = sum * rand.gen_range(0.0..1.0);
                 for j in 0..(n - 1) {
-                    choice -= weight[j];
+                    choice -= weight.get_ref()[j];
                     if choice <= F32::zero() {
                         break 'a j;
                     }
@@ -64,7 +73,7 @@ impl<S: G> ElkanKMeans<S> {
             let mut minimal = F32::infinity();
             let mut target = 0;
             for j in 0..c {
-                let dis = lowerbound[(i, j)];
+                let dis = lowerbound.get_ref()[(i, j)];
                 if dis < minimal {
                     minimal = dis;
                     target = j;
@@ -73,6 +82,7 @@ impl<S: G> ElkanKMeans<S> {
             assign[i] = target;
             upperbound[i] = minimal;
         }
+        let lowerbound = lowerbound.get_ref().clone();
 
         Self {
             dims,
@@ -121,10 +131,7 @@ impl<S: G> ElkanKMeans<S> {
         let dims = self.dims;
         let samples = &self.samples;
         let rand = &mut self.rand;
-        let assign = &mut self.assign;
         let centroids = &mut self.centroids;
-        let lowerbound = &mut self.lowerbound;
-        let upperbound = &mut self.upperbound;
         let change = AtomicUsize::new(0);
         let n = samples.len();
         if n <= c {
@@ -132,20 +139,18 @@ impl<S: G> ElkanKMeans<S> {
         }
 
         // Step 1
-        let mut dist0 = Square::new(c, c);
+        let dist0 = SyncUnsafeCell::new(Square::new(c, c));
         let mut sp = vec![F32::zero(); c];
-        dist0.v.par_iter_mut().enumerate().for_each(|(ii, v)| {
-            let i = ii / c;
-            let j = ii % c;
-            if i <= j {
-                *v = S::elkan_k_means_distance(&centroids[i], &centroids[j]) * 0.5;
+        (0..c).into_par_iter().for_each(|i| {
+            for j in i + 1..c {
+                let dis = S::elkan_k_means_distance(&centroids[i], &centroids[j]) * 0.5;
+                unsafe {
+                    (&mut *dist0.get())[(i, j)] = dis;
+                    (&mut *dist0.get())[(j, i)] = dis;
+                }
             }
         });
-        for i in 1..c {
-            for j in 0..i - 1 {
-                dist0[(i, j)] = dist0[(j, i)];
-            }
-        }
+        let dist0 = dist0.get_ref().clone();
         for i in 0..c {
             let mut minimal = F32::infinity();
             for j in 0..c {
@@ -160,41 +165,54 @@ impl<S: G> ElkanKMeans<S> {
             sp[i] = minimal;
         }
 
-        upperbound
-            .par_iter_mut()
-            .zip(assign.par_iter_mut())
-            .zip(lowerbound.v.par_chunks_mut(c))
-            .enumerate()
-            .for_each(|(i, ((upperboundi, assigni), lowerboundi))| {
-                // Step 2
-                if *upperboundi > sp[*assigni] {
-                    let mut minimal = S::elkan_k_means_distance(&samples[i], &centroids[*assigni]);
-                    lowerboundi[*assigni] = minimal;
-                    *upperboundi = minimal;
-                    // Step 3
-                    for j in 0..c {
-                        if j == *assigni {
-                            continue;
+        let assign = SyncUnsafeCell::new(self.assign.clone());
+        let lowerbound = SyncUnsafeCell::new(self.lowerbound.clone());
+        let upperbound = SyncUnsafeCell::new(self.upperbound.clone());
+
+        (0..n).into_par_iter().for_each(|i| {
+            // Step 2
+            if upperbound.get_ref()[i] <= sp[assign.get_ref()[i]] {
+                return;
+            }
+            let mut minimal =
+                S::elkan_k_means_distance(&samples[i], &centroids[assign.get_ref()[i]]);
+            unsafe {
+                (&mut *lowerbound.get())[(i, assign.get_ref()[i])] = minimal;
+                (&mut *upperbound.get())[i] = minimal;
+            }
+            // Step 3
+            for j in 0..c {
+                if j == assign.get_ref()[i] {
+                    continue;
+                }
+                if upperbound.get_ref()[i] <= lowerbound.get_ref()[(i, j)] {
+                    continue;
+                }
+                if upperbound.get_ref()[i] <= dist0[(assign.get_ref()[i], j)] {
+                    continue;
+                }
+                if minimal > lowerbound.get_ref()[(i, j)]
+                    || minimal > dist0[(assign.get_ref()[i], j)]
+                {
+                    let dis = S::elkan_k_means_distance(&samples[i], &centroids[j]);
+                    unsafe {
+                        (&mut *lowerbound.get())[(i, j)] = dis;
+                    }
+                    if dis < minimal {
+                        minimal = dis;
+                        unsafe {
+                            (&mut *assign.get())[i] = j;
+                            (&mut *upperbound.get())[i] = dis;
                         }
-                        if *upperboundi <= lowerboundi[j] {
-                            continue;
-                        }
-                        if *upperboundi <= dist0[(*assigni, j)] {
-                            continue;
-                        }
-                        if minimal > lowerboundi[j] || minimal > dist0[(*assigni, j)] {
-                            let dis = S::elkan_k_means_distance(&samples[i], &centroids[j]);
-                            lowerboundi[j] = dis;
-                            if dis < minimal {
-                                minimal = dis;
-                                *assigni = j;
-                                *upperboundi = dis;
-                                change.fetch_add(1, Ordering::Relaxed);
-                            }
-                        }
+                        change.fetch_add(1, Ordering::Relaxed);
                     }
                 }
-            });
+            }
+        });
+
+        self.assign = assign.get_ref().clone();
+        self.lowerbound = lowerbound.get_ref().clone();
+        self.upperbound = upperbound.get_ref().clone();
 
         // Step 4, 7
         let old = std::mem::replace(centroids, Vec2::new(dims, c));
@@ -202,9 +220,9 @@ impl<S: G> ElkanKMeans<S> {
         centroids.fill(S::Scalar::zero());
         for i in 0..n {
             for j in 0..dims as usize {
-                centroids[assign[i]][j] += samples[i][j];
+                centroids[self.assign[i]][j] += samples[i][j];
             }
-            count[assign[i]] += 1.0;
+            count[self.assign[i]] += 1.0;
         }
         for i in 0..c {
             if count[i] == F32::zero() {
@@ -251,11 +269,12 @@ impl<S: G> ElkanKMeans<S> {
         });
         for i in 0..n {
             for j in 0..c {
-                lowerbound[(i, j)] = std::cmp::max(lowerbound[(i, j)] - dist1[j], F32::zero());
+                self.lowerbound[(i, j)] =
+                    std::cmp::max(self.lowerbound[(i, j)] - dist1[j], F32::zero());
             }
         }
         for i in 0..n {
-            upperbound[i] += dist1[assign[i]];
+            self.upperbound[i] += dist1[self.assign[i]];
         }
 
         change.load(Ordering::Relaxed) == 0
@@ -266,6 +285,7 @@ impl<S: G> ElkanKMeans<S> {
     }
 }
 
+#[derive(Clone)]
 pub struct Square {
     x: usize,
     y: usize,

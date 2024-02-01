@@ -31,10 +31,14 @@ unsafe impl<S: G> Send for ScalarQuantization<S> {}
 unsafe impl<S: G> Sync for ScalarQuantization<S> {}
 
 impl<S: G> ScalarQuantization<S> {
-    fn codes(&self, i: u32) -> &[u8] {
+    pub fn codes(&self, i: u32) -> &[u8] {
         let s = i as usize * self.dims as usize;
         let e = (i + 1) as usize * self.dims as usize;
         &self.codes[s..e]
+    }
+
+    pub fn set_codes(&mut self, codes: MmapArray<u8>) {
+        self.codes = codes;
     }
 }
 

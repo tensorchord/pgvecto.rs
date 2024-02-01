@@ -15,14 +15,14 @@ use crate::utils::mmap_array::MmapArray;
 use crate::utils::vec2::Vec2;
 use rand::seq::index::sample;
 use rand::thread_rng;
-use rayon::prelude::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
-use rayon::slice::ParallelSliceMut;
+use rayon::current_num_threads;
+use rayon::current_thread_index;
+use rayon::iter::IntoParallelIterator;
+use rayon::prelude::ParallelIterator;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::create_dir;
 use std::path::PathBuf;
-use std::sync::atomic::AtomicU32;
-use std::sync::atomic::Ordering::{Acquire, Relaxed, Release};
 use std::sync::Arc;
 
 pub struct IvfNaive<S: G> {
@@ -91,8 +91,8 @@ pub struct IvfRam<S: G> {
     nlist: u32,
     // ----------------------
     centroids: Vec2<S>,
-    heads: Vec<AtomicU32>,
-    nexts: Vec<SyncUnsafeCell<u32>>,
+    ptr: Vec<usize>,
+    payloads: Vec<Payload>,
 }
 
 unsafe impl<S: G> Send for IvfRam<S> {}
@@ -107,8 +107,8 @@ pub struct IvfMmap<S: G> {
     nlist: u32,
     // ----------------------
     centroids: MmapArray<S::Scalar>,
-    heads: MmapArray<u32>,
-    nexts: MmapArray<u32>,
+    ptr: MmapArray<usize>,
+    payloads: MmapArray<Payload>,
 }
 
 unsafe impl<S: G> Send for IvfMmap<S> {}
@@ -142,7 +142,7 @@ pub fn make<S: G>(
         sealed,
         growing,
     ));
-    let quantization = Quantization::open(
+    let quantization = Quantization::create(
         path.join("quantization"),
         options.clone(),
         quantization_opts,
@@ -151,14 +151,12 @@ pub fn make<S: G>(
     let n = raw.len();
     let m = std::cmp::min(nsample, n);
     let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
-    let mut samples = Vec2::new(dims, m as usize);
-    samples
-        .par_chunks_mut(dims as usize)
-        .enumerate()
-        .for_each(|(i, v)| {
-            v.copy_from_slice(raw.vector(f[i] as u32));
-            S::elkan_k_means_normalize(v);
-        });
+    let samples = SyncUnsafeCell::new(Vec2::<S>::new(dims, m as usize));
+    (0..m as usize).into_par_iter().for_each(|i| unsafe {
+        (&mut *samples.get())[i].copy_from_slice(raw.vector(f[i] as u32));
+        S::elkan_k_means_normalize(&mut (&mut *samples.get())[i]);
+    });
+    let samples = samples.get_ref().clone();
     let mut k_means = ElkanKMeans::new(nlist as usize, samples);
     for _ in 0..least_iterations {
         k_means.iterate();
@@ -169,16 +167,7 @@ pub fn make<S: G>(
         }
     }
     let centroids = k_means.finish();
-    let heads = {
-        let mut heads = Vec::with_capacity(nlist as usize);
-        heads.resize_with(nlist as usize, || AtomicU32::new(u32::MAX));
-        heads
-    };
-    let nexts = {
-        let mut nexts = Vec::with_capacity(nlist as usize);
-        nexts.resize_with(n as usize, || SyncUnsafeCell::new(u32::MAX));
-        nexts
-    };
+    let idx = SyncUnsafeCell::new(vec![0usize; n as usize]);
     (0..n).into_par_iter().for_each(|i| {
         let mut vector = raw.vector(i).to_vec();
         S::elkan_k_means_normalize(&mut vector);
@@ -187,66 +176,111 @@ pub fn make<S: G>(
             let dis = S::elkan_k_means_distance(&vector, &centroids[i as usize]);
             result = std::cmp::min(result, (dis, i));
         }
-        let centroid_id = result.1;
-        loop {
-            let next = heads[centroid_id as usize].load(Acquire);
-            unsafe {
-                nexts[i as usize].get().write(next);
-            }
-            let o = &heads[centroid_id as usize];
-            if o.compare_exchange(next, i, Release, Relaxed).is_ok() {
-                break;
+        unsafe {
+            (&mut *idx.get())[i as usize] = result.1 as usize;
+        }
+    });
+    let mut invlists_payloads = SyncUnsafeCell::new(vec![Vec::new(); nlist as usize]);
+    let invlists_codes = SyncUnsafeCell::new(vec![Vec::new(); nlist as usize]);
+    (0..current_num_threads()).into_par_iter().for_each(|_| {
+        let thread_id = current_thread_index().unwrap();
+        let thread_num = current_num_threads();
+        for i in 0..n {
+            let centroid_id = idx.get_ref()[i as usize];
+            let vector = raw.vector(i);
+            if centroid_id % thread_num == thread_id {
+                unsafe {
+                    (&mut *invlists_payloads.get())[centroid_id as usize].push(raw.payload(i));
+                    (&mut *invlists_codes.get())[centroid_id as usize].append(&mut vector.to_vec());
+                }
             }
         }
     });
+    let mut ptr = vec![0usize; nlist as usize + 1];
+    let mut payloads = Vec::new();
+    for i in 0..nlist {
+        ptr[i as usize + 1] = ptr[i as usize] + invlists_payloads.get_ref()[i as usize].len();
+        payloads.append(&mut invlists_payloads.get_mut()[i as usize]);
+    }
+    match &quantization {
+        Quantization::Trivial(quantization) => {
+            let mut codes = Vec::new();
+            for i in 0..nlist {
+                codes.append(&mut quantization.codes(i).to_vec());
+            }
+            MmapArray::create(path.join("vectors"), codes.iter().copied());
+        }
+        Quantization::Scalar(quantization) => {
+            let mut codes = Vec::new();
+            for i in 0..nlist {
+                codes.append(&mut quantization.codes(i).to_vec());
+            }
+            MmapArray::create(path.join("vectors"), codes.iter().copied());
+        }
+        Quantization::Product(quantization) => {
+            let mut codes = Vec::new();
+            for i in 0..nlist {
+                codes.append(&mut quantization.codes(i).to_vec());
+            }
+            MmapArray::create(path.join("vectors"), codes.iter().copied());
+        }
+    }
     IvfRam {
         raw,
         quantization,
         centroids,
-        heads,
-        nexts,
+        ptr,
+        payloads,
         nlist,
         dims,
     }
 }
 
-pub fn save<S: G>(mut ram: IvfRam<S>, path: PathBuf) -> IvfMmap<S> {
+pub fn save<S: G>(ram: IvfRam<S>, path: PathBuf) -> IvfMmap<S> {
     let centroids = MmapArray::create(
         path.join("centroids"),
         (0..ram.nlist)
             .flat_map(|i| &ram.centroids[i as usize])
             .copied(),
     );
-    let heads = MmapArray::create(
-        path.join("heads"),
-        ram.heads.iter_mut().map(|x| *x.get_mut()),
-    );
-    let nexts = MmapArray::create(
-        path.join("nexts"),
-        ram.nexts.iter_mut().map(|x| *x.get_mut()),
-    );
+    let ptr = MmapArray::create(path.join("ptr"), ram.ptr.iter().copied());
+    let payloads = MmapArray::create(path.join("payload"), ram.payloads.iter().copied());
     IvfMmap {
         raw: ram.raw,
         quantization: ram.quantization,
         dims: ram.dims,
         nlist: ram.nlist,
         centroids,
-        heads,
-        nexts,
+        ptr,
+        payloads,
     }
 }
 
 pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> IvfMmap<S> {
     let raw = Arc::new(Raw::open(path.join("raw"), options.clone()));
-    let quantization = Quantization::open(
+    let mut quantization = Quantization::open(
         path.join("quantization"),
         options.clone(),
         options.indexing.clone().unwrap_ivf().quantization,
         &raw,
     );
     let centroids = MmapArray::open(path.join("centroids"));
-    let heads = MmapArray::open(path.join("heads"));
-    let nexts = MmapArray::open(path.join("nexts"));
+    let ptr = MmapArray::open(path.join("ptr"));
+    let payloads = MmapArray::open(path.join("payload"));
+    match &mut quantization {
+        Quantization::Trivial(quantization) => {
+            let raw = Arc::new(Raw::open(path, options.clone()));
+            quantization.set_codes(raw);
+        }
+        Quantization::Scalar(quantization) => {
+            let codes = MmapArray::open(path.join("vectors"));
+            quantization.set_codes(codes);
+        }
+        Quantization::Product(quantization) => {
+            let codes = MmapArray::open(path.join("vectors"));
+            quantization.set_codes(codes);
+        }
+    }
     let IvfIndexingOptions { nlist, .. } = options.indexing.unwrap_ivf();
     IvfMmap {
         raw,
@@ -254,8 +288,8 @@ pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> IvfMmap<S> {
         dims: options.vector.dims,
         nlist,
         centroids,
-        heads,
-        nexts,
+        ptr,
+        payloads,
     }
 }
 
@@ -281,14 +315,14 @@ pub fn basic<S: G>(
     let lists = lists.into_sorted_vec();
     let mut result = BinaryHeap::new();
     for i in lists.iter().map(|e| e.payload as usize) {
-        let mut j = mmap.heads[i];
-        while u32::MAX != j {
-            let payload = mmap.raw.payload(j);
+        let start = mmap.ptr[i];
+        let end = mmap.ptr[i + 1];
+        for j in start..end {
+            let payload = mmap.payloads[j];
             if filter.check(payload) {
-                let distance = mmap.quantization.distance(vector, j);
+                let distance = mmap.quantization.distance(vector, j as u32);
                 result.push(Reverse(Element { distance, payload }));
             }
-            j = mmap.nexts[j as usize];
         }
     }
     result
@@ -315,15 +349,15 @@ pub fn vbase<'a, S: G>(
     }
     let lists = lists.into_sorted_vec();
     let mut result = Vec::new();
-    for i in lists.iter().map(|e| e.payload as u32) {
-        let mut j = mmap.heads[i as usize];
-        while u32::MAX != j {
-            let payload = mmap.raw.payload(j);
+    for i in lists.iter().map(|e| e.payload as usize) {
+        let start = mmap.ptr[i];
+        let end = mmap.ptr[i + 1];
+        for j in start..end {
+            let payload = mmap.payloads[j];
             if filter.check(payload) {
-                let distance = mmap.quantization.distance(vector, j);
+                let distance = mmap.quantization.distance(vector, j as u32);
                 result.push(Element { distance, payload });
             }
-            j = mmap.nexts[j as usize];
         }
     }
     (result, Box::new(std::iter::empty()))
