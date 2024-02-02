@@ -32,16 +32,15 @@ bytemuck.workspace = true
 service = { path = "crates/service" }
 detect = { path = "crates/detect" }
 pgrx = { version = "0.11.2", default-features = false, features = [] }
-openai_api_rust = { git = "https://github.com/tensorchord/openai-api.git", rev = "228d54b6002e98257b3c81501a054942342f585f" }
 env_logger = "0.10.0"
 toml = "0.8.8"
+arrayvec = "0.7.4"
 
 [dev-dependencies]
 pgrx-tests = "0.11.2"
-httpmock = "0.6"
-mockall = "0.12"
 
 [lints]
+clippy.needless_range_loop = "allow"
 clippy.too_many_arguments = "allow"
 rust.unsafe_op_in_unsafe_fn = "deny"
 rust.unused_lifetimes = "warn"

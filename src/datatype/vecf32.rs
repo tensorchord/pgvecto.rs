@@ -254,66 +254,23 @@ unsafe impl SqlTranslatable for Vecf32Output {
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
-    fn solve<T>(option: Option<T>, hint: &str) -> T {
-        if let Some(x) = option {
-            x
-        } else {
+    use crate::utils::parse::parse_vector;
+    let reserve = Typmod::parse_from_i32(typmod).unwrap().dims().unwrap_or(0);
+    let v = parse_vector(input.to_bytes(), reserve as usize, |s| s.parse().ok());
+    match v {
+        Err(e) => {
             SessionError::BadLiteral {
-                hint: hint.to_string(),
+                hint: e.to_string(),
             }
-            .friendly()
+            .friendly();
+        }
+        Ok(vector) => {
+            if vector.is_empty() || vector.len() > 65535 {
+                SessionError::BadValueDimensions.friendly();
+            }
+            Vecf32::new_in_postgres(&vector)
         }
     }
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    enum State {
-        MatchingLeft,
-        Reading,
-        MatchedRight,
-    }
-    use State::*;
-    let input = input.to_bytes();
-    let typmod = Typmod::parse_from_i32(typmod).unwrap();
-    let mut vector = Vec::<F32>::with_capacity(typmod.dims().unwrap_or(0) as usize);
-    let mut state = MatchingLeft;
-    let mut token: Option<String> = None;
-    for &c in input {
-        match (state, c) {
-            (MatchingLeft, b'[') => {
-                state = Reading;
-            }
-            (Reading, b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | b'.' | b'+' | b'-') => {
-                let token = token.get_or_insert(String::new());
-                token.push(char::from_u32(c as u32).unwrap());
-            }
-            (Reading, b',') => {
-                let token = solve(token.take(), "Expect a number.");
-                vector.push(solve(token.parse().ok(), "Bad number."));
-            }
-            (Reading, b']') => {
-                if let Some(token) = token.take() {
-                    vector.push(solve(token.parse().ok(), "Bad number."));
-                }
-                state = MatchedRight;
-            }
-            (_, b' ') => {}
-            _ => {
-                SessionError::BadLiteral {
-                    hint: format!("Bad character with ascii {:#x}.", c),
-                }
-                .friendly();
-            }
-        }
-    }
-    if state != MatchedRight {
-        SessionError::BadLiteral {
-            hint: "Bad sequence.".to_string(),
-        }
-        .friendly();
-    }
-    if vector.is_empty() || vector.len() > 65535 {
-        SessionError::BadValueDimensions.friendly();
-    }
-    Vecf32::new_in_postgres(&vector)
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
