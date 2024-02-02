@@ -1,5 +1,3 @@
-#![cfg(target_arch = "x86_64")]
-
 use std::sync::atomic::{AtomicBool, Ordering};
 
 static ATOMIC_AVX512FP16: AtomicBool = AtomicBool::new(false);
@@ -8,8 +6,7 @@ pub fn test_avx512fp16() -> bool {
     std_detect::is_x86_feature_detected!("avx512fp16") && test_v4()
 }
 
-#[ctor::ctor]
-fn ctor_avx512fp16() {
+pub fn ctor_avx512fp16() {
     ATOMIC_AVX512FP16.store(test_avx512fp16(), Ordering::Relaxed);
 }
 
@@ -28,8 +25,7 @@ pub fn test_v4() -> bool {
         && test_v3()
 }
 
-#[ctor::ctor]
-fn ctor_v4() {
+pub fn ctor_v4() {
     ATOMIC_V4.store(test_v4(), Ordering::Relaxed);
 }
 
@@ -52,8 +48,7 @@ pub fn test_v3() -> bool {
         && test_v2()
 }
 
-#[ctor::ctor]
-fn ctor_v3() {
+pub fn ctor_v3() {
     ATOMIC_V3.store(test_v3(), Ordering::Relaxed);
 }
 
@@ -75,8 +70,7 @@ pub fn test_v2() -> bool {
         && std_detect::is_x86_feature_detected!("ssse3")
 }
 
-#[ctor::ctor]
-fn ctor_v2() {
+pub fn ctor_v2() {
     ATOMIC_V2.store(test_v2(), Ordering::Relaxed);
 }
 
