@@ -1,5 +1,3 @@
-#![cfg(target_os = "linux")]
-
 use std::sync::atomic::{AtomicBool, Ordering};
 
 static ATOMIC_MEMFD: AtomicBool = AtomicBool::new(false);
@@ -14,8 +12,7 @@ pub fn test_memfd() -> bool {
     }
 }
 
-#[ctor::ctor]
-fn ctor_memfd() {
+pub fn ctor_memfd() {
     ATOMIC_MEMFD.store(test_memfd(), Ordering::Relaxed);
 }
 
