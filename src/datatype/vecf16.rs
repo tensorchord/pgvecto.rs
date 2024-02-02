@@ -369,8 +369,7 @@ fn _vectors_vecf16_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
     ) {
         #[derive(Default)]
         struct Workspace {
-            start: Option<usize>,
-            end: Option<usize>,
+            range: Option<(Option<usize>, Option<usize>)>,
         }
         #[pgrx::pg_guard]
         unsafe extern "C" fn sbs_check_subscripts(
@@ -381,28 +380,28 @@ fn _vectors_vecf16_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
             unsafe {
                 let state = &mut *(*op).d.sbsref.state;
                 let workspace = &mut *(state.workspace as *mut Workspace);
+                workspace.range = None;
+                let mut end = None;
+                let mut start = None;
                 if state.upperprovided.read() {
                     if !state.upperindexnull.read() {
                         let upper = state.upperindex.read().value() as i32;
-                        workspace.end = Some(upper as usize);
+                        end = Some(upper as usize);
                     } else {
                         (*op).resnull.write(true);
                         return false;
                     }
-                } else {
-                    workspace.end = None;
                 }
-                if state.lowerprovided.read() && !state.lowerindexnull.read() {
+                if state.lowerprovided.read() {
                     if !state.lowerindexnull.read() {
                         let lower = state.lowerindex.read().value() as i32;
-                        workspace.start = Some((lower - 1) as usize);
+                        start = Some((lower - 1) as usize);
                     } else {
                         (*op).resnull.write(true);
                         return false;
                     }
-                } else {
-                    workspace.start = None;
-                };
+                }
+                workspace.range = Some((start, end));
                 true
             }
         }
@@ -417,11 +416,12 @@ fn _vectors_vecf16_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
                 let workspace = &mut *(state.workspace as *mut Workspace);
                 let input =
                     Vecf16Input::from_datum((*op).resvalue.read(), (*op).resnull.read()).unwrap();
-                let slice = match (workspace.start, workspace.end) {
-                    (None, None) => input.data().get(..),
-                    (None, Some(y)) => input.data().get(..y),
-                    (Some(x), None) => input.data().get(x..),
-                    (Some(x), Some(y)) => input.data().get(x..y),
+                let slice = match workspace.range {
+                    Some((None, None)) => input.data().get(..),
+                    Some((None, Some(y))) => input.data().get(..y),
+                    Some((Some(x), None)) => input.data().get(x..),
+                    Some((Some(x), Some(y))) => input.data().get(x..y),
+                    None => None,
                 };
                 if let Some(slice) = slice {
                     if !slice.is_empty() {
