@@ -7,20 +7,34 @@ CREATE TYPE vector (
     OUTPUT = _vectors_vecf32_out,
     TYPMOD_IN = _vectors_typmod_in,
     TYPMOD_OUT = _vectors_typmod_out,
-    STORAGE = EXTENDED,
+    STORAGE = EXTERNAL,
     INTERNALLENGTH = VARIABLE,
     ALIGNMENT = double
 );
+
+DO $$
+BEGIN
+    IF current_setting('server_version_num')::int >= 140000 THEN
+        ALTER TYPE vector SET (SUBSCRIPT = _vectors_vecf32_subscript);
+    END IF;
+END $$;
 
 CREATE TYPE vecf16 (
     INPUT = _vectors_vecf16_in,
     OUTPUT = _vectors_vecf16_out,
     TYPMOD_IN = _vectors_typmod_in,
     TYPMOD_OUT = _vectors_typmod_out,
-    STORAGE = EXTENDED,
+    STORAGE = EXTERNAL,
     INTERNALLENGTH = VARIABLE,
     ALIGNMENT = double
 );
+
+DO $$
+BEGIN
+    IF current_setting('server_version_num')::int >= 140000 THEN
+		ALTER TYPE vecf16 SET (SUBSCRIPT = _vectors_vecf16_subscript);
+    END IF;
+END $$;
 
 CREATE TYPE svector (
     INPUT = _vectors_svecf32_in,
@@ -31,6 +45,13 @@ CREATE TYPE svector (
     INTERNALLENGTH = VARIABLE,
     ALIGNMENT = double
 );
+
+DO $$
+BEGIN
+    IF current_setting('server_version_num')::int >= 140000 THEN
+		ALTER TYPE svector SET (SUBSCRIPT = _vectors_svecf32_subscript);
+    END IF;
+END $$;
 
 CREATE TYPE vector_index_stat AS (
     idx_status TEXT,

@@ -15,13 +15,12 @@ use crate::prelude::*;
 use crate::utils::clean::clean;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::file_atomic::FileAtomic;
-use crate::utils::iter::RefPeekable;
+use crate::utils::tournament_tree::LoserTree;
 use arc_swap::ArcSwap;
 use crossbeam::atomic::AtomicCell;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
-use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::PathBuf;
@@ -330,25 +329,13 @@ impl<S: G> IndexView<S> {
             return Err(ServiceError::Unmatched);
         }
 
-        struct Comparer(BinaryHeap<Reverse<Element>>);
+        struct Comparer(std::collections::BinaryHeap<Reverse<Element>>);
 
-        impl PartialEq for Comparer {
-            fn eq(&self, other: &Self) -> bool {
-                self.cmp(other).is_eq()
-            }
-        }
+        impl Iterator for Comparer {
+            type Item = Element;
 
-        impl Eq for Comparer {}
-
-        impl PartialOrd for Comparer {
-            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-                Some(self.cmp(other))
-            }
-        }
-
-        impl Ord for Comparer {
-            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-                self.0.peek().cmp(&other.0.peek()).reverse()
+            fn next(&mut self) -> Option<Self::Item> {
+                self.0.pop().map(|Reverse(x)| x)
             }
         }
 
@@ -383,7 +370,7 @@ impl<S: G> IndexView<S> {
         };
 
         let n = self.sealed.len() + self.growing.len() + 1;
-        let mut heaps = BinaryHeap::with_capacity(1 + n);
+        let mut heaps = Vec::with_capacity(1 + n);
         for (_, sealed) in self.sealed.iter() {
             let p = sealed.basic(vector, opts, filter.clone());
             heaps.push(Comparer(p));
@@ -396,16 +383,13 @@ impl<S: G> IndexView<S> {
             let p = write.basic(vector, opts, filter.clone());
             heaps.push(Comparer(p));
         }
-        Ok(std::iter::from_fn(move || {
-            while let Some(mut iter) = heaps.pop() {
-                if let Some(Reverse(x)) = iter.0.pop() {
-                    heaps.push(iter);
-                    if opts.prefilter_enable || self.delete.check(x.payload).is_some() {
-                        return Some(Pointer::from_u48(x.payload >> 16));
-                    }
-                }
+        let loser = LoserTree::new(heaps);
+        Ok(loser.filter_map(|x| {
+            if opts.prefilter_enable || self.delete.check(x.payload).is_some() {
+                Some(Pointer::from_u48(x.payload >> 16))
+            } else {
+                None
             }
-            None
         }))
     }
     pub fn vbase<'a, F: FnMut(Pointer) -> bool + Clone + 'a>(
@@ -416,28 +400,6 @@ impl<S: G> IndexView<S> {
     ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
         if self.options.vector.dims != vector.dims() {
             return Err(ServiceError::Unmatched);
-        }
-
-        struct Comparer<'a>(RefPeekable<Box<dyn Iterator<Item = Element> + 'a>>);
-
-        impl PartialEq for Comparer<'_> {
-            fn eq(&self, other: &Self) -> bool {
-                self.cmp(other).is_eq()
-            }
-        }
-
-        impl Eq for Comparer<'_> {}
-
-        impl PartialOrd for Comparer<'_> {
-            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-                Some(self.cmp(other))
-            }
-        }
-
-        impl Ord for Comparer<'_> {
-            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-                self.0.peek().cmp(&other.0.peek()).reverse()
-            }
         }
 
         struct Filtering<'a, F: 'a> {
@@ -472,34 +434,31 @@ impl<S: G> IndexView<S> {
 
         let n = self.sealed.len() + self.growing.len() + 1;
         let mut alpha = Vec::new();
-        let mut beta = BinaryHeap::with_capacity(1 + n);
+        let mut beta = Vec::with_capacity(1 + n);
         for (_, sealed) in self.sealed.iter() {
             let (stage1, stage2) = sealed.vbase(vector, opts, filter.clone());
             alpha.extend(stage1);
-            beta.push(Comparer(RefPeekable::new(stage2)));
+            beta.push(stage2);
         }
         for (_, growing) in self.growing.iter() {
             let (stage1, stage2) = growing.vbase(vector, opts, filter.clone());
             alpha.extend(stage1);
-            beta.push(Comparer(RefPeekable::new(stage2)));
+            beta.push(stage2);
         }
         if let Some((_, write)) = &self.write {
             let (stage1, stage2) = write.vbase(vector, opts, filter.clone());
             alpha.extend(stage1);
-            beta.push(Comparer(RefPeekable::new(stage2)));
+            beta.push(stage2);
         }
         alpha.sort_unstable();
-        beta.push(Comparer(RefPeekable::new(Box::new(alpha.into_iter()))));
-        Ok(std::iter::from_fn(move || {
-            while let Some(mut iter) = beta.pop() {
-                if let Some(x) = iter.0.next() {
-                    beta.push(iter);
-                    if opts.prefilter_enable || self.delete.check(x.payload).is_some() {
-                        return Some(Pointer::from_u48(x.payload >> 16));
-                    }
-                }
+        beta.push(Box::new(alpha.into_iter()));
+        let loser = LoserTree::new(beta);
+        Ok(loser.filter_map(|x| {
+            if opts.prefilter_enable || self.delete.check(x.payload).is_some() {
+                Some(Pointer::from_u48(x.payload >> 16))
+            } else {
+                None
             }
-            None
         }))
     }
     pub fn insert(

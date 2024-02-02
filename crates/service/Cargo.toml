@@ -27,7 +27,7 @@ memoffset = "0.9.0"
 arrayvec = { version = "0.7.3", features = ["serde"] }
 memmap2 = "0.9.0"
 rayon = "1.6.1"
-uuid = { version = "1.6.1", features = ["serde"] }
+uuid = { version = "1.6.1", features = ["v4", "serde"] }
 arc-swap = "1.6.0"
 multiversion = "0.7.3"
 

@@ -31,17 +31,21 @@ rand.workspace = true
 bytemuck.workspace = true
 service = { path = "crates/service" }
 detect = { path = "crates/detect" }
-pgrx = { version = "0.11.2", default-features = false, features = [] }
-openai_api_rust = { git = "https://github.com/tensorchord/openai-api.git", rev = "228d54b6002e98257b3c81501a054942342f585f" }
+pgrx = { version = "0.11.3", default-features = false, features = [] }
 env_logger = "0.10.0"
 toml = "0.8.8"
+arrayvec = "0.7.4"
 
 [dev-dependencies]
-pgrx-tests = "0.11.2"
-httpmock = "0.6"
-mockall = "0.12"
+pgrx-tests = "0.11.3"
+
+[patch.crates-io]
+pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.11.3-patch" }
+pgrx-tests = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.11.3-patch" }
 
 [lints]
+clippy.needless_range_loop = "allow"
+clippy.len_zero = "allow"
 clippy.too_many_arguments = "allow"
 rust.unsafe_op_in_unsafe_fn = "deny"
 rust.unused_lifetimes = "warn"

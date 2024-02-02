@@ -41,5 +41,5 @@ sudo chmod -R 777 `pg_config --sharedir`/extension
 curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 cargo binstall sqllogictest-bin -y --force
 
-cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2) --debug
+cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1) --debug
 cargo pgrx init --pg$VERSION=$(which pg_config)

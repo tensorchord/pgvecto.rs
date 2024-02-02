@@ -6,7 +6,6 @@
 
 mod bgworker;
 mod datatype;
-mod embedding;
 mod gucs;
 mod index;
 mod ipc;
@@ -25,6 +24,7 @@ unsafe extern "C" fn _PG_init() {
         SessionError::BadInit.friendly();
     }
     unsafe {
+        detect::initialize();
         self::gucs::init();
         self::index::init();
         self::ipc::init();

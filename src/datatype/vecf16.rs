@@ -42,7 +42,7 @@ impl Vecf16 {
     }
     pub fn new_in_postgres(slice: &[F16]) -> Vecf16Output {
         unsafe {
-            assert!(u16::try_from(slice.len()).is_ok());
+            assert!(1 <= slice.len() && slice.len() <= 65535);
             let layout = Vecf16::layout(slice.len());
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut Vecf16;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
@@ -254,66 +254,23 @@ unsafe impl SqlTranslatable for Vecf16Output {
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_vecf16_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf16Output {
-    fn solve<T>(option: Option<T>, hint: &str) -> T {
-        if let Some(x) = option {
-            x
-        } else {
+    use crate::utils::parse::parse_vector;
+    let reserve = Typmod::parse_from_i32(typmod).unwrap().dims().unwrap_or(0);
+    let v = parse_vector(input.to_bytes(), reserve as usize, |s| s.parse().ok());
+    match v {
+        Err(e) => {
             SessionError::BadLiteral {
-                hint: hint.to_string(),
+                hint: e.to_string(),
             }
-            .friendly()
+            .friendly();
+        }
+        Ok(vector) => {
+            if vector.is_empty() || vector.len() > 65535 {
+                SessionError::BadValueDimensions.friendly();
+            }
+            Vecf16::new_in_postgres(&vector)
         }
     }
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    enum State {
-        MatchingLeft,
-        Reading,
-        MatchedRight,
-    }
-    use State::*;
-    let input = input.to_bytes();
-    let typmod = Typmod::parse_from_i32(typmod).unwrap();
-    let mut vector = Vec::<F16>::with_capacity(typmod.dims().unwrap_or(0) as usize);
-    let mut state = MatchingLeft;
-    let mut token: Option<String> = None;
-    for &c in input {
-        match (state, c) {
-            (MatchingLeft, b'[') => {
-                state = Reading;
-            }
-            (Reading, b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | b'.' | b'+' | b'-') => {
-                let token = token.get_or_insert(String::new());
-                token.push(char::from_u32(c as u32).unwrap());
-            }
-            (Reading, b',') => {
-                let token = solve(token.take(), "Expect a number.");
-                vector.push(solve(token.parse().ok(), "Bad number."));
-            }
-            (Reading, b']') => {
-                if let Some(token) = token.take() {
-                    vector.push(solve(token.parse().ok(), "Bad number."));
-                }
-                state = MatchedRight;
-            }
-            (_, b' ') => {}
-            _ => {
-                SessionError::BadLiteral {
-                    hint: format!("Bad character with ascii {:#x}.", c),
-                }
-                .friendly();
-            }
-        }
-    }
-    if state != MatchedRight {
-        SessionError::BadLiteral {
-            hint: "Bad sequence.".to_string(),
-        }
-        .friendly();
-    }
-    if vector.is_empty() || vector.len() > 65535 {
-        SessionError::BadValueDimensions.friendly();
-    }
-    Vecf16::new_in_postgres(&vector)
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
@@ -328,4 +285,184 @@ fn _vectors_vecf16_out(vector: Vecf16Input<'_>) -> CString {
     }
     buffer.push(']');
     CString::new(buffer).unwrap()
+}
+
+#[cfg(any(feature = "pg14", feature = "pg15", feature = "pg16"))]
+#[pgrx::pg_extern(sql = "\
+CREATE FUNCTION _vectors_vecf16_subscript(internal) RETURNS internal
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
+fn _vectors_vecf16_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
+    #[pgrx::pg_guard]
+    unsafe extern "C" fn transform(
+        subscript: *mut pgrx::pg_sys::SubscriptingRef,
+        indirection: *mut pgrx::pg_sys::List,
+        pstate: *mut pgrx::pg_sys::ParseState,
+        is_slice: bool,
+        is_assignment: bool,
+    ) {
+        unsafe {
+            if (*indirection).length != 1 {
+                pgrx::pg_sys::error!("type vecf16 does only support one subscript");
+            }
+            if !is_slice {
+                pgrx::pg_sys::error!("type vecf16 does only support slice fetch");
+            }
+            if is_assignment {
+                pgrx::pg_sys::error!("type vecf16 does not support subscripted assignment");
+            }
+            let subscript = &mut *subscript;
+            let ai = (*(*indirection).elements.add(0)).ptr_value as *mut pgrx::pg_sys::A_Indices;
+            subscript.refupperindexpr = pgrx::pg_sys::lappend(
+                std::ptr::null_mut(),
+                if !(*ai).uidx.is_null() {
+                    let subexpr =
+                        pgrx::pg_sys::transformExpr(pstate, (*ai).uidx, (*pstate).p_expr_kind);
+                    let subexpr = pgrx::pg_sys::coerce_to_target_type(
+                        pstate,
+                        subexpr,
+                        pgrx::pg_sys::exprType(subexpr),
+                        pgrx::pg_sys::INT4OID,
+                        -1,
+                        pgrx::pg_sys::CoercionContext_COERCION_ASSIGNMENT,
+                        pgrx::pg_sys::CoercionForm_COERCE_IMPLICIT_CAST,
+                        -1,
+                    );
+                    if subexpr.is_null() {
+                        pgrx::error!("vecf16 subscript must have type integer");
+                    }
+                    subexpr.cast()
+                } else {
+                    std::ptr::null_mut()
+                },
+            );
+            subscript.reflowerindexpr = pgrx::pg_sys::lappend(
+                std::ptr::null_mut(),
+                if !(*ai).lidx.is_null() {
+                    let subexpr =
+                        pgrx::pg_sys::transformExpr(pstate, (*ai).lidx, (*pstate).p_expr_kind);
+                    let subexpr = pgrx::pg_sys::coerce_to_target_type(
+                        pstate,
+                        subexpr,
+                        pgrx::pg_sys::exprType(subexpr),
+                        pgrx::pg_sys::INT4OID,
+                        -1,
+                        pgrx::pg_sys::CoercionContext_COERCION_ASSIGNMENT,
+                        pgrx::pg_sys::CoercionForm_COERCE_IMPLICIT_CAST,
+                        -1,
+                    );
+                    if subexpr.is_null() {
+                        pgrx::error!("vecf16 subscript must have type integer");
+                    }
+                    subexpr.cast()
+                } else {
+                    std::ptr::null_mut()
+                },
+            );
+            subscript.refrestype = subscript.refcontainertype;
+        }
+    }
+    #[pgrx::pg_guard]
+    unsafe extern "C" fn exec_setup(
+        _subscript: *const pgrx::pg_sys::SubscriptingRef,
+        state: *mut pgrx::pg_sys::SubscriptingRefState,
+        steps: *mut pgrx::pg_sys::SubscriptExecSteps,
+    ) {
+        #[derive(Default)]
+        struct Workspace {
+            range: Option<(Option<usize>, Option<usize>)>,
+        }
+        #[pgrx::pg_guard]
+        unsafe extern "C" fn sbs_check_subscripts(
+            _state: *mut pgrx::pg_sys::ExprState,
+            op: *mut pgrx::pg_sys::ExprEvalStep,
+            _econtext: *mut pgrx::pg_sys::ExprContext,
+        ) -> bool {
+            unsafe {
+                let state = &mut *(*op).d.sbsref.state;
+                let workspace = &mut *(state.workspace as *mut Workspace);
+                workspace.range = None;
+                let mut end = None;
+                let mut start = None;
+                if state.upperprovided.read() {
+                    if !state.upperindexnull.read() {
+                        let upper = state.upperindex.read().value() as i32;
+                        end = Some(upper as usize);
+                    } else {
+                        (*op).resnull.write(true);
+                        return false;
+                    }
+                }
+                if state.lowerprovided.read() {
+                    if !state.lowerindexnull.read() {
+                        let lower = state.lowerindex.read().value() as i32;
+                        start = Some((lower - 1) as usize);
+                    } else {
+                        (*op).resnull.write(true);
+                        return false;
+                    }
+                }
+                workspace.range = Some((start, end));
+                true
+            }
+        }
+        #[pgrx::pg_guard]
+        unsafe extern "C" fn sbs_fetch(
+            _state: *mut pgrx::pg_sys::ExprState,
+            op: *mut pgrx::pg_sys::ExprEvalStep,
+            _econtext: *mut pgrx::pg_sys::ExprContext,
+        ) {
+            unsafe {
+                let state = &mut *(*op).d.sbsref.state;
+                let workspace = &mut *(state.workspace as *mut Workspace);
+                let input =
+                    Vecf16Input::from_datum((*op).resvalue.read(), (*op).resnull.read()).unwrap();
+                let slice = match workspace.range {
+                    Some((None, None)) => input.data().get(..),
+                    Some((None, Some(y))) => input.data().get(..y),
+                    Some((Some(x), None)) => input.data().get(x..),
+                    Some((Some(x), Some(y))) => input.data().get(x..y),
+                    None => None,
+                };
+                if let Some(slice) = slice {
+                    if !slice.is_empty() {
+                        let output = Vecf16::new_in_postgres(slice);
+                        (*op).resnull.write(false);
+                        (*op).resvalue.write(Datum::from(output.into_raw()));
+                    } else {
+                        (*op).resnull.write(true);
+                    }
+                } else {
+                    (*op).resnull.write(true);
+                }
+            }
+        }
+        unsafe {
+            let state = &mut *state;
+            let steps = &mut *steps;
+            assert!(state.numlower == 1);
+            assert!(state.numupper == 1);
+            state.workspace = pgrx::pg_sys::palloc(std::mem::size_of::<Workspace>());
+            std::ptr::write::<Workspace>(state.workspace.cast(), Workspace::default());
+            steps.sbs_check_subscripts = Some(sbs_check_subscripts);
+            steps.sbs_fetch = Some(sbs_fetch);
+            steps.sbs_assign = None;
+            steps.sbs_fetch_old = None;
+        }
+    }
+    static SBSROUTINES: pgrx::pg_sys::SubscriptRoutines = pgrx::pg_sys::SubscriptRoutines {
+        transform: Some(transform),
+        exec_setup: Some(exec_setup),
+        fetch_strict: true,
+        fetch_leakproof: false,
+        store_leakproof: false,
+    };
+    std::ptr::addr_of!(SBSROUTINES).into()
+}
+
+#[cfg(not(any(feature = "pg14", feature = "pg15", feature = "pg16")))]
+#[pgrx::pg_extern(sql = "\
+CREATE FUNCTION _vectors_vecf16_subscript(internal) RETURNS internal
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
+fn _vectors_vecf16_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
+    unreachable!()
 }
