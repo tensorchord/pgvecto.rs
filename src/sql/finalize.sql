@@ -7,7 +7,7 @@ CREATE TYPE vector (
     OUTPUT = _vectors_vecf32_out,
     TYPMOD_IN = _vectors_typmod_in,
     TYPMOD_OUT = _vectors_typmod_out,
-    STORAGE = EXTENDED,
+    STORAGE = EXTERNAL,
     INTERNALLENGTH = VARIABLE,
     ALIGNMENT = double
 );
@@ -17,7 +17,7 @@ CREATE TYPE vecf16 (
     OUTPUT = _vectors_vecf16_out,
     TYPMOD_IN = _vectors_typmod_in,
     TYPMOD_OUT = _vectors_typmod_out,
-    STORAGE = EXTENDED,
+    STORAGE = EXTERNAL,
     INTERNALLENGTH = VARIABLE,
     ALIGNMENT = double
 );
