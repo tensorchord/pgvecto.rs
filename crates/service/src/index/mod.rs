@@ -30,6 +30,7 @@ use std::time::Instant;
 use thiserror::Error;
 use uuid::Uuid;
 use validator::Validate;
+use validator::ValidationError;
 
 #[derive(Debug, Error)]
 #[error("The index view is outdated.")]
@@ -49,6 +50,7 @@ pub struct VectorOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
+#[validate(schema(function = "validate_index_options"))]
 pub struct IndexOptions {
     #[validate]
     pub vector: VectorOptions,
@@ -58,6 +60,15 @@ pub struct IndexOptions {
     pub optimizing: OptimizingOptions,
     #[validate]
     pub indexing: IndexingOptions,
+}
+
+fn validate_index_options(options: &IndexOptions) -> Result<(), ValidationError> {
+    if options.vector.k == Kind::SparseF32 && options.indexing.has_quantization() {
+        return Err(ValidationError::new(
+            "quantization is not supported for sparse vector",
+        ));
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -191,6 +202,7 @@ impl<S: G> Index<S> {
                         tracker.clone(),
                         path.join("segments").join(uuid.to_string()),
                         uuid,
+                        options.clone(),
                     ),
                 )
             })
@@ -310,7 +322,7 @@ pub struct IndexView<S: G> {
 impl<S: G> IndexView<S> {
     pub fn basic<'a, F: Fn(Pointer) -> bool + Clone + 'a>(
         &'a self,
-        vector: <S::Storage as Storage>::VectorRef<'a>,
+        vector: S::VectorRef<'_>,
         opts: &'a SearchOptions,
         filter: F,
     ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
@@ -373,15 +385,15 @@ impl<S: G> IndexView<S> {
         let n = self.sealed.len() + self.growing.len() + 1;
         let mut heaps = BinaryHeap::with_capacity(1 + n);
         for (_, sealed) in self.sealed.iter() {
-            let p = sealed.basic(vector.vector(), opts, filter.clone());
+            let p = sealed.basic(vector, opts, filter.clone());
             heaps.push(Comparer(p));
         }
         for (_, growing) in self.growing.iter() {
-            let p = growing.basic(vector.vector(), opts, filter.clone());
+            let p = growing.basic(vector, opts, filter.clone());
             heaps.push(Comparer(p));
         }
         if let Some((_, write)) = &self.write {
-            let p = write.basic(vector.vector(), opts, filter.clone());
+            let p = write.basic(vector, opts, filter.clone());
             heaps.push(Comparer(p));
         }
         Ok(std::iter::from_fn(move || {
@@ -398,7 +410,7 @@ impl<S: G> IndexView<S> {
     }
     pub fn vbase<'a, F: FnMut(Pointer) -> bool + Clone + 'a>(
         &'a self,
-        vector: <S::Storage as Storage>::VectorRef<'a>,
+        vector: S::VectorRef<'a>,
         opts: &'a SearchOptions,
         filter: F,
     ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
@@ -462,17 +474,17 @@ impl<S: G> IndexView<S> {
         let mut alpha = Vec::new();
         let mut beta = BinaryHeap::with_capacity(1 + n);
         for (_, sealed) in self.sealed.iter() {
-            let (stage1, stage2) = sealed.vbase(vector.vector(), opts, filter.clone());
+            let (stage1, stage2) = sealed.vbase(vector, opts, filter.clone());
             alpha.extend(stage1);
             beta.push(Comparer(RefPeekable::new(stage2)));
         }
         for (_, growing) in self.growing.iter() {
-            let (stage1, stage2) = growing.vbase(vector.vector(), opts, filter.clone());
+            let (stage1, stage2) = growing.vbase(vector, opts, filter.clone());
             alpha.extend(stage1);
             beta.push(Comparer(RefPeekable::new(stage2)));
         }
         if let Some((_, write)) = &self.write {
-            let (stage1, stage2) = write.vbase(vector.vector(), opts, filter.clone());
+            let (stage1, stage2) = write.vbase(vector, opts, filter.clone());
             alpha.extend(stage1);
             beta.push(Comparer(RefPeekable::new(stage2)));
         }
@@ -492,7 +504,7 @@ impl<S: G> IndexView<S> {
     }
     pub fn insert(
         &self,
-        vector: <S::Storage as Storage>::Vector,
+        vector: S::VectorOwned,
         pointer: Pointer,
     ) -> Result<Result<(), OutdatedError>, ServiceError> {
         if self.options.vector.dims != vector.dims() {
@@ -502,7 +514,7 @@ impl<S: G> IndexView<S> {
         let payload = (pointer.as_u48() << 16) | self.delete.version(pointer) as Payload;
         if let Some((_, growing)) = self.write.as_ref() {
             use crate::index::segments::growing::GrowingSegmentInsertError;
-            if let Err(GrowingSegmentInsertError) = growing.insert(vector.vector(), payload) {
+            if let Err(GrowingSegmentInsertError) = growing.insert(vector.inner(), payload) {
                 return Ok(Err(OutdatedError));
             }
             Ok(Ok(()))

@@ -5,11 +5,11 @@ use crate::prelude::*;
 use std::path::Path;
 use std::sync::Arc;
 
-pub struct Raw<S> {
-    mmap: S,
+pub struct Raw<S: G> {
+    mmap: S::Storage,
 }
 
-impl<S: Storage> Raw<S> {
+impl<S: G> Raw<S> {
     pub fn create<I: G<Element = S::Element>>(
         path: &Path,
         options: IndexOptions,
@@ -18,13 +18,13 @@ impl<S: Storage> Raw<S> {
     ) -> Self {
         std::fs::create_dir(path).unwrap();
         let ram = make(sealed, growing, options);
-        let mmap = S::save(path, ram);
+        let mmap = S::Storage::save(path, ram);
         crate::utils::dir_ops::sync_dir(path);
         Self { mmap }
     }
 }
 
-impl<S: Storage> Raw<S> {
+impl<S: G> Raw<S> {
     pub fn dims(&self) -> u16 {
         self.mmap.dims()
     }
@@ -34,7 +34,7 @@ impl<S: Storage> Raw<S> {
     }
 
     pub fn content(&self, i: u32) -> S::VectorRef<'_> {
-        self.mmap.content(i)
+        S::raw_to_ref(self.dims(), self.mmap.content(i))
     }
 
     pub fn payload(&self, i: u32) -> Payload {
@@ -43,13 +43,13 @@ impl<S: Storage> Raw<S> {
 
     pub fn load(path: &Path, options: IndexOptions) -> Self {
         Self {
-            mmap: S::load(path, options),
+            mmap: S::Storage::load(path, options),
         }
     }
 }
 
-unsafe impl<S: Storage> Send for Raw<S> {}
-unsafe impl<S: Storage> Sync for Raw<S> {}
+unsafe impl<S: G> Send for Raw<S> {}
+unsafe impl<S: G> Sync for Raw<S> {}
 
 struct RawRam<S: G> {
     sealed: Vec<Arc<SealedSegment<S>>>,
@@ -72,7 +72,7 @@ impl<S: G> Ram for RawRam<S> {
     fn content(&self, mut index: u32) -> &[Self::Element] {
         for x in self.sealed.iter() {
             if index < x.len() {
-                return x.content(index).vector();
+                return x.content(index).inner();
             }
             index -= x.len();
         }

@@ -66,7 +66,7 @@ impl<S: G> Ivf<S> {
         }
     }
 
-    pub fn content(&self, i: u32) -> <S::Storage as Storage>::VectorRef<'_> {
+    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
         match self {
             Ivf::Naive(x) => x.content(i),
             Ivf::Pq(x) => x.content(i),
@@ -82,7 +82,7 @@ impl<S: G> Ivf<S> {
 
     pub fn basic(
         &self,
-        vector: &[S::Element],
+        vector: S::VectorRef<'_>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -94,7 +94,7 @@ impl<S: G> Ivf<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Element],
+        vector: S::VectorRef<'a>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {

@@ -62,15 +62,15 @@ pub trait Quan<S: G> {
         path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        raw: &Arc<Raw<S::Storage>>,
+        raw: &Arc<Raw<S>>,
     ) -> Self;
     fn open(
         path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        raw: &Arc<Raw<S::Storage>>,
+        raw: &Arc<Raw<S>>,
     ) -> Self;
-    fn distance(&self, lhs: &[S::Element], rhs: u32) -> F32;
+    fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32;
     fn distance2(&self, lhs: u32, rhs: u32) -> F32;
 }
 
@@ -85,7 +85,7 @@ impl<S: G> Quantization<S> {
         path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        raw: &Arc<Raw<S::Storage>>,
+        raw: &Arc<Raw<S>>,
     ) -> Self {
         match quantization_options {
             QuantizationOptions::Trivial(_) => Self::Trivial(TrivialQuantization::create(
@@ -113,7 +113,7 @@ impl<S: G> Quantization<S> {
         path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        raw: &Arc<Raw<S::Storage>>,
+        raw: &Arc<Raw<S>>,
     ) -> Self {
         match quantization_options {
             QuantizationOptions::Trivial(_) => Self::Trivial(TrivialQuantization::open(
@@ -137,7 +137,7 @@ impl<S: G> Quantization<S> {
         }
     }
 
-    pub fn distance(&self, lhs: &[S::Element], rhs: u32) -> F32 {
+    pub fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32 {
         use Quantization::*;
         match self {
             Trivial(x) => x.distance(lhs, rhs),

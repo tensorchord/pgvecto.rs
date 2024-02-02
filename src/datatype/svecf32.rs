@@ -15,8 +15,6 @@ use std::ffi::CStr;
 use std::ffi::CString;
 use std::ops::Deref;
 use std::ops::DerefMut;
-use std::ops::Index;
-use std::ops::IndexMut;
 use std::ptr::NonNull;
 
 #[repr(C, align(8))]
@@ -41,19 +39,22 @@ impl SVecf32 {
         let layout = layout_alpha.extend(layout_beta).unwrap().0;
         layout.pad_to_align()
     }
-    pub fn new_in_postgres(slice: &[SparseF32Element], dims: u16) -> SVecf32Output {
+    pub fn new_in_postgres(vector: SparseF32Ref<'_>) -> SVecf32Output {
         unsafe {
-            assert!(u16::try_from(slice.len()).is_ok());
-            let layout = SVecf32::layout(slice.len());
+            let layout = SVecf32::layout(vector.elements.len());
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut SVecf32;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
             std::ptr::addr_of_mut!((*ptr).varlena).write(SVecf32::varlena(layout.size()));
-            std::ptr::addr_of_mut!((*ptr).dims).write(dims);
+            std::ptr::addr_of_mut!((*ptr).dims).write(vector.dims);
             std::ptr::addr_of_mut!((*ptr).kind).write(2);
             std::ptr::addr_of_mut!((*ptr).reserved).write(0);
             std::ptr::addr_of_mut!((*ptr).padding).write(0);
-            std::ptr::addr_of_mut!((*ptr).len).write(slice.len() as u16);
-            std::ptr::copy_nonoverlapping(slice.as_ptr(), (*ptr).phantom.as_mut_ptr(), slice.len());
+            std::ptr::addr_of_mut!((*ptr).len).write(vector.elements.len() as u16);
+            std::ptr::copy_nonoverlapping(
+                vector.elements.as_ptr(),
+                (*ptr).phantom.as_mut_ptr(),
+                vector.elements.len(),
+            );
             SVecf32Output(NonNull::new(ptr).unwrap())
         }
     }
@@ -63,15 +64,18 @@ impl SVecf32 {
     pub fn len(&self) -> usize {
         self.len as usize
     }
-    pub fn data(&self) -> &[SparseF32Element] {
+    pub fn data(&self) -> SparseF32Ref<'_> {
         debug_assert_eq!(self.varlena & 3, 0);
         debug_assert_eq!(self.kind, 2);
-        unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.len as usize) }
+        let elements =
+            unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.len as usize) };
+        SparseF32Ref {
+            dims: self.dims,
+            elements,
+        }
     }
-    pub fn data_mut(&mut self) -> &mut [SparseF32Element] {
-        debug_assert_eq!(self.varlena & 3, 0);
-        debug_assert_eq!(self.kind, 2);
-        unsafe { std::slice::from_raw_parts_mut(self.phantom.as_mut_ptr(), self.len as usize) }
+    pub fn iter(&self) -> std::slice::Iter<'_, SparseF32Element> {
+        self.data().elements.iter()
     }
 }
 
@@ -91,52 +95,8 @@ impl PartialOrd for SVecf32 {
 
 impl Ord for SVecf32 {
     fn cmp(&self, other: &Self) -> Ordering {
-        use Ordering::*;
-        let n = std::cmp::min(self.len(), other.len());
-        if let x @ Less | x @ Greater = self.data()[..n].cmp(&other.data()[..n]) {
-            return x;
-        }
-        self.len().cmp(&other.len())
-    }
-}
-
-impl Deref for SVecf32 {
-    type Target = [SparseF32Element];
-
-    fn deref(&self) -> &Self::Target {
-        self.data()
-    }
-}
-
-impl DerefMut for SVecf32 {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.data_mut()
-    }
-}
-
-impl AsRef<[SparseF32Element]> for SVecf32 {
-    fn as_ref(&self) -> &[SparseF32Element] {
-        self.data()
-    }
-}
-
-impl AsMut<[SparseF32Element]> for SVecf32 {
-    fn as_mut(&mut self) -> &mut [SparseF32Element] {
-        self.data_mut()
-    }
-}
-
-impl Index<usize> for SVecf32 {
-    type Output = SparseF32Element;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        self.data().index(index)
-    }
-}
-
-impl IndexMut<usize> for SVecf32 {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        self.data_mut().index_mut(index)
+        assert!(self.dims() == other.dims());
+        self.data().elements.cmp(&other.data().elements)
     }
 }
 
@@ -309,26 +269,23 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
     if index > 65535 {
         SessionError::BadValueDimensions.friendly();
     }
-    SVecf32::new_in_postgres(&vector, index as u16)
+    SVecf32::new_in_postgres(SparseF32Ref {
+        dims: index as u16,
+        elements: &vector,
+    })
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_svecf32_out(vector: SVecf32Input<'_>) -> CString {
     let mut buffer = String::new();
     buffer.push('[');
-    let mut index = 0;
-    let mut iter = expand_sparse(&vector);
+    let vec = vector.data().to_dense();
+    let mut iter = vec.iter();
     if let Some(x) = iter.next() {
         buffer.push_str(format!("{}", x).as_str());
-        index += 1;
     }
     for x in iter {
         buffer.push_str(format!(", {}", x).as_str());
-        index += 1;
-    }
-    while index < vector.dims() {
-        buffer.push_str(", 0");
-        index += 1;
     }
     buffer.push(']');
     CString::new(buffer).unwrap()
@@ -421,10 +378,11 @@ fn svector_from_kv_string(dims: i32, input: &str) -> SVecf32Output {
 
     vector.sort_unstable_by_key(|x| x.index);
     if vector.len() > 1 {
-        for i in 0..vector.len() - 2 {
+        for i in 0..vector.len() - 1 {
             if vector[i].index == vector[i + 1].index {
-                SessionError::Custom {
-                    message: "Duplicated index.",
+                SessionError::ConstructError {
+                    dst: "svector".to_string(),
+                    hint: "Duplicated index.".to_string(),
                 }
                 .friendly();
             }
@@ -437,7 +395,10 @@ fn svector_from_kv_string(dims: i32, input: &str) -> SVecf32Output {
     if !vector.is_empty() && vector[vector.len() - 1].index >= dims as u32 {
         SessionError::BadValueDimensions.friendly();
     }
-    SVecf32::new_in_postgres(&vector, dims)
+    SVecf32::new_in_postgres(SparseF32Ref {
+        dims,
+        elements: &vector,
+    })
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
@@ -451,14 +412,16 @@ fn svector_from_split_array(
         Err(_) => SessionError::BadValueDimensions.friendly(),
     };
     if index.len() != value.len() {
-        SessionError::Custom {
-            message: "Lengths of index and value are not matched.",
+        SessionError::ConstructError {
+            dst: "svector".to_string(),
+            hint: "Lengths of index and value are not matched.".to_string(),
         }
         .friendly();
     }
     if index.contains_nulls() || value.contains_nulls() {
-        SessionError::Custom {
-            message: "Index or value contains nulls.",
+        SessionError::ConstructError {
+            dst: "svector".to_string(),
+            hint: "Index or value contains nulls.".to_string(),
         }
         .friendly();
     }
@@ -477,14 +440,18 @@ fn svector_from_split_array(
         .collect();
     vector.sort_unstable_by_key(|x| x.index);
     if vector.len() > 1 {
-        for i in 0..vector.len() - 2 {
+        for i in 0..vector.len() - 1 {
             if vector[i].index == vector[i + 1].index {
-                SessionError::Custom {
-                    message: "Duplicated index.",
+                SessionError::ConstructError {
+                    dst: "svector".to_string(),
+                    hint: "Duplicated index.".to_string(),
                 }
                 .friendly();
             }
         }
     }
-    SVecf32::new_in_postgres(&vector, dims)
+    SVecf32::new_in_postgres(SparseF32Ref {
+        dims,
+        elements: &vector,
+    })
 }

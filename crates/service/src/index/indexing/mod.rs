@@ -81,13 +81,13 @@ pub trait AbstractIndexing<S: G> {
     ) -> Self;
     fn basic(
         &self,
-        vector: &[S::Element],
+        vector: S::VectorRef<'_>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>>;
     fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Element],
+        vector: S::VectorRef<'a>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>);
@@ -121,7 +121,7 @@ impl<S: G> DynamicIndexing<S> {
 
     pub fn basic(
         &self,
-        vector: &[S::Element],
+        vector: S::VectorRef<'_>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -134,7 +134,7 @@ impl<S: G> DynamicIndexing<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Element],
+        vector: S::VectorRef<'a>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -161,7 +161,7 @@ impl<S: G> DynamicIndexing<S> {
         }
     }
 
-    pub fn content(&self, i: u32) -> <S::Storage as Storage>::VectorRef<'_> {
+    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
         match self {
             DynamicIndexing::Flat(x) => x.content(i),
             DynamicIndexing::Ivf(x) => x.content(i),

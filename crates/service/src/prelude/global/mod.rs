@@ -23,7 +23,10 @@ pub use sparse_f32_l2::SparseF32L2;
 
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fmt::{Debug, Display};
+use std::{
+    borrow::Cow,
+    fmt::{Debug, Display},
+};
 
 pub trait G: Copy + Debug + 'static {
     type Element: Copy
@@ -50,21 +53,36 @@ pub trait G: Copy + Debug + 'static {
         + num_traits::NumOps
         + num_traits::NumAssignOps
         + FloatCast;
-    type Storage: Storage<Element = Self::Element, Scalar = Self::Scalar>;
-    type L2: G<Element = Self::Scalar, Scalar = Self::Scalar>;
+    type Storage: Storage<Element = Self::Element>;
+    type L2: for<'a> G<
+        Element = Self::Scalar,
+        Scalar = Self::Scalar,
+        VectorRef<'a> = &'a [Self::Scalar],
+    >;
+    type VectorOwned: VectorOwned<Element = Self::Element>;
+    type VectorRef<'a>: VectorRef<'a, Element = Self::Element> + Copy + 'a
+    where
+        Self: 'a;
 
-    fn distance(lhs: &[Self::Element], rhs: &[Self::Element]) -> F32;
+    const DISTANCE: Distance;
+    const KIND: Kind;
+
+    fn raw_to_ref(dims: u16, raw: &[Self::Element]) -> Self::VectorRef<'_>;
+    fn owned_to_ref(vector: &Self::VectorOwned) -> Self::VectorRef<'_>;
+    fn ref_to_owned(vector: Self::VectorRef<'_>) -> Self::VectorOwned;
+    fn to_dense(vector: Self::VectorRef<'_>) -> Cow<'_, [Self::Scalar]>;
+    fn distance(lhs: Self::VectorRef<'_>, rhs: Self::VectorRef<'_>) -> F32;
 
     fn elkan_k_means_normalize(vector: &mut [Self::Scalar]);
-    fn elkan_k_means_normalize2(vector: &mut [Self::Element]);
+    fn elkan_k_means_normalize2(vector: &mut Self::VectorOwned);
     fn elkan_k_means_distance(lhs: &[Self::Scalar], rhs: &[Self::Scalar]) -> F32;
-    fn elkan_k_means_distance2(lhs: &[Self::Element], rhs: &[Self::Scalar]) -> F32;
+    fn elkan_k_means_distance2(lhs: Self::VectorRef<'_>, rhs: &[Self::Scalar]) -> F32;
 
     fn scalar_quantization_distance(
         dims: u16,
         max: &[Self::Scalar],
         min: &[Self::Scalar],
-        lhs: &[Self::Element],
+        lhs: Self::VectorRef<'_>,
         rhs: &[u8],
     ) -> F32;
     fn scalar_quantization_distance2(
@@ -79,7 +97,7 @@ pub trait G: Copy + Debug + 'static {
         dims: u16,
         ratio: u16,
         centroids: &[Self::Scalar],
-        lhs: &[Self::Element],
+        lhs: Self::VectorRef<'_>,
         rhs: &[u8],
     ) -> F32;
     fn product_quantization_distance2(
@@ -93,7 +111,7 @@ pub trait G: Copy + Debug + 'static {
         dims: u16,
         ratio: u16,
         centroids: &[Self::Scalar],
-        lhs: &[Self::Element],
+        lhs: Self::VectorRef<'_>,
         rhs: &[u8],
         delta: &[Self::Scalar],
     ) -> F32;
@@ -107,6 +125,44 @@ pub trait FloatCast: Sized {
     }
     fn to_f(self) -> F32 {
         F32(Self::to_f32(self))
+    }
+}
+
+pub trait VectorOwned {
+    type Element;
+
+    fn dims(&self) -> u16;
+    fn inner(self) -> Vec<Self::Element>;
+}
+
+pub trait VectorRef<'a> {
+    type Element;
+
+    fn dims(&self) -> u16;
+    fn inner(self) -> &'a [Self::Element];
+}
+
+impl<T> VectorOwned for Vec<T> {
+    type Element = T;
+
+    fn dims(&self) -> u16 {
+        self.len().try_into().unwrap()
+    }
+
+    fn inner(self) -> Vec<Self::Element> {
+        self
+    }
+}
+
+impl<'a, T> VectorRef<'a> for &'a [T] {
+    type Element = T;
+
+    fn dims(&self) -> u16 {
+        self.len().try_into().unwrap()
+    }
+
+    fn inner(self) -> &'a [Self::Element] {
+        self
     }
 }
 

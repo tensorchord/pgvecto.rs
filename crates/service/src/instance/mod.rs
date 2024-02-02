@@ -26,11 +26,6 @@ pub enum Instance {
 
 impl Instance {
     pub fn create(path: PathBuf, options: IndexOptions) -> Result<Self, ServiceError> {
-        if options.vector.k == Kind::SparseF32 && options.indexing.has_quantization() {
-            return Err(ServiceError::ConflictOption {
-                message: "quantization is not supported for sparse vector".to_string(),
-            });
-        }
         match (options.vector.d, options.vector.k) {
             (Distance::Cos, Kind::F32) => {
                 let index = Index::create(path.clone(), options)?;

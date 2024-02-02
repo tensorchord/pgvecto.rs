@@ -21,10 +21,7 @@ pub unsafe fn from_datum(datum: pgrx::pg_sys::Datum) -> DynamicVector {
         1 => DynamicVector::F16((*q.cast::<Vecf16>()).data().to_vec()),
         2 => {
             let svec = &*q.cast::<SVecf32>();
-            DynamicVector::SparseF32(SparseF32 {
-                dims: svec.dims(),
-                elements: svec.data().to_vec(),
-            })
+            DynamicVector::SparseF32(SparseF32::from(svec.data()))
         }
         _ => unreachable!(),
     };

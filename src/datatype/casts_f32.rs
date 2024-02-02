@@ -71,7 +71,10 @@ fn _vectors_cast_vecf32_to_svecf32(
         })
         .collect();
 
-    SVecf32::new_in_postgres(&data, vector.len() as u16)
+    SVecf32::new_in_postgres(SparseF32Ref {
+        dims: vector.len() as u16,
+        elements: &data,
+    })
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
@@ -80,8 +83,6 @@ fn _vectors_cast_svecf32_to_vecf32(
     _typmod: i32,
     _explicit: bool,
 ) -> Vecf32Output {
-    let mut data: Vec<F32> = expand_sparse(&vector).collect();
-    data.resize(vector.dims() as usize, F32::zero());
-
+    let data = vector.data().to_dense();
     Vecf32::new_in_postgres(&data)
 }

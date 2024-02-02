@@ -82,7 +82,7 @@ impl<S: G> Quan<S> for ProductQuantization<S> {
         path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        raw: &Arc<Raw<S::Storage>>,
+        raw: &Arc<Raw<S>>,
     ) -> Self {
         Self::with_normalizer(path, options, quantization_options, raw, |_, _| ())
     }
@@ -91,7 +91,7 @@ impl<S: G> Quan<S> for ProductQuantization<S> {
         path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        _: &Arc<Raw<S::Storage>>,
+        _: &Arc<Raw<S>>,
     ) -> Self {
         let centroids =
             serde_json::from_slice(&std::fs::read(path.join("centroids")).unwrap()).unwrap();
@@ -104,7 +104,7 @@ impl<S: G> Quan<S> for ProductQuantization<S> {
         }
     }
 
-    fn distance(&self, lhs: &[S::Element], rhs: u32) -> F32 {
+    fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32 {
         let dims = self.dims;
         let ratio = self.ratio;
         let rhs = self.codes(rhs);
@@ -125,14 +125,14 @@ impl<S: G> ProductQuantization<S> {
         path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        raw: &Raw<S::Storage>,
+        raw: &Raw<S>,
         normalizer: F,
     ) -> Self
     where
         F: Fn(u32, &mut [S::Scalar]),
     {
-        debug_assert!(
-            options.vector.k != Kind::SparseF32,
+        assert!(
+            S::KIND != Kind::SparseF32,
             "Product quantization is not supported for sparse vectors."
         );
 
@@ -146,9 +146,8 @@ impl<S: G> ProductQuantization<S> {
             let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
             let mut samples = Vec2::<S::Scalar>::new(options.vector.dims, m as usize);
             for i in 0..m {
-                samples[i as usize].copy_from_slice(
-                    S::Storage::full_vector(raw.content(f[i as usize] as u32)).as_ref(),
-                );
+                samples[i as usize]
+                    .copy_from_slice(S::to_dense(raw.content(f[i as usize] as u32)).as_ref());
             }
             samples
         };
@@ -174,7 +173,7 @@ impl<S: G> ProductQuantization<S> {
             }
         }
         let codes_iter = (0..n).flat_map(|i| {
-            let mut vector = S::Storage::full_vector(raw.content(i)).to_vec();
+            let mut vector = S::to_dense(raw.content(i)).to_vec();
             normalizer(i, &mut vector);
             let width = dims.div_ceil(ratio);
             let mut result = Vec::with_capacity(width as usize);
@@ -211,7 +210,7 @@ impl<S: G> ProductQuantization<S> {
         }
     }
 
-    pub fn distance_with_delta(&self, lhs: &[S::Element], rhs: u32, delta: &[S::Scalar]) -> F32 {
+    pub fn distance_with_delta(&self, lhs: S::VectorRef<'_>, rhs: u32, delta: &[S::Scalar]) -> F32 {
         let dims = self.dims;
         let ratio = self.ratio;
         let rhs = self.codes(rhs);

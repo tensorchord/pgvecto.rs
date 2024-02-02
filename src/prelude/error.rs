@@ -70,10 +70,14 @@ INFORMATION: left_dimensions = {left_dimensions}, right_dimensions = {right_dime
         left_dimensions: u16,
         right_dimensions: u16,
     },
-    #[error("{message}")]
-    Custom {
-        message: &'static str,
-    },
+    #[error("\
+Failed to construct the value of {dst}.
+INFORMATION: hint = {hint}\
+")]
+    ConstructError {
+        dst: String,
+        hint: String,
+    }
 }
 
 impl FriendlyError for SessionError {}

@@ -44,7 +44,10 @@ fn _vectors_svecf32_operator_add(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -
     v.extend(lhs_iter);
     v.extend(rhs_iter);
 
-    SVecf32::new_in_postgres(&v, lhs.dims())
+    SVecf32::new_in_postgres(SparseF32Ref {
+        dims: lhs.dims(),
+        elements: &v,
+    })
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe)]
@@ -89,7 +92,10 @@ fn _vectors_svecf32_operator_minus(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>)
     v.extend(lhs_iter);
     v.extend(rhs_iter);
 
-    SVecf32::new_in_postgres(&v, lhs.dims())
+    SVecf32::new_in_postgres(SparseF32Ref {
+        dims: lhs.dims(),
+        elements: &v,
+    })
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe)]
@@ -180,7 +186,7 @@ fn _vectors_svecf32_operator_cosine(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>
         .friendly();
     }
 
-    SparseF32Cos::distance(&lhs, &rhs).to_f32()
+    SparseF32Cos::distance(lhs.data(), rhs.data()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe)]
@@ -193,7 +199,7 @@ fn _vectors_svecf32_operator_dot(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -
         .friendly();
     }
 
-    SparseF32Dot::distance(&lhs, &rhs).to_f32()
+    SparseF32Dot::distance(lhs.data(), rhs.data()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe)]
@@ -206,5 +212,5 @@ fn _vectors_svecf32_operator_l2(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) ->
         .friendly();
     }
 
-    SparseF32L2::distance(&lhs, &rhs).to_f32()
+    SparseF32L2::distance(lhs.data(), rhs.data()).to_f32()
 }

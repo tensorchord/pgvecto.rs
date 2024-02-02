@@ -43,10 +43,10 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         path: &Path,
         options: IndexOptions,
         _: QuantizationOptions,
-        raw: &Arc<Raw<S::Storage>>,
+        raw: &Arc<Raw<S>>,
     ) -> Self {
-        debug_assert!(
-            options.vector.k != Kind::SparseF32,
+        assert!(
+            S::KIND != Kind::SparseF32,
             "Scalar quantization is not supported for sparse vectors."
         );
 
@@ -56,7 +56,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         let mut min = vec![S::Scalar::infinity(); dims as usize];
         let n = raw.len();
         for i in 0..n {
-            let vector = S::Storage::full_vector(raw.content(i));
+            let vector = S::to_dense(raw.content(i));
             for j in 0..dims as usize {
                 max[j] = std::cmp::max(max[j], vector[j]);
                 min[j] = std::cmp::min(min[j], vector[j]);
@@ -65,7 +65,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         std::fs::write(path.join("max"), serde_json::to_string(&max).unwrap()).unwrap();
         std::fs::write(path.join("min"), serde_json::to_string(&min).unwrap()).unwrap();
         let codes_iter = (0..n).flat_map(|i| {
-            let vector = S::Storage::full_vector(raw.content(i));
+            let vector = S::to_dense(raw.content(i));
             let mut result = vec![0u8; dims as usize];
             for i in 0..dims as usize {
                 let w = (((vector[i] - min[i]) / (max[i] - min[i])).to_f32() * 256.0) as u32;
@@ -83,12 +83,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         }
     }
 
-    fn open(
-        path: &Path,
-        options: IndexOptions,
-        _: QuantizationOptions,
-        _: &Arc<Raw<S::Storage>>,
-    ) -> Self {
+    fn open(path: &Path, options: IndexOptions, _: QuantizationOptions, _: &Arc<Raw<S>>) -> Self {
         let dims = options.vector.dims;
         let max = serde_json::from_slice(&std::fs::read("max").unwrap()).unwrap();
         let min = serde_json::from_slice(&std::fs::read("min").unwrap()).unwrap();
@@ -101,7 +96,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         }
     }
 
-    fn distance(&self, lhs: &[S::Element], rhs: u32) -> F32 {
+    fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32 {
         let dims = self.dims;
         let rhs = self.codes(rhs);
         S::scalar_quantization_distance(dims, &self.max, &self.min, lhs, rhs)

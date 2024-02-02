@@ -1,4 +1,4 @@
-use crate::{prelude::*, utils::iter::RefPeekable};
+use crate::prelude::*;
 
 #[inline(always)]
 #[multiversion::multiversion(targets(
@@ -8,8 +8,8 @@ use crate::{prelude::*, utils::iter::RefPeekable};
     "aarch64+neon"
 ))]
 pub fn cosine(lhs: &[SparseF32Element], rhs: &[SparseF32Element]) -> F32 {
-    let mut lhs_iter = RefPeekable::new(lhs.iter());
-    let mut rhs_iter = RefPeekable::new(rhs.iter());
+    let mut lhs_iter = lhs.iter().peekable();
+    let mut rhs_iter = rhs.iter().peekable();
     let mut xy = F32::zero();
     let mut x2 = F32::zero();
     let mut y2 = F32::zero();
@@ -49,8 +49,8 @@ pub fn cosine(lhs: &[SparseF32Element], rhs: &[SparseF32Element]) -> F32 {
     "aarch64+neon"
 ))]
 pub fn dot(lhs: &[SparseF32Element], rhs: &[SparseF32Element]) -> F32 {
-    let mut lhs_iter = RefPeekable::new(lhs.iter());
-    let mut rhs_iter = RefPeekable::new(rhs.iter());
+    let mut lhs_iter = lhs.iter().peekable();
+    let mut rhs_iter = rhs.iter().peekable();
     let mut xy = F32::zero();
     while let (Some(&lhs), Some(&rhs)) = (lhs_iter.peek(), rhs_iter.peek()) {
         match lhs.index.cmp(&rhs.index) {
@@ -93,8 +93,8 @@ pub fn dot_2(lhs: &[SparseF32Element], rhs: &[F32]) -> F32 {
     "aarch64+neon"
 ))]
 pub fn sl2(lhs: &[SparseF32Element], rhs: &[SparseF32Element]) -> F32 {
-    let mut lhs_iter = RefPeekable::new(lhs.iter());
-    let mut rhs_iter = RefPeekable::new(rhs.iter());
+    let mut lhs_iter = lhs.iter().peekable();
+    let mut rhs_iter = rhs.iter().peekable();
     let mut d2 = F32::zero();
     while let (Some(&lhs), Some(&rhs)) = (lhs_iter.peek(), rhs_iter.peek()) {
         match lhs.index.cmp(&rhs.index) {

@@ -19,31 +19,23 @@ impl Default for TrivialQuantizationOptions {
 }
 
 pub struct TrivialQuantization<S: G> {
-    raw: Arc<Raw<S::Storage>>,
+    raw: Arc<Raw<S>>,
 }
 
 impl<S: G> Quan<S> for TrivialQuantization<S> {
-    fn create(
-        _: &Path,
-        _: IndexOptions,
-        _: QuantizationOptions,
-        raw: &Arc<Raw<S::Storage>>,
-    ) -> Self {
+    fn create(_: &Path, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S>>) -> Self {
         Self { raw: raw.clone() }
     }
 
-    fn open(_: &Path, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S::Storage>>) -> Self {
+    fn open(_: &Path, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S>>) -> Self {
         Self { raw: raw.clone() }
     }
 
-    fn distance(&self, lhs: &[S::Element], rhs: u32) -> F32 {
-        S::distance(lhs, self.raw.content(rhs).vector())
+    fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32 {
+        S::distance(lhs, self.raw.content(rhs))
     }
 
     fn distance2(&self, lhs: u32, rhs: u32) -> F32 {
-        S::distance(
-            self.raw.content(lhs).vector(),
-            self.raw.content(rhs).vector(),
-        )
+        S::distance(self.raw.content(lhs), self.raw.content(rhs))
     }
 }

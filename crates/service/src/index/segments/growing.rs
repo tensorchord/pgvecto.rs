@@ -24,6 +24,7 @@ pub struct GrowingSegmentInsertError;
 
 pub struct GrowingSegment<S: G> {
     uuid: Uuid,
+    dims: u16,
     vec: Vec<UnsafeCell<MaybeUninit<Log<S>>>>,
     wal: Mutex<FileWal>,
     len: AtomicUsize,
@@ -44,6 +45,7 @@ impl<S: G> GrowingSegment<S> {
         sync_dir(&path);
         Arc::new(Self {
             uuid,
+            dims: options.vector.dims,
             #[allow(clippy::uninit_vec)]
             vec: unsafe {
                 let mut vec = Vec::with_capacity(capacity as usize);
@@ -60,7 +62,12 @@ impl<S: G> GrowingSegment<S> {
         })
     }
 
-    pub fn open(_tracker: Arc<IndexTracker>, path: PathBuf, uuid: Uuid) -> Arc<Self> {
+    pub fn open(
+        _tracker: Arc<IndexTracker>,
+        path: PathBuf,
+        uuid: Uuid,
+        options: IndexOptions,
+    ) -> Arc<Self> {
         let mut wal = FileWal::open(path.join("wal"));
         let mut vec = Vec::new();
         while let Some(log) = wal.read() {
@@ -71,6 +78,7 @@ impl<S: G> GrowingSegment<S> {
         let n = vec.len();
         Arc::new(Self {
             uuid,
+            dims: options.vector.dims,
             vec,
             wal: { Mutex::new(wal) },
             len: AtomicUsize::new(n),
@@ -120,10 +128,10 @@ impl<S: G> GrowingSegment<S> {
 
     pub fn insert(
         &self,
-        vector: Vec<S::Element>,
+        content: Vec<S::Element>,
         payload: Payload,
     ) -> Result<(), GrowingSegmentInsertError> {
-        let log = Log { vector, payload };
+        let log = Log { content, payload };
         let i;
         {
             let mut pro = self.pro.lock();
@@ -174,7 +182,7 @@ impl<S: G> GrowingSegment<S> {
             panic!("Out of bound.");
         }
         let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
-        log.vector.as_ref()
+        log.content.as_ref()
     }
 
     pub fn payload(&self, i: u32) -> Payload {
@@ -188,7 +196,7 @@ impl<S: G> GrowingSegment<S> {
 
     pub fn basic(
         &self,
-        vector: &[S::Element],
+        vector: S::VectorRef<'_>,
         _opts: &SearchOptions,
         mut filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -197,7 +205,7 @@ impl<S: G> GrowingSegment<S> {
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
             if filter.check(log.payload) {
-                let distance = S::distance(vector, &log.vector);
+                let distance = S::distance(vector, S::raw_to_ref(self.dims, &log.content));
                 result.push(Reverse(Element {
                     distance,
                     payload: log.payload,
@@ -209,7 +217,7 @@ impl<S: G> GrowingSegment<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Element],
+        vector: S::VectorRef<'a>,
         _opts: &SearchOptions,
         mut filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
@@ -218,7 +226,7 @@ impl<S: G> GrowingSegment<S> {
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
             if filter.check(log.payload) {
-                let distance = S::distance(vector, &log.vector);
+                let distance = S::distance(vector, S::raw_to_ref(self.dims, &log.content));
                 result.push(Element {
                     distance,
                     payload: log.payload,
@@ -245,7 +253,7 @@ impl<S: G> Drop for GrowingSegment<S> {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Log<S: G> {
-    vector: Vec<S::Element>,
+    content: Vec<S::Element>,
     payload: Payload,
 }
 

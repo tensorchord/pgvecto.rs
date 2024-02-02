@@ -44,7 +44,7 @@ impl<S: G> Hnsw<S> {
 
     pub fn basic(
         &self,
-        vector: &[S::Element],
+        vector: S::VectorRef<'_>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -53,7 +53,7 @@ impl<S: G> Hnsw<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Element],
+        vector: S::VectorRef<'a>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -68,7 +68,7 @@ impl<S: G> Hnsw<S> {
         self.mmap.raw.len()
     }
 
-    pub fn content(&self, i: u32) -> <S::Storage as Storage>::VectorRef<'_> {
+    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
         self.mmap.raw.content(i)
     }
 
@@ -81,7 +81,7 @@ unsafe impl<S: G> Send for Hnsw<S> {}
 unsafe impl<S: G> Sync for Hnsw<S> {}
 
 pub struct HnswRam<S: G> {
-    raw: Arc<Raw<S::Storage>>,
+    raw: Arc<Raw<S>>,
     quantization: Quantization<S>,
     // ----------------------
     m: u32,
@@ -110,7 +110,7 @@ struct HnswRamLayer {
 }
 
 pub struct HnswMmap<S: G> {
-    raw: Arc<Raw<S::Storage>>,
+    raw: Arc<Raw<S>>,
     quantization: Quantization<S>,
     // ----------------------
     m: u32,
@@ -174,7 +174,7 @@ pub fn make<S: G>(
             graph: &HnswRamGraph,
             levels: RangeInclusive<u8>,
             u: u32,
-            target: &[S::Element],
+            target: S::VectorRef<'_>,
         ) -> u32 {
             let mut u = u;
             let mut u_dis = quantization.distance(target, u);
@@ -199,7 +199,7 @@ pub fn make<S: G>(
             quantization: &Quantization<S>,
             graph: &HnswRamGraph,
             visited: &mut VisitedGuard,
-            vector: &[S::Element],
+            vector: S::VectorRef<'_>,
             s: u32,
             k: usize,
             i: u8,
@@ -256,7 +256,7 @@ pub fn make<S: G>(
             *input = res;
         }
         let mut visited = visited.fetch();
-        let target = (raw.content(i) as <S::Storage as Storage>::VectorRef<'_>).vector();
+        let target = raw.content(i);
         let levels = graph.vertexs[i as usize].levels();
         let local_entry;
         let update_entry;
@@ -398,7 +398,7 @@ pub fn load<S: G>(path: &Path, options: IndexOptions) -> HnswMmap<S> {
 
 pub fn basic<S: G>(
     mmap: &HnswMmap<S>,
-    vector: &[S::Element],
+    vector: S::VectorRef<'_>,
     ef_search: usize,
     filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
@@ -412,7 +412,7 @@ pub fn basic<S: G>(
 
 pub fn vbase<'a, S: G>(
     mmap: &'a HnswMmap<S>,
-    vector: &'a [S::Element],
+    vector: S::VectorRef<'a>,
     range: usize,
     filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -470,7 +470,7 @@ pub fn fast_search<S: G>(
     mmap: &HnswMmap<S>,
     levels: RangeInclusive<u8>,
     u: u32,
-    vector: &[S::Element],
+    vector: S::VectorRef<'_>,
     mut filter: impl Filter,
 ) -> u32 {
     let mut u = u;
@@ -500,7 +500,7 @@ pub fn local_search_basic<S: G>(
     mmap: &HnswMmap<S>,
     k: usize,
     s: u32,
-    vector: &[S::Element],
+    vector: S::VectorRef<'_>,
     mut filter: impl Filter,
 ) -> ElementHeap {
     let mut visited = mmap.visited.fetch();
@@ -544,7 +544,7 @@ pub fn local_search_basic<S: G>(
 pub fn local_search_vbase<'a, S: G>(
     mmap: &'a HnswMmap<S>,
     s: u32,
-    vector: &'a [S::Element],
+    vector: S::VectorRef<'a>,
     mut filter: impl Filter + 'a,
 ) -> impl Iterator<Item = Element> + 'a {
     let mut visited = mmap.visited.fetch2();

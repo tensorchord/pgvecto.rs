@@ -1,16 +1,36 @@
 use crate::prelude::*;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, Copy)]
 pub enum F32Cos {}
 
 impl G for F32Cos {
     type Element = F32;
-
     type Scalar = F32;
-
     type Storage = DenseMmap<F32>;
-
     type L2 = F32L2;
+    type VectorOwned = Vec<F32>;
+    type VectorRef<'a> = &'a [F32];
+
+    const DISTANCE: Distance = Distance::Cos;
+    const KIND: Kind = Kind::F32;
+
+    fn raw_to_ref(dims: u16, raw: &[F32]) -> &[F32] {
+        debug_assert!(dims as usize == raw.len());
+        raw
+    }
+
+    fn owned_to_ref(vector: &Vec<F32>) -> &[F32] {
+        vector
+    }
+
+    fn ref_to_owned(vector: &[F32]) -> Vec<F32> {
+        vector.to_vec()
+    }
+
+    fn to_dense(vector: Self::VectorRef<'_>) -> Cow<'_, [F32]> {
+        Cow::Borrowed(vector)
+    }
 
     fn distance(lhs: &[F32], rhs: &[F32]) -> F32 {
         F32(1.0) - super::f32::cosine(lhs, rhs)
@@ -20,7 +40,7 @@ impl G for F32Cos {
         super::f32::l2_normalize(vector)
     }
 
-    fn elkan_k_means_normalize2(vector: &mut [F32]) {
+    fn elkan_k_means_normalize2(vector: &mut Vec<F32>) {
         super::f32::l2_normalize(vector)
     }
 

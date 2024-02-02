@@ -36,7 +36,7 @@ impl<S: G> Flat<S> {
 
     pub fn basic(
         &self,
-        vector: &[S::Element],
+        vector: S::VectorRef<'_>,
         _opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -45,7 +45,7 @@ impl<S: G> Flat<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Element],
+        vector: S::VectorRef<'a>,
         _opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -60,7 +60,7 @@ impl<S: G> Flat<S> {
         self.mmap.raw.len()
     }
 
-    pub fn content(&self, i: u32) -> <S::Storage as Storage>::VectorRef<'_> {
+    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
         self.mmap.raw.content(i)
     }
 
@@ -73,12 +73,12 @@ unsafe impl<S: G> Send for Flat<S> {}
 unsafe impl<S: G> Sync for Flat<S> {}
 
 pub struct FlatRam<S: G> {
-    raw: Arc<Raw<S::Storage>>,
+    raw: Arc<Raw<S>>,
     quantization: Quantization<S>,
 }
 
 pub struct FlatMmap<S: G> {
-    raw: Arc<Raw<S::Storage>>,
+    raw: Arc<Raw<S>>,
     quantization: Quantization<S>,
 }
 
@@ -128,7 +128,7 @@ pub fn load<S: G>(path: &Path, options: IndexOptions) -> FlatMmap<S> {
 
 pub fn basic<S: G>(
     mmap: &FlatMmap<S>,
-    vector: &[S::Element],
+    vector: S::VectorRef<'_>,
     mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
     let mut result = BinaryHeap::new();
@@ -144,7 +144,7 @@ pub fn basic<S: G>(
 
 pub fn vbase<'a, S: G>(
     mmap: &'a FlatMmap<S>,
-    vector: &'a [S::Element],
+    vector: S::VectorRef<'a>,
     mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
     let mut result = Vec::new();

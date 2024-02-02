@@ -55,7 +55,7 @@ impl<S: G> IvfNaive<S> {
         self.mmap.raw.len()
     }
 
-    pub fn content(&self, i: u32) -> <S::Storage as Storage>::VectorRef<'_> {
+    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
         self.mmap.raw.content(i)
     }
 
@@ -65,7 +65,7 @@ impl<S: G> IvfNaive<S> {
 
     pub fn basic(
         &self,
-        vector: &[S::Element],
+        vector: S::VectorRef<'_>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -74,7 +74,7 @@ impl<S: G> IvfNaive<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Element],
+        vector: S::VectorRef<'a>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -86,7 +86,7 @@ unsafe impl<S: G> Send for IvfNaive<S> {}
 unsafe impl<S: G> Sync for IvfNaive<S> {}
 
 pub struct IvfRam<S: G> {
-    raw: Arc<Raw<S::Storage>>,
+    raw: Arc<Raw<S>>,
     quantization: Quantization<S>,
     // ----------------------
     dims: u16,
@@ -102,7 +102,7 @@ unsafe impl<S: G> Send for IvfRam<S> {}
 unsafe impl<S: G> Sync for IvfRam<S> {}
 
 pub struct IvfMmap<S: G> {
-    raw: Arc<Raw<S::Storage>>,
+    raw: Arc<Raw<S>>,
     quantization: Quantization<S>,
     // ----------------------
     dims: u16,
@@ -157,7 +157,7 @@ pub fn make<S: G>(
     let mut samples = Vec2::new(dims, m as usize);
     for i in 0..m {
         samples[i as usize]
-            .copy_from_slice(S::Storage::full_vector(raw.content(f[i as usize] as u32)).as_ref());
+            .copy_from_slice(S::to_dense(raw.content(f[i as usize] as u32)).as_ref());
         S::elkan_k_means_normalize(&mut samples[i as usize]);
     }
     let mut k_means = ElkanKMeans::<S>::new(nlist as usize, samples);
@@ -181,13 +181,11 @@ pub fn make<S: G>(
         nexts
     };
     (0..n).into_par_iter().for_each(|i| {
-        let mut vector = (raw.content(i) as <S::Storage as Storage>::VectorRef<'_>)
-            .vector()
-            .to_vec();
+        let mut vector = S::ref_to_owned(raw.content(i));
         S::elkan_k_means_normalize2(&mut vector);
         let mut result = (F32::infinity(), 0);
         for i in 0..nlist {
-            let dis = S::elkan_k_means_distance2(&vector, &centroids[i as usize]);
+            let dis = S::elkan_k_means_distance2(S::owned_to_ref(&vector), &centroids[i as usize]);
             result = std::cmp::min(result, (dis, i));
         }
         let centroid_id = result.1;
@@ -264,16 +262,16 @@ pub fn load<S: G>(path: &Path, options: IndexOptions) -> IvfMmap<S> {
 
 pub fn basic<S: G>(
     mmap: &IvfMmap<S>,
-    vector: &[S::Element],
+    vector: S::VectorRef<'_>,
     nprobe: u32,
     mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
-    let mut target = vector.to_vec();
+    let mut target = S::ref_to_owned(vector);
     S::elkan_k_means_normalize2(&mut target);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::elkan_k_means_distance2(&target, centroid);
+        let distance = S::elkan_k_means_distance2(S::owned_to_ref(&target), centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,
@@ -299,16 +297,16 @@ pub fn basic<S: G>(
 
 pub fn vbase<'a, S: G>(
     mmap: &'a IvfMmap<S>,
-    vector: &'a [S::Element],
+    vector: S::VectorRef<'a>,
     nprobe: u32,
     mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-    let mut target = vector.to_vec();
+    let mut target = S::ref_to_owned(vector);
     S::elkan_k_means_normalize2(&mut target);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::elkan_k_means_distance2(&target, centroid);
+        let distance = S::elkan_k_means_distance2(S::owned_to_ref(&target), centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,

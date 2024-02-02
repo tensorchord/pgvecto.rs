@@ -47,3 +47,12 @@ query I
 SELECT svector_from_kv_string(5, '[{1: 1}, {2: 2}]');
 ----
 [0, 1, 2, 0, 0]
+
+statement error Lengths of index and value are not matched.
+SELECT svector_from_split_array(5, '{1,2,3}', '{1,2}');
+
+statement error Duplicated index.
+SELECT svector_from_split_array(5, '{1,1}', '{1,2}');
+
+statement error Duplicated index.
+SELECT svector_from_kv_string(5, '[{1: 1}, {1: 2}]');

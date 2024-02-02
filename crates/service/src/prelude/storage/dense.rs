@@ -1,7 +1,6 @@
 use crate::index::IndexOptions;
 use crate::prelude::*;
 use crate::utils::mmap_array::MmapArray;
-use std::borrow::Cow;
 use std::path::Path;
 
 pub struct DenseMmap<T> {
@@ -15,9 +14,6 @@ where
     T: Copy + bytemuck::Pod,
 {
     type Element = T;
-    type Scalar = T;
-    type Vector = Vec<T>;
-    type VectorRef<'a> = &'a [T];
 
     fn dims(&self) -> u16 {
         self.dims
@@ -35,10 +31,6 @@ where
 
     fn payload(&self, i: u32) -> Payload {
         self.payload[i as usize]
-    }
-
-    fn full_vector(contents: Self::VectorRef<'_>) -> Cow<'_, [Self::Scalar]> {
-        Cow::Borrowed(contents)
     }
 
     fn load(path: &Path, options: IndexOptions) -> Self
