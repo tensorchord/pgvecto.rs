@@ -1,3 +1,4 @@
+use crate::algorithms::raw::RawRam;
 use crate::index::IndexOptions;
 use crate::prelude::*;
 use crate::utils::mmap_array::MmapArray;
@@ -13,7 +14,7 @@ impl<T> Storage for DenseMmap<T>
 where
     T: Copy + bytemuck::Pod,
 {
-    type Element = T;
+    type VectorRef<'a> = &'a [T];
 
     fn dims(&self) -> u16 {
         self.dims
@@ -46,12 +47,12 @@ where
         }
     }
 
-    fn save(path: &Path, ram: impl Ram<Element = Self::Element>) -> Self
-    where
-        Self: Sized,
-    {
+    fn save<S: for<'a> G<VectorRef<'a> = Self::VectorRef<'a>>>(
+        path: &Path,
+        ram: RawRam<S>,
+    ) -> Self {
         let n = ram.len();
-        let vectors_iter = (0..n).flat_map(|i| ram.content(i)).copied();
+        let vectors_iter = (0..n).flat_map(|i| ram.content(i).iter()).copied();
         let payload_iter = (0..n).map(|i| ram.payload(i));
         let vectors = MmapArray::create(&path.join("vectors"), vectors_iter);
         let payload = MmapArray::create(&path.join("payload"), payload_iter);

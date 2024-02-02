@@ -7,7 +7,7 @@ use crate::prelude::*;
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn cosine(lhs: &[SparseF32Element], rhs: &[SparseF32Element]) -> F32 {
+pub fn cosine<'a>(lhs: SparseF32Ref<'a>, rhs: SparseF32Ref<'a>) -> F32 {
     let mut lhs_iter = lhs.iter().peekable();
     let mut rhs_iter = rhs.iter().peekable();
     let mut xy = F32::zero();
@@ -48,7 +48,7 @@ pub fn cosine(lhs: &[SparseF32Element], rhs: &[SparseF32Element]) -> F32 {
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn dot(lhs: &[SparseF32Element], rhs: &[SparseF32Element]) -> F32 {
+pub fn dot<'a>(lhs: SparseF32Ref<'a>, rhs: SparseF32Ref<'a>) -> F32 {
     let mut lhs_iter = lhs.iter().peekable();
     let mut rhs_iter = rhs.iter().peekable();
     let mut xy = F32::zero();
@@ -77,10 +77,10 @@ pub fn dot(lhs: &[SparseF32Element], rhs: &[SparseF32Element]) -> F32 {
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn dot_2(lhs: &[SparseF32Element], rhs: &[F32]) -> F32 {
+pub fn dot_2<'a>(lhs: SparseF32Ref<'a>, rhs: &[F32]) -> F32 {
     let mut xy = F32::zero();
-    for &SparseF32Element { index, value } in lhs {
-        xy += value * rhs[index as usize];
+    for i in 0..lhs.indexes.len() {
+        xy += lhs.values[i] * rhs[lhs.indexes[i] as usize];
     }
     xy
 }
@@ -92,7 +92,7 @@ pub fn dot_2(lhs: &[SparseF32Element], rhs: &[F32]) -> F32 {
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn sl2(lhs: &[SparseF32Element], rhs: &[SparseF32Element]) -> F32 {
+pub fn sl2<'a>(lhs: SparseF32Ref<'a>, rhs: SparseF32Ref<'a>) -> F32 {
     let mut lhs_iter = lhs.iter().peekable();
     let mut rhs_iter = rhs.iter().peekable();
     let mut d2 = F32::zero();
@@ -134,23 +134,18 @@ pub fn sl2(lhs: &[SparseF32Element], rhs: &[SparseF32Element]) -> F32 {
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn sl2_2(lhs: &[SparseF32Element], rhs: &[F32]) -> F32 {
+pub fn sl2_2<'a>(lhs: SparseF32Ref<'a>, rhs: &[F32]) -> F32 {
     let mut d2 = F32::zero();
-    let mut i = 0;
-    for &SparseF32Element { index, value } in lhs {
-        while i < index {
-            let d = rhs[i as usize];
-            d2 += d * d;
-            i += 1;
-        }
-        let d = value - rhs[i as usize];
+    let mut index = 0;
+    for i in 0..lhs.dims {
+        let d = if index < lhs.indexes.len() && lhs.indexes[index] == i {
+            let d = lhs.values[index] - rhs[i as usize];
+            index += 1;
+            d
+        } else {
+            rhs[i as usize]
+        };
         d2 += d * d;
-        i += 1;
-    }
-    while i < rhs.len() as u32 {
-        let d = rhs[i as usize];
-        d2 += d * d;
-        i += 1;
     }
     d2
 }
@@ -162,10 +157,10 @@ pub fn sl2_2(lhs: &[SparseF32Element], rhs: &[F32]) -> F32 {
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn length(vector: &[SparseF32Element]) -> F32 {
+pub fn length<'a>(vector: SparseF32Ref<'a>) -> F32 {
     let mut dot = F32::zero();
-    for i in vector {
-        dot += i.value * i.value;
+    for &i in vector.values {
+        dot += i * i;
     }
     dot.sqrt()
 }
@@ -177,9 +172,9 @@ pub fn length(vector: &[SparseF32Element]) -> F32 {
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn l2_normalize(vector: &mut [SparseF32Element]) {
-    let l = length(vector);
-    for i in vector {
-        i.value /= l;
+pub fn l2_normalize(vector: &mut SparseF32) {
+    let l = length(SparseF32Ref::from(vector as &SparseF32));
+    for i in vector.values.iter_mut() {
+        *i /= l;
     }
 }

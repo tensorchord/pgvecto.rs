@@ -29,15 +29,6 @@ use std::{
 };
 
 pub trait G: Copy + Debug + 'static {
-    type Element: Copy
-        + Send
-        + Sync
-        + Debug
-        + Display
-        + Serialize
-        + for<'a> Deserialize<'a>
-        + bytemuck::Zeroable
-        + bytemuck::Pod;
     type Scalar: Copy
         + Send
         + Sync
@@ -53,21 +44,16 @@ pub trait G: Copy + Debug + 'static {
         + num_traits::NumOps
         + num_traits::NumAssignOps
         + FloatCast;
-    type Storage: Storage<Element = Self::Element>;
-    type L2: for<'a> G<
-        Element = Self::Scalar,
-        Scalar = Self::Scalar,
-        VectorRef<'a> = &'a [Self::Scalar],
-    >;
-    type VectorOwned: VectorOwned<Element = Self::Element>;
-    type VectorRef<'a>: VectorRef<'a, Element = Self::Element> + Copy + 'a
+    type Storage: for<'a> Storage<VectorRef<'a> = Self::VectorRef<'a>>;
+    type L2: for<'a> G<Scalar = Self::Scalar, VectorRef<'a> = &'a [Self::Scalar]>;
+    type VectorOwned: VectorOwned + Clone + Serialize + for<'a> Deserialize<'a>;
+    type VectorRef<'a>: VectorRef<'a> + Copy + 'a
     where
         Self: 'a;
 
     const DISTANCE: Distance;
     const KIND: Kind;
 
-    fn raw_to_ref(dims: u16, raw: &[Self::Element]) -> Self::VectorRef<'_>;
     fn owned_to_ref(vector: &Self::VectorOwned) -> Self::VectorRef<'_>;
     fn ref_to_owned(vector: Self::VectorRef<'_>) -> Self::VectorOwned;
     fn to_dense(vector: Self::VectorRef<'_>) -> Cow<'_, [Self::Scalar]>;
@@ -129,40 +115,25 @@ pub trait FloatCast: Sized {
 }
 
 pub trait VectorOwned {
-    type Element;
-
     fn dims(&self) -> u16;
-    fn inner(self) -> Vec<Self::Element>;
 }
 
 pub trait VectorRef<'a> {
-    type Element;
-
     fn dims(&self) -> u16;
-    fn inner(self) -> &'a [Self::Element];
+    fn length(&self) -> u16 {
+        self.dims()
+    }
 }
 
 impl<T> VectorOwned for Vec<T> {
-    type Element = T;
-
     fn dims(&self) -> u16 {
         self.len().try_into().unwrap()
-    }
-
-    fn inner(self) -> Vec<Self::Element> {
-        self
     }
 }
 
 impl<'a, T> VectorRef<'a> for &'a [T] {
-    type Element = T;
-
     fn dims(&self) -> u16 {
         self.len().try_into().unwrap()
-    }
-
-    fn inner(self) -> &'a [Self::Element] {
-        self
     }
 }
 

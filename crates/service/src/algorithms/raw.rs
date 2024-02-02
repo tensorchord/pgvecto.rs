@@ -10,7 +10,7 @@ pub struct Raw<S: G> {
 }
 
 impl<S: G> Raw<S> {
-    pub fn create<I: G<Element = S::Element>>(
+    pub fn create<I: for<'a> G<VectorRef<'a> = S::VectorRef<'a>>>(
         path: &Path,
         options: IndexOptions,
         sealed: Vec<Arc<SealedSegment<I>>>,
@@ -34,7 +34,7 @@ impl<S: G> Raw<S> {
     }
 
     pub fn content(&self, i: u32) -> S::VectorRef<'_> {
-        S::raw_to_ref(self.dims(), self.mmap.content(i))
+        self.mmap.content(i)
     }
 
     pub fn payload(&self, i: u32) -> Payload {
@@ -51,28 +51,26 @@ impl<S: G> Raw<S> {
 unsafe impl<S: G> Send for Raw<S> {}
 unsafe impl<S: G> Sync for Raw<S> {}
 
-struct RawRam<S: G> {
+pub struct RawRam<S: G> {
     sealed: Vec<Arc<SealedSegment<S>>>,
     growing: Vec<Arc<GrowingSegment<S>>>,
     dims: u16,
 }
 
-impl<S: G> Ram for RawRam<S> {
-    type Element = S::Element;
-
-    fn dims(&self) -> u16 {
+impl<S: G> RawRam<S> {
+    pub fn dims(&self) -> u16 {
         self.dims
     }
 
-    fn len(&self) -> u32 {
+    pub fn len(&self) -> u32 {
         self.sealed.iter().map(|x| x.len()).sum::<u32>()
             + self.growing.iter().map(|x| x.len()).sum::<u32>()
     }
 
-    fn content(&self, mut index: u32) -> &[Self::Element] {
+    pub fn content(&self, mut index: u32) -> S::VectorRef<'_> {
         for x in self.sealed.iter() {
             if index < x.len() {
-                return x.content(index).inner();
+                return x.content(index);
             }
             index -= x.len();
         }
@@ -85,7 +83,7 @@ impl<S: G> Ram for RawRam<S> {
         panic!("Out of bound.")
     }
 
-    fn payload(&self, mut index: u32) -> Payload {
+    pub fn payload(&self, mut index: u32) -> Payload {
         for x in self.sealed.iter() {
             if index < x.len() {
                 return x.payload(index);

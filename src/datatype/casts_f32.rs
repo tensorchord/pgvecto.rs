@@ -57,20 +57,22 @@ fn _vectors_cast_vecf32_to_svecf32(
     _typmod: i32,
     _explicit: bool,
 ) -> SVecf32Output {
-    let data: Vec<_> = vector
+    let mut indexes = Vec::new();
+    let mut values = Vec::new();
+    vector
         .data()
         .iter()
         .enumerate()
         .filter(|(_, x)| !x.is_zero())
-        .map(|(i, &x)| SparseF32Element {
-            index: i as u32,
-            value: x,
-        })
-        .collect();
+        .for_each(|(i, &x)| {
+            indexes.push(i as u16);
+            values.push(x);
+        });
 
     SVecf32::new_in_postgres(SparseF32Ref {
         dims: vector.len() as u16,
-        elements: &data,
+        indexes: &indexes,
+        values: &values,
     })
 }
 

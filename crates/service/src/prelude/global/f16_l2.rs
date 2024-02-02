@@ -6,7 +6,6 @@ use crate::prelude::*;
 pub enum F16L2 {}
 
 impl G for F16L2 {
-    type Element = F16;
     type Scalar = F16;
     type Storage = DenseMmap<F16>;
     type L2 = F16L2;
@@ -15,11 +14,6 @@ impl G for F16L2 {
 
     const DISTANCE: Distance = Distance::L2;
     const KIND: Kind = Kind::F16;
-
-    fn raw_to_ref(dims: u16, raw: &[F16]) -> &[F16] {
-        debug_assert!(dims as usize == raw.len());
-        raw
-    }
 
     fn owned_to_ref(vector: &Vec<F16>) -> &[F16] {
         vector

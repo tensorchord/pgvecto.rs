@@ -15,38 +15,46 @@ fn _vectors_svecf32_operator_add(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -
         .friendly();
     }
 
-    let mut v = Vec::<SparseF32Element>::with_capacity(std::cmp::max(lhs.len(), rhs.len()));
-    let mut lhs_iter = lhs.iter().peekable();
-    let mut rhs_iter = rhs.iter().peekable();
+    let mut indexes = Vec::<u16>::with_capacity(std::cmp::max(lhs.len(), rhs.len()));
+    let mut values = Vec::<F32>::with_capacity(std::cmp::max(lhs.len(), rhs.len()));
+    let mut lhs_iter = lhs.data().iter().peekable();
+    let mut rhs_iter = rhs.data().iter().peekable();
     while let (Some(&lhs), Some(&rhs)) = (lhs_iter.peek(), rhs_iter.peek()) {
         match lhs.index.cmp(&rhs.index) {
             std::cmp::Ordering::Less => {
-                v.push(*lhs);
+                indexes.push(lhs.index);
+                values.push(lhs.value);
                 lhs_iter.next();
             }
             std::cmp::Ordering::Equal => {
                 let value = lhs.value + rhs.value;
                 if !value.is_zero() {
-                    v.push(SparseF32Element {
-                        index: lhs.index,
-                        value,
-                    });
+                    indexes.push(lhs.index);
+                    values.push(value);
                 }
                 lhs_iter.next();
                 rhs_iter.next();
             }
             std::cmp::Ordering::Greater => {
-                v.push(*rhs);
+                indexes.push(rhs.index);
+                values.push(rhs.value);
                 rhs_iter.next();
             }
         }
     }
-    v.extend(lhs_iter);
-    v.extend(rhs_iter);
+    for lhs in lhs_iter {
+        indexes.push(lhs.index);
+        values.push(lhs.value);
+    }
+    for rhs in rhs_iter {
+        indexes.push(rhs.index);
+        values.push(rhs.value);
+    }
 
     SVecf32::new_in_postgres(SparseF32Ref {
         dims: lhs.dims(),
-        elements: &v,
+        indexes: &indexes,
+        values: &values,
     })
 }
 
@@ -60,41 +68,46 @@ fn _vectors_svecf32_operator_minus(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>)
         .friendly();
     }
 
-    let mut v = Vec::<SparseF32Element>::with_capacity(std::cmp::max(lhs.len(), rhs.len()));
-    let mut lhs_iter = lhs.iter().peekable();
-    let mut rhs_iter = rhs.iter().peekable();
+    let mut indexes = Vec::<u16>::with_capacity(std::cmp::max(lhs.len(), rhs.len()));
+    let mut values = Vec::<F32>::with_capacity(std::cmp::max(lhs.len(), rhs.len()));
+    let mut lhs_iter = lhs.data().iter().peekable();
+    let mut rhs_iter = rhs.data().iter().peekable();
     while let (Some(&lhs), Some(&rhs)) = (lhs_iter.peek(), rhs_iter.peek()) {
         match lhs.index.cmp(&rhs.index) {
             std::cmp::Ordering::Less => {
-                v.push(*lhs);
+                indexes.push(lhs.index);
+                values.push(lhs.value);
                 lhs_iter.next();
             }
             std::cmp::Ordering::Equal => {
                 let value = lhs.value - rhs.value;
                 if !value.is_zero() {
-                    v.push(SparseF32Element {
-                        index: lhs.index,
-                        value,
-                    });
+                    indexes.push(lhs.index);
+                    values.push(value);
                 }
                 lhs_iter.next();
                 rhs_iter.next();
             }
             std::cmp::Ordering::Greater => {
-                v.push(SparseF32Element {
-                    index: rhs.index,
-                    value: -rhs.value,
-                });
+                indexes.push(rhs.index);
+                values.push(-rhs.value);
                 rhs_iter.next();
             }
         }
     }
-    v.extend(lhs_iter);
-    v.extend(rhs_iter);
+    for lhs in lhs_iter {
+        indexes.push(lhs.index);
+        values.push(lhs.value);
+    }
+    for rhs in rhs_iter {
+        indexes.push(rhs.index);
+        values.push(-rhs.value);
+    }
 
     SVecf32::new_in_postgres(SparseF32Ref {
         dims: lhs.dims(),
-        elements: &v,
+        indexes: &indexes,
+        values: &values,
     })
 }
 

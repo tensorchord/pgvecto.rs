@@ -6,7 +6,6 @@ use crate::prelude::*;
 pub enum SparseF32L2 {}
 
 impl G for SparseF32L2 {
-    type Element = SparseF32Element;
     type Scalar = F32;
     type Storage = SparseMmap;
     type L2 = F32L2;
@@ -15,13 +14,6 @@ impl G for SparseF32L2 {
 
     const DISTANCE: Distance = Distance::L2;
     const KIND: Kind = Kind::SparseF32;
-
-    fn raw_to_ref(dims: u16, raw: &[SparseF32Element]) -> SparseF32Ref<'_> {
-        SparseF32Ref {
-            dims,
-            elements: raw,
-        }
-    }
 
     fn owned_to_ref(vector: &SparseF32) -> SparseF32Ref<'_> {
         SparseF32Ref::from(vector)
@@ -36,7 +28,7 @@ impl G for SparseF32L2 {
     }
 
     fn distance(lhs: SparseF32Ref<'_>, rhs: SparseF32Ref<'_>) -> F32 {
-        super::sparse_f32::sl2(lhs.inner(), rhs.inner())
+        super::sparse_f32::sl2(lhs, rhs)
     }
 
     fn elkan_k_means_normalize(_: &mut [Self::Scalar]) {}
@@ -44,11 +36,11 @@ impl G for SparseF32L2 {
     fn elkan_k_means_normalize2(_: &mut SparseF32) {}
 
     fn elkan_k_means_distance(lhs: &[Self::Scalar], rhs: &[Self::Scalar]) -> F32 {
-        super::f32::sl2(lhs.inner(), rhs.inner()).sqrt()
+        super::f32::sl2(lhs, rhs).sqrt()
     }
 
     fn elkan_k_means_distance2(lhs: SparseF32Ref<'_>, rhs: &[Self::Scalar]) -> F32 {
-        super::sparse_f32::sl2_2(lhs.inner(), rhs.inner()).sqrt()
+        super::sparse_f32::sl2_2(lhs, rhs).sqrt()
     }
 
     fn scalar_quantization_distance(

@@ -24,8 +24,7 @@ pub struct SVecf32 {
     kind: u8,
     reserved: u8,
     dims: u16,
-    padding: u16,
-    phantom: [SparseF32Element; 0],
+    phantom: [u8; 0],
 }
 
 impl SVecf32 {
@@ -34,26 +33,40 @@ impl SVecf32 {
     }
     fn layout(len: usize) -> Layout {
         u16::try_from(len).expect("Vector is too large.");
-        let layout_alpha = Layout::new::<SVecf32>();
-        let layout_beta = Layout::array::<SparseF32Element>(len).unwrap();
-        let layout = layout_alpha.extend(layout_beta).unwrap().0;
+        let layout = Layout::new::<SVecf32>();
+        let layout1 = Layout::array::<u16>(len).unwrap();
+        let layout2 = Layout::array::<F32>(len).unwrap();
+        let layout = layout.extend(layout1).unwrap().0;
+        let layout = layout.extend(layout2).unwrap().0;
         layout.pad_to_align()
     }
     pub fn new_in_postgres(vector: SparseF32Ref<'_>) -> SVecf32Output {
         unsafe {
-            let layout = SVecf32::layout(vector.elements.len());
+            let layout = SVecf32::layout(vector.length() as usize);
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut SVecf32;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
             std::ptr::addr_of_mut!((*ptr).varlena).write(SVecf32::varlena(layout.size()));
             std::ptr::addr_of_mut!((*ptr).dims).write(vector.dims);
             std::ptr::addr_of_mut!((*ptr).kind).write(2);
             std::ptr::addr_of_mut!((*ptr).reserved).write(0);
-            std::ptr::addr_of_mut!((*ptr).padding).write(0);
-            std::ptr::addr_of_mut!((*ptr).len).write(vector.elements.len() as u16);
+            std::ptr::addr_of_mut!((*ptr).len).write(vector.length());
+            let mut data_ptr = (*ptr).phantom.as_mut_ptr().cast::<u16>();
             std::ptr::copy_nonoverlapping(
-                vector.elements.as_ptr(),
-                (*ptr).phantom.as_mut_ptr(),
-                vector.elements.len(),
+                vector.indexes.as_ptr(),
+                data_ptr,
+                vector.length() as usize,
+            );
+            data_ptr = data_ptr.add(vector.length() as usize);
+            let offset = data_ptr.align_offset(std::mem::align_of::<F32>());
+            if offset != 0 {
+                debug_assert_eq!(offset, 1);
+                std::ptr::write(data_ptr, 0);
+                data_ptr = data_ptr.add(offset);
+            }
+            std::ptr::copy_nonoverlapping(
+                vector.values.as_ptr(),
+                data_ptr.cast(),
+                vector.length() as usize,
             );
             SVecf32Output(NonNull::new(ptr).unwrap())
         }
@@ -64,18 +77,30 @@ impl SVecf32 {
     pub fn len(&self) -> usize {
         self.len as usize
     }
+    fn indexes(&self) -> *const u16 {
+        self.phantom.as_ptr().cast()
+    }
+    fn values(&self) -> *const F32 {
+        let len = self.len as usize;
+        unsafe {
+            let ptr = self.phantom.as_ptr().cast::<u16>().add(len);
+            let offset = ptr.align_offset(std::mem::align_of::<F32>());
+            ptr.add(offset).cast()
+        }
+    }
     pub fn data(&self) -> SparseF32Ref<'_> {
         debug_assert_eq!(self.varlena & 3, 0);
         debug_assert_eq!(self.kind, 2);
-        let elements =
-            unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.len as usize) };
-        SparseF32Ref {
-            dims: self.dims,
-            elements,
+        let len = self.len as usize;
+        unsafe {
+            let indexes = std::slice::from_raw_parts(self.indexes(), len);
+            let values = std::slice::from_raw_parts(self.values(), len);
+            SparseF32Ref {
+                dims: self.dims,
+                indexes,
+                values,
+            }
         }
-    }
-    pub fn iter(&self) -> std::slice::Iter<'_, SparseF32Element> {
-        self.data().elements.iter()
     }
 }
 
@@ -96,7 +121,7 @@ impl PartialOrd for SVecf32 {
 impl Ord for SVecf32 {
     fn cmp(&self, other: &Self) -> Ordering {
         assert!(self.dims() == other.dims());
-        self.data().elements.cmp(other.data().elements)
+        self.data().iter().cmp(other.data().iter())
     }
 }
 
@@ -220,7 +245,8 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
     }
     use State::*;
     let input = input.to_bytes();
-    let mut vector = Vec::<SparseF32Element>::new();
+    let mut indexes = Vec::<u16>::new();
+    let mut values = Vec::<F32>::new();
     let mut state = MatchingLeft;
     let mut token: Option<String> = None;
     let mut index = 0;
@@ -237,17 +263,25 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
                 let token = solve(token.take(), "Expect a number.");
                 let value: F32 = solve(token.parse().ok(), "Bad number.");
                 if !value.is_zero() {
-                    vector.push(SparseF32Element { index, value });
+                    indexes.push(index);
+                    values.push(value);
                 }
-                index += 1;
+                index = match index.checked_add(1) {
+                    Some(x) => x,
+                    None => SessionError::BadValueDimensions.friendly(),
+                };
             }
             (Reading, b']') => {
                 if let Some(token) = token.take() {
                     let value: F32 = solve(token.parse().ok(), "Bad number.");
                     if !value.is_zero() {
-                        vector.push(SparseF32Element { index, value });
+                        indexes.push(index);
+                        values.push(value);
                     }
-                    index += 1;
+                    index = match index.checked_add(1) {
+                        Some(x) => x,
+                        None => SessionError::BadValueDimensions.friendly(),
+                    };
                 }
                 state = MatchedRight;
             }
@@ -266,12 +300,10 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
         }
         .friendly();
     }
-    if index > 65535 {
-        SessionError::BadValueDimensions.friendly();
-    }
     SVecf32::new_in_postgres(SparseF32Ref {
-        dims: index as u16,
-        elements: &vector,
+        dims: index,
+        indexes: &indexes,
+        values: &values,
     })
 }
 
@@ -341,10 +373,7 @@ fn _vectors_svector_from_kv_string(dims: i32, input: &str) -> SVecf32Output {
                 let token = solve(token.take(), "Expect a number.");
                 let value: F32 = solve(token.parse().ok(), "Bad number.");
                 if !value.is_zero() {
-                    vector.push(SparseF32Element {
-                        index: key as u32,
-                        value,
-                    });
+                    vector.push(SparseF32Element { index: key, value });
                 }
                 state = MatchingComma;
             }
@@ -392,12 +421,20 @@ fn _vectors_svector_from_kv_string(dims: i32, input: &str) -> SVecf32Output {
         Ok(x) => x,
         Err(_) => SessionError::BadValueDimensions.friendly(),
     };
-    if !vector.is_empty() && vector[vector.len() - 1].index >= dims as u32 {
+    if !vector.is_empty() && vector[vector.len() - 1].index >= dims {
         SessionError::BadValueDimensions.friendly();
+    }
+
+    let mut indexes = Vec::<u16>::with_capacity(vector.len());
+    let mut values = Vec::<F32>::with_capacity(vector.len());
+    for x in vector {
+        indexes.push(x.index);
+        values.push(x.value);
     }
     SVecf32::new_in_postgres(SparseF32Ref {
         dims,
-        elements: &vector,
+        indexes: &indexes,
+        values: &values,
     })
 }
 
@@ -433,7 +470,7 @@ fn _vectors_svector_from_split_array(
                 SessionError::BadValueDimensions.friendly();
             }
             SparseF32Element {
-                index: index as u32,
+                index: index as u16,
                 value: F32(value),
             }
         })
@@ -450,8 +487,16 @@ fn _vectors_svector_from_split_array(
             }
         }
     }
+
+    let mut indexes = Vec::<u16>::with_capacity(vector.len());
+    let mut values = Vec::<F32>::with_capacity(vector.len());
+    for x in vector {
+        indexes.push(x.index);
+        values.push(x.value);
+    }
     SVecf32::new_in_postgres(SparseF32Ref {
         dims,
-        elements: &vector,
+        indexes: &indexes,
+        values: &values,
     })
 }

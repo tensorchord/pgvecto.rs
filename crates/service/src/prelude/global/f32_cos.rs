@@ -5,7 +5,6 @@ use std::borrow::Cow;
 pub enum F32Cos {}
 
 impl G for F32Cos {
-    type Element = F32;
     type Scalar = F32;
     type Storage = DenseMmap<F32>;
     type L2 = F32L2;
@@ -14,11 +13,6 @@ impl G for F32Cos {
 
     const DISTANCE: Distance = Distance::Cos;
     const KIND: Kind = Kind::F32;
-
-    fn raw_to_ref(dims: u16, raw: &[F32]) -> &[F32] {
-        debug_assert!(dims as usize == raw.len());
-        raw
-    }
 
     fn owned_to_ref(vector: &Vec<F32>) -> &[F32] {
         vector

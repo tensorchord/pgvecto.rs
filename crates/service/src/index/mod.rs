@@ -514,7 +514,7 @@ impl<S: G> IndexView<S> {
         let payload = (pointer.as_u48() << 16) | self.delete.version(pointer) as Payload;
         if let Some((_, growing)) = self.write.as_ref() {
             use crate::index::segments::growing::GrowingSegmentInsertError;
-            if let Err(GrowingSegmentInsertError) = growing.insert(vector.inner(), payload) {
+            if let Err(GrowingSegmentInsertError) = growing.insert(vector, payload) {
                 return Ok(Err(OutdatedError));
             }
             Ok(Ok(()))

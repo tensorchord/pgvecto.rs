@@ -1,17 +1,19 @@
+use crate::algorithms::raw::RawRam;
 use crate::index::IndexOptions;
 use crate::prelude::*;
 use crate::utils::mmap_array::MmapArray;
 use std::path::Path;
 
 pub struct SparseMmap {
-    vectors: MmapArray<SparseF32Element>,
+    indexes: MmapArray<u16>,
+    values: MmapArray<F32>,
     offsets: MmapArray<u32>,
     payload: MmapArray<Payload>,
     dims: u16,
 }
 
 impl Storage for SparseMmap {
-    type Element = SparseF32Element;
+    type VectorRef<'a> = SparseF32Ref<'a>;
 
     fn dims(&self) -> u16 {
         self.dims
@@ -21,10 +23,14 @@ impl Storage for SparseMmap {
         self.payload.len() as u32
     }
 
-    fn content(&self, i: u32) -> &[SparseF32Element] {
+    fn content(&self, i: u32) -> SparseF32Ref<'_> {
         let s = self.offsets[i as usize] as usize;
         let e = self.offsets[i as usize + 1] as usize;
-        &self.vectors[s..e]
+        SparseF32Ref {
+            dims: self.dims,
+            indexes: &self.indexes[s..e],
+            values: &self.values[s..e],
+        }
     }
 
     fn payload(&self, i: u32) -> Payload {
@@ -35,35 +41,40 @@ impl Storage for SparseMmap {
     where
         Self: Sized,
     {
-        let vectors = MmapArray::open(&path.join("vectors"));
+        let indexes = MmapArray::open(&path.join("indexes"));
+        let values = MmapArray::open(&path.join("values"));
         let offsets = MmapArray::open(&path.join("offsets"));
         let payload = MmapArray::open(&path.join("payload"));
         Self {
-            vectors,
+            indexes,
+            values,
             offsets,
             payload,
             dims: options.vector.dims,
         }
     }
 
-    fn save(path: &Path, ram: impl Ram<Element = Self::Element>) -> Self
-    where
-        Self: Sized,
-    {
+    fn save<S: for<'a> G<VectorRef<'a> = Self::VectorRef<'a>>>(
+        path: &Path,
+        ram: RawRam<S>,
+    ) -> Self {
         let n = ram.len();
-        let vectors_iter = (0..n).flat_map(|i| ram.content(i)).copied();
+        let indexes_iter = (0..n).flat_map(|i| ram.content(i).indexes.iter().copied());
+        let values_iter = (0..n).flat_map(|i| ram.content(i).values.iter().copied());
         let offsets_iter = std::iter::once(0)
-            .chain((0..n).map(|i| ram.content(i).len() as u32))
+            .chain((0..n).map(|i| ram.content(i).length() as u32))
             .scan(0, |state, x| {
                 *state += x;
                 Some(*state)
             });
         let payload_iter = (0..n).map(|i| ram.payload(i));
-        let vectors = MmapArray::create(&path.join("vectors"), vectors_iter);
+        let indexes = MmapArray::create(&path.join("indexes"), indexes_iter);
+        let values = MmapArray::create(&path.join("values"), values_iter);
         let offsets = MmapArray::create(&path.join("offsets"), offsets_iter);
         let payload = MmapArray::create(&path.join("payload"), payload_iter);
         Self {
-            vectors,
+            indexes,
+            values,
             offsets,
             payload,
             dims: ram.dims(),
