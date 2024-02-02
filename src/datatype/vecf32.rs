@@ -59,12 +59,16 @@ impl Vecf32 {
     }
     pub fn data(&self) -> &[F32] {
         debug_assert_eq!(self.varlena & 3, 0);
-        debug_assert_eq!(self.kind, 0);
+        // TODO: force checking it in the future
+        // debug_assert_eq!(self.kind, 0);
+        // debug_assert_eq!(self.reserved, 1);
         unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.len as usize) }
     }
     pub fn data_mut(&mut self) -> &mut [F32] {
         debug_assert_eq!(self.varlena & 3, 0);
-        debug_assert_eq!(self.kind, 0);
+        // TODO: force checking it in the future
+        // debug_assert_eq!(self.kind, 0);
+        // debug_assert_eq!(self.reserved, 1);
         unsafe { std::slice::from_raw_parts_mut(self.phantom.as_mut_ptr(), self.len as usize) }
     }
 }

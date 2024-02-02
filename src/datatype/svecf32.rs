@@ -96,7 +96,7 @@ impl PartialOrd for SVecf32 {
 impl Ord for SVecf32 {
     fn cmp(&self, other: &Self) -> Ordering {
         assert!(self.dims() == other.dims());
-        self.data().elements.cmp(&other.data().elements)
+        self.data().elements.cmp(other.data().elements)
     }
 }
 
