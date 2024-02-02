@@ -504,6 +504,9 @@ fn _vectors_vecf16_recv(internal: pgrx::Internal, _oid: Oid, _typmod: i32) -> Ve
     unsafe {
         let buf: StringInfo = internal.into_datum().unwrap().cast_mut_ptr();
         let len = (pgrx::pg_sys::pq_getmsgbytes(buf, 2) as *const u16).read_unaligned();
+        if len == 0 {
+            pgrx::error!("data corruption is detected");
+        }
         let bytes = std::mem::size_of::<F16>() * len as usize;
         let ptr = pgrx::pg_sys::pq_getmsgbytes(buf, bytes as _);
         let mut output = Vecf16::new_zeroed_in_postgres(len as usize);
