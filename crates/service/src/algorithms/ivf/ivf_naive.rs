@@ -8,16 +8,13 @@ use crate::index::IndexOptions;
 use crate::index::SearchOptions;
 use crate::index::VectorOptions;
 use crate::prelude::*;
-use crate::utils::cells::SyncUnsafeCell;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::element_heap::ElementHeap;
 use crate::utils::mmap_array::MmapArray;
 use crate::utils::vec2::Vec2;
 use rand::seq::index::sample;
 use rand::thread_rng;
-use rayon::current_num_threads;
-use rayon::current_thread_index;
-use rayon::iter::IntoParallelIterator;
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator};
 use rayon::prelude::ParallelIterator;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -91,8 +88,6 @@ pub struct IvfRam<S: G> {
     nlist: u32,
     // ----------------------
     centroids: Vec2<S>,
-    ptr: Vec<usize>,
-    payloads: Vec<Payload>,
 }
 
 unsafe impl<S: G> Send for IvfRam<S> {}
@@ -142,7 +137,7 @@ pub fn make<S: G>(
         sealed,
         growing,
     ));
-    let quantization = Quantization::create(
+    let mut quantization = Quantization::create(
         path.join("quantization"),
         options.clone(),
         quantization_opts,
@@ -151,12 +146,11 @@ pub fn make<S: G>(
     let n = raw.len();
     let m = std::cmp::min(nsample, n);
     let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
-    let samples = SyncUnsafeCell::new(Vec2::<S>::new(dims, m as usize));
-    (0..m as usize).into_par_iter().for_each(|i| unsafe {
-        (&mut *samples.get())[i].copy_from_slice(raw.vector(f[i] as u32));
-        S::elkan_k_means_normalize(&mut (&mut *samples.get())[i]);
-    });
-    let samples = samples.get_ref().clone();
+    let mut samples = Vec2::new(dims, m as usize);
+    for i in 0..m {
+        samples[i as usize].copy_from_slice(raw.vector(f[i as usize] as u32));
+        S::elkan_k_means_normalize(&mut samples[i as usize]);
+    }
     let mut k_means = ElkanKMeans::new(nlist as usize, samples);
     for _ in 0..least_iterations {
         k_means.iterate();
@@ -167,70 +161,111 @@ pub fn make<S: G>(
         }
     }
     let centroids = k_means.finish();
-    let idx = SyncUnsafeCell::new(vec![0usize; n as usize]);
-    (0..n).into_par_iter().for_each(|i| {
-        let mut vector = raw.vector(i).to_vec();
+    let mut idx = vec![0usize; n as usize];
+    idx.par_iter_mut().enumerate().for_each(|(i, x)| {
+        let mut vector = raw.vector(i as u32).to_vec();
         S::elkan_k_means_normalize(&mut vector);
         let mut result = (F32::infinity(), 0);
-        for i in 0..nlist {
-            let dis = S::elkan_k_means_distance(&vector, &centroids[i as usize]);
+        for i in 0..nlist as usize {
+            let dis = S::elkan_k_means_distance(&vector, &centroids[i]);
             result = std::cmp::min(result, (dis, i));
         }
-        unsafe {
-            (&mut *idx.get())[i as usize] = result.1 as usize;
-        }
+        *x = result.1;
     });
-    let mut invlists_payloads = SyncUnsafeCell::new(vec![Vec::new(); nlist as usize]);
-    let invlists_codes = SyncUnsafeCell::new(vec![Vec::new(); nlist as usize]);
-    (0..current_num_threads()).into_par_iter().for_each(|_| {
-        let thread_id = current_thread_index().unwrap();
-        let thread_num = current_num_threads();
-        for i in 0..n {
-            let centroid_id = idx.get_ref()[i as usize];
-            let vector = raw.vector(i);
-            if centroid_id % thread_num == thread_id {
-                unsafe {
-                    (&mut *invlists_payloads.get())[centroid_id as usize].push(raw.payload(i));
-                    (&mut *invlists_codes.get())[centroid_id as usize].append(&mut vector.to_vec());
-                }
-            }
-        }
-    });
-    let mut ptr = vec![0usize; nlist as usize + 1];
-    let mut payloads = Vec::new();
-    for i in 0..nlist {
-        ptr[i as usize + 1] = ptr[i as usize] + invlists_payloads.get_ref()[i as usize].len();
-        payloads.append(&mut invlists_payloads.get_mut()[i as usize]);
+    let mut invlists_ids = vec![Vec::new(); nlist as usize];
+    let mut invlists_payloads = vec![Vec::new(); nlist as usize];
+    for i in 0..n {
+        invlists_ids[idx[i as usize]].push(i);
+        invlists_payloads[idx[i as usize]].push(raw.payload(i));
     }
+    let mut ptr = vec![0usize; nlist as usize + 1];
+    for i in 0..nlist {
+        ptr[i as usize + 1] = ptr[i as usize] + invlists_ids[i as usize].len();
+    }
+    let payloads = Vec::from_iter(
+        (0..nlist)
+            .flat_map(|i| &invlists_payloads[i as usize])
+            .copied(),
+    );
+    MmapArray::create(path.join("ptr"), ptr.iter().copied());
+    MmapArray::create(path.join("payload"), payloads.iter().copied());
     match &quantization {
         Quantization::Trivial(quantization) => {
-            let mut codes = Vec::new();
-            for i in 0..nlist {
-                codes.append(&mut quantization.codes(i).to_vec());
-            }
-            MmapArray::create(path.join("vectors"), codes.iter().copied());
+            let mut invlists_codes = vec![Vec::new(); nlist as usize];
+            invlists_codes
+                .par_iter_mut()
+                .enumerate()
+                .for_each(|(centroid_id, v)| {
+                    for i in &invlists_ids[centroid_id] {
+                        let vector = quantization.codes(*i);
+                        v.append(&mut vector.to_vec());
+                    }
+                });
+            MmapArray::create(
+                path.join("vectors"),
+                (0..nlist)
+                    .flat_map(|i| &invlists_codes[i as usize])
+                    .copied(),
+            );
+            sync_dir(&path);
         }
         Quantization::Scalar(quantization) => {
-            let mut codes = Vec::new();
-            for i in 0..nlist {
-                codes.append(&mut quantization.codes(i).to_vec());
-            }
-            MmapArray::create(path.join("vectors"), codes.iter().copied());
+            let mut invlists_codes = vec![Vec::new(); nlist as usize];
+            invlists_codes
+                .par_iter_mut()
+                .enumerate()
+                .for_each(|(centroid_id, v)| {
+                    for i in &invlists_ids[centroid_id] {
+                        let vector = quantization.codes(*i);
+                        v.append(&mut vector.to_vec());
+                    }
+                });
+            MmapArray::create(
+                path.join("vectors"),
+                (0..nlist)
+                    .flat_map(|i| &invlists_codes[i as usize])
+                    .copied(),
+            );
+            sync_dir(&path);
         }
         Quantization::Product(quantization) => {
-            let mut codes = Vec::new();
-            for i in 0..nlist {
-                codes.append(&mut quantization.codes(i).to_vec());
-            }
-            MmapArray::create(path.join("vectors"), codes.iter().copied());
+            let mut invlists_codes = vec![Vec::new(); nlist as usize];
+            invlists_codes
+                .par_iter_mut()
+                .enumerate()
+                .for_each(|(centroid_id, v)| {
+                    for i in &invlists_ids[centroid_id] {
+                        let vector = quantization.codes(*i);
+                        v.append(&mut vector.to_vec());
+                    }
+                });
+            MmapArray::create(
+                path.join("vectors"),
+                (0..nlist)
+                    .flat_map(|i| &invlists_codes[i as usize])
+                    .copied(),
+            );
+            sync_dir(&path);
+        }
+    }
+    match &mut quantization {
+        Quantization::Trivial(quantization) => {
+            let raw = Arc::new(Raw::open(path, options.clone()));
+            quantization.set_codes(raw);
+        }
+        Quantization::Scalar(quantization) => {
+            let codes = MmapArray::open(path.join("vectors"));
+            quantization.set_codes(codes);
+        }
+        Quantization::Product(quantization) => {
+            let codes = MmapArray::open(path.join("vectors"));
+            quantization.set_codes(codes);
         }
     }
     IvfRam {
         raw,
         quantization,
         centroids,
-        ptr,
-        payloads,
         nlist,
         dims,
     }
@@ -243,8 +278,8 @@ pub fn save<S: G>(ram: IvfRam<S>, path: PathBuf) -> IvfMmap<S> {
             .flat_map(|i| &ram.centroids[i as usize])
             .copied(),
     );
-    let ptr = MmapArray::create(path.join("ptr"), ram.ptr.iter().copied());
-    let payloads = MmapArray::create(path.join("payload"), ram.payloads.iter().copied());
+    let ptr = MmapArray::open(path.join("ptr"));
+    let payloads = MmapArray::open(path.join("payload"));
     IvfMmap {
         raw: ram.raw,
         quantization: ram.quantization,
