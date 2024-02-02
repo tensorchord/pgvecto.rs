@@ -235,7 +235,7 @@ impl<S: G> ProductQuantization<S> {
         let mut centroids = vec![S::Scalar::zero(); 256 * dims as usize];
         for i in 0..width {
             let subdims = std::cmp::min(ratio, dims - ratio * i);
-            let mut subsamples = Vec2::<S::L2>::new(subdims, m as usize);
+            let mut subsamples = Vec2::<S::L2>::new(subdims, m);
             for j in 0..m {
                 let src = &samples[j][(i * ratio) as usize..][..subdims as usize];
                 subsamples[j].copy_from_slice(src);
