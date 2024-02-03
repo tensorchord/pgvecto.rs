@@ -232,26 +232,44 @@ impl<S: G> ProductQuantization<S> {
             samples
         };
         let width = dims.div_ceil(ratio);
-        let mut centroids = vec![S::Scalar::zero(); 256 * dims as usize];
-        for i in 0..width {
-            let subdims = std::cmp::min(ratio, dims - ratio * i);
-            let mut subsamples = Vec2::<S::L2>::new(subdims, m);
-            for j in 0..m {
-                let src = &samples[j][(i * ratio) as usize..][..subdims as usize];
-                subsamples[j].copy_from_slice(src);
-            }
-            let mut k_means = ElkanKMeans::<S::L2>::new(256, subsamples);
-            for _ in 0..25 {
-                if k_means.iterate() {
-                    break;
+        // a temp layout (width * 256 * subdims) for par_chunks_mut
+        let mut tmp_centroids = vec![S::Scalar::zero(); 256 * dims as usize];
+        // this par_for parallelizes over sub quantizers
+        tmp_centroids
+            .par_chunks_mut(256 * ratio as usize)
+            .enumerate()
+            .for_each(|(i, v)| {
+                // i is the index of subquantizer
+                let subdims = std::cmp::min(ratio, dims - ratio * i as u16) as usize;
+                let mut subsamples = Vec2::<S::L2>::new(subdims as u16, m);
+                for j in 0..m {
+                    let src = &samples[j][i * ratio as usize..][..subdims];
+                    subsamples[j].copy_from_slice(src);
                 }
-            }
-            let centroid = k_means.finish();
-            for j in 0u8..=255 {
-                centroids[j as usize * dims as usize..][(i * ratio) as usize..][..subdims as usize]
-                    .copy_from_slice(&centroid[j as usize]);
-            }
-        }
+                let mut k_means = ElkanKMeans::<S::L2>::new(256, subsamples);
+                for _ in 0..25 {
+                    if k_means.iterate() {
+                        break;
+                    }
+                }
+                let centroid = k_means.finish();
+                for j in 0usize..=255 {
+                    v[j * subdims..][..subdims].copy_from_slice(&centroid[j]);
+                }
+            });
+        // transform back to normal layout (256 * width * subdims)
+        let mut centroids = vec![S::Scalar::zero(); 256 * dims as usize];
+        centroids
+            .par_chunks_mut(dims as usize)
+            .enumerate()
+            .for_each(|(i, v)| {
+                for j in 0..width {
+                    let subdims = std::cmp::min(ratio, dims - ratio * j) as usize;
+                    v[(j * ratio) as usize..][..subdims].copy_from_slice(
+                        &tmp_centroids[(j * ratio) as usize * 256..][i * subdims..][..subdims],
+                    );
+                }
+            });
         let mut codes = vec![0u8; n * width as usize];
         codes
             .par_chunks_mut(width as usize)
