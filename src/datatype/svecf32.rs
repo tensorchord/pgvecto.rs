@@ -592,7 +592,7 @@ fn _vectors_svecf32_recv(internal: pgrx::Internal, _oid: Oid, _typmod: i32) -> S
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn _vectors_svector_from_kv_string(dims: i32, input: &str) -> SVecf32Output {
+fn _vectors_svector_from_kv(dims: i32, input: &str) -> SVecf32Output {
     fn solve<T>(option: Option<T>, hint: &str) -> T {
         if let Some(x) = option {
             x
@@ -707,7 +707,7 @@ fn _vectors_svector_from_kv_string(dims: i32, input: &str) -> SVecf32Output {
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn _vectors_svector_from_split_array(
+fn _vectors_svector_from_array(
     dims: i32,
     index: pgrx::Array<i32>,
     value: pgrx::Array<f32>,

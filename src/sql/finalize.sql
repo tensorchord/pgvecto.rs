@@ -361,11 +361,11 @@ CREATE OPERATOR <=> (
 CREATE FUNCTION pgvectors_upgrade() RETURNS void
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 
-CREATE FUNCTION svector_from_split_array("dims" INT, "index" INT[], "value" real[]) RETURNS svector
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svector_from_split_array_wrapper';
+CREATE FUNCTION to_svector("dims" INT, "index" INT[], "value" real[]) RETURNS svector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svector_from_array_wrapper';
 
-CREATE FUNCTION svector_from_kv_string("dims" INT, "input" TEXT) RETURNS svector
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svector_from_kv_string_wrapper';
+CREATE FUNCTION to_svector("dims" INT, "input" TEXT) RETURNS svector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svector_from_kv_wrapper';
 
 -- List of casts
 

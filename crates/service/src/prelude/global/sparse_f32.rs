@@ -8,35 +8,29 @@ use crate::prelude::*;
     "aarch64+neon"
 ))]
 pub fn cosine<'a>(lhs: SparseF32Ref<'a>, rhs: SparseF32Ref<'a>) -> F32 {
-    let mut lhs_iter = lhs.iter().peekable();
-    let mut rhs_iter = rhs.iter().peekable();
+    let mut pos1 = 0;
+    let mut pos2 = 0;
+    let size1 = lhs.length() as usize;
+    let size2 = rhs.length() as usize;
     let mut xy = F32::zero();
     let mut x2 = F32::zero();
     let mut y2 = F32::zero();
-    while let (Some(&lhs), Some(&rhs)) = (lhs_iter.peek(), rhs_iter.peek()) {
-        match lhs.index.cmp(&rhs.index) {
-            std::cmp::Ordering::Less => {
-                x2 += lhs.value * lhs.value;
-                lhs_iter.next();
-            }
-            std::cmp::Ordering::Equal => {
-                xy += lhs.value * rhs.value;
-                x2 += lhs.value * lhs.value;
-                y2 += rhs.value * rhs.value;
-                lhs_iter.next();
-                rhs_iter.next();
-            }
-            std::cmp::Ordering::Greater => {
-                y2 += rhs.value * rhs.value;
-                rhs_iter.next();
-            }
-        }
+    while pos1 < size1 && pos2 < size2 {
+        let lhs_index = lhs.indexes[pos1];
+        let rhs_index = rhs.indexes[pos2];
+        let lhs_value = lhs.values[pos1];
+        let rhs_value = rhs.values[pos2];
+        xy += F32((lhs_index == rhs_index) as u32 as f32) * lhs_value * rhs_value;
+        x2 += F32((lhs_index <= rhs_index) as u32 as f32) * lhs_value * lhs_value;
+        y2 += F32((lhs_index >= rhs_index) as u32 as f32) * rhs_value * rhs_value;
+        pos1 += (lhs_index <= rhs_index) as usize;
+        pos2 += (lhs_index >= rhs_index) as usize;
     }
-    for lhs in lhs_iter {
-        x2 += lhs.value * lhs.value;
+    for i in pos1..size1 {
+        x2 += lhs.values[i] * lhs.values[i];
     }
-    for rhs in rhs_iter {
-        y2 += rhs.value * rhs.value;
+    for i in pos2..size2 {
+        y2 += rhs.values[i] * rhs.values[i];
     }
     xy / (x2 * y2).sqrt()
 }
@@ -49,23 +43,19 @@ pub fn cosine<'a>(lhs: SparseF32Ref<'a>, rhs: SparseF32Ref<'a>) -> F32 {
     "aarch64+neon"
 ))]
 pub fn dot<'a>(lhs: SparseF32Ref<'a>, rhs: SparseF32Ref<'a>) -> F32 {
-    let mut lhs_iter = lhs.iter().peekable();
-    let mut rhs_iter = rhs.iter().peekable();
+    let mut pos1 = 0;
+    let mut pos2 = 0;
+    let size1 = lhs.length() as usize;
+    let size2 = rhs.length() as usize;
     let mut xy = F32::zero();
-    while let (Some(&lhs), Some(&rhs)) = (lhs_iter.peek(), rhs_iter.peek()) {
-        match lhs.index.cmp(&rhs.index) {
-            std::cmp::Ordering::Less => {
-                lhs_iter.next();
-            }
-            std::cmp::Ordering::Equal => {
-                xy += lhs.value * rhs.value;
-                lhs_iter.next();
-                rhs_iter.next();
-            }
-            std::cmp::Ordering::Greater => {
-                rhs_iter.next();
-            }
-        }
+    while pos1 < size1 && pos2 < size2 {
+        let lhs_index = lhs.indexes[pos1];
+        let rhs_index = rhs.indexes[pos2];
+        let lhs_value = lhs.values[pos1];
+        let rhs_value = rhs.values[pos2];
+        xy += F32((lhs_index == rhs_index) as u32 as f32) * lhs_value * rhs_value;
+        pos1 += (lhs_index <= rhs_index) as usize;
+        pos2 += (lhs_index >= rhs_index) as usize;
     }
     xy
 }
@@ -93,36 +83,27 @@ pub fn dot_2<'a>(lhs: SparseF32Ref<'a>, rhs: &[F32]) -> F32 {
     "aarch64+neon"
 ))]
 pub fn sl2<'a>(lhs: SparseF32Ref<'a>, rhs: SparseF32Ref<'a>) -> F32 {
-    let mut lhs_iter = lhs.iter().peekable();
-    let mut rhs_iter = rhs.iter().peekable();
+    let mut pos1 = 0;
+    let mut pos2 = 0;
+    let size1 = lhs.length() as usize;
+    let size2 = rhs.length() as usize;
     let mut d2 = F32::zero();
-    while let (Some(&lhs), Some(&rhs)) = (lhs_iter.peek(), rhs_iter.peek()) {
-        match lhs.index.cmp(&rhs.index) {
-            std::cmp::Ordering::Less => {
-                let d = lhs.value;
-                d2 += d * d;
-                lhs_iter.next();
-            }
-            std::cmp::Ordering::Equal => {
-                let d = lhs.value - rhs.value;
-                d2 += d * d;
-                lhs_iter.next();
-                rhs_iter.next();
-            }
-            std::cmp::Ordering::Greater => {
-                let d = rhs.value;
-                d2 += d * d;
-                rhs_iter.next();
-            }
-        }
-    }
-    for lhs in lhs_iter {
-        let d = lhs.value;
+    while pos1 < size1 && pos2 < size2 {
+        let lhs_index = lhs.indexes[pos1];
+        let rhs_index = rhs.indexes[pos2];
+        let lhs_value = lhs.values[pos1];
+        let rhs_value = rhs.values[pos2];
+        let d = F32((lhs_index <= rhs_index) as u32 as f32) * lhs_value
+            - F32((lhs_index >= rhs_index) as u32 as f32) * rhs_value;
         d2 += d * d;
+        pos1 += (lhs_index <= rhs_index) as usize;
+        pos2 += (lhs_index >= rhs_index) as usize;
     }
-    for rhs in rhs_iter {
-        let d = rhs.value;
-        d2 += d * d;
+    for i in pos1..size1 {
+        d2 += lhs.values[i] * lhs.values[i];
+    }
+    for i in pos2..size2 {
+        d2 += rhs.values[i] * rhs.values[i];
     }
     d2
 }
@@ -138,14 +119,10 @@ pub fn sl2_2<'a>(lhs: SparseF32Ref<'a>, rhs: &[F32]) -> F32 {
     let mut d2 = F32::zero();
     let mut index = 0;
     for i in 0..lhs.dims {
-        let d = if index < lhs.indexes.len() && lhs.indexes[index] == i {
-            let d = lhs.values[index] - rhs[i as usize];
-            index += 1;
-            d
-        } else {
-            rhs[i as usize]
-        };
+        let has_index = index < lhs.indexes.len() && lhs.indexes[index] == i;
+        let d = rhs[i as usize] - F32(has_index as u32 as f32) * lhs.values[index];
         d2 += d * d;
+        index += has_index as usize;
     }
     d2
 }

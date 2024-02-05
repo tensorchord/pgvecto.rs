@@ -15,41 +15,39 @@ fn _vectors_svecf32_operator_add(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -
         .friendly();
     }
 
-    let mut indexes = Vec::<u16>::with_capacity(std::cmp::max(lhs.len(), rhs.len()));
-    let mut values = Vec::<F32>::with_capacity(std::cmp::max(lhs.len(), rhs.len()));
-    let mut lhs_iter = lhs.data().iter().peekable();
-    let mut rhs_iter = rhs.data().iter().peekable();
-    while let (Some(&lhs), Some(&rhs)) = (lhs_iter.peek(), rhs_iter.peek()) {
-        match lhs.index.cmp(&rhs.index) {
-            std::cmp::Ordering::Less => {
-                indexes.push(lhs.index);
-                values.push(lhs.value);
-                lhs_iter.next();
-            }
-            std::cmp::Ordering::Equal => {
-                let value = lhs.value + rhs.value;
-                if !value.is_zero() {
-                    indexes.push(lhs.index);
-                    values.push(value);
-                }
-                lhs_iter.next();
-                rhs_iter.next();
-            }
-            std::cmp::Ordering::Greater => {
-                indexes.push(rhs.index);
-                values.push(rhs.value);
-                rhs_iter.next();
-            }
-        }
+    let size1 = lhs.len();
+    let size2 = rhs.len();
+    let mut pos1 = 0;
+    let mut pos2 = 0;
+    let mut pos = 0;
+    let mut indexes = vec![0u16; size1 + size2];
+    let mut values = vec![F32::zero(); size1 + size2];
+    let lhs = lhs.data();
+    let rhs = rhs.data();
+    while pos1 < size1 && pos2 < size2 {
+        let lhs_index = lhs.indexes[pos1];
+        let rhs_index = rhs.indexes[pos2];
+        let lhs_value = lhs.values[pos1];
+        let rhs_value = rhs.values[pos2];
+        indexes[pos] = lhs_index.min(rhs_index);
+        values[pos] = F32((lhs_index <= rhs_index) as u32 as f32) * lhs_value
+            + F32((lhs_index >= rhs_index) as u32 as f32) * rhs_value;
+        pos1 += (lhs_index <= rhs_index) as usize;
+        pos2 += (lhs_index >= rhs_index) as usize;
+        pos += (!values[pos].is_zero()) as usize;
     }
-    for lhs in lhs_iter {
-        indexes.push(lhs.index);
-        values.push(lhs.value);
+    for i in pos1..size1 {
+        indexes[pos] = lhs.indexes[i];
+        values[pos] = lhs.values[i];
+        pos += 1;
     }
-    for rhs in rhs_iter {
-        indexes.push(rhs.index);
-        values.push(rhs.value);
+    for i in pos2..size2 {
+        indexes[pos] = rhs.indexes[i];
+        values[pos] = rhs.values[i];
+        pos += 1;
     }
+    indexes.truncate(pos);
+    values.truncate(pos);
 
     SVecf32::new_in_postgres(SparseF32Ref {
         dims: lhs.dims(),
@@ -68,41 +66,39 @@ fn _vectors_svecf32_operator_minus(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>)
         .friendly();
     }
 
-    let mut indexes = Vec::<u16>::with_capacity(std::cmp::max(lhs.len(), rhs.len()));
-    let mut values = Vec::<F32>::with_capacity(std::cmp::max(lhs.len(), rhs.len()));
-    let mut lhs_iter = lhs.data().iter().peekable();
-    let mut rhs_iter = rhs.data().iter().peekable();
-    while let (Some(&lhs), Some(&rhs)) = (lhs_iter.peek(), rhs_iter.peek()) {
-        match lhs.index.cmp(&rhs.index) {
-            std::cmp::Ordering::Less => {
-                indexes.push(lhs.index);
-                values.push(lhs.value);
-                lhs_iter.next();
-            }
-            std::cmp::Ordering::Equal => {
-                let value = lhs.value - rhs.value;
-                if !value.is_zero() {
-                    indexes.push(lhs.index);
-                    values.push(value);
-                }
-                lhs_iter.next();
-                rhs_iter.next();
-            }
-            std::cmp::Ordering::Greater => {
-                indexes.push(rhs.index);
-                values.push(-rhs.value);
-                rhs_iter.next();
-            }
-        }
+    let size1 = lhs.len();
+    let size2 = rhs.len();
+    let mut pos1 = 0;
+    let mut pos2 = 0;
+    let mut pos = 0;
+    let mut indexes = vec![0u16; size1 + size2];
+    let mut values = vec![F32::zero(); size1 + size2];
+    let lhs = lhs.data();
+    let rhs = rhs.data();
+    while pos1 < size1 && pos2 < size2 {
+        let lhs_index = lhs.indexes[pos1];
+        let rhs_index = rhs.indexes[pos2];
+        let lhs_value = lhs.values[pos1];
+        let rhs_value = rhs.values[pos2];
+        indexes[pos] = lhs_index.min(rhs_index);
+        values[pos] = F32((lhs_index <= rhs_index) as u32 as f32) * lhs_value
+            - F32((lhs_index >= rhs_index) as u32 as f32) * rhs_value;
+        pos1 += (lhs_index <= rhs_index) as usize;
+        pos2 += (lhs_index >= rhs_index) as usize;
+        pos += (!values[pos].is_zero()) as usize;
     }
-    for lhs in lhs_iter {
-        indexes.push(lhs.index);
-        values.push(lhs.value);
+    for i in pos1..size1 {
+        indexes[pos] = lhs.indexes[i];
+        values[pos] = lhs.values[i];
+        pos += 1;
     }
-    for rhs in rhs_iter {
-        indexes.push(rhs.index);
-        values.push(-rhs.value);
+    for i in pos2..size2 {
+        indexes[pos] = rhs.indexes[i];
+        values[pos] = -rhs.values[i];
+        pos += 1;
     }
+    indexes.truncate(pos);
+    values.truncate(pos);
 
     SVecf32::new_in_postgres(SparseF32Ref {
         dims: lhs.dims(),
