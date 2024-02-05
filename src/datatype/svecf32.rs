@@ -24,6 +24,7 @@ pub struct SVecf32 {
     kind: u8,
     reserved: u8,
     dims: u16,
+    padding: [u8; 6],
     phantom: [u8; 0],
 }
 
@@ -36,9 +37,9 @@ impl SVecf32 {
         let layout = Layout::new::<SVecf32>();
         let layout1 = Layout::array::<u16>(len).unwrap();
         let layout2 = Layout::array::<F32>(len).unwrap();
-        let layout = layout.extend(layout1).unwrap().0;
-        let layout = layout.extend(layout2).unwrap().0;
-        layout.pad_to_align()
+        let layout = layout.extend(layout1).unwrap().0.pad_to_align();
+        let layout = layout.extend(layout2).unwrap().0.pad_to_align();
+        layout
     }
     pub fn new_in_postgres(vector: SparseF32Ref<'_>) -> SVecf32Output {
         unsafe {
@@ -50,6 +51,7 @@ impl SVecf32 {
             std::ptr::addr_of_mut!((*ptr).kind).write(2);
             std::ptr::addr_of_mut!((*ptr).reserved).write(0);
             std::ptr::addr_of_mut!((*ptr).len).write(vector.length());
+            std::ptr::addr_of_mut!((*ptr).padding).write_bytes(0, 6);
             let mut data_ptr = (*ptr).phantom.as_mut_ptr().cast::<u16>();
             std::ptr::copy_nonoverlapping(
                 vector.indexes.as_ptr(),
@@ -57,17 +59,26 @@ impl SVecf32 {
                 vector.length() as usize,
             );
             data_ptr = data_ptr.add(vector.length() as usize);
-            let offset = data_ptr.align_offset(std::mem::align_of::<F32>());
-            if offset != 0 {
-                debug_assert_eq!(offset, 1);
-                std::ptr::write(data_ptr, 0);
-                data_ptr = data_ptr.add(offset);
-            }
+            let offset = data_ptr.align_offset(8);
+            std::ptr::write_bytes(data_ptr, 0, offset * std::mem::size_of::<u16>());
+            data_ptr = data_ptr.add(offset);
             std::ptr::copy_nonoverlapping(
                 vector.values.as_ptr(),
                 data_ptr.cast(),
                 vector.length() as usize,
             );
+            SVecf32Output(NonNull::new(ptr).unwrap())
+        }
+    }
+    pub fn new_zeroed_in_postgres(len: usize) -> SVecf32Output {
+        unsafe {
+            let layout = SVecf32::layout(len);
+            let ptr = pgrx::pg_sys::palloc0(layout.size()) as *mut SVecf32;
+            ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
+            std::ptr::addr_of_mut!((*ptr).varlena).write(SVecf32::varlena(layout.size()));
+            std::ptr::addr_of_mut!((*ptr).kind).write(2);
+            std::ptr::addr_of_mut!((*ptr).reserved).write(0);
+            std::ptr::addr_of_mut!((*ptr).len).write(len as u16);
             SVecf32Output(NonNull::new(ptr).unwrap())
         }
     }
@@ -84,7 +95,18 @@ impl SVecf32 {
         let len = self.len as usize;
         unsafe {
             let ptr = self.phantom.as_ptr().cast::<u16>().add(len);
-            let offset = ptr.align_offset(std::mem::align_of::<F32>());
+            let offset = ptr.align_offset(8);
+            ptr.add(offset).cast()
+        }
+    }
+    fn indexes_mut(&mut self) -> *mut u16 {
+        self.phantom.as_mut_ptr().cast()
+    }
+    fn values_mut(&mut self) -> *mut F32 {
+        let len = self.len as usize;
+        unsafe {
+            let ptr = self.phantom.as_mut_ptr().cast::<u16>().add(len);
+            let offset = ptr.align_offset(8);
             ptr.add(offset).cast()
         }
     }
@@ -517,6 +539,57 @@ CREATE FUNCTION _vectors_svecf32_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
 fn _vectors_svecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
     unreachable!()
+}
+
+#[pgrx::pg_extern(sql = "\
+CREATE FUNCTION _vectors_svecf32_send(svector) RETURNS bytea
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
+fn _vectors_svecf32_send(vector: SVecf32Input<'_>) -> Datum {
+    use pgrx::pg_sys::StringInfoData;
+    unsafe {
+        let mut buf = StringInfoData::default();
+        let dims = vector.dims;
+        let len = vector.len;
+        let data = vector.data();
+        pgrx::pg_sys::pq_begintypsend(&mut buf);
+        pgrx::pg_sys::pq_sendbytes(&mut buf, (&dims) as *const u16 as _, 2);
+        pgrx::pg_sys::pq_sendbytes(&mut buf, (&len) as *const u16 as _, 2);
+        pgrx::pg_sys::pq_sendbytes(
+            &mut buf,
+            data.indexes.as_ptr() as _,
+            (std::mem::size_of::<u16>() * len as usize) as _,
+        );
+        pgrx::pg_sys::pq_sendbytes(
+            &mut buf,
+            data.values.as_ptr() as _,
+            (std::mem::size_of::<F32>() * len as usize) as _,
+        );
+        Datum::from(pgrx::pg_sys::pq_endtypsend(&mut buf))
+    }
+}
+
+#[pgrx::pg_extern(sql = "
+CREATE FUNCTION _vectors_svecf32_recv(internal, oid, integer) RETURNS svector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
+fn _vectors_svecf32_recv(internal: pgrx::Internal, _oid: Oid, _typmod: i32) -> SVecf32Output {
+    use pgrx::pg_sys::StringInfo;
+    unsafe {
+        let buf: StringInfo = internal.into_datum().unwrap().cast_mut_ptr();
+        let dims = (pgrx::pg_sys::pq_getmsgbytes(buf, 2) as *const u16).read_unaligned();
+        let len = (pgrx::pg_sys::pq_getmsgbytes(buf, 2) as *const u16).read_unaligned();
+        if dims == 0 || len == 0 {
+            pgrx::error!("data corruption is detected");
+        }
+        let indexes_bytes = std::mem::size_of::<u16>() * len as usize;
+        let indexes_ptr = pgrx::pg_sys::pq_getmsgbytes(buf, indexes_bytes as _);
+        let values_bytes = std::mem::size_of::<F32>() * len as usize;
+        let values_ptr = pgrx::pg_sys::pq_getmsgbytes(buf, values_bytes as _);
+        let mut output = SVecf32::new_zeroed_in_postgres(len as usize);
+        output.dims = dims;
+        std::ptr::copy(indexes_ptr, output.indexes_mut() as _, indexes_bytes);
+        std::ptr::copy(values_ptr, output.values_mut() as _, values_bytes);
+        output
+    }
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]

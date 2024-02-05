@@ -43,9 +43,11 @@ END $$;
 CREATE TYPE svector (
     INPUT = _vectors_svecf32_in,
     OUTPUT = _vectors_svecf32_out,
+	RECEIVE = _vectors_svecf32_recv,
+	SEND = _vectors_svecf32_send,
     TYPMOD_IN = _vectors_typmod_in,
     TYPMOD_OUT = _vectors_typmod_out,
-    STORAGE = EXTENDED,
+    STORAGE = EXTERNAL,
     INTERNALLENGTH = VARIABLE,
     ALIGNMENT = double
 );
