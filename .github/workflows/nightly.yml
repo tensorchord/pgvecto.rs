@@ -9,18 +9,20 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.NIGHTLY_TOKEN }}
     permissions:
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - run: |
+      - name: trigger
+        env:
+          GH_TOKEN: ${{ secrets.NIGHTLY_TOKEN }}
+          TZ: Asia/Shanghai
+        run: |
           commit_date=$(git log -1 --since="24 hours ago" --pretty=format:"%cI")
           if [[ -n "$commit_date" ]]; then
-            if $(gh release view v0.0.0-nightly); then
-              gh release edit v0.0.0-nightly --target main
+            if gh release view v0.0.0-nightly --json name; then
+              gh release edit v0.0.0-nightly --target main --title "nightly in $(date --rfc-3339=date)"
             else
               gh release create v0.0.0-nightly --generate-notes --prerelease
             fi

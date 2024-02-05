@@ -5,6 +5,8 @@
 CREATE TYPE vector (
     INPUT = _vectors_vecf32_in,
     OUTPUT = _vectors_vecf32_out,
+	RECEIVE = _vectors_vecf32_recv,
+	SEND = _vectors_vecf32_send,
     TYPMOD_IN = _vectors_typmod_in,
     TYPMOD_OUT = _vectors_typmod_out,
     STORAGE = EXTERNAL,
@@ -22,6 +24,8 @@ END $$;
 CREATE TYPE vecf16 (
     INPUT = _vectors_vecf16_in,
     OUTPUT = _vectors_vecf16_out,
+	RECEIVE = _vectors_vecf16_recv,
+	SEND = _vectors_vecf16_send,
     TYPMOD_IN = _vectors_typmod_in,
     TYPMOD_OUT = _vectors_typmod_out,
     STORAGE = EXTERNAL,
