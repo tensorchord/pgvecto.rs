@@ -38,8 +38,7 @@ impl SVecf32 {
         let layout1 = Layout::array::<u16>(len).unwrap();
         let layout2 = Layout::array::<F32>(len).unwrap();
         let layout = layout.extend(layout1).unwrap().0.pad_to_align();
-        let layout = layout.extend(layout2).unwrap().0.pad_to_align();
-        layout
+        layout.extend(layout2).unwrap().0.pad_to_align()
     }
     pub fn new_in_postgres(vector: SparseF32Ref<'_>) -> SVecf32Output {
         unsafe {
@@ -60,7 +59,7 @@ impl SVecf32 {
             );
             data_ptr = data_ptr.add(vector.length() as usize);
             let offset = data_ptr.align_offset(8);
-            std::ptr::write_bytes(data_ptr, 0, offset * std::mem::size_of::<u16>());
+            std::ptr::write_bytes(data_ptr, 0, offset);
             data_ptr = data_ptr.add(offset);
             std::ptr::copy_nonoverlapping(
                 vector.values.as_ptr(),
