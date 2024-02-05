@@ -7,7 +7,7 @@ use std::path::Path;
 pub struct SparseMmap {
     indexes: MmapArray<u16>,
     values: MmapArray<F32>,
-    offsets: MmapArray<u32>,
+    offsets: MmapArray<usize>,
     payload: MmapArray<Payload>,
     dims: u16,
 }
@@ -24,8 +24,8 @@ impl Storage for SparseMmap {
     }
 
     fn content(&self, i: u32) -> SparseF32Ref<'_> {
-        let s = self.offsets[i as usize] as usize;
-        let e = self.offsets[i as usize + 1] as usize;
+        let s = self.offsets[i as usize];
+        let e = self.offsets[i as usize + 1];
         SparseF32Ref {
             dims: self.dims,
             indexes: &self.indexes[s..e],
@@ -62,7 +62,7 @@ impl Storage for SparseMmap {
         let indexes_iter = (0..n).flat_map(|i| ram.content(i).indexes.iter().copied());
         let values_iter = (0..n).flat_map(|i| ram.content(i).values.iter().copied());
         let offsets_iter = std::iter::once(0)
-            .chain((0..n).map(|i| ram.content(i).length() as u32))
+            .chain((0..n).map(|i| ram.content(i).length() as usize))
             .scan(0, |state, x| {
                 *state += x;
                 Some(*state)
