@@ -2,6 +2,7 @@
 
 #[test]
 fn test_v_f16_cosine() {
+    detect::initialize();
     const EPSILON: f32 = f16::EPSILON.to_f32_const();
     use half::f16;
     unsafe fn v_f16_cosine(a: *const u16, b: *const u16, n: usize) -> f32 {
@@ -46,6 +47,7 @@ fn test_v_f16_cosine() {
 
 #[test]
 fn test_v_f16_dot() {
+    detect::initialize();
     const EPSILON: f32 = 1.0f32;
     use half::f16;
     unsafe fn v_f16_dot(a: *const u16, b: *const u16, n: usize) -> f32 {
@@ -86,6 +88,7 @@ fn test_v_f16_dot() {
 
 #[test]
 fn test_v_f16_sl2() {
+    detect::initialize();
     const EPSILON: f32 = 1.0f32;
     use half::f16;
     unsafe fn v_f16_sl2(a: *const u16, b: *const u16, n: usize) -> f32 {

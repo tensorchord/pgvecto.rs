@@ -54,6 +54,19 @@ impl Vecf32 {
             Vecf32Output(NonNull::new(ptr).unwrap())
         }
     }
+    pub fn new_zeroed_in_postgres(size: usize) -> Vecf32Output {
+        unsafe {
+            assert!(u16::try_from(size).is_ok());
+            let layout = Vecf32::layout(size);
+            let ptr = pgrx::pg_sys::palloc0(layout.size()) as *mut Vecf32;
+            ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
+            std::ptr::addr_of_mut!((*ptr).varlena).write(Vecf32::varlena(layout.size()));
+            std::ptr::addr_of_mut!((*ptr).kind).write(0);
+            std::ptr::addr_of_mut!((*ptr).reserved).write(0);
+            std::ptr::addr_of_mut!((*ptr).len).write(size as u16);
+            Vecf32Output(NonNull::new(ptr).unwrap())
+        }
+    }
     pub fn len(&self) -> usize {
         self.len as usize
     }
@@ -465,4 +478,39 @@ CREATE FUNCTION _vectors_vecf32_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
 fn _vectors_vecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
     unreachable!()
+}
+
+#[pgrx::pg_extern(sql = "\
+CREATE FUNCTION _vectors_vecf32_send(vector) RETURNS bytea
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
+fn _vectors_vecf32_send(vector: Vecf32Input<'_>) -> Datum {
+    use pgrx::pg_sys::StringInfoData;
+    unsafe {
+        let mut buf = StringInfoData::default();
+        let len = vector.len;
+        let bytes = std::mem::size_of::<F32>() * len as usize;
+        pgrx::pg_sys::pq_begintypsend(&mut buf);
+        pgrx::pg_sys::pq_sendbytes(&mut buf, (&len) as *const u16 as _, 2);
+        pgrx::pg_sys::pq_sendbytes(&mut buf, vector.data().as_ptr() as _, bytes as _);
+        Datum::from(pgrx::pg_sys::pq_endtypsend(&mut buf))
+    }
+}
+
+#[pgrx::pg_extern(sql = "
+CREATE FUNCTION _vectors_vecf32_recv(internal, oid, integer) RETURNS vector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
+fn _vectors_vecf32_recv(internal: pgrx::Internal, _oid: Oid, _typmod: i32) -> Vecf32Output {
+    use pgrx::pg_sys::StringInfo;
+    unsafe {
+        let buf: StringInfo = internal.into_datum().unwrap().cast_mut_ptr();
+        let len = (pgrx::pg_sys::pq_getmsgbytes(buf, 2) as *const u16).read_unaligned();
+        if len == 0 {
+            pgrx::error!("data corruption is detected");
+        }
+        let bytes = std::mem::size_of::<F32>() * len as usize;
+        let ptr = pgrx::pg_sys::pq_getmsgbytes(buf, bytes as _);
+        let mut output = Vecf32::new_zeroed_in_postgres(len as usize);
+        std::ptr::copy(ptr, output.data_mut().as_mut_ptr() as _, bytes);
+        output
+    }
 }
