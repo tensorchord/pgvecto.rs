@@ -11,8 +11,9 @@
 
 pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx). 
 
-| Production Ready ✔    | Performant Vector Search ✔ | High Availability ✔  | Resource Efficient ✔   |
+|||||
 | --------------------- | -------------------------- | -------------------- | ---------------------- |
+| Production Ready ✔    | Performant Vector Search ✔ | High Availability ✔  | Resource Efficient ✔   |
 | Hybrid Search (FTS) ✔ | Sparse Vector Search ✔     | Permission Control ✔ | Complete SQL Support ✔ |
 
 ## Why use pgvecto.rs
