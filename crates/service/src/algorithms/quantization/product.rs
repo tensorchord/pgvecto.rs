@@ -66,6 +66,7 @@ pub struct ProductQuantization<S: G> {
     ratio: u16,
     centroids: Vec<S::Scalar>,
     codes: MmapArray<u8>,
+    precomputed_table: Vec<F32>,
 }
 
 unsafe impl<S: G> Send for ProductQuantization<S> {}
@@ -103,11 +104,14 @@ impl<S: G> Quan<S> for ProductQuantization<S> {
         let centroids =
             serde_json::from_slice(&std::fs::read(path.join("centroids")).unwrap()).unwrap();
         let codes = MmapArray::open(path.join("codes"));
+        let precomputed_table =
+            serde_json::from_slice(&std::fs::read(path.join("table")).unwrap()).unwrap();
         Self {
             dims: options.vector.dims,
             ratio: quantization_options.unwrap_product_quantization().ratio as _,
             centroids,
             codes,
+            precomputed_table,
         }
     }
 
@@ -208,6 +212,7 @@ impl<S: G> ProductQuantization<S> {
             ratio,
             centroids,
             codes,
+            precomputed_table: Vec::new(),
         }
     }
 
@@ -306,7 +311,105 @@ impl<S: G> ProductQuantization<S> {
             ratio,
             centroids,
             codes,
+            precomputed_table: Vec::new(),
         }
+    }
+
+    /** Precomputed tables for residuals
+     *
+     * During IVFPQ search with by_residual, we compute
+     *
+     *     d = || x - y_C - y_R ||^2
+     *
+     * where x is the query vector, y_C the coarse centroid, y_R the
+     * refined PQ centroid. The expression can be decomposed as:
+     *
+     *    d = || x - y_C ||^2 + || y_R ||^2 + 2 * (y_C|y_R) - 2 * (x|y_R)
+     *        ---------------   ---------------------------       -------
+     *             term 1                 term 2                   term 3
+     *
+     * When using multiprobe, we use the following decomposition:
+     * - term 1 is the distance to the coarse centroid, that is computed
+     *   during the 1st stage search.
+     * - term 2 can be precomputed, as it does not involve x. However,
+     *   because of the PQ, it needs nlist * M * ksub storage. This is why
+     *   use_precomputed_table is off by default
+     * - term 3 is the classical non-residual distance table.
+     *
+     * Since y_R defined by a product quantizer, it is split across
+     * subvectors and stored separately for each subvector.
+     *
+     * At search time, the tables for term 2 and term 3 are added up. This
+     * is faster when the length of the lists is > ksub * M.
+     */
+
+    // compute term3 at build time
+    pub fn precompute_table(&mut self, path: PathBuf, coarse_centroids: &Vec2<S>) {
+        let nlist = coarse_centroids.len();
+        let dims = self.dims;
+        let ratio = self.ratio;
+        let width = dims.div_ceil(ratio);
+        self.precomputed_table
+            .resize(nlist * width as usize * 256, F32::zero());
+        self.precomputed_table
+            .par_chunks_mut(width as usize * 256)
+            .enumerate()
+            .for_each(|(i, v)| {
+                let x_c = &coarse_centroids[i];
+                for j in 0..width {
+                    let subdims = std::cmp::min(ratio, dims - ratio * j);
+                    let sub_x_c = &x_c[(j * ratio) as usize..][..subdims as usize];
+                    for k in 0usize..256 {
+                        let sub_x_r = &self.centroids[k * dims as usize..][(j * ratio) as usize..]
+                            [..subdims as usize];
+                        v[j as usize * 256 + k] = squared_norm::<S>(subdims, sub_x_r)
+                            + F32(2.0) * inner_product::<S>(subdims, sub_x_c, sub_x_r);
+                    }
+                }
+            });
+        std::fs::write(
+            path.join("table"),
+            serde_json::to_string(&self.precomputed_table).unwrap(),
+        )
+        .unwrap();
+    }
+
+    // compute term2 at query time
+    pub fn init_query(&self, query: &[S::Scalar]) -> Vec<F32> {
+        let dims = self.dims;
+        let ratio = self.ratio;
+        let width = dims.div_ceil(ratio);
+        let mut runtime_table = vec![F32::zero(); width as usize * 256];
+        for i in 0..256 {
+            for j in 0..width {
+                let subdims = std::cmp::min(ratio, dims - ratio * j);
+                let sub_query = &query[(j * ratio) as usize..][..subdims as usize];
+                let centroid = &self.centroids[i * dims as usize..][(j * ratio) as usize..]
+                    [..subdims as usize];
+                runtime_table[j as usize * 256 + i] =
+                    F32(2.0) * inner_product::<S>(subdims, sub_query, centroid);
+            }
+        }
+        runtime_table
+    }
+
+    // add up all terms given codes
+    pub fn distance_with_table(
+        &self,
+        rhs: u32,
+        key: usize,
+        coarse_dis: F32,
+        runtime_table: &[F32],
+    ) -> F32 {
+        let mut result = coarse_dis * coarse_dis;
+        let codes = self.codes(rhs);
+        let width = self.dims.div_ceil(self.ratio);
+        let precomputed_table = &self.precomputed_table[key * width as usize * 256..];
+        for i in 0..width {
+            result += precomputed_table[i as usize * 256 + codes[i as usize] as usize]
+                - runtime_table[i as usize * 256 + codes[i as usize] as usize];
+        }
+        result
     }
 
     pub fn distance_with_delta(&self, lhs: &[S::Scalar], rhs: u32, delta: &[S::Scalar]) -> F32 {

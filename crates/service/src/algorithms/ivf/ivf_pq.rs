@@ -200,12 +200,13 @@ pub fn make<S: G>(
             });
         residuals
     };
-    let quantization = ProductQuantization::encode(
+    let mut quantization = ProductQuantization::encode(
         path.join("quantization"),
         options.clone(),
         quantization_opts,
         &residuals,
     );
+    quantization.precompute_table(path.join("quantization"), &centroids);
     IvfRam {
         raw,
         quantization,
@@ -277,18 +278,22 @@ pub fn basic<S: G>(
             });
         }
     }
+    let runtime_table = mmap.quantization.init_query(&target);
     let lists = lists.into_sorted_vec();
     let mut result = BinaryHeap::new();
-    for i in lists.iter().map(|e| e.payload as usize) {
-        let start = mmap.ptr[i];
-        let end = mmap.ptr[i + 1];
+    for i in lists.iter() {
+        let key = i.payload as usize;
+        let coarse_dis = i.distance;
+        let start = mmap.ptr[key];
+        let end = mmap.ptr[key + 1];
         for j in start..end {
             let payload = mmap.payloads[j];
             if filter.check(payload) {
-                let distance = mmap.quantization.distance_with_delta(
-                    vector,
+                let distance = mmap.quantization.distance_with_table(
                     j as u32,
-                    mmap.centroids(i as u32),
+                    key,
+                    coarse_dis,
+                    &runtime_table,
                 );
                 result.push(Reverse(Element { distance, payload }));
             }
@@ -316,18 +321,22 @@ pub fn vbase<'a, S: G>(
             });
         }
     }
+    let runtime_table = mmap.quantization.init_query(&target);
     let lists = lists.into_sorted_vec();
     let mut result = Vec::new();
-    for i in lists.iter().map(|e| e.payload as usize) {
-        let start = mmap.ptr[i];
-        let end = mmap.ptr[i + 1];
+    for i in lists.iter() {
+        let key = i.payload as usize;
+        let coarse_dis = i.distance;
+        let start = mmap.ptr[key];
+        let end = mmap.ptr[key + 1];
         for j in start..end {
             let payload = mmap.payloads[j];
             if filter.check(payload) {
-                let distance = mmap.quantization.distance_with_delta(
-                    vector,
+                let distance = mmap.quantization.distance_with_table(
                     j as u32,
-                    mmap.centroids(i as u32),
+                    key,
+                    coarse_dis,
+                    &runtime_table,
                 );
                 result.push(Element { distance, payload });
             }

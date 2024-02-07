@@ -120,3 +120,19 @@ pub enum Kind {
     F32,
     F16,
 }
+
+pub fn squared_norm<S: G>(dims: u16, vec: &[S::Scalar]) -> F32 {
+    let mut result = F32::zero();
+    for i in 0..dims as usize {
+        result += F32((vec[i] * vec[i]).to_f32());
+    }
+    result
+}
+
+pub fn inner_product<S: G>(dims: u16, lhs: &[S::Scalar], rhs: &[S::Scalar]) -> F32 {
+    let mut result = F32::zero();
+    for i in 0..dims as usize {
+        result += F32((lhs[i] * rhs[i]).to_f32());
+    }
+    result
+}
