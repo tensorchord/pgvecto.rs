@@ -2,6 +2,7 @@
 
 #[test]
 fn print() {
+    detect::initialize();
     assert_eq!(
         detect::x86_64::test_avx512fp16(),
         detect::x86_64::detect_avx512fp16()
