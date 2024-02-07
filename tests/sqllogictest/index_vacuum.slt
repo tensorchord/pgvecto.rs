@@ -1,0 +1,25 @@
+statement ok
+SET search_path TO pg_temp, vectors;
+
+statement ok
+CREATE TABLE t (id bigserial, val vector(3));
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM generate_series(1, 1000);
+
+statement ok
+CREATE INDEX ON t USING vectors (val vector_l2_ops);
+
+statement ok
+DELETE FROM t WHERE id % 2 = 0;
+
+statement ok
+VACUUM FULL;
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0,0,0]' limit 10) t2;
+----
+10
+
+statement ok
+DROP TABLE t;
