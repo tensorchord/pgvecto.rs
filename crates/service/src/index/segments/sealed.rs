@@ -41,7 +41,7 @@ impl<S: G> SealedSegment<S> {
         uuid: Uuid,
         options: IndexOptions,
     ) -> Arc<Self> {
-        let indexing = DynamicIndexing::load(&path.join("indexing"), options);
+        let indexing = DynamicIndexing::open(&path.join("indexing"), options);
         Arc::new(Self {
             uuid,
             indexing,
@@ -81,16 +81,12 @@ impl<S: G> SealedSegment<S> {
         self.indexing.vbase(vector, opts, filter)
     }
 
-    pub fn dims(&self) -> u16 {
-        self.indexing.dims()
-    }
-
     pub fn len(&self) -> u32 {
         self.indexing.len()
     }
 
-    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
-        self.indexing.content(i)
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+        self.indexing.vector(i)
     }
 
     pub fn payload(&self, i: u32) -> Payload {

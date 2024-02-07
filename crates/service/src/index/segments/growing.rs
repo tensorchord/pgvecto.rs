@@ -173,7 +173,7 @@ impl<S: G> GrowingSegment<S> {
         }
     }
 
-    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
         let i = i as usize;
         if i >= self.len.load(Ordering::Acquire) {
             panic!("Out of bound.");

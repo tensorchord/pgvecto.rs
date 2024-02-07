@@ -145,14 +145,6 @@ impl<S: G> DynamicIndexing<S> {
         }
     }
 
-    pub fn dims(&self) -> u16 {
-        match self {
-            DynamicIndexing::Flat(x) => x.dims(),
-            DynamicIndexing::Ivf(x) => x.dims(),
-            DynamicIndexing::Hnsw(x) => x.dims(),
-        }
-    }
-
     pub fn len(&self) -> u32 {
         match self {
             DynamicIndexing::Flat(x) => x.len(),
@@ -161,11 +153,11 @@ impl<S: G> DynamicIndexing<S> {
         }
     }
 
-    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
         match self {
-            DynamicIndexing::Flat(x) => x.content(i),
-            DynamicIndexing::Ivf(x) => x.content(i),
-            DynamicIndexing::Hnsw(x) => x.content(i),
+            DynamicIndexing::Flat(x) => x.vector(i),
+            DynamicIndexing::Ivf(x) => x.vector(i),
+            DynamicIndexing::Hnsw(x) => x.vector(i),
         }
     }
 
@@ -177,11 +169,11 @@ impl<S: G> DynamicIndexing<S> {
         }
     }
 
-    pub fn load(path: &Path, options: IndexOptions) -> Self {
+    pub fn open(path: &Path, options: IndexOptions) -> Self {
         match options.indexing {
-            IndexingOptions::Flat(_) => Self::Flat(FlatIndexing::load(path, options)),
-            IndexingOptions::Ivf(_) => Self::Ivf(IvfIndexing::load(path, options)),
-            IndexingOptions::Hnsw(_) => Self::Hnsw(HnswIndexing::load(path, options)),
+            IndexingOptions::Flat(_) => Self::Flat(FlatIndexing::open(path, options)),
+            IndexingOptions::Ivf(_) => Self::Ivf(IvfIndexing::open(path, options)),
+            IndexingOptions::Hnsw(_) => Self::Hnsw(HnswIndexing::open(path, options)),
         }
     }
 }

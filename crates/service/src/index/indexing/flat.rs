@@ -63,25 +63,21 @@ impl<S: G> AbstractIndexing<S> for FlatIndexing<S> {
 }
 
 impl<S: G> FlatIndexing<S> {
-    pub fn dims(&self) -> u16 {
-        self.raw.dims()
-    }
-
     pub fn len(&self) -> u32 {
         self.raw.len()
     }
 
-    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
-        self.raw.content(i)
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+        self.raw.vector(i)
     }
 
     pub fn payload(&self, i: u32) -> Payload {
         self.raw.payload(i)
     }
 
-    pub fn load(path: &Path, options: IndexOptions) -> Self {
+    pub fn open(path: &Path, options: IndexOptions) -> Self {
         Self {
-            raw: Flat::load(path, options),
+            raw: Flat::open(path, options),
         }
     }
 }

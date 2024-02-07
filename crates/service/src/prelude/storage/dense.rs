@@ -24,7 +24,7 @@ where
         self.payload.len() as u32
     }
 
-    fn content(&self, i: u32) -> &[T] {
+    fn vector(&self, i: u32) -> &[T] {
         let s = i as usize * self.dims as usize;
         let e = (i + 1) as usize * self.dims as usize;
         &self.vectors[s..e]
@@ -34,7 +34,7 @@ where
         self.payload[i as usize]
     }
 
-    fn load(path: &Path, options: IndexOptions) -> Self
+    fn open(path: &Path, options: IndexOptions) -> Self
     where
         Self: Sized,
     {
@@ -52,7 +52,7 @@ where
         ram: RawRam<S>,
     ) -> Self {
         let n = ram.len();
-        let vectors_iter = (0..n).flat_map(|i| ram.content(i).iter()).copied();
+        let vectors_iter = (0..n).flat_map(|i| ram.vector(i).iter()).copied();
         let payload_iter = (0..n).map(|i| ram.payload(i));
         let vectors = MmapArray::create(&path.join("vectors"), vectors_iter);
         let payload = MmapArray::create(&path.join("payload"), payload_iter);

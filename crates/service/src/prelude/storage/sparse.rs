@@ -23,7 +23,7 @@ impl Storage for SparseMmap {
         self.payload.len() as u32
     }
 
-    fn content(&self, i: u32) -> SparseF32Ref<'_> {
+    fn vector(&self, i: u32) -> SparseF32Ref<'_> {
         let s = self.offsets[i as usize];
         let e = self.offsets[i as usize + 1];
         SparseF32Ref {
@@ -37,7 +37,7 @@ impl Storage for SparseMmap {
         self.payload[i as usize]
     }
 
-    fn load(path: &Path, options: IndexOptions) -> Self
+    fn open(path: &Path, options: IndexOptions) -> Self
     where
         Self: Sized,
     {
@@ -59,10 +59,10 @@ impl Storage for SparseMmap {
         ram: RawRam<S>,
     ) -> Self {
         let n = ram.len();
-        let indexes_iter = (0..n).flat_map(|i| ram.content(i).indexes.iter().copied());
-        let values_iter = (0..n).flat_map(|i| ram.content(i).values.iter().copied());
+        let indexes_iter = (0..n).flat_map(|i| ram.vector(i).indexes.iter().copied());
+        let values_iter = (0..n).flat_map(|i| ram.vector(i).values.iter().copied());
         let offsets_iter = std::iter::once(0)
-            .chain((0..n).map(|i| ram.content(i).length() as usize))
+            .chain((0..n).map(|i| ram.vector(i).length() as usize))
             .scan(0, |state, x| {
                 *state += x;
                 Some(*state)

@@ -29,8 +29,8 @@ impl<S: G> Flat<S> {
         Self { mmap }
     }
 
-    pub fn load(path: &Path, options: IndexOptions) -> Self {
-        let mmap = load(path, options);
+    pub fn open(path: &Path, options: IndexOptions) -> Self {
+        let mmap = open(path, options);
         Self { mmap }
     }
 
@@ -52,16 +52,12 @@ impl<S: G> Flat<S> {
         vbase(&self.mmap, vector, filter)
     }
 
-    pub fn dims(&self) -> u16 {
-        self.mmap.raw.dims()
-    }
-
     pub fn len(&self) -> u32 {
         self.mmap.raw.len()
     }
 
-    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
-        self.mmap.raw.content(i)
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+        self.mmap.raw.vector(i)
     }
 
     pub fn payload(&self, i: u32) -> Payload {
@@ -114,9 +110,9 @@ pub fn save<S: G>(_: &Path, ram: FlatRam<S>) -> FlatMmap<S> {
     }
 }
 
-pub fn load<S: G>(path: &Path, options: IndexOptions) -> FlatMmap<S> {
+pub fn open<S: G>(path: &Path, options: IndexOptions) -> FlatMmap<S> {
     let idx_opts = options.indexing.clone().unwrap_flat();
-    let raw = Arc::new(Raw::load(&path.join("raw"), options.clone()));
+    let raw = Arc::new(Raw::open(&path.join("raw"), options.clone()));
     let quantization = Quantization::open(
         &path.join("quantization"),
         options.clone(),

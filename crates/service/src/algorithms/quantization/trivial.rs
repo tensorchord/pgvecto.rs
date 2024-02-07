@@ -32,10 +32,10 @@ impl<S: G> Quan<S> for TrivialQuantization<S> {
     }
 
     fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32 {
-        S::distance(lhs, self.raw.content(rhs))
+        S::distance(lhs, self.raw.vector(rhs))
     }
 
     fn distance2(&self, lhs: u32, rhs: u32) -> F32 {
-        S::distance(self.raw.content(lhs), self.raw.content(rhs))
+        S::distance(self.raw.vector(lhs), self.raw.vector(rhs))
     }
 }

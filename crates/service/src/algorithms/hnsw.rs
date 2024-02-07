@@ -37,8 +37,8 @@ impl<S: G> Hnsw<S> {
         Self { mmap }
     }
 
-    pub fn load(path: &Path, options: IndexOptions) -> Self {
-        let mmap = load(path, options);
+    pub fn open(path: &Path, options: IndexOptions) -> Self {
+        let mmap = open(path, options);
         Self { mmap }
     }
 
@@ -60,16 +60,12 @@ impl<S: G> Hnsw<S> {
         vbase(&self.mmap, vector, opts.hnsw_ef_search, filter)
     }
 
-    pub fn dims(&self) -> u16 {
-        self.mmap.raw.dims()
-    }
-
     pub fn len(&self) -> u32 {
         self.mmap.raw.len()
     }
 
-    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
-        self.mmap.raw.content(i)
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+        self.mmap.raw.vector(i)
     }
 
     pub fn payload(&self, i: u32) -> Payload {
@@ -256,7 +252,7 @@ pub fn make<S: G>(
             *input = res;
         }
         let mut visited = visited.fetch();
-        let target = raw.content(i);
+        let target = raw.vector(i);
         let levels = graph.vertexs[i as usize].levels();
         let local_entry;
         let update_entry;
@@ -371,9 +367,9 @@ pub fn save<S: G>(mut ram: HnswRam<S>, path: &Path) -> HnswMmap<S> {
     }
 }
 
-pub fn load<S: G>(path: &Path, options: IndexOptions) -> HnswMmap<S> {
+pub fn open<S: G>(path: &Path, options: IndexOptions) -> HnswMmap<S> {
     let idx_opts = options.indexing.clone().unwrap_hnsw();
-    let raw = Arc::new(Raw::load(&path.join("raw"), options.clone()));
+    let raw = Arc::new(Raw::open(&path.join("raw"), options.clone()));
     let quantization = Quantization::open(
         &path.join("quantization"),
         options.clone(),

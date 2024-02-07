@@ -38,7 +38,7 @@ impl<S: G> Ivf<S> {
         }
     }
 
-    pub fn load(path: &Path, options: IndexOptions) -> Self {
+    pub fn open(path: &Path, options: IndexOptions) -> Self {
         if options
             .indexing
             .clone()
@@ -46,16 +46,9 @@ impl<S: G> Ivf<S> {
             .quantization
             .is_product_quantization()
         {
-            Self::Pq(IvfPq::load(path, options))
+            Self::Pq(IvfPq::open(path, options))
         } else {
-            Self::Naive(IvfNaive::load(path, options))
-        }
-    }
-
-    pub fn dims(&self) -> u16 {
-        match self {
-            Ivf::Naive(x) => x.dims(),
-            Ivf::Pq(x) => x.dims(),
+            Self::Naive(IvfNaive::open(path, options))
         }
     }
 
@@ -66,10 +59,10 @@ impl<S: G> Ivf<S> {
         }
     }
 
-    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
         match self {
-            Ivf::Naive(x) => x.content(i),
-            Ivf::Pq(x) => x.content(i),
+            Ivf::Naive(x) => x.vector(i),
+            Ivf::Pq(x) => x.vector(i),
         }
     }
 

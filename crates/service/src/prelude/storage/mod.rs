@@ -16,9 +16,9 @@ pub trait Storage {
 
     fn dims(&self) -> u16;
     fn len(&self) -> u32;
-    fn content(&self, i: u32) -> Self::VectorRef<'_>;
+    fn vector(&self, i: u32) -> Self::VectorRef<'_>;
     fn payload(&self, i: u32) -> Payload;
-    fn load(path: &Path, options: IndexOptions) -> Self;
+    fn open(path: &Path, options: IndexOptions) -> Self;
     fn save<S: for<'a> G<VectorRef<'a> = Self::VectorRef<'a>>>(path: &Path, ram: RawRam<S>)
         -> Self;
 }

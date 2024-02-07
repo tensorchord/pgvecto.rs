@@ -42,21 +42,17 @@ impl<S: G> IvfPq<S> {
         Self { mmap }
     }
 
-    pub fn load(path: &Path, options: IndexOptions) -> Self {
-        let mmap = load(path, options);
+    pub fn open(path: &Path, options: IndexOptions) -> Self {
+        let mmap = open(path, options);
         Self { mmap }
-    }
-
-    pub fn dims(&self) -> u16 {
-        self.mmap.dims
     }
 
     pub fn len(&self) -> u32 {
         self.mmap.raw.len()
     }
 
-    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
-        self.mmap.raw.content(i)
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+        self.mmap.raw.vector(i)
     }
 
     pub fn payload(&self, i: u32) -> Payload {
@@ -150,8 +146,7 @@ pub fn make<S: G>(
     let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
     let mut samples = Vec2::new(dims, m as usize);
     for i in 0..m {
-        samples[i as usize]
-            .copy_from_slice(S::to_dense(raw.content(f[i as usize] as u32)).as_ref());
+        samples[i as usize].copy_from_slice(S::to_dense(raw.vector(f[i as usize] as u32)).as_ref());
         S::elkan_k_means_normalize(&mut samples[i as usize]);
     }
     let mut k_means = ElkanKMeans::<S>::new(nlist as usize, samples);
@@ -240,8 +235,8 @@ pub fn save<S: G>(mut ram: IvfRam<S>, path: &Path) -> IvfMmap<S> {
     }
 }
 
-pub fn load<S: G>(path: &Path, options: IndexOptions) -> IvfMmap<S> {
-    let raw = Arc::new(Raw::load(&path.join("raw"), options.clone()));
+pub fn open<S: G>(path: &Path, options: IndexOptions) -> IvfMmap<S> {
+    let raw = Arc::new(Raw::open(&path.join("raw"), options.clone()));
     let quantization = ProductQuantization::open(
         &path.join("quantization"),
         options.clone(),

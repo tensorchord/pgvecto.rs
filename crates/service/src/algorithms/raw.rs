@@ -25,25 +25,21 @@ impl<S: G> Raw<S> {
 }
 
 impl<S: G> Raw<S> {
-    pub fn dims(&self) -> u16 {
-        self.mmap.dims()
-    }
-
     pub fn len(&self) -> u32 {
         self.mmap.len()
     }
 
-    pub fn content(&self, i: u32) -> S::VectorRef<'_> {
-        self.mmap.content(i)
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+        self.mmap.vector(i)
     }
 
     pub fn payload(&self, i: u32) -> Payload {
         self.mmap.payload(i)
     }
 
-    pub fn load(path: &Path, options: IndexOptions) -> Self {
+    pub fn open(path: &Path, options: IndexOptions) -> Self {
         Self {
-            mmap: S::Storage::load(path, options),
+            mmap: S::Storage::open(path, options),
         }
     }
 }
@@ -67,16 +63,16 @@ impl<S: G> RawRam<S> {
             + self.growing.iter().map(|x| x.len()).sum::<u32>()
     }
 
-    pub fn content(&self, mut index: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, mut index: u32) -> S::VectorRef<'_> {
         for x in self.sealed.iter() {
             if index < x.len() {
-                return x.content(index);
+                return x.vector(index);
             }
             index -= x.len();
         }
         for x in self.growing.iter() {
             if index < x.len() {
-                return x.content(index);
+                return x.vector(index);
             }
             index -= x.len();
         }

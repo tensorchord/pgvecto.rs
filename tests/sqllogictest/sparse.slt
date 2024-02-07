@@ -43,16 +43,8 @@ SELECT to_svector(5, '{1,2}', '{1,2}');
 ----
 [0, 1, 2, 0, 0]
 
-query I
-SELECT to_svector(5, '[{1: 1}, {2: 2}]');
-----
-[0, 1, 2, 0, 0]
-
 statement error Lengths of index and value are not matched.
 SELECT to_svector(5, '{1,2,3}', '{1,2}');
 
 statement error Duplicated index.
 SELECT to_svector(5, '{1,1}', '{1,2}');
-
-statement error Duplicated index.
-SELECT to_svector(5, '[{1: 1}, {1: 2}]');

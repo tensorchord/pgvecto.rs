@@ -364,9 +364,6 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvect
 CREATE FUNCTION to_svector("dims" INT, "index" INT[], "value" real[]) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svector_from_array_wrapper';
 
-CREATE FUNCTION to_svector("dims" INT, "input" TEXT) RETURNS svector
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svector_from_kv_wrapper';
-
 -- List of casts
 
 CREATE CAST (real[] AS vector)
