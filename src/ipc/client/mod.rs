@@ -53,18 +53,15 @@ impl Rpc {
 }
 
 impl ClientGuard<Rpc> {
-    pub fn commit(&mut self, pending_deletes: Vec<Handle>, pending_dirty: Vec<Handle>) {
-        let packet = RpcPacket::Commit {
-            pending_deletes,
-            pending_dirty,
-        };
+    pub fn flush(&mut self, handle: Handle) {
+        let packet = RpcPacket::Flush { handle };
         self.socket.ok(packet).friendly();
-        let commit::CommitPacket::Leave {} = self.socket.recv().friendly();
+        let flush::FlushPacket::Leave {} = self.socket.recv().friendly();
     }
-    pub fn abort(&mut self, pending_deletes: Vec<Handle>) {
-        let packet = RpcPacket::Abort { pending_deletes };
+    pub fn drop(&mut self, handle: Handle) {
+        let packet = RpcPacket::Drop { handle };
         self.socket.ok(packet).friendly();
-        let abort::AbortPacket::Leave {} = self.socket.recv().friendly();
+        let drop::DropPacket::Leave {} = self.socket.recv().friendly();
     }
     pub fn create(&mut self, handle: Handle, options: IndexOptions) {
         let packet = RpcPacket::Create { handle, options };
@@ -83,24 +80,13 @@ impl ClientGuard<Rpc> {
             opts,
         };
         self.socket.ok(packet).friendly();
-        let vbase::VbaseErrorPacket {} = self.socket.recv().friendly();
+        let basic::BasicErrorPacket {} = self.socket.recv().friendly();
         ClientGuard::map(self)
     }
-    pub fn delete(&mut self, handle: Handle, mut t: impl Delete) {
-        let packet = RpcPacket::Delete { handle };
+    pub fn delete(&mut self, handle: Handle, pointer: Pointer) {
+        let packet = RpcPacket::Delete { handle, pointer };
         self.socket.ok(packet).friendly();
-        loop {
-            match self.socket.recv().friendly() {
-                delete::DeletePacket::Test { p } => {
-                    self.socket
-                        .ok(delete::DeleteTestPacket { delete: t.test(p) })
-                        .friendly();
-                }
-                delete::DeletePacket::Leave {} => {
-                    return;
-                }
-            }
-        }
+        let delete::DeletePacket::Leave {} = self.socket.recv().friendly();
     }
     pub fn insert(&mut self, handle: Handle, vector: DynamicVector, pointer: Pointer) {
         let packet = RpcPacket::Insert {
@@ -132,6 +118,12 @@ impl ClientGuard<Rpc> {
         let vbase::VbaseErrorPacket {} = self.socket.recv().friendly();
         ClientGuard::map(self)
     }
+    pub fn list(mut self, handle: Handle) -> ClientGuard<List> {
+        let packet = RpcPacket::List { handle };
+        self.socket.ok(packet).friendly();
+        let list::ListErrorPacket {} = self.socket.recv().friendly();
+        ClientGuard::map(self)
+    }
     pub fn upgrade(&mut self) {
         let packet = RpcPacket::Upgrade {};
         self.socket.ok(packet).friendly();
@@ -147,10 +139,6 @@ impl ClientLike for Rpc {
     fn to_socket(self) -> ClientSocket {
         self.socket
     }
-}
-
-pub trait Delete {
-    fn test(&mut self, p: Pointer) -> bool;
 }
 
 pub struct Vbase {
@@ -208,6 +196,38 @@ impl ClientGuard<Basic> {
 }
 
 impl ClientLike for Basic {
+    fn from_socket(socket: ClientSocket) -> Self {
+        Self { socket }
+    }
+
+    fn to_socket(self) -> ClientSocket {
+        self.socket
+    }
+}
+
+pub struct List {
+    socket: ClientSocket,
+}
+
+impl List {
+    pub fn next(&mut self) -> Option<Pointer> {
+        let packet = list::ListPacket::Next {};
+        self.socket.ok(packet).friendly();
+        let list::ListNextPacket { p } = self.socket.recv().friendly();
+        p
+    }
+}
+
+impl ClientGuard<List> {
+    pub fn leave(mut self) -> ClientGuard<Rpc> {
+        let packet = list::ListPacket::Leave {};
+        self.socket.ok(packet).friendly();
+        let list::ListLeavePacket {} = self.socket.recv().friendly();
+        ClientGuard::map(self)
+    }
+}
+
+impl ClientLike for List {
     fn from_socket(socket: ClientSocket) -> Self {
         Self { socket }
     }
