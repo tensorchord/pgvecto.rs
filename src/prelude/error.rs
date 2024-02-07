@@ -1,6 +1,10 @@
 use crate::ipc::{ClientRpc, ConnectionError};
-use pgrx::error;
 use std::num::NonZeroU16;
+
+#[cfg(not(test))]
+use pgrx::error;
+#[cfg(test)]
+use std::panic as error;
 
 pub fn bad_init() -> ! {
     error!("\
@@ -9,6 +13,22 @@ ADVICE: If you encounter this error for your first use of pgvecto.rs, \
 please read `https://docs.pgvecto.rs/getting-started/installation.html`. \
 You should edit `shared_preload_libraries` in `postgresql.conf` to include `vectors.so`, \
 or simply run the command `psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = \"vectors.so\"'`.");
+}
+
+pub fn embedding_failed(hint: &str) -> ! {
+    error!(
+        "\
+Error happens at embedding.
+INFORMATION: hint = {hint}"
+    );
+}
+
+pub fn guc_parse_failed(key: &str, hint: &str) -> ! {
+    error!(
+        "\
+        Failed to parse Guc.
+        INFORMATION: gucs = {key}, hint = {hint}"
+    );
 }
 
 pub fn check_type_dimensions(dimensions: Option<NonZeroU16>) -> NonZeroU16 {

@@ -37,11 +37,13 @@ service = { path = "crates/service" }
 interprocess_atomic_wait = { path = "crates/interprocess-atomic-wait" }
 memfd = { path = "crates/memfd" }
 pgrx = { version = "0.11.3", default-features = false, features = [] }
+reqwest = { version = "0.11", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 env_logger = "0.11.2"
 toml = "0.8.10"
 
 [dev-dependencies]
 pgrx-tests = "0.11.3"
+httpmock = "0.7"
 
 [patch.crates-io]
 pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.11.3-patch" }

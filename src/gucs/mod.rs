@@ -1,3 +1,4 @@
+pub mod embedding;
 pub mod executing;
 pub mod internal;
 pub mod planning;
@@ -7,5 +8,6 @@ pub unsafe fn init() {
         self::planning::init();
         self::internal::init();
         self::executing::init();
+        self::embedding::init();
     }
 }
