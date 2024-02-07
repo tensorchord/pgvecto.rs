@@ -430,7 +430,7 @@ fn _vectors_svecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum 
         struct Workspace {
             range: Option<(Option<usize>, Option<usize>)>,
         }
-        #[pgrx::pg_guard]
+                #[pgrx::pg_guard]
         unsafe extern "C" fn sbs_check_subscripts(
             _state: *mut pgrx::pg_sys::ExprState,
             op: *mut pgrx::pg_sys::ExprEvalStep,
@@ -445,7 +445,12 @@ fn _vectors_svecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum 
                 if state.upperprovided.read() {
                     if !state.upperindexnull.read() {
                         let upper = state.upperindex.read().value() as i32;
-                        end = Some(upper as usize);
+                        if upper >= 0 {
+                            end = Some(upper as usize);
+                        } else {
+                            (*op).resnull.write(true);
+                            return false;
+                        }
                     } else {
                         (*op).resnull.write(true);
                         return false;
@@ -454,7 +459,12 @@ fn _vectors_svecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum 
                 if state.lowerprovided.read() {
                     if !state.lowerindexnull.read() {
                         let lower = state.lowerindex.read().value() as i32;
-                        start = Some((lower - 1) as usize);
+                        if lower >= 0 {
+                            start = Some(lower as usize);
+                        } else {
+                            (*op).resnull.write(true);
+                            return false;
+                        }
                     } else {
                         (*op).resnull.write(true);
                         return false;

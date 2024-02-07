@@ -2,87 +2,87 @@ statement ok
 SET search_path TO pg_temp, vectors;
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[3:6];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[3:6];
 ----
-[3, 4, 5, 6]
+[3, 4, 5]
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[:4];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[:4];
 ----
-[1, 2, 3, 4]
+[0, 1, 2, 3]
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[5:];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[5:];
 ----
-[5, 6, 7, 8]
+[5, 6, 7]
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[1:8];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[1:8];
 ----
-[1, 2, 3, 4, 5, 6, 7, 8]
+[1, 2, 3, 4, 5, 6, 7]
 
-statement error type svector does only support one subscript
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[3:3][1:1];
+statement error type vector does only support one subscript
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[3:3][1:1];
 
-statement error type svector does only support slice fetch
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[3];
+statement error type vector does only support slice fetch
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[3];
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[5:4];
-----
-NULL
-
-query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[9:];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[5:4];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[:0];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[9:];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[:-1];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[:0];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[NULL:NULL];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[:-1];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[NULL:8];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[NULL:NULL];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[1:NULL];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[NULL:8];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[NULL:];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[1:NULL];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::svector)[:NULL];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[NULL:];
 ----
 NULL
 
 query I
-SELECT ('[0, 2, 0, 4, 0, 0, 7, 0]'::svector)[3:6];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vector)[:NULL];
+----
+NULL
+
+query I
+SELECT ('[0, 0, 2, 0, 4, 0, 0, 7]'::svector)[3:7];
 ----
 [0, 4, 0, 0]
 
 query I
-SELECT ('[0, 2, 0, 4, 0, 0, 7, 0]'::svector)[5:6];
+SELECT ('[0, 0, 2, 0, 4, 0, 0, 7]'::svector)[5:7];
 ----
 [0, 0]
 
 query I
-SELECT ('[0, 0, 0, 0, 0, 0, 0, 0]'::svector)[5:6];
+SELECT ('[0, 0, 0, 0, 0, 0, 0, 0]'::svector)[5:7];
 ----
 [0, 0]

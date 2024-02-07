@@ -16,19 +16,15 @@ impl RpcHandler {
     }
     pub fn handle(mut self) -> Result<RpcHandle, ConnectionError> {
         Ok(match self.socket.recv::<RpcPacket>()? {
-            RpcPacket::Commit {
-                pending_deletes,
-                pending_dirty,
-            } => RpcHandle::Commit {
-                pending_deletes,
-                pending_dirty,
-                x: Commit {
+            RpcPacket::Flush { handle } => RpcHandle::Flush {
+                handle,
+                x: Flush {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Abort { pending_deletes } => RpcHandle::Abort {
-                pending_deletes,
-                x: Abort {
+            RpcPacket::Drop { handle } => RpcHandle::Drop {
+                handle,
+                x: Drop {
                     socket: self.socket,
                 },
             },
@@ -51,8 +47,9 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
-            RpcPacket::Delete { handle } => RpcHandle::Delete {
+            RpcPacket::Delete { handle, pointer } => RpcHandle::Delete {
                 handle,
+                pointer,
                 x: Delete {
                     socket: self.socket,
                 },
@@ -87,6 +84,12 @@ impl RpcHandler {
                     socket: self.socket,
                 },
             },
+            RpcPacket::List { handle } => RpcHandle::List {
+                handle,
+                x: List {
+                    socket: self.socket,
+                },
+            },
             RpcPacket::Upgrade {} => RpcHandle::Upgrade {
                 x: Upgrade {
                     socket: self.socket,
@@ -97,14 +100,13 @@ impl RpcHandler {
 }
 
 pub enum RpcHandle {
-    Commit {
-        pending_deletes: Vec<Handle>,
-        pending_dirty: Vec<Handle>,
-        x: Commit,
+    Flush {
+        handle: Handle,
+        x: Flush,
     },
-    Abort {
-        pending_deletes: Vec<Handle>,
-        x: Abort,
+    Drop {
+        handle: Handle,
+        x: Drop,
     },
     Create {
         handle: Handle,
@@ -125,6 +127,7 @@ pub enum RpcHandle {
     },
     Delete {
         handle: Handle,
+        pointer: Pointer,
         x: Delete,
     },
     Stat {
@@ -137,18 +140,22 @@ pub enum RpcHandle {
         opts: SearchOptions,
         x: Vbase,
     },
+    List {
+        handle: Handle,
+        x: List,
+    },
     Upgrade {
         x: Upgrade,
     },
 }
 
-pub struct Commit {
+pub struct Flush {
     socket: ServerSocket,
 }
 
-impl Commit {
+impl Flush {
     pub fn leave(mut self) -> Result<RpcHandler, ConnectionError> {
-        let packet = commit::CommitPacket::Leave {};
+        let packet = flush::FlushPacket::Leave {};
         self.socket.ok(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
@@ -160,13 +167,13 @@ impl Commit {
     }
 }
 
-pub struct Abort {
+pub struct Drop {
     socket: ServerSocket,
 }
 
-impl Abort {
+impl Drop {
     pub fn leave(mut self) -> Result<RpcHandler, ConnectionError> {
-        let packet = abort::AbortPacket::Leave {};
+        let packet = drop::DropPacket::Leave {};
         self.socket.ok(packet)?;
         Ok(RpcHandler {
             socket: self.socket,
@@ -217,12 +224,6 @@ pub struct Delete {
 }
 
 impl Delete {
-    pub fn next(&mut self, p: Pointer) -> Result<bool, ConnectionError> {
-        let packet = delete::DeletePacket::Test { p };
-        self.socket.ok(packet)?;
-        let delete::DeleteTestPacket { delete } = self.socket.recv::<delete::DeleteTestPacket>()?;
-        Ok(delete)
-    }
     pub fn leave(mut self) -> Result<RpcHandler, ConnectionError> {
         let packet = delete::DeletePacket::Leave {};
         self.socket.ok(packet)?;
@@ -365,6 +366,65 @@ impl VbaseNext {
         let packet = vbase::VbaseNextPacket { p };
         self.socket.ok(packet)?;
         Ok(VbaseHandler {
+            socket: self.socket,
+        })
+    }
+}
+
+pub struct List {
+    socket: ServerSocket,
+}
+
+impl List {
+    pub fn error(mut self) -> Result<ListHandler, ConnectionError> {
+        self.socket.ok(list::ListErrorPacket {})?;
+        Ok(ListHandler {
+            socket: self.socket,
+        })
+    }
+    pub fn reset(mut self, err: ServiceError) -> Result<!, ConnectionError> {
+        self.socket.err(err)
+    }
+}
+
+pub struct ListHandler {
+    socket: ServerSocket,
+}
+
+impl ListHandler {
+    pub fn handle(mut self) -> Result<ListHandle, ConnectionError> {
+        Ok(match self.socket.recv::<list::ListPacket>()? {
+            list::ListPacket::Next {} => ListHandle::Next {
+                x: ListNext {
+                    socket: self.socket,
+                },
+            },
+            list::ListPacket::Leave {} => {
+                self.socket.ok(list::ListLeavePacket {})?;
+                ListHandle::Leave {
+                    x: RpcHandler {
+                        socket: self.socket,
+                    },
+                }
+            }
+        })
+    }
+}
+
+pub enum ListHandle {
+    Next { x: ListNext },
+    Leave { x: RpcHandler },
+}
+
+pub struct ListNext {
+    socket: ServerSocket,
+}
+
+impl ListNext {
+    pub fn leave(mut self, p: Option<Pointer>) -> Result<ListHandler, ConnectionError> {
+        let packet = list::ListNextPacket { p };
+        self.socket.ok(packet)?;
+        Ok(ListHandler {
             socket: self.socket,
         })
     }

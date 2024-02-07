@@ -2,72 +2,72 @@ statement ok
 SET search_path TO pg_temp, vectors;
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[3:6];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[3:6];
 ----
-[3, 4, 5, 6]
+[3, 4, 5]
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[:4];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[:4];
 ----
-[1, 2, 3, 4]
+[0, 1, 2, 3]
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[5:];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[5:];
 ----
-[5, 6, 7, 8]
+[5, 6, 7]
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[1:8];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[1:8];
 ----
-[1, 2, 3, 4, 5, 6, 7, 8]
+[1, 2, 3, 4, 5, 6, 7]
 
 statement error type vecf16 does only support one subscript
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[3:3][1:1];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[3:3][1:1];
 
 statement error type vecf16 does only support slice fetch
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[3];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[3];
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[5:4];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[5:4];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[9:];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[9:];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[:0];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[:0];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[:-1];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[:-1];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[NULL:NULL];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[NULL:NULL];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[NULL:8];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[NULL:8];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[1:NULL];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[1:NULL];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[NULL:];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[NULL:];
 ----
 NULL
 
 query I
-SELECT ('[1, 2, 3, 4, 5, 6, 7, 8]'::vecf16)[:NULL];
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::vecf16)[:NULL];
 ----
 NULL

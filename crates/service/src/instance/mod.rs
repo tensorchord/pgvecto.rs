@@ -224,6 +224,19 @@ impl InstanceView {
             _ => Err(ServiceError::Unmatched),
         }
     }
+    pub fn list(&self) -> impl Iterator<Item = Pointer> + '_ {
+        match self {
+            InstanceView::F32Cos(x) => Box::new(x.list()) as Box<dyn Iterator<Item = Pointer>>,
+            InstanceView::F32Dot(x) => Box::new(x.list()),
+            InstanceView::F32L2(x) => Box::new(x.list()),
+            InstanceView::F16Cos(x) => Box::new(x.list()),
+            InstanceView::F16Dot(x) => Box::new(x.list()),
+            InstanceView::F16L2(x) => Box::new(x.list()),
+            InstanceView::SparseF32Cos(x) => Box::new(x.list()),
+            InstanceView::SparseF32Dot(x) => Box::new(x.list()),
+            InstanceView::SparseF32L2(x) => Box::new(x.list()),
+        }
+    }
     pub fn insert(
         &self,
         vector: DynamicVector,
@@ -248,17 +261,17 @@ impl InstanceView {
             _ => Err(ServiceError::Unmatched),
         }
     }
-    pub fn delete<F: FnMut(Pointer) -> bool>(&self, f: F) {
+    pub fn delete(&self, pointer: Pointer) {
         match self {
-            InstanceView::F32Cos(x) => x.delete(f),
-            InstanceView::F32Dot(x) => x.delete(f),
-            InstanceView::F32L2(x) => x.delete(f),
-            InstanceView::F16Cos(x) => x.delete(f),
-            InstanceView::F16Dot(x) => x.delete(f),
-            InstanceView::F16L2(x) => x.delete(f),
-            InstanceView::SparseF32Cos(x) => x.delete(f),
-            InstanceView::SparseF32Dot(x) => x.delete(f),
-            InstanceView::SparseF32L2(x) => x.delete(f),
+            InstanceView::F32Cos(x) => x.delete(pointer),
+            InstanceView::F32Dot(x) => x.delete(pointer),
+            InstanceView::F32L2(x) => x.delete(pointer),
+            InstanceView::F16Cos(x) => x.delete(pointer),
+            InstanceView::F16Dot(x) => x.delete(pointer),
+            InstanceView::F16L2(x) => x.delete(pointer),
+            InstanceView::SparseF32Cos(x) => x.delete(pointer),
+            InstanceView::SparseF32Dot(x) => x.delete(pointer),
+            InstanceView::SparseF32L2(x) => x.delete(pointer),
         }
     }
     pub fn flush(&self) {

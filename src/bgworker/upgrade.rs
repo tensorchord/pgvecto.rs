@@ -57,18 +57,18 @@ fn session(handler: RpcHandler) -> Result<(), ConnectionError> {
     let mut handler = handler;
     loop {
         match handler.handle()? {
-            RpcHandle::Commit { x, .. } => {
+            RpcHandle::Drop { x, .. } => {
+                // false drop
                 handler = x.leave()?;
             }
-            RpcHandle::Abort { x, .. } => {
-                handler = x.leave()?;
-            }
+            RpcHandle::Flush { x, .. } => x.reset(ServiceError::Upgrade)?,
             RpcHandle::Create { x, .. } => x.reset(ServiceError::Upgrade)?,
             RpcHandle::Insert { x, .. } => x.reset(ServiceError::Upgrade)?,
             RpcHandle::Delete { x, .. } => x.reset(ServiceError::Upgrade)?,
             RpcHandle::Stat { x, .. } => x.reset(ServiceError::Upgrade)?,
             RpcHandle::Basic { x, .. } => x.reset(ServiceError::Upgrade)?,
             RpcHandle::Vbase { x, .. } => x.reset(ServiceError::Upgrade)?,
+            RpcHandle::List { x, .. } => x.reset(ServiceError::Upgrade)?,
             RpcHandle::Upgrade { x } => {
                 let _ = std::fs::remove_dir_all("./pg_vectors");
                 handler = x.leave()?;
