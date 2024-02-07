@@ -65,28 +65,17 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
     loop {
         match handler.handle()? {
             // transaction
-            RpcHandle::Commit {
-                pending_deletes,
-                pending_dirty,
-                x,
-            } => {
+            RpcHandle::Flush { handle, x } => {
                 let view = worker.view();
-                for handle in pending_deletes {
-                    worker.instance_destroy(handle);
-                }
-                for handle in pending_dirty {
-                    if let Some(instance) = view.get(handle) {
-                        if let Some(view) = instance.view() {
-                            view.flush();
-                        }
+                if let Some(instance) = view.get(handle) {
+                    if let Some(view) = instance.view() {
+                        view.flush();
                     }
                 }
                 handler = x.leave()?;
             }
-            RpcHandle::Abort { pending_deletes, x } => {
-                for handle in pending_deletes {
-                    worker.instance_destroy(handle);
-                }
+            RpcHandle::Drop { handle, x } => {
+                worker.instance_destroy(handle);
                 handler = x.leave()?;
             }
             RpcHandle::Create { handle, options, x } => {
@@ -120,7 +109,7 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
                 }
                 handler = x.leave()?;
             }
-            RpcHandle::Delete { handle, mut x } => {
+            RpcHandle::Delete { handle, pointer, x } => {
                 let view = worker.view();
                 let Some(instance) = view.get(handle) else {
                     x.reset(ServiceError::UnknownIndex)?;
@@ -129,7 +118,7 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
                     Some(x) => x,
                     None => x.reset(ServiceError::Upgrade2)?,
                 };
-                instance_view.delete(|p| x.next(p).expect("Panic in VACUUM."));
+                instance_view.delete(pointer);
                 handler = x.leave()?;
             }
             RpcHandle::Stat { handle, x } => {
@@ -191,6 +180,30 @@ fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionErro
                     Ok(x) => x,
                     Err(e) => x.reset(e)?,
                 };
+                let mut x = x.error()?;
+                loop {
+                    match x.handle()? {
+                        Next { x: y } => {
+                            x = y.leave(it.next())?;
+                        }
+                        Leave { x } => {
+                            handler = x;
+                            break;
+                        }
+                    }
+                }
+            }
+            RpcHandle::List { handle, x } => {
+                use crate::ipc::server::ListHandle::*;
+                let view = worker.view();
+                let Some(instance) = view.get(handle) else {
+                    x.reset(ServiceError::UnknownIndex)?;
+                };
+                let view = match instance.view() {
+                    Some(x) => x,
+                    None => x.reset(ServiceError::Upgrade2)?,
+                };
+                let mut it = view.list();
                 let mut x = x.error()?;
                 loop {
                     match x.handle()? {

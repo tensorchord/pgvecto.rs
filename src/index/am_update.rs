@@ -10,24 +10,15 @@ pub fn update_insert(handle: Handle, vector: DynamicVector, tid: pgrx::pg_sys::I
     rpc.insert(handle, vector, pointer);
 }
 
-pub fn update_delete(handle: Handle, hook: impl Fn(Pointer) -> bool) {
+pub fn update_delete(handle: Handle, f: impl Fn(Pointer) -> bool) {
     callback_dirty(handle);
 
-    struct Delete<H> {
-        hook: H,
-    }
-
-    impl<H> crate::ipc::client::Delete for Delete<H>
-    where
-        H: Fn(Pointer) -> bool,
-    {
-        fn test(&mut self, p: Pointer) -> bool {
-            (self.hook)(p)
+    let mut rpc_list = crate::ipc::client::borrow_mut().list(handle);
+    let mut rpc = crate::ipc::client::borrow_mut();
+    while let Some(p) = rpc_list.next() {
+        if f(p) {
+            rpc.delete(handle, p);
         }
     }
-
-    let client_delete = Delete { hook };
-
-    let mut rpc = crate::ipc::client::borrow_mut();
-    rpc.delete(handle, client_delete);
+    rpc_list.leave();
 }

@@ -1,9 +1,10 @@
-pub mod abort;
 pub mod basic;
-pub mod commit;
 pub mod create;
 pub mod delete;
+pub mod drop;
+pub mod flush;
 pub mod insert;
+pub mod list;
 pub mod stat;
 pub mod upgrade;
 pub mod vbase;
@@ -16,12 +17,11 @@ use service::prelude::*;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum RpcPacket {
     // transaction
-    Commit {
-        pending_deletes: Vec<Handle>,
-        pending_dirty: Vec<Handle>,
+    Flush {
+        handle: Handle,
     },
-    Abort {
-        pending_deletes: Vec<Handle>,
+    Drop {
+        handle: Handle,
     },
     Create {
         handle: Handle,
@@ -35,6 +35,7 @@ pub enum RpcPacket {
     },
     Delete {
         handle: Handle,
+        pointer: Pointer,
     },
     Stat {
         handle: Handle,
@@ -48,6 +49,9 @@ pub enum RpcPacket {
         handle: Handle,
         vector: DynamicVector,
         opts: SearchOptions,
+    },
+    List {
+        handle: Handle,
     },
     // admin
     Upgrade {},
