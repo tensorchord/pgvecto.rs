@@ -430,7 +430,7 @@ fn _vectors_svecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum 
         struct Workspace {
             range: Option<(Option<usize>, Option<usize>)>,
         }
-                #[pgrx::pg_guard]
+        #[pgrx::pg_guard]
         unsafe extern "C" fn sbs_check_subscripts(
             _state: *mut pgrx::pg_sys::ExprState,
             op: *mut pgrx::pg_sys::ExprEvalStep,
