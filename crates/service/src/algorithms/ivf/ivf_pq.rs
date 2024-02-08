@@ -90,6 +90,8 @@ pub struct IvfRam<S: G> {
     nlist: u32,
     // ----------------------
     centroids: Vec2<S>,
+    ptr: Vec<usize>,
+    payloads: Vec<Payload>,
 }
 
 unsafe impl<S: G> Send for IvfRam<S> {}
@@ -184,8 +186,6 @@ pub fn make<S: G>(
             .flat_map(|i| &invlists_payloads[i as usize])
             .copied(),
     );
-    MmapArray::create(path.join("ptr"), ptr.iter().copied());
-    MmapArray::create(path.join("payload"), payloads.iter().copied());
     sync_dir(&path);
     let residuals = {
         let mut residuals = Vec2::<S>::new(options.vector.dims, n as usize);
@@ -213,6 +213,8 @@ pub fn make<S: G>(
         centroids,
         nlist,
         dims,
+        ptr,
+        payloads,
     }
 }
 
@@ -223,8 +225,8 @@ pub fn save<S: G>(ram: IvfRam<S>, path: PathBuf) -> IvfMmap<S> {
             .flat_map(|i| &ram.centroids[i as usize])
             .copied(),
     );
-    let ptr = MmapArray::open(path.join("ptr"));
-    let payloads = MmapArray::open(path.join("payload"));
+    let ptr = MmapArray::create(path.join("ptr"), ram.ptr.iter().copied());
+    let payloads = MmapArray::create(path.join("payload"), ram.payloads.iter().copied());
     IvfMmap {
         raw: ram.raw,
         quantization: ram.quantization,

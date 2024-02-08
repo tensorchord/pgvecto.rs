@@ -79,10 +79,6 @@ impl<S: G> ProductQuantization<S> {
         let e = (i + 1) as usize * width as usize;
         &self.codes[s..e]
     }
-
-    pub fn set_codes(&mut self, codes: MmapArray<u8>) {
-        self.codes = codes;
-    }
 }
 
 impl<S: G> Quan<S> for ProductQuantization<S> {
@@ -91,8 +87,16 @@ impl<S: G> Quan<S> for ProductQuantization<S> {
         options: IndexOptions,
         quantization_options: QuantizationOptions,
         raw: &Arc<Raw<S>>,
+        permutation: Vec<u32>, // permutation is the mapping from placements to original ids
     ) -> Self {
-        Self::with_normalizer(path, options, quantization_options, raw, |_, _| ())
+        Self::with_normalizer(
+            path,
+            options,
+            quantization_options,
+            raw,
+            |_, _| (),
+            permutation,
+        )
     }
 
     fn open(
@@ -138,6 +142,7 @@ impl<S: G> ProductQuantization<S> {
         quantization_options: QuantizationOptions,
         raw: &Raw<S>,
         normalizer: F,
+        permutation: Vec<u32>,
     ) -> Self
     where
         F: Fn(u32, &mut [S::Scalar]),
@@ -178,8 +183,8 @@ impl<S: G> ProductQuantization<S> {
             }
         }
         let codes_iter = (0..n).flat_map(|i| {
-            let mut vector = raw.vector(i).to_vec();
-            normalizer(i, &mut vector);
+            let mut vector = raw.vector(permutation[i as usize]).to_vec();
+            normalizer(permutation[i as usize], &mut vector);
             let width = dims.div_ceil(ratio);
             let mut result = Vec::with_capacity(width as usize);
             for i in 0..width {

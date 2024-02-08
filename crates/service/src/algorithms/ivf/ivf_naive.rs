@@ -88,6 +88,8 @@ pub struct IvfRam<S: G> {
     nlist: u32,
     // ----------------------
     centroids: Vec2<S>,
+    ptr: Vec<usize>,
+    payloads: Vec<Payload>,
 }
 
 unsafe impl<S: G> Send for IvfRam<S> {}
@@ -137,12 +139,6 @@ pub fn make<S: G>(
         sealed,
         growing,
     ));
-    let mut quantization = Quantization::create(
-        path.join("quantization"),
-        options.clone(),
-        quantization_opts,
-        &raw,
-    );
     let n = raw.len();
     let m = std::cmp::min(nsample, n);
     let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
@@ -178,89 +174,22 @@ pub fn make<S: G>(
         invlists_ids[idx[i as usize]].push(i);
         invlists_payloads[idx[i as usize]].push(raw.payload(i));
     }
-    let mut ptr = vec![0usize; nlist as usize + 1];
-    for i in 0..nlist {
-        ptr[i as usize + 1] = ptr[i as usize] + invlists_ids[i as usize].len();
-    }
+    let permutation = Vec::from_iter((0..nlist).flat_map(|i| &invlists_ids[i as usize]).copied());
     let payloads = Vec::from_iter(
         (0..nlist)
             .flat_map(|i| &invlists_payloads[i as usize])
             .copied(),
     );
-    MmapArray::create(path.join("ptr"), ptr.iter().copied());
-    MmapArray::create(path.join("payload"), payloads.iter().copied());
-    match &quantization {
-        Quantization::Trivial(quantization) => {
-            let mut invlists_codes = vec![Vec::new(); nlist as usize];
-            invlists_codes
-                .par_iter_mut()
-                .enumerate()
-                .for_each(|(centroid_id, v)| {
-                    for i in &invlists_ids[centroid_id] {
-                        let vector = quantization.codes(*i);
-                        v.append(&mut vector.to_vec());
-                    }
-                });
-            MmapArray::create(
-                path.join("vectors"),
-                (0..nlist)
-                    .flat_map(|i| &invlists_codes[i as usize])
-                    .copied(),
-            );
-            sync_dir(&path);
-        }
-        Quantization::Scalar(quantization) => {
-            let mut invlists_codes = vec![Vec::new(); nlist as usize];
-            invlists_codes
-                .par_iter_mut()
-                .enumerate()
-                .for_each(|(centroid_id, v)| {
-                    for i in &invlists_ids[centroid_id] {
-                        let vector = quantization.codes(*i);
-                        v.append(&mut vector.to_vec());
-                    }
-                });
-            MmapArray::create(
-                path.join("vectors"),
-                (0..nlist)
-                    .flat_map(|i| &invlists_codes[i as usize])
-                    .copied(),
-            );
-            sync_dir(&path);
-        }
-        Quantization::Product(quantization) => {
-            let mut invlists_codes = vec![Vec::new(); nlist as usize];
-            invlists_codes
-                .par_iter_mut()
-                .enumerate()
-                .for_each(|(centroid_id, v)| {
-                    for i in &invlists_ids[centroid_id] {
-                        let vector = quantization.codes(*i);
-                        v.append(&mut vector.to_vec());
-                    }
-                });
-            MmapArray::create(
-                path.join("vectors"),
-                (0..nlist)
-                    .flat_map(|i| &invlists_codes[i as usize])
-                    .copied(),
-            );
-            sync_dir(&path);
-        }
-    }
-    match &mut quantization {
-        Quantization::Trivial(quantization) => {
-            let raw = Arc::new(Raw::open(path, options.clone()));
-            quantization.set_codes(raw);
-        }
-        Quantization::Scalar(quantization) => {
-            let codes = MmapArray::open(path.join("vectors"));
-            quantization.set_codes(codes);
-        }
-        Quantization::Product(quantization) => {
-            let codes = MmapArray::open(path.join("vectors"));
-            quantization.set_codes(codes);
-        }
+    let quantization = Quantization::create(
+        path.join("quantization"),
+        options.clone(),
+        quantization_opts,
+        &raw,
+        permutation,
+    );
+    let mut ptr = vec![0usize; nlist as usize + 1];
+    for i in 0..nlist {
+        ptr[i as usize + 1] = ptr[i as usize] + invlists_ids[i as usize].len();
     }
     IvfRam {
         raw,
@@ -268,6 +197,8 @@ pub fn make<S: G>(
         centroids,
         nlist,
         dims,
+        ptr,
+        payloads,
     }
 }
 
@@ -278,8 +209,8 @@ pub fn save<S: G>(ram: IvfRam<S>, path: PathBuf) -> IvfMmap<S> {
             .flat_map(|i| &ram.centroids[i as usize])
             .copied(),
     );
-    let ptr = MmapArray::open(path.join("ptr"));
-    let payloads = MmapArray::open(path.join("payload"));
+    let ptr = MmapArray::create(path.join("ptr"), ram.ptr.iter().copied());
+    let payloads = MmapArray::create(path.join("payload"), ram.payloads.iter().copied());
     IvfMmap {
         raw: ram.raw,
         quantization: ram.quantization,
@@ -293,7 +224,7 @@ pub fn save<S: G>(ram: IvfRam<S>, path: PathBuf) -> IvfMmap<S> {
 
 pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> IvfMmap<S> {
     let raw = Arc::new(Raw::open(path.join("raw"), options.clone()));
-    let mut quantization = Quantization::open(
+    let quantization = Quantization::open(
         path.join("quantization"),
         options.clone(),
         options.indexing.clone().unwrap_ivf().quantization,
@@ -302,20 +233,6 @@ pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> IvfMmap<S> {
     let centroids = MmapArray::open(path.join("centroids"));
     let ptr = MmapArray::open(path.join("ptr"));
     let payloads = MmapArray::open(path.join("payload"));
-    match &mut quantization {
-        Quantization::Trivial(quantization) => {
-            let raw = Arc::new(Raw::open(path, options.clone()));
-            quantization.set_codes(raw);
-        }
-        Quantization::Scalar(quantization) => {
-            let codes = MmapArray::open(path.join("vectors"));
-            quantization.set_codes(codes);
-        }
-        Quantization::Product(quantization) => {
-            let codes = MmapArray::open(path.join("vectors"));
-            quantization.set_codes(codes);
-        }
-    }
     let IvfIndexingOptions { nlist, .. } = options.indexing.unwrap_ivf();
     IvfMmap {
         raw,

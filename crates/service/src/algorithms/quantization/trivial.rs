@@ -3,6 +3,7 @@ use crate::algorithms::quantization::QuantizationOptions;
 use crate::algorithms::raw::Raw;
 use crate::index::IndexOptions;
 use crate::prelude::*;
+use crate::utils::dir_ops::sync_dir;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -20,32 +21,52 @@ impl Default for TrivialQuantizationOptions {
 
 pub struct TrivialQuantization<S: G> {
     raw: Arc<Raw<S>>,
+    permutation: Vec<u32>,
 }
 
 impl<S: G> TrivialQuantization<S> {
     pub fn codes(&self, i: u32) -> &[S::Scalar] {
-        self.raw.vector(i)
-    }
-
-    pub fn set_codes(&mut self, raw: Arc<Raw<S>>) {
-        self.raw = raw;
+        self.raw.vector(self.permutation[i as usize])
     }
 }
 
 impl<S: G> Quan<S> for TrivialQuantization<S> {
-    fn create(_: PathBuf, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S>>) -> Self {
-        Self { raw: raw.clone() }
+    // permutation is the mapping from placements to original ids
+    fn create(
+        path: PathBuf,
+        _: IndexOptions,
+        _: QuantizationOptions,
+        raw: &Arc<Raw<S>>,
+        permutation: Vec<u32>,
+    ) -> Self {
+        // here we cannot modify raw, so we record permutation for translation
+        std::fs::create_dir(&path).unwrap();
+        sync_dir(&path);
+        std::fs::write(
+            path.join("permutation"),
+            serde_json::to_string(&permutation).unwrap(),
+        )
+        .unwrap();
+        Self {
+            raw: raw.clone(),
+            permutation,
+        }
     }
 
-    fn open(_: PathBuf, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S>>) -> Self {
-        Self { raw: raw.clone() }
+    fn open(path: PathBuf, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S>>) -> Self {
+        let permutation =
+            serde_json::from_slice(&std::fs::read(path.join("permutation")).unwrap()).unwrap();
+        Self {
+            raw: raw.clone(),
+            permutation,
+        }
     }
 
     fn distance(&self, lhs: &[S::Scalar], rhs: u32) -> F32 {
-        S::distance(lhs, self.raw.vector(rhs))
+        S::distance(lhs, self.codes(rhs))
     }
 
     fn distance2(&self, lhs: u32, rhs: u32) -> F32 {
-        S::distance(self.raw.vector(lhs), self.raw.vector(rhs))
+        S::distance(self.codes(lhs), self.codes(rhs))
     }
 }

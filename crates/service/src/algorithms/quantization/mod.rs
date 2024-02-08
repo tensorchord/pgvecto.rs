@@ -63,6 +63,7 @@ pub trait Quan<S: G> {
         options: IndexOptions,
         quantization_options: QuantizationOptions,
         raw: &Arc<Raw<S>>,
+        permutation: Vec<u32>,
     ) -> Self;
     fn open(
         path: PathBuf,
@@ -86,6 +87,7 @@ impl<S: G> Quantization<S> {
         options: IndexOptions,
         quantization_options: QuantizationOptions,
         raw: &Arc<Raw<S>>,
+        permutation: Vec<u32>, // permutation is the mapping from placements to original ids
     ) -> Self {
         match quantization_options {
             QuantizationOptions::Trivial(_) => Self::Trivial(TrivialQuantization::create(
@@ -93,18 +95,21 @@ impl<S: G> Quantization<S> {
                 options,
                 quantization_options,
                 raw,
+                permutation,
             )),
             QuantizationOptions::Scalar(_) => Self::Scalar(ScalarQuantization::create(
                 path,
                 options,
                 quantization_options,
                 raw,
+                permutation,
             )),
             QuantizationOptions::Product(_) => Self::Product(ProductQuantization::create(
                 path,
                 options,
                 quantization_options,
                 raw,
+                permutation,
             )),
         }
     }
