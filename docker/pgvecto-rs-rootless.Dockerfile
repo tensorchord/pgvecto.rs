@@ -12,4 +12,4 @@ RUN apt-get install -y /tmp/vectors.deb && rm -f /tmp/vectors.deb
 RUN usermod -u 26 postgres
 USER 26
 
-CMD ["postgres", "-c" ,"shared_preload_libraries=vectors.so", "-c", "search_path=\"$user\", public, vectors"]
+CMD ["postgres", "-c" ,"shared_preload_libraries=vectors.so", "-c", "search_path=\"$user\", public, vectors", "-c", "logging_collector=on"]

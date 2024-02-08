@@ -46,6 +46,7 @@ pub mod pg_test {
         vec![
             "shared_preload_libraries=vectors.so",
             "search_path=\"$user\", public, vectors",
+            "logging_collector=on",
         ]
     }
 }

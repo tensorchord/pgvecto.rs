@@ -1,31 +1,40 @@
 use crate::prelude::*;
 use crate::utils::cells::PgRefCell;
 use service::prelude::*;
+use std::collections::BTreeSet;
 use std::ops::DerefMut;
 
-static DIRTY: PgRefCell<Vec<Handle>> = unsafe { PgRefCell::new(Vec::new()) };
+static DIRTY: PgRefCell<BTreeSet<Handle>> = unsafe { PgRefCell::new(BTreeSet::new()) };
 
 pub fn callback_dirty(handle: Handle) {
-    DIRTY.borrow_mut().push(handle);
+    DIRTY.borrow_mut().insert(handle);
 }
 
 pub fn commit() {
-    let pending_deletes = pending_deletes(true);
     let pending_dirty = std::mem::take(DIRTY.borrow_mut().deref_mut());
+    let pending_deletes = pending_deletes(true);
     if pending_deletes.is_empty() && pending_dirty.is_empty() {
         return;
     }
     let mut rpc = crate::ipc::client::borrow_mut();
-    rpc.commit(pending_deletes, pending_dirty);
+    for handle in pending_dirty {
+        rpc.flush(handle);
+    }
+    for handle in pending_deletes {
+        rpc.drop(handle);
+    }
 }
 
 pub fn abort() {
+    let _pending_dirty = std::mem::take(DIRTY.borrow_mut().deref_mut());
     let pending_deletes = pending_deletes(false);
     if pending_deletes.is_empty() {
         return;
     }
     let mut rpc = crate::ipc::client::borrow_mut();
-    rpc.abort(pending_deletes);
+    for handle in pending_deletes {
+        rpc.drop(handle);
+    }
 }
 
 #[cfg(any(feature = "pg12", feature = "pg13", feature = "pg14", feature = "pg15"))]

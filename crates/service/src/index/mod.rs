@@ -448,6 +448,25 @@ impl<S: G> IndexView<S> {
             }
         }))
     }
+    pub fn list(&self) -> impl Iterator<Item = Pointer> + '_ {
+        let sealed = self
+            .sealed
+            .values()
+            .flat_map(|x| (0..x.len()).map(|i| x.payload(i)));
+        let growing = self
+            .growing
+            .values()
+            .flat_map(|x| (0..x.len()).map(|i| x.payload(i)));
+        let write = self
+            .write
+            .iter()
+            .map(|(_, x)| x)
+            .flat_map(|x| (0..x.len()).map(|i| x.payload(i)));
+        sealed
+            .chain(growing)
+            .chain(write)
+            .filter_map(|p| self.delete.check(p))
+    }
     pub fn insert(
         &self,
         vector: Vec<S::Scalar>,
@@ -467,37 +486,8 @@ impl<S: G> IndexView<S> {
             Ok(Err(OutdatedError))
         }
     }
-    pub fn delete<F: FnMut(Pointer) -> bool>(&self, mut f: F) {
-        for (_, sealed) in self.sealed.iter() {
-            let n = sealed.len();
-            for i in 0..n {
-                if let Some(p) = self.delete.check(sealed.payload(i)) {
-                    if f(p) {
-                        self.delete.delete(p);
-                    }
-                }
-            }
-        }
-        for (_, growing) in self.growing.iter() {
-            let n = growing.len();
-            for i in 0..n {
-                if let Some(p) = self.delete.check(growing.payload(i)) {
-                    if f(p) {
-                        self.delete.delete(p);
-                    }
-                }
-            }
-        }
-        if let Some((_, write)) = &self.write {
-            let n = write.len();
-            for i in 0..n {
-                if let Some(p) = self.delete.check(write.payload(i)) {
-                    if f(p) {
-                        self.delete.delete(p);
-                    }
-                }
-            }
-        }
+    pub fn delete(&self, p: Pointer) {
+        self.delete.delete(p);
     }
     pub fn flush(&self) {
         self.delete.flush();
