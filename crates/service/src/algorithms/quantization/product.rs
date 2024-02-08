@@ -320,34 +320,6 @@ impl<S: G> ProductQuantization<S> {
         }
     }
 
-    /** Precomputed tables for residuals
-     *
-     * During IVFPQ search with by_residual, we compute
-     *
-     *     d = || x - y_C - y_R ||^2
-     *
-     * where x is the query vector, y_C the coarse centroid, y_R the
-     * refined PQ centroid. The expression can be decomposed as:
-     *
-     *    d = || x - y_C ||^2 + || y_R ||^2 + 2 * (y_C|y_R) - 2 * (x|y_R)
-     *        ---------------   ---------------------------       -------
-     *             term 1                 term 2                   term 3
-     *
-     * When using multiprobe, we use the following decomposition:
-     * - term 1 is the distance to the coarse centroid, that is computed
-     *   during the 1st stage search.
-     * - term 2 can be precomputed, as it does not involve x. However,
-     *   because of the PQ, it needs nlist * M * ksub storage. This is why
-     *   use_precomputed_table is off by default
-     * - term 3 is the classical non-residual distance table.
-     *
-     * Since y_R defined by a product quantizer, it is split across
-     * subvectors and stored separately for each subvector.
-     *
-     * At search time, the tables for term 2 and term 3 are added up. This
-     * is faster when the length of the lists is > ksub * M.
-     */
-
     // compute term3 at build time
     pub fn precompute_table(&mut self, path: PathBuf, coarse_centroids: &Vec2<S>) {
         let nlist = coarse_centroids.len();
