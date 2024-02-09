@@ -66,6 +66,8 @@ pub struct SearchOptions {
     pub hnsw_ef_search: usize,
     #[validate(range(min = 1, max = 1_000_000))]
     pub ivf_nprobe: u32,
+    #[validate(range(min = 1, max = 65535))]
+    pub disk_ann_k: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
