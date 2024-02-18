@@ -37,7 +37,7 @@ pub fn abort() {
     }
 }
 
-#[cfg(any(feature = "pg12", feature = "pg13", feature = "pg14", feature = "pg15"))]
+#[cfg(any(feature = "pg14", feature = "pg15"))]
 fn pending_deletes(for_commit: bool) -> Vec<Handle> {
     let mut ptr: *mut pgrx::pg_sys::RelFileNode = std::ptr::null_mut();
     let n = unsafe { pgrx::pg_sys::smgrGetPendingDeletes(for_commit, &mut ptr as *mut _) };

@@ -18,7 +18,7 @@ pub unsafe fn build(
     index: pgrx::pg_sys::Relation,
     data: Option<(*mut RelationData, *mut IndexInfo, *mut IndexBuildResult)>,
 ) {
-    #[cfg(any(feature = "pg12", feature = "pg13", feature = "pg14", feature = "pg15"))]
+    #[cfg(any(feature = "pg14", feature = "pg15"))]
     let oid = (*index).rd_node.relNode;
     #[cfg(feature = "pg16")]
     let oid = (*index).rd_locator.relNumber;
@@ -43,28 +43,6 @@ pub unsafe fn build(
     }
 }
 
-#[cfg(feature = "pg12")]
-#[pgrx::pg_guard]
-unsafe extern "C" fn callback(
-    index_relation: pgrx::pg_sys::Relation,
-    htup: pgrx::pg_sys::HeapTuple,
-    values: *mut pgrx::pg_sys::Datum,
-    _is_null: *mut bool,
-    _tuple_is_alive: bool,
-    state: *mut std::os::raw::c_void,
-) {
-    let ctid = &(*htup).t_self;
-    let oid = (*index_relation).rd_node.relNode;
-    let id = Handle::from_sys(oid);
-    let state = &mut *(state as *mut Builder);
-    let vector = from_datum(*values.add(0));
-    let pointer = Pointer::from_sys(*ctid);
-    state.rpc.insert(id, vector, pointer);
-    (*state.result).heap_tuples += 1.0;
-    (*state.result).index_tuples += 1.0;
-}
-
-#[cfg(any(feature = "pg13", feature = "pg14", feature = "pg15", feature = "pg16"))]
 #[pgrx::pg_guard]
 unsafe extern "C" fn callback(
     index_relation: pgrx::pg_sys::Relation,
@@ -74,7 +52,7 @@ unsafe extern "C" fn callback(
     _tuple_is_alive: bool,
     state: *mut std::os::raw::c_void,
 ) {
-    #[cfg(any(feature = "pg13", feature = "pg14", feature = "pg15"))]
+    #[cfg(any(feature = "pg14", feature = "pg15"))]
     let oid = (*index_relation).rd_node.relNode;
     #[cfg(feature = "pg16")]
     let oid = (*index_relation).rd_locator.relNumber;

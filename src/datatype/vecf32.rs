@@ -300,7 +300,6 @@ fn _vectors_vecf32_out(vector: Vecf32Input<'_>) -> CString {
     CString::new(buffer).unwrap()
 }
 
-#[cfg(any(feature = "pg14", feature = "pg15", feature = "pg16"))]
 #[pgrx::pg_extern(sql = "\
 CREATE FUNCTION _vectors_vecf32_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
@@ -480,14 +479,6 @@ fn _vectors_vecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
         store_leakproof: false,
     };
     std::ptr::addr_of!(SBSROUTINES).into()
-}
-
-#[cfg(not(any(feature = "pg14", feature = "pg15", feature = "pg16")))]
-#[pgrx::pg_extern(sql = "\
-CREATE FUNCTION _vectors_vecf32_subscript(internal) RETURNS internal
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
-fn _vectors_vecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
-    unreachable!()
 }
 
 #[pgrx::pg_extern(sql = "\
