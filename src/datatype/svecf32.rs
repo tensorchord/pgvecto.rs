@@ -141,7 +141,31 @@ impl PartialOrd for SVecf32 {
 impl Ord for SVecf32 {
     fn cmp(&self, other: &Self) -> Ordering {
         assert!(self.dims() == other.dims());
-        self.data().iter().cmp(other.data().iter())
+        let lhs = self.data();
+        let rhs = other.data();
+        let mut pos = 0;
+        let size1 = lhs.length() as usize;
+        let size2 = rhs.length() as usize;
+        while pos < size1 && pos < size2 {
+            let lhs_index = lhs.indexes[pos];
+            let rhs_index = rhs.indexes[pos];
+            let lhs_value = lhs.values[pos];
+            let rhs_value = rhs.values[pos];
+            match lhs_index.cmp(&rhs_index) {
+                Ordering::Less => return lhs_value.cmp(&F32::zero()),
+                Ordering::Greater => return F32::zero().cmp(&rhs_value),
+                Ordering::Equal => match lhs_value.cmp(&rhs_value) {
+                    Ordering::Equal => {}
+                    x => return x,
+                },
+            }
+            pos += 1;
+        }
+        match size1.cmp(&size2) {
+            Ordering::Less => F32::zero().cmp(&rhs.values[pos]),
+            Ordering::Greater => lhs.values[pos].cmp(&F32::zero()),
+            Ordering::Equal => Ordering::Equal,
+        }
     }
 }
 
@@ -640,23 +664,20 @@ fn _vectors_svector_from_array(
         }
         .friendly();
     }
-    let mut vector: Vec<SparseF32Element> = index
+    let mut vector: Vec<(u16, F32)> = index
         .iter_deny_null()
         .zip(value.iter_deny_null())
         .map(|(index, value)| {
             if index < 0 || index >= dims as i32 {
                 SessionError::BadValueDimensions.friendly();
             }
-            SparseF32Element {
-                index: index as u16,
-                value: F32(value),
-            }
+            (index as u16, F32(value))
         })
         .collect();
-    vector.sort_unstable_by_key(|x| x.index);
+    vector.sort_unstable_by_key(|x| x.0);
     if vector.len() > 1 {
         for i in 0..vector.len() - 1 {
-            if vector[i].index == vector[i + 1].index {
+            if vector[i].0 == vector[i + 1].0 {
                 SessionError::BadLiteral {
                     hint: "Duplicated index.".to_string(),
                 }
@@ -668,8 +689,8 @@ fn _vectors_svector_from_array(
     let mut indexes = Vec::<u16>::with_capacity(vector.len());
     let mut values = Vec::<F32>::with_capacity(vector.len());
     for x in vector {
-        indexes.push(x.index);
-        values.push(x.value);
+        indexes.push(x.0);
+        values.push(x.1);
     }
     SVecf32::new_in_postgres(SparseF32Ref {
         dims,
