@@ -46,8 +46,8 @@ pub trait G: Copy + Debug + 'static {
         + FloatCast;
     type Storage: for<'a> Storage<VectorRef<'a> = Self::VectorRef<'a>>;
     type L2: for<'a> G<Scalar = Self::Scalar, VectorRef<'a> = &'a [Self::Scalar]>;
-    type VectorOwned: VectorOwned + Clone + Serialize + for<'a> Deserialize<'a>;
-    type VectorRef<'a>: VectorRef<'a> + Copy + 'a
+    type VectorOwned: Vector + Clone + Serialize + for<'a> Deserialize<'a>;
+    type VectorRef<'a>: Vector + Copy + 'a
     where
         Self: 'a;
 
@@ -114,24 +114,17 @@ pub trait FloatCast: Sized {
     }
 }
 
-pub trait VectorOwned {
+pub trait Vector {
     fn dims(&self) -> u16;
 }
 
-pub trait VectorRef<'a> {
-    fn dims(&self) -> u16;
-    fn length(&self) -> u16 {
-        self.dims()
-    }
-}
-
-impl<T> VectorOwned for Vec<T> {
+impl<T> Vector for Vec<T> {
     fn dims(&self) -> u16 {
         self.len().try_into().unwrap()
     }
 }
 
-impl<'a, T> VectorRef<'a> for &'a [T] {
+impl<'a, T> Vector for &'a [T] {
     fn dims(&self) -> u16 {
         self.len().try_into().unwrap()
     }
