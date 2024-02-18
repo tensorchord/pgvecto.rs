@@ -2,25 +2,25 @@ statement ok
 SET search_path TO pg_temp, vectors;
 
 statement ok
-CREATE TABLE t (id bigserial, val vecf16);
+CREATE TABLE t (id bigserial, val svector);
 
 statement ok
 INSERT INTO t (val) SELECT NULL FROM generate_series(1, 1000);
 
 statement ok
-INSERT INTO t (val) SELECT ARRAY[random()]::real[]::vector::vecf16 FROM generate_series(1, 1000);
+INSERT INTO t (val) SELECT ARRAY[random()]::real[]::vector::svector FROM generate_series(1, 1000);
 
 statement ok
-INSERT INTO t (val) SELECT ARRAY[random(), random()]::real[]::vector::vecf16 FROM generate_series(1, 1000);
+INSERT INTO t (val) SELECT ARRAY[random(), random()]::real[]::vector::svector FROM generate_series(1, 1000);
 
 statement ok
-INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[]::vector::vecf16 FROM generate_series(1, 1000);
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[]::vector::svector FROM generate_series(1, 1000);
 
 statement ok
 COPY t TO '/tmp/data.bin' WITH (FORMAT binary);
 
 statement ok
-CREATE TABLE t2 (id bigserial, val vecf16);
+CREATE TABLE t2 (id bigserial, val svector);
 
 statement ok
 COPY t2 FROM '/tmp/data.bin' WITH (FORMAT binary);

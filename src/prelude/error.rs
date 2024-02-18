@@ -69,7 +69,7 @@ INFORMATION: left_dimensions = {left_dimensions}, right_dimensions = {right_dime
     Unmatched {
         left_dimensions: u16,
         right_dimensions: u16,
-    },
+    }
 }
 
 impl FriendlyError for SessionError {}

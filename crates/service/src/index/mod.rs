@@ -29,6 +29,7 @@ use std::time::Instant;
 use thiserror::Error;
 use uuid::Uuid;
 use validator::Validate;
+use validator::ValidationError;
 
 #[derive(Debug, Error)]
 #[error("The index view is outdated.")]
@@ -48,6 +49,7 @@ pub struct VectorOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
+#[validate(schema(function = "validate_index_options"))]
 pub struct IndexOptions {
     #[validate]
     pub vector: VectorOptions,
@@ -57,6 +59,15 @@ pub struct IndexOptions {
     pub optimizing: OptimizingOptions,
     #[validate]
     pub indexing: IndexingOptions,
+}
+
+fn validate_index_options(options: &IndexOptions) -> Result<(), ValidationError> {
+    if options.vector.k == Kind::SparseF32 && options.indexing.has_quantization() {
+        return Err(ValidationError::new(
+            "quantization is not supported for sparse vector",
+        ));
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -147,6 +158,7 @@ impl<S: G> Index<S> {
         OptimizerSealing::new(index.clone()).spawn();
         Ok(index)
     }
+
     pub fn open(path: PathBuf) -> Arc<Self> {
         let options =
             serde_json::from_slice::<IndexOptions>(&std::fs::read(path.join("options")).unwrap())
@@ -189,6 +201,7 @@ impl<S: G> Index<S> {
                         tracker.clone(),
                         path.join("segments").join(uuid.to_string()),
                         uuid,
+                        options.clone(),
                     ),
                 )
             })
@@ -308,11 +321,11 @@ pub struct IndexView<S: G> {
 impl<S: G> IndexView<S> {
     pub fn basic<'a, F: Fn(Pointer) -> bool + Clone + 'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: S::VectorRef<'_>,
         opts: &'a SearchOptions,
         filter: F,
     ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
-        if self.options.vector.dims as usize != vector.len() {
+        if self.options.vector.dims != vector.dims() {
             return Err(ServiceError::Unmatched);
         }
 
@@ -381,11 +394,11 @@ impl<S: G> IndexView<S> {
     }
     pub fn vbase<'a, F: FnMut(Pointer) -> bool + Clone + 'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: S::VectorRef<'a>,
         opts: &'a SearchOptions,
         filter: F,
     ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
-        if self.options.vector.dims as usize != vector.len() {
+        if self.options.vector.dims != vector.dims() {
             return Err(ServiceError::Unmatched);
         }
 
@@ -469,12 +482,13 @@ impl<S: G> IndexView<S> {
     }
     pub fn insert(
         &self,
-        vector: Vec<S::Scalar>,
+        vector: S::VectorOwned,
         pointer: Pointer,
     ) -> Result<Result<(), OutdatedError>, ServiceError> {
-        if self.options.vector.dims as usize != vector.len() {
+        if self.options.vector.dims != vector.dims() {
             return Err(ServiceError::Unmatched);
         }
+
         let payload = (pointer.as_u48() << 16) | self.delete.version(pointer) as Payload;
         if let Some((_, growing)) = self.write.as_ref() {
             use crate::index::segments::growing::GrowingSegmentInsertError;

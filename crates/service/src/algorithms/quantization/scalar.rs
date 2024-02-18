@@ -6,7 +6,7 @@ use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::mmap_array::MmapArray;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use validator::Validate;
 
@@ -40,18 +40,23 @@ impl<S: G> ScalarQuantization<S> {
 
 impl<S: G> Quan<S> for ScalarQuantization<S> {
     fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         _: QuantizationOptions,
         raw: &Arc<Raw<S>>,
     ) -> Self {
-        std::fs::create_dir(&path).unwrap();
+        assert!(
+            S::KIND != Kind::SparseF32,
+            "Scalar quantization is not supported for sparse vectors."
+        );
+
+        std::fs::create_dir(path).unwrap();
         let dims = options.vector.dims;
         let mut max = vec![S::Scalar::neg_infinity(); dims as usize];
         let mut min = vec![S::Scalar::infinity(); dims as usize];
         let n = raw.len();
         for i in 0..n {
-            let vector = raw.vector(i);
+            let vector = S::to_dense(raw.vector(i));
             for j in 0..dims as usize {
                 max[j] = std::cmp::max(max[j], vector[j]);
                 min[j] = std::cmp::min(min[j], vector[j]);
@@ -60,7 +65,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         std::fs::write(path.join("max"), serde_json::to_string(&max).unwrap()).unwrap();
         std::fs::write(path.join("min"), serde_json::to_string(&min).unwrap()).unwrap();
         let codes_iter = (0..n).flat_map(|i| {
-            let vector = raw.vector(i);
+            let vector = S::to_dense(raw.vector(i));
             let mut result = vec![0u8; dims as usize];
             for i in 0..dims as usize {
                 let w = (((vector[i] - min[i]) / (max[i] - min[i])).to_f32() * 256.0) as u32;
@@ -68,8 +73,8 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
             }
             result.into_iter()
         });
-        let codes = MmapArray::create(path.join("codes"), codes_iter);
-        sync_dir(&path);
+        let codes = MmapArray::create(&path.join("codes"), codes_iter);
+        sync_dir(path);
         Self {
             dims,
             max,
@@ -78,11 +83,11 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         }
     }
 
-    fn open(path: PathBuf, options: IndexOptions, _: QuantizationOptions, _: &Arc<Raw<S>>) -> Self {
+    fn open(path: &Path, options: IndexOptions, _: QuantizationOptions, _: &Arc<Raw<S>>) -> Self {
         let dims = options.vector.dims;
         let max = serde_json::from_slice(&std::fs::read("max").unwrap()).unwrap();
         let min = serde_json::from_slice(&std::fs::read("min").unwrap()).unwrap();
-        let codes = MmapArray::open(path.join("codes"));
+        let codes = MmapArray::open(&path.join("codes"));
         Self {
             dims,
             max,
@@ -91,7 +96,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         }
     }
 
-    fn distance(&self, lhs: &[S::Scalar], rhs: u32) -> F32 {
+    fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32 {
         let dims = self.dims;
         let rhs = self.codes(rhs);
         S::scalar_quantization_distance(dims, &self.max, &self.min, lhs, rhs)

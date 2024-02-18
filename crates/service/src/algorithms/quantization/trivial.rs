@@ -4,7 +4,7 @@ use crate::algorithms::raw::Raw;
 use crate::index::IndexOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use validator::Validate;
 
@@ -23,15 +23,15 @@ pub struct TrivialQuantization<S: G> {
 }
 
 impl<S: G> Quan<S> for TrivialQuantization<S> {
-    fn create(_: PathBuf, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S>>) -> Self {
+    fn create(_: &Path, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S>>) -> Self {
         Self { raw: raw.clone() }
     }
 
-    fn open(_: PathBuf, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S>>) -> Self {
+    fn open(_: &Path, _: IndexOptions, _: QuantizationOptions, raw: &Arc<Raw<S>>) -> Self {
         Self { raw: raw.clone() }
     }
 
-    fn distance(&self, lhs: &[S::Scalar], rhs: u32) -> F32 {
+    fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32 {
         S::distance(lhs, self.raw.vector(rhs))
     }
 

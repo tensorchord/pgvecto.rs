@@ -7,18 +7,18 @@ use std::ops::{Index, IndexMut};
 pub struct ElkanKMeans<S: G> {
     dims: u16,
     c: usize,
-    pub centroids: Vec2<S>,
+    pub centroids: Vec2<S::Scalar>,
     lowerbound: Square,
     upperbound: Vec<F32>,
     assign: Vec<usize>,
     rand: StdRng,
-    samples: Vec2<S>,
+    samples: Vec2<S::Scalar>,
 }
 
 const DELTA: f32 = 1.0 / 1024.0;
 
 impl<S: G> ElkanKMeans<S> {
-    pub fn new(c: usize, samples: Vec2<S>) -> Self {
+    pub fn new(c: usize, samples: Vec2<S::Scalar>) -> Self {
         let n = samples.len();
         let dims = samples.dims();
 
@@ -249,7 +249,7 @@ impl<S: G> ElkanKMeans<S> {
         change == 0
     }
 
-    pub fn finish(self) -> Vec2<S> {
+    pub fn finish(self) -> Vec2<S::Scalar> {
         self.centroids
     }
 }
