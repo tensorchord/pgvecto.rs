@@ -129,7 +129,7 @@ impl Channel {
                 }
                 Y => {
                     if !test() {
-                        return Err(ConnectionError::Unexpected);
+                        return Err(ConnectionError);
                     }
                     unsafe {
                         futex_wait(&self.futex, Y);
@@ -188,7 +188,7 @@ impl Channel {
                 }
                 Y => {
                     if !test() {
-                        return Err(ConnectionError::Unexpected);
+                        return Err(ConnectionError);
                     }
                     unsafe {
                         futex_wait(&self.futex, Y);

@@ -1,37 +1,95 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+// control plane
+
 #[must_use]
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
-#[rustfmt::skip]
-pub enum ServiceError {
-    #[error("\
-The given index option is invalid.
-INFORMATION: reason = {validation:?}\
-")]
-    BadOption { validation: String },
-    #[error("\
-The index is not existing in the background worker.
-ADVICE: Drop or rebuild the index.\
-")]
-    UnknownIndex,
-#[error("\
-The index is already existing in the background worker.\
-")]
-    KnownIndex,
-    #[error("\
-The given vector is invalid for input.
-ADVICE: Check if dimensions and scalar type of the vector is matched with the index.\
-")]
-    Unmatched,
-    #[error("\
-The extension is upgraded so all index files are outdated.
-ADVICE: Delete all index files. Please read `https://docs.pgvecto.rs/admin/upgrading.html`.\
-")]
+pub enum CreateError {
+    #[error("Index of given name already exists.")]
+    Exist,
+    #[error("Invalid index options.")]
+    InvalidIndexOptions { reason: String },
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum DropError {
+    #[error("Index not found.")]
+    NotExist,
+}
+
+// data plane
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum FlushError {
+    #[error("Index not found.")]
+    NotExist,
+    #[error("Maintenance should be done.")]
     Upgrade,
-    #[error("\
-The extension is upgraded so this index is outdated.
-ADVICE: Rebuild the index. Please read `https://docs.pgvecto.rs/admin/upgrading.html`.\
-")]
-    Upgrade2,
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum InsertError {
+    #[error("Index not found.")]
+    NotExist,
+    #[error("Maintenance should be done.")]
+    Upgrade,
+    #[error("Invalid vector.")]
+    InvalidVector,
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum DeleteError {
+    #[error("Index not found.")]
+    NotExist,
+    #[error("Maintenance should be done.")]
+    Upgrade,
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum BasicError {
+    #[error("Index not found.")]
+    NotExist,
+    #[error("Maintenance should be done.")]
+    Upgrade,
+    #[error("Invalid vector.")]
+    InvalidVector,
+    #[error("Invalid search options.")]
+    InvalidSearchOptions { reason: String },
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum VbaseError {
+    #[error("Index not found.")]
+    NotExist,
+    #[error("Maintenance should be done.")]
+    Upgrade,
+    #[error("Invalid vector.")]
+    InvalidVector,
+    #[error("Invalid search options.")]
+    InvalidSearchOptions { reason: String },
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum ListError {
+    #[error("Index not found.")]
+    NotExist,
+    #[error("Maintenance should be done.")]
+    Upgrade,
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum StatError {
+    #[error("Index not found.")]
+    NotExist,
+    #[error("Maintenance should be done.")]
+    Upgrade,
 }

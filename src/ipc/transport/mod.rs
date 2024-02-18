@@ -1,9 +1,8 @@
 pub mod mmap;
 pub mod unix;
 
-use super::{ConnectionError, GraceError};
+use super::ConnectionError;
 use serde::{Deserialize, Serialize};
-use service::prelude::ServiceError;
 use std::fmt::Debug;
 
 pub trait Bincode: Debug {
@@ -40,15 +39,6 @@ impl ServerSocket {
             Self::Mmap(x) => x.send(&buffer),
         }
     }
-    pub fn err(&mut self, packet: ServiceError) -> Result<!, ConnectionError> {
-        let mut buffer = vec![1u8];
-        buffer.extend(Bincode::serialize(&packet));
-        match self {
-            Self::Unix(x) => x.send(&buffer)?,
-            Self::Mmap(x) => x.send(&buffer)?,
-        }
-        Err(ConnectionError::Service(packet))
-    }
     pub fn recv<T: Bincode>(&mut self) -> Result<T, ConnectionError> {
         let buffer = match self {
             Self::Unix(x) => x.recv()?,
@@ -57,7 +47,6 @@ impl ServerSocket {
         let c = &buffer[1..];
         match buffer[0] {
             0u8 => Ok(T::deserialize(c)),
-            1u8 => Err(ConnectionError::Grace(bincode::deserialize(c).unwrap())),
             _ => unreachable!(),
         }
     }
@@ -72,16 +61,6 @@ impl ClientSocket {
             Self::Mmap(x) => x.send(&buffer),
         }
     }
-    #[allow(unused)]
-    pub fn err(&mut self, packet: GraceError) -> Result<!, ConnectionError> {
-        let mut buffer = vec![1u8];
-        buffer.extend(Bincode::serialize(&packet));
-        match self {
-            Self::Unix(x) => x.send(&buffer)?,
-            Self::Mmap(x) => x.send(&buffer)?,
-        }
-        Err(ConnectionError::Grace(packet))
-    }
     pub fn recv<T: Bincode>(&mut self) -> Result<T, ConnectionError> {
         let buffer = match self {
             Self::Unix(x) => x.recv()?,
@@ -90,7 +69,6 @@ impl ClientSocket {
         let c = &buffer[1..];
         match buffer[0] {
             0u8 => Ok(T::deserialize(c)),
-            1u8 => Err(ConnectionError::Service(bincode::deserialize(c).unwrap())),
             _ => unreachable!(),
         }
     }

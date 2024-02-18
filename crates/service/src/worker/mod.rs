@@ -1,7 +1,7 @@
 pub mod metadata;
 
-use crate::index::IndexOptions;
-use crate::instance::Instance;
+use crate::index::{IndexOptions, IndexStat};
+use crate::instance::{Instance, InstanceView};
 use crate::prelude::*;
 use crate::utils::clean::clean;
 use crate::utils::dir_ops::sync_dir;
@@ -65,11 +65,7 @@ impl Worker {
     pub fn view(&self) -> Arc<WorkerView> {
         self.view.load_full()
     }
-    pub fn instance_create(
-        &self,
-        handle: Handle,
-        options: IndexOptions,
-    ) -> Result<(), ServiceError> {
+    pub fn _create(&self, handle: Handle, options: IndexOptions) -> Result<(), CreateError> {
         use std::collections::hash_map::Entry;
         let mut protect = self.protect.lock();
         match protect.indexes.entry(handle) {
@@ -80,14 +76,69 @@ impl Worker {
                 protect.maintain(&self.view);
                 Ok(())
             }
-            Entry::Occupied(_) => Err(ServiceError::KnownIndex),
+            Entry::Occupied(_) => Err(CreateError::Exist),
         }
     }
-    pub fn instance_destroy(&self, handle: Handle) {
+    pub fn _drop(&self, handle: Handle) -> Result<(), DropError> {
         let mut protect = self.protect.lock();
         if protect.indexes.remove(&handle).is_some() {
             protect.maintain(&self.view);
+            Ok(())
+        } else {
+            Err(DropError::NotExist)
         }
+    }
+    pub fn _flush(&self, handle: Handle) -> Result<(), FlushError> {
+        let view = self.view();
+        let instance = view.get(handle).ok_or(FlushError::NotExist)?;
+        let view = instance.view().ok_or(FlushError::Upgrade)?;
+        view.flush()?;
+        Ok(())
+    }
+    pub fn _insert(
+        &self,
+        handle: Handle,
+        vector: DynamicVector,
+        pointer: Pointer,
+    ) -> Result<(), InsertError> {
+        let view = self.view();
+        let instance = view.get(handle).ok_or(InsertError::NotExist)?;
+        loop {
+            let view = instance.view().ok_or(InsertError::Upgrade)?;
+            match view.insert(vector.clone(), pointer)? {
+                Ok(()) => break,
+                Err(_) => instance.refresh(),
+            }
+        }
+        Ok(())
+    }
+    pub fn _delete(&self, handle: Handle, pointer: Pointer) -> Result<(), DeleteError> {
+        let view = self.view();
+        let instance = view.get(handle).ok_or(DeleteError::NotExist)?;
+        let view = instance.view().ok_or(DeleteError::Upgrade)?;
+        view.delete(pointer)?;
+        Ok(())
+    }
+    pub fn _basic_view(&self, handle: Handle) -> Result<InstanceView, BasicError> {
+        let view = self.view();
+        let instance = view.get(handle).ok_or(BasicError::NotExist)?;
+        instance.view().ok_or(BasicError::Upgrade)
+    }
+    pub fn _vbase_view(&self, handle: Handle) -> Result<InstanceView, VbaseError> {
+        let view = self.view();
+        let instance = view.get(handle).ok_or(VbaseError::NotExist)?;
+        instance.view().ok_or(VbaseError::Upgrade)
+    }
+    pub fn _list_view(&self, handle: Handle) -> Result<InstanceView, ListError> {
+        let view = self.view();
+        let instance = view.get(handle).ok_or(ListError::NotExist)?;
+        instance.view().ok_or(ListError::Upgrade)
+    }
+    pub fn _stat(&self, handle: Handle) -> Result<IndexStat, StatError> {
+        let view = self.view();
+        let instance = view.get(handle).ok_or(StatError::NotExist)?;
+        let stat = instance.stat().ok_or(StatError::Upgrade)?;
+        Ok(stat)
     }
 }
 

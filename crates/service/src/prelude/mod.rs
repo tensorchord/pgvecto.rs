@@ -5,7 +5,7 @@ mod search;
 mod storage;
 mod sys;
 
-pub use self::error::ServiceError;
+pub use self::error::*;
 pub use self::global::*;
 pub use self::scalar::{SparseF32, SparseF32Ref, F16, F32};
 pub use self::search::{Element, Filter, Payload};

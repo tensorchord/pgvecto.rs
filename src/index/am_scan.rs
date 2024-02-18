@@ -4,8 +4,7 @@ use crate::gucs::executing::search_options;
 use crate::gucs::planning::Mode;
 use crate::gucs::planning::SEARCH_MODE;
 use crate::index::utils::from_datum;
-use crate::ipc::client::ClientGuard;
-use crate::ipc::client::{Basic, Vbase};
+use crate::ipc::{ClientBasic, ClientVbase};
 use crate::prelude::*;
 use pgrx::FromDatum;
 use service::prelude::*;
@@ -17,11 +16,11 @@ pub enum Scanner {
     },
     Basic {
         node: *mut pgrx::pg_sys::IndexScanState,
-        basic: ClientGuard<Basic>,
+        basic: ClientBasic,
     },
     Vbase {
         node: *mut pgrx::pg_sys::IndexScanState,
-        vbase: ClientGuard<Vbase>,
+        vbase: ClientVbase,
     },
 }
 
@@ -97,17 +96,29 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         let oid = (*(*scan).indexRelation).rd_locator.relNumber;
         let id = Handle::from_sys(oid);
 
-        let rpc = crate::ipc::client::borrow_mut();
+        let rpc = check_client(crate::ipc::client());
 
         match SEARCH_MODE.get() {
             Mode::basic => {
                 let opts = search_options();
-                let basic = rpc.basic(id, vector.clone(), opts);
+                let basic = match rpc.basic(id, vector.clone(), opts) {
+                    Ok(x) => x,
+                    Err((_, BasicError::NotExist)) => bad_service_not_exist(),
+                    Err((_, BasicError::Upgrade)) => bad_service_upgrade(),
+                    Err((_, BasicError::InvalidVector)) => bad_service_invalid_vector(),
+                    Err((_, BasicError::InvalidSearchOptions { reason: _ })) => unreachable!(),
+                };
                 *scanner = Scanner::Basic { node, basic };
             }
             Mode::vbase => {
                 let opts = search_options();
-                let vbase = rpc.vbase(id, vector.clone(), opts);
+                let vbase = match rpc.vbase(id, vector.clone(), opts) {
+                    Ok(x) => x,
+                    Err((_, VbaseError::NotExist)) => bad_service_not_exist(),
+                    Err((_, VbaseError::Upgrade)) => bad_service_upgrade(),
+                    Err((_, VbaseError::InvalidVector)) => bad_service_invalid_vector(),
+                    Err((_, VbaseError::InvalidSearchOptions { reason: _ })) => unreachable!(),
+                };
                 *scanner = Scanner::Vbase { node, vbase };
             }
         }

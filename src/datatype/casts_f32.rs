@@ -1,7 +1,7 @@
 use crate::datatype::svecf32::{SVecf32, SVecf32Input, SVecf32Output};
 use crate::datatype::vecf16::{Vecf16, Vecf16Input, Vecf16Output};
 use crate::datatype::vecf32::{Vecf32, Vecf32Input, Vecf32Output};
-use crate::prelude::{FriendlyError, SessionError};
+use crate::prelude::check_value_dimensions;
 use service::prelude::*;
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
@@ -10,9 +10,7 @@ fn _vectors_cast_array_to_vecf32(
     _typmod: i32,
     _explicit: bool,
 ) -> Vecf32Output {
-    if array.is_empty() || array.len() > 65535 {
-        SessionError::BadValueDimensions.friendly();
-    }
+    check_value_dimensions(array.len());
     let mut data = vec![F32::zero(); array.len()];
     for (i, x) in array.iter().enumerate() {
         data[i] = F32(x.unwrap_or(f32::NAN));

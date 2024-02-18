@@ -33,6 +33,7 @@ pgrx = { version = "0.11.3", default-features = false, features = [] }
 env_logger = "0.10.0"
 toml = "0.8.8"
 arrayvec = "0.7.4"
+paste = "1.0.14"
 
 [dev-dependencies]
 pgrx-tests = "0.11.3"
