@@ -53,7 +53,7 @@ unsafe extern "C" fn rewrite_plan_state(
             }
         }
     }
-    #[cfg(any(feature = "pg12", feature = "pg13", feature = "pg14", feature = "pg15"))]
+    #[cfg(any(feature = "pg14", feature = "pg15"))]
     {
         type PlanstateTreeWalker =
             unsafe extern "C" fn(*mut pgrx::pg_sys::PlanState, *mut libc::c_void) -> bool;

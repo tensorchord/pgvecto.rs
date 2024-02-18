@@ -91,7 +91,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
         let node = node.expect("Hook failed.");
         let vector = vector.as_ref().expect("Scan failed.");
 
-        #[cfg(any(feature = "pg12", feature = "pg13", feature = "pg14", feature = "pg15"))]
+        #[cfg(any(feature = "pg14", feature = "pg15"))]
         let oid = (*(*scan).indexRelation).rd_node.relNode;
         #[cfg(feature = "pg16")]
         let oid = (*(*scan).indexRelation).rd_locator.relNumber;
