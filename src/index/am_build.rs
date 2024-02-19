@@ -1,14 +1,14 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
+use crate::index::am_setup::options;
 use crate::index::utils::from_datum;
-use crate::ipc::client::ClientGuard;
+use crate::ipc::ClientRpc;
 use crate::prelude::*;
-use crate::{index::am_setup::options, ipc::client::Rpc};
 use pgrx::pg_sys::{IndexBuildResult, IndexInfo, RelationData};
 use service::prelude::*;
 
 pub struct Builder {
-    pub rpc: ClientGuard<Rpc>,
+    pub rpc: ClientRpc,
     pub heap_relation: *mut RelationData,
     pub index_info: *mut IndexInfo,
     pub result: *mut IndexBuildResult,
@@ -24,8 +24,14 @@ pub unsafe fn build(
     let oid = (*index).rd_locator.relNumber;
     let id = Handle::from_sys(oid);
     let options = options(index);
-    let mut rpc = crate::ipc::client::borrow_mut();
-    rpc.create(id, options);
+    let mut rpc = check_client(crate::ipc::client());
+    match rpc.create(id, options) {
+        Ok(()) => (),
+        Err(CreateError::Exist) => bad_service_exists(),
+        Err(CreateError::InvalidIndexOptions { reason }) => {
+            bad_service_invalid_index_options(&reason)
+        }
+    }
     if let Some((heap_relation, index_info, result)) = data {
         let mut builder = Builder {
             rpc,
@@ -60,7 +66,12 @@ unsafe extern "C" fn callback(
     let state = &mut *(state as *mut Builder);
     let vector = from_datum(*values.add(0));
     let pointer = Pointer::from_sys(*ctid);
-    state.rpc.insert(id, vector, pointer);
+    match state.rpc.insert(id, vector, pointer) {
+        Ok(()) => (),
+        Err(InsertError::NotExist) => bad_service_not_exist(),
+        Err(InsertError::Upgrade) => bad_service_upgrade(),
+        Err(InsertError::InvalidVector) => bad_service_invalid_vector(),
+    }
     (*state.result).heap_tuples += 1.0;
     (*state.result).index_tuples += 1.0;
 }

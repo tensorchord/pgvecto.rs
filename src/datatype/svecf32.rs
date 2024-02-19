@@ -275,10 +275,7 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
         if let Some(x) = option {
             x
         } else {
-            SessionError::BadLiteral {
-                hint: hint.to_string(),
-            }
-            .friendly()
+            bad_literal(hint);
         }
     }
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -312,7 +309,7 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
                 }
                 index = match index.checked_add(1) {
                     Some(x) => x,
-                    None => SessionError::BadValueDimensions.friendly(),
+                    None => check_value_dimensions(65536).get(),
                 };
             }
             (Reading, b']') => {
@@ -324,31 +321,22 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
                     }
                     index = match index.checked_add(1) {
                         Some(x) => x,
-                        None => SessionError::BadValueDimensions.friendly(),
+                        None => check_value_dimensions(65536).get(),
                     };
                 }
                 state = MatchedRight;
             }
             (_, b' ') => {}
             _ => {
-                SessionError::BadLiteral {
-                    hint: format!("Bad character with ascii {:#x}.", c),
-                }
-                .friendly();
+                bad_literal(&format!("Bad character with ascii {:#x}.", c));
             }
         }
     }
     if state != MatchedRight {
-        SessionError::BadLiteral {
-            hint: "Bad sequence.".to_string(),
-        }
-        .friendly();
-    }
-    if index == 0 {
-        SessionError::BadValueDimensions.friendly();
+        bad_literal("Bad sequence");
     }
     SVecf32::new_in_postgres(SparseF32Ref {
-        dims: index,
+        dims: check_value_dimensions(index as usize).get(),
         indexes: &indexes,
         values: &values,
     })
@@ -616,15 +604,12 @@ fn _vectors_svecf32_recv(internal: pgrx::Internal, _oid: Oid, _typmod: i32) -> S
         if len > 1 {
             for i in 0..len as usize - 1 {
                 if indexes[i] >= indexes[i + 1] {
-                    SessionError::BadLiteral {
-                        hint: "Indexes are not sorted or duplicated.".to_string(),
-                    }
-                    .friendly();
+                    pgrx::error!("data corruption is detected");
                 }
             }
         }
         if indexes[len as usize - 1] >= dims {
-            SessionError::BadValueDimensions.friendly();
+            pgrx::error!("data corruption is detected");
         }
 
         output.dims = dims;
@@ -643,33 +628,24 @@ fn _vectors_svecf32_recv(internal: pgrx::Internal, _oid: Oid, _typmod: i32) -> S
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn _vectors_svector_from_array(
+fn _vectors_to_svector(
     dims: i32,
     index: pgrx::Array<i32>,
     value: pgrx::Array<f32>,
 ) -> SVecf32Output {
-    let dims: u16 = match dims.try_into() {
-        Ok(x) => x,
-        Err(_) => SessionError::BadValueDimensions.friendly(),
-    };
+    let dims = check_value_dimensions(dims as usize);
     if index.len() != value.len() {
-        SessionError::BadLiteral {
-            hint: "Lengths of index and value are not matched.".to_string(),
-        }
-        .friendly();
+        bad_literal("Lengths of index and value are not matched.");
     }
     if index.contains_nulls() || value.contains_nulls() {
-        SessionError::BadLiteral {
-            hint: "Index or value contains nulls.".to_string(),
-        }
-        .friendly();
+        bad_literal("Index or value contains nulls.");
     }
     let mut vector: Vec<(u16, F32)> = index
         .iter_deny_null()
         .zip(value.iter_deny_null())
         .map(|(index, value)| {
-            if index < 0 || index >= dims as i32 {
-                SessionError::BadValueDimensions.friendly();
+            if index < 0 || index >= dims.get() as i32 {
+                bad_literal("Index out of bound.");
             }
             (index as u16, F32(value))
         })
@@ -678,10 +654,7 @@ fn _vectors_svector_from_array(
     if vector.len() > 1 {
         for i in 0..vector.len() - 1 {
             if vector[i].0 == vector[i + 1].0 {
-                SessionError::BadLiteral {
-                    hint: "Duplicated index.".to_string(),
-                }
-                .friendly();
+                bad_literal("Duplicated index.");
             }
         }
     }
@@ -693,7 +666,7 @@ fn _vectors_svector_from_array(
         values.push(x.1);
     }
     SVecf32::new_in_postgres(SparseF32Ref {
-        dims,
+        dims: dims.get(),
         indexes: &indexes,
         values: &values,
     })

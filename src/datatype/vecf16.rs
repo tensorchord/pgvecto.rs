@@ -268,19 +268,18 @@ unsafe impl SqlTranslatable for Vecf16Output {
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_vecf16_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf16Output {
     use crate::utils::parse::parse_vector;
-    let reserve = Typmod::parse_from_i32(typmod).unwrap().dims().unwrap_or(0);
+    let reserve = Typmod::parse_from_i32(typmod)
+        .unwrap()
+        .dims()
+        .map(|x| x.get())
+        .unwrap_or(0);
     let v = parse_vector(input.to_bytes(), reserve as usize, |s| s.parse().ok());
     match v {
         Err(e) => {
-            SessionError::BadLiteral {
-                hint: e.to_string(),
-            }
-            .friendly();
+            bad_literal(&e.to_string());
         }
         Ok(vector) => {
-            if vector.is_empty() || vector.len() > 65535 {
-                SessionError::BadValueDimensions.friendly();
-            }
+            check_value_dimensions(vector.len());
             Vecf16::new_in_postgres(&vector)
         }
     }

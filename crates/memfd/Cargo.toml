@@ -1,0 +1,15 @@
+[package]
+name = "memfd"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+rand.workspace = true
+rustix.workspace = true
+detect = { path = "../detect" }
+
+[lints]
+rust.internal_features = "allow"
+rust.unsafe_op_in_unsafe_fn = "forbid"
+rust.unused_lifetimes = "warn"
+rust.unused_qualifications = "warn"

@@ -4,9 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [dev-dependencies]
-half = { version = "~2.3", features = ["use-intrinsics", "rand_distr"] }
+half.workspace = true
+rand.workspace = true
 detect = { path = "../detect" }
-rand = "0.8.5"
 
 [build-dependencies]
 cc = "1.0"

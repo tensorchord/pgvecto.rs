@@ -14,25 +14,30 @@ pg16 = ["pgrx/pg16", "pgrx-tests/pg16"]
 pg_test = []
 
 [dependencies]
+arrayvec.workspace = true
+bincode.workspace = true
+bytemuck.workspace = true
+byteorder.workspace = true
+half.workspace = true
 libc.workspace = true
 log.workspace = true
+memmap2.workspace = true
+num-traits.workspace = true
+paste.workspace = true
+rand.workspace = true
+rustix.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-validator.workspace = true
-rustix.workspace = true
 thiserror.workspace = true
-byteorder.workspace = true
-bincode.workspace = true
-half.workspace = true
-num-traits.workspace = true
-rand.workspace = true
-bytemuck.workspace = true
-service = { path = "crates/service" }
+validator.workspace = true
 detect = { path = "crates/detect" }
+send_fd = { path = "crates/send_fd" }
+service = { path = "crates/service" }
+interprocess_atomic_wait = { path = "crates/interprocess-atomic-wait" }
+memfd = { path = "crates/memfd" }
 pgrx = { version = "0.11.3", default-features = false, features = [] }
-env_logger = "0.10.0"
-toml = "0.8.8"
-arrayvec = "0.7.4"
+env_logger = "0.11.2"
+toml = "0.8.10"
 
 [dev-dependencies]
 pgrx-tests = "0.11.3"
@@ -58,24 +63,29 @@ version = "0.0.0"
 edition = "2021"
 
 [workspace.dependencies]
-libc = "~0.2"
-log = "~0.4"
-serde = "~1.0"
-serde_json = "1"
-thiserror = "~1.0"
+arrayvec = "~0.7"
 bincode = "~1.3"
-byteorder = "~1.5"
 bytemuck = { version = "~1.14", features = ["extern_crate_alloc"] }
+byteorder = "~1.5"
 half = { version = "~2.3", features = [
     "bytemuck",
     "num-traits",
     "serde",
     "use-intrinsics",
+    "rand_distr",
 ] }
+libc = "~0.2"
+log = "~0.4"
+memmap2 = "0.9.4"
 num-traits = "~0.2"
-validator = { version = "~0.16", features = ["derive"] }
+paste = "~1.0"
+rand = "0.8.5"
 rustix = { version = "~0.38", features = ["fs", "net", "mm"] }
-rand = "~0.8"
+serde = "~1.0"
+serde_json = "~1.0"
+thiserror = "~1.0"
+uuid = { version = "1.7.0", features = ["v4", "serde"] }
+validator = { version = "~0.16", features = ["derive"] }
 
 [profile.dev]
 panic = "unwind"
