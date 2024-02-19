@@ -54,8 +54,8 @@ jobs:
       VERSION: ${{ matrix.version }}
       OS: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/cache/restore@v3
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cargo/registry/index/
@@ -63,10 +63,57 @@ jobs:
             ~/.cargo/git/db/
           key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
           restore-keys: cargo-${{ matrix.os }}-pg${{ matrix.version }}
-      - uses: mozilla-actions/sccache-action@v0.0.3
+      - uses: mozilla-actions/sccache-action@v0.0.4
       - name: Setup
         shell: bash
-        run: ./scripts/ci_setup.sh
+        run: | 
+          ./scripts/ci_setup.sh
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall sqllogictest-bin -y --force
+          cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1) --debug
+          cargo pgrx init --pg$VERSION=$(which pg_config)
+      - name: Install release
+        run: ./scripts/ci_install.sh
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Test 2
+        run: ./tests/tests.sh
+      - uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
+  debug_check:
+    strategy:
+      matrix:
+        include:
+          - { version: 14, os: "ubuntu-latest" }
+          - { version: 15, os: "ubuntu-latest" }
+          - { version: 16, os: "ubuntu-latest" }
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ matrix.version }}
+      OS: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
+          restore-keys: cargo-${{ matrix.os }}-pg${{ matrix.version }}
+      - uses: mozilla-actions/sccache-action@v0.0.4
+      - name: Setup
+        shell: bash
+        run: |
+          ./scripts/ci_setup.sh
+          cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1) --debug
+          cargo pgrx init --pg$VERSION=$(which pg_config)
       - name: Format check
         run: cargo fmt --check
       - name: Semantic check
@@ -80,17 +127,3 @@ jobs:
       - name: Test
         run: |
           cargo test --all --no-fail-fast --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu -- --nocapture
-      - name: Install release
-        run: ./scripts/ci_install.sh
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-      - name: Test 2
-        run: ./tests/tests.sh
-      - uses: actions/cache/save@v3
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-          key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}

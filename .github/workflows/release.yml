@@ -55,7 +55,7 @@ jobs:
         run: |
           sed -i "s/@CARGO_VERSION@/${{ needs.semver.outputs.version }}/g" ./vectors.control
           cat ./vectors.control
-      - uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cargo/registry/index/

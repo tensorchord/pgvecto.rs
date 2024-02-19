@@ -25,21 +25,6 @@ if [ "$OS" == "ubuntu-latest" ]; then
     sudo -iu postgres createuser -s -r runner
     createdb
 fi
-if [ "$OS" == "macos-latest" ]; then
-    brew uninstall postgresql
-    brew install postgresql@$VERSION
-    export PATH="$PATH:$(brew --prefix postgresql@$VERSION)/bin"
-    echo "$(brew --prefix postgresql@$VERSION)/bin" >> $GITHUB_PATH
-    brew services start postgresql@$VERSION
-    sleep 30
-    createdb
-fi
 
 sudo chmod -R 777 `pg_config --pkglibdir`
 sudo chmod -R 777 `pg_config --sharedir`/extension
-
-curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-cargo binstall sqllogictest-bin -y --force
-
-cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1) --debug
-cargo pgrx init --pg$VERSION=$(which pg_config)
