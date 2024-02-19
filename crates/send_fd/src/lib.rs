@@ -6,12 +6,12 @@ use std::io::{IoSlice, IoSliceMut};
 use std::os::unix::net::UnixStream;
 
 #[repr(C)]
-pub struct FileSocket {
+pub struct SendFd {
     tx: OwnedFd,
     rx: OwnedFd,
 }
 
-impl FileSocket {
+impl SendFd {
     pub fn new() -> std::io::Result<Self> {
         let (tx, rx) = UnixStream::pair()?;
         Ok(Self {

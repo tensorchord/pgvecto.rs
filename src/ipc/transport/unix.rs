@@ -1,15 +1,15 @@
 use super::ConnectionError;
-use crate::utils::file_socket::FileSocket;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use rustix::fd::AsFd;
+use send_fd::SendFd;
 use std::io::{Read, Write};
 use std::os::unix::net::UnixStream;
 use std::sync::OnceLock;
 
-static CHANNEL: OnceLock<FileSocket> = OnceLock::new();
+static CHANNEL: OnceLock<SendFd> = OnceLock::new();
 
 pub fn init() {
-    CHANNEL.set(FileSocket::new().unwrap()).ok().unwrap();
+    CHANNEL.set(SendFd::new().unwrap()).ok().unwrap();
 }
 
 pub fn accept() -> Socket {

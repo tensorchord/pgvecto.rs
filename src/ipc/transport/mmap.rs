@@ -1,8 +1,7 @@
 use super::ConnectionError;
-use crate::utils::file_socket::FileSocket;
-use crate::utils::os::{memfd_create, mmap_populate};
 use rustix::fd::{AsFd, OwnedFd};
 use rustix::fs::FlockOperation;
+use send_fd::SendFd;
 use std::cell::UnsafeCell;
 use std::io::ErrorKind;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -13,33 +12,47 @@ const BUFFER_SIZE: usize = 512 * 1024;
 const SPIN_LIMIT: usize = 8;
 const TIMEOUT: Duration = Duration::from_secs(15);
 
-static CHANNEL: OnceLock<FileSocket> = OnceLock::new();
+static CHANNEL: OnceLock<SendFd> = OnceLock::new();
 
 pub fn init() {
-    CHANNEL.set(FileSocket::new().unwrap()).ok().unwrap();
+    CHANNEL.set(SendFd::new().unwrap()).ok().unwrap();
 }
 
 pub fn accept() -> Socket {
     let memfd = CHANNEL.get().unwrap().recv().unwrap();
     rustix::fs::fcntl_lock(&memfd, FlockOperation::NonBlockingLockShared).unwrap();
-    let addr = unsafe { mmap_populate(BUFFER_SIZE, &memfd).unwrap() };
+    let memmap = unsafe {
+        memmap2::MmapOptions::new()
+            .len(BUFFER_SIZE)
+            .populate()
+            .map_mut(&memfd)
+            .unwrap()
+    };
     Socket {
         is_server: true,
-        addr: addr as _,
+        addr: memmap.as_ptr().cast(),
         memfd,
+        _memmap: memmap,
     }
 }
 
 pub fn connect() -> Socket {
-    let memfd = memfd_create().unwrap();
+    let memfd = memfd::memfd_create().unwrap();
     rustix::fs::ftruncate(&memfd, BUFFER_SIZE as u64).unwrap();
     rustix::fs::fcntl_lock(&memfd, FlockOperation::NonBlockingLockShared).unwrap();
     CHANNEL.get().unwrap().send(memfd.as_fd()).unwrap();
-    let addr = unsafe { mmap_populate(BUFFER_SIZE, &memfd).unwrap() };
+    let memmap = unsafe {
+        memmap2::MmapOptions::new()
+            .len(BUFFER_SIZE)
+            .populate()
+            .map_mut(&memfd)
+            .unwrap()
+    };
     Socket {
         is_server: false,
-        addr: addr as _,
+        addr: memmap.as_ptr().cast(),
         memfd,
+        _memmap: memmap,
     }
 }
 
@@ -47,6 +60,7 @@ pub struct Socket {
     is_server: bool,
     addr: *const Channel,
     memfd: OwnedFd,
+    _memmap: memmap2::MmapMut,
 }
 
 unsafe impl Send for Socket {}
