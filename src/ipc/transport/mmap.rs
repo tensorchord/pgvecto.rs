@@ -1,15 +1,17 @@
 use super::ConnectionError;
 use crate::utils::file_socket::FileSocket;
-use crate::utils::os::{futex_wait, futex_wake, memfd_create, mmap_populate};
+use crate::utils::os::{memfd_create, mmap_populate};
 use rustix::fd::{AsFd, OwnedFd};
 use rustix::fs::FlockOperation;
 use std::cell::UnsafeCell;
 use std::io::ErrorKind;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::OnceLock;
+use std::time::Duration;
 
 const BUFFER_SIZE: usize = 512 * 1024;
 const SPIN_LIMIT: usize = 8;
+const TIMEOUT: Duration = Duration::from_secs(15);
 
 static CHANNEL: OnceLock<FileSocket> = OnceLock::new();
 
@@ -123,17 +125,13 @@ impl Channel {
                     {
                         break;
                     }
-                    unsafe {
-                        futex_wait(&self.futex, Y);
-                    }
+                    interprocess_atomic_wait::wait(&self.futex, Y, TIMEOUT);
                 }
                 Y => {
                     if !test() {
                         return Err(ConnectionError);
                     }
-                    unsafe {
-                        futex_wait(&self.futex, Y);
-                    }
+                    interprocess_atomic_wait::wait(&self.futex, Y, TIMEOUT);
                 }
                 _ => unsafe { std::hint::unreachable_unchecked() },
             }
@@ -154,9 +152,7 @@ impl Channel {
             (*self.bytes.get())[0..data.len()].copy_from_slice(data);
         }
         if X == self.futex.swap(T, Ordering::Release) {
-            unsafe {
-                futex_wake(&self.futex);
-            }
+            interprocess_atomic_wait::wake(&self.futex);
         }
     }
     unsafe fn server_recv(&self, test: impl Fn() -> bool) -> Result<Vec<u8>, ConnectionError> {
@@ -182,17 +178,13 @@ impl Channel {
                     {
                         break;
                     }
-                    unsafe {
-                        futex_wait(&self.futex, Y);
-                    }
+                    interprocess_atomic_wait::wait(&self.futex, Y, TIMEOUT);
                 }
                 Y => {
                     if !test() {
                         return Err(ConnectionError);
                     }
-                    unsafe {
-                        futex_wait(&self.futex, Y);
-                    }
+                    interprocess_atomic_wait::wait(&self.futex, Y, TIMEOUT);
                 }
                 _ => unsafe { std::hint::unreachable_unchecked() },
             }
@@ -213,9 +205,7 @@ impl Channel {
             (*self.bytes.get())[0..data.len()].copy_from_slice(data);
         }
         if X == self.futex.swap(T, Ordering::Release) {
-            unsafe {
-                futex_wake(&self.futex);
-            }
+            interprocess_atomic_wait::wake(&self.futex);
         }
     }
 }

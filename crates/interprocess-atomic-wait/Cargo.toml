@@ -1,0 +1,16 @@
+[package]
+name = "interprocess_atomic_wait"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+libc.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+ulock-sys = "0.1.0"
+
+[lints]
+rust.internal_features = "allow"
+rust.unsafe_op_in_unsafe_fn = "forbid"
+rust.unused_lifetimes = "warn"
+rust.unused_qualifications = "warn"
