@@ -3,20 +3,19 @@ pub mod unix;
 
 use super::ConnectionError;
 use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
 
-pub trait Bincode: Debug {
-    fn serialize(&self) -> Vec<u8>;
-    fn deserialize(_: &[u8]) -> Self;
+pub trait Packet: Sized {
+    fn serialize(&self) -> Option<Vec<u8>>;
+    fn deserialize(_: &[u8]) -> Option<Self>;
 }
 
-impl<T: Debug + Serialize + for<'a> Deserialize<'a>> Bincode for T {
-    fn serialize(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
+impl<T: Serialize + for<'a> Deserialize<'a>> Packet for T {
+    fn serialize(&self) -> Option<Vec<u8>> {
+        bincode::serialize(self).ok()
     }
 
-    fn deserialize(bytes: &[u8]) -> Self {
-        bincode::deserialize(bytes).unwrap()
+    fn deserialize(bytes: &[u8]) -> Option<Self> {
+        bincode::deserialize(bytes).ok()
     }
 }
 
@@ -31,45 +30,39 @@ pub enum ClientSocket {
 }
 
 impl ServerSocket {
-    pub fn ok<T: Bincode>(&mut self, packet: T) -> Result<(), ConnectionError> {
-        let mut buffer = vec![0u8];
-        buffer.extend(packet.serialize());
+    pub fn ok<T: Packet>(&mut self, packet: T) -> Result<(), ConnectionError> {
+        let buffer = packet
+            .serialize()
+            .ok_or(ConnectionError::BadSerialization)?;
         match self {
             Self::Unix(x) => x.send(&buffer),
             Self::Mmap(x) => x.send(&buffer),
         }
     }
-    pub fn recv<T: Bincode>(&mut self) -> Result<T, ConnectionError> {
+    pub fn recv<T: Packet>(&mut self) -> Result<T, ConnectionError> {
         let buffer = match self {
             Self::Unix(x) => x.recv()?,
             Self::Mmap(x) => x.recv()?,
         };
-        let c = &buffer[1..];
-        match buffer[0] {
-            0u8 => Ok(T::deserialize(c)),
-            _ => unreachable!(),
-        }
+        Ok(T::deserialize(&buffer).ok_or(ConnectionError::BadDeserialization)?)
     }
 }
 
 impl ClientSocket {
-    pub fn ok<T: Bincode>(&mut self, packet: T) -> Result<(), ConnectionError> {
-        let mut buffer = vec![0u8];
-        buffer.extend(packet.serialize());
+    pub fn ok<T: Packet>(&mut self, packet: T) -> Result<(), ConnectionError> {
+        let buffer = packet
+            .serialize()
+            .ok_or(ConnectionError::BadSerialization)?;
         match self {
             Self::Unix(x) => x.send(&buffer),
             Self::Mmap(x) => x.send(&buffer),
         }
     }
-    pub fn recv<T: Bincode>(&mut self) -> Result<T, ConnectionError> {
+    pub fn recv<T: Packet>(&mut self) -> Result<T, ConnectionError> {
         let buffer = match self {
             Self::Unix(x) => x.recv()?,
             Self::Mmap(x) => x.recv()?,
         };
-        let c = &buffer[1..];
-        match buffer[0] {
-            0u8 => Ok(T::deserialize(c)),
-            _ => unreachable!(),
-        }
+        Ok(T::deserialize(&buffer).ok_or(ConnectionError::BadDeserialization)?)
     }
 }

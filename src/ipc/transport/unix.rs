@@ -31,7 +31,9 @@ pub struct Socket {
 macro_rules! resolve_closed {
     ($t: expr) => {
         match $t {
-            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => return Err(ConnectionError),
+            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
+                return Err(ConnectionError::ClosedConnection)
+            }
             Err(e) => panic!("{}", e),
             Ok(e) => e,
         }

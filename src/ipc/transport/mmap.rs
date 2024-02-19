@@ -143,7 +143,7 @@ impl Channel {
                 }
                 Y => {
                     if !test() {
-                        return Err(ConnectionError);
+                        return Err(ConnectionError::ClosedConnection);
                     }
                     interprocess_atomic_wait::wait(&self.futex, Y, TIMEOUT);
                 }
@@ -196,7 +196,7 @@ impl Channel {
                 }
                 Y => {
                     if !test() {
-                        return Err(ConnectionError);
+                        return Err(ConnectionError::ClosedConnection);
                     }
                     interprocess_atomic_wait::wait(&self.futex, Y, TIMEOUT);
                 }

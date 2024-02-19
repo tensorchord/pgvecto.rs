@@ -3,7 +3,7 @@ pub mod transport;
 use self::transport::ClientSocket;
 use self::transport::ServerSocket;
 use crate::gucs::internal::{Transport, TRANSPORT};
-use crate::ipc::transport::Bincode;
+use crate::ipc::transport::Packet;
 use crate::prelude::*;
 use crate::utils::cells::PgRefCell;
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,11 @@ use service::index::SearchOptions;
 use service::prelude::*;
 
 #[derive(Debug, Clone)]
-pub struct ConnectionError;
+pub enum ConnectionError {
+    ClosedConnection,
+    BadSerialization,
+    BadDeserialization,
+}
 
 pub fn listen_unix() -> impl Iterator<Item = ServerRpcHandler> {
     std::iter::from_fn(move || {
@@ -64,10 +68,10 @@ impl ClientRpc {
             socket: Some(socket),
         }
     }
-    fn _ok<U: Bincode>(&mut self, packet: U) -> Result<(), ConnectionError> {
+    fn _ok<U: Packet>(&mut self, packet: U) -> Result<(), ConnectionError> {
         self.socket.as_mut().unwrap().ok(packet)
     }
-    fn _recv<U: Bincode>(&mut self) -> Result<U, ConnectionError> {
+    fn _recv<U: Packet>(&mut self) -> Result<U, ConnectionError> {
         self.socket.as_mut().unwrap().recv()
     }
 }
@@ -167,10 +171,10 @@ macro_rules! define_client_stuffs {
             }
 
             impl [<Client $name:camel>] {
-                fn _ok<U: Bincode>(&mut self, packet: U) -> Result<(), ConnectionError> {
+                fn _ok<U: Packet>(&mut self, packet: U) -> Result<(), ConnectionError> {
                     self.socket.as_mut().unwrap().ok(packet)
                 }
-                fn _recv<U: Bincode>(&mut self) -> Result<U, ConnectionError> {
+                fn _recv<U: Packet>(&mut self) -> Result<U, ConnectionError> {
                     self.socket.as_mut().unwrap().recv()
                 }
             }
