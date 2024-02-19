@@ -2,7 +2,7 @@ pub mod normal;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-static NORMAL: AtomicBool = AtomicBool::new(false);
+static STARTED: AtomicBool = AtomicBool::new(false);
 
 pub unsafe fn init() {
     use service::worker::Worker;
@@ -19,12 +19,12 @@ pub unsafe fn init() {
             .set_start_time(BgWorkerStartTime::PostmasterStart)
             .set_restart_time(Some(Duration::from_secs(15)))
             .load();
-        NORMAL.store(true, Ordering::Relaxed);
+        STARTED.store(true, Ordering::Relaxed);
     }
 }
 
-pub fn is_normal() -> bool {
-    NORMAL.load(Ordering::Relaxed)
+pub fn is_started() -> bool {
+    STARTED.load(Ordering::Relaxed)
 }
 
 #[pgrx::pg_guard]

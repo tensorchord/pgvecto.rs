@@ -75,7 +75,7 @@ impl ClientRpc {
 static CLIENTS: PgRefCell<Vec<ClientSocket>> = unsafe { PgRefCell::new(Vec::new()) };
 
 pub fn client() -> Option<ClientRpc> {
-    if !crate::bgworker::is_normal() {
+    if !crate::bgworker::is_started() {
         return None;
     }
     let mut x = CLIENTS.borrow_mut();
