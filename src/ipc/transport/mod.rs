@@ -44,7 +44,7 @@ impl ServerSocket {
             Self::Unix(x) => x.recv()?,
             Self::Mmap(x) => x.recv()?,
         };
-        Ok(T::deserialize(&buffer).ok_or(ConnectionError::BadDeserialization)?)
+        T::deserialize(&buffer).ok_or(ConnectionError::BadDeserialization)
     }
 }
 
@@ -63,6 +63,6 @@ impl ClientSocket {
             Self::Unix(x) => x.recv()?,
             Self::Mmap(x) => x.recv()?,
         };
-        Ok(T::deserialize(&buffer).ok_or(ConnectionError::BadDeserialization)?)
+        T::deserialize(&buffer).ok_or(ConnectionError::BadDeserialization)
     }
 }

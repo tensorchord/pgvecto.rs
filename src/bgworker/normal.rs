@@ -59,19 +59,21 @@ pub fn normal(worker: Arc<Worker>) {
 
 fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<!, ConnectionError> {
     use crate::ipc::ServerRpcHandle;
+    use service::instance::InstanceViewOperations;
+    use service::worker::WorkerOperations;
     let mut handler = handler;
     loop {
         match handler.handle()? {
             // control plane
             ServerRpcHandle::Create { handle, options, x } => {
-                handler = x.leave(worker._create(handle, options))?;
+                handler = x.leave(WorkerOperations::create(worker.as_ref(), handle, options))?;
             }
             ServerRpcHandle::Drop { handle, x } => {
-                handler = x.leave(worker._drop(handle))?;
+                handler = x.leave(WorkerOperations::drop(worker.as_ref(), handle))?;
             }
             // data plane
             ServerRpcHandle::Flush { handle, x } => {
-                handler = x.leave(worker._flush(handle))?;
+                handler = x.leave(worker.flush(handle))?;
             }
             ServerRpcHandle::Insert {
                 handle,
@@ -79,13 +81,13 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<!, Connecti
                 pointer,
                 x,
             } => {
-                handler = x.leave(worker._insert(handle, vector, pointer))?;
+                handler = x.leave(worker.insert(handle, vector, pointer))?;
             }
             ServerRpcHandle::Delete { handle, pointer, x } => {
-                handler = x.leave(worker._delete(handle, pointer))?;
+                handler = x.leave(worker.delete(handle, pointer))?;
             }
             ServerRpcHandle::Stat { handle, x } => {
-                handler = x.leave(worker._stat(handle))?;
+                handler = x.leave(worker.stat(handle))?;
             }
             ServerRpcHandle::Basic {
                 handle,
@@ -93,14 +95,14 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<!, Connecti
                 opts,
                 x,
             } => {
-                let v = match worker._basic_view(handle) {
+                let v = match worker.basic_view(handle) {
                     Ok(x) => x,
                     Err(e) => {
                         handler = x.error_err(e)?;
                         continue;
                     }
                 };
-                match v._basic(&vector, &opts, |_| true) {
+                match v.basic(&vector, &opts, |_| true) {
                     Ok(mut iter) => {
                         use crate::ipc::ServerBasicHandle;
                         let mut x = x.error_ok()?;
@@ -125,14 +127,14 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<!, Connecti
                 opts,
                 x,
             } => {
-                let v = match worker._vbase_view(handle) {
+                let v = match worker.vbase_view(handle) {
                     Ok(x) => x,
                     Err(e) => {
                         handler = x.error_err(e)?;
                         continue;
                     }
                 };
-                match v._vbase(&vector, &opts, |_| true) {
+                match v.vbase(&vector, &opts, |_| true) {
                     Ok(mut iter) => {
                         use crate::ipc::ServerVbaseHandle;
                         let mut x = x.error_ok()?;
@@ -152,14 +154,14 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<!, Connecti
                 };
             }
             ServerRpcHandle::List { handle, x } => {
-                let v = match worker._list_view(handle) {
+                let v = match worker.list_view(handle) {
                     Ok(x) => x,
                     Err(e) => {
                         handler = x.error_err(e)?;
                         continue;
                     }
                 };
-                match v._list() {
+                match v.list() {
                     Ok(mut iter) => {
                         use crate::ipc::ServerListHandle;
                         let mut x = x.error_ok()?;

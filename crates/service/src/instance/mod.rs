@@ -10,6 +10,22 @@ use crate::prelude::*;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+pub trait InstanceViewOperations {
+    fn basic<'a, F: Fn(Pointer) -> bool + Clone + 'a>(
+        &'a self,
+        vector: &'a DynamicVector,
+        opts: &'a SearchOptions,
+        filter: F,
+    ) -> Result<Box<dyn Iterator<Item = Pointer> + 'a>, BasicError>;
+    fn vbase<'a, F: FnMut(Pointer) -> bool + Clone + 'a>(
+        &'a self,
+        vector: &'a DynamicVector,
+        opts: &'a SearchOptions,
+        filter: F,
+    ) -> Result<Box<dyn Iterator<Item = Pointer> + 'a>, VbaseError>;
+    fn list(&self) -> Result<Box<dyn Iterator<Item = Pointer> + '_>, ListError>;
+}
+
 #[derive(Clone)]
 pub enum Instance {
     F32Cos(Arc<Index<F32Cos>>),
@@ -149,8 +165,8 @@ pub enum InstanceView {
     SparseF32L2(Arc<IndexView<SparseF32L2>>),
 }
 
-impl InstanceView {
-    pub fn _basic<'a, F: Fn(Pointer) -> bool + Clone + 'a>(
+impl InstanceViewOperations for InstanceView {
+    fn basic<'a, F: Fn(Pointer) -> bool + Clone + 'a>(
         &'a self,
         vector: &'a DynamicVector,
         opts: &'a SearchOptions,
@@ -187,7 +203,7 @@ impl InstanceView {
             _ => Err(BasicError::InvalidVector),
         }
     }
-    pub fn _vbase<'a, F: FnMut(Pointer) -> bool + Clone + 'a>(
+    fn vbase<'a, F: FnMut(Pointer) -> bool + Clone + 'a>(
         &'a self,
         vector: &'a DynamicVector,
         opts: &'a SearchOptions,
@@ -224,7 +240,7 @@ impl InstanceView {
             _ => Err(VbaseError::InvalidVector),
         }
     }
-    pub fn _list(&self) -> Result<Box<dyn Iterator<Item = Pointer> + '_>, ListError> {
+    fn list(&self) -> Result<Box<dyn Iterator<Item = Pointer> + '_>, ListError> {
         match self {
             InstanceView::F32Cos(x) => Ok(Box::new(x.list()?) as Box<dyn Iterator<Item = Pointer>>),
             InstanceView::F32Dot(x) => Ok(Box::new(x.list()?)),
@@ -237,6 +253,9 @@ impl InstanceView {
             InstanceView::SparseF32L2(x) => Ok(Box::new(x.list()?)),
         }
     }
+}
+
+impl InstanceView {
     pub fn insert(
         &self,
         vector: DynamicVector,
