@@ -50,10 +50,10 @@ fn _vectors_typmod_in(list: Array<&CStr>) -> i32 {
         -1
     } else if list.len() == 1 {
         let s = list.get(0).unwrap().unwrap().to_str().unwrap();
-        let typmod = Typmod::Dims(check_type_dimensions(s.parse::<NonZeroU16>().ok()));
+        let typmod = Typmod::Dims(check_type_dims(s.parse::<NonZeroU16>().ok()));
         typmod.into_i32()
     } else {
-        check_type_dimensions(None);
+        check_type_dims(None);
         unreachable!()
     }
 }

@@ -173,13 +173,13 @@ impl<S: G> GrowingSegment<S> {
         }
     }
 
-    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, i: u32) -> Borrowed<'_, S> {
         let i = i as usize;
         if i >= self.len.load(Ordering::Acquire) {
             panic!("Out of bound.");
         }
         let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
-        S::owned_to_ref(&log.vector)
+        log.vector.for_borrow()
     }
 
     pub fn payload(&self, i: u32) -> Payload {
@@ -193,7 +193,7 @@ impl<S: G> GrowingSegment<S> {
 
     pub fn basic(
         &self,
-        vector: S::VectorRef<'_>,
+        vector: Borrowed<'_, S>,
         _opts: &SearchOptions,
         mut filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -202,7 +202,7 @@ impl<S: G> GrowingSegment<S> {
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
             if filter.check(log.payload) {
-                let distance = S::distance(vector, S::owned_to_ref(&log.vector));
+                let distance = S::distance(vector, log.vector.for_borrow());
                 result.push(Reverse(Element {
                     distance,
                     payload: log.payload,
@@ -214,7 +214,7 @@ impl<S: G> GrowingSegment<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: S::VectorRef<'a>,
+        vector: Borrowed<'a, S>,
         _opts: &SearchOptions,
         mut filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
@@ -223,7 +223,7 @@ impl<S: G> GrowingSegment<S> {
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
             if filter.check(log.payload) {
-                let distance = S::distance(vector, S::owned_to_ref(&log.vector));
+                let distance = S::distance(vector, log.vector.for_borrow());
                 result.push(Element {
                     distance,
                     payload: log.payload,

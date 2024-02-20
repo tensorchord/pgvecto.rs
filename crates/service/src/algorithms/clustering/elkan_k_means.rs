@@ -1,27 +1,26 @@
 use crate::prelude::*;
 use crate::utils::vec2::Vec2;
-use base::scalar::FloatCast;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 use rayon::slice::ParallelSliceMut;
 use std::ops::{Index, IndexMut};
 
-pub struct ElkanKMeans<S: G> {
+pub struct ElkanKMeans<S: Global> {
     dims: u16,
     c: usize,
-    pub centroids: Vec2<S::Scalar>,
+    pub centroids: Vec2<Scalar<S>>,
     lowerbound: Square,
     upperbound: Vec<F32>,
     assign: Vec<usize>,
     rand: StdRng,
-    samples: Vec2<S::Scalar>,
+    samples: Vec2<Scalar<S>>,
 }
 
 const DELTA: f32 = 1.0 / 1024.0;
 
-impl<S: G> ElkanKMeans<S> {
-    pub fn new(c: usize, samples: Vec2<S::Scalar>) -> Self {
+impl<S: GlobalElkanKMeans> ElkanKMeans<S> {
+    pub fn new(c: usize, samples: Vec2<Scalar<S>>) -> Self {
         let n = samples.len();
         let dims = samples.dims();
 
@@ -105,14 +104,14 @@ impl<S: G> ElkanKMeans<S> {
                 centroids[i].copy_from_slice(&samples[*index]);
             } else {
                 let rand_centroids: Vec<_> = (0..dims)
-                    .map(|_| S::Scalar::from_f32(rand.gen_range(0.0..1.0f32)))
+                    .map(|_| Scalar::<S>::from_f32(rand.gen_range(0.0..1.0f32)))
                     .collect();
                 centroids[i].copy_from_slice(rand_centroids.as_slice());
             }
         }
         for i in n..c {
             let rand_centroids: Vec<_> = (0..dims)
-                .map(|_| S::Scalar::from_f32(rand.gen_range(0.0..1.0f32)))
+                .map(|_| Scalar::<S>::from_f32(rand.gen_range(0.0..1.0f32)))
                 .collect();
             centroids[i].copy_from_slice(rand_centroids.as_slice());
         }
@@ -204,7 +203,7 @@ impl<S: G> ElkanKMeans<S> {
         // Step 4, 7
         let old = std::mem::replace(centroids, Vec2::new(dims, c));
         let mut count = vec![F32::zero(); c];
-        centroids.fill(S::Scalar::zero());
+        centroids.fill(Scalar::<S>::zero());
         for i in 0..n {
             for j in 0..dims as usize {
                 centroids[self.assign[i]][j] += samples[i][j];
@@ -216,7 +215,7 @@ impl<S: G> ElkanKMeans<S> {
                 continue;
             }
             for dim in 0..dims as usize {
-                centroids[i][dim] /= S::Scalar::from_f32(count[i].into());
+                centroids[i][dim] /= Scalar::<S>::from_f32(count[i].into());
             }
         }
         for i in 0..c {
@@ -235,11 +234,11 @@ impl<S: G> ElkanKMeans<S> {
             centroids.copy_within(o, i);
             for dim in 0..dims as usize {
                 if dim % 2 == 0 {
-                    centroids[i][dim] *= S::Scalar::from_f32(1.0 + DELTA);
-                    centroids[o][dim] *= S::Scalar::from_f32(1.0 - DELTA);
+                    centroids[i][dim] *= Scalar::<S>::from_f32(1.0 + DELTA);
+                    centroids[o][dim] *= Scalar::<S>::from_f32(1.0 - DELTA);
                 } else {
-                    centroids[i][dim] *= S::Scalar::from_f32(1.0 - DELTA);
-                    centroids[o][dim] *= S::Scalar::from_f32(1.0 + DELTA);
+                    centroids[i][dim] *= Scalar::<S>::from_f32(1.0 - DELTA);
+                    centroids[o][dim] *= Scalar::<S>::from_f32(1.0 + DELTA);
                 }
             }
             count[i] = count[o] / 2.0;
@@ -267,7 +266,7 @@ impl<S: G> ElkanKMeans<S> {
         change == 0
     }
 
-    pub fn finish(self) -> Vec2<S::Scalar> {
+    pub fn finish(self) -> Vec2<Scalar<S>> {
         self.centroids
     }
 }

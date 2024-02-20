@@ -2,75 +2,18 @@ pub mod flat;
 pub mod hnsw;
 pub mod ivf;
 
-use self::flat::{FlatIndexing, FlatIndexingOptions};
-use self::hnsw::{HnswIndexing, HnswIndexingOptions};
-use self::ivf::{IvfIndexing, IvfIndexingOptions};
+use self::flat::FlatIndexing;
+use self::hnsw::HnswIndexing;
+use self::ivf::IvfIndexing;
 use super::segments::growing::GrowingSegment;
 use super::segments::sealed::SealedSegment;
 use super::IndexOptions;
-use crate::algorithms::quantization::QuantizationOptions;
 use crate::index::SearchOptions;
 use crate::prelude::*;
-use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::path::Path;
 use std::sync::Arc;
-use validator::Validate;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-#[serde(rename_all = "snake_case")]
-pub enum IndexingOptions {
-    Flat(FlatIndexingOptions),
-    Ivf(IvfIndexingOptions),
-    Hnsw(HnswIndexingOptions),
-}
-
-impl IndexingOptions {
-    pub fn unwrap_flat(self) -> FlatIndexingOptions {
-        let IndexingOptions::Flat(x) = self else {
-            unreachable!()
-        };
-        x
-    }
-    pub fn unwrap_ivf(self) -> IvfIndexingOptions {
-        let IndexingOptions::Ivf(x) = self else {
-            unreachable!()
-        };
-        x
-    }
-    pub fn unwrap_hnsw(self) -> HnswIndexingOptions {
-        let IndexingOptions::Hnsw(x) = self else {
-            unreachable!()
-        };
-        x
-    }
-    pub fn has_quantization(&self) -> bool {
-        let option = match self {
-            Self::Flat(x) => &x.quantization,
-            Self::Ivf(x) => &x.quantization,
-            Self::Hnsw(x) => &x.quantization,
-        };
-        !matches!(option, QuantizationOptions::Trivial(_))
-    }
-}
-
-impl Default for IndexingOptions {
-    fn default() -> Self {
-        Self::Hnsw(Default::default())
-    }
-}
-
-impl Validate for IndexingOptions {
-    fn validate(&self) -> Result<(), validator::ValidationErrors> {
-        match self {
-            Self::Flat(x) => x.validate(),
-            Self::Ivf(x) => x.validate(),
-            Self::Hnsw(x) => x.validate(),
-        }
-    }
-}
 
 pub trait AbstractIndexing<S: G> {
     fn create(
@@ -81,13 +24,13 @@ pub trait AbstractIndexing<S: G> {
     ) -> Self;
     fn basic(
         &self,
-        vector: S::VectorRef<'_>,
+        vector: Borrowed<'_, S>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>>;
     fn vbase<'a>(
         &'a self,
-        vector: S::VectorRef<'a>,
+        vector: Borrowed<'a, S>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>);
@@ -121,7 +64,7 @@ impl<S: G> DynamicIndexing<S> {
 
     pub fn basic(
         &self,
-        vector: S::VectorRef<'_>,
+        vector: Borrowed<'_, S>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -134,7 +77,7 @@ impl<S: G> DynamicIndexing<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: S::VectorRef<'a>,
+        vector: Borrowed<'a, S>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -153,7 +96,7 @@ impl<S: G> DynamicIndexing<S> {
         }
     }
 
-    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, i: u32) -> Borrowed<'_, S> {
         match self {
             DynamicIndexing::Flat(x) => x.vector(i),
             DynamicIndexing::Ivf(x) => x.vector(i),

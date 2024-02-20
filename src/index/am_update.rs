@@ -1,8 +1,7 @@
 use crate::index::hook_transaction::callback_dirty;
 use crate::prelude::*;
-use service::prelude::*;
 
-pub fn update_insert(handle: Handle, vector: DynamicVector, tid: pgrx::pg_sys::ItemPointerData) {
+pub fn update_insert(handle: Handle, vector: OwnedVector, tid: pgrx::pg_sys::ItemPointerData) {
     callback_dirty(handle);
 
     let pointer = Pointer::from_sys(tid);

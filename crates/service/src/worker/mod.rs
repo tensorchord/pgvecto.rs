@@ -1,36 +1,17 @@
 pub mod metadata;
 
-use crate::index::{IndexOptions, IndexStat};
-use crate::instance::{Instance, InstanceView, InstanceViewOperations};
+use crate::instance::*;
 use crate::prelude::*;
 use crate::utils::clean::clean;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::file_atomic::FileAtomic;
 use arc_swap::ArcSwap;
+use base::worker::*;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
-
-pub trait WorkerOperations {
-    type InstanceView: InstanceViewOperations;
-
-    fn create(&self, handle: Handle, options: IndexOptions) -> Result<(), CreateError>;
-    fn drop(&self, handle: Handle) -> Result<(), DropError>;
-    fn flush(&self, handle: Handle) -> Result<(), FlushError>;
-    fn insert(
-        &self,
-        handle: Handle,
-        vector: DynamicVector,
-        pointer: Pointer,
-    ) -> Result<(), InsertError>;
-    fn delete(&self, handle: Handle, pointer: Pointer) -> Result<(), DeleteError>;
-    fn basic_view(&self, handle: Handle) -> Result<Self::InstanceView, BasicError>;
-    fn vbase_view(&self, handle: Handle) -> Result<Self::InstanceView, VbaseError>;
-    fn list_view(&self, handle: Handle) -> Result<Self::InstanceView, ListError>;
-    fn stat(&self, handle: Handle) -> Result<IndexStat, StatError>;
-}
 
 pub struct Worker {
     path: PathBuf,
@@ -81,14 +62,12 @@ impl Worker {
             view: ArcSwap::new(view),
         })
     }
-    pub fn view(&self) -> Arc<WorkerView> {
+    fn view(&self) -> Arc<WorkerView> {
         self.view.load_full()
     }
 }
 
 impl WorkerOperations for Worker {
-    type InstanceView = InstanceView;
-
     fn create(&self, handle: Handle, options: IndexOptions) -> Result<(), CreateError> {
         use std::collections::hash_map::Entry;
         let mut protect = self.protect.lock();
@@ -122,7 +101,7 @@ impl WorkerOperations for Worker {
     fn insert(
         &self,
         handle: Handle,
-        vector: DynamicVector,
+        vector: OwnedVector,
         pointer: Pointer,
     ) -> Result<(), InsertError> {
         let view = self.view();
@@ -143,17 +122,17 @@ impl WorkerOperations for Worker {
         view.delete(pointer)?;
         Ok(())
     }
-    fn basic_view(&self, handle: Handle) -> Result<InstanceView, BasicError> {
+    fn view_basic(&self, handle: Handle) -> Result<impl ViewBasicOperations, BasicError> {
         let view = self.view();
         let instance = view.get(handle).ok_or(BasicError::NotExist)?;
         instance.view().ok_or(BasicError::Upgrade)
     }
-    fn vbase_view(&self, handle: Handle) -> Result<InstanceView, VbaseError> {
+    fn view_vbase(&self, handle: Handle) -> Result<impl ViewVbaseOperations, VbaseError> {
         let view = self.view();
         let instance = view.get(handle).ok_or(VbaseError::NotExist)?;
         instance.view().ok_or(VbaseError::Upgrade)
     }
-    fn list_view(&self, handle: Handle) -> Result<InstanceView, ListError> {
+    fn view_list(&self, handle: Handle) -> Result<impl ViewListOperations, ListError> {
         let view = self.view();
         let instance = view.get(handle).ok_or(ListError::NotExist)?;
         instance.view().ok_or(ListError::Upgrade)

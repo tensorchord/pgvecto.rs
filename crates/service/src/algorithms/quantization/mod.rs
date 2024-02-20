@@ -2,60 +2,13 @@ pub mod product;
 pub mod scalar;
 pub mod trivial;
 
-use self::product::{ProductQuantization, ProductQuantizationOptions};
-use self::scalar::{ScalarQuantization, ScalarQuantizationOptions};
-use self::trivial::{TrivialQuantization, TrivialQuantizationOptions};
+use self::product::ProductQuantization;
+use self::scalar::ScalarQuantization;
+use self::trivial::TrivialQuantization;
 use super::raw::Raw;
-use crate::index::IndexOptions;
 use crate::prelude::*;
-use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
 use std::path::Path;
 use std::sync::Arc;
-use validator::Validate;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-#[serde(rename_all = "snake_case")]
-pub enum QuantizationOptions {
-    Trivial(TrivialQuantizationOptions),
-    Scalar(ScalarQuantizationOptions),
-    Product(ProductQuantizationOptions),
-}
-
-impl Validate for QuantizationOptions {
-    fn validate(&self) -> Result<(), validator::ValidationErrors> {
-        match self {
-            Self::Trivial(x) => x.validate(),
-            Self::Scalar(x) => x.validate(),
-            Self::Product(x) => x.validate(),
-        }
-    }
-}
-
-impl Default for QuantizationOptions {
-    fn default() -> Self {
-        Self::Trivial(Default::default())
-    }
-}
-
-impl QuantizationOptions {
-    fn _unwrap_scalar_quantization(self) -> ScalarQuantizationOptions {
-        match self {
-            Self::Scalar(x) => x,
-            _ => unreachable!(),
-        }
-    }
-    fn unwrap_product_quantization(self) -> ProductQuantizationOptions {
-        match self {
-            Self::Product(x) => x,
-            _ => unreachable!(),
-        }
-    }
-    pub fn is_product_quantization(&self) -> bool {
-        matches!(self, Self::Product(_))
-    }
-}
 
 pub trait Quan<S: G> {
     fn create(
@@ -71,7 +24,7 @@ pub trait Quan<S: G> {
         quantization_options: QuantizationOptions,
         raw: &Arc<Raw<S>>,
     ) -> Self;
-    fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32;
+    fn distance(&self, lhs: Borrowed<'_, S>, rhs: u32) -> F32;
     fn distance2(&self, lhs: u32, rhs: u32) -> F32;
 }
 
@@ -142,7 +95,7 @@ impl<S: G> Quantization<S> {
         }
     }
 
-    pub fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32 {
+    pub fn distance(&self, lhs: Borrowed<'_, S>, rhs: u32) -> F32 {
         use Quantization::*;
         match self {
             Trivial(x) => x.distance(lhs, rhs),

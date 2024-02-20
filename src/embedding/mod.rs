@@ -1,8 +1,8 @@
-use crate::datatype::vecf32::{Vecf32, Vecf32Output};
+use crate::datatype::memory_vecf32::Vecf32Output;
 use crate::gucs::embedding::openai_options;
+use crate::prelude::*;
 use embedding::openai_embedding;
 use pgrx::error;
-use service::prelude::F32;
 
 #[pgrx::pg_extern(volatile, strict)]
 fn _vectors_text2vec_openai(input: String, model: String) -> Vecf32Output {
@@ -16,5 +16,5 @@ fn _vectors_text2vec_openai(input: String, model: String) -> Vecf32Output {
         Err(e) => error!("{}", e.to_string()),
     };
 
-    Vecf32::new_in_postgres(&embedding)
+    Vecf32Output::new(Vecf32Borrowed::new(&embedding))
 }

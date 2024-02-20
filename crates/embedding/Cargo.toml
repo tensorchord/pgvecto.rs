@@ -9,10 +9,7 @@ thiserror = "~1.0"
 serde = "~1.0"
 
 [lints]
-rust.internal_features = "allow"
-rust.unsafe_op_in_unsafe_fn = "forbid"
-rust.unused_lifetimes = "warn"
-rust.unused_qualifications = "warn"
+workspace = true
 
 [dev-dependencies]
 httpmock = "0.7"

@@ -6,6 +6,10 @@ edition.workspace = true
 [lib]
 crate-type = ["cdylib", "lib"]
 
+[[bin]]
+name = "pgrx_embed_vectors"
+path = "./src/bin/pgrx_embed.rs"
+
 [features]
 default = ["pg15"]
 pg14 = ["pgrx/pg14", "pgrx-tests/pg14"]
@@ -18,7 +22,6 @@ arrayvec.workspace = true
 bincode.workspace = true
 bytemuck.workspace = true
 byteorder.workspace = true
-half.workspace = true
 libc.workspace = true
 log.workspace = true
 memmap2.workspace = true
@@ -50,9 +53,6 @@ pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.11.3-patc
 pgrx-tests = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.11.3-patch" }
 
 [lints]
-clippy.needless_range_loop = "allow"
-clippy.len_zero = "allow"
-clippy.too_many_arguments = "allow"
 rust.unsafe_op_in_unsafe_fn = "deny"
 rust.unused_lifetimes = "warn"
 rust.unused_qualifications = "warn"
@@ -89,6 +89,11 @@ serde_json = "~1.0"
 thiserror = "~1.0"
 uuid = { version = "1.7.0", features = ["v4", "serde"] }
 validator = { version = "~0.16", features = ["derive"] }
+
+[workspace.lints]
+rust.unsafe_op_in_unsafe_fn = "forbid"
+rust.unused_lifetimes = "warn"
+rust.unused_qualifications = "warn"
 
 [profile.dev]
 panic = "unwind"

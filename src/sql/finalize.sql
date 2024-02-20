@@ -5,9 +5,9 @@
 CREATE TYPE vector (
     INPUT = _vectors_vecf32_in,
     OUTPUT = _vectors_vecf32_out,
-	RECEIVE = _vectors_vecf32_recv,
-	SEND = _vectors_vecf32_send,
-	SUBSCRIPT = _vectors_vecf32_subscript,
+    RECEIVE = _vectors_vecf32_recv,
+    SEND = _vectors_vecf32_send,
+    SUBSCRIPT = _vectors_vecf32_subscript,
     TYPMOD_IN = _vectors_typmod_in,
     TYPMOD_OUT = _vectors_typmod_out,
     STORAGE = EXTERNAL,
@@ -18,9 +18,9 @@ CREATE TYPE vector (
 CREATE TYPE vecf16 (
     INPUT = _vectors_vecf16_in,
     OUTPUT = _vectors_vecf16_out,
-	RECEIVE = _vectors_vecf16_recv,
-	SEND = _vectors_vecf16_send,
-	SUBSCRIPT = _vectors_vecf16_subscript,
+    RECEIVE = _vectors_vecf16_recv,
+    SEND = _vectors_vecf16_send,
+    SUBSCRIPT = _vectors_vecf16_subscript,
     TYPMOD_IN = _vectors_typmod_in,
     TYPMOD_OUT = _vectors_typmod_out,
     STORAGE = EXTERNAL,
@@ -31,9 +31,9 @@ CREATE TYPE vecf16 (
 CREATE TYPE svector (
     INPUT = _vectors_svecf32_in,
     OUTPUT = _vectors_svecf32_out,
-	RECEIVE = _vectors_svecf32_recv,
-	SEND = _vectors_svecf32_send,
-	SUBSCRIPT = _vectors_svecf32_subscript,
+    RECEIVE = _vectors_svecf32_recv,
+    SEND = _vectors_svecf32_send,
+    SUBSCRIPT = _vectors_svecf32_subscript,
     TYPMOD_IN = _vectors_typmod_in,
     TYPMOD_OUT = _vectors_typmod_out,
     STORAGE = EXTERNAL,
@@ -55,287 +55,287 @@ CREATE TYPE vector_index_stat AS (
 -- List of operators
 
 CREATE OPERATOR + (
-	PROCEDURE = _vectors_vecf32_operator_add,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = +
+    PROCEDURE = _vectors_vecf32_operator_add,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = +
 );
 
 CREATE OPERATOR + (
-	PROCEDURE = _vectors_vecf16_operator_add,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = +
+    PROCEDURE = _vectors_vecf16_operator_add,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = +
 );
 
 CREATE OPERATOR + (
-	PROCEDURE = _vectors_svecf32_operator_add,
-	LEFTARG = svector,
-	RIGHTARG = svector,
-	COMMUTATOR = +
+    PROCEDURE = _vectors_svecf32_operator_add,
+    LEFTARG = svector,
+    RIGHTARG = svector,
+    COMMUTATOR = +
 );
 
 CREATE OPERATOR - (
-	PROCEDURE = _vectors_vecf32_operator_minus,
-	LEFTARG = vector,
-	RIGHTARG = vector
+    PROCEDURE = _vectors_vecf32_operator_minus,
+    LEFTARG = vector,
+    RIGHTARG = vector
 );
 
 CREATE OPERATOR - (
-	PROCEDURE = _vectors_vecf16_operator_minus,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16
+    PROCEDURE = _vectors_vecf16_operator_minus,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16
 );
 
 CREATE OPERATOR - (
-	PROCEDURE = _vectors_svecf32_operator_minus,
-	LEFTARG = svector,
-	RIGHTARG = svector
+    PROCEDURE = _vectors_svecf32_operator_minus,
+    LEFTARG = svector,
+    RIGHTARG = svector
 );
 
 CREATE OPERATOR = (
-	PROCEDURE = _vectors_vecf32_operator_eq,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = =,
-	NEGATOR = <>,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_vecf32_operator_eq,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = =,
+    NEGATOR = <>,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR = (
-	PROCEDURE = _vectors_vecf16_operator_eq,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = =,
-	NEGATOR = <>,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_vecf16_operator_eq,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = =,
+    NEGATOR = <>,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR = (
-	PROCEDURE = _vectors_svecf32_operator_eq,
-	LEFTARG = svector,
-	RIGHTARG = svector,
-	COMMUTATOR = =,
-	NEGATOR = <>,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_svecf32_operator_eq,
+    LEFTARG = svector,
+    RIGHTARG = svector,
+    COMMUTATOR = =,
+    NEGATOR = <>,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR <> (
-	PROCEDURE = _vectors_vecf32_operator_neq,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = <>,
-	NEGATOR = =,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_vecf32_operator_neq,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = <>,
+    NEGATOR = =,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR <> (
-	PROCEDURE = _vectors_vecf16_operator_neq,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = <>,
-	NEGATOR = =,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_vecf16_operator_neq,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = <>,
+    NEGATOR = =,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR <> (
-	PROCEDURE = _vectors_svecf32_operator_neq,
-	LEFTARG = svector,
-	RIGHTARG = svector,
-	COMMUTATOR = <>,
-	NEGATOR = =,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_svecf32_operator_neq,
+    LEFTARG = svector,
+    RIGHTARG = svector,
+    COMMUTATOR = <>,
+    NEGATOR = =,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR < (
-	PROCEDURE = _vectors_vecf32_operator_lt,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = >,
-	NEGATOR = >=,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_vecf32_operator_lt,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = >,
+    NEGATOR = >=,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR < (
-	PROCEDURE = _vectors_vecf16_operator_lt,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = >,
-	NEGATOR = >=,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_vecf16_operator_lt,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = >,
+    NEGATOR = >=,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR < (
-	PROCEDURE = _vectors_svecf32_operator_lt,
-	LEFTARG = svector,
-	RIGHTARG = svector,
-	COMMUTATOR = >,
-	NEGATOR = >=,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_svecf32_operator_lt,
+    LEFTARG = svector,
+    RIGHTARG = svector,
+    COMMUTATOR = >,
+    NEGATOR = >=,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR > (
-	PROCEDURE = _vectors_vecf32_operator_gt,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = <,
-	NEGATOR = <=,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_vecf32_operator_gt,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = <,
+    NEGATOR = <=,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR > (
-	PROCEDURE = _vectors_vecf16_operator_gt,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = <,
-	NEGATOR = <=,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_vecf16_operator_gt,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = <,
+    NEGATOR = <=,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR > (
-	PROCEDURE = _vectors_svecf32_operator_gt,
-	LEFTARG = svector,
-	RIGHTARG = svector,
-	COMMUTATOR = <,
-	NEGATOR = <=,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_svecf32_operator_gt,
+    LEFTARG = svector,
+    RIGHTARG = svector,
+    COMMUTATOR = <,
+    NEGATOR = <=,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 
 CREATE OPERATOR <= (
-	PROCEDURE = _vectors_vecf32_operator_lte,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = >=,
-	NEGATOR = >,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_vecf32_operator_lte,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = >=,
+    NEGATOR = >,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR <= (
-	PROCEDURE = _vectors_vecf16_operator_lte,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = >=,
-	NEGATOR = >,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_vecf16_operator_lte,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = >=,
+    NEGATOR = >,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR <= (
-	PROCEDURE = _vectors_svecf32_operator_lte,
-	LEFTARG = svector,
-	RIGHTARG = svector,
-	COMMUTATOR = >=,
-	NEGATOR = >,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_svecf32_operator_lte,
+    LEFTARG = svector,
+    RIGHTARG = svector,
+    COMMUTATOR = >=,
+    NEGATOR = >,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR >= (
-	PROCEDURE = _vectors_vecf32_operator_gte,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = <=,
-	NEGATOR = <,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_vecf32_operator_gte,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = <=,
+    NEGATOR = <,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR >= (
-	PROCEDURE = _vectors_vecf16_operator_gte,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = <=,
-	NEGATOR = <,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_vecf16_operator_gte,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = <=,
+    NEGATOR = <,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR >= (
-	PROCEDURE = _vectors_svecf32_operator_gte,
-	LEFTARG = svector,
-	RIGHTARG = svector,
-	COMMUTATOR = <=,
-	NEGATOR = <,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_svecf32_operator_gte,
+    LEFTARG = svector,
+    RIGHTARG = svector,
+    COMMUTATOR = <=,
+    NEGATOR = <,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR <-> (
-	PROCEDURE = _vectors_vecf32_operator_l2,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = <->
+    PROCEDURE = _vectors_vecf32_operator_l2,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = <->
 );
 
 CREATE OPERATOR <-> (
-	PROCEDURE = _vectors_vecf16_operator_l2,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = <->
+    PROCEDURE = _vectors_vecf16_operator_l2,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = <->
 );
 
 CREATE OPERATOR <-> (
-	PROCEDURE = _vectors_svecf32_operator_l2,
-	LEFTARG = svector,
-	RIGHTARG = svector,
-	COMMUTATOR = <->
+    PROCEDURE = _vectors_svecf32_operator_l2,
+    LEFTARG = svector,
+    RIGHTARG = svector,
+    COMMUTATOR = <->
 );
 
 
 CREATE OPERATOR <#> (
-	PROCEDURE = _vectors_vecf32_operator_dot,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = <#>
+    PROCEDURE = _vectors_vecf32_operator_dot,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = <#>
 );
 
 CREATE OPERATOR <#> (
-	PROCEDURE = _vectors_vecf16_operator_dot,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = <#>
+    PROCEDURE = _vectors_vecf16_operator_dot,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = <#>
 );
 
 CREATE OPERATOR <#> (
-	PROCEDURE = _vectors_svecf32_operator_dot,
-	LEFTARG = svector,
-	RIGHTARG = svector,
-	COMMUTATOR = <#>
+    PROCEDURE = _vectors_svecf32_operator_dot,
+    LEFTARG = svector,
+    RIGHTARG = svector,
+    COMMUTATOR = <#>
 );
 
 CREATE OPERATOR <=> (
-	PROCEDURE = _vectors_vecf32_operator_cosine,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = <=>
+    PROCEDURE = _vectors_vecf32_operator_cosine,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = <=>
 );
 
 CREATE OPERATOR <=> (
-	PROCEDURE = _vectors_vecf16_operator_cosine,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = <=>
+    PROCEDURE = _vectors_vecf16_operator_cosine,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = <=>
 );
 
 CREATE OPERATOR <=> (
-	PROCEDURE = _vectors_svecf32_operator_cosine,
-	LEFTARG = svector,
-	RIGHTARG = svector,
-	COMMUTATOR = <=>
+    PROCEDURE = _vectors_svecf32_operator_cosine,
+    LEFTARG = svector,
+    RIGHTARG = svector,
+    COMMUTATOR = <=>
 );
 
 -- List of functions
@@ -343,7 +343,7 @@ CREATE OPERATOR <=> (
 CREATE FUNCTION pgvectors_upgrade() RETURNS void
 STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 
-CREATE FUNCTION to_svector(dims INT, indices INT[], vals real[]) RETURNS svector
+CREATE FUNCTION to_svector(dims INT, indexes INT[], "values" real[]) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_svector_wrapper';
 
 CREATE FUNCTION text2vec_openai(input TEXT, model TEXT) RETURNS vector

@@ -1,23 +1,10 @@
 use crate::algorithms::quantization::Quan;
 use crate::algorithms::quantization::QuantizationOptions;
 use crate::algorithms::raw::Raw;
-use crate::index::IndexOptions;
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
-use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::sync::Arc;
-use validator::Validate;
-
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-#[serde(deny_unknown_fields)]
-pub struct TrivialQuantizationOptions {}
-
-impl Default for TrivialQuantizationOptions {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 pub struct TrivialQuantization<S: G> {
     raw: Arc<Raw<S>>,
@@ -25,7 +12,7 @@ pub struct TrivialQuantization<S: G> {
 }
 
 impl<S: G> TrivialQuantization<S> {
-    pub fn codes(&self, i: u32) -> S::VectorRef<'_> {
+    pub fn codes(&self, i: u32) -> Borrowed<'_, S> {
         self.raw.vector(self.permutation[i as usize])
     }
 }
@@ -62,7 +49,7 @@ impl<S: G> Quan<S> for TrivialQuantization<S> {
         }
     }
 
-    fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32 {
+    fn distance(&self, lhs: Borrowed<'_, S>, rhs: u32) -> F32 {
         S::distance(lhs, self.codes(rhs))
     }
 

@@ -1,12 +1,10 @@
 use crate::prelude::*;
-use service::prelude::*;
 
 #[pgrx::pg_extern(volatile, strict)]
 fn _vectors_index_stat(
     oid: pgrx::pg_sys::Oid,
 ) -> pgrx::composite_type!('static, "vectors.vector_index_stat") {
     use pgrx::heap_tuple::PgHeapTuple;
-    use service::index::IndexStat;
     let id = Handle::from_sys(oid);
     let mut res = PgHeapTuple::new_composite_type("vectors.vector_index_stat").unwrap();
     let mut rpc = check_client(crate::ipc::client());
