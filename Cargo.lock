@@ -144,6 +144,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "base"
+version = "0.0.0"
+dependencies = [
+ "arc-swap",
+ "bincode",
+ "bytemuck",
+ "byteorder",
+ "c",
+ "crc32fast",
+ "crossbeam",
+ "dashmap",
+ "detect",
+ "half 2.3.1",
+ "libc",
+ "log",
+ "memmap2",
+ "multiversion",
+ "num-traits",
+ "parking_lot",
+ "rand",
+ "rayon",
+ "rustix",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "uuid",
+ "validator",
+]
+
+[[package]]
 name = "base64"
 version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1739,6 +1769,7 @@ name = "service"
 version = "0.0.0"
 dependencies = [
  "arc-swap",
+ "base",
  "bincode",
  "bytemuck",
  "byteorder",
@@ -2197,6 +2228,7 @@ name = "vectors"
 version = "0.0.0"
 dependencies = [
  "arrayvec",
+ "base",
  "bincode",
  "bytemuck",
  "byteorder",

@@ -1,4 +1,6 @@
-use crate::prelude::*;
+use super::Vector;
+use crate::scalar::F32;
+use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

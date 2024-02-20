@@ -1,4 +1,4 @@
-use crate::prelude::F32;
+use crate::scalar::F32;
 
 pub type Payload = u64;
 

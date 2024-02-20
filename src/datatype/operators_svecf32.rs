@@ -1,5 +1,6 @@
 use crate::datatype::svecf32::{SVecf32, SVecf32Input, SVecf32Output};
 use crate::prelude::*;
+use base::scalar::FloatCast;
 use service::prelude::*;
 use std::ops::Deref;
 

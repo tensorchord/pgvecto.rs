@@ -43,7 +43,7 @@ pub trait G: Copy + Debug + 'static {
         + Zero
         + num_traits::NumOps
         + num_traits::NumAssignOps
-        + FloatCast;
+        + base::scalar::FloatCast;
     type Storage: for<'a> Storage<VectorRef<'a> = Self::VectorRef<'a>>;
     type L2: for<'a> G<Scalar = Self::Scalar, VectorRef<'a> = &'a [Self::Scalar]>;
     type VectorOwned: Vector + Clone + Serialize + for<'a> Deserialize<'a>;
@@ -101,33 +101,6 @@ pub trait G: Copy + Debug + 'static {
         rhs: &[u8],
         delta: &[Self::Scalar],
     ) -> F32;
-}
-
-pub trait FloatCast: Sized {
-    fn from_f32(x: f32) -> Self;
-    fn to_f32(self) -> f32;
-    fn from_f(x: F32) -> Self {
-        Self::from_f32(x.0)
-    }
-    fn to_f(self) -> F32 {
-        F32(Self::to_f32(self))
-    }
-}
-
-pub trait Vector {
-    fn dims(&self) -> u16;
-}
-
-impl<T> Vector for Vec<T> {
-    fn dims(&self) -> u16 {
-        self.len().try_into().unwrap()
-    }
-}
-
-impl<'a, T> Vector for &'a [T] {
-    fn dims(&self) -> u16 {
-        self.len().try_into().unwrap()
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

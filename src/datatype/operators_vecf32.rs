@@ -1,5 +1,6 @@
 use crate::datatype::vecf32::{Vecf32, Vecf32Input, Vecf32Output};
 use crate::prelude::*;
+use base::scalar::FloatCast;
 use service::prelude::*;
 use std::ops::Deref;
 

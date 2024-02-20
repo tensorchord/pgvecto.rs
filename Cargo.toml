@@ -30,6 +30,7 @@ serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 validator.workspace = true
+base = { path = "crates/base" }
 detect = { path = "crates/detect" }
 send_fd = { path = "crates/send_fd" }
 service = { path = "crates/service" }
