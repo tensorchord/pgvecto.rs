@@ -11,14 +11,6 @@ pub enum Typmod {
 }
 
 impl Typmod {
-    pub fn parse_from_str(s: &str) -> Option<Self> {
-        use Typmod::*;
-        if let Ok(x) = s.parse::<NonZeroU16>() {
-            Some(Dims(x))
-        } else {
-            None
-        }
-    }
     pub fn parse_from_i32(x: i32) -> Option<Self> {
         use Typmod::*;
         if x == -1 {
@@ -43,11 +35,11 @@ impl Typmod {
             Dims(x) => i32::from(x.get()),
         }
     }
-    pub fn dims(self) -> Option<u16> {
+    pub fn dims(self) -> Option<NonZeroU16> {
         use Typmod::*;
         match self {
             Any => None,
-            Dims(dims) => Some(dims.get()),
+            Dims(dims) => Some(dims),
         }
     }
 }
@@ -58,12 +50,11 @@ fn _vectors_typmod_in(list: Array<&CStr>) -> i32 {
         -1
     } else if list.len() == 1 {
         let s = list.get(0).unwrap().unwrap().to_str().unwrap();
-        let typmod = Typmod::parse_from_str(s)
-            .ok_or(SessionError::BadTypeDimensions)
-            .friendly();
+        let typmod = Typmod::Dims(check_type_dimensions(s.parse::<NonZeroU16>().ok()));
         typmod.into_i32()
     } else {
-        SessionError::BadTypeDimensions.friendly();
+        check_type_dimensions(None);
+        unreachable!()
     }
 }
 

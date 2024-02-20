@@ -14,9 +14,9 @@ pub struct OptimizingOptions {
     #[serde(default = "OptimizingOptions::default_sealing_size")]
     #[validate(range(min = 1, max = 4_000_000_000))]
     pub sealing_size: u32,
-    #[serde(default = "OptimizingOptions::default_deleted_threshold", skip)]
+    #[serde(default = "OptimizingOptions::default_delete_threshold")]
     #[validate(range(min = 0.01, max = 1.00))]
-    pub deleted_threshold: f64,
+    pub delete_threshold: f64,
     #[serde(default = "OptimizingOptions::default_optimizing_threads")]
     #[validate(range(min = 1, max = 65535))]
     pub optimizing_threads: usize,
@@ -29,7 +29,7 @@ impl OptimizingOptions {
     fn default_sealing_size() -> u32 {
         1
     }
-    fn default_deleted_threshold() -> f64 {
+    fn default_delete_threshold() -> f64 {
         0.2
     }
     fn default_optimizing_threads() -> usize {
@@ -45,7 +45,7 @@ impl Default for OptimizingOptions {
         Self {
             sealing_secs: Self::default_sealing_secs(),
             sealing_size: Self::default_sealing_size(),
-            deleted_threshold: Self::default_deleted_threshold(),
+            delete_threshold: Self::default_delete_threshold(),
             optimizing_threads: Self::default_optimizing_threads(),
         }
     }

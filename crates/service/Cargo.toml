@@ -4,36 +4,32 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+bincode.workspace = true
+bitvec.workspace = true
+bytemuck.workspace = true
+byteorder.workspace = true
+half.workspace = true
 libc.workspace = true
 log.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-validator.workspace = true
-rustix.workspace = true
-thiserror.workspace = true
-byteorder.workspace = true
-bincode.workspace = true
-half.workspace = true
+memmap2.workspace = true
 num-traits.workspace = true
 rand.workspace = true
-bytemuck.workspace = true
-bitvec.workspace = true
+rustix.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+validator.workspace = true
+base = { path = "../base" }
 c = { path = "../c" }
 detect = { path = "../detect" }
-crc32fast = "1.3.2"
-crossbeam = "0.8.2"
-dashmap = "5.4.0"
+crc32fast = "1.4.0"
+crossbeam = "0.8.4"
+dashmap = "5.5.3"
 parking_lot = "0.12.1"
-memoffset = "0.9.0"
-arrayvec = { version = "0.7.3", features = ["serde"] }
-memmap2 = "0.9.0"
-rayon = "1.6.1"
-uuid = { version = "1.6.1", features = ["v4", "serde"] }
+rayon = "1.8.1"
 arc-swap = "1.6.0"
 multiversion = "0.7.3"
-
-[target.'cfg(target_os = "macos")'.dependencies]
-ulock-sys = "0.1.0"
 
 [lints]
 clippy.derivable_impls = "allow"

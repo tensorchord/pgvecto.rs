@@ -1,8 +1,4 @@
-use crate::ipc::client;
-
-#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+#[pgrx::pg_extern(volatile, strict)]
 fn _vectors_pgvectors_upgrade() {
-    let mut client = client::borrow_mut();
-    client.upgrade();
-    pgrx::warning!("pgvecto.rs is upgraded. Restart PostgreSQL to take effects.");
+    let _ = std::fs::remove_dir_all("pg_vectors");
 }

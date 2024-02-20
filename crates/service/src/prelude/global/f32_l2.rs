@@ -1,6 +1,5 @@
-use std::borrow::Cow;
-
 use crate::prelude::*;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, Copy)]
 pub enum F32L2 {}

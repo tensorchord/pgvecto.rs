@@ -1,5 +1,4 @@
-use crate::prelude::global::FloatCast;
-use half::f16;
+use super::FloatCast;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display};
@@ -10,49 +9,49 @@ use std::str::FromStr;
 #[derive(Clone, Copy, Default, Serialize, Deserialize)]
 #[repr(transparent)]
 #[serde(transparent)]
-pub struct F16(pub f16);
+pub struct F32(pub f32);
 
-impl Debug for F16 {
+impl Debug for F32 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(&self.0, f)
     }
 }
 
-impl Display for F16 {
+impl Display for F32 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Display::fmt(&self.0, f)
     }
 }
 
-impl PartialEq for F16 {
+impl PartialEq for F32 {
     fn eq(&self, other: &Self) -> bool {
         self.0.total_cmp(&other.0) == Ordering::Equal
     }
 }
 
-impl Eq for F16 {}
+impl Eq for F32 {}
 
-impl PartialOrd for F16 {
+impl PartialOrd for F32 {
     #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(Ord::cmp(self, other))
     }
 }
 
-impl Ord for F16 {
+impl Ord for F32 {
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
         self.0.total_cmp(&other.0)
     }
 }
 
-unsafe impl bytemuck::Zeroable for F16 {}
+unsafe impl bytemuck::Zeroable for F32 {}
 
-unsafe impl bytemuck::Pod for F16 {}
+unsafe impl bytemuck::Pod for F32 {}
 
-impl num_traits::Zero for F16 {
+impl num_traits::Zero for F32 {
     fn zero() -> Self {
-        Self(f16::zero())
+        Self(f32::zero())
     }
 
     fn is_zero(&self) -> bool {
@@ -60,71 +59,71 @@ impl num_traits::Zero for F16 {
     }
 }
 
-impl num_traits::One for F16 {
+impl num_traits::One for F32 {
     fn one() -> Self {
-        Self(f16::one())
+        Self(f32::one())
     }
 }
 
-impl num_traits::FromPrimitive for F16 {
+impl num_traits::FromPrimitive for F32 {
     fn from_i64(n: i64) -> Option<Self> {
-        f16::from_i64(n).map(Self)
+        f32::from_i64(n).map(Self)
     }
 
     fn from_u64(n: u64) -> Option<Self> {
-        f16::from_u64(n).map(Self)
+        f32::from_u64(n).map(Self)
     }
 
     fn from_isize(n: isize) -> Option<Self> {
-        f16::from_isize(n).map(Self)
+        f32::from_isize(n).map(Self)
     }
 
     fn from_i8(n: i8) -> Option<Self> {
-        f16::from_i8(n).map(Self)
+        f32::from_i8(n).map(Self)
     }
 
     fn from_i16(n: i16) -> Option<Self> {
-        f16::from_i16(n).map(Self)
+        f32::from_i16(n).map(Self)
     }
 
     fn from_i32(n: i32) -> Option<Self> {
-        f16::from_i32(n).map(Self)
+        f32::from_i32(n).map(Self)
     }
 
     fn from_i128(n: i128) -> Option<Self> {
-        f16::from_i128(n).map(Self)
+        f32::from_i128(n).map(Self)
     }
 
     fn from_usize(n: usize) -> Option<Self> {
-        f16::from_usize(n).map(Self)
+        f32::from_usize(n).map(Self)
     }
 
     fn from_u8(n: u8) -> Option<Self> {
-        f16::from_u8(n).map(Self)
+        f32::from_u8(n).map(Self)
     }
 
     fn from_u16(n: u16) -> Option<Self> {
-        f16::from_u16(n).map(Self)
+        f32::from_u16(n).map(Self)
     }
 
     fn from_u32(n: u32) -> Option<Self> {
-        f16::from_u32(n).map(Self)
+        f32::from_u32(n).map(Self)
     }
 
     fn from_u128(n: u128) -> Option<Self> {
-        f16::from_u128(n).map(Self)
+        f32::from_u128(n).map(Self)
     }
 
     fn from_f32(n: f32) -> Option<Self> {
-        Some(Self(f16::from_f32(n)))
+        f32::from_f32(n).map(Self)
     }
 
     fn from_f64(n: f64) -> Option<Self> {
-        Some(Self(f16::from_f64(n)))
+        f32::from_f64(n).map(Self)
     }
 }
 
-impl num_traits::ToPrimitive for F16 {
+impl num_traits::ToPrimitive for F32 {
     fn to_i64(&self) -> Option<i64> {
         self.0.to_i64()
     }
@@ -174,55 +173,55 @@ impl num_traits::ToPrimitive for F16 {
     }
 
     fn to_f32(&self) -> Option<f32> {
-        Some(self.0.to_f32())
+        self.0.to_f32()
     }
 
     fn to_f64(&self) -> Option<f64> {
-        Some(self.0.to_f64())
+        self.0.to_f64()
     }
 }
 
-impl num_traits::NumCast for F16 {
+impl num_traits::NumCast for F32 {
     fn from<T: num_traits::ToPrimitive>(n: T) -> Option<Self> {
         num_traits::NumCast::from(n).map(Self)
     }
 }
 
-impl num_traits::Num for F16 {
-    type FromStrRadixErr = <f16 as num_traits::Num>::FromStrRadixErr;
+impl num_traits::Num for F32 {
+    type FromStrRadixErr = <f32 as num_traits::Num>::FromStrRadixErr;
 
     fn from_str_radix(str: &str, radix: u32) -> Result<Self, Self::FromStrRadixErr> {
-        f16::from_str_radix(str, radix).map(Self)
+        f32::from_str_radix(str, radix).map(Self)
     }
 }
 
-impl num_traits::Float for F16 {
+impl num_traits::Float for F32 {
     fn nan() -> Self {
-        Self(f16::nan())
+        Self(f32::nan())
     }
 
     fn infinity() -> Self {
-        Self(f16::infinity())
+        Self(f32::infinity())
     }
 
     fn neg_infinity() -> Self {
-        Self(f16::neg_infinity())
+        Self(f32::neg_infinity())
     }
 
     fn neg_zero() -> Self {
-        Self(f16::neg_zero())
+        Self(f32::neg_zero())
     }
 
     fn min_value() -> Self {
-        Self(f16::min_value())
+        Self(f32::min_value())
     }
 
     fn min_positive_value() -> Self {
-        Self(f16::min_positive_value())
+        Self(f32::min_positive_value())
     }
 
     fn max_value() -> Self {
-        Self(f16::max_value())
+        Self(f32::max_value())
     }
 
     fn is_nan(self) -> bool {
@@ -415,7 +414,7 @@ impl num_traits::Float for F16 {
     }
 
     fn epsilon() -> Self {
-        Self(f16::EPSILON)
+        Self(f32::EPSILON)
     }
 
     fn is_subnormal(self) -> bool {
@@ -435,87 +434,87 @@ impl num_traits::Float for F16 {
     }
 }
 
-impl Add<F16> for F16 {
-    type Output = F16;
+impl Add<F32> for F32 {
+    type Output = F32;
 
     #[inline(always)]
-    fn add(self, rhs: F16) -> F16 {
-        unsafe { self::intrinsics::fadd_fast(self.0, rhs.0).into() }
+    fn add(self, rhs: F32) -> F32 {
+        unsafe { std::intrinsics::fadd_fast(self.0, rhs.0).into() }
     }
 }
 
-impl AddAssign<F16> for F16 {
+impl AddAssign<F32> for F32 {
     #[inline(always)]
-    fn add_assign(&mut self, rhs: F16) {
-        unsafe { self.0 = self::intrinsics::fadd_fast(self.0, rhs.0) }
+    fn add_assign(&mut self, rhs: F32) {
+        unsafe { self.0 = std::intrinsics::fadd_fast(self.0, rhs.0) }
     }
 }
 
-impl Sub<F16> for F16 {
-    type Output = F16;
+impl Sub<F32> for F32 {
+    type Output = F32;
 
     #[inline(always)]
-    fn sub(self, rhs: F16) -> F16 {
-        unsafe { self::intrinsics::fsub_fast(self.0, rhs.0).into() }
+    fn sub(self, rhs: F32) -> F32 {
+        unsafe { std::intrinsics::fsub_fast(self.0, rhs.0).into() }
     }
 }
 
-impl SubAssign<F16> for F16 {
+impl SubAssign<F32> for F32 {
     #[inline(always)]
-    fn sub_assign(&mut self, rhs: F16) {
-        unsafe { self.0 = self::intrinsics::fsub_fast(self.0, rhs.0) }
+    fn sub_assign(&mut self, rhs: F32) {
+        unsafe { self.0 = std::intrinsics::fsub_fast(self.0, rhs.0) }
     }
 }
 
-impl Mul<F16> for F16 {
-    type Output = F16;
+impl Mul<F32> for F32 {
+    type Output = F32;
 
     #[inline(always)]
-    fn mul(self, rhs: F16) -> F16 {
-        unsafe { self::intrinsics::fmul_fast(self.0, rhs.0).into() }
+    fn mul(self, rhs: F32) -> F32 {
+        unsafe { std::intrinsics::fmul_fast(self.0, rhs.0).into() }
     }
 }
 
-impl MulAssign<F16> for F16 {
+impl MulAssign<F32> for F32 {
     #[inline(always)]
-    fn mul_assign(&mut self, rhs: F16) {
-        unsafe { self.0 = self::intrinsics::fmul_fast(self.0, rhs.0) }
+    fn mul_assign(&mut self, rhs: F32) {
+        unsafe { self.0 = std::intrinsics::fmul_fast(self.0, rhs.0) }
     }
 }
 
-impl Div<F16> for F16 {
-    type Output = F16;
+impl Div<F32> for F32 {
+    type Output = F32;
 
     #[inline(always)]
-    fn div(self, rhs: F16) -> F16 {
-        unsafe { self::intrinsics::fdiv_fast(self.0, rhs.0).into() }
+    fn div(self, rhs: F32) -> F32 {
+        unsafe { std::intrinsics::fdiv_fast(self.0, rhs.0).into() }
     }
 }
 
-impl DivAssign<F16> for F16 {
+impl DivAssign<F32> for F32 {
     #[inline(always)]
-    fn div_assign(&mut self, rhs: F16) {
-        unsafe { self.0 = self::intrinsics::fdiv_fast(self.0, rhs.0) }
+    fn div_assign(&mut self, rhs: F32) {
+        unsafe { self.0 = std::intrinsics::fdiv_fast(self.0, rhs.0) }
     }
 }
 
-impl Rem<F16> for F16 {
-    type Output = F16;
+impl Rem<F32> for F32 {
+    type Output = F32;
 
     #[inline(always)]
-    fn rem(self, rhs: F16) -> F16 {
-        unsafe { self::intrinsics::frem_fast(self.0, rhs.0).into() }
+    fn rem(self, rhs: F32) -> F32 {
+        unsafe { std::intrinsics::frem_fast(self.0, rhs.0).into() }
     }
 }
 
-impl RemAssign<F16> for F16 {
+impl RemAssign<F32> for F32 {
     #[inline(always)]
-    fn rem_assign(&mut self, rhs: F16) {
-        unsafe { self.0 = self::intrinsics::frem_fast(self.0, rhs.0) }
+    fn rem_assign(&mut self, rhs: F32) {
+        unsafe { self.0 = std::intrinsics::frem_fast(self.0, rhs.0) }
     }
 }
 
-impl Neg for F16 {
+impl Neg for F32 {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -523,131 +522,111 @@ impl Neg for F16 {
     }
 }
 
-impl FromStr for F16 {
+impl FromStr for F32 {
     type Err = ParseFloatError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        f16::from_str(s).map(|x| x.into())
+        f32::from_str(s).map(|x| x.into())
     }
 }
 
-impl FloatCast for F16 {
+impl FloatCast for F32 {
     fn from_f32(x: f32) -> Self {
-        Self(f16::from_f32(x))
+        Self(x)
     }
 
     fn to_f32(self) -> f32 {
-        f16::to_f32(self.0)
+        self.0
     }
 }
 
-impl From<f16> for F16 {
-    fn from(value: f16) -> Self {
+impl From<f32> for F32 {
+    fn from(value: f32) -> Self {
         Self(value)
     }
 }
 
-impl From<F16> for f16 {
-    fn from(F16(float): F16) -> Self {
+impl From<F32> for f32 {
+    fn from(F32(float): F32) -> Self {
         float
     }
 }
 
-impl Add<f16> for F16 {
-    type Output = F16;
+impl Add<f32> for F32 {
+    type Output = F32;
 
     #[inline(always)]
-    fn add(self, rhs: f16) -> F16 {
-        unsafe { self::intrinsics::fadd_fast(self.0, rhs).into() }
+    fn add(self, rhs: f32) -> F32 {
+        unsafe { std::intrinsics::fadd_fast(self.0, rhs).into() }
     }
 }
 
-impl AddAssign<f16> for F16 {
-    fn add_assign(&mut self, rhs: f16) {
-        unsafe { self.0 = self::intrinsics::fadd_fast(self.0, rhs) }
+impl AddAssign<f32> for F32 {
+    fn add_assign(&mut self, rhs: f32) {
+        unsafe { self.0 = std::intrinsics::fadd_fast(self.0, rhs) }
     }
 }
 
-impl Sub<f16> for F16 {
-    type Output = F16;
+impl Sub<f32> for F32 {
+    type Output = F32;
 
     #[inline(always)]
-    fn sub(self, rhs: f16) -> F16 {
-        unsafe { self::intrinsics::fsub_fast(self.0, rhs).into() }
+    fn sub(self, rhs: f32) -> F32 {
+        unsafe { std::intrinsics::fsub_fast(self.0, rhs).into() }
     }
 }
 
-impl SubAssign<f16> for F16 {
+impl SubAssign<f32> for F32 {
     #[inline(always)]
-    fn sub_assign(&mut self, rhs: f16) {
-        unsafe { self.0 = self::intrinsics::fsub_fast(self.0, rhs) }
+    fn sub_assign(&mut self, rhs: f32) {
+        unsafe { self.0 = std::intrinsics::fsub_fast(self.0, rhs) }
     }
 }
 
-impl Mul<f16> for F16 {
-    type Output = F16;
-
-    #[inline(always)]
-    fn mul(self, rhs: f16) -> F16 {
-        unsafe { self::intrinsics::fmul_fast(self.0, rhs).into() }
-    }
-}
-
-impl MulAssign<f16> for F16 {
-    #[inline(always)]
-    fn mul_assign(&mut self, rhs: f16) {
-        unsafe { self.0 = self::intrinsics::fmul_fast(self.0, rhs) }
-    }
-}
-
-impl Div<f16> for F16 {
-    type Output = F16;
+impl Mul<f32> for F32 {
+    type Output = F32;
 
     #[inline(always)]
-    fn div(self, rhs: f16) -> F16 {
-        unsafe { self::intrinsics::fdiv_fast(self.0, rhs).into() }
+    fn mul(self, rhs: f32) -> F32 {
+        unsafe { std::intrinsics::fmul_fast(self.0, rhs).into() }
     }
 }
 
-impl DivAssign<f16> for F16 {
+impl MulAssign<f32> for F32 {
     #[inline(always)]
-    fn div_assign(&mut self, rhs: f16) {
-        unsafe { self.0 = self::intrinsics::fdiv_fast(self.0, rhs) }
+    fn mul_assign(&mut self, rhs: f32) {
+        unsafe { self.0 = std::intrinsics::fmul_fast(self.0, rhs) }
     }
 }
 
-impl Rem<f16> for F16 {
-    type Output = F16;
+impl Div<f32> for F32 {
+    type Output = F32;
 
     #[inline(always)]
-    fn rem(self, rhs: f16) -> F16 {
-        unsafe { self::intrinsics::frem_fast(self.0, rhs).into() }
+    fn div(self, rhs: f32) -> F32 {
+        unsafe { std::intrinsics::fdiv_fast(self.0, rhs).into() }
     }
 }
 
-impl RemAssign<f16> for F16 {
+impl DivAssign<f32> for F32 {
     #[inline(always)]
-    fn rem_assign(&mut self, rhs: f16) {
-        unsafe { self.0 = self::intrinsics::frem_fast(self.0, rhs) }
+    fn div_assign(&mut self, rhs: f32) {
+        unsafe { self.0 = std::intrinsics::fdiv_fast(self.0, rhs) }
     }
 }
 
-mod intrinsics {
-    use half::f16;
+impl Rem<f32> for F32 {
+    type Output = F32;
 
-    pub unsafe fn fadd_fast(lhs: f16, rhs: f16) -> f16 {
-        lhs + rhs
+    #[inline(always)]
+    fn rem(self, rhs: f32) -> F32 {
+        unsafe { std::intrinsics::frem_fast(self.0, rhs).into() }
     }
-    pub unsafe fn fsub_fast(lhs: f16, rhs: f16) -> f16 {
-        lhs - rhs
-    }
-    pub unsafe fn fmul_fast(lhs: f16, rhs: f16) -> f16 {
-        lhs * rhs
-    }
-    pub unsafe fn fdiv_fast(lhs: f16, rhs: f16) -> f16 {
-        lhs / rhs
-    }
-    pub unsafe fn frem_fast(lhs: f16, rhs: f16) -> f16 {
-        lhs % rhs
+}
+
+impl RemAssign<f32> for F32 {
+    #[inline(always)]
+    fn rem_assign(&mut self, rhs: f32) {
+        unsafe { self.0 = std::intrinsics::frem_fast(self.0, rhs) }
     }
 }

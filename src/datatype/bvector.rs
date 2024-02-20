@@ -45,7 +45,7 @@ impl BVector {
     pub fn new_in_postgres(vector: BinaryVecRef<'_>) -> BVectorOutput {
         unsafe {
             let dims = vector.values.len();
-            assert!(1 <= dims && dims <= 65535);
+            assert!((1..=65535).contains(&dims));
             let layout = BVector::layout(dims);
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut BVector;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
@@ -215,7 +215,11 @@ unsafe impl SqlTranslatable for BVectorOutput {
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_bvector_in(input: &CStr, _oid: Oid, typmod: i32) -> BVectorOutput {
     use crate::utils::parse::parse_vector;
-    let reserve = Typmod::parse_from_i32(typmod).unwrap().dims().unwrap_or(0);
+    let reserve = Typmod::parse_from_i32(typmod)
+        .unwrap()
+        .dims()
+        .map(|x| x.get())
+        .unwrap_or(0);
     let v = parse_vector(input.to_bytes(), reserve as usize, |s| {
         s.parse::<u8>().ok().and_then(|x| match x {
             0 => Some(false),
@@ -225,15 +229,10 @@ fn _vectors_bvector_in(input: &CStr, _oid: Oid, typmod: i32) -> BVectorOutput {
     });
     match v {
         Err(e) => {
-            SessionError::BadLiteral {
-                hint: e.to_string(),
-            }
-            .friendly();
+            bad_literal(&e.to_string());
         }
         Ok(vector) => {
-            if vector.is_empty() || vector.len() > 65535 {
-                SessionError::BadValueDimensions.friendly();
-            }
+            check_value_dimensions(vector.len());
             let mut values = bitvec![0; vector.len()];
             for (i, x) in vector.iter().enumerate() {
                 values.set(i, *x);
@@ -420,9 +419,7 @@ fn _vectors_bvector_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum 
                 }
                 let mut values = bitvec![0; end as usize - start as usize];
                 values.copy_from_bitslice(&input.data().values[start as usize..end as usize]);
-                let output = BVector::new_in_postgres(BinaryVecRef {
-                    values: &values,
-                });
+                let output = BVector::new_in_postgres(BinaryVecRef { values: &values });
                 (*op).resvalue.write(output.into_datum().unwrap());
                 (*op).resnull.write(false);
             }

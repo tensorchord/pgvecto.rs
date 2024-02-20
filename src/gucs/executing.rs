@@ -1,6 +1,5 @@
 use pgrx::{GucContext, GucFlags, GucRegistry, GucSetting};
 use service::index::SearchOptions;
-use validator::Validate;
 
 static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(true);
 
@@ -40,11 +39,9 @@ pub unsafe fn init() {
 }
 
 pub fn search_options() -> SearchOptions {
-    let options = SearchOptions {
+    SearchOptions {
         prefilter_enable: ENABLE_PREFILTER.get(),
         hnsw_ef_search: HNSW_EF_SEARCH.get() as usize,
         ivf_nprobe: IVF_NPROBE.get() as u32,
-    };
-    assert!(options.validate().is_ok());
-    options
+    }
 }

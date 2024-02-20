@@ -1,4 +1,5 @@
-use crate::prelude::*;
+use super::Vector;
+use crate::scalar::F32;
 use bitvec::{slice::BitSlice, vec::BitVec};
 use serde::{Deserialize, Serialize};
 

@@ -53,7 +53,9 @@ impl Storage for BinaryMmap {
         ram: RawRam<S>,
     ) -> Self {
         let n = ram.len();
-        let vectors_iter = (0..n).flat_map(|i| ram.vector(i).as_bytes().iter()).copied();
+        let vectors_iter = (0..n)
+            .flat_map(|i| ram.vector(i).as_bytes().iter())
+            .copied();
         let payload_iter = (0..n).map(|i| ram.payload(i));
         let vectors = MmapArray::create(&path.join("vectors"), vectors_iter);
         let payload = MmapArray::create(&path.join("payload"), payload_iter);

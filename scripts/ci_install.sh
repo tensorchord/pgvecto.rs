@@ -10,6 +10,3 @@ if [ "$OS" == "ubuntu-latest" ]; then
     sudo systemctl restart postgresql
     pg_lsclusters
 fi
-if [ "$OS" == "macos-latest" ]; then
-    brew services restart postgresql@$VERSION
-fi

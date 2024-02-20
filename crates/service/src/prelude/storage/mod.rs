@@ -1,10 +1,10 @@
+mod binary;
 mod dense;
 mod sparse;
-mod binary;
 
+pub use binary::BinaryMmap;
 pub use dense::DenseMmap;
 pub use sparse::SparseMmap;
-pub use binary::BinaryMmap;
 
 use crate::algorithms::raw::RawRam;
 use crate::index::IndexOptions;

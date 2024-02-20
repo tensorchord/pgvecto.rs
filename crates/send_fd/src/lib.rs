@@ -6,12 +6,12 @@ use std::io::{IoSlice, IoSliceMut};
 use std::os::unix::net::UnixStream;
 
 #[repr(C)]
-pub struct FileSocket {
+pub struct SendFd {
     tx: OwnedFd,
     rx: OwnedFd,
 }
 
-impl FileSocket {
+impl SendFd {
     pub fn new() -> std::io::Result<Self> {
         let (tx, rx) = UnixStream::pair()?;
         Ok(Self {
@@ -47,7 +47,7 @@ fn recv_fd(rx: BorrowedFd<'_>) -> std::io::Result<OwnedFd> {
         let mut control = RecvAncillaryBuffer::new(&mut buffer.0);
         let mut buffer_ios = [b'.'];
         let ios = IoSliceMut::new(&mut buffer_ios);
-        let returned = rustix::net::recvmsg(rx, &mut [ios], &mut control, RecvFlags::CMSG_CLOEXEC)?;
+        let returned = rustix::net::recvmsg(rx, &mut [ios], &mut control, RecvFlags::empty())?;
         if returned.flags.bits() & libc::MSG_CTRUNC as u32 != 0 {
             log::warn!("Ancillary is truncated.");
         }

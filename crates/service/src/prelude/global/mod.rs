@@ -15,6 +15,9 @@ mod sparse_f32_cos;
 mod sparse_f32_dot;
 mod sparse_f32_l2;
 
+pub use binary_cos::BinaryCos;
+pub use binary_dot::BinaryDot;
+pub use binary_l2::BinaryL2;
 pub use f16_cos::F16Cos;
 pub use f16_dot::F16Dot;
 pub use f16_l2::F16L2;
@@ -24,9 +27,6 @@ pub use f32_l2::F32L2;
 pub use sparse_f32_cos::SparseF32Cos;
 pub use sparse_f32_dot::SparseF32Dot;
 pub use sparse_f32_l2::SparseF32L2;
-pub use binary_cos::BinaryCos;
-pub use binary_dot::BinaryDot;
-pub use binary_l2::BinaryL2;
 
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -50,7 +50,7 @@ pub trait G: Copy + Debug + 'static {
         + Zero
         + num_traits::NumOps
         + num_traits::NumAssignOps
-        + FloatCast;
+        + base::scalar::FloatCast;
     type Storage: for<'a> Storage<VectorRef<'a> = Self::VectorRef<'a>>;
     type L2: for<'a> G<Scalar = Self::Scalar, VectorRef<'a> = &'a [Self::Scalar]>;
     type VectorOwned: Vector + Clone + Serialize + for<'a> Deserialize<'a>;
@@ -123,33 +123,6 @@ pub trait G: Copy + Debug + 'static {
         delta: &[Self::Scalar],
     ) -> F32 {
         unimplemented!()
-    }
-}
-
-pub trait FloatCast: Sized {
-    fn from_f32(x: f32) -> Self;
-    fn to_f32(self) -> f32;
-    fn from_f(x: F32) -> Self {
-        Self::from_f32(x.0)
-    }
-    fn to_f(self) -> F32 {
-        F32(Self::to_f32(self))
-    }
-}
-
-pub trait Vector {
-    fn dims(&self) -> u16;
-}
-
-impl<T> Vector for Vec<T> {
-    fn dims(&self) -> u16 {
-        self.len().try_into().unwrap()
-    }
-}
-
-impl<'a, T> Vector for &'a [T] {
-    fn dims(&self) -> u16 {
-        self.len().try_into().unwrap()
     }
 }
 

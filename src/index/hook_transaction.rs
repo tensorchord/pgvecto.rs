@@ -16,12 +16,14 @@ pub fn commit() {
     if pending_deletes.is_empty() && pending_dirty.is_empty() {
         return;
     }
-    let mut rpc = crate::ipc::client::borrow_mut();
+    let Some(mut rpc) = crate::ipc::client() else {
+        return;
+    };
     for handle in pending_dirty {
-        rpc.flush(handle);
+        let _ = rpc.flush(handle);
     }
     for handle in pending_deletes {
-        rpc.drop(handle);
+        let _ = rpc.drop(handle);
     }
 }
 
@@ -31,9 +33,11 @@ pub fn abort() {
     if pending_deletes.is_empty() {
         return;
     }
-    let mut rpc = crate::ipc::client::borrow_mut();
+    let Some(mut rpc) = crate::ipc::client() else {
+        return;
+    };
     for handle in pending_deletes {
-        rpc.drop(handle);
+        let _ = rpc.drop(handle);
     }
 }
 

@@ -1,15 +1,13 @@
-mod error;
 mod global;
-mod scalar;
-mod search;
 mod storage;
-mod sys;
 
-pub use self::error::ServiceError;
 pub use self::global::*;
-pub use self::scalar::{BinaryVec, BinaryVecRef, SparseF32, SparseF32Ref, F16, F32};
-pub use self::search::{Element, Filter, Payload};
-pub use self::storage::{DenseMmap, SparseMmap, Storage, BinaryMmap};
-pub use self::sys::{Handle, Pointer};
+pub use self::storage::{BinaryMmap, DenseMmap, SparseMmap, Storage};
+
+pub use base::error::*;
+pub use base::scalar::{F16, F32};
+pub use base::search::{Element, Filter, Payload};
+pub use base::sys::{Handle, Pointer};
+pub use base::vector::{BinaryVec, BinaryVecRef, SparseF32, SparseF32Ref, Vector};
 
 pub use num_traits::{Float, Zero};

@@ -5,6 +5,7 @@ use crate::index::IndexOptions;
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::mmap_array::MmapArray;
+use base::scalar::FloatCast;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::sync::Arc;

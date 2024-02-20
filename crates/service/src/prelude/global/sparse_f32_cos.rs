@@ -47,6 +47,6 @@ impl G for SparseF32Cos {
     }
 
     fn elkan_k_means_distance2(lhs: &SparseF32, rhs: &[Self::Scalar]) -> F32 {
-        super::sparse_f32::dot_2( SparseF32Ref::from(lhs), rhs).acos()
+        super::sparse_f32::dot_2(SparseF32Ref::from(lhs), rhs).acos()
     }
 }

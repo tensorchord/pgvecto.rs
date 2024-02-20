@@ -1,7 +1,5 @@
-use crate::ipc::server::RpcHandler;
 use crate::ipc::ConnectionError;
-use service::index::OutdatedError;
-use service::prelude::ServiceError;
+use crate::ipc::ServerRpcHandler;
 use service::worker::Worker;
 use std::sync::Arc;
 
@@ -59,167 +57,128 @@ pub fn normal(worker: Arc<Worker>) {
     });
 }
 
-fn session(worker: Arc<Worker>, handler: RpcHandler) -> Result<!, ConnectionError> {
-    use crate::ipc::server::RpcHandle;
+fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<!, ConnectionError> {
+    use crate::ipc::ServerRpcHandle;
+    use service::instance::InstanceViewOperations;
+    use service::worker::WorkerOperations;
     let mut handler = handler;
     loop {
         match handler.handle()? {
-            // transaction
-            RpcHandle::Flush { handle, x } => {
-                let view = worker.view();
-                if let Some(instance) = view.get(handle) {
-                    if let Some(view) = instance.view() {
-                        view.flush();
-                    }
-                }
-                handler = x.leave()?;
+            // control plane
+            ServerRpcHandle::Create { handle, options, x } => {
+                handler = x.leave(WorkerOperations::create(worker.as_ref(), handle, options))?;
             }
-            RpcHandle::Drop { handle, x } => {
-                worker.instance_destroy(handle);
-                handler = x.leave()?;
+            ServerRpcHandle::Drop { handle, x } => {
+                handler = x.leave(WorkerOperations::drop(worker.as_ref(), handle))?;
             }
-            RpcHandle::Create { handle, options, x } => {
-                match worker.instance_create(handle, options) {
-                    Ok(()) => (),
-                    Err(e) => x.reset(e)?,
-                };
-                handler = x.leave()?;
+            // data plane
+            ServerRpcHandle::Flush { handle, x } => {
+                handler = x.leave(worker.flush(handle))?;
             }
-            // instance
-            RpcHandle::Insert {
+            ServerRpcHandle::Insert {
                 handle,
                 vector,
                 pointer,
                 x,
             } => {
-                let view = worker.view();
-                let Some(instance) = view.get(handle) else {
-                    x.reset(ServiceError::UnknownIndex)?;
-                };
-                loop {
-                    let instance_view = match instance.view() {
-                        Some(x) => x,
-                        None => x.reset(ServiceError::Upgrade2)?,
-                    };
-                    match instance_view.insert(vector.clone(), pointer) {
-                        Ok(Ok(())) => break,
-                        Ok(Err(OutdatedError)) => instance.refresh(),
-                        Err(e) => x.reset(e)?,
-                    }
-                }
-                handler = x.leave()?;
+                handler = x.leave(worker.insert(handle, vector, pointer))?;
             }
-            RpcHandle::Delete { handle, pointer, x } => {
-                let view = worker.view();
-                let Some(instance) = view.get(handle) else {
-                    x.reset(ServiceError::UnknownIndex)?;
-                };
-                let instance_view = match instance.view() {
-                    Some(x) => x,
-                    None => x.reset(ServiceError::Upgrade2)?,
-                };
-                instance_view.delete(pointer);
-                handler = x.leave()?;
+            ServerRpcHandle::Delete { handle, pointer, x } => {
+                handler = x.leave(worker.delete(handle, pointer))?;
             }
-            RpcHandle::Stat { handle, x } => {
-                let view = worker.view();
-                let Some(instance) = view.get(handle) else {
-                    x.reset(ServiceError::UnknownIndex)?;
-                };
-                let r = instance.stat();
-                handler = x.leave(r)?
+            ServerRpcHandle::Stat { handle, x } => {
+                handler = x.leave(worker.stat(handle))?;
             }
-            RpcHandle::Basic {
+            ServerRpcHandle::Basic {
                 handle,
                 vector,
                 opts,
                 x,
             } => {
-                use crate::ipc::server::BasicHandle::*;
-                let view = worker.view();
-                let Some(instance) = view.get(handle) else {
-                    x.reset(ServiceError::UnknownIndex)?;
-                };
-                let view = match instance.view() {
-                    Some(x) => x,
-                    None => x.reset(ServiceError::Upgrade2)?,
-                };
-                let mut it = match view.basic(&vector, &opts, |_| true) {
+                let v = match worker.basic_view(handle) {
                     Ok(x) => x,
-                    Err(e) => x.reset(e)?,
+                    Err(e) => {
+                        handler = x.error_err(e)?;
+                        continue;
+                    }
                 };
-                let mut x = x.error()?;
-                loop {
-                    match x.handle()? {
-                        Next { x: y } => {
-                            x = y.leave(it.next())?;
-                        }
-                        Leave { x } => {
-                            handler = x;
-                            break;
+                match v.basic(&vector, &opts, |_| true) {
+                    Ok(mut iter) => {
+                        use crate::ipc::ServerBasicHandle;
+                        let mut x = x.error_ok()?;
+                        loop {
+                            match x.handle()? {
+                                ServerBasicHandle::Next { x: y } => {
+                                    x = y.leave(iter.next())?;
+                                }
+                                ServerBasicHandle::Leave { x } => {
+                                    handler = x;
+                                    break;
+                                }
+                            }
                         }
                     }
-                }
+                    Err(e) => handler = x.error_err(e)?,
+                };
             }
-            RpcHandle::Vbase {
+            ServerRpcHandle::Vbase {
                 handle,
                 vector,
                 opts,
                 x,
             } => {
-                use crate::ipc::server::VbaseHandle::*;
-                let view = worker.view();
-                let Some(instance) = view.get(handle) else {
-                    x.reset(ServiceError::UnknownIndex)?;
-                };
-                let view = match instance.view() {
-                    Some(x) => x,
-                    None => x.reset(ServiceError::Upgrade2)?,
-                };
-                let mut it = match view.vbase(&vector, &opts, |_| true) {
+                let v = match worker.vbase_view(handle) {
                     Ok(x) => x,
-                    Err(e) => x.reset(e)?,
+                    Err(e) => {
+                        handler = x.error_err(e)?;
+                        continue;
+                    }
                 };
-                let mut x = x.error()?;
-                loop {
-                    match x.handle()? {
-                        Next { x: y } => {
-                            x = y.leave(it.next())?;
-                        }
-                        Leave { x } => {
-                            handler = x;
-                            break;
+                match v.vbase(&vector, &opts, |_| true) {
+                    Ok(mut iter) => {
+                        use crate::ipc::ServerVbaseHandle;
+                        let mut x = x.error_ok()?;
+                        loop {
+                            match x.handle()? {
+                                ServerVbaseHandle::Next { x: y } => {
+                                    x = y.leave(iter.next())?;
+                                }
+                                ServerVbaseHandle::Leave { x } => {
+                                    handler = x;
+                                    break;
+                                }
+                            }
                         }
                     }
-                }
+                    Err(e) => handler = x.error_err(e)?,
+                };
             }
-            RpcHandle::List { handle, x } => {
-                use crate::ipc::server::ListHandle::*;
-                let view = worker.view();
-                let Some(instance) = view.get(handle) else {
-                    x.reset(ServiceError::UnknownIndex)?;
+            ServerRpcHandle::List { handle, x } => {
+                let v = match worker.list_view(handle) {
+                    Ok(x) => x,
+                    Err(e) => {
+                        handler = x.error_err(e)?;
+                        continue;
+                    }
                 };
-                let view = match instance.view() {
-                    Some(x) => x,
-                    None => x.reset(ServiceError::Upgrade2)?,
-                };
-                let mut it = view.list();
-                let mut x = x.error()?;
-                loop {
-                    match x.handle()? {
-                        Next { x: y } => {
-                            x = y.leave(it.next())?;
-                        }
-                        Leave { x } => {
-                            handler = x;
-                            break;
+                match v.list() {
+                    Ok(mut iter) => {
+                        use crate::ipc::ServerListHandle;
+                        let mut x = x.error_ok()?;
+                        loop {
+                            match x.handle()? {
+                                ServerListHandle::Next { x: y } => {
+                                    x = y.leave(iter.next())?;
+                                }
+                                ServerListHandle::Leave { x } => {
+                                    handler = x;
+                                    break;
+                                }
+                            }
                         }
                     }
-                }
-            }
-            // admin
-            RpcHandle::Upgrade { x } => {
-                handler = x.leave()?;
+                    Err(e) => handler = x.error_err(e)?,
+                };
             }
         }
     }
