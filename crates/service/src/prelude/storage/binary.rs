@@ -2,7 +2,6 @@ use crate::algorithms::raw::RawRam;
 use crate::index::IndexOptions;
 use crate::prelude::*;
 use crate::utils::mmap_array::MmapArray;
-use bitvec::view::BitView;
 use std::path::Path;
 
 pub struct BinaryMmap {
@@ -23,11 +22,12 @@ impl Storage for BinaryMmap {
     }
 
     fn vector(&self, i: u32) -> BinaryVecRef<'_> {
-        let bit_size = (self.dims as usize).div_ceil(std::mem::size_of::<usize>() * 8);
-        let s = i as usize * bit_size;
-        let e = (i + 1) as usize * bit_size;
+        let size = (self.dims as usize).div_ceil(std::mem::size_of::<usize>() * 8);
+        let s = i as usize * size;
+        let e = (i + 1) as usize * size;
         BinaryVecRef {
-            values: &self.vectors[s..e].view_bits()[..self.dims as usize],
+            dims: self.dims,
+            data: &self.vectors[s..e],
         }
     }
 
@@ -53,9 +53,7 @@ impl Storage for BinaryMmap {
         ram: RawRam<S>,
     ) -> Self {
         let n = ram.len();
-        let vectors_iter = (0..n)
-            .flat_map(|i| ram.vector(i).as_bytes().iter())
-            .copied();
+        let vectors_iter = (0..n).flat_map(|i| ram.vector(i).data.iter()).copied();
         let payload_iter = (0..n).map(|i| ram.payload(i));
         let vectors = MmapArray::create(&path.join("vectors"), vectors_iter);
         let payload = MmapArray::create(&path.join("payload"), payload_iter);

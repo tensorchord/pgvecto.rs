@@ -32,7 +32,8 @@ fn test_v_binary_cosine() {
     let r = unsafe { v_binary_cosine(a.as_ptr().cast(), b.as_ptr().cast(), n) };
     if detect::x86_64::detect_avx512vpopcntdq() {
         println!("detected avx512vpopcntdq");
-        let c = unsafe { c::v_binary_cosine_avx512vpopcntdq(a.as_ptr().cast(), b.as_ptr().cast(), n) };
+        let c =
+            unsafe { c::v_binary_cosine_avx512vpopcntdq(a.as_ptr().cast(), b.as_ptr().cast(), n) };
         assert!((c - r).abs() < EPSILON, "c = {c}, r = {r}.");
     } else {
         println!("detected no avx512vpopcntdq, skipped");

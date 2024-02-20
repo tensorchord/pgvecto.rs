@@ -7,22 +7,31 @@ use std::ops::Deref;
 #[pgrx::pg_extern(immutable, parallel_safe)]
 fn _vectors_bvector_operator_and(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> BVectorOutput {
     check_matched_dimensions(lhs.dims() as _, rhs.dims() as _);
-    let results = lhs.data().values.to_bitvec() & rhs.data().values;
-    BVector::new_in_postgres(BinaryVecRef { values: &results })
+    let mut results = BinaryVec::new(lhs.dims());
+    for i in 0..results.data.len() {
+        results.data[i] = lhs.data().data[i] & rhs.data().data[i];
+    }
+    BVector::new_in_postgres(BinaryVecRef::from(&results))
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe)]
 fn _vectors_bvector_operator_or(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> BVectorOutput {
     check_matched_dimensions(lhs.dims() as _, rhs.dims() as _);
-    let results = lhs.data().values.to_bitvec() | rhs.data().values;
-    BVector::new_in_postgres(BinaryVecRef { values: &results })
+    let mut results = BinaryVec::new(lhs.dims());
+    for i in 0..results.data.len() {
+        results.data[i] = lhs.data().data[i] | rhs.data().data[i];
+    }
+    BVector::new_in_postgres(BinaryVecRef::from(&results))
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe)]
 fn _vectors_bvector_operator_xor(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> BVectorOutput {
     check_matched_dimensions(lhs.dims() as _, rhs.dims() as _);
-    let results = lhs.data().values.to_bitvec() ^ rhs.data().values;
-    BVector::new_in_postgres(BinaryVecRef { values: &results })
+    let mut results = BinaryVec::new(lhs.dims());
+    for i in 0..results.data.len() {
+        results.data[i] = lhs.data().data[i] ^ rhs.data().data[i];
+    }
+    BVector::new_in_postgres(BinaryVecRef::from(&results))
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe)]

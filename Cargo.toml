@@ -16,7 +16,6 @@ pg_test = []
 [dependencies]
 arrayvec.workspace = true
 bincode.workspace = true
-bitvec.workspace = true
 bytemuck.workspace = true
 byteorder.workspace = true
 half.workspace = true
@@ -67,7 +66,6 @@ edition = "2021"
 [workspace.dependencies]
 arrayvec = "~0.7"
 bincode = "~1.3"
-bitvec = { version = "~1.0", features = ["serde"] }
 bytemuck = { version = "~1.14", features = ["extern_crate_alloc"] }
 byteorder = "~1.5"
 half = { version = "~2.3", features = [

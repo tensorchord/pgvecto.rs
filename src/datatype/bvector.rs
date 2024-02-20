@@ -1,7 +1,5 @@
 use crate::datatype::typmod::Typmod;
 use crate::prelude::*;
-use bitvec::bitvec;
-use bitvec::view::BitView;
 use pgrx::pg_sys::Datum;
 use pgrx::pg_sys::Oid;
 use pgrx::pgrx_sql_entity_graph::metadata::ArgumentError;
@@ -44,8 +42,7 @@ impl BVector {
     }
     pub fn new_in_postgres(vector: BinaryVecRef<'_>) -> BVectorOutput {
         unsafe {
-            let dims = vector.values.len();
-            assert!((1..=65535).contains(&dims));
+            let dims = vector.dims as usize;
             let layout = BVector::layout(dims);
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut BVector;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
@@ -54,7 +51,7 @@ impl BVector {
             std::ptr::addr_of_mut!((*ptr).reserved).write(0);
             std::ptr::addr_of_mut!((*ptr).dims).write(dims as u16);
             std::ptr::copy_nonoverlapping(
-                vector.values.as_bitptr().pointer(),
+                vector.data.as_ptr(),
                 (*ptr).phantom.as_mut_ptr(),
                 dims.div_ceil(std::mem::size_of::<usize>() * 8),
             );
@@ -81,13 +78,13 @@ impl BVector {
         debug_assert_eq!(self.varlena & 3, 0);
         debug_assert_eq!(self.kind, 3);
         BinaryVecRef {
-            values: &unsafe {
+            dims: self.dims,
+            data: unsafe {
                 std::slice::from_raw_parts(
                     self.phantom.as_ptr(),
-                    (self.dims as usize).div_ceil(std::mem::size_of::<usize>() * 8),
+                    self.dims.div_ceil(std::mem::size_of::<usize>() as u16 * 8) as usize,
                 )
-            }
-            .view_bits()[..self.dims as usize],
+            },
         }
     }
 }
@@ -233,11 +230,13 @@ fn _vectors_bvector_in(input: &CStr, _oid: Oid, typmod: i32) -> BVectorOutput {
         }
         Ok(vector) => {
             check_value_dimensions(vector.len());
-            let mut values = bitvec![0; vector.len()];
-            for (i, x) in vector.iter().enumerate() {
-                values.set(i, *x);
+            let mut values = BinaryVec::new(vector.len() as u16);
+            for (i, &x) in vector.iter().enumerate() {
+                if x {
+                    values.set(i, true);
+                }
             }
-            BVector::new_in_postgres(BinaryVecRef { values: &values })
+            BVector::new_in_postgres(BinaryVecRef::from(&values))
         }
     }
 }
@@ -246,12 +245,12 @@ fn _vectors_bvector_in(input: &CStr, _oid: Oid, typmod: i32) -> BVectorOutput {
 fn _vectors_bvector_out(vector: BVectorInput<'_>) -> CString {
     let mut buffer = String::new();
     buffer.push('[');
-    let mut iter = vector.data().values.iter();
+    let mut iter = vector.data().iter();
     if let Some(x) = iter.next() {
-        write!(buffer, "{}", *x as u32).unwrap();
+        write!(buffer, "{}", x as u32).unwrap();
     }
     for x in iter {
-        write!(buffer, ", {}", *x as u32).unwrap();
+        write!(buffer, ", {}", x as u32).unwrap();
     }
     buffer.push(']');
     CString::new(buffer).unwrap()
@@ -417,9 +416,24 @@ fn _vectors_bvector_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum 
                     (*op).resnull.write(true);
                     return;
                 }
-                let mut values = bitvec![0; end as usize - start as usize];
-                values.copy_from_bitslice(&input.data().values[start as usize..end as usize]);
-                let output = BVector::new_in_postgres(BinaryVecRef { values: &values });
+                let dims = end - start;
+                let mut values = BinaryVec::new(dims);
+                if start % (std::mem::size_of::<usize>() as u16 * 8) == 0 {
+                    let start_idx = start as usize / (std::mem::size_of::<usize>() * 8);
+                    let end_idx = (end as usize).div_ceil(std::mem::size_of::<usize>() * 8);
+                    values
+                        .data
+                        .copy_from_slice(&input.data().data[start_idx..end_idx]);
+                } else {
+                    let mut i = 0;
+                    let mut j = start as usize;
+                    while j < end as usize {
+                        values.set(i, input.data().get(j));
+                        i += 1;
+                        j += 1;
+                    }
+                }
+                let output = BVector::new_in_postgres(BinaryVecRef::from(&values));
                 (*op).resvalue.write(output.into_datum().unwrap());
                 (*op).resnull.write(false);
             }
