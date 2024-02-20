@@ -55,14 +55,6 @@ jobs:
         run: |
           sed -i "s/@CARGO_VERSION@/${{ needs.semver.outputs.version }}/g" ./vectors.control
           cat ./vectors.control
-      - uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-          key: cargo-${{ runner.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
-          restore-keys: cargo-${{ runner.os }}-pg${{ matrix.version }}
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Prepare
         run: |
