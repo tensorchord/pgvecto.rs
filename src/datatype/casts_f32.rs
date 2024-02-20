@@ -1,8 +1,12 @@
+use crate::datatype::bvector::{BVector, BVectorOutput};
 use crate::datatype::svecf32::{SVecf32, SVecf32Input, SVecf32Output};
 use crate::datatype::vecf16::{Vecf16, Vecf16Input, Vecf16Output};
 use crate::datatype::vecf32::{Vecf32, Vecf32Input, Vecf32Output};
 use crate::prelude::{FriendlyError, SessionError};
+use bitvec::bitvec;
 use service::prelude::*;
+
+use super::bvector::BVectorInput;
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_cast_array_to_vecf32(
@@ -83,5 +87,41 @@ fn _vectors_cast_svecf32_to_vecf32(
     _explicit: bool,
 ) -> Vecf32Output {
     let data = vector.data().to_dense();
+    Vecf32::new_in_postgres(&data)
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_cast_vecf32_to_bvector(
+    vector: Vecf32Input<'_>,
+    _typmod: i32,
+    _explicit: bool,
+) -> BVectorOutput {
+    let mut values = bitvec![0; vector.len()];
+    for (i, &x) in vector.data().iter().enumerate() {
+        match x.to_f32() {
+            x if x == 0. => {}
+            x if x == 1. => values.set(i, true),
+            _ => SessionError::BadLiteral {
+                hint: "The vector contains a non-binary value.".to_string(),
+            }
+            .friendly(),
+        }
+    }
+
+    BVector::new_in_postgres(BinaryVecRef { values: &values })
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_cast_bvector_to_vecf32(
+    vector: BVectorInput<'_>,
+    _typmod: i32,
+    _explicit: bool,
+) -> Vecf32Output {
+    let data: Vec<F32> = vector
+        .data()
+        .values
+        .iter()
+        .map(|x| F32(*x as u32 as f32))
+        .collect();
     Vecf32::new_in_postgres(&data)
 }

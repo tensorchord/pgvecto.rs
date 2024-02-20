@@ -56,7 +56,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         let mut min = vec![S::Scalar::infinity(); dims as usize];
         let n = raw.len();
         for i in 0..n {
-            let vector = S::to_dense(raw.vector(i));
+            let vector = S::to_scalar_vec(raw.vector(i));
             for j in 0..dims as usize {
                 max[j] = std::cmp::max(max[j], vector[j]);
                 min[j] = std::cmp::min(min[j], vector[j]);
@@ -65,7 +65,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         std::fs::write(path.join("max"), serde_json::to_string(&max).unwrap()).unwrap();
         std::fs::write(path.join("min"), serde_json::to_string(&min).unwrap()).unwrap();
         let codes_iter = (0..n).flat_map(|i| {
-            let vector = S::to_dense(raw.vector(i));
+            let vector = S::to_scalar_vec(raw.vector(i));
             let mut result = vec![0u8; dims as usize];
             for i in 0..dims as usize {
                 let w = (((vector[i] - min[i]) / (max[i] - min[i])).to_f32() * 256.0) as u32;

@@ -11,6 +11,7 @@ impl G for F16L2 {
     type L2 = F16L2;
     type VectorOwned = Vec<F16>;
     type VectorRef<'a> = &'a [F16];
+    type VectorNormalized = Vec<F16>;
 
     const DISTANCE: Distance = Distance::L2;
     const KIND: Kind = Kind::F16;
@@ -23,7 +24,7 @@ impl G for F16L2 {
         vector.to_vec()
     }
 
-    fn to_dense(vector: Self::VectorRef<'_>) -> Cow<'_, [F16]> {
+    fn to_scalar_vec(vector: Self::VectorRef<'_>) -> Cow<'_, [F16]> {
         Cow::Borrowed(vector)
     }
 
@@ -33,13 +34,15 @@ impl G for F16L2 {
 
     fn elkan_k_means_normalize(_: &mut [F16]) {}
 
-    fn elkan_k_means_normalize2(_: &mut Vec<F16>) {}
+    fn elkan_k_means_normalize2(vector: &[F16]) -> Vec<F16> {
+        vector.to_vec()
+    }
 
     fn elkan_k_means_distance(lhs: &[F16], rhs: &[F16]) -> F32 {
         super::f16::sl2(lhs, rhs).sqrt()
     }
 
-    fn elkan_k_means_distance2(lhs: &[F16], rhs: &[F16]) -> F32 {
+    fn elkan_k_means_distance2(lhs: &Vec<F16>, rhs: &[F16]) -> F32 {
         super::f16::sl2(lhs, rhs).sqrt()
     }
 

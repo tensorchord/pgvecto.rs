@@ -1,5 +1,6 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
+use crate::datatype::bvector::BVector;
 use crate::datatype::svecf32::SVecf32;
 use crate::datatype::vecf16::Vecf16;
 use crate::datatype::vecf32::Vecf32;
@@ -23,6 +24,7 @@ pub unsafe fn from_datum(datum: pgrx::pg_sys::Datum) -> DynamicVector {
             let svec = &*q.cast::<SVecf32>();
             DynamicVector::SparseF32(SparseF32::from(svec.data()))
         }
+        3 => DynamicVector::Binary(BinaryVec::from((*q.cast::<BVector>()).data())),
         _ => unreachable!(),
     };
     if p != q {

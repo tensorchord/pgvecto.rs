@@ -1,3 +1,7 @@
+mod binary;
+mod binary_cos;
+mod binary_dot;
+mod binary_l2;
 mod f16;
 mod f16_cos;
 mod f16_dot;
@@ -20,6 +24,9 @@ pub use f32_l2::F32L2;
 pub use sparse_f32_cos::SparseF32Cos;
 pub use sparse_f32_dot::SparseF32Dot;
 pub use sparse_f32_l2::SparseF32L2;
+pub use binary_cos::BinaryCos;
+pub use binary_dot::BinaryDot;
+pub use binary_l2::BinaryL2;
 
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -50,49 +57,63 @@ pub trait G: Copy + Debug + 'static {
     type VectorRef<'a>: Vector + Copy + 'a
     where
         Self: 'a;
+    type VectorNormalized: Vector;
 
     const DISTANCE: Distance;
     const KIND: Kind;
 
     fn owned_to_ref(vector: &Self::VectorOwned) -> Self::VectorRef<'_>;
     fn ref_to_owned(vector: Self::VectorRef<'_>) -> Self::VectorOwned;
-    fn to_dense(vector: Self::VectorRef<'_>) -> Cow<'_, [Self::Scalar]>;
+    fn to_scalar_vec(vector: Self::VectorRef<'_>) -> Cow<'_, [Self::Scalar]>;
     fn distance(lhs: Self::VectorRef<'_>, rhs: Self::VectorRef<'_>) -> F32;
 
     fn elkan_k_means_normalize(vector: &mut [Self::Scalar]);
-    fn elkan_k_means_normalize2(vector: &mut Self::VectorOwned);
+    fn elkan_k_means_normalize2(vector: Self::VectorRef<'_>) -> Self::VectorNormalized;
     fn elkan_k_means_distance(lhs: &[Self::Scalar], rhs: &[Self::Scalar]) -> F32;
-    fn elkan_k_means_distance2(lhs: Self::VectorRef<'_>, rhs: &[Self::Scalar]) -> F32;
+    fn elkan_k_means_distance2(lhs: &Self::VectorNormalized, rhs: &[Self::Scalar]) -> F32;
 
+    #[allow(unused_variables)]
     fn scalar_quantization_distance(
         dims: u16,
         max: &[Self::Scalar],
         min: &[Self::Scalar],
         lhs: Self::VectorRef<'_>,
         rhs: &[u8],
-    ) -> F32;
+    ) -> F32 {
+        unimplemented!()
+    }
+    #[allow(unused_variables)]
     fn scalar_quantization_distance2(
         dims: u16,
         max: &[Self::Scalar],
         min: &[Self::Scalar],
         lhs: &[u8],
         rhs: &[u8],
-    ) -> F32;
+    ) -> F32 {
+        unimplemented!()
+    }
 
+    #[allow(unused_variables)]
     fn product_quantization_distance(
         dims: u16,
         ratio: u16,
         centroids: &[Self::Scalar],
         lhs: Self::VectorRef<'_>,
         rhs: &[u8],
-    ) -> F32;
+    ) -> F32 {
+        unimplemented!()
+    }
+    #[allow(unused_variables)]
     fn product_quantization_distance2(
         dims: u16,
         ratio: u16,
         centroids: &[Self::Scalar],
         lhs: &[u8],
         rhs: &[u8],
-    ) -> F32;
+    ) -> F32 {
+        unimplemented!()
+    }
+    #[allow(unused_variables)]
     fn product_quantization_distance_with_delta(
         dims: u16,
         ratio: u16,
@@ -100,7 +121,9 @@ pub trait G: Copy + Debug + 'static {
         lhs: Self::VectorRef<'_>,
         rhs: &[u8],
         delta: &[Self::Scalar],
-    ) -> F32;
+    ) -> F32 {
+        unimplemented!()
+    }
 }
 
 pub trait FloatCast: Sized {
@@ -135,6 +158,7 @@ pub enum DynamicVector {
     F32(Vec<F32>),
     F16(Vec<F16>),
     SparseF32(SparseF32),
+    Binary(BinaryVec),
 }
 
 impl From<Vec<F32>> for DynamicVector {
@@ -155,6 +179,12 @@ impl From<SparseF32> for DynamicVector {
     }
 }
 
+impl From<BinaryVec> for DynamicVector {
+    fn from(value: BinaryVec) -> Self {
+        Self::Binary(value)
+    }
+}
+
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Distance {
@@ -169,4 +199,5 @@ pub enum Kind {
     F32,
     F16,
     SparseF32,
+    Binary,
 }

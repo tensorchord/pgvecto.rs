@@ -62,7 +62,9 @@ pub struct IndexOptions {
 }
 
 fn validate_index_options(options: &IndexOptions) -> Result<(), ValidationError> {
-    if options.vector.k == Kind::SparseF32 && options.indexing.has_quantization() {
+    if (options.vector.k == Kind::SparseF32 || options.vector.k == Kind::Binary)
+        && options.indexing.has_quantization()
+    {
         return Err(ValidationError::new(
             "quantization is not supported for sparse vector",
         ));

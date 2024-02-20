@@ -18,9 +18,12 @@ pub enum Instance {
     F16Cos(Arc<Index<F16Cos>>),
     F16Dot(Arc<Index<F16Dot>>),
     F16L2(Arc<Index<F16L2>>),
-    SparseF32L2(Arc<Index<SparseF32L2>>),
     SparseF32Cos(Arc<Index<SparseF32Cos>>),
     SparseF32Dot(Arc<Index<SparseF32Dot>>),
+    SparseF32L2(Arc<Index<SparseF32L2>>),
+    BinaryCos(Arc<Index<BinaryCos>>),
+    BinaryDot(Arc<Index<BinaryDot>>),
+    BinaryL2(Arc<Index<BinaryL2>>),
     Upgrade,
 }
 
@@ -57,11 +60,6 @@ impl Instance {
                 self::metadata::Metadata::write(path.join("metadata"));
                 Ok(Self::F16L2(index))
             }
-            (Distance::L2, Kind::SparseF32) => {
-                let index = Index::create(path.clone(), options)?;
-                self::metadata::Metadata::write(path.join("metadata"));
-                Ok(Self::SparseF32L2(index))
-            }
             (Distance::Cos, Kind::SparseF32) => {
                 let index = Index::create(path.clone(), options)?;
                 self::metadata::Metadata::write(path.join("metadata"));
@@ -71,6 +69,26 @@ impl Instance {
                 let index = Index::create(path.clone(), options)?;
                 self::metadata::Metadata::write(path.join("metadata"));
                 Ok(Self::SparseF32Dot(index))
+            }
+            (Distance::L2, Kind::SparseF32) => {
+                let index = Index::create(path.clone(), options)?;
+                self::metadata::Metadata::write(path.join("metadata"));
+                Ok(Self::SparseF32L2(index))
+            }
+            (Distance::Cos, Kind::Binary) => {
+                let index = Index::create(path.clone(), options)?;
+                self::metadata::Metadata::write(path.join("metadata"));
+                Ok(Self::BinaryCos(index))
+            }
+            (Distance::Dot, Kind::Binary) => {
+                let index = Index::create(path.clone(), options)?;
+                self::metadata::Metadata::write(path.join("metadata"));
+                Ok(Self::BinaryDot(index))
+            }
+            (Distance::L2, Kind::Binary) => {
+                let index = Index::create(path.clone(), options)?;
+                self::metadata::Metadata::write(path.join("metadata"));
+                Ok(Self::BinaryL2(index))
             }
         }
     }
@@ -88,9 +106,12 @@ impl Instance {
             (Distance::Cos, Kind::F16) => Self::F16Cos(Index::open(path)),
             (Distance::Dot, Kind::F16) => Self::F16Dot(Index::open(path)),
             (Distance::L2, Kind::F16) => Self::F16L2(Index::open(path)),
-            (Distance::L2, Kind::SparseF32) => Self::SparseF32L2(Index::open(path)),
             (Distance::Cos, Kind::SparseF32) => Self::SparseF32Cos(Index::open(path)),
             (Distance::Dot, Kind::SparseF32) => Self::SparseF32Dot(Index::open(path)),
+            (Distance::L2, Kind::SparseF32) => Self::SparseF32L2(Index::open(path)),
+            (Distance::Cos, Kind::Binary) => Self::BinaryCos(Index::open(path)),
+            (Distance::Dot, Kind::Binary) => Self::BinaryDot(Index::open(path)),
+            (Distance::L2, Kind::Binary) => Self::BinaryL2(Index::open(path)),
         }
     }
     pub fn refresh(&self) {
@@ -101,9 +122,12 @@ impl Instance {
             Instance::F16Cos(x) => x.refresh(),
             Instance::F16Dot(x) => x.refresh(),
             Instance::F16L2(x) => x.refresh(),
-            Instance::SparseF32L2(x) => x.refresh(),
             Instance::SparseF32Cos(x) => x.refresh(),
             Instance::SparseF32Dot(x) => x.refresh(),
+            Instance::SparseF32L2(x) => x.refresh(),
+            Instance::BinaryCos(x) => x.refresh(),
+            Instance::BinaryDot(x) => x.refresh(),
+            Instance::BinaryL2(x) => x.refresh(),
             Instance::Upgrade => (),
         }
     }
@@ -115,9 +139,12 @@ impl Instance {
             Instance::F16Cos(x) => Some(InstanceView::F16Cos(x.view())),
             Instance::F16Dot(x) => Some(InstanceView::F16Dot(x.view())),
             Instance::F16L2(x) => Some(InstanceView::F16L2(x.view())),
-            Instance::SparseF32L2(x) => Some(InstanceView::SparseF32L2(x.view())),
             Instance::SparseF32Cos(x) => Some(InstanceView::SparseF32Cos(x.view())),
             Instance::SparseF32Dot(x) => Some(InstanceView::SparseF32Dot(x.view())),
+            Instance::SparseF32L2(x) => Some(InstanceView::SparseF32L2(x.view())),
+            Instance::BinaryCos(x) => Some(InstanceView::BinaryCos(x.view())),
+            Instance::BinaryDot(x) => Some(InstanceView::BinaryDot(x.view())),
+            Instance::BinaryL2(x) => Some(InstanceView::BinaryL2(x.view())),
             Instance::Upgrade => None,
         }
     }
@@ -132,6 +159,9 @@ impl Instance {
             Instance::SparseF32L2(x) => x.stat(),
             Instance::SparseF32Cos(x) => x.stat(),
             Instance::SparseF32Dot(x) => x.stat(),
+            Instance::BinaryCos(x) => x.stat(),
+            Instance::BinaryDot(x) => x.stat(),
+            Instance::BinaryL2(x) => x.stat(),
             Instance::Upgrade => IndexStat::Upgrade,
         }
     }
@@ -147,6 +177,9 @@ pub enum InstanceView {
     SparseF32Cos(Arc<IndexView<SparseF32Cos>>),
     SparseF32Dot(Arc<IndexView<SparseF32Dot>>),
     SparseF32L2(Arc<IndexView<SparseF32L2>>),
+    BinaryCos(Arc<IndexView<BinaryCos>>),
+    BinaryDot(Arc<IndexView<BinaryDot>>),
+    BinaryL2(Arc<IndexView<BinaryL2>>),
 }
 
 impl InstanceView {
@@ -182,6 +215,15 @@ impl InstanceView {
                 Ok(Box::new(x.basic(vector.into(), opts, filter)?))
             }
             (InstanceView::SparseF32L2(x), DynamicVector::SparseF32(vector)) => {
+                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
+            }
+            (InstanceView::BinaryCos(x), DynamicVector::Binary(vector)) => {
+                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
+            }
+            (InstanceView::BinaryDot(x), DynamicVector::Binary(vector)) => {
+                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
+            }
+            (InstanceView::BinaryL2(x), DynamicVector::Binary(vector)) => {
                 Ok(Box::new(x.basic(vector.into(), opts, filter)?))
             }
             _ => Err(ServiceError::Unmatched),
@@ -221,6 +263,15 @@ impl InstanceView {
             (InstanceView::SparseF32L2(x), DynamicVector::SparseF32(vector)) => {
                 Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
             }
+            (InstanceView::BinaryCos(x), DynamicVector::Binary(vector)) => {
+                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
+            }
+            (InstanceView::BinaryDot(x), DynamicVector::Binary(vector)) => {
+                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
+            }
+            (InstanceView::BinaryL2(x), DynamicVector::Binary(vector)) => {
+                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
+            }
             _ => Err(ServiceError::Unmatched),
         }
     }
@@ -235,6 +286,9 @@ impl InstanceView {
             InstanceView::SparseF32Cos(x) => Box::new(x.list()),
             InstanceView::SparseF32Dot(x) => Box::new(x.list()),
             InstanceView::SparseF32L2(x) => Box::new(x.list()),
+            InstanceView::BinaryCos(x) => Box::new(x.list()),
+            InstanceView::BinaryDot(x) => Box::new(x.list()),
+            InstanceView::BinaryL2(x) => Box::new(x.list()),
         }
     }
     pub fn insert(
@@ -258,6 +312,13 @@ impl InstanceView {
             (InstanceView::SparseF32L2(x), DynamicVector::SparseF32(vector)) => {
                 x.insert(vector, pointer)
             }
+            (InstanceView::BinaryCos(x), DynamicVector::Binary(vector)) => {
+                x.insert(vector, pointer)
+            }
+            (InstanceView::BinaryDot(x), DynamicVector::Binary(vector)) => {
+                x.insert(vector, pointer)
+            }
+            (InstanceView::BinaryL2(x), DynamicVector::Binary(vector)) => x.insert(vector, pointer),
             _ => Err(ServiceError::Unmatched),
         }
     }
@@ -272,6 +333,9 @@ impl InstanceView {
             InstanceView::SparseF32Cos(x) => x.delete(pointer),
             InstanceView::SparseF32Dot(x) => x.delete(pointer),
             InstanceView::SparseF32L2(x) => x.delete(pointer),
+            InstanceView::BinaryCos(x) => x.delete(pointer),
+            InstanceView::BinaryDot(x) => x.delete(pointer),
+            InstanceView::BinaryL2(x) => x.delete(pointer),
         }
     }
     pub fn flush(&self) {
@@ -285,6 +349,9 @@ impl InstanceView {
             InstanceView::SparseF32Cos(x) => x.flush(),
             InstanceView::SparseF32Dot(x) => x.flush(),
             InstanceView::SparseF32L2(x) => x.flush(),
+            InstanceView::BinaryCos(x) => x.flush(),
+            InstanceView::BinaryDot(x) => x.flush(),
+            InstanceView::BinaryL2(x) => x.flush(),
         }
     }
 }

@@ -146,7 +146,8 @@ pub fn make<S: G>(
     let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
     let mut samples = Vec2::new(dims, m as usize);
     for i in 0..m {
-        samples[i as usize].copy_from_slice(S::to_dense(raw.vector(f[i as usize] as u32)).as_ref());
+        samples[i as usize]
+            .copy_from_slice(S::to_scalar_vec(raw.vector(f[i as usize] as u32)).as_ref());
         S::elkan_k_means_normalize(&mut samples[i as usize]);
     }
     let mut k_means = ElkanKMeans::<S>::new(nlist as usize, samples);
@@ -264,12 +265,11 @@ pub fn basic<S: G>(
     nprobe: u32,
     mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
-    let mut target = S::ref_to_owned(vector);
-    S::elkan_k_means_normalize2(&mut target);
+    let target = S::elkan_k_means_normalize2(vector);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::elkan_k_means_distance2(S::owned_to_ref(&target), centroid);
+        let distance = S::elkan_k_means_distance2(&target, centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,
@@ -301,12 +301,11 @@ pub fn vbase<'a, S: G>(
     nprobe: u32,
     mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-    let mut target = S::ref_to_owned(vector);
-    S::elkan_k_means_normalize2(&mut target);
+    let target = S::elkan_k_means_normalize2(vector);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::elkan_k_means_distance2(S::owned_to_ref(&target), centroid);
+        let distance = S::elkan_k_means_distance2(&target, centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,

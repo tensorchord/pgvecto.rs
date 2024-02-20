@@ -1,4 +1,6 @@
+pub mod bvector;
 pub mod casts_f32;
+pub mod operators_bvector;
 pub mod operators_svecf32;
 pub mod operators_vecf16;
 pub mod operators_vecf32;
