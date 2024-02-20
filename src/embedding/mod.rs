@@ -1,2 +1,2 @@
-pub mod openai;
+mod openai;
 mod udf;

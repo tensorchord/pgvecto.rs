@@ -1,6 +1,16 @@
-use crate::prelude::embedding_failed;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+#[error(
+    "\
+Error happens at embedding.
+INFORMATION: hint = {hint}"
+)]
+pub struct EmbeddingError {
+    pub hint: String,
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EmbeddingData {
@@ -39,10 +49,12 @@ pub struct EmbeddingResponse {
 }
 
 impl EmbeddingResponse {
-    pub fn pop_embedding(mut self) -> Vec<f32> {
+    pub fn try_pop_embedding(mut self) -> Result<Vec<f32>, EmbeddingError> {
         match self.data.pop() {
-            Some(d) => d.embedding,
-            None => embedding_failed("no embedding from service"),
+            Some(d) => Ok(d.embedding),
+            None => Err(EmbeddingError {
+                hint: "no embedding from service".to_string(),
+            }),
         }
     }
 }

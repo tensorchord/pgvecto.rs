@@ -2,32 +2,45 @@ use std::time::Duration;
 
 use crate::datatype::vecf32::{Vecf32, Vecf32Output};
 use crate::gucs::embedding::{openai_options, OpenAIOptions};
-use crate::prelude::embedding_failed;
-use pgrx::default;
+use pgrx::error;
 use reqwest::blocking::Client;
 use service::prelude::F32;
 
-use super::openai::{EmbeddingRequest, EmbeddingResponse};
+use super::openai::{EmbeddingError, EmbeddingRequest, EmbeddingResponse};
 
 #[pgrx::pg_extern(volatile, strict)]
-fn _vectors_ai_embedding_vector(
-    input: String,
-    model: default!(String, "'text-embedding-ada-002'"),
-) -> Vecf32Output {
+fn _vectors_ai_embedding_vector_v3(input: String) -> Vecf32Output {
+    _vectors_ai_embedding_vector(input, "text-embedding-3-small".to_string())
+}
+
+#[pgrx::pg_extern(volatile, strict)]
+fn _vectors_ai_embedding_vector(input: String, model: String) -> Vecf32Output {
     let options = openai_options();
-    let embedding = openai_embedding(input, model, options)
-        .pop_embedding()
-        .into_iter()
-        .map(F32)
-        .collect::<Vec<_>>();
+    let resp = match openai_embedding(input, model, options) {
+        Ok(r) => r,
+        Err(e) => error!("{}", e.to_string()),
+    };
+    let embedding = match resp.try_pop_embedding() {
+        Ok(emb) => emb.into_iter().map(F32).collect::<Vec<_>>(),
+        Err(e) => error!("{}", e.to_string()),
+    };
+
     Vecf32::new_in_postgres(&embedding)
 }
 
-pub fn openai_embedding(input: String, model: String, opt: OpenAIOptions) -> EmbeddingResponse {
+pub fn openai_embedding(
+    input: String,
+    model: String,
+    opt: OpenAIOptions,
+) -> Result<EmbeddingResponse, EmbeddingError> {
     let url = format!("{}/embeddings", opt.base_url);
     let client = match Client::builder().timeout(Duration::from_secs(30)).build() {
         Ok(c) => c,
-        Err(e) => embedding_failed(&e.to_string()),
+        Err(e) => {
+            return Err(EmbeddingError {
+                hint: e.to_string(),
+            })
+        }
     };
     let form: EmbeddingRequest = EmbeddingRequest::new(model.to_string(), input);
     let resp = match client
@@ -37,11 +50,17 @@ pub fn openai_embedding(input: String, model: String, opt: OpenAIOptions) -> Emb
         .send()
     {
         Ok(c) => c,
-        Err(e) => embedding_failed(&e.to_string()),
+        Err(e) => {
+            return Err(EmbeddingError {
+                hint: e.to_string(),
+            })
+        }
     };
     match resp.json::<EmbeddingResponse>() {
-        Ok(c) => c,
-        Err(e) => embedding_failed(&e.to_string()),
+        Ok(c) => Ok(c),
+        Err(e) => Err(EmbeddingError {
+            hint: e.to_string(),
+        }),
     }
 }
 
@@ -92,8 +111,9 @@ mod tests {
         };
 
         let real_resp = openai_embedding("mock-input".to_string(), "mock-model".to_string(), opt);
-        let real_embedding = real_resp.pop_embedding();
-        assert_eq!(real_embedding, embedding);
+        assert!(real_resp.is_ok());
+        let real_embedding = real_resp.unwrap().try_pop_embedding();
+        assert!(real_embedding.is_ok());
     }
 
     #[test]
@@ -115,8 +135,9 @@ mod tests {
         };
 
         let real_resp = openai_embedding("mock-input".to_string(), "mock-model".to_string(), opt);
-        let expect_panic = std::panic::catch_unwind(|| real_resp.pop_embedding());
-        assert!(expect_panic.is_err());
+        assert!(real_resp.is_ok());
+        let real_embedding = real_resp.unwrap().try_pop_embedding();
+        assert!(real_embedding.is_err());
     }
 
     #[test]
@@ -135,9 +156,7 @@ mod tests {
             api_key: "fake-key".to_string(),
         };
 
-        let real_resp = std::panic::catch_unwind(|| {
-            openai_embedding("mock-input".to_string(), "mock-model".to_string(), opt)
-        });
+        let real_resp = openai_embedding("mock-input".to_string(), "mock-model".to_string(), opt);
         assert!(real_resp.is_err());
     }
 }

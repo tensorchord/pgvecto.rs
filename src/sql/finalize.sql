@@ -340,6 +340,12 @@ CREATE OPERATOR <=> (
 
 -- List of functions
 
+CREATE FUNCTION text2vec_openai(input TEXT, model TEXT) RETURNS vector
+STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_ai_embedding_vector_wrapper';
+
+CREATE FUNCTION text2vec_openai_v3(input TEXT) RETURNS vector
+STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_ai_embedding_vector_v3_wrapper';
+
 CREATE FUNCTION pgvectors_upgrade() RETURNS void
 STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 

@@ -1,19 +1,6 @@
-use std::ffi::CStr;
-
+use super::guc_string_parse;
 use pgrx::{GucContext, GucFlags, GucRegistry, GucSetting};
-
-use crate::prelude::guc_parse_failed;
-
-fn guc_string_parse(target: &'static GucSetting<Option<&'static CStr>>, name: String) -> String {
-    let value = match target.get() {
-        Some(s) => s,
-        None => guc_parse_failed(&name, "uninitialized"),
-    };
-    match value.to_str() {
-        Ok(s) => s.to_string(),
-        Err(_e) => guc_parse_failed(&name, "utf8 parse failed"),
-    }
-}
+use std::ffi::CStr;
 
 pub struct OpenAIOptions {
     pub base_url: String,
@@ -21,8 +8,8 @@ pub struct OpenAIOptions {
 }
 
 pub fn openai_options() -> OpenAIOptions {
-    let base_url = guc_string_parse(&OPENAI_BASE_URL, "vectors.openai_base".to_string());
-    let api_key = guc_string_parse(&OPENAI_API_KEY, "vectors.openai_api_key".to_string());
+    let base_url = guc_string_parse(&OPENAI_BASE_URL, "vectors.openai_base");
+    let api_key = guc_string_parse(&OPENAI_API_KEY, "vectors.openai_api_key");
     OpenAIOptions { base_url, api_key }
 }
 
@@ -30,9 +17,7 @@ static OPENAI_API_KEY: GucSetting<Option<&'static CStr>> =
     GucSetting::<Option<&'static CStr>>::new(None);
 
 static OPENAI_BASE_URL: GucSetting<Option<&'static CStr>> =
-    GucSetting::<Option<&'static CStr>>::new(Some(unsafe {
-        CStr::from_bytes_with_nul_unchecked(b"https://api.openai.com/v1/\0")
-    }));
+    GucSetting::<Option<&'static CStr>>::new(Some(c"https://api.openai.com/v1/"));
 
 pub unsafe fn init() {
     GucRegistry::define_string_guc(
@@ -44,7 +29,7 @@ pub unsafe fn init() {
         GucFlags::default(),
     );
     GucRegistry::define_string_guc(
-        "vectors.openai_base",
+        "vectors.openai_base_url",
         "The base url of OpenAI or compatible server.",
         "",
         &OPENAI_BASE_URL,
