@@ -33,7 +33,8 @@ pub fn cosine<'a>(lhs: BinaryVecRef<'a>, rhs: BinaryVecRef<'a>) -> F32 {
     #[cfg(target_arch = "x86_64")]
     if detect::x86_64::detect_avx512vpopcntdq() {
         unsafe {
-            return c::v_binary_cosine_avx512vpopcntdq(lhs.as_ptr(), rhs.as_ptr(), lhs.len()).into();
+            return c::v_binary_cosine_avx512vpopcntdq(lhs.as_ptr(), rhs.as_ptr(), lhs.len())
+                .into();
         }
     }
     #[cfg(target_arch = "x86_64")]
