@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use base::scalar::FloatCast;
 
 pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
     #[inline(always)]

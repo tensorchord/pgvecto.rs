@@ -1,6 +1,6 @@
-use std::borrow::Cow;
-
 use crate::prelude::*;
+use base::scalar::FloatCast;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, Copy)]
 pub enum F16Dot {}

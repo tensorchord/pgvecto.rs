@@ -2,6 +2,7 @@ use crate::datatype::svecf32::{SVecf32, SVecf32Input, SVecf32Output};
 use crate::datatype::vecf16::{Vecf16, Vecf16Input, Vecf16Output};
 use crate::datatype::vecf32::{Vecf32, Vecf32Input, Vecf32Output};
 use crate::prelude::check_value_dimensions;
+use base::scalar::FloatCast;
 use service::prelude::*;
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]

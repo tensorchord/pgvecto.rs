@@ -1,5 +1,5 @@
 [package]
-name = "service"
+name = "base"
 version.workspace = true
 edition.workspace = true
 
@@ -19,7 +19,6 @@ serde_json.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
 validator.workspace = true
-base = { path = "../base" }
 c = { path = "../c" }
 detect = { path = "../detect" }
 crc32fast = "1.4.0"
