@@ -2,6 +2,8 @@ use super::Vector;
 use crate::scalar::F32;
 use serde::{Deserialize, Serialize};
 
+pub const BVEC_WIDTH: usize = std::mem::size_of::<usize>() * 8;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BinaryVec {
     pub dims: u16,
@@ -73,7 +75,7 @@ impl<'a> PartialOrd for BinaryVecRef<'a> {
 
 impl BinaryVec {
     pub fn new(dims: u16) -> Self {
-        let size = (dims as usize).div_ceil(std::mem::size_of::<usize>() * 8);
+        let size = (dims as usize).div_ceil(BVEC_WIDTH);
         Self {
             dims,
             data: vec![0; size],
@@ -83,9 +85,9 @@ impl BinaryVec {
     pub fn set(&mut self, index: usize, value: bool) {
         assert!(index < self.dims as usize);
         if value {
-            self.data[index / 32] |= 1 << (index % 32);
+            self.data[index / BVEC_WIDTH] |= 1 << (index % BVEC_WIDTH);
         } else {
-            self.data[index / 32] &= !(1 << (index % 32));
+            self.data[index / BVEC_WIDTH] &= !(1 << (index % BVEC_WIDTH));
         }
     }
 }
@@ -95,7 +97,7 @@ impl<'a> BinaryVecRef<'a> {
         let mut index = 0;
         std::iter::from_fn(move || {
             if index < self.dims as usize {
-                let result = self.data[index / 32] & (1 << (index % 32)) != 0;
+                let result = self.data[index / BVEC_WIDTH] & (1 << (index % BVEC_WIDTH)) != 0;
                 index += 1;
                 Some(result)
             } else {
@@ -106,6 +108,6 @@ impl<'a> BinaryVecRef<'a> {
 
     pub fn get(&self, index: usize) -> bool {
         assert!(index < self.dims as usize);
-        self.data[index / 32] & (1 << (index % 32)) != 0
+        self.data[index / BVEC_WIDTH] & (1 << (index % BVEC_WIDTH)) != 0
     }
 }

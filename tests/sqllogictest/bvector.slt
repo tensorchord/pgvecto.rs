@@ -36,3 +36,6 @@ SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0,1,0]'::bvector limit 
 
 statement ok
 DROP TABLE t;
+
+statement ok
+SELECT array_agg(1)::real[]::vector::bvector FROM generate_series(1, 100);

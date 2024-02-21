@@ -1,7 +1,7 @@
 mod binary;
 mod sparse_f32;
 
-pub use binary::{BinaryVec, BinaryVecRef};
+pub use binary::{BinaryVec, BinaryVecRef, BVEC_WIDTH};
 pub use sparse_f32::{SparseF32, SparseF32Ref};
 
 pub trait Vector {

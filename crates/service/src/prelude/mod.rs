@@ -8,6 +8,6 @@ pub use base::error::*;
 pub use base::scalar::{F16, F32};
 pub use base::search::{Element, Filter, Payload};
 pub use base::sys::{Handle, Pointer};
-pub use base::vector::{BinaryVec, BinaryVecRef, SparseF32, SparseF32Ref, Vector};
+pub use base::vector::{BinaryVec, BinaryVecRef, SparseF32, SparseF32Ref, Vector, BVEC_WIDTH};
 
 pub use num_traits::{Float, Zero};

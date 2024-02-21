@@ -35,8 +35,7 @@ impl BVector {
     fn layout(len: usize) -> Layout {
         u16::try_from(len).expect("Vector is too large.");
         let layout_alpha = Layout::new::<BVector>();
-        let layout_beta =
-            Layout::array::<usize>(len.div_ceil(std::mem::size_of::<usize>() * 8)).unwrap();
+        let layout_beta = Layout::array::<usize>(len.div_ceil(BVEC_WIDTH)).unwrap();
         let layout = layout_alpha.extend(layout_beta).unwrap().0;
         layout.pad_to_align()
     }
@@ -53,7 +52,7 @@ impl BVector {
             std::ptr::copy_nonoverlapping(
                 vector.data.as_ptr(),
                 (*ptr).phantom.as_mut_ptr(),
-                dims.div_ceil(std::mem::size_of::<usize>() * 8),
+                dims.div_ceil(BVEC_WIDTH),
             );
             BVectorOutput(NonNull::new(ptr).unwrap())
         }
@@ -82,7 +81,7 @@ impl BVector {
             data: unsafe {
                 std::slice::from_raw_parts(
                     self.phantom.as_ptr(),
-                    self.dims.div_ceil(std::mem::size_of::<usize>() as u16 * 8) as usize,
+                    (self.dims as usize).div_ceil(BVEC_WIDTH),
                 )
             },
         }
@@ -418,9 +417,9 @@ fn _vectors_bvector_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum 
                 }
                 let dims = end - start;
                 let mut values = BinaryVec::new(dims);
-                if start % (std::mem::size_of::<usize>() as u16 * 8) == 0 {
-                    let start_idx = start as usize / (std::mem::size_of::<usize>() * 8);
-                    let end_idx = (end as usize).div_ceil(std::mem::size_of::<usize>() * 8);
+                if start % BVEC_WIDTH as u16 == 0 {
+                    let start_idx = start as usize / BVEC_WIDTH;
+                    let end_idx = (end as usize).div_ceil(BVEC_WIDTH);
                     values
                         .data
                         .copy_from_slice(&input.data().data[start_idx..end_idx]);
@@ -469,8 +468,7 @@ fn _vectors_bvector_send(vector: BVectorInput<'_>) -> Datum {
     unsafe {
         let mut buf = StringInfoData::default();
         let len = vector.dims;
-        let bytes = (len as usize).div_ceil(std::mem::size_of::<usize>() * 8)
-            * std::mem::size_of::<usize>();
+        let bytes = (len as usize).div_ceil(BVEC_WIDTH) * std::mem::size_of::<usize>();
         pgrx::pg_sys::pq_begintypsend(&mut buf);
         pgrx::pg_sys::pq_sendbytes(&mut buf, (&len) as *const u16 as _, 2);
         pgrx::pg_sys::pq_sendbytes(&mut buf, vector.phantom.as_ptr() as _, bytes as _);
@@ -489,8 +487,7 @@ fn _vectors_bvector_recv(internal: pgrx::Internal, _oid: Oid, _typmod: i32) -> B
         if len == 0 {
             pgrx::error!("data corruption is detected");
         }
-        let bytes = (len as usize).div_ceil(std::mem::size_of::<usize>() * 8)
-            * std::mem::size_of::<usize>();
+        let bytes = (len as usize).div_ceil(BVEC_WIDTH) * std::mem::size_of::<usize>();
         let ptr = pgrx::pg_sys::pq_getmsgbytes(buf, bytes as _);
         let mut output = BVector::new_zeroed_in_postgres(len as usize);
         std::ptr::copy(ptr, output.phantom.as_mut_ptr() as _, bytes);

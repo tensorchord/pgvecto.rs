@@ -22,7 +22,7 @@ impl Storage for BinaryMmap {
     }
 
     fn vector(&self, i: u32) -> BinaryVecRef<'_> {
-        let size = (self.dims as usize).div_ceil(std::mem::size_of::<usize>() * 8);
+        let size = (self.dims as usize).div_ceil(BVEC_WIDTH);
         let s = i as usize * size;
         let e = (i + 1) as usize * size;
         BinaryVecRef {
