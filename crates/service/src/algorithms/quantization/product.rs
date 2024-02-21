@@ -67,6 +67,7 @@ pub struct ProductQuantization<S: G> {
     centroids: Vec<S::Scalar>,
     codes: MmapArray<u8>,
     precomputed_table: Vec<F32>,
+    metric: Distance,
 }
 
 unsafe impl<S: G> Send for ProductQuantization<S> {}
@@ -116,6 +117,7 @@ impl<S: G> Quan<S> for ProductQuantization<S> {
             centroids,
             codes,
             precomputed_table,
+            metric: options.vector.d,
         }
     }
 
@@ -218,6 +220,7 @@ impl<S: G> ProductQuantization<S> {
             centroids,
             codes,
             precomputed_table: Vec::new(),
+            metric: options.vector.d,
         }
     }
 
@@ -317,6 +320,7 @@ impl<S: G> ProductQuantization<S> {
             centroids,
             codes,
             precomputed_table: Vec::new(),
+            metric: options.vector.d,
         }
     }
 
@@ -353,6 +357,9 @@ impl<S: G> ProductQuantization<S> {
 
     // compute term2 at query time
     pub fn init_query(&self, query: &[S::Scalar]) -> Vec<F32> {
+        if matches!(self.metric, Distance::Cos) {
+            return Vec::new();
+        }
         let dims = self.dims;
         let ratio = self.ratio;
         let width = dims.div_ceil(ratio);
@@ -364,27 +371,38 @@ impl<S: G> ProductQuantization<S> {
                 let centroid = &self.centroids[i * dims as usize..][(j * ratio) as usize..]
                     [..subdims as usize];
                 runtime_table[j as usize * 256 + i] =
-                    F32(2.0) * inner_product::<S>(subdims, sub_query, centroid);
+                    F32(-1.0) * inner_product::<S>(subdims, sub_query, centroid);
             }
         }
         runtime_table
     }
 
     // add up all terms given codes
-    pub fn distance_with_table(
+    pub fn distance_with_codes(
         &self,
+        lhs: &[S::Scalar],
         rhs: u32,
+        delta: &[S::Scalar],
         key: usize,
         coarse_dis: F32,
         runtime_table: &[F32],
     ) -> F32 {
-        let mut result = coarse_dis * coarse_dis;
+        if matches!(self.metric, Distance::Cos) {
+            return self.distance_with_delta(lhs, rhs, delta);
+        }
+        let mut result = coarse_dis;
         let codes = self.codes(rhs);
         let width = self.dims.div_ceil(self.ratio);
         let precomputed_table = &self.precomputed_table[key * width as usize * 256..];
-        for i in 0..width {
-            result += precomputed_table[i as usize * 256 + codes[i as usize] as usize]
-                - runtime_table[i as usize * 256 + codes[i as usize] as usize];
+        if matches!(self.metric, Distance::L2) {
+            for i in 0..width {
+                result += precomputed_table[i as usize * 256 + codes[i as usize] as usize]
+                    + F32(2.0) * runtime_table[i as usize * 256 + codes[i as usize] as usize];
+            }
+        } else if matches!(self.metric, Distance::Dot) {
+            for i in 0..width {
+                result += runtime_table[i as usize * 256 + codes[i as usize] as usize];
+            }
         }
         result
     }

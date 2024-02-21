@@ -267,12 +267,12 @@ pub fn basic<S: G>(
     nprobe: u32,
     mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
-    let mut target = vector.to_vec();
-    S::elkan_k_means_normalize(&mut target);
+    let target = vector.to_vec();
+    // S::elkan_k_means_normalize(&mut target);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::elkan_k_means_distance(&target, centroid);
+        let distance = S::distance(&target, centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,
@@ -291,8 +291,10 @@ pub fn basic<S: G>(
         for j in start..end {
             let payload = mmap.payloads[j];
             if filter.check(payload) {
-                let distance = mmap.quantization.distance_with_table(
+                let distance = mmap.quantization.distance_with_codes(
+                    vector,
                     j as u32,
+                    mmap.centroids(key as u32),
                     key,
                     coarse_dis,
                     &runtime_table,
@@ -310,12 +312,12 @@ pub fn vbase<'a, S: G>(
     nprobe: u32,
     mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-    let mut target = vector.to_vec();
-    S::elkan_k_means_normalize(&mut target);
+    let target = vector.to_vec();
+    // S::elkan_k_means_normalize(&mut target);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::elkan_k_means_distance(&target, centroid);
+        let distance = S::distance(&target, centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,
@@ -334,8 +336,10 @@ pub fn vbase<'a, S: G>(
         for j in start..end {
             let payload = mmap.payloads[j];
             if filter.check(payload) {
-                let distance = mmap.quantization.distance_with_table(
+                let distance = mmap.quantization.distance_with_codes(
+                    vector,
                     j as u32,
+                    mmap.centroids(key as u32),
                     key,
                     coarse_dis,
                     &runtime_table,
