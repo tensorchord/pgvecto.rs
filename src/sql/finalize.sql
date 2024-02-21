@@ -346,6 +346,20 @@ STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 CREATE FUNCTION to_svector(dims INT, indices INT[], vals real[]) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_svector_wrapper';
 
+CREATE FUNCTION text2vec_openai(input TEXT, model TEXT) RETURNS vector
+STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_text2vec_openai_wrapper';
+
+CREATE FUNCTION text2vec_openai_v3(input TEXT) RETURNS vector
+STRICT LANGUAGE plpgsql AS
+$$
+DECLARE 
+variable vectors.vector;
+BEGIN
+  variable := vectors.text2vec_openai(input, 'text-embedding-3-small');
+  RETURN variable;
+END;
+$$;
+
 -- List of casts
 
 CREATE CAST (real[] AS vector)

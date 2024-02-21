@@ -6,6 +6,7 @@
 
 mod bgworker;
 mod datatype;
+mod embedding;
 mod gucs;
 mod index;
 mod ipc;

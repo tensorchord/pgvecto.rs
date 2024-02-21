@@ -11,6 +11,14 @@ You should edit `shared_preload_libraries` in `postgresql.conf` to include `vect
 or simply run the command `psql -U postgres -c 'ALTER SYSTEM SET shared_preload_libraries = \"vectors.so\"'`.");
 }
 
+pub fn bad_guc_literal(key: &str, hint: &str) -> ! {
+    error!(
+        "\
+Failed to parse a GUC variable.
+INFORMATION: GUC = {key}, hint = {hint}"
+    );
+}
+
 pub fn check_type_dimensions(dimensions: Option<NonZeroU16>) -> NonZeroU16 {
     match dimensions {
         None => {
