@@ -34,10 +34,10 @@ base = { path = "crates/base" }
 detect = { path = "crates/detect" }
 send_fd = { path = "crates/send_fd" }
 service = { path = "crates/service" }
+embedding = { path = "crates/embedding" }
 interprocess_atomic_wait = { path = "crates/interprocess-atomic-wait" }
 memfd = { path = "crates/memfd" }
 pgrx = { version = "0.11.3", default-features = false, features = [] }
-reqwest = { version = "0.11", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 env_logger = "0.11.2"
 toml = "0.8.10"
 

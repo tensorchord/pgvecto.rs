@@ -1,11 +1,7 @@
 use super::guc_string_parse;
+use embedding::OpenAIOptions;
 use pgrx::{GucContext, GucFlags, GucRegistry, GucSetting};
 use std::ffi::CStr;
-
-pub struct OpenAIOptions {
-    pub base_url: String,
-    pub api_key: String,
-}
 
 pub fn openai_options() -> OpenAIOptions {
     let base_url = guc_string_parse(&OPENAI_BASE_URL, "vectors.openai_base");

@@ -884,6 +884,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11157ac094ffbdde99aa67b23417ebdd801842852b500e395a45a9c0aac03e4a"
 
 [[package]]
+name = "embedding"
+version = "0.0.0"
+dependencies = [
+ "httpmock",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "ena"
 version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3266,6 +3277,7 @@ dependencies = [
  "bytemuck",
  "byteorder",
  "detect",
+ "embedding",
  "env_logger",
  "half 2.3.1",
  "httpmock",
@@ -3279,7 +3291,6 @@ dependencies = [
  "pgrx",
  "pgrx-tests",
  "rand",
- "reqwest",
  "rustix 0.38.31",
  "send_fd",
  "serde",

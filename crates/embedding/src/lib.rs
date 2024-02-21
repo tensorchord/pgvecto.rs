@@ -1,31 +1,14 @@
+pub mod openai;
+
+use crate::openai::EmbeddingError;
+use crate::openai::EmbeddingRequest;
+use crate::openai::EmbeddingResponse;
+use reqwest::blocking::Client;
 use std::time::Duration;
 
-use crate::datatype::vecf32::{Vecf32, Vecf32Output};
-use crate::gucs::embedding::{openai_options, OpenAIOptions};
-use pgrx::error;
-use reqwest::blocking::Client;
-use service::prelude::F32;
-
-use super::openai::{EmbeddingError, EmbeddingRequest, EmbeddingResponse};
-
-#[pgrx::pg_extern(volatile, strict)]
-fn _vectors_ai_embedding_vector_v3(input: String) -> Vecf32Output {
-    _vectors_ai_embedding_vector(input, "text-embedding-3-small".to_string())
-}
-
-#[pgrx::pg_extern(volatile, strict)]
-fn _vectors_ai_embedding_vector(input: String, model: String) -> Vecf32Output {
-    let options = openai_options();
-    let resp = match openai_embedding(input, model, options) {
-        Ok(r) => r,
-        Err(e) => error!("{}", e.to_string()),
-    };
-    let embedding = match resp.try_pop_embedding() {
-        Ok(emb) => emb.into_iter().map(F32).collect::<Vec<_>>(),
-        Err(e) => error!("{}", e.to_string()),
-    };
-
-    Vecf32::new_in_postgres(&embedding)
+pub struct OpenAIOptions {
+    pub base_url: String,
+    pub api_key: String,
 }
 
 pub fn openai_embedding(
@@ -66,8 +49,8 @@ pub fn openai_embedding(
 
 #[cfg(test)]
 mod tests {
-    use crate::embedding::openai::EmbeddingData;
-    use crate::embedding::openai::Usage;
+    use crate::openai::EmbeddingData;
+    use crate::openai::Usage;
 
     use super::openai_embedding;
     use super::EmbeddingResponse;
