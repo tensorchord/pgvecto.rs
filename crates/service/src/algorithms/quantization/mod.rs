@@ -63,8 +63,9 @@ pub trait Quan<S: G> {
         options: IndexOptions,
         quantization_options: QuantizationOptions,
         raw: &Arc<Raw<S>>,
+        permutation: Vec<u32>,
     ) -> Self;
-    fn open(
+    fn open2(
         path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
@@ -86,6 +87,7 @@ impl<S: G> Quantization<S> {
         options: IndexOptions,
         quantization_options: QuantizationOptions,
         raw: &Arc<Raw<S>>,
+        permutation: Vec<u32>, // permutation is the mapping from placements to original ids
     ) -> Self {
         match quantization_options {
             QuantizationOptions::Trivial(_) => Self::Trivial(TrivialQuantization::create(
@@ -93,18 +95,21 @@ impl<S: G> Quantization<S> {
                 options,
                 quantization_options,
                 raw,
+                permutation,
             )),
             QuantizationOptions::Scalar(_) => Self::Scalar(ScalarQuantization::create(
                 path,
                 options,
                 quantization_options,
                 raw,
+                permutation,
             )),
             QuantizationOptions::Product(_) => Self::Product(ProductQuantization::create(
                 path,
                 options,
                 quantization_options,
                 raw,
+                permutation,
             )),
         }
     }
@@ -116,19 +121,19 @@ impl<S: G> Quantization<S> {
         raw: &Arc<Raw<S>>,
     ) -> Self {
         match quantization_options {
-            QuantizationOptions::Trivial(_) => Self::Trivial(TrivialQuantization::open(
+            QuantizationOptions::Trivial(_) => Self::Trivial(TrivialQuantization::open2(
                 path,
                 options,
                 quantization_options,
                 raw,
             )),
-            QuantizationOptions::Scalar(_) => Self::Scalar(ScalarQuantization::open(
+            QuantizationOptions::Scalar(_) => Self::Scalar(ScalarQuantization::open2(
                 path,
                 options,
                 quantization_options,
                 raw,
             )),
-            QuantizationOptions::Product(_) => Self::Product(ProductQuantization::open(
+            QuantizationOptions::Product(_) => Self::Product(ProductQuantization::open2(
                 path,
                 options,
                 quantization_options,

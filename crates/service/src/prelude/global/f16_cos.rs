@@ -31,6 +31,10 @@ impl G for F16Cos {
         F32(1.0) - super::f16::cosine(lhs, rhs)
     }
 
+    fn distance2(lhs: &[F16], rhs: &[F16]) -> F32 {
+        F32(1.0) - super::f16::cosine(lhs, rhs)
+    }
+
     fn elkan_k_means_normalize(vector: &mut [F16]) {
         super::f16::l2_normalize(vector)
     }

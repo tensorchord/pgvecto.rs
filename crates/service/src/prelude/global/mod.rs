@@ -22,6 +22,7 @@ pub use sparse_f32_dot::SparseF32Dot;
 pub use sparse_f32_l2::SparseF32L2;
 
 use crate::prelude::*;
+use base::scalar::FloatCast;
 use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
@@ -43,7 +44,7 @@ pub trait G: Copy + Debug + 'static {
         + Zero
         + num_traits::NumOps
         + num_traits::NumAssignOps
-        + base::scalar::FloatCast;
+        + FloatCast;
     type Storage: for<'a> Storage<VectorRef<'a> = Self::VectorRef<'a>>;
     type L2: for<'a> G<Scalar = Self::Scalar, VectorRef<'a> = &'a [Self::Scalar]>;
     type VectorOwned: Vector + Clone + Serialize + for<'a> Deserialize<'a>;
@@ -58,6 +59,7 @@ pub trait G: Copy + Debug + 'static {
     fn ref_to_owned(vector: Self::VectorRef<'_>) -> Self::VectorOwned;
     fn to_dense(vector: Self::VectorRef<'_>) -> Cow<'_, [Self::Scalar]>;
     fn distance(lhs: Self::VectorRef<'_>, rhs: Self::VectorRef<'_>) -> F32;
+    fn distance2(lhs: Self::VectorRef<'_>, rhs: &[Self::Scalar]) -> F32;
 
     fn elkan_k_means_normalize(vector: &mut [Self::Scalar]);
     fn elkan_k_means_normalize2(vector: &mut Self::VectorOwned);
@@ -142,4 +144,20 @@ pub enum Kind {
     F32,
     F16,
     SparseF32,
+}
+
+pub fn squared_norm<S: G>(dims: u16, vec: &[S::Scalar]) -> F32 {
+    let mut result = F32::zero();
+    for i in 0..dims as usize {
+        result += F32((vec[i] * vec[i]).to_f32());
+    }
+    result
+}
+
+pub fn inner_product<S: G>(dims: u16, lhs: &[S::Scalar], rhs: &[S::Scalar]) -> F32 {
+    let mut result = F32::zero();
+    for i in 0..dims as usize {
+        result += F32((lhs[i] * rhs[i]).to_f32());
+    }
+    result
 }

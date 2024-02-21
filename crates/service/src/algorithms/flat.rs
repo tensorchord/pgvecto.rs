@@ -99,6 +99,7 @@ pub fn make<S: G>(
         options.clone(),
         idx_opts.quantization,
         &raw,
+        (0..raw.len()).collect::<Vec<_>>(),
     );
     FlatRam { raw, quantization }
 }

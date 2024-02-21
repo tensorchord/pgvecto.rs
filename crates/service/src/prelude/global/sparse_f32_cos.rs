@@ -31,6 +31,10 @@ impl G for SparseF32Cos {
         F32(1.0) - super::sparse_f32::cosine(lhs, rhs)
     }
 
+    fn distance2(_lhs: Self::VectorRef<'_>, _rhs: &[Self::Scalar]) -> F32 {
+        unimplemented!()
+    }
+
     fn elkan_k_means_normalize(vector: &mut [Self::Scalar]) {
         super::f32::l2_normalize(vector)
     }

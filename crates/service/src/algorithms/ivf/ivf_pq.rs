@@ -9,19 +9,19 @@ use crate::index::IndexOptions;
 use crate::index::SearchOptions;
 use crate::index::VectorOptions;
 use crate::prelude::*;
-use crate::utils::cells::SyncUnsafeCell;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::element_heap::ElementHeap;
 use crate::utils::mmap_array::MmapArray;
 use crate::utils::vec2::Vec2;
 use rand::seq::index::sample;
 use rand::thread_rng;
+use rayon::iter::IntoParallelRefMutIterator;
+use rayon::iter::{IndexedParallelIterator, ParallelIterator};
+use rayon::prelude::ParallelSliceMut;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::create_dir;
 use std::path::Path;
-use std::sync::atomic::AtomicU32;
-use std::sync::atomic::Ordering::{Acquire, Relaxed, Release};
 use std::sync::Arc;
 
 pub struct IvfPq<S: G> {
@@ -90,8 +90,8 @@ pub struct IvfRam<S: G> {
     nlist: u32,
     // ----------------------
     centroids: Vec2<S::Scalar>,
-    heads: Vec<AtomicU32>,
-    nexts: Vec<SyncUnsafeCell<u32>>,
+    ptr: Vec<usize>,
+    payloads: Vec<Payload>,
 }
 
 unsafe impl<S: G> Send for IvfRam<S> {}
@@ -106,8 +106,8 @@ pub struct IvfMmap<S: G> {
     nlist: u32,
     // ----------------------
     centroids: MmapArray<S::Scalar>,
-    heads: MmapArray<u32>,
-    nexts: MmapArray<u32>,
+    ptr: MmapArray<usize>,
+    payloads: MmapArray<Payload>,
 }
 
 unsafe impl<S: G> Send for IvfMmap<S> {}
@@ -159,93 +159,96 @@ pub fn make<S: G>(
         }
     }
     let centroids = k_means.finish();
-    let heads = {
-        let mut heads = Vec::with_capacity(nlist as usize);
-        heads.resize_with(nlist as usize, || AtomicU32::new(u32::MAX));
-        heads
+    let mut idx = vec![0usize; n as usize];
+    idx.par_iter_mut().enumerate().for_each(|(i, x)| {
+        let mut vector = S::ref_to_owned(raw.vector(i as u32));
+        S::elkan_k_means_normalize2(&mut vector);
+        let mut result = (F32::infinity(), 0);
+        for i in 0..nlist as usize {
+            let dis = S::elkan_k_means_distance2(S::owned_to_ref(&vector), &centroids[i]);
+            result = std::cmp::min(result, (dis, i));
+        }
+        *x = result.1;
+    });
+    let mut invlists_ids = vec![Vec::new(); nlist as usize];
+    let mut invlists_payloads = vec![Vec::new(); nlist as usize];
+    for i in 0..n {
+        invlists_ids[idx[i as usize]].push(i);
+        invlists_payloads[idx[i as usize]].push(raw.payload(i));
+    }
+    let mut ptr = vec![0usize; nlist as usize + 1];
+    for i in 0..nlist {
+        ptr[i as usize + 1] = ptr[i as usize] + invlists_ids[i as usize].len();
+    }
+    let ids = Vec::from_iter((0..nlist).flat_map(|i| &invlists_ids[i as usize]).copied());
+    let payloads = Vec::from_iter(
+        (0..nlist)
+            .flat_map(|i| &invlists_payloads[i as usize])
+            .copied(),
+    );
+    sync_dir(path);
+    let residuals = {
+        let mut residuals = Vec2::new(options.vector.dims, n as usize);
+        residuals
+            .par_chunks_mut(dims as usize)
+            .enumerate()
+            .for_each(|(i, v)| {
+                for j in 0..dims {
+                    v[j as usize] = S::to_dense(raw.vector(ids[i])).as_ref()[j as usize]
+                        - centroids[idx[ids[i] as usize]][j as usize];
+                }
+            });
+        residuals
     };
-    let nexts = {
-        let mut nexts = Vec::with_capacity(nlist as usize);
-        nexts.resize_with(n as usize, || SyncUnsafeCell::new(u32::MAX));
-        nexts
-    };
-    let quantization = ProductQuantization::with_normalizer(
+    let mut quantization = ProductQuantization::encode(
         &path.join("quantization"),
         options.clone(),
         quantization_opts,
-        &raw,
-        |i, target| {
-            let mut vector = target.to_vec();
-            S::elkan_k_means_normalize(&mut vector);
-            let mut result = (F32::infinity(), 0);
-            for i in 0..nlist {
-                let dis = S::elkan_k_means_distance(&vector, &centroids[i as usize]);
-                result = std::cmp::min(result, (dis, i));
-            }
-            let centroid_id = result.1;
-            loop {
-                let next = heads[centroid_id as usize].load(Acquire);
-                unsafe {
-                    nexts[i as usize].get().write(next);
-                }
-                let o = &heads[centroid_id as usize];
-                if o.compare_exchange(next, i, Release, Relaxed).is_ok() {
-                    break;
-                }
-            }
-            for i in 0..dims {
-                target[i as usize] -= centroids[centroid_id as usize][i as usize];
-            }
-        },
+        &residuals,
     );
+    quantization.precompute_table(&path.join("quantization"), &centroids);
     IvfRam {
         raw,
         quantization,
         centroids,
-        heads,
-        nexts,
         nlist,
         dims,
+        ptr,
+        payloads,
     }
 }
 
-pub fn save<S: G>(mut ram: IvfRam<S>, path: &Path) -> IvfMmap<S> {
+pub fn save<S: G>(ram: IvfRam<S>, path: &Path) -> IvfMmap<S> {
     let centroids = MmapArray::create(
         &path.join("centroids"),
         (0..ram.nlist)
             .flat_map(|i| &ram.centroids[i as usize])
             .copied(),
     );
-    let heads = MmapArray::create(
-        &path.join("heads"),
-        ram.heads.iter_mut().map(|x| *x.get_mut()),
-    );
-    let nexts = MmapArray::create(
-        &path.join("nexts"),
-        ram.nexts.iter_mut().map(|x| *x.get_mut()),
-    );
+    let ptr = MmapArray::create(&path.join("ptr"), ram.ptr.iter().copied());
+    let payloads = MmapArray::create(&path.join("payload"), ram.payloads.iter().copied());
     IvfMmap {
         raw: ram.raw,
         quantization: ram.quantization,
         dims: ram.dims,
         nlist: ram.nlist,
         centroids,
-        heads,
-        nexts,
+        ptr,
+        payloads,
     }
 }
 
 pub fn open<S: G>(path: &Path, options: IndexOptions) -> IvfMmap<S> {
     let raw = Arc::new(Raw::open(&path.join("raw"), options.clone()));
-    let quantization = ProductQuantization::open(
+    let quantization = ProductQuantization::open2(
         &path.join("quantization"),
         options.clone(),
         options.indexing.clone().unwrap_ivf().quantization,
         &raw,
     );
     let centroids = MmapArray::open(&path.join("centroids"));
-    let heads = MmapArray::open(&path.join("heads"));
-    let nexts = MmapArray::open(&path.join("nexts"));
+    let ptr = MmapArray::open(&path.join("ptr"));
+    let payloads = MmapArray::open(&path.join("payload"));
     let IvfIndexingOptions { nlist, .. } = options.indexing.unwrap_ivf();
     IvfMmap {
         raw,
@@ -253,8 +256,8 @@ pub fn open<S: G>(path: &Path, options: IndexOptions) -> IvfMmap<S> {
         dims: options.vector.dims,
         nlist,
         centroids,
-        heads,
-        nexts,
+        ptr,
+        payloads,
     }
 }
 
@@ -264,12 +267,10 @@ pub fn basic<S: G>(
     nprobe: u32,
     mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
-    let mut target = S::ref_to_owned(vector);
-    S::elkan_k_means_normalize2(&mut target);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::elkan_k_means_distance2(S::owned_to_ref(&target), centroid);
+        let distance = S::distance2(vector, centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,
@@ -277,19 +278,27 @@ pub fn basic<S: G>(
             });
         }
     }
+    let runtime_table = mmap.quantization.init_query(S::to_dense(vector).as_ref());
     let lists = lists.into_sorted_vec();
     let mut result = BinaryHeap::new();
-    for i in lists.iter().map(|e| e.payload as u32) {
-        let mut j = mmap.heads[i as usize];
-        while u32::MAX != j {
-            let payload = mmap.raw.payload(j);
+    for i in lists.iter() {
+        let key = i.payload as usize;
+        let coarse_dis = i.distance;
+        let start = mmap.ptr[key];
+        let end = mmap.ptr[key + 1];
+        for j in start..end {
+            let payload = mmap.payloads[j];
             if filter.check(payload) {
-                let distance = mmap
-                    .quantization
-                    .distance_with_delta(vector, j, mmap.centroids(i));
+                let distance = mmap.quantization.distance_with_codes(
+                    vector,
+                    j as u32,
+                    mmap.centroids(key as u32),
+                    key,
+                    coarse_dis,
+                    &runtime_table,
+                );
                 result.push(Reverse(Element { distance, payload }));
             }
-            j = mmap.nexts[j as usize];
         }
     }
     result
@@ -301,12 +310,10 @@ pub fn vbase<'a, S: G>(
     nprobe: u32,
     mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-    let mut target = S::ref_to_owned(vector);
-    S::elkan_k_means_normalize2(&mut target);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::elkan_k_means_distance2(S::owned_to_ref(&target), centroid);
+        let distance = S::distance2(vector, centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,
@@ -314,19 +321,27 @@ pub fn vbase<'a, S: G>(
             });
         }
     }
+    let runtime_table = mmap.quantization.init_query(S::to_dense(vector).as_ref());
     let lists = lists.into_sorted_vec();
     let mut result = Vec::new();
-    for i in lists.iter().map(|e| e.payload as u32) {
-        let mut j = mmap.heads[i as usize];
-        while u32::MAX != j {
-            let payload = mmap.raw.payload(j);
+    for i in lists.iter() {
+        let key = i.payload as usize;
+        let coarse_dis = i.distance;
+        let start = mmap.ptr[key];
+        let end = mmap.ptr[key + 1];
+        for j in start..end {
+            let payload = mmap.payloads[j];
             if filter.check(payload) {
-                let distance = mmap
-                    .quantization
-                    .distance_with_delta(vector, j, mmap.centroids(i));
+                let distance = mmap.quantization.distance_with_codes(
+                    vector,
+                    j as u32,
+                    mmap.centroids(key as u32),
+                    key,
+                    coarse_dis,
+                    &runtime_table,
+                );
                 result.push(Element { distance, payload });
             }
-            j = mmap.nexts[j as usize];
         }
     }
     (result, Box::new(std::iter::empty()))

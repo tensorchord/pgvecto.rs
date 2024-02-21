@@ -150,6 +150,7 @@ pub fn make<S: G>(
         options.clone(),
         quantization_opts,
         &raw,
+        (0..raw.len()).collect::<Vec<_>>(),
     );
     let n = raw.len();
     let graph = HnswRamGraph {

@@ -32,7 +32,7 @@ unsafe impl<S: G> Send for ScalarQuantization<S> {}
 unsafe impl<S: G> Sync for ScalarQuantization<S> {}
 
 impl<S: G> ScalarQuantization<S> {
-    fn codes(&self, i: u32) -> &[u8] {
+    pub fn codes(&self, i: u32) -> &[u8] {
         let s = i as usize * self.dims as usize;
         let e = (i + 1) as usize * self.dims as usize;
         &self.codes[s..e]
@@ -45,6 +45,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         options: IndexOptions,
         _: QuantizationOptions,
         raw: &Arc<Raw<S>>,
+        permutation: Vec<u32>, // permutation is the mapping from placements to original ids
     ) -> Self {
         assert!(
             S::KIND != Kind::SparseF32,
@@ -57,7 +58,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         let mut min = vec![S::Scalar::infinity(); dims as usize];
         let n = raw.len();
         for i in 0..n {
-            let vector = S::to_dense(raw.vector(i));
+            let vector = S::to_dense(raw.vector(permutation[i as usize]));
             for j in 0..dims as usize {
                 max[j] = std::cmp::max(max[j], vector[j]);
                 min[j] = std::cmp::min(min[j], vector[j]);
@@ -66,7 +67,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         std::fs::write(path.join("max"), serde_json::to_string(&max).unwrap()).unwrap();
         std::fs::write(path.join("min"), serde_json::to_string(&min).unwrap()).unwrap();
         let codes_iter = (0..n).flat_map(|i| {
-            let vector = S::to_dense(raw.vector(i));
+            let vector = S::to_dense(raw.vector(permutation[i as usize]));
             let mut result = vec![0u8; dims as usize];
             for i in 0..dims as usize {
                 let w = (((vector[i] - min[i]) / (max[i] - min[i])).to_f32() * 256.0) as u32;
@@ -84,7 +85,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         }
     }
 
-    fn open(path: &Path, options: IndexOptions, _: QuantizationOptions, _: &Arc<Raw<S>>) -> Self {
+    fn open2(path: &Path, options: IndexOptions, _: QuantizationOptions, _: &Arc<Raw<S>>) -> Self {
         let dims = options.vector.dims;
         let max = serde_json::from_slice(&std::fs::read("max").unwrap()).unwrap();
         let min = serde_json::from_slice(&std::fs::read("min").unwrap()).unwrap();

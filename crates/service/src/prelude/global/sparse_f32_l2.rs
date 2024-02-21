@@ -31,6 +31,10 @@ impl G for SparseF32L2 {
         super::sparse_f32::sl2(lhs, rhs)
     }
 
+    fn distance2(_lhs: Self::VectorRef<'_>, _rhs: &[Self::Scalar]) -> F32 {
+        unimplemented!()
+    }
+
     fn elkan_k_means_normalize(_: &mut [Self::Scalar]) {}
 
     fn elkan_k_means_normalize2(_: &mut SparseF32) {}
