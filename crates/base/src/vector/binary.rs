@@ -53,7 +53,15 @@ impl<'a> From<BinaryVecRef<'a>> for Vec<F32> {
 impl<'a> Ord for BinaryVecRef<'a> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         assert_eq!(self.dims, other.dims);
-        self.data.cmp(other.data).reverse()
+        for (&l, &r) in self.data.iter().zip(other.data.iter()) {
+            let l = l.reverse_bits();
+            let r = r.reverse_bits();
+            match l.cmp(&r) {
+                std::cmp::Ordering::Equal => {}
+                x => return x,
+            }
+        }
+        std::cmp::Ordering::Equal
     }
 }
 
