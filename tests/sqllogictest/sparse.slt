@@ -1,0 +1,50 @@
+statement ok
+SET search_path TO pg_temp, vectors;
+
+statement ok
+CREATE TABLE t (val svector(6));
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[0, random(), 0, 0, random(), random()]::real[]::vector::svector FROM generate_series(1, 1000);
+
+statement ok
+CREATE INDEX ON t USING vectors (val svector_l2_ops)
+WITH (options = "[indexing.hnsw]");
+
+statement ok
+CREATE INDEX ON t USING vectors (val svector_dot_ops)
+WITH (options = "[indexing.hnsw]");
+
+statement ok
+CREATE INDEX ON t USING vectors (val svector_cos_ops)
+WITH (options = "[indexing.ivf]");
+
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0.5,0.5,0.5,0.5,0.5,0.5]'::svector limit 10) t2;
+----
+10
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <=> '[0.5,0.5,0.5,0.5,0.5,0.5]'::svector limit 10) t2;
+----
+10
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0.5,0.5,0.5,0.5,0.5,0.5]'::svector limit 10) t2;
+----
+10
+
+statement ok
+DROP TABLE t;
+
+query I
+SELECT to_svector(5, '{1,2}', '{1,2}');
+----
+[0, 1, 2, 0, 0]
+
+statement error Lengths of index and value are not matched.
+SELECT to_svector(5, '{1,2,3}', '{1,2}');
+
+statement error Duplicated index.
+SELECT to_svector(5, '{1,1}', '{1,2}');

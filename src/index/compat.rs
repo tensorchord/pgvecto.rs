@@ -126,10 +126,10 @@ unsafe fn rewrite_opclass(istmt: *mut pgrx::pg_sys::IndexStmt) {
             if opclass_name.is_null() {
                 continue;
             }
+            #[cfg(feature = "pg14")]
+            let opclass_ptr = (*(opclass_name as *mut pgrx::pg_sys::Value)).val.str_;
             #[cfg(any(feature = "pg15", feature = "pg16"))]
             let opclass_ptr = (*(opclass_name as *mut pgrx::pg_sys::String)).sval;
-            #[cfg(any(feature = "pg12", feature = "pg13", feature = "pg14"))]
-            let opclass_ptr = (*(opclass_name as *mut pgrx::pg_sys::Value)).val.str_;
             let opclass = match CStr::from_ptr(opclass_ptr).to_str() {
                 Ok("vector_l2_ops") => "vector_l2_ops",
                 Ok("vector_ip_ops") => "vector_dot_ops",
@@ -169,7 +169,6 @@ pub unsafe fn options_from_vec(vec: Vec<*mut pgrx::pg_sys::DefElem>) -> HashMap<
     options
 }
 
-#[cfg(any(feature = "pg13", feature = "pg14", feature = "pg15", feature = "pg16"))]
 pub unsafe fn vec_from_list<T>(l: *mut pgrx::pg_sys::List) -> Vec<*mut T> {
     let mut vec = Vec::new();
     if l.is_null() {
@@ -180,24 +179,6 @@ pub unsafe fn vec_from_list<T>(l: *mut pgrx::pg_sys::List) -> Vec<*mut T> {
         for i in 0..length {
             let cell = (*l).elements.add(i);
             vec.push((*cell).ptr_value as *mut T)
-        }
-    }
-    vec
-}
-
-#[cfg(feature = "pg12")]
-pub unsafe fn vec_from_list<T>(l: *mut pgrx::pg_sys::List) -> Vec<*mut T> {
-    let mut vec: Vec<*mut T> = Vec::new();
-    if l.is_null() {
-        return vec;
-    }
-    unsafe {
-        let length = (*l).length;
-        let mut elem = (*l).head;
-        for _ in 0..length {
-            let e = (*elem).data.ptr_value as *mut T;
-            vec.push(e);
-            elem = (*elem).next;
         }
     }
     vec

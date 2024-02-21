@@ -14,7 +14,7 @@ use rayon::iter::ParallelIterator;
 use rayon::slice::ParallelSliceMut;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use validator::Validate;
 
@@ -67,7 +67,6 @@ pub struct ProductQuantization<S: G> {
     centroids: Vec<S::Scalar>,
     codes: MmapArray<u8>,
     precomputed_table: Vec<F32>,
-    metric: Distance,
 }
 
 unsafe impl<S: G> Send for ProductQuantization<S> {}
@@ -84,7 +83,7 @@ impl<S: G> ProductQuantization<S> {
 
 impl<S: G> Quan<S> for ProductQuantization<S> {
     fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
         raw: &Arc<Raw<S>>,
@@ -100,15 +99,15 @@ impl<S: G> Quan<S> for ProductQuantization<S> {
         )
     }
 
-    fn open(
-        path: PathBuf,
+    fn open2(
+        path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
         _: &Arc<Raw<S>>,
     ) -> Self {
         let centroids =
             serde_json::from_slice(&std::fs::read(path.join("centroids")).unwrap()).unwrap();
-        let codes = MmapArray::open(path.join("codes"));
+        let codes = MmapArray::open(&path.join("codes"));
         let precomputed_table =
             serde_json::from_slice(&std::fs::read(path.join("table")).unwrap()).unwrap();
         Self {
@@ -117,11 +116,10 @@ impl<S: G> Quan<S> for ProductQuantization<S> {
             centroids,
             codes,
             precomputed_table,
-            metric: options.vector.d,
         }
     }
 
-    fn distance(&self, lhs: &[S::Scalar], rhs: u32) -> F32 {
+    fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32 {
         let dims = self.dims;
         let ratio = self.ratio;
         let rhs = self.codes(rhs);
@@ -139,7 +137,7 @@ impl<S: G> Quan<S> for ProductQuantization<S> {
 
 impl<S: G> ProductQuantization<S> {
     pub fn with_normalizer<F>(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
         raw: &Raw<S>,
@@ -149,7 +147,12 @@ impl<S: G> ProductQuantization<S> {
     where
         F: Fn(u32, &mut [S::Scalar]),
     {
-        std::fs::create_dir(&path).unwrap();
+        assert!(
+            S::KIND != Kind::SparseF32,
+            "Product quantization is not supported for sparse vectors."
+        );
+
+        std::fs::create_dir(path).unwrap();
         let quantization_options = quantization_options.unwrap_product_quantization();
         let dims = options.vector.dims;
         let ratio = quantization_options.ratio as u16;
@@ -157,9 +160,10 @@ impl<S: G> ProductQuantization<S> {
         let m = std::cmp::min(n, quantization_options.sample);
         let samples = {
             let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
-            let mut samples = Vec2::<S>::new(options.vector.dims, m as usize);
+            let mut samples = Vec2::<S::Scalar>::new(options.vector.dims, m as usize);
             for i in 0..m {
-                samples[i as usize].copy_from_slice(raw.vector(f[i as usize] as u32));
+                samples[i as usize]
+                    .copy_from_slice(S::to_dense(raw.vector(f[i as usize] as u32)).as_ref());
             }
             samples
         };
@@ -167,7 +171,7 @@ impl<S: G> ProductQuantization<S> {
         let mut centroids = vec![S::Scalar::zero(); 256 * dims as usize];
         for i in 0..width {
             let subdims = std::cmp::min(ratio, dims - ratio * i);
-            let mut subsamples = Vec2::<S::L2>::new(subdims, m as usize);
+            let mut subsamples = Vec2::<S::Scalar>::new(subdims, m as usize);
             for j in 0..m {
                 let src = &samples[j as usize][(i * ratio) as usize..][..subdims as usize];
                 subsamples[j as usize].copy_from_slice(src);
@@ -185,7 +189,7 @@ impl<S: G> ProductQuantization<S> {
             }
         }
         let codes_iter = (0..n).flat_map(|i| {
-            let mut vector = raw.vector(permutation[i as usize]).to_vec();
+            let mut vector = S::to_dense(raw.vector(permutation[i as usize])).to_vec();
             normalizer(permutation[i as usize], &mut vector);
             let width = dims.div_ceil(ratio);
             let mut result = Vec::with_capacity(width as usize);
@@ -207,30 +211,29 @@ impl<S: G> ProductQuantization<S> {
             }
             result.into_iter()
         });
-        sync_dir(&path);
+        sync_dir(path);
         std::fs::write(
             path.join("centroids"),
             serde_json::to_string(&centroids).unwrap(),
         )
         .unwrap();
-        let codes = MmapArray::create(path.join("codes"), codes_iter);
+        let codes = MmapArray::create(&path.join("codes"), codes_iter);
         Self {
             dims,
             ratio,
             centroids,
             codes,
             precomputed_table: Vec::new(),
-            metric: options.vector.d,
         }
     }
 
     pub fn encode(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        raw: &Vec2<S>,
+        raw: &Vec2<S::Scalar>,
     ) -> Self {
-        std::fs::create_dir(&path).unwrap();
+        std::fs::create_dir(path).unwrap();
         let quantization_options = quantization_options.unwrap_product_quantization();
         let dims = options.vector.dims;
         let ratio = quantization_options.ratio as u16;
@@ -238,7 +241,7 @@ impl<S: G> ProductQuantization<S> {
         let m = std::cmp::min(n, quantization_options.sample as usize);
         let samples = {
             let f = sample(&mut thread_rng(), n, m).into_vec();
-            let mut samples = Vec2::<S>::new(options.vector.dims, m);
+            let mut samples = Vec2::new(options.vector.dims, m);
             for i in 0..m {
                 samples[i].copy_from_slice(&raw[f[i]]);
             }
@@ -254,7 +257,7 @@ impl<S: G> ProductQuantization<S> {
             .for_each(|(i, v)| {
                 // i is the index of subquantizer
                 let subdims = std::cmp::min(ratio, dims - ratio * i as u16) as usize;
-                let mut subsamples = Vec2::<S::L2>::new(subdims as u16, m);
+                let mut subsamples = Vec2::new(subdims as u16, m);
                 for j in 0..m {
                     let src = &samples[j][i * ratio as usize..][..subdims];
                     subsamples[j].copy_from_slice(src);
@@ -307,25 +310,24 @@ impl<S: G> ProductQuantization<S> {
                     v[i as usize] = target;
                 }
             });
-        sync_dir(&path);
+        sync_dir(path);
         std::fs::write(
             path.join("centroids"),
             serde_json::to_string(&centroids).unwrap(),
         )
         .unwrap();
-        let codes = MmapArray::create(path.join("codes"), codes.into_iter());
+        let codes = MmapArray::create(&path.join("codes"), codes.into_iter());
         Self {
             dims,
             ratio,
             centroids,
             codes,
             precomputed_table: Vec::new(),
-            metric: options.vector.d,
         }
     }
 
     // compute term3 at build time
-    pub fn precompute_table(&mut self, path: PathBuf, coarse_centroids: &Vec2<S>) {
+    pub fn precompute_table(&mut self, path: &Path, coarse_centroids: &Vec2<S::Scalar>) {
         let nlist = coarse_centroids.len();
         let dims = self.dims;
         let ratio = self.ratio;
@@ -357,7 +359,7 @@ impl<S: G> ProductQuantization<S> {
 
     // compute term2 at query time
     pub fn init_query(&self, query: &[S::Scalar]) -> Vec<F32> {
-        if matches!(self.metric, Distance::Cos) {
+        if S::DISTANCE == Distance::Cos {
             return Vec::new();
         }
         let dims = self.dims;
@@ -380,26 +382,26 @@ impl<S: G> ProductQuantization<S> {
     // add up all terms given codes
     pub fn distance_with_codes(
         &self,
-        lhs: &[S::Scalar],
+        lhs: S::VectorRef<'_>,
         rhs: u32,
         delta: &[S::Scalar],
         key: usize,
         coarse_dis: F32,
         runtime_table: &[F32],
     ) -> F32 {
-        if matches!(self.metric, Distance::Cos) {
+        if S::DISTANCE == Distance::Cos {
             return self.distance_with_delta(lhs, rhs, delta);
         }
         let mut result = coarse_dis;
         let codes = self.codes(rhs);
         let width = self.dims.div_ceil(self.ratio);
         let precomputed_table = &self.precomputed_table[key * width as usize * 256..];
-        if matches!(self.metric, Distance::L2) {
+        if S::DISTANCE == Distance::L2 {
             for i in 0..width {
                 result += precomputed_table[i as usize * 256 + codes[i as usize] as usize]
                     + F32(2.0) * runtime_table[i as usize * 256 + codes[i as usize] as usize];
             }
-        } else if matches!(self.metric, Distance::Dot) {
+        } else if S::DISTANCE == Distance::Dot {
             for i in 0..width {
                 result += runtime_table[i as usize * 256 + codes[i as usize] as usize];
             }
@@ -407,7 +409,7 @@ impl<S: G> ProductQuantization<S> {
         result
     }
 
-    pub fn distance_with_delta(&self, lhs: &[S::Scalar], rhs: u32, delta: &[S::Scalar]) -> F32 {
+    pub fn distance_with_delta(&self, lhs: S::VectorRef<'_>, rhs: u32, delta: &[S::Scalar]) -> F32 {
         let dims = self.dims;
         let ratio = self.ratio;
         let rhs = self.codes(rhs);

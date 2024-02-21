@@ -1,43 +1,58 @@
 use super::ConnectionError;
-use crate::utils::file_socket::FileSocket;
-use crate::utils::os::{futex_wait, futex_wake, memfd_create, mmap_populate};
 use rustix::fd::{AsFd, OwnedFd};
 use rustix::fs::FlockOperation;
+use send_fd::SendFd;
 use std::cell::UnsafeCell;
 use std::io::ErrorKind;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::OnceLock;
+use std::time::Duration;
 
 const BUFFER_SIZE: usize = 512 * 1024;
 const SPIN_LIMIT: usize = 8;
+const TIMEOUT: Duration = Duration::from_secs(15);
 
-static CHANNEL: OnceLock<FileSocket> = OnceLock::new();
+static CHANNEL: OnceLock<SendFd> = OnceLock::new();
 
 pub fn init() {
-    CHANNEL.set(FileSocket::new().unwrap()).ok().unwrap();
+    CHANNEL.set(SendFd::new().unwrap()).ok().unwrap();
 }
 
 pub fn accept() -> Socket {
     let memfd = CHANNEL.get().unwrap().recv().unwrap();
     rustix::fs::fcntl_lock(&memfd, FlockOperation::NonBlockingLockShared).unwrap();
-    let addr = unsafe { mmap_populate(BUFFER_SIZE, &memfd).unwrap() };
+    let memmap = unsafe {
+        memmap2::MmapOptions::new()
+            .len(BUFFER_SIZE)
+            .populate()
+            .map_mut(&memfd)
+            .unwrap()
+    };
     Socket {
         is_server: true,
-        addr: addr as _,
+        addr: memmap.as_ptr().cast(),
         memfd,
+        _memmap: memmap,
     }
 }
 
 pub fn connect() -> Socket {
-    let memfd = memfd_create().unwrap();
+    let memfd = memfd::memfd_create().unwrap();
     rustix::fs::ftruncate(&memfd, BUFFER_SIZE as u64).unwrap();
     rustix::fs::fcntl_lock(&memfd, FlockOperation::NonBlockingLockShared).unwrap();
     CHANNEL.get().unwrap().send(memfd.as_fd()).unwrap();
-    let addr = unsafe { mmap_populate(BUFFER_SIZE, &memfd).unwrap() };
+    let memmap = unsafe {
+        memmap2::MmapOptions::new()
+            .len(BUFFER_SIZE)
+            .populate()
+            .map_mut(&memfd)
+            .unwrap()
+    };
     Socket {
         is_server: false,
-        addr: addr as _,
+        addr: memmap.as_ptr().cast(),
         memfd,
+        _memmap: memmap,
     }
 }
 
@@ -45,6 +60,7 @@ pub struct Socket {
     is_server: bool,
     addr: *const Channel,
     memfd: OwnedFd,
+    _memmap: memmap2::MmapMut,
 }
 
 unsafe impl Send for Socket {}
@@ -123,17 +139,13 @@ impl Channel {
                     {
                         break;
                     }
-                    unsafe {
-                        futex_wait(&self.futex, Y);
-                    }
+                    interprocess_atomic_wait::wait(&self.futex, Y, TIMEOUT);
                 }
                 Y => {
                     if !test() {
-                        return Err(ConnectionError::Unexpected);
+                        return Err(ConnectionError::ClosedConnection);
                     }
-                    unsafe {
-                        futex_wait(&self.futex, Y);
-                    }
+                    interprocess_atomic_wait::wait(&self.futex, Y, TIMEOUT);
                 }
                 _ => unsafe { std::hint::unreachable_unchecked() },
             }
@@ -154,9 +166,7 @@ impl Channel {
             (*self.bytes.get())[0..data.len()].copy_from_slice(data);
         }
         if X == self.futex.swap(T, Ordering::Release) {
-            unsafe {
-                futex_wake(&self.futex);
-            }
+            interprocess_atomic_wait::wake(&self.futex);
         }
     }
     unsafe fn server_recv(&self, test: impl Fn() -> bool) -> Result<Vec<u8>, ConnectionError> {
@@ -182,17 +192,13 @@ impl Channel {
                     {
                         break;
                     }
-                    unsafe {
-                        futex_wait(&self.futex, Y);
-                    }
+                    interprocess_atomic_wait::wait(&self.futex, Y, TIMEOUT);
                 }
                 Y => {
                     if !test() {
-                        return Err(ConnectionError::Unexpected);
+                        return Err(ConnectionError::ClosedConnection);
                     }
-                    unsafe {
-                        futex_wait(&self.futex, Y);
-                    }
+                    interprocess_atomic_wait::wait(&self.futex, Y, TIMEOUT);
                 }
                 _ => unsafe { std::hint::unreachable_unchecked() },
             }
@@ -213,9 +219,7 @@ impl Channel {
             (*self.bytes.get())[0..data.len()].copy_from_slice(data);
         }
         if X == self.futex.swap(T, Ordering::Release) {
-            unsafe {
-                futex_wake(&self.futex);
-            }
+            interprocess_atomic_wait::wake(&self.futex);
         }
     }
 }

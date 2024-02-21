@@ -29,6 +29,7 @@ use std::time::Instant;
 use thiserror::Error;
 use uuid::Uuid;
 use validator::Validate;
+use validator::ValidationError;
 
 #[derive(Debug, Error)]
 #[error("The index view is outdated.")]
@@ -48,6 +49,7 @@ pub struct VectorOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
+#[validate(schema(function = "validate_index_options"))]
 pub struct IndexOptions {
     #[validate]
     pub vector: VectorOptions,
@@ -57,6 +59,15 @@ pub struct IndexOptions {
     pub optimizing: OptimizingOptions,
     #[validate]
     pub indexing: IndexingOptions,
+}
+
+fn validate_index_options(options: &IndexOptions) -> Result<(), ValidationError> {
+    if options.vector.k == Kind::SparseF32 && options.indexing.has_quantization() {
+        return Err(ValidationError::new(
+            "quantization is not supported for sparse vector",
+        ));
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -79,13 +90,10 @@ pub struct SegmentStat {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum IndexStat {
-    Normal {
-        indexing: bool,
-        segments: Vec<SegmentStat>,
-        options: IndexOptions,
-    },
-    Upgrade,
+pub struct IndexStat {
+    pub indexing: bool,
+    pub segments: Vec<SegmentStat>,
+    pub options: IndexOptions,
 }
 
 pub struct Index<S: G> {
@@ -100,10 +108,10 @@ pub struct Index<S: G> {
 }
 
 impl<S: G> Index<S> {
-    pub fn create(path: PathBuf, options: IndexOptions) -> Result<Arc<Self>, ServiceError> {
+    pub fn create(path: PathBuf, options: IndexOptions) -> Result<Arc<Self>, CreateError> {
         if let Err(err) = options.validate() {
-            return Err(ServiceError::BadOption {
-                validation: err.to_string(),
+            return Err(CreateError::InvalidIndexOptions {
+                reason: err.to_string(),
             });
         }
         std::fs::create_dir(&path).unwrap();
@@ -147,6 +155,7 @@ impl<S: G> Index<S> {
         OptimizerSealing::new(index.clone()).spawn();
         Ok(index)
     }
+
     pub fn open(path: PathBuf) -> Arc<Self> {
         let options =
             serde_json::from_slice::<IndexOptions>(&std::fs::read(path.join("options")).unwrap())
@@ -189,6 +198,7 @@ impl<S: G> Index<S> {
                         tracker.clone(),
                         path.join("segments").join(uuid.to_string()),
                         uuid,
+                        options.clone(),
                     ),
                 )
             })
@@ -262,7 +272,7 @@ impl<S: G> Index<S> {
     }
     pub fn stat(&self) -> IndexStat {
         let view = self.view();
-        IndexStat::Normal {
+        IndexStat {
             indexing: self.instant_index.load() < self.instant_write.load(),
             options: self.options().clone(),
             segments: {
@@ -308,12 +318,17 @@ pub struct IndexView<S: G> {
 impl<S: G> IndexView<S> {
     pub fn basic<'a, F: Fn(Pointer) -> bool + Clone + 'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: S::VectorRef<'_>,
         opts: &'a SearchOptions,
         filter: F,
-    ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
-        if self.options.vector.dims as usize != vector.len() {
-            return Err(ServiceError::Unmatched);
+    ) -> Result<impl Iterator<Item = Pointer> + 'a, BasicError> {
+        if self.options.vector.dims != vector.dims() {
+            return Err(BasicError::InvalidVector);
+        }
+        if let Err(err) = opts.validate() {
+            return Err(BasicError::InvalidSearchOptions {
+                reason: err.to_string(),
+            });
         }
 
         struct Comparer(std::collections::BinaryHeap<Reverse<Element>>);
@@ -381,12 +396,17 @@ impl<S: G> IndexView<S> {
     }
     pub fn vbase<'a, F: FnMut(Pointer) -> bool + Clone + 'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: S::VectorRef<'a>,
         opts: &'a SearchOptions,
         filter: F,
-    ) -> Result<impl Iterator<Item = Pointer> + 'a, ServiceError> {
-        if self.options.vector.dims as usize != vector.len() {
-            return Err(ServiceError::Unmatched);
+    ) -> Result<impl Iterator<Item = Pointer> + 'a, VbaseError> {
+        if self.options.vector.dims != vector.dims() {
+            return Err(VbaseError::InvalidVector);
+        }
+        if let Err(err) = opts.validate() {
+            return Err(VbaseError::InvalidSearchOptions {
+                reason: err.to_string(),
+            });
         }
 
         struct Filtering<'a, F: 'a> {
@@ -448,7 +468,7 @@ impl<S: G> IndexView<S> {
             }
         }))
     }
-    pub fn list(&self) -> impl Iterator<Item = Pointer> + '_ {
+    pub fn list(&self) -> Result<impl Iterator<Item = Pointer> + '_, ListError> {
         let sealed = self
             .sealed
             .values()
@@ -462,19 +482,21 @@ impl<S: G> IndexView<S> {
             .iter()
             .map(|(_, x)| x)
             .flat_map(|x| (0..x.len()).map(|i| x.payload(i)));
-        sealed
+        let iter = sealed
             .chain(growing)
             .chain(write)
-            .filter_map(|p| self.delete.check(p))
+            .filter_map(|p| self.delete.check(p));
+        Ok(iter)
     }
     pub fn insert(
         &self,
-        vector: Vec<S::Scalar>,
+        vector: S::VectorOwned,
         pointer: Pointer,
-    ) -> Result<Result<(), OutdatedError>, ServiceError> {
-        if self.options.vector.dims as usize != vector.len() {
-            return Err(ServiceError::Unmatched);
+    ) -> Result<Result<(), OutdatedError>, InsertError> {
+        if self.options.vector.dims != vector.dims() {
+            return Err(InsertError::InvalidVector);
         }
+
         let payload = (pointer.as_u48() << 16) | self.delete.version(pointer) as Payload;
         if let Some((_, growing)) = self.write.as_ref() {
             use crate::index::segments::growing::GrowingSegmentInsertError;
@@ -486,14 +508,16 @@ impl<S: G> IndexView<S> {
             Ok(Err(OutdatedError))
         }
     }
-    pub fn delete(&self, p: Pointer) {
+    pub fn delete(&self, p: Pointer) -> Result<(), DeleteError> {
         self.delete.delete(p);
+        Ok(())
     }
-    pub fn flush(&self) {
+    pub fn flush(&self) -> Result<(), FlushError> {
         self.delete.flush();
         if let Some((_, write)) = &self.write {
             write.flush();
         }
+        Ok(())
     }
 }
 

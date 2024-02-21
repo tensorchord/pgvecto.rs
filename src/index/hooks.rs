@@ -20,7 +20,6 @@ unsafe extern "C" fn vectors_executor_start(
     }
 }
 
-#[cfg(any(feature = "pg14", feature = "pg15", feature = "pg16"))]
 #[pgrx::pg_guard]
 unsafe extern "C" fn hook_pgvector_compatibility(
     pstmt: *mut pgrx::pg_sys::PlannedStmt,
@@ -52,84 +51,6 @@ unsafe extern "C" fn hook_pgvector_compatibility(
                 pstmt,
                 query_string,
                 read_only_tree,
-                context,
-                params,
-                query_env,
-                dest,
-                completion_tag,
-            );
-        }
-    }
-}
-
-#[cfg(feature = "pg13")]
-#[pgrx::pg_guard]
-unsafe extern "C" fn hook_pgvector_compatibility(
-    pstmt: *mut pgrx::pg_sys::PlannedStmt,
-    query_string: *const ::std::os::raw::c_char,
-    context: pgrx::pg_sys::ProcessUtilityContext,
-    params: pgrx::pg_sys::ParamListInfo,
-    query_env: *mut pgrx::pg_sys::QueryEnvironment,
-    dest: *mut pgrx::pg_sys::DestReceiver,
-    completion_tag: *mut pgrx::pg_sys::QueryCompletion,
-) {
-    unsafe {
-        pgvector_stmt_rewrite(pstmt);
-    }
-    unsafe {
-        if let Some(prev_process_utility) = PREV_PROCESS_UTILITY {
-            prev_process_utility(
-                pstmt,
-                query_string,
-                context,
-                params,
-                query_env,
-                dest,
-                completion_tag,
-            );
-        } else {
-            pgrx::pg_sys::standard_ProcessUtility(
-                pstmt,
-                query_string,
-                context,
-                params,
-                query_env,
-                dest,
-                completion_tag,
-            );
-        }
-    }
-}
-
-#[cfg(feature = "pg12")]
-#[pgrx::pg_guard]
-unsafe extern "C" fn hook_pgvector_compatibility(
-    pstmt: *mut pgrx::pg_sys::PlannedStmt,
-    query_string: *const ::std::os::raw::c_char,
-    context: pgrx::pg_sys::ProcessUtilityContext,
-    params: pgrx::pg_sys::ParamListInfo,
-    query_env: *mut pgrx::pg_sys::QueryEnvironment,
-    dest: *mut pgrx::pg_sys::DestReceiver,
-    completion_tag: *mut ::std::os::raw::c_char,
-) {
-    unsafe {
-        pgvector_stmt_rewrite(pstmt);
-    }
-    unsafe {
-        if let Some(prev_process_utility) = PREV_PROCESS_UTILITY {
-            prev_process_utility(
-                pstmt,
-                query_string,
-                context,
-                params,
-                query_env,
-                dest,
-                completion_tag,
-            );
-        } else {
-            pgrx::pg_sys::standard_ProcessUtility(
-                pstmt,
-                query_string,
                 context,
                 params,
                 query_env,

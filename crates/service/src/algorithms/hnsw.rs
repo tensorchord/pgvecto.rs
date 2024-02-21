@@ -16,7 +16,7 @@ use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::create_dir;
 use std::ops::RangeInclusive;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 
 pub struct Hnsw<S: G> {
@@ -25,37 +25,26 @@ pub struct Hnsw<S: G> {
 
 impl<S: G> Hnsw<S> {
     pub fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
     ) -> Self {
-        create_dir(&path).unwrap();
-        let ram = make(path.clone(), sealed, growing, options.clone());
-        let mmap = save(ram, path.clone());
-        sync_dir(&path);
-        Self { mmap }
-    }
-    pub fn open(path: PathBuf, options: IndexOptions) -> Self {
-        let mmap = load(path, options.clone());
+        create_dir(path).unwrap();
+        let ram = make(path, sealed, growing, options);
+        let mmap = save(ram, path);
+        sync_dir(path);
         Self { mmap }
     }
 
-    pub fn len(&self) -> u32 {
-        self.mmap.raw.len()
-    }
-
-    pub fn vector(&self, i: u32) -> &[S::Scalar] {
-        self.mmap.raw.vector(i)
-    }
-
-    pub fn payload(&self, i: u32) -> Payload {
-        self.mmap.raw.payload(i)
+    pub fn open(path: &Path, options: IndexOptions) -> Self {
+        let mmap = open(path, options);
+        Self { mmap }
     }
 
     pub fn basic(
         &self,
-        vector: &[S::Scalar],
+        vector: S::VectorRef<'_>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -64,11 +53,23 @@ impl<S: G> Hnsw<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: S::VectorRef<'a>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
         vbase(&self.mmap, vector, opts.hnsw_ef_search, filter)
+    }
+
+    pub fn len(&self) -> u32 {
+        self.mmap.raw.len()
+    }
+
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+        self.mmap.raw.vector(i)
+    }
+
+    pub fn payload(&self, i: u32) -> Payload {
+        self.mmap.raw.payload(i)
     }
 }
 
@@ -128,7 +129,7 @@ unsafe impl Pod for HnswMmapEdge {}
 unsafe impl Zeroable for HnswMmapEdge {}
 
 pub fn make<S: G>(
-    path: PathBuf,
+    path: &Path,
     sealed: Vec<Arc<SealedSegment<S>>>,
     growing: Vec<Arc<GrowingSegment<S>>>,
     options: IndexOptions,
@@ -139,13 +140,13 @@ pub fn make<S: G>(
         quantization: quantization_opts,
     } = options.indexing.clone().unwrap_hnsw();
     let raw = Arc::new(Raw::create(
-        path.join("raw"),
+        &path.join("raw"),
         options.clone(),
         sealed,
         growing,
     ));
     let quantization = Quantization::create(
-        path.join("quantization"),
+        &path.join("quantization"),
         options.clone(),
         quantization_opts,
         &raw,
@@ -170,7 +171,7 @@ pub fn make<S: G>(
             graph: &HnswRamGraph,
             levels: RangeInclusive<u8>,
             u: u32,
-            target: &[S::Scalar],
+            target: S::VectorRef<'_>,
         ) -> u32 {
             let mut u = u;
             let mut u_dis = quantization.distance(target, u);
@@ -195,7 +196,7 @@ pub fn make<S: G>(
             quantization: &Quantization<S>,
             graph: &HnswRamGraph,
             visited: &mut VisitedGuard,
-            vector: &[S::Scalar],
+            vector: S::VectorRef<'_>,
             s: u32,
             k: usize,
             i: u8,
@@ -335,9 +336,9 @@ pub fn make<S: G>(
     }
 }
 
-pub fn save<S: G>(mut ram: HnswRam<S>, path: PathBuf) -> HnswMmap<S> {
+pub fn save<S: G>(mut ram: HnswRam<S>, path: &Path) -> HnswMmap<S> {
     let edges = MmapArray::create(
-        path.join("edges"),
+        &path.join("edges"),
         ram.graph
             .vertexs
             .iter_mut()
@@ -345,13 +346,13 @@ pub fn save<S: G>(mut ram: HnswRam<S>, path: PathBuf) -> HnswMmap<S> {
             .flat_map(|v| &v.get_mut().edges)
             .map(|&(_0, _1)| HnswMmapEdge(_0, _1)),
     );
-    let by_layer_id = MmapArray::create(path.join("by_layer_id"), {
+    let by_layer_id = MmapArray::create(&path.join("by_layer_id"), {
         let iter = ram.graph.vertexs.iter_mut();
         let iter = iter.flat_map(|v| v.layers.iter_mut());
         let iter = iter.map(|v| v.get_mut().edges.len());
         caluate_offsets(iter)
     });
-    let by_vertex_id = MmapArray::create(path.join("by_vertex_id"), {
+    let by_vertex_id = MmapArray::create(&path.join("by_vertex_id"), {
         let iter = ram.graph.vertexs.iter_mut();
         let iter = iter.map(|v| v.layers.len());
         caluate_offsets(iter)
@@ -367,18 +368,18 @@ pub fn save<S: G>(mut ram: HnswRam<S>, path: PathBuf) -> HnswMmap<S> {
     }
 }
 
-pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> HnswMmap<S> {
+pub fn open<S: G>(path: &Path, options: IndexOptions) -> HnswMmap<S> {
     let idx_opts = options.indexing.clone().unwrap_hnsw();
-    let raw = Arc::new(Raw::open(path.join("raw"), options.clone()));
+    let raw = Arc::new(Raw::open(&path.join("raw"), options.clone()));
     let quantization = Quantization::open(
-        path.join("quantization"),
+        &path.join("quantization"),
         options.clone(),
         idx_opts.quantization,
         &raw,
     );
-    let edges = MmapArray::open(path.join("edges"));
-    let by_layer_id = MmapArray::open(path.join("by_layer_id"));
-    let by_vertex_id = MmapArray::open(path.join("by_vertex_id"));
+    let edges = MmapArray::open(&path.join("edges"));
+    let by_layer_id = MmapArray::open(&path.join("by_layer_id"));
+    let by_vertex_id = MmapArray::open(&path.join("by_vertex_id"));
     let idx_opts = options.indexing.unwrap_hnsw();
     let n = raw.len();
     HnswMmap {
@@ -394,7 +395,7 @@ pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> HnswMmap<S> {
 
 pub fn basic<S: G>(
     mmap: &HnswMmap<S>,
-    vector: &[S::Scalar],
+    vector: S::VectorRef<'_>,
     ef_search: usize,
     filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
@@ -408,7 +409,7 @@ pub fn basic<S: G>(
 
 pub fn vbase<'a, S: G>(
     mmap: &'a HnswMmap<S>,
-    vector: &'a [S::Scalar],
+    vector: S::VectorRef<'a>,
     range: usize,
     filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -466,7 +467,7 @@ pub fn fast_search<S: G>(
     mmap: &HnswMmap<S>,
     levels: RangeInclusive<u8>,
     u: u32,
-    vector: &[S::Scalar],
+    vector: S::VectorRef<'_>,
     mut filter: impl Filter,
 ) -> u32 {
     let mut u = u;
@@ -496,7 +497,7 @@ pub fn local_search_basic<S: G>(
     mmap: &HnswMmap<S>,
     k: usize,
     s: u32,
-    vector: &[S::Scalar],
+    vector: S::VectorRef<'_>,
     mut filter: impl Filter,
 ) -> ElementHeap {
     let mut visited = mmap.visited.fetch();
@@ -540,7 +541,7 @@ pub fn local_search_basic<S: G>(
 pub fn local_search_vbase<'a, S: G>(
     mmap: &'a HnswMmap<S>,
     s: u32,
-    vector: &'a [S::Scalar],
+    vector: S::VectorRef<'a>,
     mut filter: impl Filter + 'a,
 ) -> impl Iterator<Item = Element> + 'a {
     let mut visited = mmap.visited.fetch2();
@@ -618,7 +619,7 @@ impl VisitedPool {
             locked_buffers: Mutex::new(Vec::new()),
         }
     }
-    pub fn fetch(&self) -> VisitedGuard<'_> {
+    pub fn fetch(&self) -> VisitedGuard {
         let buffer = self
             .locked_buffers
             .lock()

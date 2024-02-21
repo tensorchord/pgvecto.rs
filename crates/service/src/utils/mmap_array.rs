@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::{BufWriter, Read, Seek, Write};
 use std::ops::Index;
 use std::ops::{Deref, Range, RangeInclusive};
-use std::path::PathBuf;
+use std::path::Path;
 
 pub struct MmapArray<T> {
     info: Information,
@@ -15,7 +15,7 @@ impl<T> MmapArray<T>
 where
     T: Pod,
 {
-    pub fn create<I>(path: PathBuf, iter: I) -> Self
+    pub fn create<I>(path: &Path, iter: I) -> Self
     where
         I: Iterator<Item = T>,
     {
@@ -43,7 +43,7 @@ where
             _mmap: mmap,
         }
     }
-    pub fn open(path: PathBuf) -> Self {
+    pub fn open(path: &Path) -> Self {
         let file = std::fs::OpenOptions::new().read(true).open(path).unwrap();
         let info = read_information(&file);
         let mmap = unsafe { read_mmap(&file, info.len * std::mem::size_of::<T>()) };

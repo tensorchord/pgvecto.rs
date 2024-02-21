@@ -2,9 +2,14 @@ mod f16;
 mod f16_cos;
 mod f16_dot;
 mod f16_l2;
+mod f32;
 mod f32_cos;
 mod f32_dot;
 mod f32_l2;
+mod sparse_f32;
+mod sparse_f32_cos;
+mod sparse_f32_dot;
+mod sparse_f32_l2;
 
 pub use f16_cos::F16Cos;
 pub use f16_dot::F16Dot;
@@ -12,10 +17,17 @@ pub use f16_l2::F16L2;
 pub use f32_cos::F32Cos;
 pub use f32_dot::F32Dot;
 pub use f32_l2::F32L2;
+pub use sparse_f32_cos::SparseF32Cos;
+pub use sparse_f32_dot::SparseF32Dot;
+pub use sparse_f32_l2::SparseF32L2;
 
 use crate::prelude::*;
+use base::scalar::FloatCast;
 use serde::{Deserialize, Serialize};
-use std::fmt::{Debug, Display};
+use std::{
+    borrow::Cow,
+    fmt::{Debug, Display},
+};
 
 pub trait G: Copy + Debug + 'static {
     type Scalar: Copy
@@ -33,17 +45,32 @@ pub trait G: Copy + Debug + 'static {
         + num_traits::NumOps
         + num_traits::NumAssignOps
         + FloatCast;
-    const DISTANCE: Distance;
-    type L2: G<Scalar = Self::Scalar>;
+    type Storage: for<'a> Storage<VectorRef<'a> = Self::VectorRef<'a>>;
+    type L2: for<'a> G<Scalar = Self::Scalar, VectorRef<'a> = &'a [Self::Scalar]>;
+    type VectorOwned: Vector + Clone + Serialize + for<'a> Deserialize<'a>;
+    type VectorRef<'a>: Vector + Copy + 'a
+    where
+        Self: 'a;
 
-    fn distance(lhs: &[Self::Scalar], rhs: &[Self::Scalar]) -> F32;
+    const DISTANCE: Distance;
+    const KIND: Kind;
+
+    fn owned_to_ref(vector: &Self::VectorOwned) -> Self::VectorRef<'_>;
+    fn ref_to_owned(vector: Self::VectorRef<'_>) -> Self::VectorOwned;
+    fn to_dense(vector: Self::VectorRef<'_>) -> Cow<'_, [Self::Scalar]>;
+    fn distance(lhs: Self::VectorRef<'_>, rhs: Self::VectorRef<'_>) -> F32;
+    fn distance2(lhs: Self::VectorRef<'_>, rhs: &[Self::Scalar]) -> F32;
+
     fn elkan_k_means_normalize(vector: &mut [Self::Scalar]);
+    fn elkan_k_means_normalize2(vector: &mut Self::VectorOwned);
     fn elkan_k_means_distance(lhs: &[Self::Scalar], rhs: &[Self::Scalar]) -> F32;
+    fn elkan_k_means_distance2(lhs: Self::VectorRef<'_>, rhs: &[Self::Scalar]) -> F32;
+
     fn scalar_quantization_distance(
         dims: u16,
         max: &[Self::Scalar],
         min: &[Self::Scalar],
-        lhs: &[Self::Scalar],
+        lhs: Self::VectorRef<'_>,
         rhs: &[u8],
     ) -> F32;
     fn scalar_quantization_distance2(
@@ -53,11 +80,12 @@ pub trait G: Copy + Debug + 'static {
         lhs: &[u8],
         rhs: &[u8],
     ) -> F32;
+
     fn product_quantization_distance(
         dims: u16,
         ratio: u16,
         centroids: &[Self::Scalar],
-        lhs: &[Self::Scalar],
+        lhs: Self::VectorRef<'_>,
         rhs: &[u8],
     ) -> F32;
     fn product_quantization_distance2(
@@ -71,27 +99,17 @@ pub trait G: Copy + Debug + 'static {
         dims: u16,
         ratio: u16,
         centroids: &[Self::Scalar],
-        lhs: &[Self::Scalar],
+        lhs: Self::VectorRef<'_>,
         rhs: &[u8],
         delta: &[Self::Scalar],
     ) -> F32;
-}
-
-pub trait FloatCast: Sized {
-    fn from_f32(x: f32) -> Self;
-    fn to_f32(self) -> f32;
-    fn from_f(x: F32) -> Self {
-        Self::from_f32(x.0)
-    }
-    fn to_f(self) -> F32 {
-        F32(Self::to_f32(self))
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DynamicVector {
     F32(Vec<F32>),
     F16(Vec<F16>),
+    SparseF32(SparseF32),
 }
 
 impl From<Vec<F32>> for DynamicVector {
@@ -103,6 +121,12 @@ impl From<Vec<F32>> for DynamicVector {
 impl From<Vec<F16>> for DynamicVector {
     fn from(value: Vec<F16>) -> Self {
         Self::F16(value)
+    }
+}
+
+impl From<SparseF32> for DynamicVector {
+    fn from(value: SparseF32) -> Self {
+        Self::SparseF32(value)
     }
 }
 
@@ -119,6 +143,7 @@ pub enum Distance {
 pub enum Kind {
     F32,
     F16,
+    SparseF32,
 }
 
 pub fn squared_norm<S: G>(dims: u16, vec: &[S::Scalar]) -> F32 {

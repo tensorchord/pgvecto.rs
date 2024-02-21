@@ -1,0 +1,20 @@
+statement ok
+SET search_path TO pg_temp, vectors;
+
+statement ok
+CREATE TABLE t (val svector);
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[]::vector::svector FROM generate_series(1, 1000);
+
+statement ok
+ALTER TABLE t ALTER COLUMN val SET STORAGE PLAIN;
+
+statement ok
+ALTER TABLE t ALTER COLUMN val SET STORAGE EXTERNAL;
+
+statement ok
+ALTER TABLE t ALTER COLUMN val SET STORAGE EXTENDED;
+
+statement ok
+ALTER TABLE t ALTER COLUMN val SET STORAGE MAIN;

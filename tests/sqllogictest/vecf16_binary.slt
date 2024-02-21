@@ -11,10 +11,10 @@ statement ok
 INSERT INTO t (val) SELECT ARRAY[random()]::real[]::vector::vecf16 FROM generate_series(1, 1000);
 
 statement ok
-INSERT INTO t (val) SELECT ARRAY[random(), random()]::real[]::real[]::vector::vecf16 FROM generate_series(1, 1000);
+INSERT INTO t (val) SELECT ARRAY[random(), random()]::real[]::vector::vecf16 FROM generate_series(1, 1000);
 
 statement ok
-INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[]::real[]::vector::vecf16 FROM generate_series(1, 1000);
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[]::vector::vecf16 FROM generate_series(1, 1000);
 
 statement ok
 COPY t TO '/tmp/data.bin' WITH (FORMAT binary);

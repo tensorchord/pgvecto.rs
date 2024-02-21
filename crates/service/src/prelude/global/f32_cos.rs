@@ -1,27 +1,53 @@
-use super::G;
-use crate::prelude::scalar::F32;
 use crate::prelude::*;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, Copy)]
 pub enum F32Cos {}
 
 impl G for F32Cos {
     type Scalar = F32;
+    type Storage = DenseMmap<F32>;
+    type L2 = F32L2;
+    type VectorOwned = Vec<F32>;
+    type VectorRef<'a> = &'a [F32];
 
     const DISTANCE: Distance = Distance::Cos;
+    const KIND: Kind = Kind::F32;
 
-    type L2 = F32L2;
+    fn owned_to_ref(vector: &Vec<F32>) -> &[F32] {
+        vector
+    }
+
+    fn ref_to_owned(vector: &[F32]) -> Vec<F32> {
+        vector.to_vec()
+    }
+
+    fn to_dense(vector: Self::VectorRef<'_>) -> Cow<'_, [F32]> {
+        Cow::Borrowed(vector)
+    }
 
     fn distance(lhs: &[F32], rhs: &[F32]) -> F32 {
-        F32(1.0) - cosine(lhs, rhs)
+        F32(1.0) - super::f32::cosine(lhs, rhs)
+    }
+
+    fn distance2(lhs: &[F32], rhs: &[F32]) -> F32 {
+        F32(1.0) - super::f32::cosine(lhs, rhs)
     }
 
     fn elkan_k_means_normalize(vector: &mut [F32]) {
-        l2_normalize(vector)
+        super::f32::l2_normalize(vector)
+    }
+
+    fn elkan_k_means_normalize2(vector: &mut Vec<F32>) {
+        super::f32::l2_normalize(vector)
     }
 
     fn elkan_k_means_distance(lhs: &[F32], rhs: &[F32]) -> F32 {
-        super::f32_dot::dot(lhs, rhs).acos()
+        super::f32::dot(lhs, rhs).acos()
+    }
+
+    fn elkan_k_means_distance2(lhs: &[F32], rhs: &[F32]) -> F32 {
+        super::f32::dot(lhs, rhs).acos()
     }
 
     #[multiversion::multiversion(targets(
@@ -168,58 +194,6 @@ impl G for F32Cos {
         }
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-fn length(vector: &[F32]) -> F32 {
-    let n = vector.len();
-    let mut dot = F32::zero();
-    for i in 0..n {
-        dot += vector[i] * vector[i];
-    }
-    dot.sqrt()
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-fn l2_normalize(vector: &mut [F32]) {
-    let n = vector.len();
-    let l = length(vector);
-    for i in 0..n {
-        vector[i] /= l;
-    }
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-fn cosine(lhs: &[F32], rhs: &[F32]) -> F32 {
-    assert!(lhs.len() == rhs.len());
-    let n = lhs.len();
-    let mut xy = F32::zero();
-    let mut x2 = F32::zero();
-    let mut y2 = F32::zero();
-    for i in 0..n {
-        xy += lhs[i] * rhs[i];
-        x2 += lhs[i] * lhs[i];
-        y2 += rhs[i] * rhs[i];
-    }
-    xy / (x2 * y2).sqrt()
 }
 
 #[inline(always)]

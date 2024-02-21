@@ -67,8 +67,14 @@ pub unsafe fn convert_opfamily_to_distance(opfamily: pgrx::pg_sys::Oid) -> (Dist
         result = (Distance::Dot, Kind::F16);
     } else if operator == regoperatorin("vectors.<=>(vectors.vecf16,vectors.vecf16)") {
         result = (Distance::Cos, Kind::F16);
+    } else if operator == regoperatorin("vectors.<->(vectors.svector,vectors.svector)") {
+        result = (Distance::L2, Kind::SparseF32);
+    } else if operator == regoperatorin("vectors.<#>(vectors.svector,vectors.svector)") {
+        result = (Distance::Dot, Kind::SparseF32);
+    } else if operator == regoperatorin("vectors.<=>(vectors.svector,vectors.svector)") {
+        result = (Distance::Cos, Kind::SparseF32);
     } else {
-        SessionError::BadOptions2.friendly();
+        bad_opclass();
     };
     pgrx::pg_sys::ReleaseCatCacheList(list);
     pgrx::pg_sys::ReleaseSysCache(tuple);
@@ -85,7 +91,7 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
     let attrs = (*(*index_relation).rd_att).attrs.as_slice(1);
     let attr = &attrs[0];
     let typmod = Typmod::parse_from_i32(attr.type_mod()).unwrap();
-    let dims = typmod.dims().ok_or(SessionError::BadOption1).friendly();
+    let dims = check_column_dimensions(typmod.dims()).get();
     // get other options
     let parsed = get_parsed_from_varlena((*index_relation).rd_options);
     IndexOptions {

@@ -10,7 +10,7 @@ use crate::index::IndexOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use validator::Validate;
 
@@ -59,19 +59,19 @@ impl QuantizationOptions {
 
 pub trait Quan<S: G> {
     fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
         raw: &Arc<Raw<S>>,
         permutation: Vec<u32>,
     ) -> Self;
-    fn open(
-        path: PathBuf,
+    fn open2(
+        path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
         raw: &Arc<Raw<S>>,
     ) -> Self;
-    fn distance(&self, lhs: &[S::Scalar], rhs: u32) -> F32;
+    fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32;
     fn distance2(&self, lhs: u32, rhs: u32) -> F32;
 }
 
@@ -83,7 +83,7 @@ pub enum Quantization<S: G> {
 
 impl<S: G> Quantization<S> {
     pub fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
         raw: &Arc<Raw<S>>,
@@ -115,25 +115,25 @@ impl<S: G> Quantization<S> {
     }
 
     pub fn open(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         quantization_options: QuantizationOptions,
         raw: &Arc<Raw<S>>,
     ) -> Self {
         match quantization_options {
-            QuantizationOptions::Trivial(_) => Self::Trivial(TrivialQuantization::open(
+            QuantizationOptions::Trivial(_) => Self::Trivial(TrivialQuantization::open2(
                 path,
                 options,
                 quantization_options,
                 raw,
             )),
-            QuantizationOptions::Scalar(_) => Self::Scalar(ScalarQuantization::open(
+            QuantizationOptions::Scalar(_) => Self::Scalar(ScalarQuantization::open2(
                 path,
                 options,
                 quantization_options,
                 raw,
             )),
-            QuantizationOptions::Product(_) => Self::Product(ProductQuantization::open(
+            QuantizationOptions::Product(_) => Self::Product(ProductQuantization::open2(
                 path,
                 options,
                 quantization_options,
@@ -142,7 +142,7 @@ impl<S: G> Quantization<S> {
         }
     }
 
-    pub fn distance(&self, lhs: &[S::Scalar], rhs: u32) -> F32 {
+    pub fn distance(&self, lhs: S::VectorRef<'_>, rhs: u32) -> F32 {
         use Quantization::*;
         match self {
             Trivial(x) => x.distance(lhs, rhs),

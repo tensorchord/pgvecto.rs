@@ -17,11 +17,11 @@ use rand::seq::index::sample;
 use rand::thread_rng;
 use rayon::iter::IntoParallelRefMutIterator;
 use rayon::iter::{IndexedParallelIterator, ParallelIterator};
-use rayon::slice::ParallelSliceMut;
+use rayon::prelude::ParallelSliceMut;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::create_dir;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 
 pub struct IvfPq<S: G> {
@@ -30,20 +30,20 @@ pub struct IvfPq<S: G> {
 
 impl<S: G> IvfPq<S> {
     pub fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
     ) -> Self {
-        create_dir(&path).unwrap();
-        let ram = make(path.clone(), sealed, growing, options);
-        let mmap = save(ram, path.clone());
-        sync_dir(&path);
+        create_dir(path).unwrap();
+        let ram = make(path, sealed, growing, options);
+        let mmap = save(ram, path);
+        sync_dir(path);
         Self { mmap }
     }
 
-    pub fn open(path: PathBuf, options: IndexOptions) -> Self {
-        let mmap = load(path.clone(), options);
+    pub fn open(path: &Path, options: IndexOptions) -> Self {
+        let mmap = open(path, options);
         Self { mmap }
     }
 
@@ -51,7 +51,7 @@ impl<S: G> IvfPq<S> {
         self.mmap.raw.len()
     }
 
-    pub fn vector(&self, i: u32) -> &[S::Scalar] {
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
         self.mmap.raw.vector(i)
     }
 
@@ -61,7 +61,7 @@ impl<S: G> IvfPq<S> {
 
     pub fn basic(
         &self,
-        vector: &[S::Scalar],
+        vector: S::VectorRef<'_>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -70,7 +70,7 @@ impl<S: G> IvfPq<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: S::VectorRef<'a>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -89,7 +89,7 @@ pub struct IvfRam<S: G> {
     // ----------------------
     nlist: u32,
     // ----------------------
-    centroids: Vec2<S>,
+    centroids: Vec2<S::Scalar>,
     ptr: Vec<usize>,
     payloads: Vec<Payload>,
 }
@@ -122,7 +122,7 @@ impl<S: G> IvfMmap<S> {
 }
 
 pub fn make<S: G>(
-    path: PathBuf,
+    path: &Path,
     sealed: Vec<Arc<SealedSegment<S>>>,
     growing: Vec<Arc<GrowingSegment<S>>>,
     options: IndexOptions,
@@ -136,7 +136,7 @@ pub fn make<S: G>(
         quantization: quantization_opts,
     } = options.indexing.clone().unwrap_ivf();
     let raw = Arc::new(Raw::create(
-        path.join("raw"),
+        &path.join("raw"),
         options.clone(),
         sealed,
         growing,
@@ -146,10 +146,10 @@ pub fn make<S: G>(
     let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
     let mut samples = Vec2::new(dims, m as usize);
     for i in 0..m {
-        samples[i as usize].copy_from_slice(raw.vector(f[i as usize] as u32));
+        samples[i as usize].copy_from_slice(S::to_dense(raw.vector(f[i as usize] as u32)).as_ref());
         S::elkan_k_means_normalize(&mut samples[i as usize]);
     }
-    let mut k_means = ElkanKMeans::new(nlist as usize, samples);
+    let mut k_means = ElkanKMeans::<S>::new(nlist as usize, samples);
     for _ in 0..least_iterations {
         k_means.iterate();
     }
@@ -161,11 +161,11 @@ pub fn make<S: G>(
     let centroids = k_means.finish();
     let mut idx = vec![0usize; n as usize];
     idx.par_iter_mut().enumerate().for_each(|(i, x)| {
-        let mut vector = raw.vector(i as u32).to_vec();
-        S::elkan_k_means_normalize(&mut vector);
+        let mut vector = S::ref_to_owned(raw.vector(i as u32));
+        S::elkan_k_means_normalize2(&mut vector);
         let mut result = (F32::infinity(), 0);
         for i in 0..nlist as usize {
-            let dis = S::elkan_k_means_distance(&vector, &centroids[i]);
+            let dis = S::elkan_k_means_distance2(S::owned_to_ref(&vector), &centroids[i]);
             result = std::cmp::min(result, (dis, i));
         }
         *x = result.1;
@@ -186,27 +186,27 @@ pub fn make<S: G>(
             .flat_map(|i| &invlists_payloads[i as usize])
             .copied(),
     );
-    sync_dir(&path);
+    sync_dir(path);
     let residuals = {
-        let mut residuals = Vec2::<S>::new(options.vector.dims, n as usize);
+        let mut residuals = Vec2::new(options.vector.dims, n as usize);
         residuals
             .par_chunks_mut(dims as usize)
             .enumerate()
             .for_each(|(i, v)| {
                 for j in 0..dims {
-                    v[j as usize] = raw.vector(ids[i])[j as usize]
+                    v[j as usize] = S::to_dense(raw.vector(ids[i])).as_ref()[j as usize]
                         - centroids[idx[ids[i] as usize]][j as usize];
                 }
             });
         residuals
     };
     let mut quantization = ProductQuantization::encode(
-        path.join("quantization"),
+        &path.join("quantization"),
         options.clone(),
         quantization_opts,
         &residuals,
     );
-    quantization.precompute_table(path.join("quantization"), &centroids);
+    quantization.precompute_table(&path.join("quantization"), &centroids);
     IvfRam {
         raw,
         quantization,
@@ -218,15 +218,15 @@ pub fn make<S: G>(
     }
 }
 
-pub fn save<S: G>(ram: IvfRam<S>, path: PathBuf) -> IvfMmap<S> {
+pub fn save<S: G>(ram: IvfRam<S>, path: &Path) -> IvfMmap<S> {
     let centroids = MmapArray::create(
-        path.join("centroids"),
+        &path.join("centroids"),
         (0..ram.nlist)
             .flat_map(|i| &ram.centroids[i as usize])
             .copied(),
     );
-    let ptr = MmapArray::create(path.join("ptr"), ram.ptr.iter().copied());
-    let payloads = MmapArray::create(path.join("payload"), ram.payloads.iter().copied());
+    let ptr = MmapArray::create(&path.join("ptr"), ram.ptr.iter().copied());
+    let payloads = MmapArray::create(&path.join("payload"), ram.payloads.iter().copied());
     IvfMmap {
         raw: ram.raw,
         quantization: ram.quantization,
@@ -238,17 +238,17 @@ pub fn save<S: G>(ram: IvfRam<S>, path: PathBuf) -> IvfMmap<S> {
     }
 }
 
-pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> IvfMmap<S> {
-    let raw = Arc::new(Raw::open(path.join("raw"), options.clone()));
-    let quantization = ProductQuantization::open(
-        path.join("quantization"),
+pub fn open<S: G>(path: &Path, options: IndexOptions) -> IvfMmap<S> {
+    let raw = Arc::new(Raw::open(&path.join("raw"), options.clone()));
+    let quantization = ProductQuantization::open2(
+        &path.join("quantization"),
         options.clone(),
         options.indexing.clone().unwrap_ivf().quantization,
         &raw,
     );
-    let centroids = MmapArray::open(path.join("centroids"));
-    let ptr = MmapArray::open(path.join("ptr"));
-    let payloads = MmapArray::open(path.join("payload"));
+    let centroids = MmapArray::open(&path.join("centroids"));
+    let ptr = MmapArray::open(&path.join("ptr"));
+    let payloads = MmapArray::open(&path.join("payload"));
     let IvfIndexingOptions { nlist, .. } = options.indexing.unwrap_ivf();
     IvfMmap {
         raw,
@@ -263,16 +263,14 @@ pub fn load<S: G>(path: PathBuf, options: IndexOptions) -> IvfMmap<S> {
 
 pub fn basic<S: G>(
     mmap: &IvfMmap<S>,
-    vector: &[S::Scalar],
+    vector: S::VectorRef<'_>,
     nprobe: u32,
     mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
-    let target = vector.to_vec();
-    // S::elkan_k_means_normalize(&mut target);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::distance(&target, centroid);
+        let distance = S::distance2(vector, centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,
@@ -280,7 +278,7 @@ pub fn basic<S: G>(
             });
         }
     }
-    let runtime_table = mmap.quantization.init_query(&target);
+    let runtime_table = mmap.quantization.init_query(S::to_dense(vector).as_ref());
     let lists = lists.into_sorted_vec();
     let mut result = BinaryHeap::new();
     for i in lists.iter() {
@@ -308,16 +306,14 @@ pub fn basic<S: G>(
 
 pub fn vbase<'a, S: G>(
     mmap: &'a IvfMmap<S>,
-    vector: &'a [S::Scalar],
+    vector: S::VectorRef<'a>,
     nprobe: u32,
     mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-    let target = vector.to_vec();
-    // S::elkan_k_means_normalize(&mut target);
     let mut lists = ElementHeap::new(nprobe as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = S::distance(&target, centroid);
+        let distance = S::distance2(vector, centroid);
         if lists.check(distance) {
             lists.push(Element {
                 distance,
@@ -325,7 +321,7 @@ pub fn vbase<'a, S: G>(
             });
         }
     }
-    let runtime_table = mmap.quantization.init_query(&target);
+    let runtime_table = mmap.quantization.init_query(S::to_dense(vector).as_ref());
     let lists = lists.into_sorted_vec();
     let mut result = Vec::new();
     for i in lists.iter() {

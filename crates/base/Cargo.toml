@@ -1,0 +1,40 @@
+[package]
+name = "base"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+bincode.workspace = true
+bytemuck.workspace = true
+byteorder.workspace = true
+half.workspace = true
+libc.workspace = true
+log.workspace = true
+memmap2.workspace = true
+num-traits.workspace = true
+rand.workspace = true
+rustix.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+validator.workspace = true
+c = { path = "../c" }
+detect = { path = "../detect" }
+crc32fast = "1.4.0"
+crossbeam = "0.8.4"
+dashmap = "5.5.3"
+parking_lot = "0.12.1"
+rayon = "1.8.1"
+arc-swap = "1.6.0"
+multiversion = "0.7.3"
+
+[lints]
+clippy.derivable_impls = "allow"
+clippy.len_without_is_empty = "allow"
+clippy.needless_range_loop = "allow"
+clippy.too_many_arguments = "allow"
+rust.internal_features = "allow"
+rust.unsafe_op_in_unsafe_fn = "forbid"
+rust.unused_lifetimes = "warn"
+rust.unused_qualifications = "warn"

@@ -1,26 +1,35 @@
 pub mod normal;
-pub mod upgrade;
+
+use std::sync::atomic::{AtomicBool, Ordering};
+
+static STARTED: AtomicBool = AtomicBool::new(false);
 
 pub unsafe fn init() {
-    use pgrx::bgworkers::BackgroundWorkerBuilder;
-    use pgrx::bgworkers::BgWorkerStartTime;
-    use std::time::Duration;
-    BackgroundWorkerBuilder::new("vectors")
-        .set_library("vectors")
-        .set_function("_vectors_main")
-        .set_argument(None)
-        .enable_shmem_access(None)
-        .set_start_time(BgWorkerStartTime::PostmasterStart)
-        .set_restart_time(Some(Duration::from_secs(1)))
-        .load();
+    use service::worker::Worker;
+    let path = std::path::Path::new("pg_vectors");
+    if !path.try_exists().unwrap() || Worker::check(path.to_owned()) {
+        use pgrx::bgworkers::BackgroundWorkerBuilder;
+        use pgrx::bgworkers::BgWorkerStartTime;
+        use std::time::Duration;
+        BackgroundWorkerBuilder::new("vectors")
+            .set_library("vectors")
+            .set_function("_vectors_main")
+            .set_argument(None)
+            .enable_shmem_access(None)
+            .set_start_time(BgWorkerStartTime::PostmasterStart)
+            .set_restart_time(Some(Duration::from_secs(15)))
+            .load();
+        STARTED.store(true, Ordering::Relaxed);
+    }
 }
 
+pub fn is_started() -> bool {
+    STARTED.load(Ordering::Relaxed)
+}
+
+#[pgrx::pg_guard]
 #[no_mangle]
 extern "C" fn _vectors_main(_arg: pgrx::pg_sys::Datum) {
-    let _ = std::panic::catch_unwind(main);
-}
-
-fn main() {
     pub struct AllocErrorPanicPayload {
         pub layout: std::alloc::Layout,
     }
@@ -60,12 +69,8 @@ fn main() {
     use std::path::Path;
     let path = Path::new("pg_vectors");
     if path.try_exists().unwrap() {
-        if Worker::check(path.to_owned()) {
-            let worker = Worker::open(path.to_owned());
-            self::normal::normal(worker);
-        } else {
-            self::upgrade::upgrade();
-        }
+        let worker = Worker::open(path.to_owned());
+        self::normal::normal(worker);
     } else {
         let worker = Worker::create(path.to_owned());
         self::normal::normal(worker);

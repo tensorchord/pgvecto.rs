@@ -59,7 +59,13 @@ impl<S: G> GrowingSegment<S> {
             _tracker: Arc::new(SegmentTracker { path, _tracker }),
         })
     }
-    pub fn open(_tracker: Arc<IndexTracker>, path: PathBuf, uuid: Uuid) -> Arc<Self> {
+
+    pub fn open(
+        _tracker: Arc<IndexTracker>,
+        path: PathBuf,
+        uuid: Uuid,
+        _: IndexOptions,
+    ) -> Arc<Self> {
         let mut wal = FileWal::open(path.join("wal"));
         let mut vec = Vec::new();
         while let Some(log) = wal.read() {
@@ -80,9 +86,11 @@ impl<S: G> GrowingSegment<S> {
             _tracker: Arc::new(SegmentTracker { path, _tracker }),
         })
     }
+
     pub fn uuid(&self) -> Uuid {
         self.uuid
     }
+
     pub fn is_full(&self) -> bool {
         let n;
         {
@@ -97,6 +105,7 @@ impl<S: G> GrowingSegment<S> {
         }
         true
     }
+
     pub fn seal(&self) {
         let n;
         {
@@ -109,12 +118,14 @@ impl<S: G> GrowingSegment<S> {
         }
         self.wal.lock().sync_all();
     }
+
     pub fn flush(&self) {
         self.wal.lock().sync_all();
     }
+
     pub fn insert(
         &self,
-        vector: Vec<S::Scalar>,
+        vector: S::VectorOwned,
         payload: Payload,
     ) -> Result<(), GrowingSegmentInsertError> {
         let log = Log { vector, payload };
@@ -139,9 +150,11 @@ impl<S: G> GrowingSegment<S> {
             .write(&bincode::serialize::<Log<S>>(&log).unwrap());
         Ok(())
     }
+
     pub fn len(&self) -> u32 {
         self.len.load(Ordering::Acquire) as u32
     }
+
     pub fn stat_growing(&self) -> SegmentStat {
         SegmentStat {
             id: self.uuid,
@@ -150,6 +163,7 @@ impl<S: G> GrowingSegment<S> {
             size: (self.len() as u64) * (std::mem::size_of::<Log<S>>() as u64),
         }
     }
+
     pub fn stat_write(&self) -> SegmentStat {
         SegmentStat {
             id: self.uuid,
@@ -158,14 +172,16 @@ impl<S: G> GrowingSegment<S> {
             size: (self.len() as u64) * (std::mem::size_of::<Log<S>>() as u64),
         }
     }
-    pub fn vector(&self, i: u32) -> &[S::Scalar] {
+
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
         let i = i as usize;
         if i >= self.len.load(Ordering::Acquire) {
             panic!("Out of bound.");
         }
         let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
-        log.vector.as_ref()
+        S::owned_to_ref(&log.vector)
     }
+
     pub fn payload(&self, i: u32) -> Payload {
         let i = i as usize;
         if i >= self.len.load(Ordering::Acquire) {
@@ -174,9 +190,10 @@ impl<S: G> GrowingSegment<S> {
         let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
         log.payload
     }
+
     pub fn basic(
         &self,
-        vector: &[S::Scalar],
+        vector: S::VectorRef<'_>,
         _opts: &SearchOptions,
         mut filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -185,7 +202,7 @@ impl<S: G> GrowingSegment<S> {
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
             if filter.check(log.payload) {
-                let distance = S::distance(vector, &log.vector);
+                let distance = S::distance(vector, S::owned_to_ref(&log.vector));
                 result.push(Reverse(Element {
                     distance,
                     payload: log.payload,
@@ -194,9 +211,10 @@ impl<S: G> GrowingSegment<S> {
         }
         result
     }
+
     pub fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: S::VectorRef<'a>,
         _opts: &SearchOptions,
         mut filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
@@ -205,7 +223,7 @@ impl<S: G> GrowingSegment<S> {
         for i in 0..n {
             let log = unsafe { (*self.vec[i].get()).assume_init_ref() };
             if filter.check(log.payload) {
-                let distance = S::distance(vector, &log.vector);
+                let distance = S::distance(vector, S::owned_to_ref(&log.vector));
                 result.push(Element {
                     distance,
                     payload: log.payload,
@@ -232,7 +250,7 @@ impl<S: G> Drop for GrowingSegment<S> {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Log<S: G> {
-    vector: Vec<S::Scalar>,
+    vector: S::VectorOwned,
     payload: Payload,
 }
 

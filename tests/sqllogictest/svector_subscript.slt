@@ -1,0 +1,88 @@
+statement ok
+SET search_path TO pg_temp, vectors;
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[3:6];
+----
+[3, 4, 5]
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[:4];
+----
+[0, 1, 2, 3]
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[5:];
+----
+[5, 6, 7]
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[1:8];
+----
+[1, 2, 3, 4, 5, 6, 7]
+
+statement error type svector does only support one subscript
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[3:3][1:1];
+
+statement error type svector does only support slice fetch
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[3];
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[5:4];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[9:];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[:0];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[:-1];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[NULL:NULL];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[NULL:8];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[1:NULL];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[NULL:];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::svector)[:NULL];
+----
+NULL
+
+query I
+SELECT ('[0, 0, 2, 0, 4, 0, 0, 7]'::svector)[3:7];
+----
+[0, 4, 0, 0]
+
+query I
+SELECT ('[0, 0, 2, 0, 4, 0, 0, 7]'::svector)[5:7];
+----
+[0, 0]
+
+query I
+SELECT ('[0, 0, 0, 0, 0, 0, 0, 0]'::svector)[5:7];
+----
+[0, 0]

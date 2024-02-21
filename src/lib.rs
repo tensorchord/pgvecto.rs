@@ -21,7 +21,7 @@ pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
 unsafe extern "C" fn _PG_init() {
     use crate::prelude::*;
     if unsafe { pgrx::pg_sys::IsUnderPostmaster } {
-        SessionError::BadInit.friendly();
+        bad_init();
     }
     unsafe {
         detect::initialize();

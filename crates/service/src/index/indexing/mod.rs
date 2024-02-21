@@ -8,12 +8,13 @@ use self::ivf::{IvfIndexing, IvfIndexingOptions};
 use super::segments::growing::GrowingSegment;
 use super::segments::sealed::SealedSegment;
 use super::IndexOptions;
+use crate::algorithms::quantization::QuantizationOptions;
 use crate::index::SearchOptions;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use validator::Validate;
 
@@ -45,6 +46,14 @@ impl IndexingOptions {
         };
         x
     }
+    pub fn has_quantization(&self) -> bool {
+        let option = match self {
+            Self::Flat(x) => &x.quantization,
+            Self::Ivf(x) => &x.quantization,
+            Self::Hnsw(x) => &x.quantization,
+        };
+        !matches!(option, QuantizationOptions::Trivial(_))
+    }
 }
 
 impl Default for IndexingOptions {
@@ -63,26 +72,22 @@ impl Validate for IndexingOptions {
     }
 }
 
-pub trait AbstractIndexing<S: G>: Sized {
+pub trait AbstractIndexing<S: G> {
     fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
     ) -> Self;
-    fn open(path: PathBuf, options: IndexOptions) -> Self;
-    fn len(&self) -> u32;
-    fn vector(&self, i: u32) -> &[S::Scalar];
-    fn payload(&self, i: u32) -> Payload;
     fn basic(
         &self,
-        vector: &[S::Scalar],
+        vector: S::VectorRef<'_>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>>;
     fn vbase<'a>(
         &'a self,
-        vector: &'a [S::Scalar],
+        vector: S::VectorRef<'a>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>);
@@ -96,7 +101,7 @@ pub enum DynamicIndexing<S: G> {
 
 impl<S: G> DynamicIndexing<S> {
     pub fn create(
-        path: PathBuf,
+        path: &Path,
         options: IndexOptions,
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
@@ -114,11 +119,29 @@ impl<S: G> DynamicIndexing<S> {
         }
     }
 
-    pub fn open(path: PathBuf, options: IndexOptions) -> Self {
-        match options.indexing {
-            IndexingOptions::Flat(_) => Self::Flat(FlatIndexing::open(path, options)),
-            IndexingOptions::Ivf(_) => Self::Ivf(IvfIndexing::open(path, options)),
-            IndexingOptions::Hnsw(_) => Self::Hnsw(HnswIndexing::open(path, options)),
+    pub fn basic(
+        &self,
+        vector: S::VectorRef<'_>,
+        opts: &SearchOptions,
+        filter: impl Filter,
+    ) -> BinaryHeap<Reverse<Element>> {
+        match self {
+            DynamicIndexing::Flat(x) => x.basic(vector, opts, filter),
+            DynamicIndexing::Ivf(x) => x.basic(vector, opts, filter),
+            DynamicIndexing::Hnsw(x) => x.basic(vector, opts, filter),
+        }
+    }
+
+    pub fn vbase<'a>(
+        &'a self,
+        vector: S::VectorRef<'a>,
+        opts: &'a SearchOptions,
+        filter: impl Filter + 'a,
+    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
+        match self {
+            DynamicIndexing::Flat(x) => x.vbase(vector, opts, filter),
+            DynamicIndexing::Ivf(x) => x.vbase(vector, opts, filter),
+            DynamicIndexing::Hnsw(x) => x.vbase(vector, opts, filter),
         }
     }
 
@@ -130,7 +153,7 @@ impl<S: G> DynamicIndexing<S> {
         }
     }
 
-    pub fn vector(&self, i: u32) -> &[S::Scalar] {
+    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
         match self {
             DynamicIndexing::Flat(x) => x.vector(i),
             DynamicIndexing::Ivf(x) => x.vector(i),
@@ -146,29 +169,11 @@ impl<S: G> DynamicIndexing<S> {
         }
     }
 
-    pub fn basic(
-        &self,
-        vector: &[S::Scalar],
-        opts: &SearchOptions,
-        filter: impl Filter,
-    ) -> BinaryHeap<Reverse<Element>> {
-        match self {
-            DynamicIndexing::Flat(x) => x.basic(vector, opts, filter),
-            DynamicIndexing::Ivf(x) => x.basic(vector, opts, filter),
-            DynamicIndexing::Hnsw(x) => x.basic(vector, opts, filter),
-        }
-    }
-
-    pub fn vbase<'a>(
-        &'a self,
-        vector: &'a [S::Scalar],
-        opts: &'a SearchOptions,
-        filter: impl Filter + 'a,
-    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-        match self {
-            DynamicIndexing::Flat(x) => x.vbase(vector, opts, filter),
-            DynamicIndexing::Ivf(x) => x.vbase(vector, opts, filter),
-            DynamicIndexing::Hnsw(x) => x.vbase(vector, opts, filter),
+    pub fn open(path: &Path, options: IndexOptions) -> Self {
+        match options.indexing {
+            IndexingOptions::Flat(_) => Self::Flat(FlatIndexing::open(path, options)),
+            IndexingOptions::Ivf(_) => Self::Ivf(IvfIndexing::open(path, options)),
+            IndexingOptions::Hnsw(_) => Self::Hnsw(HnswIndexing::open(path, options)),
         }
     }
 }
