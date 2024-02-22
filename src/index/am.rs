@@ -9,7 +9,6 @@ use crate::index::utils::from_datum;
 use crate::prelude::*;
 use crate::utils::cells::PgCell;
 use pgrx::pg_sys::Datum;
-use service::prelude::*;
 
 static RELOPT_KIND: PgCell<pgrx::pg_sys::relopt_kind> = unsafe { PgCell::new(0) };
 

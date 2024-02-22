@@ -65,7 +65,7 @@ impl<S: G> SealedSegment<S> {
 
     pub fn basic(
         &self,
-        vector: S::VectorRef<'_>,
+        vector: Borrowed<'_, S>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -74,7 +74,7 @@ impl<S: G> SealedSegment<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: S::VectorRef<'a>,
+        vector: Borrowed<'a, S>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
@@ -85,7 +85,7 @@ impl<S: G> SealedSegment<S> {
         self.indexing.len()
     }
 
-    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, i: u32) -> Borrowed<'_, S> {
         self.indexing.vector(i)
     }
 

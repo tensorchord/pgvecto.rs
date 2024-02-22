@@ -1,5 +1,5 @@
+use crate::prelude::*;
 use pgrx::{GucContext, GucFlags, GucRegistry, GucSetting};
-use service::index::SearchOptions;
 
 static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(true);
 

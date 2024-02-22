@@ -7,12 +7,11 @@ use crate::index::utils::from_datum;
 use crate::ipc::{ClientBasic, ClientVbase};
 use crate::prelude::*;
 use pgrx::FromDatum;
-use service::prelude::*;
 
 pub enum Scanner {
     Initial {
         node: Option<*mut pgrx::pg_sys::IndexScanState>,
-        vector: Option<DynamicVector>,
+        vector: Option<OwnedVector>,
     },
     Basic {
         node: *mut pgrx::pg_sys::IndexScanState,

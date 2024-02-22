@@ -1,27 +1,32 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
-use crate::datatype::svecf32::SVecf32;
-use crate::datatype::vecf16::Vecf16;
-use crate::datatype::vecf32::Vecf32;
-use service::prelude::*;
+use crate::datatype::memory_svecf32::SVecf32Header;
+use crate::datatype::memory_vecf16::Vecf16Header;
+use crate::datatype::memory_vecf32::Vecf32Header;
+use crate::prelude::*;
 
 #[repr(C, align(8))]
 struct Header {
     varlena: u32,
-    len: u16,
-    kind: u8,
-    reserved: u8,
+    dims: u16,
+    kind: u16,
 }
 
-pub unsafe fn from_datum(datum: pgrx::pg_sys::Datum) -> DynamicVector {
+pub unsafe fn from_datum(datum: pgrx::pg_sys::Datum) -> OwnedVector {
     let p = datum.cast_mut_ptr::<pgrx::pg_sys::varlena>();
     let q = pgrx::pg_sys::pg_detoast_datum(p);
     let vector = match (*q.cast::<Header>()).kind {
-        0 => DynamicVector::F32((*q.cast::<Vecf32>()).data().to_vec()),
-        1 => DynamicVector::F16((*q.cast::<Vecf16>()).data().to_vec()),
+        0 => {
+            let v = &*q.cast::<Vecf32Header>();
+            OwnedVector::Vecf32(v.for_borrow().for_own())
+        }
+        1 => {
+            let v = &*q.cast::<Vecf16Header>();
+            OwnedVector::Vecf16(v.for_borrow().for_own())
+        }
         2 => {
-            let svec = &*q.cast::<SVecf32>();
-            DynamicVector::SparseF32(SparseF32::from(svec.data()))
+            let v = &*q.cast::<SVecf32Header>();
+            OwnedVector::SVecF32(v.for_borrow().for_own())
         }
         _ => unreachable!(),
     };

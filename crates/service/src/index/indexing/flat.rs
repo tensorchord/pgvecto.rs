@@ -1,32 +1,13 @@
 use super::AbstractIndexing;
-use crate::algorithms::quantization::QuantizationOptions;
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::IndexOptions;
 use crate::index::SearchOptions;
 use crate::prelude::*;
 use crate::{algorithms::flat::Flat, index::segments::sealed::SealedSegment};
-use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::path::Path;
 use std::sync::Arc;
-use validator::Validate;
-
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-#[serde(deny_unknown_fields)]
-pub struct FlatIndexingOptions {
-    #[serde(default)]
-    #[validate]
-    pub quantization: QuantizationOptions,
-}
-
-impl Default for FlatIndexingOptions {
-    fn default() -> Self {
-        Self {
-            quantization: QuantizationOptions::default(),
-        }
-    }
-}
 
 pub struct FlatIndexing<S: G> {
     raw: Flat<S>,
@@ -45,7 +26,7 @@ impl<S: G> AbstractIndexing<S> for FlatIndexing<S> {
 
     fn basic(
         &self,
-        vector: S::VectorRef<'_>,
+        vector: Borrowed<'_, S>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -54,7 +35,7 @@ impl<S: G> AbstractIndexing<S> for FlatIndexing<S> {
 
     fn vbase<'a>(
         &'a self,
-        vector: S::VectorRef<'a>,
+        vector: Borrowed<'a, S>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -67,7 +48,7 @@ impl<S: G> FlatIndexing<S> {
         self.raw.len()
     }
 
-    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, i: u32) -> Borrowed<'_, S> {
         self.raw.vector(i)
     }
 

@@ -10,8 +10,8 @@ fn test_v_f16_cosine() {
         let mut xx = 0.0f32;
         let mut yy = 0.0f32;
         for i in 0..n {
-            let x = a.add(i).cast::<f16>().read().to_f32();
-            let y = b.add(i).cast::<f16>().read().to_f32();
+            let x = unsafe { a.add(i).cast::<f16>().read() }.to_f32();
+            let y = unsafe { b.add(i).cast::<f16>().read() }.to_f32();
             xy += x * y;
             xx += x * x;
             yy += y * y;
@@ -53,8 +53,8 @@ fn test_v_f16_dot() {
     unsafe fn v_f16_dot(a: *const u16, b: *const u16, n: usize) -> f32 {
         let mut xy = 0.0f32;
         for i in 0..n {
-            let x = a.add(i).cast::<f16>().read().to_f32();
-            let y = b.add(i).cast::<f16>().read().to_f32();
+            let x = unsafe { a.add(i).cast::<f16>().read() }.to_f32();
+            let y = unsafe { b.add(i).cast::<f16>().read() }.to_f32();
             xy += x * y;
         }
         xy
@@ -94,8 +94,8 @@ fn test_v_f16_sl2() {
     unsafe fn v_f16_sl2(a: *const u16, b: *const u16, n: usize) -> f32 {
         let mut dd = 0.0f32;
         for i in 0..n {
-            let x = a.add(i).cast::<f16>().read().to_f32();
-            let y = b.add(i).cast::<f16>().read().to_f32();
+            let x = unsafe { a.add(i).cast::<f16>().read() }.to_f32();
+            let y = unsafe { b.add(i).cast::<f16>().read() }.to_f32();
             let d = x - y;
             dd += d * d;
         }

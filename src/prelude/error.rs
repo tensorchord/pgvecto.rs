@@ -19,8 +19,8 @@ INFORMATION: GUC = {key}, hint = {hint}"
     );
 }
 
-pub fn check_type_dimensions(dimensions: Option<NonZeroU16>) -> NonZeroU16 {
-    match dimensions {
+pub fn check_type_dims(dims: Option<NonZeroU16>) -> NonZeroU16 {
+    match dims {
         None => {
             error!(
                 "\
@@ -32,11 +32,8 @@ ADVICE: Check if modifier of the type is an integer among 1 and 65535."
     }
 }
 
-pub fn check_value_dimensions(dimensions: usize) -> NonZeroU16 {
-    match u16::try_from(dimensions)
-        .and_then(NonZeroU16::try_from)
-        .ok()
-    {
+pub fn check_value_dims(dims: usize) -> NonZeroU16 {
+    match u16::try_from(dims).and_then(NonZeroU16::try_from).ok() {
         None => {
             error!(
                 "\
@@ -57,20 +54,20 @@ INFORMATION: hint = {hint}"
 }
 
 #[inline(always)]
-pub fn check_matched_dimensions(left_dimensions: usize, right_dimensions: usize) -> usize {
-    if left_dimensions != right_dimensions {
+pub fn check_matched_dims(left_dims: usize, right_dims: usize) -> usize {
+    if left_dims != right_dims {
         error!(
             "\
 pgvecto.rs: Operands of the operator differs in dimensions or scalar type.
-INFORMATION: left_dimensions = {left_dimensions}, right_dimensions = {right_dimensions}",
+INFORMATION: left_dimensions = {left_dims}, right_dimensions = {right_dims}",
         )
     }
-    left_dimensions
+    left_dims
 }
 
 #[inline(always)]
-pub fn check_column_dimensions(dimensions: Option<NonZeroU16>) -> NonZeroU16 {
-    match dimensions {
+pub fn check_column_dims(dims: Option<NonZeroU16>) -> NonZeroU16 {
+    match dims {
         None => error!(
             "\
 pgvecto.rs: Dimensions type modifier of a vector column is needed for building the index.",

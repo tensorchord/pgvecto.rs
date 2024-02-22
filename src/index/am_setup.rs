@@ -3,11 +3,6 @@
 use crate::datatype::typmod::Typmod;
 use crate::prelude::*;
 use serde::Deserialize;
-use service::index::indexing::IndexingOptions;
-use service::index::optimizing::OptimizingOptions;
-use service::index::segments::SegmentsOptions;
-use service::index::{IndexOptions, VectorOptions};
-use service::prelude::*;
 use std::ffi::CStr;
 
 pub fn helper_offset() -> usize {
@@ -18,7 +13,9 @@ pub fn helper_size() -> usize {
     std::mem::size_of::<Helper>()
 }
 
-pub unsafe fn convert_opclass_to_distance(opclass: pgrx::pg_sys::Oid) -> (Distance, Kind) {
+pub unsafe fn convert_opclass_to_distance(
+    opclass: pgrx::pg_sys::Oid,
+) -> (DistanceKind, VectorKind) {
     let opclass_cache_id = pgrx::pg_sys::SysCacheIdentifier_CLAOID as _;
     let tuple = pgrx::pg_sys::SearchSysCache1(opclass_cache_id, opclass.into());
     assert!(
@@ -32,7 +29,9 @@ pub unsafe fn convert_opclass_to_distance(opclass: pgrx::pg_sys::Oid) -> (Distan
     result
 }
 
-pub unsafe fn convert_opfamily_to_distance(opfamily: pgrx::pg_sys::Oid) -> (Distance, Kind) {
+pub unsafe fn convert_opfamily_to_distance(
+    opfamily: pgrx::pg_sys::Oid,
+) -> (DistanceKind, VectorKind) {
     let opfamily_cache_id = pgrx::pg_sys::SysCacheIdentifier_OPFAMILYOID as _;
     let opstrategy_cache_id = pgrx::pg_sys::SysCacheIdentifier_AMOPSTRATEGY as _;
     let tuple = pgrx::pg_sys::SearchSysCache1(opfamily_cache_id, opfamily.into());
@@ -56,23 +55,23 @@ pub unsafe fn convert_opfamily_to_distance(opfamily: pgrx::pg_sys::Oid) -> (Dist
     let operator = (*amop).amopopr;
     let result;
     if operator == regoperatorin("vectors.<->(vectors.vector,vectors.vector)") {
-        result = (Distance::L2, Kind::F32);
+        result = (DistanceKind::L2, VectorKind::Vecf32);
     } else if operator == regoperatorin("vectors.<#>(vectors.vector,vectors.vector)") {
-        result = (Distance::Dot, Kind::F32);
+        result = (DistanceKind::Dot, VectorKind::Vecf32);
     } else if operator == regoperatorin("vectors.<=>(vectors.vector,vectors.vector)") {
-        result = (Distance::Cos, Kind::F32);
+        result = (DistanceKind::Cos, VectorKind::Vecf32);
     } else if operator == regoperatorin("vectors.<->(vectors.vecf16,vectors.vecf16)") {
-        result = (Distance::L2, Kind::F16);
+        result = (DistanceKind::L2, VectorKind::Vecf16);
     } else if operator == regoperatorin("vectors.<#>(vectors.vecf16,vectors.vecf16)") {
-        result = (Distance::Dot, Kind::F16);
+        result = (DistanceKind::Dot, VectorKind::Vecf16);
     } else if operator == regoperatorin("vectors.<=>(vectors.vecf16,vectors.vecf16)") {
-        result = (Distance::Cos, Kind::F16);
+        result = (DistanceKind::Cos, VectorKind::Vecf16);
     } else if operator == regoperatorin("vectors.<->(vectors.svector,vectors.svector)") {
-        result = (Distance::L2, Kind::SparseF32);
+        result = (DistanceKind::L2, VectorKind::SVecf32);
     } else if operator == regoperatorin("vectors.<#>(vectors.svector,vectors.svector)") {
-        result = (Distance::Dot, Kind::SparseF32);
+        result = (DistanceKind::Dot, VectorKind::SVecf32);
     } else if operator == regoperatorin("vectors.<=>(vectors.svector,vectors.svector)") {
-        result = (Distance::Cos, Kind::SparseF32);
+        result = (DistanceKind::Cos, VectorKind::SVecf32);
     } else {
         bad_opclass();
     };
@@ -91,11 +90,11 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
     let attrs = (*(*index_relation).rd_att).attrs.as_slice(1);
     let attr = &attrs[0];
     let typmod = Typmod::parse_from_i32(attr.type_mod()).unwrap();
-    let dims = check_column_dimensions(typmod.dims()).get();
+    let dims = check_column_dims(typmod.dims()).get();
     // get other options
     let parsed = get_parsed_from_varlena((*index_relation).rd_options);
     IndexOptions {
-        vector: VectorOptions { dims, d, k },
+        vector: VectorOptions { dims, d, v: k },
         segment: parsed.segment,
         optimizing: parsed.optimizing,
         indexing: parsed.indexing,
