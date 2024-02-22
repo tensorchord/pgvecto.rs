@@ -3,6 +3,7 @@
 use crate::datatype::svecf32::SVecf32;
 use crate::datatype::vecf16::Vecf16;
 use crate::datatype::vecf32::Vecf32;
+use crate::datatype::veci8::Veci8;
 use service::prelude::*;
 
 #[repr(C, align(8))]
@@ -22,6 +23,10 @@ pub unsafe fn from_datum(datum: pgrx::pg_sys::Datum) -> DynamicVector {
         2 => {
             let svec = &*q.cast::<SVecf32>();
             DynamicVector::SparseF32(SparseF32::from(svec.data()))
+        }
+        3 => {
+            let veci8 = &*q.cast::<Veci8>();
+            DynamicVector::I8(veci8.to_ref().to_owned())
         }
         _ => unreachable!(),
     };

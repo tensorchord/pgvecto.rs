@@ -1,6 +1,7 @@
 use crate::datatype::svecf32::{SVecf32, SVecf32Input, SVecf32Output};
 use crate::datatype::vecf16::{Vecf16, Vecf16Input, Vecf16Output};
 use crate::datatype::vecf32::{Vecf32, Vecf32Input, Vecf32Output};
+use crate::datatype::veci8::{Veci8, Veci8Input, Veci8Output};
 use crate::prelude::check_value_dimensions;
 use service::prelude::*;
 
@@ -82,4 +83,26 @@ fn _vectors_cast_svecf32_to_vecf32(
 ) -> Vecf32Output {
     let data = vector.data().to_dense();
     Vecf32::new_in_postgres(&data)
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_cast_veci8_to_vecf32(
+    vector: Veci8Input<'_>,
+    _typmod: i32,
+    _explicit: bool,
+) -> Vecf32Output {
+    let data = (0..vector.len())
+        .map(|i| vector.index(i))
+        .collect::<Vec<_>>();
+    Vecf32::new_in_postgres(&data)
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_cast_vecf32_to_veci8(
+    vector: Vecf32Input<'_>,
+    _typmod: i32,
+    _explicit: bool,
+) -> Veci8Output {
+    let (data, alpha, offset) = quantization(vector.data().to_vec());
+    Veci8::new_in_postgres(&data, alpha, offset)
 }

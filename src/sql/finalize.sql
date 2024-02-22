@@ -438,4 +438,41 @@ CREATE VIEW pg_vector_index_stat AS
          pg_am A ON A.oid = I.relam
     WHERE A.amname = 'vectors';
 
+CREATE TYPE veci8 (
+	INPUT = _vectors_veci8_in,
+	OUTPUT = _vectors_veci8_out,
+	TYPMOD_IN = _vectors_typmod_in,
+	TYPMOD_OUT = _vectors_typmod_out,
+	STORAGE = EXTENDED,
+	INTERNALLENGTH = VARIABLE,
+	ALIGNMENT = double
+);
+
+CREATE OPERATOR <-> (
+	PROCEDURE = _vectors_veci8_operator_l2,
+	LEFTARG = veci8,
+	RIGHTARG = veci8,
+	COMMUTATOR = <->
+);
+
+CREATE OPERATOR <#> (
+	PROCEDURE = _vectors_veci8_operator_dot,
+	LEFTARG = veci8,
+	RIGHTARG = veci8,
+	COMMUTATOR = <#>
+);
+
+CREATE OPERATOR <=> (
+	PROCEDURE = _vectors_veci8_operator_cosine,
+	LEFTARG = veci8,
+	RIGHTARG = veci8,
+	COMMUTATOR = <=>
+);
+
+CREATE CAST (veci8 AS vector)
+    WITH FUNCTION _vectors_cast_veci8_to_vecf32(veci8, integer, boolean);
+
+CREATE CAST (vector AS veci8)
+	WITH FUNCTION _vectors_cast_vecf32_to_veci8(vector, integer, boolean);
+
 -- finalize end

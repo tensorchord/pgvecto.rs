@@ -2,6 +2,7 @@ use crate::prelude::global::FloatCast;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display};
+use std::iter::Sum;
 use std::num::ParseFloatError;
 use std::ops::*;
 use std::str::FromStr;
@@ -447,6 +448,12 @@ impl AddAssign<F32> for F32 {
     #[inline(always)]
     fn add_assign(&mut self, rhs: F32) {
         unsafe { self.0 = std::intrinsics::fadd_fast(self.0, rhs.0) }
+    }
+}
+
+impl Sum for F32 {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(F32(0.0), Add::add)
     }
 }
 

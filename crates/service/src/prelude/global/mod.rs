@@ -6,6 +6,7 @@ mod f32;
 mod f32_cos;
 mod f32_dot;
 mod f32_l2;
+mod i8;
 mod sparse_f32;
 mod sparse_f32_cos;
 mod sparse_f32_dot;
@@ -17,6 +18,7 @@ pub use f16_l2::F16L2;
 pub use f32_cos::F32Cos;
 pub use f32_dot::F32Dot;
 pub use f32_l2::F32L2;
+pub use i8::{cosine_distance, dequantization, dot_distance, l2_distance, quantization};
 pub use sparse_f32_cos::SparseF32Cos;
 pub use sparse_f32_dot::SparseF32Dot;
 pub use sparse_f32_l2::SparseF32L2;
@@ -135,6 +137,7 @@ pub enum DynamicVector {
     F32(Vec<F32>),
     F16(Vec<F16>),
     SparseF32(SparseF32),
+    I8(VecI8Owned),
 }
 
 impl From<Vec<F32>> for DynamicVector {
@@ -155,6 +158,12 @@ impl From<SparseF32> for DynamicVector {
     }
 }
 
+impl From<VecI8Owned> for DynamicVector {
+    fn from(value: VecI8Owned) -> Self {
+        Self::I8(value)
+    }
+}
+
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Distance {
@@ -169,4 +178,6 @@ pub enum Kind {
     F32,
     F16,
     SparseF32,
+    //TODO: I8
+    // I8,
 }
