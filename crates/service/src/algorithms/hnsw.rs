@@ -1,10 +1,7 @@
 use super::quantization::Quantization;
 use super::raw::Raw;
-use crate::index::indexing::hnsw::HnswIndexingOptions;
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::segments::sealed::SealedSegment;
-use crate::index::IndexOptions;
-use crate::index::SearchOptions;
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::element_heap::ElementHeap;
@@ -44,7 +41,7 @@ impl<S: G> Hnsw<S> {
 
     pub fn basic(
         &self,
-        vector: S::VectorRef<'_>,
+        vector: Borrowed<'_, S>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -53,7 +50,7 @@ impl<S: G> Hnsw<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: S::VectorRef<'a>,
+        vector: Borrowed<'a, S>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -64,7 +61,7 @@ impl<S: G> Hnsw<S> {
         self.mmap.raw.len()
     }
 
-    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, i: u32) -> Borrowed<'_, S> {
         self.mmap.raw.vector(i)
     }
 
@@ -150,6 +147,7 @@ pub fn make<S: G>(
         options.clone(),
         quantization_opts,
         &raw,
+        (0..raw.len()).collect::<Vec<_>>(),
     );
     let n = raw.len();
     let graph = HnswRamGraph {
@@ -170,7 +168,7 @@ pub fn make<S: G>(
             graph: &HnswRamGraph,
             levels: RangeInclusive<u8>,
             u: u32,
-            target: S::VectorRef<'_>,
+            target: Borrowed<'_, S>,
         ) -> u32 {
             let mut u = u;
             let mut u_dis = quantization.distance(target, u);
@@ -195,7 +193,7 @@ pub fn make<S: G>(
             quantization: &Quantization<S>,
             graph: &HnswRamGraph,
             visited: &mut VisitedGuard,
-            vector: S::VectorRef<'_>,
+            vector: Borrowed<'_, S>,
             s: u32,
             k: usize,
             i: u8,
@@ -394,7 +392,7 @@ pub fn open<S: G>(path: &Path, options: IndexOptions) -> HnswMmap<S> {
 
 pub fn basic<S: G>(
     mmap: &HnswMmap<S>,
-    vector: S::VectorRef<'_>,
+    vector: Borrowed<'_, S>,
     ef_search: usize,
     filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
@@ -408,7 +406,7 @@ pub fn basic<S: G>(
 
 pub fn vbase<'a, S: G>(
     mmap: &'a HnswMmap<S>,
-    vector: S::VectorRef<'a>,
+    vector: Borrowed<'a, S>,
     range: usize,
     filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -466,7 +464,7 @@ pub fn fast_search<S: G>(
     mmap: &HnswMmap<S>,
     levels: RangeInclusive<u8>,
     u: u32,
-    vector: S::VectorRef<'_>,
+    vector: Borrowed<'_, S>,
     mut filter: impl Filter,
 ) -> u32 {
     let mut u = u;
@@ -496,7 +494,7 @@ pub fn local_search_basic<S: G>(
     mmap: &HnswMmap<S>,
     k: usize,
     s: u32,
-    vector: S::VectorRef<'_>,
+    vector: Borrowed<'_, S>,
     mut filter: impl Filter,
 ) -> ElementHeap {
     let mut visited = mmap.visited.fetch();
@@ -540,7 +538,7 @@ pub fn local_search_basic<S: G>(
 pub fn local_search_vbase<'a, S: G>(
     mmap: &'a HnswMmap<S>,
     s: u32,
-    vector: S::VectorRef<'a>,
+    vector: Borrowed<'a, S>,
     mut filter: impl Filter + 'a,
 ) -> impl Iterator<Item = Element> + 'a {
     let mut visited = mmap.visited.fetch2();

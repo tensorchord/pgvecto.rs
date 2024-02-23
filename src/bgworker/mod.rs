@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 static STARTED: AtomicBool = AtomicBool::new(false);
 
 pub unsafe fn init() {
-    use service::worker::Worker;
+    use service::Worker;
     let path = std::path::Path::new("pg_vectors");
     if !path.try_exists().unwrap() || Worker::check(path.to_owned()) {
         use pgrx::bgworkers::BackgroundWorkerBuilder;
@@ -65,7 +65,7 @@ extern "C" fn _vectors_main(_arg: pgrx::pg_sys::Datum) {
     std::alloc::set_alloc_error_hook(|layout| {
         std::panic::panic_any(AllocErrorPanicPayload { layout });
     });
-    use service::worker::Worker;
+    use service::Worker;
     use std::path::Path;
     let path = Path::new("pg_vectors");
     if path.try_exists().unwrap() {

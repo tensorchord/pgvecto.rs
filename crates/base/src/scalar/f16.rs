@@ -1,4 +1,5 @@
-use super::FloatCast;
+use super::ScalarLike;
+use crate::scalar::F32;
 use half::f16;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -531,16 +532,6 @@ impl FromStr for F16 {
     }
 }
 
-impl FloatCast for F16 {
-    fn from_f32(x: f32) -> Self {
-        Self(f16::from_f32(x))
-    }
-
-    fn to_f32(self) -> f32 {
-        f16::to_f32(self.0)
-    }
-}
-
 impl From<f16> for F16 {
     fn from(value: f16) -> Self {
         Self(value)
@@ -649,5 +640,21 @@ mod intrinsics {
     }
     pub unsafe fn frem_fast(lhs: f16, rhs: f16) -> f16 {
         lhs % rhs
+    }
+}
+
+impl ScalarLike for F16 {
+    fn from_f32(x: f32) -> Self {
+        Self(f16::from_f32(x))
+    }
+
+    fn to_f32(self) -> f32 {
+        f16::to_f32(self.0)
+    }
+    fn from_f(x: F32) -> Self {
+        Self::from_f32(x.0)
+    }
+    fn to_f(self) -> F32 {
+        F32(Self::to_f32(self))
     }
 }

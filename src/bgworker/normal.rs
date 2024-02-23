@@ -1,6 +1,7 @@
 use crate::ipc::ConnectionError;
 use crate::ipc::ServerRpcHandler;
-use service::worker::Worker;
+use service::Worker;
+use std::convert::Infallible;
 use std::sync::Arc;
 
 pub fn normal(worker: Arc<Worker>) {
@@ -57,10 +58,9 @@ pub fn normal(worker: Arc<Worker>) {
     });
 }
 
-fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<!, ConnectionError> {
+fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<Infallible, ConnectionError> {
     use crate::ipc::ServerRpcHandle;
-    use service::instance::InstanceViewOperations;
-    use service::worker::WorkerOperations;
+    use base::worker::*;
     let mut handler = handler;
     loop {
         match handler.handle()? {
@@ -95,7 +95,7 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<!, Connecti
                 opts,
                 x,
             } => {
-                let v = match worker.basic_view(handle) {
+                let v = match worker.view_basic(handle) {
                     Ok(x) => x,
                     Err(e) => {
                         handler = x.error_err(e)?;
@@ -127,7 +127,7 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<!, Connecti
                 opts,
                 x,
             } => {
-                let v = match worker.vbase_view(handle) {
+                let v = match worker.view_vbase(handle) {
                     Ok(x) => x,
                     Err(e) => {
                         handler = x.error_err(e)?;
@@ -154,7 +154,7 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<!, Connecti
                 };
             }
             ServerRpcHandle::List { handle, x } => {
-                let v = match worker.list_view(handle) {
+                let v = match worker.view_list(handle) {
                     Ok(x) => x,
                     Err(e) => {
                         handler = x.error_err(e)?;

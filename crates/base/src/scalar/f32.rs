@@ -1,4 +1,4 @@
-use super::FloatCast;
+use super::ScalarLike;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display};
@@ -530,16 +530,6 @@ impl FromStr for F32 {
     }
 }
 
-impl FloatCast for F32 {
-    fn from_f32(x: f32) -> Self {
-        Self(x)
-    }
-
-    fn to_f32(self) -> f32 {
-        self.0
-    }
-}
-
 impl From<f32> for F32 {
     fn from(value: f32) -> Self {
         Self(value)
@@ -628,5 +618,23 @@ impl RemAssign<f32> for F32 {
     #[inline(always)]
     fn rem_assign(&mut self, rhs: f32) {
         unsafe { self.0 = std::intrinsics::frem_fast(self.0, rhs) }
+    }
+}
+
+impl ScalarLike for F32 {
+    fn from_f32(x: f32) -> Self {
+        Self(x)
+    }
+
+    fn to_f32(self) -> f32 {
+        self.0
+    }
+
+    fn from_f(x: F32) -> Self {
+        Self::from_f32(x.0)
+    }
+
+    fn to_f(self) -> F32 {
+        F32(Self::to_f32(self))
     }
 }

@@ -1,11 +1,13 @@
 //! Postgres vector extension.
 //!
 //! Provides an easy-to-use extension for vector similarity search.
-#![feature(never_type)]
 #![feature(alloc_error_hook)]
+#![allow(clippy::needless_range_loop)]
+#![allow(clippy::too_many_arguments)]
 
 mod bgworker;
 mod datatype;
+mod embedding;
 mod gucs;
 mod index;
 mod ipc;
@@ -31,9 +33,6 @@ unsafe extern "C" fn _PG_init() {
         self::bgworker::init();
     }
 }
-
-#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "freebsd")))]
-compile_error!("Target is not supported.");
 
 #[cfg(not(all(target_endian = "little", target_pointer_width = "64")))]
 compile_error!("Target is not supported.");

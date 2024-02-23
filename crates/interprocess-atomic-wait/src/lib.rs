@@ -89,3 +89,6 @@ pub fn wake(futex: &AtomicU32) {
         );
     };
 }
+
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "freebsd")))]
+compile_error!("Target is not supported.");

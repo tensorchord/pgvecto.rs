@@ -18,8 +18,8 @@ fn test_v_binary_cosine() {
         let mut xx = 0.0f32;
         let mut yy = 0.0f32;
         for i in 0..n {
-            let x = a.add(i).read();
-            let y = b.add(i).read();
+            let x = unsafe { a.add(i).read() };
+            let y = unsafe { b.add(i).read() };
             xy += count_ones(x & y) as f32;
             xx += count_ones(x) as f32;
             yy += count_ones(y) as f32;
@@ -61,8 +61,8 @@ fn test_v_binary_dot() {
     unsafe fn v_binary_dot(a: *const usize, b: *const usize, n: usize) -> f32 {
         let mut xy = 0.0f32;
         for i in 0..n {
-            let x = a.add(i).read();
-            let y = b.add(i).read();
+            let x = unsafe { a.add(i).read() };
+            let y = unsafe { b.add(i).read() };
             xy += count_ones(x & y) as f32;
         }
         xy
@@ -101,8 +101,8 @@ fn test_v_binary_sl2() {
     unsafe fn v_binary_sl2(a: *const usize, b: *const usize, n: usize) -> f32 {
         let mut dd = 0.0f32;
         for i in 0..n {
-            let x = a.add(i).read();
-            let y = b.add(i).read();
+            let x = unsafe { a.add(i).read() };
+            let y = unsafe { b.add(i).read() };
             dd += count_ones(x ^ y) as f32;
         }
         dd
@@ -141,7 +141,7 @@ fn test_v_binary_cnt() {
     unsafe fn v_binary_cnt(a: *const usize, n: usize) -> f32 {
         let mut cnt = 0.0f32;
         for i in 0..n {
-            let x = a.add(i).read();
+            let x = unsafe { a.add(i).read() };
             cnt += count_ones(x) as f32;
         }
         cnt

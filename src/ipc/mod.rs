@@ -7,10 +7,6 @@ use crate::ipc::transport::Packet;
 use crate::prelude::*;
 use crate::utils::cells::PgRefCell;
 use serde::{Deserialize, Serialize};
-use service::index::IndexOptions;
-use service::index::IndexStat;
-use service::index::SearchOptions;
-use service::prelude::*;
 
 #[derive(Debug, Clone)]
 pub enum ConnectionError {
@@ -323,10 +319,10 @@ defines! {
     unary create(handle: Handle, options: IndexOptions) -> ();
     unary drop(handle: Handle) -> ();
     unary flush(handle: Handle) -> ();
-    unary insert(handle: Handle, vector: DynamicVector, pointer: Pointer) -> ();
+    unary insert(handle: Handle, vector: OwnedVector, pointer: Pointer) -> ();
     unary delete(handle: Handle, pointer: Pointer) -> ();
-    stream basic(handle: Handle, vector: DynamicVector, opts: SearchOptions) -> Pointer;
-    stream vbase(handle: Handle, vector: DynamicVector, opts: SearchOptions) -> Pointer;
+    stream basic(handle: Handle, vector: OwnedVector, opts: SearchOptions) -> Pointer;
+    stream vbase(handle: Handle, vector: OwnedVector, opts: SearchOptions) -> Pointer;
     stream list(handle: Handle) -> Pointer;
     unary stat(handle: Handle) -> IndexStat;
 }

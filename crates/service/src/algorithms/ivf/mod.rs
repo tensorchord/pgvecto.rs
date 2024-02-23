@@ -5,8 +5,6 @@ use self::ivf_naive::IvfNaive;
 use self::ivf_pq::IvfPq;
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::segments::sealed::SealedSegment;
-use crate::index::IndexOptions;
-use crate::index::SearchOptions;
 use crate::prelude::*;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -25,13 +23,10 @@ impl<S: G> Ivf<S> {
         sealed: Vec<Arc<SealedSegment<S>>>,
         growing: Vec<Arc<GrowingSegment<S>>>,
     ) -> Self {
-        if options
-            .indexing
-            .clone()
-            .unwrap_ivf()
-            .quantization
-            .is_product_quantization()
-        {
+        if matches!(
+            options.indexing.clone().unwrap_ivf().quantization,
+            QuantizationOptions::Product(_)
+        ) {
             Self::Pq(IvfPq::create(path, options, sealed, growing))
         } else {
             Self::Naive(IvfNaive::create(path, options, sealed, growing))
@@ -39,13 +34,10 @@ impl<S: G> Ivf<S> {
     }
 
     pub fn open(path: &Path, options: IndexOptions) -> Self {
-        if options
-            .indexing
-            .clone()
-            .unwrap_ivf()
-            .quantization
-            .is_product_quantization()
-        {
+        if matches!(
+            options.indexing.clone().unwrap_ivf().quantization,
+            QuantizationOptions::Product(_)
+        ) {
             Self::Pq(IvfPq::open(path, options))
         } else {
             Self::Naive(IvfNaive::open(path, options))
@@ -59,7 +51,7 @@ impl<S: G> Ivf<S> {
         }
     }
 
-    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, i: u32) -> Borrowed<'_, S> {
         match self {
             Ivf::Naive(x) => x.vector(i),
             Ivf::Pq(x) => x.vector(i),
@@ -75,7 +67,7 @@ impl<S: G> Ivf<S> {
 
     pub fn basic(
         &self,
-        vector: S::VectorRef<'_>,
+        vector: Borrowed<'_, S>,
         opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -87,7 +79,7 @@ impl<S: G> Ivf<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: S::VectorRef<'a>,
+        vector: Borrowed<'a, S>,
         opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
