@@ -37,6 +37,9 @@ pub enum Instance {
     SparseF32L2(Arc<Index<SparseF32L2>>),
     SparseF32Cos(Arc<Index<SparseF32Cos>>),
     SparseF32Dot(Arc<Index<SparseF32Dot>>),
+    I8L2(Arc<Index<I8L2>>),
+    I8Cos(Arc<Index<I8Cos>>),
+    I8Dot(Arc<Index<I8Dot>>),
     Upgrade,
 }
 
@@ -88,6 +91,21 @@ impl Instance {
                 self::metadata::Metadata::write(path.join("metadata"));
                 Ok(Self::SparseF32Dot(index))
             }
+            (Distance::L2, Kind::I8) => {
+                let index = Index::create(path.clone(), options)?;
+                self::metadata::Metadata::write(path.join("metadata"));
+                Ok(Self::I8L2(index))
+            }
+            (Distance::Cos, Kind::I8) => {
+                let index = Index::create(path.clone(), options)?;
+                self::metadata::Metadata::write(path.join("metadata"));
+                Ok(Self::I8Cos(index))
+            }
+            (Distance::Dot, Kind::I8) => {
+                let index = Index::create(path.clone(), options)?;
+                self::metadata::Metadata::write(path.join("metadata"));
+                Ok(Self::I8Dot(index))
+            }
         }
     }
     pub fn open(path: PathBuf) -> Self {
@@ -107,6 +125,9 @@ impl Instance {
             (Distance::L2, Kind::SparseF32) => Self::SparseF32L2(Index::open(path)),
             (Distance::Cos, Kind::SparseF32) => Self::SparseF32Cos(Index::open(path)),
             (Distance::Dot, Kind::SparseF32) => Self::SparseF32Dot(Index::open(path)),
+            (Distance::L2, Kind::I8) => Self::I8L2(Index::open(path)),
+            (Distance::Cos, Kind::I8) => Self::I8Cos(Index::open(path)),
+            (Distance::Dot, Kind::I8) => Self::I8Dot(Index::open(path)),
         }
     }
     pub fn refresh(&self) {
@@ -120,6 +141,9 @@ impl Instance {
             Instance::SparseF32L2(x) => x.refresh(),
             Instance::SparseF32Cos(x) => x.refresh(),
             Instance::SparseF32Dot(x) => x.refresh(),
+            Instance::I8L2(x) => x.refresh(),
+            Instance::I8Cos(x) => x.refresh(),
+            Instance::I8Dot(x) => x.refresh(),
             Instance::Upgrade => (),
         }
     }
@@ -134,6 +158,9 @@ impl Instance {
             Instance::SparseF32L2(x) => Some(InstanceView::SparseF32L2(x.view())),
             Instance::SparseF32Cos(x) => Some(InstanceView::SparseF32Cos(x.view())),
             Instance::SparseF32Dot(x) => Some(InstanceView::SparseF32Dot(x.view())),
+            Instance::I8L2(x) => Some(InstanceView::I8L2(x.view())),
+            Instance::I8Cos(x) => Some(InstanceView::I8Cos(x.view())),
+            Instance::I8Dot(x) => Some(InstanceView::I8Dot(x.view())),
             Instance::Upgrade => None,
         }
     }
@@ -148,6 +175,9 @@ impl Instance {
             Instance::SparseF32L2(x) => Some(x.stat()),
             Instance::SparseF32Cos(x) => Some(x.stat()),
             Instance::SparseF32Dot(x) => Some(x.stat()),
+            Instance::I8L2(x) => Some(x.stat()),
+            Instance::I8Cos(x) => Some(x.stat()),
+            Instance::I8Dot(x) => Some(x.stat()),
             Instance::Upgrade => None,
         }
     }
@@ -163,6 +193,9 @@ pub enum InstanceView {
     SparseF32Cos(Arc<IndexView<SparseF32Cos>>),
     SparseF32Dot(Arc<IndexView<SparseF32Dot>>),
     SparseF32L2(Arc<IndexView<SparseF32L2>>),
+    I8Cos(Arc<IndexView<I8Cos>>),
+    I8Dot(Arc<IndexView<I8Dot>>),
+    I8L2(Arc<IndexView<I8L2>>),
 }
 
 impl InstanceViewOperations for InstanceView {
@@ -198,6 +231,15 @@ impl InstanceViewOperations for InstanceView {
                 Ok(Box::new(x.basic(vector.into(), opts, filter)?))
             }
             (InstanceView::SparseF32L2(x), DynamicVector::SparseF32(vector)) => {
+                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
+            }
+            (InstanceView::I8Cos(x), DynamicVector::I8(vector)) => {
+                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
+            }
+            (InstanceView::I8Dot(x), DynamicVector::I8(vector)) => {
+                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
+            }
+            (InstanceView::I8L2(x), DynamicVector::I8(vector)) => {
                 Ok(Box::new(x.basic(vector.into(), opts, filter)?))
             }
             _ => Err(BasicError::InvalidVector),
@@ -237,6 +279,15 @@ impl InstanceViewOperations for InstanceView {
             (InstanceView::SparseF32L2(x), DynamicVector::SparseF32(vector)) => {
                 Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
             }
+            (InstanceView::I8Cos(x), DynamicVector::I8(vector)) => {
+                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
+            }
+            (InstanceView::I8Dot(x), DynamicVector::I8(vector)) => {
+                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
+            }
+            (InstanceView::I8L2(x), DynamicVector::I8(vector)) => {
+                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
+            }
             _ => Err(VbaseError::InvalidVector),
         }
     }
@@ -251,6 +302,9 @@ impl InstanceViewOperations for InstanceView {
             InstanceView::SparseF32Cos(x) => Ok(Box::new(x.list()?)),
             InstanceView::SparseF32Dot(x) => Ok(Box::new(x.list()?)),
             InstanceView::SparseF32L2(x) => Ok(Box::new(x.list()?)),
+            InstanceView::I8Cos(x) => Ok(Box::new(x.list()?)),
+            InstanceView::I8Dot(x) => Ok(Box::new(x.list()?)),
+            InstanceView::I8L2(x) => Ok(Box::new(x.list()?)),
         }
     }
 }
@@ -277,6 +331,9 @@ impl InstanceView {
             (InstanceView::SparseF32L2(x), DynamicVector::SparseF32(vector)) => {
                 x.insert(vector, pointer)
             }
+            (InstanceView::I8Cos(x), DynamicVector::I8(vector)) => x.insert(vector, pointer),
+            (InstanceView::I8Dot(x), DynamicVector::I8(vector)) => x.insert(vector, pointer),
+            (InstanceView::I8L2(x), DynamicVector::I8(vector)) => x.insert(vector, pointer),
             _ => Err(InsertError::InvalidVector),
         }
     }
@@ -291,6 +348,9 @@ impl InstanceView {
             InstanceView::SparseF32Cos(x) => x.delete(pointer),
             InstanceView::SparseF32Dot(x) => x.delete(pointer),
             InstanceView::SparseF32L2(x) => x.delete(pointer),
+            InstanceView::I8Cos(x) => x.delete(pointer),
+            InstanceView::I8Dot(x) => x.delete(pointer),
+            InstanceView::I8L2(x) => x.delete(pointer),
         }
     }
     pub fn flush(&self) -> Result<(), FlushError> {
@@ -304,6 +364,9 @@ impl InstanceView {
             InstanceView::SparseF32Cos(x) => x.flush(),
             InstanceView::SparseF32Dot(x) => x.flush(),
             InstanceView::SparseF32L2(x) => x.flush(),
+            InstanceView::I8Cos(x) => x.flush(),
+            InstanceView::I8Dot(x) => x.flush(),
+            InstanceView::I8L2(x) => x.flush(),
         }
     }
 }

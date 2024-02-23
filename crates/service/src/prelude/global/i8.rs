@@ -76,6 +76,7 @@ pub fn dot_distance(x: &VecI8Ref<'_>, y: &VecI8Ref<'_>) -> F32 {
 pub fn l2_distance(x: &VecI8Ref<'_>, y: &VecI8Ref<'_>) -> F32 {
     // Sum(l2(origin_x[i] - origin_y[i])) = sum(x[i] ^ 2 - 2 * x[i] * y[i] + y[i] ^ 2)
     // = dot(x, x) - 2 * dot(x, y) + dot(y, y)
+    // TODO: should we precompute the dot(x, x) ?
     dot_distance(x, x) - F32(2.0) * dot_distance(x, y) + dot_distance(y, y)
 }
 
@@ -87,6 +88,12 @@ pub fn cosine_distance(x: &VecI8Ref<'_>, y: &VecI8Ref<'_>) -> F32 {
     dot_xy / (l2_x * l2_y)
 }
 
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
 pub fn quantization(vector: Vec<F32>) -> (Vec<I8>, F32, F32) {
     let min = vector.iter().copied().fold(F32::infinity(), Float::min);
     let max = vector.iter().copied().fold(F32::neg_infinity(), Float::max);
@@ -99,11 +106,82 @@ pub fn quantization(vector: Vec<F32>) -> (Vec<I8>, F32, F32) {
     (result, alpha, offset)
 }
 
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
 pub fn dequantization(vector: &[I8], alpha: F32, offset: F32) -> Vec<F32> {
     vector
         .iter()
         .map(|&x| (x.to_f() * alpha + offset))
         .collect()
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn l2_normalize(vector: &mut VecI8Owned) {
+    let l = vector.l2_norm;
+    vector.alpha /= l;
+    vector.offset /= l;
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn precompute(data: &[I8], alpha: F32, offset: F32) -> (F32, F32) {
+    let sum = data.iter().map(|&x| x.to_f() * alpha).sum();
+    let l2_norm = data
+        .iter()
+        .map(|&x| (x.to_f() * alpha + offset) * (x.to_f() * alpha + offset))
+        .sum::<F32>()
+        .sqrt();
+    (sum, l2_norm)
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn l2_2<'a>(lhs: VecI8Ref<'a>, rhs: &[F32]) -> F32 {
+    let data = lhs.data;
+    assert_eq!(data.len(), rhs.len());
+    data.iter()
+        .zip(rhs.iter())
+        .map(|(&x, &y)| {
+            (x.to_f() * lhs.alpha + lhs.offset - y) * (x.to_f() * lhs.alpha + lhs.offset - y)
+        })
+        .sum::<F32>()
+        .sqrt()
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn dot_2<'a>(lhs: VecI8Ref<'a>, rhs: &[F32]) -> F32 {
+    let data = lhs.data;
+    assert_eq!(data.len(), rhs.len());
+    data.iter()
+        .zip(rhs.iter())
+        .map(|(&x, &y)| (x.to_f() * lhs.alpha + lhs.offset) * y)
+        .sum::<F32>()
 }
 
 #[cfg(test)]

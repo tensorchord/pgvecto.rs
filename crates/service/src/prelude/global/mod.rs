@@ -6,7 +6,10 @@ mod f32;
 mod f32_cos;
 mod f32_dot;
 mod f32_l2;
-mod i8;
+pub mod i8;
+mod i8_cos;
+mod i8_dot;
+mod i8_l2;
 mod sparse_f32;
 mod sparse_f32_cos;
 mod sparse_f32_dot;
@@ -18,7 +21,10 @@ pub use f16_l2::F16L2;
 pub use f32_cos::F32Cos;
 pub use f32_dot::F32Dot;
 pub use f32_l2::F32L2;
-pub use i8::{cosine_distance, dequantization, dot_distance, l2_distance, quantization};
+pub use i8::{dequantization, quantization};
+pub use i8_cos::I8Cos;
+pub use i8_dot::I8Dot;
+pub use i8_l2::I8L2;
 pub use sparse_f32_cos::SparseF32Cos;
 pub use sparse_f32_dot::SparseF32Dot;
 pub use sparse_f32_l2::SparseF32L2;
@@ -179,5 +185,5 @@ pub enum Kind {
     F16,
     SparseF32,
     //TODO: I8
-    // I8,
+    I8,
 }

@@ -13,6 +13,12 @@ pub struct VecI8Owned {
     pub l2_norm: F32,
 }
 
+impl Vector for VecI8Owned {
+    fn dims(&self) -> u16 {
+        self.dims
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VecI8Ref<'a> {
     pub dims: u16,
@@ -27,12 +33,7 @@ pub struct VecI8Ref<'a> {
 
 impl VecI8Ref<'_> {
     pub fn new(dims: u16, data: &[I8], alpha: F32, offset: F32) -> VecI8Ref<'_> {
-        let sum = data.iter().map(|&x| x.to_f() * alpha).sum();
-        let l2_norm = data
-            .iter()
-            .map(|&x| (x.to_f() * alpha + offset) * (x.to_f() * alpha + offset))
-            .sum::<F32>()
-            .sqrt();
+        let (sum, l2_norm) = crate::prelude::i8::precompute(data, alpha, offset);
         VecI8Ref {
             dims,
             data,
@@ -51,6 +52,38 @@ impl VecI8Ref<'_> {
             offset: self.offset,
             sum: self.sum,
             l2_norm: self.l2_norm,
+        }
+    }
+}
+
+impl Vector for VecI8Ref<'_> {
+    fn dims(&self) -> u16 {
+        self.dims
+    }
+}
+
+impl From<VecI8Ref<'_>> for VecI8Owned {
+    fn from(value: VecI8Ref<'_>) -> Self {
+        Self {
+            dims: value.dims,
+            data: value.data.to_vec(),
+            alpha: value.alpha,
+            offset: value.offset,
+            sum: value.sum,
+            l2_norm: value.l2_norm,
+        }
+    }
+}
+
+impl<'a> From<&'a VecI8Owned> for VecI8Ref<'a> {
+    fn from(value: &'a VecI8Owned) -> Self {
+        Self {
+            dims: value.dims,
+            data: &value.data,
+            alpha: value.alpha,
+            offset: value.offset,
+            sum: value.sum,
+            l2_norm: value.l2_norm,
         }
     }
 }

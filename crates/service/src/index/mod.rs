@@ -67,6 +67,11 @@ fn validate_index_options(options: &IndexOptions) -> Result<(), ValidationError>
             "quantization is not supported for sparse vector",
         ));
     }
+    if options.vector.k == Kind::I8 && options.indexing.has_quantization() {
+        return Err(ValidationError::new(
+            "other quantization is not supported for i8 vector",
+        ));
+    }
     Ok(())
 }
 

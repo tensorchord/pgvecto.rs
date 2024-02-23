@@ -1,7 +1,9 @@
 mod dense;
+mod i8_quant;
 mod sparse;
 
 pub use dense::DenseMmap;
+pub use i8_quant::I8QuantMmap;
 pub use sparse::SparseMmap;
 
 use crate::algorithms::raw::RawRam;
