@@ -441,11 +441,94 @@ CREATE VIEW pg_vector_index_stat AS
 CREATE TYPE veci8 (
 	INPUT = _vectors_veci8_in,
 	OUTPUT = _vectors_veci8_out,
+	RECEIVE = _vectors_veci8_recv,
+	SEND = _vectors_veci8_send,
+	SUBSCRIPT = _vectors_veci8_subscript,
 	TYPMOD_IN = _vectors_typmod_in,
 	TYPMOD_OUT = _vectors_typmod_out,
 	STORAGE = EXTENDED,
 	INTERNALLENGTH = VARIABLE,
 	ALIGNMENT = double
+);
+
+DO $$
+BEGIN 
+	IF current_setting('server_version_num')::int >= 140000 THEN 
+		ALTER TYPE veci8 SET (SUBSCRIPT = _vectors_veci8_subscript);
+	END IF;
+END $$; 
+
+CREATE OPERATOR + (
+	PROCEDURE = _vectors_veci8_operator_add,
+	LEFTARG = veci8,
+	RIGHTARG = veci8,
+	COMMUTATOR = +
+);
+
+CREATE OPERATOR - (
+	PROCEDURE = _vectors_veci8_operator_minus,
+	LEFTARG = veci8,
+	RIGHTARG = veci8
+);
+
+CREATE OPERATOR = (
+	PROCEDURE = _vectors_veci8_operator_eq,
+	LEFTARG = veci8,
+	RIGHTARG = veci8,
+	COMMUTATOR = =,
+	NEGATOR = <>,
+	RESTRICT = eqsel,
+	JOIN = eqjoinsel
+);
+
+CREATE OPERATOR <> (
+	PROCEDURE = _vectors_veci8_operator_neq,
+	LEFTARG = veci8,
+	RIGHTARG = veci8,
+	COMMUTATOR = <>,
+	NEGATOR = =,
+	RESTRICT = eqsel,
+	JOIN = eqjoinsel
+);
+
+CREATE OPERATOR < (
+	PROCEDURE = _vectors_veci8_operator_lt,
+	LEFTARG = veci8,
+	RIGHTARG = veci8,
+	COMMUTATOR = >,
+	NEGATOR = >=,
+	RESTRICT = scalarltsel,
+	JOIN = scalarltjoinsel
+);
+
+CREATE OPERATOR > (
+	PROCEDURE = _vectors_veci8_operator_gt,
+	LEFTARG = veci8,
+	RIGHTARG = veci8,
+	COMMUTATOR = <,
+	NEGATOR = <=,
+	RESTRICT = scalargtsel,
+	JOIN = scalargtjoinsel
+);
+
+CREATE OPERATOR <= (
+	PROCEDURE = _vectors_veci8_operator_lte,
+	LEFTARG = veci8,
+	RIGHTARG = veci8,
+	COMMUTATOR = >=,
+	NEGATOR = >,
+	RESTRICT = scalarltsel,
+	JOIN = scalarltjoinsel
+);
+
+CREATE OPERATOR >= (
+	PROCEDURE = _vectors_veci8_operator_gte,
+	LEFTARG = veci8,
+	RIGHTARG = veci8,
+	COMMUTATOR = <=,
+	NEGATOR = <,
+	RESTRICT = scalargtsel,
+	JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR <-> (

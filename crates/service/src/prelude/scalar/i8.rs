@@ -5,8 +5,6 @@ use std::fmt::{Debug, Display};
 
 use super::F32;
 
-// TODO: lots of useless code
-
 #[derive(Clone, Copy, Default, Serialize, Deserialize)]
 #[repr(transparent)]
 #[serde(transparent)]
