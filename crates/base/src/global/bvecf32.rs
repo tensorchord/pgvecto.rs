@@ -137,7 +137,7 @@ pub fn sl2<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
 }
 
 #[inline(always)]
-pub fn length<'a>(vector: BVecf32Borrowed<'a>) -> F32 {
+pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
     let vector = vector.data();
 
     #[inline(always)]
