@@ -558,4 +558,7 @@ CREATE CAST (veci8 AS vector)
 CREATE CAST (vector AS veci8)
 	WITH FUNCTION _vectors_cast_vecf32_to_veci8(vector, integer, boolean);
 
+CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_from_array_wrapper';
+
 -- finalize end

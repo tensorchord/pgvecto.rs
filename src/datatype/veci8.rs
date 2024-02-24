@@ -72,7 +72,7 @@ impl Veci8 {
 
     pub fn new_zeroed_in_postgres(len: usize) -> Veci8Output {
         unsafe {
-            assert!(1 <= len && len <= 65535);
+            assert!((1..=65535).contains(&len));
             let layout = Veci8::layout(len);
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut Veci8;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
@@ -554,4 +554,20 @@ fn _vectors_veci8_out(vector: Veci8Input<'_>) -> CString {
     }
     buffer.push(']');
     CString::new(buffer).unwrap()
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_to_veci8(len: i32, alpha: f32, offset: f32, values: pgrx::Array<i32>) -> Veci8Output {
+    check_value_dimensions(len as usize);
+    if (len as usize) != values.len() {
+        bad_literal("Lengths of values and len are not matched.");
+    }
+    if values.contains_nulls() {
+        bad_literal("Index or value contains nulls.");
+    }
+    let values = values
+        .iter()
+        .map(|x| I8(x.unwrap() as i8))
+        .collect::<Vec<_>>();
+    Veci8::new_in_postgres(values.as_slice(), F32(alpha), F32(offset))
 }

@@ -1,0 +1,37 @@
+statement ok
+SET search_path TO pg_temp, vectors;
+
+statement ok
+CREATE TABLE t (id bigserial, val veci8);
+
+statement ok
+INSERT INTO t (val) SELECT NULL FROM generate_series(1, 1000);
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random()]::real[]::vector::veci8 FROM generate_series(1, 1000);
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random(), random()]::real[]::vector::veci8 FROM generate_series(1, 1000);
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[]::vector::veci8 FROM generate_series(1, 1000);
+
+statement ok
+COPY t TO '/tmp/data.bin' WITH (FORMAT binary);
+
+statement ok
+CREATE TABLE t2 (id bigserial, val veci8);
+
+statement ok
+COPY t2 FROM '/tmp/data.bin' WITH (FORMAT binary);
+
+query I
+SELECT SUM(((t.val = t2.val) OR (t.val IS NULL and t2.val IS NULL))::int) FROM t FULL OUTER JOIN t2 ON t.id = t2.id;
+----
+4000
+
+statement ok
+DROP TABLE t;
+
+statement ok
+DROP TABLE t2;
