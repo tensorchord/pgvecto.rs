@@ -498,7 +498,7 @@ fn _vectors_veci8_send(vector: Veci8Input<'_>) -> Datum {
 }
 
 #[pgrx::pg_extern(sql = "\
-CREATE FUNCTION _vectors_veci8_recv(bytea) RETURNS veci8
+CREATE FUNCTION _vectors_veci8_recv(internal, oid, integer) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE C AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
 fn _vectors_veci8_recv(internal: pgrx::Internal, _oid: Oid, _typmod: i32) -> Veci8Output {
     use pgrx::pg_sys::StringInfo;

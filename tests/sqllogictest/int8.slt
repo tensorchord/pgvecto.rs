@@ -43,8 +43,8 @@ SELECT to_veci8(5, 1, 0, '{0,1,2,0,0}');
 ----
 [0, 1, 2, 0, 0]
 
-Lengths of values and len are not matched.
+statement error Lengths of values and len are not matched.
 SELECT to_veci8(5, 1, 0, '{0,1,2,0,0,0}');
 
-Index or value contains nulls.
+statement error Index or value contains nulls.
 SELECT to_veci8(5, 1, 0, '{0,1,2,NULL,0}');

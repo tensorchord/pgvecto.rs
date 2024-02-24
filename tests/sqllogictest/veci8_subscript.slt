@@ -2,22 +2,22 @@ statement ok
 SET search_path TO pg_temp, vectors;
 
 query I
-SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[3:6];
+SELECT (to_veci8(8, 1, 0, '{0,1,2,3,4,5,6,7}'))[3:6];
 ----
 [3, 4, 5]
 
 query I
-SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[:4];
+SELECT (to_veci8(8, 1, 0, '{0,1,2,3,4,5,6,7}'))[:4];
 ----
 [0, 1, 2, 3]
 
 query I
-SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[5:];
+SELECT (to_veci8(8, 1, 0, '{0,1,2,3,4,5,6,7}'))[5:];
 ----
 [5, 6, 7]
 
 query I
-SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[1:8];
+SELECT (to_veci8(8, 1, 0, '{0,1,2,3,4,5,6,7}'))[1:8];
 ----
 [1, 2, 3, 4, 5, 6, 7]
 
