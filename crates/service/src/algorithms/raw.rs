@@ -1,7 +1,7 @@
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::segments::sealed::SealedSegment;
-use crate::index::IndexOptions;
 use crate::prelude::*;
+use crate::storage::Storage;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -10,11 +10,11 @@ pub struct Raw<S: G> {
 }
 
 impl<S: G> Raw<S> {
-    pub fn create<I: for<'a> G<VectorRef<'a> = S::VectorRef<'a>>>(
+    pub fn create(
         path: &Path,
         options: IndexOptions,
-        sealed: Vec<Arc<SealedSegment<I>>>,
-        growing: Vec<Arc<GrowingSegment<I>>>,
+        sealed: Vec<Arc<SealedSegment<S>>>,
+        growing: Vec<Arc<GrowingSegment<S>>>,
     ) -> Self {
         std::fs::create_dir(path).unwrap();
         let ram = make(sealed, growing, options);
@@ -29,7 +29,7 @@ impl<S: G> Raw<S> {
         self.mmap.len()
     }
 
-    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, i: u32) -> Borrowed<'_, S> {
         self.mmap.vector(i)
     }
 
@@ -63,7 +63,7 @@ impl<S: G> RawRam<S> {
             + self.growing.iter().map(|x| x.len()).sum::<u32>()
     }
 
-    pub fn vector(&self, mut index: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, mut index: u32) -> Borrowed<'_, S> {
         for x in self.sealed.iter() {
             if index < x.len() {
                 return x.vector(index);

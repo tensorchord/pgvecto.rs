@@ -56,17 +56,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache/restore@v4
+        id: cache
         with:
           path: |
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
-          restore-keys: cargo-${{ matrix.os }}-pg${{ matrix.version }}
+          key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}
       - uses: mozilla-actions/sccache-action@v0.0.4
       - name: Setup
         shell: bash
-        run: | 
+        run: |
           ./scripts/ci_setup.sh
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
           cargo binstall sqllogictest-bin -y --force
@@ -77,15 +77,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-      - name: Test 2
+      - name: Test
         run: ./tests/tests.sh
       - uses: actions/cache/save@v4
+        if: ${{ !steps.cache.outputs.cache-hit }}
         with:
           path: |
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
+          key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}
   debug_check:
     strategy:
       matrix:
@@ -100,13 +101,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache/restore@v4
+        id: cache
         with:
           path: |
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
-          restore-keys: cargo-${{ matrix.os }}-pg${{ matrix.version }}
+          key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}
       - uses: mozilla-actions/sccache-action@v0.0.4
       - name: Setup
         shell: bash
@@ -127,3 +128,11 @@ jobs:
       - name: Test
         run: |
           cargo test --all --no-fail-fast --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu -- --nocapture
+      - uses: actions/cache/save@v4
+        if: ${{ !steps.cache.outputs.cache-hit }}
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}

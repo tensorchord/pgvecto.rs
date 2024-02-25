@@ -5,7 +5,6 @@ use crate::index::utils::from_datum;
 use crate::ipc::ClientRpc;
 use crate::prelude::*;
 use pgrx::pg_sys::{IndexBuildResult, IndexInfo, RelationData};
-use service::prelude::*;
 
 pub struct Builder {
     pub rpc: ClientRpc,

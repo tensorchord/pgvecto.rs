@@ -4,11 +4,8 @@ pub mod optimizing;
 pub mod segments;
 
 use self::delete::Delete;
-use self::indexing::IndexingOptions;
-use self::optimizing::OptimizingOptions;
 use self::segments::growing::GrowingSegment;
 use self::segments::sealed::SealedSegment;
-use self::segments::SegmentsOptions;
 use crate::index::optimizing::indexing::OptimizerIndexing;
 use crate::index::optimizing::sealing::OptimizerSealing;
 use crate::prelude::*;
@@ -29,77 +26,10 @@ use std::time::Instant;
 use thiserror::Error;
 use uuid::Uuid;
 use validator::Validate;
-use validator::ValidationError;
 
 #[derive(Debug, Error)]
 #[error("The index view is outdated.")]
 pub struct OutdatedError;
-
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-#[serde(deny_unknown_fields)]
-pub struct VectorOptions {
-    #[validate(range(min = 1, max = 65535))]
-    #[serde(rename = "dimensions")]
-    pub dims: u16,
-    #[serde(rename = "distance")]
-    pub d: Distance,
-    #[serde(rename = "kind")]
-    pub k: Kind,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-#[serde(deny_unknown_fields)]
-#[validate(schema(function = "validate_index_options"))]
-pub struct IndexOptions {
-    #[validate]
-    pub vector: VectorOptions,
-    #[validate]
-    pub segment: SegmentsOptions,
-    #[validate]
-    pub optimizing: OptimizingOptions,
-    #[validate]
-    pub indexing: IndexingOptions,
-}
-
-fn validate_index_options(options: &IndexOptions) -> Result<(), ValidationError> {
-    if options.vector.k == Kind::SparseF32 && options.indexing.has_quantization() {
-        return Err(ValidationError::new(
-            "quantization is not supported for sparse vector",
-        ));
-    }
-    if options.vector.k == Kind::I8 && options.indexing.has_quantization() {
-        return Err(ValidationError::new(
-            "other quantization is not supported for i8 vector",
-        ));
-    }
-    Ok(())
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-pub struct SearchOptions {
-    pub prefilter_enable: bool,
-    #[validate(range(min = 1, max = 65535))]
-    pub hnsw_ef_search: usize,
-    #[validate(range(min = 1, max = 1_000_000))]
-    pub ivf_nprobe: u32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct SegmentStat {
-    pub id: Uuid,
-    #[serde(rename = "type")]
-    pub typ: String,
-    pub length: usize,
-    pub size: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct IndexStat {
-    pub indexing: bool,
-    pub segments: Vec<SegmentStat>,
-    pub options: IndexOptions,
-}
 
 pub struct Index<S: G> {
     path: PathBuf,
@@ -323,7 +253,7 @@ pub struct IndexView<S: G> {
 impl<S: G> IndexView<S> {
     pub fn basic<'a, F: Fn(Pointer) -> bool + Clone + 'a>(
         &'a self,
-        vector: S::VectorRef<'_>,
+        vector: Borrowed<'_, S>,
         opts: &'a SearchOptions,
         filter: F,
     ) -> Result<impl Iterator<Item = Pointer> + 'a, BasicError> {
@@ -401,7 +331,7 @@ impl<S: G> IndexView<S> {
     }
     pub fn vbase<'a, F: FnMut(Pointer) -> bool + Clone + 'a>(
         &'a self,
-        vector: S::VectorRef<'a>,
+        vector: Borrowed<'a, S>,
         opts: &'a SearchOptions,
         filter: F,
     ) -> Result<impl Iterator<Item = Pointer> + 'a, VbaseError> {
@@ -495,7 +425,7 @@ impl<S: G> IndexView<S> {
     }
     pub fn insert(
         &self,
-        vector: S::VectorOwned,
+        vector: Owned<S>,
         pointer: Pointer,
     ) -> Result<Result<(), OutdatedError>, InsertError> {
         if self.options.vector.dims != vector.dims() {

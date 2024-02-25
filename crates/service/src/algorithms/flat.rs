@@ -2,7 +2,6 @@ use super::quantization::Quantization;
 use super::raw::Raw;
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::segments::sealed::SealedSegment;
-use crate::index::{IndexOptions, SearchOptions};
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
 use std::cmp::Reverse;
@@ -36,7 +35,7 @@ impl<S: G> Flat<S> {
 
     pub fn basic(
         &self,
-        vector: S::VectorRef<'_>,
+        vector: Borrowed<'_, S>,
         _opts: &SearchOptions,
         filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
@@ -45,7 +44,7 @@ impl<S: G> Flat<S> {
 
     pub fn vbase<'a>(
         &'a self,
-        vector: S::VectorRef<'a>,
+        vector: Borrowed<'a, S>,
         _opts: &'a SearchOptions,
         filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
@@ -56,7 +55,7 @@ impl<S: G> Flat<S> {
         self.mmap.raw.len()
     }
 
-    pub fn vector(&self, i: u32) -> S::VectorRef<'_> {
+    pub fn vector(&self, i: u32) -> Borrowed<'_, S> {
         self.mmap.raw.vector(i)
     }
 
@@ -99,6 +98,7 @@ pub fn make<S: G>(
         options.clone(),
         idx_opts.quantization,
         &raw,
+        (0..raw.len()).collect::<Vec<_>>(),
     );
     FlatRam { raw, quantization }
 }
@@ -124,7 +124,7 @@ pub fn open<S: G>(path: &Path, options: IndexOptions) -> FlatMmap<S> {
 
 pub fn basic<S: G>(
     mmap: &FlatMmap<S>,
-    vector: S::VectorRef<'_>,
+    vector: Borrowed<'_, S>,
     mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
     let mut result = BinaryHeap::new();
@@ -140,7 +140,7 @@ pub fn basic<S: G>(
 
 pub fn vbase<'a, S: G>(
     mmap: &'a FlatMmap<S>,
-    vector: S::VectorRef<'a>,
+    vector: Borrowed<'a, S>,
     mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
     let mut result = Vec::new();
