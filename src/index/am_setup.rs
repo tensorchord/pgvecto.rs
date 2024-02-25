@@ -73,11 +73,11 @@ pub unsafe fn convert_opfamily_to_distance(
     } else if operator == regoperatorin("vectors.<=>(vectors.svector,vectors.svector)") {
         result = (DistanceKind::Cos, VectorKind::SVecf32);
     } else if operator == regoperatorin("vectors.<->(vectors.veci8,vectors.veci8)") {
-        result = (Distance::L2, Kind::I8);
+        result = (DistanceKind::L2, VectorKind::Veci8);
     } else if operator == regoperatorin("vectors.<#>(vectors.veci8,vectors.veci8)") {
-        result = (Distance::Dot, Kind::I8);
+        result = (DistanceKind::Dot, VectorKind::Veci8);
     } else if operator == regoperatorin("vectors.<=>(vectors.veci8,vectors.veci8)") {
-        result = (Distance::Cos, Kind::I8);
+        result = (DistanceKind::Cos, VectorKind::Veci8);
     } else {
         bad_opclass();
     };

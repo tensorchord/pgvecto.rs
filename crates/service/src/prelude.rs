@@ -31,3 +31,9 @@ impl G for Vecf32Cos {}
 impl G for Vecf32Dot {}
 
 impl G for Vecf32L2 {}
+
+impl G for Veci8Cos {}
+
+impl G for Veci8Dot {}
+
+impl G for Veci8L2 {}

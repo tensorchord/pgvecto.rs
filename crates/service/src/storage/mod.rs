@@ -1,7 +1,9 @@
 mod dense;
+mod i8_quant;
 mod sparse;
 
 pub use dense::DenseMmap;
+pub use i8_quant::I8QuantMmap;
 pub use sparse::SparseMmap;
 
 use crate::algorithms::raw::RawRam;
@@ -57,4 +59,16 @@ impl GlobalStorage for Vecf32Dot {
 
 impl GlobalStorage for Vecf32L2 {
     type Storage = DenseMmap<F32>;
+}
+
+impl GlobalStorage for Veci8Cos {
+    type Storage = I8QuantMmap;
+}
+
+impl GlobalStorage for Veci8Dot {
+    type Storage = I8QuantMmap;
+}
+
+impl GlobalStorage for Veci8L2 {
+    type Storage = I8QuantMmap;
 }

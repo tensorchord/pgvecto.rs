@@ -1,4 +1,9 @@
-use crate::prelude::*;
+use crate::{
+    global::Veci8Owned,
+    scalar::{F32, I8},
+};
+
+use super::Veci8Borrowed;
 
 pub fn dot(x: &[I8], y: &[I8]) -> F32 {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -62,61 +67,43 @@ unsafe fn dot_i8_avx512vnni(x: &[I8], y: &[I8]) -> F32 {
     F32(sum as f32)
 }
 
-pub fn dot_distance(x: &VecI8Ref<'_>, y: &VecI8Ref<'_>) -> F32 {
+pub fn dot_distance(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
     // (alpha_x * x[i] + offset_x) * (alpha_y * y[i] + offset_y)
     // = alpha_x * alpha_y * x[i] * y[i] + alpha_x * offset_y * x[i] + alpha_y * offset_x * y[i] + offset_x * offset_y
     // Sum(dot(origin_x[i] , origin_y[i])) = alpha_x * alpha_y * Sum(dot(x[i], y[i])) + offset_y * Sum(alpha_x * x[i]) + offset_x * Sum(alpha_y * y[i]) + offset_x * offset_y * dims
-    let dot_xy = dot(x.data, y.data);
-    x.alpha * y.alpha * dot_xy
-        + x.offset * y.sum
-        + y.offset * x.sum
-        + x.offset * y.offset * F32(x.dims as f32)
+    let dot_xy = dot(x.data(), y.data());
+    x.alpha() * y.alpha() * dot_xy
+        + x.offset() * y.sum()
+        + y.offset() * x.sum()
+        + x.offset() * y.offset() * F32(x.dims() as f32)
 }
 
-pub fn l2_distance(x: &VecI8Ref<'_>, y: &VecI8Ref<'_>) -> F32 {
+pub fn l2_distance(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
     // Sum(l2(origin_x[i] - origin_y[i])) = sum(x[i] ^ 2 - 2 * x[i] * y[i] + y[i] ^ 2)
     // = dot(x, x) - 2 * dot(x, y) + dot(y, y)
     // TODO: should we precompute the dot(x, x) ?
     dot_distance(x, x) - F32(2.0) * dot_distance(x, y) + dot_distance(y, y)
 }
 
-pub fn cosine_distance(x: &VecI8Ref<'_>, y: &VecI8Ref<'_>) -> F32 {
+pub fn cosine_distance(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
     // dot(x, y) / (l2(x) * l2(y))
     let dot_xy = dot_distance(x, y);
-    let l2_x = x.l2_norm;
-    let l2_y = y.l2_norm;
+    let l2_x = x.l2_norm();
+    let l2_y = y.l2_norm();
     dot_xy / (l2_x * l2_y)
 }
 
+#[inline(always)]
 #[multiversion::multiversion(targets(
     "x86_64/x86-64-v4",
     "x86_64/x86-64-v3",
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn quantization(vector: Vec<F32>) -> (Vec<I8>, F32, F32) {
-    let min = vector.iter().copied().fold(F32::infinity(), Float::min);
-    let max = vector.iter().copied().fold(F32::neg_infinity(), Float::max);
-    let alpha = (max - min) / 255.0;
-    let offset = (max + min) / 2.0;
-    let result = vector
-        .iter()
-        .map(|&x| ((x - offset) / alpha).into())
-        .collect();
-    (result, alpha, offset)
-}
-
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-pub fn dequantization(vector: &[I8], alpha: F32, offset: F32) -> Vec<F32> {
-    vector
-        .iter()
-        .map(|&x| (x.to_f() * alpha + offset))
-        .collect()
+pub fn l2_normalize(vector: &mut Veci8Owned) {
+    let l = vector.l2_norm();
+    *vector.alpha_mut() /= l;
+    *vector.offset_mut() /= l;
 }
 
 #[inline(always)]
@@ -126,46 +113,16 @@ pub fn dequantization(vector: &[I8], alpha: F32, offset: F32) -> Vec<F32> {
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn l2_normalize(vector: &mut VecI8Owned) {
-    let l = vector.l2_norm;
-    vector.alpha /= l;
-    vector.offset /= l;
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-pub fn precompute(data: &[I8], alpha: F32, offset: F32) -> (F32, F32) {
-    let sum = data.iter().map(|&x| x.to_f() * alpha).sum();
-    let l2_norm = data
-        .iter()
-        .map(|&x| (x.to_f() * alpha + offset) * (x.to_f() * alpha + offset))
-        .sum::<F32>()
-        .sqrt();
-    (sum, l2_norm)
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-pub fn l2_2<'a>(lhs: VecI8Ref<'a>, rhs: &[F32]) -> F32 {
-    let data = lhs.data;
+pub fn l2_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
+    let data = lhs.data();
     assert_eq!(data.len(), rhs.len());
     data.iter()
         .zip(rhs.iter())
         .map(|(&x, &y)| {
-            (x.to_f() * lhs.alpha + lhs.offset - y) * (x.to_f() * lhs.alpha + lhs.offset - y)
+            (x.to_f32() * lhs.alpha() + lhs.offset() - y)
+                * (x.to_f32() * lhs.alpha() + lhs.offset() - y)
         })
         .sum::<F32>()
-        .sqrt()
 }
 
 #[inline(always)]
@@ -175,40 +132,28 @@ pub fn l2_2<'a>(lhs: VecI8Ref<'a>, rhs: &[F32]) -> F32 {
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn dot_2<'a>(lhs: VecI8Ref<'a>, rhs: &[F32]) -> F32 {
-    let data = lhs.data;
+pub fn dot_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
+    let data = lhs.data();
     assert_eq!(data.len(), rhs.len());
     data.iter()
         .zip(rhs.iter())
-        .map(|(&x, &y)| (x.to_f() * lhs.alpha + lhs.offset) * y)
+        .map(|(&x, &y)| (x.to_f32() * lhs.alpha() + lhs.offset()) * y)
         .sum::<F32>()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_quantization_roundtrip() {
-        let vector = vec![F32(0.0), F32(1.0), F32(2.0), F32(3.0), F32(4.0)];
-        let (result, alpha, offset) = quantization(vector);
-        assert_eq!(result, vec![I8(-127), I8(-63), I8(0), I8(63), I8(127)]);
-        assert_eq!(alpha, F32(4.0 / 255.0));
-        assert_eq!(offset, F32(2.0));
-        let vector = dequantization(result.as_slice(), alpha, offset);
-        for (i, x) in vector.iter().enumerate() {
-            assert!((x.0 - (i as f32)).abs() < 0.05);
-        }
-    }
+    use crate::vector::i8_quantization;
 
     #[test]
     fn test_dot_i8() {
         let x = vec![F32(1.0), F32(2.0), F32(3.0)];
         let y = vec![F32(3.0), F32(2.0), F32(1.0)];
-        let (v_x, alpha_x, offset_x) = quantization(x);
-        let ref_x = VecI8Ref::new(v_x.len() as u16, &v_x, alpha_x, offset_x);
-        let (v_y, alpha_y, offset_y) = quantization(y);
-        let ref_y = VecI8Ref::new(v_y.len() as u16, &v_y, alpha_y, offset_y);
+        let (v_x, alpha_x, offset_x) = i8_quantization(x);
+        let ref_x = Veci8Borrowed::new(v_x.len() as u16, &v_x, alpha_x, offset_x);
+        let (v_y, alpha_y, offset_y) = i8_quantization(y);
+        let ref_y = Veci8Borrowed::new(v_y.len() as u16, &v_y, alpha_y, offset_y);
         let result = dot_distance(&ref_x, &ref_y);
         assert!((result.0 - 10.0).abs() < 0.1);
     }
@@ -217,10 +162,10 @@ mod tests {
     fn test_cos_i8() {
         let x = vec![F32(1.0), F32(2.0), F32(3.0)];
         let y = vec![F32(3.0), F32(2.0), F32(1.0)];
-        let (v_x, alpha_x, offset_x) = quantization(x);
-        let ref_x = VecI8Ref::new(v_x.len() as u16, &v_x, alpha_x, offset_x);
-        let (v_y, alpha_y, offset_y) = quantization(y);
-        let ref_y = VecI8Ref::new(v_y.len() as u16, &v_y, alpha_y, offset_y);
+        let (v_x, alpha_x, offset_x) = i8_quantization(x);
+        let ref_x = Veci8Borrowed::new(v_x.len() as u16, &v_x, alpha_x, offset_x);
+        let (v_y, alpha_y, offset_y) = i8_quantization(y);
+        let ref_y = Veci8Borrowed::new(v_y.len() as u16, &v_y, alpha_y, offset_y);
         let result = cosine_distance(&ref_x, &ref_y);
         assert!((result.0 - (10.0 / 14.0)).abs() < 0.1);
     }
@@ -229,10 +174,10 @@ mod tests {
     fn test_l2_i8() {
         let x = vec![F32(1.0), F32(2.0), F32(3.0)];
         let y = vec![F32(3.0), F32(2.0), F32(1.0)];
-        let (v_x, alpha_x, offset_x) = quantization(x);
-        let ref_x = VecI8Ref::new(v_x.len() as u16, &v_x, alpha_x, offset_x);
-        let (v_y, alpha_y, offset_y) = quantization(y);
-        let ref_y = VecI8Ref::new(v_y.len() as u16, &v_y, alpha_y, offset_y);
+        let (v_x, alpha_x, offset_x) = i8_quantization(x);
+        let ref_x = Veci8Borrowed::new(v_x.len() as u16, &v_x, alpha_x, offset_x);
+        let (v_y, alpha_y, offset_y) = i8_quantization(y);
+        let ref_y = Veci8Borrowed::new(v_y.len() as u16, &v_y, alpha_y, offset_y);
         let result = l2_distance(&ref_x, &ref_y);
         assert!((result.0 - 8.0).abs() < 0.1);
     }

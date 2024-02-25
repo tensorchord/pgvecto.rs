@@ -1,6 +1,7 @@
 use crate::datatype::memory_svecf32::{SVecf32Input, SVecf32Output};
 use crate::datatype::memory_vecf16::{Vecf16Input, Vecf16Output};
 use crate::datatype::memory_vecf32::{Vecf32Input, Vecf32Output};
+use crate::datatype::memory_veci8::{Veci8Input, Veci8Output};
 use crate::prelude::*;
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
@@ -82,4 +83,29 @@ fn _vectors_cast_svecf32_to_vecf32(
     let slice = vector.for_borrow().to_vec();
 
     Vecf32Output::new(Vecf32Borrowed::new(&slice))
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_cast_veci8_to_vecf32(
+    vector: Veci8Input<'_>,
+    _typmod: i32,
+    _explicit: bool,
+) -> Vecf32Output {
+    let data = (0..vector.len())
+        .map(|i| vector.index(i))
+        .collect::<Vec<_>>();
+    Vecf32Output::new(Vecf32Borrowed::new(&data))
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_cast_vecf32_to_veci8(
+    vector: Vecf32Input<'_>,
+    _typmod: i32,
+    _explicit: bool,
+) -> Veci8Output {
+    let (data, alpha, offset) = i8_quantization(vector.slice().to_vec());
+    Veci8Output::new(
+        Veci8Borrowed::new_checked_without_precomputed(data.len() as u16, &data, alpha, offset)
+            .unwrap(),
+    )
 }

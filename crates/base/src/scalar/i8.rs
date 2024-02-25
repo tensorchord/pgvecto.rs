@@ -1,4 +1,3 @@
-use crate::prelude::global::FloatCast;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display};
@@ -48,16 +47,6 @@ unsafe impl bytemuck::Zeroable for I8 {}
 
 unsafe impl bytemuck::Pod for I8 {}
 
-impl FloatCast for I8 {
-    fn from_f32(x: f32) -> Self {
-        Self(x as i8)
-    }
-
-    fn to_f32(self) -> f32 {
-        self.0 as f32
-    }
-}
-
 impl From<i8> for I8 {
     fn from(value: i8) -> Self {
         Self(value)
@@ -74,5 +63,18 @@ impl From<F32> for I8 {
     fn from(F32(value): F32) -> Self {
         // Because F32 may be out of range of i8 [-128, 127], so we can't use to_int_unchecked here.
         Self(value as i8)
+    }
+}
+
+impl From<I8> for F32 {
+    fn from(val: I8) -> Self {
+        F32(val.0 as f32)
+    }
+}
+
+impl I8 {
+    #[inline(always)]
+    pub fn to_f32(self) -> F32 {
+        F32(self.0 as f32)
     }
 }

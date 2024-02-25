@@ -19,9 +19,9 @@ pub enum Instance {
     SVecf32L2(Arc<Index<SVecf32L2>>),
     SVecf32Cos(Arc<Index<SVecf32Cos>>),
     SVecf32Dot(Arc<Index<SVecf32Dot>>),
-    I8L2(Arc<Index<I8L2>>),
-    I8Cos(Arc<Index<I8Cos>>),
-    I8Dot(Arc<Index<I8Dot>>),
+    Veci8L2(Arc<Index<Veci8L2>>),
+    Veci8Cos(Arc<Index<Veci8Cos>>),
+    Veci8Dot(Arc<Index<Veci8Dot>>),
     Upgrade,
 }
 
@@ -73,35 +73,20 @@ impl Instance {
                 self::metadata::Metadata::write(path.join("metadata"));
                 Ok(Self::SVecf32Dot(index))
             }
-            (Distance::L2, Kind::I8) => {
+            (DistanceKind::L2, VectorKind::Veci8) => {
                 let index = Index::create(path.clone(), options)?;
                 self::metadata::Metadata::write(path.join("metadata"));
-                Ok(Self::I8L2(index))
+                Ok(Self::Veci8L2(index))
             }
-            (Distance::Cos, Kind::I8) => {
+            (DistanceKind::Cos, VectorKind::Veci8) => {
                 let index = Index::create(path.clone(), options)?;
                 self::metadata::Metadata::write(path.join("metadata"));
-                Ok(Self::I8Cos(index))
+                Ok(Self::Veci8Cos(index))
             }
-            (Distance::Dot, Kind::I8) => {
+            (DistanceKind::Dot, VectorKind::Veci8) => {
                 let index = Index::create(path.clone(), options)?;
                 self::metadata::Metadata::write(path.join("metadata"));
-                Ok(Self::I8Dot(index))
-            }
-            (Distance::L2, Kind::I8) => {
-                let index = Index::create(path.clone(), options)?;
-                self::metadata::Metadata::write(path.join("metadata"));
-                Ok(Self::I8L2(index))
-            }
-            (Distance::Cos, Kind::I8) => {
-                let index = Index::create(path.clone(), options)?;
-                self::metadata::Metadata::write(path.join("metadata"));
-                Ok(Self::I8Cos(index))
-            }
-            (Distance::Dot, Kind::I8) => {
-                let index = Index::create(path.clone(), options)?;
-                self::metadata::Metadata::write(path.join("metadata"));
-                Ok(Self::I8Dot(index))
+                Ok(Self::Veci8Dot(index))
             }
         }
     }
@@ -122,9 +107,9 @@ impl Instance {
             (DistanceKind::L2, VectorKind::SVecf32) => Self::SVecf32L2(Index::open(path)),
             (DistanceKind::Cos, VectorKind::SVecf32) => Self::SVecf32Cos(Index::open(path)),
             (DistanceKind::Dot, VectorKind::SVecf32) => Self::SVecf32Dot(Index::open(path)),
-            (Distance::L2, Kind::I8) => Self::I8L2(Index::open(path)),
-            (Distance::Cos, Kind::I8) => Self::I8Cos(Index::open(path)),
-            (Distance::Dot, Kind::I8) => Self::I8Dot(Index::open(path)),
+            (DistanceKind::L2, VectorKind::Veci8) => Self::Veci8L2(Index::open(path)),
+            (DistanceKind::Cos, VectorKind::Veci8) => Self::Veci8Cos(Index::open(path)),
+            (DistanceKind::Dot, VectorKind::Veci8) => Self::Veci8Dot(Index::open(path)),
         }
     }
     pub fn refresh(&self) {
@@ -138,9 +123,9 @@ impl Instance {
             Instance::SVecf32L2(x) => x.refresh(),
             Instance::SVecf32Cos(x) => x.refresh(),
             Instance::SVecf32Dot(x) => x.refresh(),
-            Instance::I8L2(x) => x.refresh(),
-            Instance::I8Cos(x) => x.refresh(),
-            Instance::I8Dot(x) => x.refresh(),
+            Instance::Veci8L2(x) => x.refresh(),
+            Instance::Veci8Cos(x) => x.refresh(),
+            Instance::Veci8Dot(x) => x.refresh(),
             Instance::Upgrade => (),
         }
     }
@@ -155,9 +140,9 @@ impl Instance {
             Instance::SVecf32L2(x) => Some(InstanceView::SVecf32L2(x.view())),
             Instance::SVecf32Cos(x) => Some(InstanceView::SVecf32Cos(x.view())),
             Instance::SVecf32Dot(x) => Some(InstanceView::SVecf32Dot(x.view())),
-            Instance::I8L2(x) => Some(InstanceView::I8L2(x.view())),
-            Instance::I8Cos(x) => Some(InstanceView::I8Cos(x.view())),
-            Instance::I8Dot(x) => Some(InstanceView::I8Dot(x.view())),
+            Instance::Veci8L2(x) => Some(InstanceView::Veci8L2(x.view())),
+            Instance::Veci8Cos(x) => Some(InstanceView::Veci8Cos(x.view())),
+            Instance::Veci8Dot(x) => Some(InstanceView::Veci8Dot(x.view())),
             Instance::Upgrade => None,
         }
     }
@@ -172,9 +157,9 @@ impl Instance {
             Instance::SVecf32L2(x) => Some(x.stat()),
             Instance::SVecf32Cos(x) => Some(x.stat()),
             Instance::SVecf32Dot(x) => Some(x.stat()),
-            Instance::I8L2(x) => Some(x.stat()),
-            Instance::I8Cos(x) => Some(x.stat()),
-            Instance::I8Dot(x) => Some(x.stat()),
+            Instance::Veci8L2(x) => Some(x.stat()),
+            Instance::Veci8Cos(x) => Some(x.stat()),
+            Instance::Veci8Dot(x) => Some(x.stat()),
             Instance::Upgrade => None,
         }
     }
@@ -190,9 +175,9 @@ pub enum InstanceView {
     SVecf32Cos(Arc<IndexView<SVecf32Cos>>),
     SVecf32Dot(Arc<IndexView<SVecf32Dot>>),
     SVecf32L2(Arc<IndexView<SVecf32L2>>),
-    I8Cos(Arc<IndexView<I8Cos>>),
-    I8Dot(Arc<IndexView<I8Dot>>),
-    I8L2(Arc<IndexView<I8L2>>),
+    Veci8Cos(Arc<IndexView<Veci8Cos>>),
+    Veci8Dot(Arc<IndexView<Veci8Dot>>),
+    Veci8L2(Arc<IndexView<Veci8L2>>),
 }
 
 impl ViewBasicOperations for InstanceView {
@@ -231,22 +216,13 @@ impl ViewBasicOperations for InstanceView {
             (InstanceView::SVecf32L2(x), OwnedVector::SVecF32(vector)) => {
                 Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
             }
-            (InstanceView::I8Cos(x), DynamicVector::I8(vector)) => {
+            (InstanceView::Veci8Cos(x), OwnedVector::Veci8(vector)) => {
                 Ok(Box::new(x.basic(vector.into(), opts, filter)?))
             }
-            (InstanceView::I8Dot(x), DynamicVector::I8(vector)) => {
+            (InstanceView::Veci8Dot(x), OwnedVector::Veci8(vector)) => {
                 Ok(Box::new(x.basic(vector.into(), opts, filter)?))
             }
-            (InstanceView::I8L2(x), DynamicVector::I8(vector)) => {
-                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
-            }
-            (InstanceView::I8Cos(x), DynamicVector::I8(vector)) => {
-                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
-            }
-            (InstanceView::I8Dot(x), DynamicVector::I8(vector)) => {
-                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
-            }
-            (InstanceView::I8L2(x), DynamicVector::I8(vector)) => {
+            (InstanceView::Veci8L2(x), OwnedVector::Veci8(vector)) => {
                 Ok(Box::new(x.basic(vector.into(), opts, filter)?))
             }
             _ => Err(BasicError::InvalidVector),
@@ -290,22 +266,13 @@ impl ViewVbaseOperations for InstanceView {
             (InstanceView::SVecf32L2(x), OwnedVector::SVecF32(vector)) => {
                 Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
             }
-            (InstanceView::I8Cos(x), DynamicVector::I8(vector)) => {
+            (InstanceView::Veci8Cos(x), OwnedVector::Veci8(vector)) => {
                 Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
             }
-            (InstanceView::I8Dot(x), DynamicVector::I8(vector)) => {
+            (InstanceView::Veci8Dot(x), OwnedVector::Veci8(vector)) => {
                 Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
             }
-            (InstanceView::I8L2(x), DynamicVector::I8(vector)) => {
-                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
-            }
-            (InstanceView::I8Cos(x), DynamicVector::I8(vector)) => {
-                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
-            }
-            (InstanceView::I8Dot(x), DynamicVector::I8(vector)) => {
-                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
-            }
-            (InstanceView::I8L2(x), DynamicVector::I8(vector)) => {
+            (InstanceView::Veci8L2(x), OwnedVector::Veci8(vector)) => {
                 Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
             }
             _ => Err(VbaseError::InvalidVector),
@@ -327,9 +294,9 @@ impl ViewListOperations for InstanceView {
             InstanceView::SVecf32Cos(x) => Ok(Box::new(x.list()?)),
             InstanceView::SVecf32Dot(x) => Ok(Box::new(x.list()?)),
             InstanceView::SVecf32L2(x) => Ok(Box::new(x.list()?)),
-            InstanceView::I8Cos(x) => Ok(Box::new(x.list()?)),
-            InstanceView::I8Dot(x) => Ok(Box::new(x.list()?)),
-            InstanceView::I8L2(x) => Ok(Box::new(x.list()?)),
+            InstanceView::Veci8Cos(x) => Ok(Box::new(x.list()?)),
+            InstanceView::Veci8Dot(x) => Ok(Box::new(x.list()?)),
+            InstanceView::Veci8L2(x) => Ok(Box::new(x.list()?)),
         }
     }
 }
@@ -354,9 +321,9 @@ impl InstanceView {
                 x.insert(vector, pointer)
             }
             (InstanceView::SVecf32L2(x), OwnedVector::SVecF32(vector)) => x.insert(vector, pointer),
-            (InstanceView::I8Cos(x), DynamicVector::I8(vector)) => x.insert(vector, pointer),
-            (InstanceView::I8Dot(x), DynamicVector::I8(vector)) => x.insert(vector, pointer),
-            (InstanceView::I8L2(x), DynamicVector::I8(vector)) => x.insert(vector, pointer),
+            (InstanceView::Veci8Cos(x), OwnedVector::Veci8(vector)) => x.insert(vector, pointer),
+            (InstanceView::Veci8Dot(x), OwnedVector::Veci8(vector)) => x.insert(vector, pointer),
+            (InstanceView::Veci8L2(x), OwnedVector::Veci8(vector)) => x.insert(vector, pointer),
             _ => Err(InsertError::InvalidVector),
         }
     }
@@ -371,9 +338,9 @@ impl InstanceView {
             InstanceView::SVecf32Cos(x) => x.delete(pointer),
             InstanceView::SVecf32Dot(x) => x.delete(pointer),
             InstanceView::SVecf32L2(x) => x.delete(pointer),
-            InstanceView::I8Cos(x) => x.delete(pointer),
-            InstanceView::I8Dot(x) => x.delete(pointer),
-            InstanceView::I8L2(x) => x.delete(pointer),
+            InstanceView::Veci8Cos(x) => x.delete(pointer),
+            InstanceView::Veci8Dot(x) => x.delete(pointer),
+            InstanceView::Veci8L2(x) => x.delete(pointer),
         }
     }
     pub fn flush(&self) -> Result<(), FlushError> {
@@ -387,9 +354,9 @@ impl InstanceView {
             InstanceView::SVecf32Cos(x) => x.flush(),
             InstanceView::SVecf32Dot(x) => x.flush(),
             InstanceView::SVecf32L2(x) => x.flush(),
-            InstanceView::I8Cos(x) => x.flush(),
-            InstanceView::I8Dot(x) => x.flush(),
-            InstanceView::I8L2(x) => x.flush(),
+            InstanceView::Veci8Cos(x) => x.flush(),
+            InstanceView::Veci8Dot(x) => x.flush(),
+            InstanceView::Veci8L2(x) => x.flush(),
         }
     }
 }

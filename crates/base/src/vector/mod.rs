@@ -1,10 +1,12 @@
 mod svecf32;
 mod vecf16;
 mod vecf32;
+mod veci8;
 
 pub use svecf32::{SVecf32Borrowed, SVecf32Owned};
 pub use vecf16::{Vecf16Borrowed, Vecf16Owned};
 pub use vecf32::{Vecf32Borrowed, Vecf32Owned};
+pub use veci8::{i8_dequantization, i8_precompute, i8_quantization, Veci8Borrowed, Veci8Owned};
 
 use crate::scalar::ScalarLike;
 use serde::{Deserialize, Serialize};
@@ -15,6 +17,7 @@ pub enum VectorKind {
     Vecf32,
     Vecf16,
     SVecf32,
+    Veci8,
 }
 
 pub trait VectorOwned: Clone + Serialize + for<'a> Deserialize<'a> + 'static {
@@ -44,6 +47,7 @@ pub enum OwnedVector {
     Vecf32(Vecf32Owned),
     Vecf16(Vecf16Owned),
     SVecF32(SVecf32Owned),
+    Veci8(Veci8Owned),
 }
 
 #[derive(Debug, Clone)]
@@ -51,4 +55,5 @@ pub enum BorrowedVector<'a> {
     Vecf32(Vecf32Borrowed<'a>),
     Vecf16(Vecf16Borrowed<'a>),
     SVecF32(SVecf32Borrowed<'a>),
+    Veci8(Veci8Borrowed<'a>),
 }
