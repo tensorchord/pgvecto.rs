@@ -34,7 +34,7 @@ pub struct Veci8Header {
 
 impl Veci8Header {
     fn varlena(size: usize) -> u32 {
-        // varattrib_4b type with compress is not setted
+        // varattrib_4b type with compress is not set
         (size << 2) as u32
     }
 
