@@ -168,7 +168,9 @@ pub unsafe extern "C" fn aminsert(
     let oid = (*index_relation).rd_locator.relNumber;
     let id = Handle::from_sys(oid);
     let vector = from_datum(*values.add(0));
-    am_update::update_insert(id, vector, *heap_tid);
+    if let Some(v) = vector {
+        am_update::update_insert(id, v, *heap_tid);
+    }
     true
 }
 

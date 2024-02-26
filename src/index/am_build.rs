@@ -57,13 +57,21 @@ unsafe extern "C" fn callback(
     _tuple_is_alive: bool,
     state: *mut std::os::raw::c_void,
 ) {
+    let state = &mut *(state as *mut Builder);
+    if *_is_null.add(0) {
+        (*state.result).heap_tuples += 1.0;
+        return;
+    }
     #[cfg(any(feature = "pg14", feature = "pg15"))]
     let oid = (*index_relation).rd_node.relNode;
     #[cfg(feature = "pg16")]
     let oid = (*index_relation).rd_locator.relNumber;
     let id = Handle::from_sys(oid);
-    let state = &mut *(state as *mut Builder);
     let vector = from_datum(*values.add(0));
+    let vector = match vector {
+        Some(v) => v,
+        None => unreachable!(),
+    };
     let pointer = Pointer::from_sys(*ctid);
     match state.rpc.insert(id, vector, pointer) {
         Ok(()) => (),

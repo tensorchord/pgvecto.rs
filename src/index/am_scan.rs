@@ -68,7 +68,7 @@ pub unsafe fn start_scan(scan: pgrx::pg_sys::IndexScanDesc, orderbys: pgrx::pg_s
         scanner,
         Scanner::Initial {
             node: scanner.node(),
-            vector: Some(vector),
+            vector,
         },
     );
 
