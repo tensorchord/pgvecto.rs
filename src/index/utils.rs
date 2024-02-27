@@ -12,12 +12,15 @@ struct Header {
     reserved: u8,
 }
 
-pub unsafe fn from_datum(datum: pgrx::pg_sys::Datum) -> DynamicVector {
+pub unsafe fn from_datum(datum: pgrx::pg_sys::Datum, is_null: bool) -> Option<DynamicVector> {
+    if is_null {
+        return None;
+    }
     let p = datum.cast_mut_ptr::<pgrx::pg_sys::varlena>();
     let q = pgrx::pg_sys::pg_detoast_datum(p);
     let vector = match (*q.cast::<Header>()).kind {
-        0 => DynamicVector::F32((*q.cast::<Vecf32>()).data().to_vec()),
-        1 => DynamicVector::F16((*q.cast::<Vecf16>()).data().to_vec()),
+        0 => Some(DynamicVector::F32((*q.cast::<Vecf32>()).data().to_vec())),
+        1 => Some(DynamicVector::F16((*q.cast::<Vecf16>()).data().to_vec())),
         _ => unreachable!(),
     };
     if p != q {
