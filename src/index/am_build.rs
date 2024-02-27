@@ -67,7 +67,7 @@ unsafe extern "C" fn callback(
     #[cfg(feature = "pg16")]
     let oid = (*index_relation).rd_locator.relNumber;
     let id = Handle::from_sys(oid);
-    let vector = from_datum(*values.add(0));
+    let vector = from_datum(*values.add(0), *_is_null.add(0));
     let vector = match vector {
         Some(v) => v,
         None => unreachable!(),

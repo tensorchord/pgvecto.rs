@@ -12,11 +12,11 @@ struct Header {
     kind: u16,
 }
 
-pub unsafe fn from_datum(datum: pgrx::pg_sys::Datum) -> Option<OwnedVector> {
-    let p = datum.cast_mut_ptr::<pgrx::pg_sys::varlena>();
-    if p.is_null() {
+pub unsafe fn from_datum(values: pgrx::pg_sys::Datum, is_null: bool) -> Option<OwnedVector> {
+    if is_null {
         return None;
     }
+    let p = values.cast_mut_ptr::<pgrx::pg_sys::varlena>();
     let q = pgrx::pg_sys::pg_detoast_datum(p);
     let vector = match (*q.cast::<Header>()).kind {
         0 => {
