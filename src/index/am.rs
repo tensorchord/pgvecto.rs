@@ -155,7 +155,7 @@ pub unsafe extern "C" fn ambuildempty(index_relation: pgrx::pg_sys::Relation) {
 pub unsafe extern "C" fn aminsert(
     index_relation: pgrx::pg_sys::Relation,
     values: *mut Datum,
-    _is_null: *mut bool,
+    is_null: *mut bool,
     heap_tid: pgrx::pg_sys::ItemPointer,
     _heap_relation: pgrx::pg_sys::Relation,
     _check_unique: pgrx::pg_sys::IndexUniqueCheck,
@@ -167,7 +167,7 @@ pub unsafe extern "C" fn aminsert(
     #[cfg(feature = "pg16")]
     let oid = (*index_relation).rd_locator.relNumber;
     let id = Handle::from_sys(oid);
-    let vector = from_datum(*values.add(0), *_is_null.add(0));
+    let vector = from_datum(*values.add(0), *is_null.add(0));
     if let Some(v) = vector {
         am_update::update_insert(id, v, *heap_tid);
     }

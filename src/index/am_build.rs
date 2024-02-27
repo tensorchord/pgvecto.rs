@@ -53,12 +53,12 @@ unsafe extern "C" fn callback(
     index_relation: pgrx::pg_sys::Relation,
     ctid: pgrx::pg_sys::ItemPointer,
     values: *mut pgrx::pg_sys::Datum,
-    _is_null: *mut bool,
+    is_null: *mut bool,
     _tuple_is_alive: bool,
     state: *mut std::os::raw::c_void,
 ) {
     let state = &mut *(state as *mut Builder);
-    if *_is_null.add(0) {
+    if *is_null.add(0) {
         (*state.result).heap_tuples += 1.0;
         return;
     }
@@ -67,7 +67,7 @@ unsafe extern "C" fn callback(
     #[cfg(feature = "pg16")]
     let oid = (*index_relation).rd_locator.relNumber;
     let id = Handle::from_sys(oid);
-    let vector = from_datum(*values.add(0), *_is_null.add(0));
+    let vector = from_datum(*values.add(0), *is_null.add(0));
     let vector = match vector {
         Some(v) => v,
         None => unreachable!(),
