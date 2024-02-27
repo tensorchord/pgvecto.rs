@@ -448,6 +448,13 @@ CREATE OPERATOR <=> (
 	COMMUTATOR = <=>
 );
 
+CREATE OPERATOR <~> (
+	PROCEDURE = _vectors_bvecf32_operator_jaccard,
+	LEFTARG = bvector,
+	RIGHTARG = bvector,
+	COMMUTATOR = <~>
+);
+
 -- List of functions
 
 CREATE FUNCTION pgvectors_upgrade() RETURNS void

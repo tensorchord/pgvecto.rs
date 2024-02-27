@@ -17,8 +17,7 @@ use std::ptr::NonNull;
 pub struct BVecf32Header {
     varlena: u32,
     dims: u16,
-    kind: u8,
-    reserved: u8,
+    kind: u16,
     phantom: [usize; 0],
 }
 
@@ -89,7 +88,6 @@ impl BVecf32Output {
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
             std::ptr::addr_of_mut!((*ptr).varlena).write(BVecf32Header::varlena(layout.size()));
             std::ptr::addr_of_mut!((*ptr).kind).write(3);
-            std::ptr::addr_of_mut!((*ptr).reserved).write(0);
             std::ptr::addr_of_mut!((*ptr).dims).write(dims as u16);
             std::ptr::copy_nonoverlapping(
                 vector.data().as_ptr(),

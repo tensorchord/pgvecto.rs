@@ -2,8 +2,9 @@ use super::{VectorBorrowed, VectorOwned};
 use crate::scalar::F32;
 use serde::{Deserialize, Serialize};
 
-pub const BVEC_WIDTH: usize = std::mem::size_of::<usize>() * 8;
+pub const BVEC_WIDTH: usize = usize::BITS as usize;
 
+// When using binary vector, please ensure that the padding bits are always zero.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BVecf32Owned {
     dims: u16,
@@ -29,8 +30,11 @@ impl BVecf32Owned {
         }
     }
 
+    /// # Safety
+    ///
+    /// The caller must ensure that it won't modify the padding bits
     #[inline(always)]
-    pub fn data_mut(&mut self) -> &mut [usize] {
+    pub unsafe fn data_mut(&mut self) -> &mut [usize] {
         &mut self.data
     }
 }
@@ -75,12 +79,16 @@ impl<'a> BVecf32Borrowed<'a> {
         if data.len() != (dims as usize).div_ceil(BVEC_WIDTH) {
             return None;
         }
+        if data[data.len() - 1] >> (dims % BVEC_WIDTH as u16) != 0 {
+            return None;
+        }
         unsafe { Some(Self::new_unchecked(dims, data)) }
     }
     /// # Safety
     ///
     /// * `dims` must be in `1..=65535`.
     /// * `data` must be of the correct length.
+    /// * The padding bits must be zero.
     #[inline(always)]
     pub unsafe fn new_unchecked(dims: u16, data: &'a [usize]) -> Self {
         Self { dims, data }

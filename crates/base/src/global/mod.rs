@@ -15,6 +15,7 @@ mod vecf32_cos;
 mod vecf32_dot;
 mod vecf32_l2;
 
+pub use bvecf32::jaccard as bvecf32_jaccard;
 pub use bvecf32_cos::BVecf32Cos;
 pub use bvecf32_dot::BVecf32Dot;
 pub use bvecf32_l2::BVecf32L2;

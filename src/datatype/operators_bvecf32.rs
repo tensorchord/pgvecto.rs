@@ -7,8 +7,9 @@ use std::ops::Deref;
 fn _vectors_bvecf32_operator_and(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> BVecf32Output {
     let n = check_matched_dims(lhs.dims() as _, rhs.dims() as _);
     let mut results = BVecf32Owned::new_zeroed(n.try_into().unwrap());
-    for i in 0..results.data_mut().len() {
-        results.data_mut()[i] = lhs.data()[i] & rhs.data()[i];
+    let slice = unsafe { results.data_mut() };
+    for i in 0..slice.len() {
+        slice[i] = lhs.data()[i] & rhs.data()[i];
     }
     BVecf32Output::new(results.for_borrow())
 }
@@ -17,8 +18,9 @@ fn _vectors_bvecf32_operator_and(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -
 fn _vectors_bvecf32_operator_or(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> BVecf32Output {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
     let mut results = BVecf32Owned::new_zeroed(lhs.dims().try_into().unwrap());
-    for i in 0..results.data_mut().len() {
-        results.data_mut()[i] = lhs.data()[i] | rhs.data()[i];
+    let slice = unsafe { results.data_mut() };
+    for i in 0..slice.len() {
+        slice[i] = lhs.data()[i] | rhs.data()[i];
     }
     BVecf32Output::new(results.for_borrow())
 }
@@ -27,8 +29,9 @@ fn _vectors_bvecf32_operator_or(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) ->
 fn _vectors_bvecf32_operator_xor(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> BVecf32Output {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
     let mut results = BVecf32Owned::new_zeroed(lhs.dims().try_into().unwrap());
-    for i in 0..results.data_mut().len() {
-        results.data_mut()[i] = lhs.data()[i] ^ rhs.data()[i];
+    let slice = unsafe { results.data_mut() };
+    for i in 0..slice.len() {
+        slice[i] = lhs.data()[i] ^ rhs.data()[i];
     }
     BVecf32Output::new(results.for_borrow())
 }
@@ -85,4 +88,10 @@ fn _vectors_bvecf32_operator_dot(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -
 fn _vectors_bvecf32_operator_l2(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> f32 {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
     BVecf32L2::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe)]
+fn _vectors_bvecf32_operator_jaccard(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> f32 {
+    check_matched_dims(lhs.dims() as _, rhs.dims() as _);
+    bvecf32_jaccard(lhs.for_borrow(), rhs.for_borrow()).to_f32()
 }
