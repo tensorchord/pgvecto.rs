@@ -28,3 +28,6 @@ fi
 
 sudo chmod -R 777 `pg_config --pkglibdir`
 sudo chmod -R 777 `pg_config --sharedir`/extension
+
+cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1) --debug
+cargo pgrx init --pg$VERSION=$(which pg_config)

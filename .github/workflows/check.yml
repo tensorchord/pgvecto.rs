@@ -54,8 +54,12 @@ jobs:
       VERSION: ${{ matrix.version }}
       OS: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache/restore@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Sccache
+        uses: mozilla-actions/sccache-action@v0.0.4
+      - name: Set up Cache
+        uses: actions/cache/restore@v4
         id: cache
         with:
           path: |
@@ -63,23 +67,32 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
           key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}
-      - uses: mozilla-actions/sccache-action@v0.0.4
-      - name: Setup
-        shell: bash
-        run: |
-          ./scripts/ci_setup.sh
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall sqllogictest-bin -y --force
-          cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1) --debug
-          cargo pgrx init --pg$VERSION=$(which pg_config)
-      - name: Install release
-        run: ./scripts/ci_install.sh
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+      - name: Set up Binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - name: Set up Sqllogictest
+        run: cargo binstall sqllogictest-bin -y --force
+      - name: Set up Environment
+        shell: bash
+        run: ./scripts/ci_setup.sh
+      - name: Release build
+        run: |
+          cargo pgrx install --no-default-features --features "pg$VERSION" --release
+          psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
+          psql -c 'ALTER SYSTEM SET search_path = "$user", public, vectors'
+          psql -c 'ALTER SYSTEM SET logging_collector = on'
+
+          if [ "$OS" == "ubuntu-latest" ]; then
+              sudo systemctl restart postgresql
+              pg_lsclusters
+          fi
       - name: Test
         run: ./tests/tests.sh
-      - uses: actions/cache/save@v4
+      - name: Cache
+        uses: actions/cache/save@v4
         if: ${{ !steps.cache.outputs.cache-hit }}
         with:
           path: |
@@ -99,8 +112,12 @@ jobs:
       VERSION: ${{ matrix.version }}
       OS: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache/restore@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Sccache
+        uses: mozilla-actions/sccache-action@v0.0.4
+      - name: Set up Cache
+        uses: actions/cache/restore@v4
         id: cache
         with:
           path: |
@@ -108,13 +125,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
           key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}
-      - uses: mozilla-actions/sccache-action@v0.0.4
-      - name: Setup
+      - name: Set up Environment
         shell: bash
-        run: |
-          ./scripts/ci_setup.sh
-          cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1) --debug
-          cargo pgrx init --pg$VERSION=$(which pg_config)
+        run: ./scripts/ci_setup.sh
       - name: Format check
         run: cargo fmt --check
       - name: Semantic check
@@ -128,7 +141,8 @@ jobs:
       - name: Test
         run: |
           cargo test --all --no-fail-fast --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu -- --nocapture
-      - uses: actions/cache/save@v4
+      - name: Cache
+        uses: actions/cache/save@v4
         if: ${{ !steps.cache.outputs.cache-hit }}
         with:
           path: |
