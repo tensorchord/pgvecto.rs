@@ -12,21 +12,24 @@ struct Header {
     kind: u16,
 }
 
-pub unsafe fn from_datum(datum: pgrx::pg_sys::Datum) -> OwnedVector {
-    let p = datum.cast_mut_ptr::<pgrx::pg_sys::varlena>();
+pub unsafe fn from_datum(values: pgrx::pg_sys::Datum, is_null: bool) -> Option<OwnedVector> {
+    if is_null {
+        return None;
+    }
+    let p = values.cast_mut_ptr::<pgrx::pg_sys::varlena>();
     let q = pgrx::pg_sys::pg_detoast_datum(p);
     let vector = match (*q.cast::<Header>()).kind {
         0 => {
             let v = &*q.cast::<Vecf32Header>();
-            OwnedVector::Vecf32(v.for_borrow().for_own())
+            Some(OwnedVector::Vecf32(v.for_borrow().for_own()))
         }
         1 => {
             let v = &*q.cast::<Vecf16Header>();
-            OwnedVector::Vecf16(v.for_borrow().for_own())
+            Some(OwnedVector::Vecf16(v.for_borrow().for_own()))
         }
         2 => {
             let v = &*q.cast::<SVecf32Header>();
-            OwnedVector::SVecF32(v.for_borrow().for_own())
+            Some(OwnedVector::SVecF32(v.for_borrow().for_own()))
         }
         _ => unreachable!(),
     };

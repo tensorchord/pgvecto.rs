@@ -6,6 +6,7 @@ use crate::gucs::planning::SEARCH_MODE;
 use crate::index::utils::from_datum;
 use crate::ipc::{ClientBasic, ClientVbase};
 use crate::prelude::*;
+use pgrx::pg_sys::SK_ISNULL;
 use pgrx::FromDatum;
 
 pub enum Scanner {
@@ -60,15 +61,15 @@ pub unsafe fn make_scan(index_relation: pgrx::pg_sys::Relation) -> pgrx::pg_sys:
 
 pub unsafe fn start_scan(scan: pgrx::pg_sys::IndexScanDesc, orderbys: pgrx::pg_sys::ScanKey) {
     std::ptr::copy(orderbys, (*scan).orderByData, 1);
-
-    let vector = from_datum((*orderbys.add(0)).sk_argument);
+    let is_null = (SK_ISNULL & (*orderbys.add(0)).sk_flags as u32) != 0;
+    let vector = from_datum((*orderbys.add(0)).sk_argument, is_null);
 
     let scanner = &mut *((*scan).opaque as *mut Scanner);
     let scanner = std::mem::replace(
         scanner,
         Scanner::Initial {
             node: scanner.node(),
-            vector: Some(vector),
+            vector,
         },
     );
 
