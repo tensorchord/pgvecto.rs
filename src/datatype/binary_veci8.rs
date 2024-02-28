@@ -15,11 +15,15 @@ fn _vectors_veci8_send(vector: Veci8Input<'_>) -> Datum {
         let len = vector.len() as u16;
         let alpha = vector.alpha();
         let offset = vector.offset();
+        let sum = vector.sum();
+        let l2_norm = vector.l2_norm();
         let bytes = std::mem::size_of::<I8>() * len as usize;
         pgrx::pg_sys::pq_begintypsend(&mut buf);
         pgrx::pg_sys::pq_sendbytes(&mut buf, (&len) as *const u16 as _, 2);
         pgrx::pg_sys::pq_sendbytes(&mut buf, (&alpha) as *const F32 as _, 4);
         pgrx::pg_sys::pq_sendbytes(&mut buf, (&offset) as *const F32 as _, 4);
+        pgrx::pg_sys::pq_sendbytes(&mut buf, (&sum) as *const F32 as _, 4);
+        pgrx::pg_sys::pq_sendbytes(&mut buf, (&l2_norm) as *const F32 as _, 4);
         pgrx::pg_sys::pq_sendbytes(&mut buf, vector.data().as_ptr() as _, bytes as _);
         Datum::from(pgrx::pg_sys::pq_endtypsend(&mut buf))
     }
@@ -35,14 +39,15 @@ fn _vectors_veci8_recv(internal: pgrx::Internal, _oid: Oid, _typmod: i32) -> Vec
         let len = (pgrx::pg_sys::pq_getmsgbytes(buf, 2) as *const u16).read_unaligned();
         let alpha = (pgrx::pg_sys::pq_getmsgbytes(buf, 4) as *const F32).read_unaligned();
         let offset = (pgrx::pg_sys::pq_getmsgbytes(buf, 4) as *const F32).read_unaligned();
+        let sum = (pgrx::pg_sys::pq_getmsgbytes(buf, 4) as *const F32).read_unaligned();
+        let l2_norm = (pgrx::pg_sys::pq_getmsgbytes(buf, 4) as *const F32).read_unaligned();
         let bytes = std::mem::size_of::<I8>() * len as usize;
         let ptr = pgrx::pg_sys::pq_getmsgbytes(buf, bytes as _);
         let mut slice = Vec::<I8>::with_capacity(len as usize);
         std::ptr::copy(ptr, slice.as_mut_ptr().cast::<c_char>(), bytes);
         slice.set_len(len as usize);
 
-        if let Some(x) = Veci8Borrowed::new_checked_without_precomputed(len, &slice, alpha, offset)
-        {
+        if let Some(x) = Veci8Borrowed::new_checked(len, &slice, alpha, offset, sum, l2_norm) {
             Veci8Output::new(x)
         } else {
             pgrx::error!("detect data corruption");

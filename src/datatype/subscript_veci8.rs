@@ -150,12 +150,16 @@ fn _vectors_veci8_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
                 };
                 if let Some(slice) = slice {
                     if !slice.is_empty() {
+                        let (sum, l2_norm) =
+                            base::vector::i8_precompute(slice, input.alpha(), input.offset());
                         let output = Veci8Output::new(
-                            Veci8Borrowed::new_checked_without_precomputed(
+                            Veci8Borrowed::new_checked(
                                 slice.len() as u16,
                                 slice,
                                 input.alpha(),
                                 input.offset(),
+                                sum,
+                                l2_norm,
                             )
                             .unwrap(),
                         );

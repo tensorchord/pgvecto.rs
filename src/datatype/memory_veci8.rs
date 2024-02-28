@@ -9,26 +9,29 @@ use pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
 use pgrx::FromDatum;
 use pgrx::IntoDatum;
 use std::alloc::Layout;
-use std::cmp::Ordering;
 use std::ops::Deref;
 use std::ops::DerefMut;
 use std::ptr::NonNull;
 
-pub const VECI8_KIND: u8 = 3;
+pub const VECI8_KIND: u16 = 3;
 
 /// Veci8 utilizes int8 for data storage, originally derived from Vecf32.
 /// Given a vector of F32, [a_0, a_1, a_2, ..., a_n], we aim to find the maximum and minimum values. The maximum value, max, is the greatest among {a_0, a_1, a_2, ..., a_n}, and the minimum value, min, is the smallest.
-/// We can transform F32 to I8 using the formula (a - (max + min) / 2) / (max - min) * 255, resulting in a vector of I8, [b_0, b_1, b_2, ..., b_n]. Here 255 is the range size that the int8 type can cover, which is the difference between -128 and 127.
-/// Converting I8 back to F32 can be achieved by using the formula b * (max - min) / 255 + (max + min) / 2, which gives us a vector of F32, albeit with a slight loss of precision.
-/// We use alpha to represent (max - min) / 255, and offset to represent (max + min) / 2 here.
+/// We can transform F32 to I8 using the formula (a - (max + min) / 2) / (max - min) * 254, resulting in a vector of I8, [b_0, b_1, b_2, ..., b_n]. Here 254 is the range size that the int8 type can cover, which is the difference between -127 and 127.
+/// Converting I8 back to F32 can be achieved by using the formula b * (max - min) / 254 + (max + min) / 2, which gives us a vector of F32, albeit with a slight loss of precision.
+/// We use alpha to represent (max - min) / 254, and offset to represent (max + min) / 2 here.
+/// We choose [-127, 127] rather than [-128, 127] to avoid overflow when we need to calculate (-a_i) in dot_i8_avx512vnni.
 #[repr(C, align(8))]
 pub struct Veci8Header {
     varlena: u32,
     len: u16,
-    kind: u8,
-    reserved: u8,
+    kind: u16,
     alpha: F32,
     offset: F32,
+    // sum of a_i * alpha, precomputed for dot
+    sum: F32,
+    // l2 norm of original f_i, precomputed for l2
+    l2_norm: F32,
     phantom: [I8; 0],
 }
 
@@ -60,15 +63,26 @@ impl Veci8Header {
         self.offset
     }
 
+    pub fn sum(&self) -> F32 {
+        self.sum
+    }
+
+    pub fn l2_norm(&self) -> F32 {
+        self.l2_norm
+    }
+
+    pub fn dequantization(&self) -> Vec<F32> {
+        self.data()
+            .iter()
+            .map(|&x| x.to_f32() * self.alpha() + self.offset())
+            .collect()
+    }
+
     /// return value after dequantization by index
     /// since index<usize> return &Output, we can't create a new Output and return it as a reference, so we need to use this function to return a new Output directly
     #[inline(always)]
     pub fn index(&self, index: usize) -> F32 {
         self.data()[index].to_f32() * self.alpha() + self.offset()
-    }
-
-    pub fn to_ref(&self) -> Veci8Borrowed<'_> {
-        Veci8Borrowed::new(self.len, self.data(), self.alpha(), self.offset())
     }
 
     pub fn data(&self) -> &[I8] {
@@ -78,46 +92,14 @@ impl Veci8Header {
     }
 
     pub fn for_borrow(&self) -> Veci8Borrowed<'_> {
-        Veci8Borrowed::new(self.len, self.data(), self.alpha, self.offset)
-    }
-}
-
-impl PartialEq for Veci8Header {
-    fn eq(&self, other: &Self) -> bool {
-        if self.len() != other.len() {
-            return false;
-        }
-        let n = self.len();
-        for i in 0..n {
-            if self.index(i) != other.index(i) {
-                return false;
-            }
-        }
-        true
-    }
-}
-
-impl Eq for Veci8Header {}
-
-impl PartialOrd for Veci8Header {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Veci8Header {
-    fn cmp(&self, other: &Self) -> Ordering {
-        use Ordering::*;
-        if let x @ Less | x @ Greater = self.len().cmp(&other.len()) {
-            return x;
-        }
-        let n = self.len();
-        for i in 0..n {
-            if let x @ Less | x @ Greater = self.index(i).cmp(&other.index(i)) {
-                return x;
-            }
-        }
-        Equal
+        Veci8Borrowed::new(
+            self.len,
+            self.data(),
+            self.alpha,
+            self.offset,
+            self.sum,
+            self.l2_norm,
+        )
     }
 }
 
@@ -162,9 +144,10 @@ impl Veci8Output {
             std::ptr::addr_of_mut!((*ptr).varlena).write(Veci8Header::varlena(layout.size()));
             std::ptr::addr_of_mut!((*ptr).len).write(slice.len() as u16);
             std::ptr::addr_of_mut!((*ptr).kind).write(VECI8_KIND);
-            std::ptr::addr_of_mut!((*ptr).reserved).write(0);
             std::ptr::addr_of_mut!((*ptr).alpha).write(vector.alpha());
             std::ptr::addr_of_mut!((*ptr).offset).write(vector.offset());
+            std::ptr::addr_of_mut!((*ptr).sum).write(vector.sum());
+            std::ptr::addr_of_mut!((*ptr).l2_norm).write(vector.l2_norm());
             std::ptr::copy_nonoverlapping(slice.as_ptr(), (*ptr).phantom.as_mut_ptr(), slice.len());
             Veci8Output(NonNull::new(ptr).unwrap())
         }

@@ -103,9 +103,9 @@ fn _vectors_cast_vecf32_to_veci8(
     _typmod: i32,
     _explicit: bool,
 ) -> Veci8Output {
-    let (data, alpha, offset) = i8_quantization(vector.slice().to_vec());
+    let (data, alpha, offset) = i8_quantization(vector.slice());
+    let (sum, l2_norm) = i8_precompute(&data, alpha, offset);
     Veci8Output::new(
-        Veci8Borrowed::new_checked_without_precomputed(data.len() as u16, &data, alpha, offset)
-            .unwrap(),
+        Veci8Borrowed::new_checked(data.len() as u16, &data, alpha, offset, sum, l2_norm).unwrap(),
     )
 }

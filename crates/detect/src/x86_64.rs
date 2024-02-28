@@ -80,12 +80,9 @@ pub fn detect_v2() -> bool {
 
 static ATOMIC_AVX512VNNI: AtomicBool = AtomicBool::new(false);
 
-/// check if the CPU supports avx512f, avx512bw, avx512vnni, bmi2
+/// check if the CPU supports avx512vnni
 pub fn test_avx512vnni() -> bool {
-    std_detect::is_x86_feature_detected!("avx512f")
-        && std_detect::is_x86_feature_detected!("avx512bw")
-        && std_detect::is_x86_feature_detected!("avx512vnni")
-        && std_detect::is_x86_feature_detected!("bmi2")
+    std_detect::is_x86_feature_detected!("avx512vnni") && test_v4()
 }
 
 pub fn ctor_vnni() {

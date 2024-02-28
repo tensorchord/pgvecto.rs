@@ -20,13 +20,16 @@ fn _vectors_veci8_in(input: &CStr, _oid: Oid, typmod: i32) -> Veci8Output {
         }
         Ok(vector) => {
             check_value_dims(vector.len());
-            let (vector, alpha, offset) = i8_quantization(vector);
+            let (vector, alpha, offset) = i8_quantization(&vector);
+            let (sum, l2_norm) = i8_precompute(&vector, alpha, offset);
             Veci8Output::new(
-                Veci8Borrowed::new_checked_without_precomputed(
+                Veci8Borrowed::new_checked(
                     vector.len() as u16,
                     &vector,
                     alpha,
                     offset,
+                    sum,
+                    l2_norm,
                 )
                 .unwrap(),
             )
@@ -62,12 +65,15 @@ fn _vectors_to_veci8(len: i32, alpha: f32, offset: f32, values: pgrx::Array<i32>
         .iter()
         .map(|x| I8(x.unwrap() as i8))
         .collect::<Vec<_>>();
+    let (sum, l2_norm) = i8_precompute(&values, F32(alpha), F32(offset));
     Veci8Output::new(
-        Veci8Borrowed::new_checked_without_precomputed(
+        Veci8Borrowed::new_checked(
             values.len() as u16,
             &values,
             F32(alpha),
             F32(offset),
+            sum,
+            l2_norm,
         )
         .unwrap(),
     )

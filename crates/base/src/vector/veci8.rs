@@ -9,10 +9,10 @@ use serde::{Deserialize, Serialize};
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn i8_quantization(vector: Vec<F32>) -> (Vec<I8>, F32, F32) {
+pub fn i8_quantization(vector: &[F32]) -> (Vec<I8>, F32, F32) {
     let min = vector.iter().copied().fold(F32::infinity(), Float::min);
     let max = vector.iter().copied().fold(F32::neg_infinity(), Float::max);
-    let alpha = (max - min) / 255.0;
+    let alpha = (max - min) / 254.0;
     let offset = (max + min) / 2.0;
     let result = vector
         .iter()
@@ -174,37 +174,35 @@ pub struct Veci8Borrowed<'a> {
 
 impl<'a> Veci8Borrowed<'a> {
     #[inline(always)]
-    pub fn new(dims: u16, data: &'a [I8], alpha: F32, offset: F32) -> Veci8Borrowed<'a> {
-        Self::new_checked(dims, data, alpha, offset).unwrap()
-    }
-
-    #[inline(always)]
-    pub fn new_checked(dims: u16, data: &'a [I8], alpha: F32, offset: F32) -> Option<Self> {
-        if dims == 0 || dims as usize != data.len() {
-            return None;
-        }
-        let (sum, l2_norm) = i8_precompute(data, alpha, offset);
-        Some(unsafe { Self::new_unchecked(dims, data, alpha, offset, sum, l2_norm) })
-    }
-
-    #[inline(always)]
-    pub fn new_checked_without_precomputed(
+    pub fn new(
         dims: u16,
         data: &'a [I8],
         alpha: F32,
         offset: F32,
+        sum: F32,
+        l2_norm: F32,
+    ) -> Veci8Borrowed<'a> {
+        Self::new_checked(dims, data, alpha, offset, sum, l2_norm).unwrap()
+    }
+
+    #[inline(always)]
+    pub fn new_checked(
+        dims: u16,
+        data: &'a [I8],
+        alpha: F32,
+        offset: F32,
+        sum: F32,
+        l2_norm: F32,
     ) -> Option<Self> {
         if dims == 0 || dims as usize != data.len() {
             return None;
         }
-        Some(Self {
-            dims,
-            data,
-            alpha,
-            offset,
-            sum: F32(0.0),
-            l2_norm: F32(0.0),
-        })
+        // TODO: should we check the precomputed result?
+        // let (sum_calc, l2_norm_calc) = i8_precompute(data, alpha, offset);
+        // if sum != sum_calc || l2_norm != l2_norm_calc {
+        //     return None;
+        // }
+        Some(unsafe { Self::new_unchecked(dims, data, alpha, offset, sum, l2_norm) })
     }
 
     /// # Safety
@@ -326,9 +324,9 @@ mod tests {
     #[test]
     fn test_quantization_roundtrip() {
         let vector = vec![F32(0.0), F32(1.0), F32(2.0), F32(3.0), F32(4.0)];
-        let (result, alpha, offset) = i8_quantization(vector);
+        let (result, alpha, offset) = i8_quantization(&vector);
         assert_eq!(result, vec![I8(-127), I8(-63), I8(0), I8(63), I8(127)]);
-        assert_eq!(alpha, F32(4.0 / 255.0));
+        assert_eq!(alpha, F32(4.0 / 254.0));
         assert_eq!(offset, F32(2.0));
         let vector = i8_dequantization(result.as_slice(), alpha, offset);
         for (i, x) in vector.iter().enumerate() {
