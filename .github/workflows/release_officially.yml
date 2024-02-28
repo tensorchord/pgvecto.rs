@@ -1,0 +1,24 @@
+name: Release Officially
+
+on:
+  release:
+    types:
+      - created
+      - edited
+
+permissions:
+  actions: write
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Trigger
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          R=${{ github.event.release.tag_name }}
+          V=${R:1}
+          gh workflow run release.yml -r $R -f version=$V -f tag=$R

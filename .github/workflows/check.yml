@@ -56,17 +56,78 @@ jobs:
       VERSION: ${{ matrix.version }}
       OS: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/cache/restore@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Sccache
+        uses: mozilla-actions/sccache-action@v0.0.4
+      - name: Set up Cache
+        uses: actions/cache/restore@v4
+        id: cache
         with:
           path: |
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: cargo-${{ matrix.os }}-pg${{ matrix.version }}-${{ hashFiles('./Cargo.lock') }}
-          restore-keys: cargo-${{ matrix.os }}-pg${{ matrix.version }}
-      - uses: mozilla-actions/sccache-action@v0.0.3
-      - name: Setup
+          key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Set up Binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - name: Set up Sqllogictest
+        run: cargo binstall sqllogictest-bin -y --force
+      - name: Set up Environment
+        shell: bash
+        run: ./scripts/ci_setup.sh
+      - name: Release build
+        run: |
+          cargo pgrx install --no-default-features --features "pg$VERSION" --release
+          psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
+          psql -c 'ALTER SYSTEM SET search_path = "$user", public, vectors'
+          psql -c 'ALTER SYSTEM SET logging_collector = on'
+
+          if [ "$OS" == "ubuntu-latest" ]; then
+              sudo systemctl restart postgresql
+              pg_lsclusters
+          fi
+      - name: Test
+        run: ./tests/tests.sh
+      - name: Cache
+        uses: actions/cache/save@v4
+        if: ${{ !steps.cache.outputs.cache-hit }}
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}
+  debug_check:
+    strategy:
+      matrix:
+        include:
+          - { version: 14, os: "ubuntu-latest" }
+          - { version: 15, os: "ubuntu-latest" }
+          - { version: 16, os: "ubuntu-latest" }
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ matrix.version }}
+      OS: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Sccache
+        uses: mozilla-actions/sccache-action@v0.0.4
+      - name: Set up Cache
+        uses: actions/cache/restore@v4
+        id: cache
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}
+      - name: Set up Environment
         shell: bash
         run: ./scripts/ci_setup.sh
       - name: Format check
@@ -82,14 +143,9 @@ jobs:
       - name: Test
         run: |
           cargo test --all --no-fail-fast --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu -- --nocapture
-      - name: Install release
-        run: ./scripts/ci_install.sh
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-      - name: Test 2
-        run: ./tests/tests.sh
-      - uses: actions/cache/save@v3
+      - name: Cache
+        uses: actions/cache/save@v4
+        if: ${{ !steps.cache.outputs.cache-hit }}
         with:
           path: |
             ~/.cargo/registry/index/
