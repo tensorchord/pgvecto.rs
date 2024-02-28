@@ -1,0 +1,25 @@
+name: Release Nightly
+
+on:
+  schedule:
+    # 00:00 UTC+8 -> 16:00
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Trigger
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          commit_date=$(git log -1 --since="24 hours ago" --pretty=format:"%cI")
+          if [[ -n "$commit_date" ]]; then
+            gh workflow run release.yml -f version=$(TZ='Asia/Shanghai' date +"0.0.0-nightly.%Y%m%d") -f tag=v0.0.0-nightly
+          fi
