@@ -8,3 +8,4 @@
 __pycache__
 .pytest_cache
 rustc-ice-*.txt
+build
