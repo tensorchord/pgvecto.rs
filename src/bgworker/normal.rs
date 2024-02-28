@@ -41,12 +41,12 @@ pub fn normal(worker: Arc<Worker>) {
             unsafe {
                 let mut set: libc::sigset_t = std::mem::zeroed();
                 libc::sigemptyset(&mut set);
-                libc::sigaddset(&mut set, libc::SIGHUP);
+                libc::sigaddset(&mut set, libc::SIGQUIT);
                 libc::sigaddset(&mut set, libc::SIGTERM);
                 libc::sigwait(&set, &mut sig);
             }
             match sig {
-                libc::SIGHUP => {
+                libc::SIGQUIT => {
                     std::process::exit(0);
                 }
                 libc::SIGTERM => {
