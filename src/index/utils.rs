@@ -34,7 +34,7 @@ pub unsafe fn from_datum(values: pgrx::pg_sys::Datum, is_null: bool) -> Option<O
         }
         3 => {
             let v = &*q.cast::<Veci8Header>();
-            OwnedVector::Veci8(v.for_borrow().for_own())
+            Some(OwnedVector::Veci8(v.for_borrow().for_own()))
         }
         _ => unreachable!(),
     };
