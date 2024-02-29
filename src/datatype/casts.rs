@@ -1,3 +1,4 @@
+use crate::datatype::memory_bvecf32::{BVecf32Input, BVecf32Output};
 use crate::datatype::memory_svecf32::{SVecf32Input, SVecf32Output};
 use crate::datatype::memory_vecf16::{Vecf16Input, Vecf16Output};
 use crate::datatype::memory_vecf32::{Vecf32Input, Vecf32Output};
@@ -82,4 +83,36 @@ fn _vectors_cast_svecf32_to_vecf32(
     let slice = vector.for_borrow().to_vec();
 
     Vecf32Output::new(Vecf32Borrowed::new(&slice))
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_cast_vecf32_to_bvecf32(
+    vector: Vecf32Input<'_>,
+    _typmod: i32,
+    _explicit: bool,
+) -> BVecf32Output {
+    let mut values = BVecf32Owned::new_zeroed(vector.len() as u16);
+    for (i, &x) in vector.slice().iter().enumerate() {
+        match x.to_f32() {
+            x if x == 0. => {}
+            x if x == 1. => values.set(i, true),
+            _ => bad_literal("The vector contains a non-binary value."),
+        }
+    }
+
+    BVecf32Output::new(values.for_borrow())
+}
+
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_cast_bvecf32_to_vecf32(
+    vector: BVecf32Input<'_>,
+    _typmod: i32,
+    _explicit: bool,
+) -> Vecf32Output {
+    let data: Vec<F32> = vector
+        .for_borrow()
+        .iter()
+        .map(|x| F32(x as u32 as f32))
+        .collect();
+    Vecf32Output::new(Vecf32Borrowed::new(&data))
 }

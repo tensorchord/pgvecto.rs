@@ -15,19 +15,15 @@ pub trait G:
 }
 
 impl G for SVecf32Cos {}
-
 impl G for SVecf32Dot {}
-
 impl G for SVecf32L2 {}
-
 impl G for Vecf16Cos {}
-
 impl G for Vecf16Dot {}
-
 impl G for Vecf16L2 {}
-
 impl G for Vecf32Cos {}
-
 impl G for Vecf32Dot {}
-
 impl G for Vecf32L2 {}
+impl G for BVecf32Cos {}
+impl G for BVecf32Dot {}
+impl G for BVecf32L2 {}
+impl G for BVecf32Jaccard {}

@@ -5,40 +5,40 @@ use crate::vector::*;
 use num_traits::Float;
 
 #[derive(Debug, Clone, Copy)]
-pub enum SVecf32Cos {}
+pub enum BVecf32Dot {}
 
-impl Global for SVecf32Cos {
-    type VectorOwned = SVecf32Owned;
+impl Global for BVecf32Dot {
+    type VectorOwned = BVecf32Owned;
 
-    const VECTOR_KIND: VectorKind = VectorKind::SVecf32;
-    const DISTANCE_KIND: DistanceKind = DistanceKind::Cos;
+    const VECTOR_KIND: VectorKind = VectorKind::BVecf32;
+    const DISTANCE_KIND: DistanceKind = DistanceKind::Dot;
 
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> F32 {
-        F32(1.0) - super::svecf32::cosine(lhs, rhs)
+        super::bvecf32::dot(lhs, rhs) * (-1.0)
     }
 }
 
-impl GlobalElkanKMeans for SVecf32Cos {
+impl GlobalElkanKMeans for BVecf32Dot {
+    type VectorNormalized = Vecf32Owned;
+
     fn elkan_k_means_normalize(vector: &mut [Scalar<Self>]) {
         super::vecf32::l2_normalize(vector)
     }
 
-    fn elkan_k_means_normalize2(vector: Borrowed<'_, Self>) -> SVecf32Owned {
-        let mut vector = vector.for_own();
-        super::svecf32::l2_normalize(&mut vector);
-        vector
+    fn elkan_k_means_normalize2(vector: Borrowed<'_, Self>) -> Vecf32Owned {
+        super::bvecf32::l2_normalize(vector)
     }
 
     fn elkan_k_means_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
         super::vecf32::dot(lhs, rhs).acos()
     }
 
-    fn elkan_k_means_distance2(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> F32 {
-        super::svecf32::dot_2(lhs, rhs).acos()
+    fn elkan_k_means_distance2(lhs: Vecf32Borrowed<'_>, rhs: &[Scalar<Self>]) -> F32 {
+        super::vecf32::dot(lhs.slice(), rhs).acos()
     }
 }
 
-impl GlobalScalarQuantization for SVecf32Cos {
+impl GlobalScalarQuantization for BVecf32Dot {
     fn scalar_quantization_distance(
         _dims: u16,
         _max: &[F32],
@@ -60,8 +60,8 @@ impl GlobalScalarQuantization for SVecf32Cos {
     }
 }
 
-impl GlobalProductQuantization for SVecf32Cos {
-    type ProductQuantizationL2 = SVecf32L2;
+impl GlobalProductQuantization for BVecf32Dot {
+    type ProductQuantizationL2 = BVecf32L2;
 
     fn product_quantization_distance(
         _dims: u16,

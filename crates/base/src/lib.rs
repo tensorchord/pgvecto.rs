@@ -1,5 +1,7 @@
 #![feature(core_intrinsics)]
 #![feature(avx512_target_feature)]
+#![feature(associated_type_defaults)]
+#![feature(stdsimd)]
 #![allow(internal_features)]
 #![allow(clippy::derivable_impls)]
 #![allow(clippy::len_without_is_empty)]

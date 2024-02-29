@@ -23,8 +23,10 @@ impl GlobalElkanKMeans for Vecf16Dot {
         super::vecf16::l2_normalize(vector)
     }
 
-    fn elkan_k_means_normalize2(vector: &mut Vecf16Owned) {
-        super::vecf16::l2_normalize(vector.slice_mut())
+    fn elkan_k_means_normalize2(vector: Vecf16Borrowed<'_>) -> Vecf16Owned {
+        let mut vector = vector.for_own();
+        super::vecf16::l2_normalize(vector.slice_mut());
+        vector
     }
 
     fn elkan_k_means_distance(lhs: &[F16], rhs: &[F16]) -> F32 {
