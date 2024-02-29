@@ -5,6 +5,7 @@ pub mod binary_vecf32;
 pub mod binary_veci8;
 pub mod casts;
 pub mod functions;
+pub mod functions_veci8;
 pub mod memory_bvecf32;
 pub mod memory_svecf32;
 pub mod memory_vecf16;

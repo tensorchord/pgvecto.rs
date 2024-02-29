@@ -58,11 +58,12 @@ unsafe fn dot_i8_avx512vnni(x: &[I8], y: &[I8]) -> F32 {
                 p_x = p_x.add(64);
                 p_y = p_y.add(64);
             }
-            // there are only _mm512_dpbusd_epi32 support, dpbusd will zeroextend a[i] and signextend b[i] first, so we need to convert a[i] positive and change corresponding b[i] to get right result.
+            // There are only _mm512_dpbusd_epi32 support, dpbusd will zeroextend a[i] and signextend b[i] first, so we need to convert a[i] positive and change corresponding b[i] to get right result.
             // And because we use -b[i] here, the range of quantization should be [-127, 127] instead of [-128, 127] to avoid overflow.
             let neg_mask = _mm512_movepi8_mask(vec_x);
             vec_x = _mm512_mask_abs_epi8(vec_x, neg_mask, vec_x);
-            vec_y = _mm512_mask_sub_epi8(vec_y, neg_mask, zero, vec_y);
+            // Get -b[i] here, use saturating sub to avoid overflow. There are some precision loss here.
+            vec_y = _mm512_mask_subs_epi8(vec_y, neg_mask, zero, vec_y);
             result = _mm512_dpbusd_epi32(result, vec_x, vec_y);
         }
         sum += _mm512_reduce_add_epi32(result);
@@ -133,7 +134,10 @@ pub fn dot_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{global::VectorOwned, vector::i8_quantization};
+    use crate::{
+        global::{Veci8Owned, VectorOwned},
+        vector::i8_quantization,
+    };
 
     fn new_random_vec_f32(size: usize) -> Vec<F32> {
         use rand::Rng;
