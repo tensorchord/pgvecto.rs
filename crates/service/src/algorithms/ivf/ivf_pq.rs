@@ -157,8 +157,8 @@ pub fn make<S: G>(
     let centroids = k_means.finish();
     let mut idx = vec![0usize; n as usize];
     idx.par_iter_mut().enumerate().for_each(|(i, x)| {
-        let mut vector = raw.vector(i as u32).for_own();
-        S::elkan_k_means_normalize2(&mut vector);
+        let vector = raw.vector(i as u32);
+        let vector = S::elkan_k_means_normalize2(vector);
         let mut result = (F32::infinity(), 0);
         for i in 0..nlist as usize {
             let dis = S::elkan_k_means_distance2(vector.for_borrow(), &centroids[i]);

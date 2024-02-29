@@ -1,5 +1,6 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
+use crate::datatype::memory_bvecf32::BVecf32Header;
 use crate::datatype::memory_svecf32::SVecf32Header;
 use crate::datatype::memory_vecf16::Vecf16Header;
 use crate::datatype::memory_vecf32::Vecf32Header;
@@ -30,7 +31,11 @@ pub unsafe fn from_datum(values: pgrx::pg_sys::Datum, is_null: bool) -> Option<O
         }
         2 => {
             let v = &*q.cast::<SVecf32Header>();
-            Some(OwnedVector::SVecF32(v.for_borrow().for_own()))
+            Some(OwnedVector::SVecf32(v.for_borrow().for_own()))
+        }
+        3 => {
+            let v = &*q.cast::<BVecf32Header>();
+            Some(OwnedVector::BVecf32(v.for_borrow().for_own()))
         }
         3 => {
             let v = &*q.cast::<Veci8Header>();

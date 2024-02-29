@@ -1,3 +1,8 @@
+mod bvecf32;
+mod bvecf32_cos;
+mod bvecf32_dot;
+mod bvecf32_jaccard;
+mod bvecf32_l2;
 mod svecf32;
 mod svecf32_cos;
 mod svecf32_dot;
@@ -15,6 +20,10 @@ mod veci8_cos;
 mod veci8_dot;
 mod veci8_l2;
 
+pub use bvecf32_cos::BVecf32Cos;
+pub use bvecf32_dot::BVecf32Dot;
+pub use bvecf32_jaccard::BVecf32Jaccard;
+pub use bvecf32_l2::BVecf32L2;
 pub use svecf32_cos::SVecf32Cos;
 pub use svecf32_dot::SVecf32Dot;
 pub use svecf32_l2::SVecf32L2;
@@ -33,10 +42,15 @@ use crate::scalar::*;
 use crate::vector::*;
 
 pub trait GlobalElkanKMeans: Global {
+    type VectorNormalized: VectorOwned = Self::VectorOwned;
+
     fn elkan_k_means_normalize(vector: &mut [Scalar<Self>]);
-    fn elkan_k_means_normalize2(vector: &mut Self::VectorOwned);
+    fn elkan_k_means_normalize2(vector: Borrowed<'_, Self>) -> Self::VectorNormalized;
     fn elkan_k_means_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32;
-    fn elkan_k_means_distance2(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> F32;
+    fn elkan_k_means_distance2(
+        lhs: <Self::VectorNormalized as VectorOwned>::Borrowed<'_>,
+        rhs: &[Scalar<Self>],
+    ) -> F32;
 }
 
 pub trait GlobalScalarQuantization: Global {

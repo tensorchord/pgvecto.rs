@@ -6,4 +6,5 @@ pub enum DistanceKind {
     L2,
     Cos,
     Dot,
+    Jaccard,
 }

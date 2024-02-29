@@ -1,0 +1,55 @@
+statement ok
+SET search_path TO pg_temp, vectors;
+
+statement ok
+CREATE TABLE t (val bvector(3));
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[ROUND(RANDOM()::numeric, 0), ROUND(RANDOM()::numeric, 0), ROUND(RANDOM()::numeric, 0)]::real[]::vector::bvector FROM generate_series(1, 1000);
+
+statement ok
+CREATE INDEX ON t USING vectors (val bvector_l2_ops)
+WITH (options = "[indexing.hnsw]");
+
+statement ok
+CREATE INDEX ON t USING vectors (val bvector_dot_ops)
+WITH (options = "[indexing.hnsw]");
+
+statement ok
+CREATE INDEX ON t USING vectors (val bvector_cos_ops)
+WITH (options = "[indexing.ivf]");
+
+statement ok
+CREATE INDEX ON t USING vectors (val bvector_jaccard_ops)
+WITH (options = "[indexing.ivf]");
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0,1,0]'::bvector limit 10) t2;
+----
+10
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <=> '[0,1,0]'::bvector limit 10) t2;
+----
+10
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0,1,0]'::bvector limit 10) t2;
+----
+10
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <~> '[0,1,0]'::bvector limit 10) t2;
+----
+10
+
+statement ok
+DROP TABLE t;
+
+statement ok
+SELECT array_agg(1)::real[]::vector::bvector FROM generate_series(1, 100);
+
+query I
+SELECT binarize(ARRAY[-2, -1, 0, 1, 2]::real[]::vector);
+----
+[0, 0, 0, 1, 1]

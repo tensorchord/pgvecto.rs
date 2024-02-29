@@ -1,7 +1,9 @@
+mod binary;
 mod dense;
 mod i8_quant;
 mod sparse;
 
+pub use binary::BinaryMmap;
 pub use dense::DenseMmap;
 pub use i8_quant::I8QuantMmap;
 pub use sparse::SparseMmap;
@@ -59,6 +61,22 @@ impl GlobalStorage for Vecf32Dot {
 
 impl GlobalStorage for Vecf32L2 {
     type Storage = DenseMmap<F32>;
+}
+
+impl GlobalStorage for BVecf32Cos {
+    type Storage = BinaryMmap;
+}
+
+impl GlobalStorage for BVecf32Dot {
+    type Storage = BinaryMmap;
+}
+
+impl GlobalStorage for BVecf32L2 {
+    type Storage = BinaryMmap;
+}
+
+impl GlobalStorage for BVecf32Jaccard {
+    type Storage = BinaryMmap;
 }
 
 impl GlobalStorage for Veci8Cos {

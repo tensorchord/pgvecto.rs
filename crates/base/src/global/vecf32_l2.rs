@@ -21,7 +21,9 @@ impl Global for Vecf32L2 {
 impl GlobalElkanKMeans for Vecf32L2 {
     fn elkan_k_means_normalize(_: &mut [F32]) {}
 
-    fn elkan_k_means_normalize2(_: &mut Vecf32Owned) {}
+    fn elkan_k_means_normalize2(vector: Vecf32Borrowed<'_>) -> Vecf32Owned {
+        vector.for_own()
+    }
 
     fn elkan_k_means_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
         super::vecf32::sl2(lhs, rhs).sqrt()
