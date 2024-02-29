@@ -72,3 +72,7 @@ impl GlobalStorage for BVecf32Dot {
 impl GlobalStorage for BVecf32L2 {
     type Storage = BinaryMmap;
 }
+
+impl GlobalStorage for BVecf32Jaccard {
+    type Storage = BinaryMmap;
+}

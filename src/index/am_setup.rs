@@ -78,6 +78,8 @@ pub unsafe fn convert_opfamily_to_distance(
         result = (DistanceKind::Dot, VectorKind::BVecf32);
     } else if operator == regoperatorin("vectors.<=>(vectors.bvector,vectors.bvector)") {
         result = (DistanceKind::Cos, VectorKind::BVecf32);
+    } else if operator == regoperatorin("vectors.<~>(vectors.bvector,vectors.bvector)") {
+        result = (DistanceKind::Jaccard, VectorKind::BVecf32);
     } else {
         bad_opclass();
     };

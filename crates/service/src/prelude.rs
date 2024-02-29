@@ -26,3 +26,4 @@ impl G for Vecf32L2 {}
 impl G for BVecf32Cos {}
 impl G for BVecf32Dot {}
 impl G for BVecf32L2 {}
+impl G for BVecf32Jaccard {}

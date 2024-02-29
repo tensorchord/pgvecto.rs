@@ -22,6 +22,7 @@ pub enum Instance {
     BVecf32Cos(Arc<Index<BVecf32Cos>>),
     BVecf32Dot(Arc<Index<BVecf32Dot>>),
     BVecf32L2(Arc<Index<BVecf32L2>>),
+    BVecf32Jaccard(Arc<Index<BVecf32Jaccard>>),
     Upgrade,
 }
 
@@ -88,6 +89,14 @@ impl Instance {
                 self::metadata::Metadata::write(path.join("metadata"));
                 Ok(Self::BVecf32L2(index))
             }
+            (DistanceKind::Jaccard, VectorKind::BVecf32) => {
+                let index = Index::create(path.clone(), options)?;
+                self::metadata::Metadata::write(path.join("metadata"));
+                Ok(Self::BVecf32Jaccard(index))
+            }
+            (DistanceKind::Jaccard, _) => Err(CreateError::InvalidIndexOptions {
+                reason: "Jaccard distance is only supported for BVecf32 vectors".to_string(),
+            }),
         }
     }
     pub fn open(path: PathBuf) -> Self {
@@ -110,6 +119,8 @@ impl Instance {
             (DistanceKind::Cos, VectorKind::BVecf32) => Self::BVecf32Cos(Index::open(path)),
             (DistanceKind::Dot, VectorKind::BVecf32) => Self::BVecf32Dot(Index::open(path)),
             (DistanceKind::L2, VectorKind::BVecf32) => Self::BVecf32L2(Index::open(path)),
+            (DistanceKind::Jaccard, VectorKind::BVecf32) => Self::BVecf32Jaccard(Index::open(path)),
+            (DistanceKind::Jaccard, _) => unreachable!(),
         }
     }
     pub fn refresh(&self) {
@@ -126,6 +137,7 @@ impl Instance {
             Instance::BVecf32Cos(x) => x.refresh(),
             Instance::BVecf32Dot(x) => x.refresh(),
             Instance::BVecf32L2(x) => x.refresh(),
+            Instance::BVecf32Jaccard(x) => x.refresh(),
             Instance::Upgrade => (),
         }
     }
@@ -143,6 +155,7 @@ impl Instance {
             Instance::BVecf32Cos(x) => Some(InstanceView::BVecf32Cos(x.view())),
             Instance::BVecf32Dot(x) => Some(InstanceView::BVecf32Dot(x.view())),
             Instance::BVecf32L2(x) => Some(InstanceView::BVecf32L2(x.view())),
+            Instance::BVecf32Jaccard(x) => Some(InstanceView::BVecf32Jaccard(x.view())),
             Instance::Upgrade => None,
         }
     }
@@ -160,6 +173,7 @@ impl Instance {
             Instance::BVecf32Cos(x) => Some(x.stat()),
             Instance::BVecf32Dot(x) => Some(x.stat()),
             Instance::BVecf32L2(x) => Some(x.stat()),
+            Instance::BVecf32Jaccard(x) => Some(x.stat()),
             Instance::Upgrade => None,
         }
     }
@@ -178,6 +192,7 @@ pub enum InstanceView {
     BVecf32Cos(Arc<IndexView<BVecf32Cos>>),
     BVecf32Dot(Arc<IndexView<BVecf32Dot>>),
     BVecf32L2(Arc<IndexView<BVecf32L2>>),
+    BVecf32Jaccard(Arc<IndexView<BVecf32Jaccard>>),
 }
 
 impl ViewBasicOperations for InstanceView {
@@ -223,6 +238,9 @@ impl ViewBasicOperations for InstanceView {
                 Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
             }
             (InstanceView::BVecf32L2(x), OwnedVector::BVecf32(vector)) => {
+                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
+            }
+            (InstanceView::BVecf32Jaccard(x), OwnedVector::BVecf32(vector)) => {
                 Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
             }
             _ => Err(BasicError::InvalidVector),
@@ -275,6 +293,9 @@ impl ViewVbaseOperations for InstanceView {
             (InstanceView::BVecf32L2(x), OwnedVector::BVecf32(vector)) => {
                 Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
             }
+            (InstanceView::BVecf32Jaccard(x), OwnedVector::BVecf32(vector)) => {
+                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
+            }
             _ => Err(VbaseError::InvalidVector),
         }
     }
@@ -297,6 +318,7 @@ impl ViewListOperations for InstanceView {
             InstanceView::BVecf32Cos(x) => Ok(Box::new(x.list()?)),
             InstanceView::BVecf32Dot(x) => Ok(Box::new(x.list()?)),
             InstanceView::BVecf32L2(x) => Ok(Box::new(x.list()?)),
+            InstanceView::BVecf32Jaccard(x) => Ok(Box::new(x.list()?)),
         }
     }
 }
@@ -328,6 +350,9 @@ impl InstanceView {
                 x.insert(vector, pointer)
             }
             (InstanceView::BVecf32L2(x), OwnedVector::BVecf32(vector)) => x.insert(vector, pointer),
+            (InstanceView::BVecf32Jaccard(x), OwnedVector::BVecf32(vector)) => {
+                x.insert(vector, pointer)
+            }
             _ => Err(InsertError::InvalidVector),
         }
     }
@@ -345,6 +370,7 @@ impl InstanceView {
             InstanceView::BVecf32Cos(x) => x.delete(pointer),
             InstanceView::BVecf32Dot(x) => x.delete(pointer),
             InstanceView::BVecf32L2(x) => x.delete(pointer),
+            InstanceView::BVecf32Jaccard(x) => x.delete(pointer),
         }
     }
     pub fn flush(&self) -> Result<(), FlushError> {
@@ -361,6 +387,7 @@ impl InstanceView {
             InstanceView::BVecf32Cos(x) => x.flush(),
             InstanceView::BVecf32Dot(x) => x.flush(),
             InstanceView::BVecf32L2(x) => x.flush(),
+            InstanceView::BVecf32Jaccard(x) => x.flush(),
         }
     }
 }

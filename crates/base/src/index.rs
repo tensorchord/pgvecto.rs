@@ -39,6 +39,7 @@ impl IndexOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
+#[validate(schema(function = "Self::validate_0"))]
 pub struct VectorOptions {
     #[validate(range(min = 1, max = 65535))]
     #[serde(rename = "dimensions")]
@@ -47,6 +48,18 @@ pub struct VectorOptions {
     pub d: DistanceKind,
     #[serde(rename = "vector")]
     pub v: VectorKind,
+}
+
+impl VectorOptions {
+    // Jaccard distance is only supported for bvector.
+    pub fn validate_0(&self) -> Result<(), ValidationError> {
+        if self.v != VectorKind::BVecf32 && self.d == DistanceKind::Jaccard {
+            return Err(ValidationError::new(
+                "Jaccard distance is only supported for bvector.",
+            ));
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]

@@ -5,20 +5,20 @@ use crate::vector::*;
 use num_traits::Float;
 
 #[derive(Debug, Clone, Copy)]
-pub enum BVecf32L2 {}
+pub enum BVecf32Jaccard {}
 
-impl Global for BVecf32L2 {
+impl Global for BVecf32Jaccard {
     type VectorOwned = BVecf32Owned;
 
     const VECTOR_KIND: VectorKind = VectorKind::BVecf32;
-    const DISTANCE_KIND: DistanceKind = DistanceKind::L2;
+    const DISTANCE_KIND: DistanceKind = DistanceKind::Jaccard;
 
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> F32 {
-        super::bvecf32::sl2(lhs, rhs)
+        F32(1.) - super::bvecf32::jaccard(lhs, rhs)
     }
 }
 
-impl GlobalElkanKMeans for BVecf32L2 {
+impl GlobalElkanKMeans for BVecf32Jaccard {
     type VectorNormalized = Vecf32Owned;
 
     fn elkan_k_means_normalize(vector: &mut [Scalar<Self>]) {
@@ -38,7 +38,7 @@ impl GlobalElkanKMeans for BVecf32L2 {
     }
 }
 
-impl GlobalScalarQuantization for BVecf32L2 {
+impl GlobalScalarQuantization for BVecf32Jaccard {
     fn scalar_quantization_distance(
         _dims: u16,
         _max: &[F32],
@@ -60,7 +60,7 @@ impl GlobalScalarQuantization for BVecf32L2 {
     }
 }
 
-impl GlobalProductQuantization for BVecf32L2 {
+impl GlobalProductQuantization for BVecf32Jaccard {
     type ProductQuantizationL2 = BVecf32L2;
 
     fn product_quantization_distance(
