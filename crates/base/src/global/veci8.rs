@@ -1,7 +1,4 @@
-use crate::{
-    global::Veci8Owned,
-    scalar::{F32, I8},
-};
+use crate::scalar::{F32, I8};
 
 use super::Veci8Borrowed;
 
@@ -96,19 +93,6 @@ pub fn cosine_distance(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
     let l2_x = x.l2_norm();
     let l2_y = y.l2_norm();
     dot_xy / (l2_x * l2_y)
-}
-
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-pub fn l2_normalize(vector: &mut Veci8Owned) {
-    let l = vector.l2_norm();
-    *vector.alpha_mut() /= l;
-    *vector.offset_mut() /= l;
 }
 
 #[inline(always)]

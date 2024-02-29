@@ -263,6 +263,24 @@ impl<'a> Veci8Borrowed<'a> {
     pub fn dims(&self) -> u16 {
         self.dims
     }
+
+    pub fn normalize(&self) -> Veci8Owned {
+        let l = self.l2_norm();
+        let alpha = self.alpha() / l;
+        let offset = self.offset() / l;
+        let sum = self.sum() / l;
+        let l2_norm = F32(1.0);
+        unsafe {
+            Veci8Owned::new_unchecked(
+                self.dims(),
+                self.data().to_vec(),
+                alpha,
+                offset,
+                sum,
+                l2_norm,
+            )
+        }
+    }
 }
 
 impl VectorBorrowed for Veci8Borrowed<'_> {

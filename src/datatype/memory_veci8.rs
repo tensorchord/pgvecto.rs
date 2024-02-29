@@ -13,7 +13,7 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::ptr::NonNull;
 
-pub const VECI8_KIND: u16 = 3;
+pub const VECI8_KIND: u16 = 4;
 
 /// Veci8 utilizes int8 for data storage, originally derived from Vecf32.
 /// Given a vector of F32, [a_0, a_1, a_2, ..., a_n], we aim to find the maximum and minimum values. The maximum value, max, is the greatest among {a_0, a_1, a_2, ..., a_n}, and the minimum value, min, is the smallest.

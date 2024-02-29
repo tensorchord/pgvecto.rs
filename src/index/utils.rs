@@ -37,7 +37,7 @@ pub unsafe fn from_datum(values: pgrx::pg_sys::Datum, is_null: bool) -> Option<O
             let v = &*q.cast::<BVecf32Header>();
             Some(OwnedVector::BVecf32(v.for_borrow().for_own()))
         }
-        3 => {
+        4 => {
             let v = &*q.cast::<Veci8Header>();
             Some(OwnedVector::Veci8(v.for_borrow().for_own()))
         }
