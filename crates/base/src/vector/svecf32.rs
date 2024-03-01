@@ -17,7 +17,7 @@ impl SVecf32Owned {
     }
     #[inline(always)]
     pub fn new_checked(dims: u32, indexes: Vec<u32>, values: Vec<F32>) -> Option<Self> {
-        if !(1..=1_048_576).contains(&dims) {
+        if !(1..=1_048_575).contains(&dims) {
             return None;
         }
         if indexes.len() != values.len() {
@@ -41,7 +41,7 @@ impl SVecf32Owned {
     }
     /// # Safety
     ///
-    /// * `dims` must be in `1..=1_048_576`.
+    /// * `dims` must be in `1..=1_048_575`.
     /// * `indexes.len()` must be equal to `values.len()`.
     /// * `indexes` must be a strictly increasing sequence and the last in the sequence must be less than `dims`.
     /// * A floating number in `values` must not be positive zero or negative zero.
@@ -103,7 +103,7 @@ impl<'a> SVecf32Borrowed<'a> {
     }
     #[inline(always)]
     pub fn new_checked(dims: u32, indexes: &'a [u32], values: &'a [F32]) -> Option<Self> {
-        if !(1..=1_048_576).contains(&dims) {
+        if !(1..=1_048_575).contains(&dims) {
             return None;
         }
         if indexes.len() != values.len() {
@@ -127,7 +127,7 @@ impl<'a> SVecf32Borrowed<'a> {
     }
     /// # Safety
     ///
-    /// * `dims` must be in `1..=1_048_576`.
+    /// * `dims` must be in `1..=1_048_575`.
     /// * `indexes.len()` must be equal to `values.len()`.
     /// * `indexes` must be a strictly increasing sequence and the last in the sequence must be less than `dims`.
     /// * A floating number in `values` must not be positive zero or negative zero.
