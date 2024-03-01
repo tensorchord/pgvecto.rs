@@ -14,14 +14,14 @@ fn _vectors_svecf32_send(vector: SVecf32Input<'_>) -> Datum {
     use pgrx::pg_sys::StringInfoData;
     unsafe {
         let mut buf = StringInfoData::default();
-        let dims = vector.dims() as u16;
-        let len = vector.len() as u16;
+        let dims = vector.dims() as u32;
+        let len = vector.len() as u32;
         let x = vector.for_borrow();
-        let b_indexes = std::mem::size_of::<u16>() * len as usize;
+        let b_indexes = std::mem::size_of::<u32>() * len as usize;
         let b_values = std::mem::size_of::<F32>() * len as usize;
         pgrx::pg_sys::pq_begintypsend(&mut buf);
-        pgrx::pg_sys::pq_sendbytes(&mut buf, (&dims) as *const u16 as _, 2);
-        pgrx::pg_sys::pq_sendbytes(&mut buf, (&len) as *const u16 as _, 2);
+        pgrx::pg_sys::pq_sendbytes(&mut buf, (&dims) as *const u32 as _, 4);
+        pgrx::pg_sys::pq_sendbytes(&mut buf, (&len) as *const u32 as _, 4);
         pgrx::pg_sys::pq_sendbytes(&mut buf, x.indexes().as_ptr() as _, b_indexes as _);
         pgrx::pg_sys::pq_sendbytes(&mut buf, x.values().as_ptr() as _, b_values as _);
         Datum::from(pgrx::pg_sys::pq_endtypsend(&mut buf))
@@ -35,12 +35,12 @@ fn _vectors_svecf32_recv(internal: pgrx::Internal, _oid: Oid, _typmod: i32) -> S
     use pgrx::pg_sys::StringInfo;
     unsafe {
         let buf: StringInfo = internal.into_datum().unwrap().cast_mut_ptr();
-        let dims = (pgrx::pg_sys::pq_getmsgbytes(buf, 2) as *const u16).read_unaligned();
-        let len = (pgrx::pg_sys::pq_getmsgbytes(buf, 2) as *const u16).read_unaligned();
+        let dims = (pgrx::pg_sys::pq_getmsgbytes(buf, 4) as *const u32).read_unaligned();
+        let len = (pgrx::pg_sys::pq_getmsgbytes(buf, 4) as *const u32).read_unaligned();
 
-        let b_indexes = std::mem::size_of::<u16>() * len as usize;
+        let b_indexes = std::mem::size_of::<u32>() * len as usize;
         let p_indexes = pgrx::pg_sys::pq_getmsgbytes(buf, b_indexes as _);
-        let mut indexes = Vec::<u16>::with_capacity(len as usize);
+        let mut indexes = Vec::<u32>::with_capacity(len as usize);
         std::ptr::copy(p_indexes, indexes.as_mut_ptr().cast::<c_char>(), b_indexes);
         indexes.set_len(len as usize);
 

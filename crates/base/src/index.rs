@@ -40,10 +40,11 @@ impl IndexOptions {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
 #[validate(schema(function = "Self::validate_0"))]
+#[validate(schema(function = "Self::validate_dims"))]
 pub struct VectorOptions {
-    #[validate(range(min = 1, max = 65535))]
+    #[validate(range(min = 1, max = 1_000_000))]
     #[serde(rename = "dimensions")]
-    pub dims: u16,
+    pub dims: u32,
     #[serde(rename = "distance")]
     pub d: DistanceKind,
     #[serde(rename = "vector")]
@@ -58,6 +59,16 @@ impl VectorOptions {
                 "Jaccard distance is only supported for bvector.",
             ));
         }
+        Ok(())
+    }
+
+    pub fn validate_dims(&self) -> Result<(), ValidationError> {
+        if self.v != VectorKind::SVecf32 && self.dims > 65535 {
+            return Err(ValidationError::new(
+                "Except svector, the maximum number of dimensions is 65535.",
+            ));
+        }
+
         Ok(())
     }
 }

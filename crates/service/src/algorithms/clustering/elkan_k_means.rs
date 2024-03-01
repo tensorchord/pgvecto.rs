@@ -7,7 +7,7 @@ use rayon::slice::ParallelSliceMut;
 use std::ops::{Index, IndexMut};
 
 pub struct ElkanKMeans<S: Global> {
-    dims: u16,
+    dims: u32,
     c: usize,
     pub centroids: Vec2<Scalar<S>>,
     lowerbound: Square,

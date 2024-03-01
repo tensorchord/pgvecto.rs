@@ -13,28 +13,27 @@ fn _vectors_bvecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> BVecf32Output {
         .dims()
         .map(|x| x.get())
         .unwrap_or(0);
-    let v = parse_vector(input.to_bytes(), reserve as usize, |s| {
-        s.parse::<u8>().ok().and_then(|x| match x {
-            0 => Some(false),
-            1 => Some(true),
-            _ => None,
-        })
-    });
-    match v {
-        Err(e) => {
-            bad_literal(&e.to_string());
+    let mut bool_vec = Vec::<bool>::with_capacity(reserve as usize);
+    if let Err(e) = parse_vector(input.to_bytes(), |_, s| match s.parse::<u8>() {
+        Ok(0) => {
+            bool_vec.push(false);
+            true
         }
-        Ok(vector) => {
-            check_value_dims(vector.len());
-            let mut values = BVecf32Owned::new_zeroed(vector.len() as u16);
-            for (i, &x) in vector.iter().enumerate() {
-                if x {
-                    values.set(i, true);
-                }
-            }
-            BVecf32Output::new(values.for_borrow())
+        Ok(1) => {
+            bool_vec.push(true);
+            true
+        }
+        _ => false,
+    }) {
+        bad_literal(&e.to_string());
+    }
+    let mut values = BVecf32Owned::new_zeroed(bool_vec.len() as u16);
+    for (i, &x) in bool_vec.iter().enumerate() {
+        if x {
+            values.set(i, true);
         }
     }
+    BVecf32Output::new(values.for_borrow())
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]

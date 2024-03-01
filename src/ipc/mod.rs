@@ -13,6 +13,7 @@ pub enum ConnectionError {
     ClosedConnection,
     BadSerialization,
     BadDeserialization,
+    PacketTooLarge,
 }
 
 pub fn listen_unix() -> impl Iterator<Item = ServerRpcHandler> {

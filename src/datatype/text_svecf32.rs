@@ -8,75 +8,26 @@ use std::ffi::{CStr, CString};
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
-    fn solve<T>(option: Option<T>, hint: &str) -> T {
-        if let Some(x) = option {
-            x
-        } else {
-            bad_literal(hint);
-        }
-    }
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    enum State {
-        MatchingLeft,
-        Reading,
-        MatchedRight,
-    }
-    use State::*;
-    let input = input.to_bytes();
-    let mut indexes = Vec::<u16>::new();
+    use crate::utils::parse::parse_vector;
+    let mut dims = 0;
+    let mut indexes = Vec::<u32>::new();
     let mut values = Vec::<F32>::new();
-    let mut state = MatchingLeft;
-    let mut token: Option<String> = None;
-    let mut index = 0;
-    for &c in input {
-        match (state, c) {
-            (MatchingLeft, b'[') => {
-                state = Reading;
-            }
-            (Reading, b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | b'.' | b'+' | b'-') => {
-                let token = token.get_or_insert(String::new());
-                token.push(char::from_u32(c as u32).unwrap());
-            }
-            (Reading, b',') => {
-                let token = solve(token.take(), "Expect a number.");
-                let value: F32 = solve(token.parse().ok(), "Bad number.");
-                if !value.is_zero() {
-                    indexes.push(index);
-                    values.push(value);
+    if let Err(e) = parse_vector(input.to_bytes(), |i, s| {
+        s.parse::<F32>()
+            .ok()
+            .map(|s| {
+                dims = i + 1;
+                if !s.is_zero() {
+                    indexes.push(i);
+                    values.push(s);
                 }
-                index = match index.checked_add(1) {
-                    Some(x) => x,
-                    None => check_value_dims(65536).get(),
-                };
-            }
-            (Reading, b']') => {
-                if let Some(token) = token.take() {
-                    let value: F32 = solve(token.parse().ok(), "Bad number.");
-                    if !value.is_zero() {
-                        indexes.push(index);
-                        values.push(value);
-                    }
-                    index = match index.checked_add(1) {
-                        Some(x) => x,
-                        None => check_value_dims(65536).get(),
-                    };
-                }
-                state = MatchedRight;
-            }
-            (_, b' ') => {}
-            _ => {
-                bad_literal(&format!("Bad character with ascii {:#x}.", c));
-            }
-        }
+            })
+            .is_some()
+    }) {
+        bad_literal(&e.to_string());
     }
-    if state != MatchedRight {
-        bad_literal("Bad sequence");
-    }
-    SVecf32Output::new(SVecf32Borrowed::new(
-        check_value_dims(index as usize).get(),
-        &indexes,
-        &values,
-    ))
+    check_value_dims_max(dims as usize);
+    SVecf32Output::new(SVecf32Borrowed::new(dims, &indexes, &values))
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]

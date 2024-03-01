@@ -11,21 +11,21 @@ fn _vectors_to_svector(
     index: pgrx::Array<i32>,
     value: pgrx::Array<f32>,
 ) -> SVecf32Output {
-    let dims = check_value_dims(dims as usize);
+    let dims = check_value_dims_max(dims as usize);
     if index.len() != value.len() {
         bad_literal("Lengths of index and value are not matched.");
     }
     if index.contains_nulls() || value.contains_nulls() {
         bad_literal("Index or value contains nulls.");
     }
-    let mut vector: Vec<(u16, F32)> = index
+    let mut vector: Vec<(u32, F32)> = index
         .iter_deny_null()
         .zip(value.iter_deny_null())
         .map(|(index, value)| {
             if index < 0 || index >= dims.get() as i32 {
                 bad_literal("Index out of bound.");
             }
-            (index as u16, F32(value))
+            (index as u32, F32(value))
         })
         .collect();
     vector.sort_unstable_by_key(|x| x.0);
@@ -37,7 +37,7 @@ fn _vectors_to_svector(
         }
     }
 
-    let mut indexes = Vec::<u16>::with_capacity(vector.len());
+    let mut indexes = Vec::<u32>::with_capacity(vector.len());
     let mut values = Vec::<F32>::with_capacity(vector.len());
     for x in vector {
         indexes.push(x.0);

@@ -3,18 +3,18 @@ use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 #[derive(Debug, Clone)]
 pub struct Vec2<T> {
-    dims: u16,
+    dims: u32,
     v: Vec<T>,
 }
 
 impl<T: Zeroable + Ord> Vec2<T> {
-    pub fn new(dims: u16, n: usize) -> Self {
+    pub fn new(dims: u32, n: usize) -> Self {
         Self {
             dims,
             v: bytemuck::zeroed_vec(dims as usize * n),
         }
     }
-    pub fn dims(&self) -> u16 {
+    pub fn dims(&self) -> u32 {
         self.dims
     }
     pub fn len(&self) -> usize {

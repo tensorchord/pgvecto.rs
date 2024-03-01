@@ -34,7 +34,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
         permutation: Vec<u32>, // permutation is the mapping from placements to original ids
     ) -> Self {
         std::fs::create_dir(path).unwrap();
-        let dims = options.vector.dims;
+        let dims: u16 = options.vector.dims.try_into().unwrap();
         let mut max = vec![Scalar::<S>::neg_infinity(); dims as usize];
         let mut min = vec![Scalar::<S>::infinity(); dims as usize];
         let n = raw.len();
@@ -67,7 +67,7 @@ impl<S: G> Quan<S> for ScalarQuantization<S> {
     }
 
     fn open2(path: &Path, options: IndexOptions, _: QuantizationOptions, _: &Arc<Raw<S>>) -> Self {
-        let dims = options.vector.dims;
+        let dims: u16 = options.vector.dims.try_into().unwrap();
         let max = serde_json::from_slice(&std::fs::read("max").unwrap()).unwrap();
         let min = serde_json::from_slice(&std::fs::read("min").unwrap()).unwrap();
         let codes = MmapArray::open(&path.join("codes"));
