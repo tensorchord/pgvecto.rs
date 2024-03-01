@@ -58,6 +58,7 @@ jobs:
       - name: Set up Crossbuild
         if: ${{ matrix.arch == 'aarch64' }}
         run: |
+          sudo apt-get update
           sudo apt-get -y install crossbuild-essential-arm64
           echo 'target.aarch64-unknown-linux-gnu.linker = "aarch64-linux-gnu-gcc"' | tee ~/.cargo/config.toml
           echo 'env.BINDGEN_EXTRA_CLANG_ARGS_aarch64_unknown_linux_gnu = "-isystem /usr/aarch64-linux-gnu/include/ -ccc-gcc-name aarch64-linux-gnu-gcc"' | tee -a ~/.cargo/config.toml
