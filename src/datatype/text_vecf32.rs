@@ -14,18 +14,16 @@ fn _vectors_vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
         .dims()
         .map(|x| x.get())
         .unwrap_or(0);
-    let mut vector = Vec::<F32>::with_capacity(reserve as usize);
-    if let Err(e) = parse_vector(input.to_bytes(), |s| match s.parse::<F32>() {
-        Ok(s) => {
-            vector.push(s);
-            true
+    let v = parse_vector(input.to_bytes(), reserve as usize, |s| s.parse().ok());
+    match v {
+        Err(e) => {
+            bad_literal(&e.to_string());
         }
-        Err(_) => false,
-    }) {
-        bad_literal(&e.to_string());
+        Ok(vector) => {
+            check_value_dims_u16(vector.len());
+            Vecf32Output::new(Vecf32Borrowed::new(&vector))
+        }
     }
-    check_value_dims_u16(vector.len());
-    Vecf32Output::new(Vecf32Borrowed::new(&vector))
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
