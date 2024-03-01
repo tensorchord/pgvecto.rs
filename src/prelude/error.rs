@@ -34,12 +34,12 @@ ADVICE: Check if modifier of the type is an integer among 1 and 65535."
 
 pub fn check_type_dims_max(dims: Option<NonZeroU32>) -> NonZeroU32 {
     match dims {
-        Some(x) if x.get() <= 1_000_000 => x,
+        Some(x) if x.get() <= 1_048_576 => x,
         _ => {
             error!(
                 "\
 pgvecto.rs: Modifier of the type is invalid.
-ADVICE: Check if modifier of the type is an integer among 1 and 1_000_000."
+ADVICE: Check if modifier of the type is an integer among 1 and 1_048_576."
             )
         }
     }
@@ -59,11 +59,11 @@ ADVICE: Check if dimensions of the vector are among 1 and 65535."
 }
 
 pub fn check_value_dims_max(dims: usize) -> NonZeroU32 {
-    if !(1..=1_000_000).contains(&dims) {
+    if !(1..=1_048_576).contains(&dims) {
         error!(
             "\
 pgvecto.rs: Dimensions of the vector is invalid.
-ADVICE: Check if dimensions of the vector are among 1 and 1_000_000."
+ADVICE: Check if dimensions of the vector are among 1 and 1_048_576."
         )
     }
     NonZeroU32::new(dims as u32).unwrap()

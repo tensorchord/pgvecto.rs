@@ -42,7 +42,7 @@ impl IndexOptions {
 #[validate(schema(function = "Self::validate_0"))]
 #[validate(schema(function = "Self::validate_dims"))]
 pub struct VectorOptions {
-    #[validate(range(min = 1, max = 1_000_000))]
+    #[validate(range(min = 1, max = 1_048_576))]
     #[serde(rename = "dimensions")]
     pub dims: u32,
     #[serde(rename = "distance")]
