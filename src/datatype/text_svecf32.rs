@@ -12,17 +12,16 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
     let mut dims = 0;
     let mut indexes = Vec::<u32>::new();
     let mut values = Vec::<F32>::new();
-    if let Err(e) = parse_vector(input.to_bytes(), |i, s| {
-        s.parse::<F32>()
-            .ok()
-            .map(|s| {
-                dims = i + 1;
-                if !s.is_zero() {
-                    indexes.push(i);
-                    values.push(s);
-                }
-            })
-            .is_some()
+    if let Err(e) = parse_vector(input.to_bytes(), |s| match s.parse::<F32>() {
+        Ok(val) => {
+            if !val.is_zero() {
+                indexes.push(dims);
+                values.push(val);
+            }
+            dims += 1;
+            true
+        }
+        Err(_) => false,
     }) {
         bad_literal(&e.to_string());
     }

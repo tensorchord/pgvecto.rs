@@ -15,8 +15,8 @@ use std::path::Path;
 use std::sync::Arc;
 
 pub struct ProductQuantization<S: G> {
-    dims: u16,
-    ratio: u16,
+    dims: u32,
+    ratio: u32,
     centroids: Vec<Scalar<S>>,
     codes: MmapArray<u8>,
     precomputed_table: Vec<F32>,
@@ -67,7 +67,7 @@ impl<S: G> Quan<S> for ProductQuantization<S> {
         let precomputed_table =
             serde_json::from_slice(&std::fs::read(path.join("table")).unwrap()).unwrap();
         Self {
-            dims: options.vector.dims.try_into().unwrap(),
+            dims: options.vector.dims,
             ratio: quantization_options.ratio as _,
             centroids,
             codes,
@@ -107,13 +107,13 @@ impl<S: G> ProductQuantization<S> {
         let QuantizationOptions::Product(quantization_options) = quantization_options else {
             unreachable!()
         };
-        let dims: u16 = options.vector.dims.try_into().unwrap();
-        let ratio = quantization_options.ratio as u16;
+        let dims = options.vector.dims;
+        let ratio = quantization_options.ratio as u32;
         let n = raw.len();
         let m = std::cmp::min(n, quantization_options.sample);
         let samples = {
             let f = sample(&mut thread_rng(), n as usize, m as usize).into_vec();
-            let mut samples = Vec2::<Scalar<S>>::new(dims as u32, m as usize);
+            let mut samples = Vec2::<Scalar<S>>::new(dims, m as usize);
             for i in 0..m {
                 samples[i as usize]
                     .copy_from_slice(raw.vector(f[i as usize] as u32).to_vec().as_ref());
@@ -190,13 +190,13 @@ impl<S: G> ProductQuantization<S> {
         let QuantizationOptions::Product(quantization_options) = quantization_options else {
             unreachable!()
         };
-        let dims: u16 = options.vector.dims.try_into().unwrap();
-        let ratio = quantization_options.ratio as u16;
+        let dims = options.vector.dims;
+        let ratio = quantization_options.ratio as u32;
         let n = raw.len();
         let m = std::cmp::min(n, quantization_options.sample as usize);
         let samples = {
             let f = sample(&mut thread_rng(), n, m).into_vec();
-            let mut samples = Vec2::new(dims as u32, m);
+            let mut samples = Vec2::new(dims, m);
             for i in 0..m {
                 samples[i].copy_from_slice(&raw[f[i]]);
             }
@@ -211,7 +211,7 @@ impl<S: G> ProductQuantization<S> {
             .enumerate()
             .for_each(|(i, v)| {
                 // i is the index of subquantizer
-                let subdims = std::cmp::min(ratio, dims - ratio * i as u16) as usize;
+                let subdims = std::cmp::min(ratio, dims - ratio * i as u32) as usize;
                 let mut subsamples = Vec2::new(subdims as u32, m);
                 for j in 0..m {
                     let src = &samples[j][i * ratio as usize..][..subdims];
@@ -374,7 +374,7 @@ impl<S: G> ProductQuantization<S> {
     }
 }
 
-pub fn squared_norm<S: G>(dims: u16, vec: &[Scalar<S>]) -> F32 {
+pub fn squared_norm<S: G>(dims: u32, vec: &[Scalar<S>]) -> F32 {
     let mut result = F32::zero();
     for i in 0..dims as usize {
         result += F32((vec[i] * vec[i]).to_f32());
@@ -382,7 +382,7 @@ pub fn squared_norm<S: G>(dims: u16, vec: &[Scalar<S>]) -> F32 {
     result
 }
 
-pub fn inner_product<S: G>(dims: u16, lhs: &[Scalar<S>], rhs: &[Scalar<S>]) -> F32 {
+pub fn inner_product<S: G>(dims: u32, lhs: &[Scalar<S>], rhs: &[Scalar<S>]) -> F32 {
     let mut result = F32::zero();
     for i in 0..dims as usize {
         result += F32((lhs[i] * rhs[i]).to_f32());

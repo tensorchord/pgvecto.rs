@@ -59,7 +59,7 @@ fn _vectors_typmod_in(list: Array<&CStr>) -> i32 {
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn _vectors_typmod_in_i32(list: Array<&CStr>) -> i32 {
+fn _vectors_typmod_in_1048575(list: Array<&CStr>) -> i32 {
     if list.is_empty() {
         -1
     } else if list.len() == 1 {

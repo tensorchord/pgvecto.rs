@@ -19,7 +19,7 @@ pub enum ParseVectorError {
 #[inline(always)]
 pub fn parse_vector<F>(input: &[u8], mut f: F) -> Result<(), ParseVectorError>
 where
-    F: FnMut(u32, &str) -> bool,
+    F: FnMut(&str) -> bool,
 {
     use arrayvec::ArrayVec;
     if input.is_empty() {
@@ -45,7 +45,6 @@ where
         }
         return Err(ParseVectorError::BadParentheses { character: ']' });
     };
-    let mut index = 0;
     let mut token: ArrayVec<u8, 48> = ArrayVec::new();
     for position in left + 1..right {
         let c = input[position];
@@ -62,10 +61,9 @@ where
                 if !token.is_empty() {
                     // Safety: all bytes in `token` are ascii characters
                     let s = unsafe { std::str::from_utf8_unchecked(&token[1..]) };
-                    if !f(index, s) {
+                    if !f(s) {
                         return Err(ParseVectorError::BadParsing { position });
                     };
-                    index += 1;
                     token.clear();
                 } else {
                     return Err(ParseVectorError::TooShortNumber { position });
@@ -79,7 +77,7 @@ where
         let position = right;
         // Safety: all bytes in `token` are ascii characters
         let s = unsafe { std::str::from_utf8_unchecked(&token[1..]) };
-        if !f(index, s) {
+        if !f(s) {
             return Err(ParseVectorError::BadParsing { position });
         };
         token.clear();

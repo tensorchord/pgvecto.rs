@@ -14,7 +14,7 @@ fn _vectors_bvecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> BVecf32Output {
         .map(|x| x.get())
         .unwrap_or(0);
     let mut bool_vec = Vec::<bool>::with_capacity(reserve as usize);
-    if let Err(e) = parse_vector(input.to_bytes(), |_, s| match s.parse::<u8>() {
+    if let Err(e) = parse_vector(input.to_bytes(), |s| match s.parse::<u8>() {
         Ok(0) => {
             bool_vec.push(false);
             true

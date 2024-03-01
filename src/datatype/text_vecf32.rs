@@ -15,8 +15,12 @@ fn _vectors_vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
         .map(|x| x.get())
         .unwrap_or(0);
     let mut vector = Vec::<F32>::with_capacity(reserve as usize);
-    if let Err(e) = parse_vector(input.to_bytes(), |_, s| {
-        s.parse().ok().map(|s| vector.push(s)).is_some()
+    if let Err(e) = parse_vector(input.to_bytes(), |s| match s.parse::<F32>() {
+        Ok(s) => {
+            vector.push(s);
+            true
+        }
+        Err(_) => false,
     }) {
         bad_literal(&e.to_string());
     }
