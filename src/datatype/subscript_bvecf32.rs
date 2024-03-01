@@ -170,8 +170,7 @@ fn _vectors_bvecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum 
                     let end_idx = (end as usize).div_ceil(BVEC_WIDTH);
                     let slice = values.data_mut();
                     slice.copy_from_slice(&input.for_borrow().data()[start_idx..end_idx]);
-                    slice[(end_idx - start_idx - 1) as usize] &=
-                        (1 << (end as usize % BVEC_WIDTH)) - 1;
+                    slice[end_idx - start_idx - 1] &= (1 << (end as usize % BVEC_WIDTH)) - 1;
                 } else {
                     let mut i = 0;
                     let mut j = start as usize;
