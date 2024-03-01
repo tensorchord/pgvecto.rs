@@ -71,3 +71,8 @@ query I
 SELECT ('[0, 1, 0, 1, 0, 1, 0, 1]'::bvector)[:NULL];
 ----
 NULL
+
+query I
+SELECT ((replace(replace(array_agg(1)::real[]::text, '{', '['), '}', ']')::bvector)[:])[:2] FROM generate_series(1, 64);
+----
+[1, 1]
