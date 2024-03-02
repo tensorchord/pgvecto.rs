@@ -13,6 +13,7 @@ pub fn initialize() {
     {
         self::x86_64::ctor_avx512fp16();
         self::x86_64::ctor_avx512vpopcntdq();
+        self::x86_64::ctor_avx512vp2intersect();
         self::x86_64::ctor_v2();
         self::x86_64::ctor_v3();
         self::x86_64::ctor_v4();

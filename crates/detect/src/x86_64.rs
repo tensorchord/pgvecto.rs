@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 static ATOMIC_AVX512FP16: AtomicBool = AtomicBool::new(false);
 static ATOMIC_AVX512VPOPCNTDQ: AtomicBool = AtomicBool::new(false);
+static ATOMIC_AVX512VP2INTERSECT: AtomicBool = AtomicBool::new(false);
 
 pub fn test_avx512fp16() -> bool {
     std_detect::is_x86_feature_detected!("avx512fp16") && test_v4()
@@ -9,6 +10,10 @@ pub fn test_avx512fp16() -> bool {
 
 pub fn test_avx512vpopcntdq() -> bool {
     std_detect::is_x86_feature_detected!("avx512vpopcntdq") && test_v4()
+}
+
+pub fn test_avx512vp2intersect() -> bool {
+    std_detect::is_x86_feature_detected!("avx512vp2intersect") && test_v4()
 }
 
 pub fn ctor_avx512fp16() {
@@ -19,12 +24,20 @@ pub fn ctor_avx512vpopcntdq() {
     ATOMIC_AVX512VPOPCNTDQ.store(test_avx512vpopcntdq(), Ordering::Relaxed);
 }
 
+pub fn ctor_avx512vp2intersect() {
+    ATOMIC_AVX512VP2INTERSECT.store(test_avx512vp2intersect(), Ordering::Relaxed);
+}
+
 pub fn detect_avx512fp16() -> bool {
     ATOMIC_AVX512FP16.load(Ordering::Relaxed)
 }
 
 pub fn detect_avx512vpopcntdq() -> bool {
     ATOMIC_AVX512VPOPCNTDQ.load(Ordering::Relaxed)
+}
+
+pub fn detect_avx512vp2intersect() -> bool {
+    ATOMIC_AVX512VP2INTERSECT.load(Ordering::Relaxed)
 }
 
 static ATOMIC_V4: AtomicBool = AtomicBool::new(false);

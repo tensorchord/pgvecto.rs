@@ -9,7 +9,7 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         "x86_64/x86-64-v2",
         "aarch64+neon"
     ))]
-    pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
+    fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         let mut xy = F32::zero();
@@ -57,7 +57,7 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         "x86_64/x86-64-v2",
         "aarch64+neon"
     ))]
-    pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
+    fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         let mut xy = F32::zero();
@@ -101,7 +101,7 @@ pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         "x86_64/x86-64-v2",
         "aarch64+neon"
     ))]
-    pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
+    fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         let mut d2 = F32::zero();
