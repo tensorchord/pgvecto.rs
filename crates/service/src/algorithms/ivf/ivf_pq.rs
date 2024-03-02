@@ -81,7 +81,7 @@ pub struct IvfRam<S: G> {
     raw: Arc<Raw<S>>,
     quantization: ProductQuantization<S>,
     // ----------------------
-    dims: u16,
+    dims: u32,
     // ----------------------
     nlist: u32,
     // ----------------------
@@ -97,7 +97,7 @@ pub struct IvfMmap<S: G> {
     raw: Arc<Raw<S>>,
     quantization: ProductQuantization<S>,
     // ----------------------
-    dims: u16,
+    dims: u32,
     // ----------------------
     nlist: u32,
     // ----------------------

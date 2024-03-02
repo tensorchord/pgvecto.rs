@@ -13,8 +13,8 @@ pub struct DenseMmap<T> {
 impl Storage for DenseMmap<F32> {
     type VectorOwned = Vecf32Owned;
 
-    fn dims(&self) -> u16 {
-        self.dims
+    fn dims(&self) -> u32 {
+        self.dims as u32
     }
 
     fn len(&self) -> u32 {
@@ -40,7 +40,7 @@ impl Storage for DenseMmap<F32> {
         Self {
             vectors,
             payload,
-            dims: options.vector.dims,
+            dims: options.vector.dims.try_into().unwrap(),
         }
     }
 
@@ -53,7 +53,7 @@ impl Storage for DenseMmap<F32> {
         Self {
             vectors,
             payload,
-            dims: ram.dims(),
+            dims: ram.dims().try_into().unwrap(),
         }
     }
 }
@@ -61,8 +61,8 @@ impl Storage for DenseMmap<F32> {
 impl Storage for DenseMmap<F16> {
     type VectorOwned = Vecf16Owned;
 
-    fn dims(&self) -> u16 {
-        self.dims
+    fn dims(&self) -> u32 {
+        self.dims as u32
     }
 
     fn len(&self) -> u32 {
@@ -88,7 +88,7 @@ impl Storage for DenseMmap<F16> {
         Self {
             vectors,
             payload,
-            dims: options.vector.dims,
+            dims: options.vector.dims.try_into().unwrap(),
         }
     }
 
@@ -101,7 +101,7 @@ impl Storage for DenseMmap<F16> {
         Self {
             vectors,
             payload,
-            dims: ram.dims(),
+            dims: ram.dims().try_into().unwrap(),
         }
     }
 }

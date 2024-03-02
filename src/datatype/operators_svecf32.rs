@@ -12,7 +12,7 @@ fn _vectors_svecf32_operator_add(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -
     let mut pos1 = 0;
     let mut pos2 = 0;
     let mut pos = 0;
-    let mut indexes = vec![0u16; size1 + size2];
+    let mut indexes = vec![0; size1 + size2];
     let mut values = vec![F32::zero(); size1 + size2];
     let lhs = lhs.for_borrow();
     let rhs = rhs.for_borrow();
@@ -53,7 +53,7 @@ fn _vectors_svecf32_operator_minus(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>)
     let mut pos1 = 0;
     let mut pos2 = 0;
     let mut pos = 0;
-    let mut indexes = vec![0u16; size1 + size2];
+    let mut indexes = vec![0; size1 + size2];
     let mut values = vec![F32::zero(); size1 + size2];
     let lhs = lhs.for_borrow();
     let rhs = rhs.for_borrow();

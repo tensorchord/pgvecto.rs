@@ -141,19 +141,19 @@ fn _vectors_svecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum 
                 let workspace = &mut *(state.workspace as *mut Workspace);
                 let input =
                     SVecf32Input::from_datum((*op).resvalue.read(), (*op).resnull.read()).unwrap();
-                let dims = input.dims() as u16;
+                let dims = input.dims() as u32;
                 let Some((start, end)) = workspace.range else {
                     (*op).resnull.write(true);
                     return;
                 };
-                let start: u16 = match start.unwrap_or(0).try_into() {
+                let start: u32 = match start.unwrap_or(0).try_into() {
                     Ok(x) => x,
                     Err(_) => {
                         (*op).resnull.write(true);
                         return;
                     }
                 };
-                let end: u16 = match end.unwrap_or(dims as usize).try_into() {
+                let end: u32 = match end.unwrap_or(dims as usize).try_into() {
                     Ok(x) => x,
                     Err(_) => {
                         (*op).resnull.write(true);

@@ -15,10 +15,10 @@ use std::ptr::NonNull;
 #[repr(C, align(8))]
 pub struct SVecf32Header {
     varlena: u32,
-    dims: u16,
+    reserved: u16,
     kind: u16,
-    len: u16,
-    reserved: [u8; 6],
+    dims: u32,
+    len: u32,
     phantom: [u8; 0],
 }
 
@@ -27,9 +27,9 @@ impl SVecf32Header {
         (size << 2) as u32
     }
     fn layout(len: usize) -> Layout {
-        u16::try_from(len).expect("Vector is too large.");
+        u32::try_from(len).expect("Vector is too large.");
         let layout = Layout::new::<SVecf32Header>();
-        let layout1 = Layout::array::<u16>(len).unwrap();
+        let layout1 = Layout::array::<u32>(len).unwrap();
         let layout2 = Layout::array::<F32>(len).unwrap();
         let layout = layout.extend(layout1).unwrap().0.pad_to_align();
         layout.extend(layout2).unwrap().0.pad_to_align()
@@ -40,14 +40,14 @@ impl SVecf32Header {
     pub fn len(&self) -> usize {
         self.len as usize
     }
-    fn indexes(&self) -> &[u16] {
+    fn indexes(&self) -> &[u32] {
         let ptr = self.phantom.as_ptr().cast();
         unsafe { std::slice::from_raw_parts(ptr, self.len as usize) }
     }
     fn values(&self) -> &[F32] {
         let len = self.len as usize;
         unsafe {
-            let ptr = self.phantom.as_ptr().cast::<u16>().add(len);
+            let ptr = self.phantom.as_ptr().cast::<u32>().add(len);
             let offset = ptr.align_offset(8);
             let ptr = ptr.add(offset).cast();
             std::slice::from_raw_parts(ptr, len)
@@ -99,8 +99,8 @@ impl SVecf32Output {
             std::ptr::addr_of_mut!((*ptr).dims).write(vector.dims());
             std::ptr::addr_of_mut!((*ptr).kind).write(2);
             std::ptr::addr_of_mut!((*ptr).len).write(vector.len());
-            std::ptr::addr_of_mut!((*ptr).reserved).write([0; 6]);
-            let mut data_ptr = (*ptr).phantom.as_mut_ptr().cast::<u16>();
+            std::ptr::addr_of_mut!((*ptr).reserved).write(0);
+            let mut data_ptr = (*ptr).phantom.as_mut_ptr().cast::<u32>();
             std::ptr::copy_nonoverlapping(
                 vector.indexes().as_ptr(),
                 data_ptr,
