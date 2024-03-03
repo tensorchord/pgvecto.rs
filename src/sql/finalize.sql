@@ -44,9 +44,9 @@ CREATE TYPE svector (
 CREATE TYPE bvector (
     INPUT = _vectors_bvecf32_in,
     OUTPUT = _vectors_bvecf32_out,
-	RECEIVE = _vectors_bvecf32_recv,
-	SEND = _vectors_bvecf32_send,
-	SUBSCRIPT = _vectors_bvecf32_subscript,
+    RECEIVE = _vectors_bvecf32_recv,
+    SEND = _vectors_bvecf32_send,
+    SUBSCRIPT = _vectors_bvecf32_subscript,
     TYPMOD_IN = _vectors_typmod_in,
     TYPMOD_OUT = _vectors_typmod_out,
     STORAGE = EXTERNAL,
@@ -55,16 +55,16 @@ CREATE TYPE bvector (
 );
 
 CREATE TYPE veci8 (
-	INPUT = _vectors_veci8_in,
-	OUTPUT = _vectors_veci8_out,
-	RECEIVE = _vectors_veci8_recv,
-	SEND = _vectors_veci8_send,
-	SUBSCRIPT = _vectors_veci8_subscript,
-	TYPMOD_IN = _vectors_typmod_in,
-	TYPMOD_OUT = _vectors_typmod_out,
-	STORAGE = EXTENDED,
-	INTERNALLENGTH = VARIABLE,
-	ALIGNMENT = double
+    INPUT = _vectors_veci8_in,
+    OUTPUT = _vectors_veci8_out,
+    RECEIVE = _vectors_veci8_recv,
+    SEND = _vectors_veci8_send,
+    SUBSCRIPT = _vectors_veci8_subscript,
+    TYPMOD_IN = _vectors_typmod_in,
+    TYPMOD_OUT = _vectors_typmod_out,
+    STORAGE = EXTERNAL,
+    INTERNALLENGTH = VARIABLE,
+    ALIGNMENT = double
 );
 
 CREATE TYPE vector_index_stat AS (
@@ -102,10 +102,10 @@ CREATE OPERATOR + (
 );
 
 CREATE OPERATOR + (
-	PROCEDURE = _vectors_veci8_operator_add,
-	LEFTARG = veci8,
-	RIGHTARG = veci8,
-	COMMUTATOR = +
+    PROCEDURE = _vectors_veci8_operator_add,
+    LEFTARG = veci8,
+    RIGHTARG = veci8,
+    COMMUTATOR = +
 );
 
 CREATE OPERATOR - (
@@ -127,27 +127,27 @@ CREATE OPERATOR - (
 );
 
 CREATE OPERATOR - (
-	PROCEDURE = _vectors_veci8_operator_minus,
-	LEFTARG = veci8,
-	RIGHTARG = veci8
+    PROCEDURE = _vectors_veci8_operator_minus,
+    LEFTARG = veci8,
+    RIGHTARG = veci8
 );
 
 CREATE OPERATOR & (
-	PROCEDURE = _vectors_bvecf32_operator_and,
-	LEFTARG = bvector,
-	RIGHTARG = bvector
+    PROCEDURE = _vectors_bvecf32_operator_and,
+    LEFTARG = bvector,
+    RIGHTARG = bvector
 );
 
 CREATE OPERATOR | (
-	PROCEDURE = _vectors_bvecf32_operator_or,
-	LEFTARG = bvector,
-	RIGHTARG = bvector
+    PROCEDURE = _vectors_bvecf32_operator_or,
+    LEFTARG = bvector,
+    RIGHTARG = bvector
 );
 
 CREATE OPERATOR ^ (
-	PROCEDURE = _vectors_bvecf32_operator_xor,
-	LEFTARG = bvector,
-	RIGHTARG = bvector
+    PROCEDURE = _vectors_bvecf32_operator_xor,
+    LEFTARG = bvector,
+    RIGHTARG = bvector
 );
 
 CREATE OPERATOR = (
@@ -181,23 +181,23 @@ CREATE OPERATOR = (
 );
 
 CREATE OPERATOR = (
-	PROCEDURE = _vectors_bvecf32_operator_eq,
-	LEFTARG = bvector,
-	RIGHTARG = bvector,
-	COMMUTATOR = =,
-	NEGATOR = <>,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_bvecf32_operator_eq,
+    LEFTARG = bvector,
+    RIGHTARG = bvector,
+    COMMUTATOR = =,
+    NEGATOR = <>,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR = (
-	PROCEDURE = _vectors_veci8_operator_eq,
-	LEFTARG = veci8,
-	RIGHTARG = veci8,
-	COMMUTATOR = =,
-	NEGATOR = <>,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_veci8_operator_eq,
+    LEFTARG = veci8,
+    RIGHTARG = veci8,
+    COMMUTATOR = =,
+    NEGATOR = <>,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR <> (
@@ -231,23 +231,23 @@ CREATE OPERATOR <> (
 );
 
 CREATE OPERATOR <> (
-	PROCEDURE = _vectors_bvecf32_operator_neq,
-	LEFTARG = bvector,
-	RIGHTARG = bvector,
-	COMMUTATOR = <>,
-	NEGATOR = =,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_bvecf32_operator_neq,
+    LEFTARG = bvector,
+    RIGHTARG = bvector,
+    COMMUTATOR = <>,
+    NEGATOR = =,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR <> (
-	PROCEDURE = _vectors_veci8_operator_neq,
-	LEFTARG = veci8,
-	RIGHTARG = veci8,
-	COMMUTATOR = <>,
-	NEGATOR = =,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_veci8_operator_neq,
+    LEFTARG = veci8,
+    RIGHTARG = veci8,
+    COMMUTATOR = <>,
+    NEGATOR = =,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR < (
@@ -281,23 +281,23 @@ CREATE OPERATOR < (
 );
 
 CREATE OPERATOR < (
-	PROCEDURE = _vectors_bvecf32_operator_lt,
-	LEFTARG = bvector,
-	RIGHTARG = bvector,
-	COMMUTATOR = >,
-	NEGATOR = >=,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_bvecf32_operator_lt,
+    LEFTARG = bvector,
+    RIGHTARG = bvector,
+    COMMUTATOR = >,
+    NEGATOR = >=,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR < (
-	PROCEDURE = _vectors_veci8_operator_lt,
-	LEFTARG = veci8,
-	RIGHTARG = veci8,
-	COMMUTATOR = >,
-	NEGATOR = >=,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_veci8_operator_lt,
+    LEFTARG = veci8,
+    RIGHTARG = veci8,
+    COMMUTATOR = >,
+    NEGATOR = >=,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR > (
@@ -331,23 +331,23 @@ CREATE OPERATOR > (
 );
 
 CREATE OPERATOR > (
-	PROCEDURE = _vectors_bvecf32_operator_gt,
-	LEFTARG = bvector,
-	RIGHTARG = bvector,
-	COMMUTATOR = <,
-	NEGATOR = <=,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_bvecf32_operator_gt,
+    LEFTARG = bvector,
+    RIGHTARG = bvector,
+    COMMUTATOR = <,
+    NEGATOR = <=,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR > (
-	PROCEDURE = _vectors_veci8_operator_gt,
-	LEFTARG = veci8,
-	RIGHTARG = veci8,
-	COMMUTATOR = <,
-	NEGATOR = <=,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_veci8_operator_gt,
+    LEFTARG = veci8,
+    RIGHTARG = veci8,
+    COMMUTATOR = <,
+    NEGATOR = <=,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR <= (
@@ -381,23 +381,23 @@ CREATE OPERATOR <= (
 );
 
 CREATE OPERATOR <= (
-	PROCEDURE = _vectors_bvecf32_operator_lte,
-	LEFTARG = bvector,
-	RIGHTARG = bvector,
-	COMMUTATOR = >=,
-	NEGATOR = >,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_bvecf32_operator_lte,
+    LEFTARG = bvector,
+    RIGHTARG = bvector,
+    COMMUTATOR = >=,
+    NEGATOR = >,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR <= (
-	PROCEDURE = _vectors_veci8_operator_lte,
-	LEFTARG = veci8,
-	RIGHTARG = veci8,
-	COMMUTATOR = >=,
-	NEGATOR = >,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_veci8_operator_lte,
+    LEFTARG = veci8,
+    RIGHTARG = veci8,
+    COMMUTATOR = >=,
+    NEGATOR = >,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR >= (
@@ -431,23 +431,23 @@ CREATE OPERATOR >= (
 );
 
 CREATE OPERATOR >= (
-	PROCEDURE = _vectors_bvecf32_operator_gte,
-	LEFTARG = bvector,
-	RIGHTARG = bvector,
-	COMMUTATOR = <=,
-	NEGATOR = <,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_bvecf32_operator_gte,
+    LEFTARG = bvector,
+    RIGHTARG = bvector,
+    COMMUTATOR = <=,
+    NEGATOR = <,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR >= (
-	PROCEDURE = _vectors_veci8_operator_gte,
-	LEFTARG = veci8,
-	RIGHTARG = veci8,
-	COMMUTATOR = <=,
-	NEGATOR = <,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_veci8_operator_gte,
+    LEFTARG = veci8,
+    RIGHTARG = veci8,
+    COMMUTATOR = <=,
+    NEGATOR = <,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR <-> (
@@ -472,17 +472,17 @@ CREATE OPERATOR <-> (
 );
 
 CREATE OPERATOR <-> (
-	PROCEDURE = _vectors_bvecf32_operator_l2,
-	LEFTARG = bvector,
-	RIGHTARG = bvector,
-	COMMUTATOR = <->
+    PROCEDURE = _vectors_bvecf32_operator_l2,
+    LEFTARG = bvector,
+    RIGHTARG = bvector,
+    COMMUTATOR = <->
 );
 
 CREATE OPERATOR <-> (
-	PROCEDURE = _vectors_veci8_operator_l2,
-	LEFTARG = veci8,
-	RIGHTARG = veci8,
-	COMMUTATOR = <->
+    PROCEDURE = _vectors_veci8_operator_l2,
+    LEFTARG = veci8,
+    RIGHTARG = veci8,
+    COMMUTATOR = <->
 );
 
 CREATE OPERATOR <#> (
@@ -507,17 +507,17 @@ CREATE OPERATOR <#> (
 );
 
 CREATE OPERATOR <#> (
-	PROCEDURE = _vectors_bvecf32_operator_dot,
-	LEFTARG = bvector,
-	RIGHTARG = bvector,
-	COMMUTATOR = <#>
+    PROCEDURE = _vectors_bvecf32_operator_dot,
+    LEFTARG = bvector,
+    RIGHTARG = bvector,
+    COMMUTATOR = <#>
 );
 
 CREATE OPERATOR <#> (
-	PROCEDURE = _vectors_veci8_operator_dot,
-	LEFTARG = veci8,
-	RIGHTARG = veci8,
-	COMMUTATOR = <#>
+    PROCEDURE = _vectors_veci8_operator_dot,
+    LEFTARG = veci8,
+    RIGHTARG = veci8,
+    COMMUTATOR = <#>
 );
 
 CREATE OPERATOR <=> (
@@ -542,24 +542,24 @@ CREATE OPERATOR <=> (
 );
 
 CREATE OPERATOR <=> (
-	PROCEDURE = _vectors_bvecf32_operator_cosine,
-	LEFTARG = bvector,
-	RIGHTARG = bvector,
-	COMMUTATOR = <=>
+    PROCEDURE = _vectors_bvecf32_operator_cosine,
+    LEFTARG = bvector,
+    RIGHTARG = bvector,
+    COMMUTATOR = <=>
 );
 
 CREATE OPERATOR <=> (
-	PROCEDURE = _vectors_veci8_operator_cosine,
-	LEFTARG = veci8,
-	RIGHTARG = veci8,
-	COMMUTATOR = <=>
+    PROCEDURE = _vectors_veci8_operator_cosine,
+    LEFTARG = veci8,
+    RIGHTARG = veci8,
+    COMMUTATOR = <=>
 );
 
 CREATE OPERATOR <~> (
-	PROCEDURE = _vectors_bvecf32_operator_jaccard,
-	LEFTARG = bvector,
-	RIGHTARG = bvector,
-	COMMUTATOR = <~>
+    PROCEDURE = _vectors_bvecf32_operator_jaccard,
+    LEFTARG = bvector,
+    RIGHTARG = bvector,
+    COMMUTATOR = <~>
 );
 
 -- List of functions
@@ -620,7 +620,7 @@ CREATE CAST (veci8 AS vector)
     WITH FUNCTION _vectors_cast_veci8_to_vecf32(veci8, integer, boolean);
 
 CREATE CAST (vector AS veci8)
-	WITH FUNCTION _vectors_cast_vecf32_to_veci8(vector, integer, boolean);
+    WITH FUNCTION _vectors_cast_vecf32_to_veci8(vector, integer, boolean);
 
 -- List of access methods
 
@@ -700,32 +700,32 @@ CREATE OPERATOR CLASS svector_cos_ops
     OPERATOR 1 <=> (svector, svector) FOR ORDER BY float_ops;
 
 CREATE OPERATOR CLASS bvector_l2_ops
-	FOR TYPE bvector USING vectors AS
-	OPERATOR 1 <-> (bvector, bvector) FOR ORDER BY float_ops;
+    FOR TYPE bvector USING vectors AS
+    OPERATOR 1 <-> (bvector, bvector) FOR ORDER BY float_ops;
 
 CREATE OPERATOR CLASS bvector_dot_ops
-	FOR TYPE bvector USING vectors AS
-	OPERATOR 1 <#> (bvector, bvector) FOR ORDER BY float_ops;
+    FOR TYPE bvector USING vectors AS
+    OPERATOR 1 <#> (bvector, bvector) FOR ORDER BY float_ops;
 
 CREATE OPERATOR CLASS bvector_cos_ops
-	FOR TYPE bvector USING vectors AS
-	OPERATOR 1 <=> (bvector, bvector) FOR ORDER BY float_ops;
+    FOR TYPE bvector USING vectors AS
+    OPERATOR 1 <=> (bvector, bvector) FOR ORDER BY float_ops;
 
 CREATE OPERATOR CLASS bvector_jaccard_ops
-	FOR TYPE bvector USING vectors AS
-	OPERATOR 1 <~> (bvector, bvector) FOR ORDER BY float_ops;
+    FOR TYPE bvector USING vectors AS
+    OPERATOR 1 <~> (bvector, bvector) FOR ORDER BY float_ops;
 
 CREATE OPERATOR CLASS veci8_l2_ops
-	FOR TYPE veci8 USING vectors AS
-	OPERATOR 1 <-> (veci8, veci8) FOR ORDER BY float_ops;
+    FOR TYPE veci8 USING vectors AS
+    OPERATOR 1 <-> (veci8, veci8) FOR ORDER BY float_ops;
 
 CREATE OPERATOR CLASS veci8_dot_ops
-	FOR TYPE veci8 USING vectors AS
-	OPERATOR 1 <#> (veci8, veci8) FOR ORDER BY float_ops;
+    FOR TYPE veci8 USING vectors AS
+    OPERATOR 1 <#> (veci8, veci8) FOR ORDER BY float_ops;
 
 CREATE OPERATOR CLASS veci8_cos_ops
-	FOR TYPE veci8 USING vectors AS
-	OPERATOR 1 <=> (veci8, veci8) FOR ORDER BY float_ops;
+    FOR TYPE veci8 USING vectors AS
+    OPERATOR 1 <=> (veci8, veci8) FOR ORDER BY float_ops;
 
 -- List of views
 
