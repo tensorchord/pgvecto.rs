@@ -90,3 +90,18 @@ pub fn ctor_v2() {
 pub fn detect_v2() -> bool {
     ATOMIC_V2.load(Ordering::Relaxed)
 }
+
+static ATOMIC_AVX512VNNI: AtomicBool = AtomicBool::new(false);
+
+/// check if the CPU supports avx512vnni
+pub fn test_avx512vnni() -> bool {
+    std_detect::is_x86_feature_detected!("avx512vnni") && test_v4()
+}
+
+pub fn ctor_vnni() {
+    ATOMIC_AVX512VNNI.store(test_avx512vnni(), Ordering::Relaxed);
+}
+
+pub fn detect_vnni() -> bool {
+    ATOMIC_AVX512VNNI.load(Ordering::Relaxed)
+}

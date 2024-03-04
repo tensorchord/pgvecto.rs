@@ -20,7 +20,7 @@ fn _vectors_vecf16_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf16Output {
             bad_literal(&e.to_string());
         }
         Ok(vector) => {
-            check_value_dims_u16(vector.len());
+            check_value_dims_65535(vector.len());
             Vecf16Output::new(Vecf16Borrowed::new(&vector))
         }
     }

@@ -45,7 +45,7 @@ ADVICE: Check if modifier of the type is an integer among 1 and 1_048_575."
     }
 }
 
-pub fn check_value_dims_u16(dims: usize) -> NonZeroU16 {
+pub fn check_value_dims_65535(dims: usize) -> NonZeroU16 {
     match u16::try_from(dims).and_then(NonZeroU16::try_from).ok() {
         None => {
             error!(
@@ -58,7 +58,7 @@ ADVICE: Check if dimensions of the vector are among 1 and 65535."
     }
 }
 
-pub fn check_value_dims_max(dims: usize) -> NonZeroU32 {
+pub fn check_value_dims_1048575(dims: usize) -> NonZeroU32 {
     if !(1..=1_048_575).contains(&dims) {
         error!(
             "\

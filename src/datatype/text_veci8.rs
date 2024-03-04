@@ -1,13 +1,12 @@
-use super::memory_vecf32::Vecf32Output;
-use crate::datatype::memory_vecf32::Vecf32Input;
+use crate::datatype::memory_veci8::{Veci8Input, Veci8Output};
 use crate::datatype::typmod::Typmod;
 use crate::prelude::*;
-use base::vector::Vecf32Borrowed;
+use base::vector::Veci8Borrowed;
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn _vectors_vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
+fn _vectors_veci8_in(input: &CStr, _oid: Oid, typmod: i32) -> Veci8Output {
     use crate::utils::parse::parse_vector;
     let reserve = Typmod::parse_from_i32(typmod)
         .unwrap()
@@ -21,19 +20,32 @@ fn _vectors_vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
         }
         Ok(vector) => {
             check_value_dims_65535(vector.len());
-            Vecf32Output::new(Vecf32Borrowed::new(&vector))
+            let (vector, alpha, offset) = i8_quantization(&vector);
+            let (sum, l2_norm) = i8_precompute(&vector, alpha, offset);
+            Veci8Output::new(
+                Veci8Borrowed::new_checked(
+                    vector.len() as u32,
+                    &vector,
+                    alpha,
+                    offset,
+                    sum,
+                    l2_norm,
+                )
+                .unwrap(),
+            )
         }
     }
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn _vectors_vecf32_out(vector: Vecf32Input<'_>) -> CString {
+fn _vectors_veci8_out(vector: Veci8Input<'_>) -> CString {
+    let vector = i8_dequantization(vector.data(), vector.alpha(), vector.offset());
     let mut buffer = String::new();
     buffer.push('[');
-    if let Some(&x) = vector.slice().first() {
+    if let Some(&x) = vector.first() {
         buffer.push_str(format!("{}", x).as_str());
     }
-    for &x in vector.slice().iter().skip(1) {
+    for &x in vector.iter().skip(1) {
         buffer.push_str(format!(", {}", x).as_str());
     }
     buffer.push(']');

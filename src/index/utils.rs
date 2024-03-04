@@ -4,6 +4,7 @@ use crate::datatype::memory_bvecf32::BVecf32Header;
 use crate::datatype::memory_svecf32::SVecf32Header;
 use crate::datatype::memory_vecf16::Vecf16Header;
 use crate::datatype::memory_vecf32::Vecf32Header;
+use crate::datatype::memory_veci8::Veci8Header;
 use crate::prelude::*;
 
 #[repr(C, align(8))]
@@ -35,6 +36,10 @@ pub unsafe fn from_datum(values: pgrx::pg_sys::Datum, is_null: bool) -> Option<O
         3 => {
             let v = &*q.cast::<BVecf32Header>();
             Some(OwnedVector::BVecf32(v.for_borrow().for_own()))
+        }
+        4 => {
+            let v = &*q.cast::<Veci8Header>();
+            Some(OwnedVector::Veci8(v.for_borrow().for_own()))
         }
         _ => unreachable!(),
     };

@@ -1,4 +1,5 @@
 #![allow(clippy::needless_range_loop)]
+#![feature(stdsimd)]
 
 mod algorithms;
 mod index;

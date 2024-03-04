@@ -1,0 +1,73 @@
+statement ok
+SET search_path TO pg_temp, vectors;
+
+query I
+SELECT (to_veci8(8, 1, 0, '{0,1,2,3,4,5,6,7}'))[3:6];
+----
+[3, 4, 5]
+
+query I
+SELECT (to_veci8(8, 1, 0, '{0,1,2,3,4,5,6,7}'))[:4];
+----
+[0, 1, 2, 3]
+
+query I
+SELECT (to_veci8(8, 1, 0, '{0,1,2,3,4,5,6,7}'))[5:];
+----
+[5, 6, 7]
+
+query I
+SELECT (to_veci8(8, 1, 0, '{0,1,2,3,4,5,6,7}'))[1:8];
+----
+[1, 2, 3, 4, 5, 6, 7]
+
+statement error type veci8 does only support one subscript
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[3:3][1:1];
+
+statement error type veci8 does only support slice fetch
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[3];
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[5:4];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[9:];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[:0];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[:-1];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[NULL:NULL];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[NULL:8];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[1:NULL];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[NULL:];
+----
+NULL
+
+query I
+SELECT ('[0, 1, 2, 3, 4, 5, 6, 7]'::veci8)[:NULL];
+----
+NULL

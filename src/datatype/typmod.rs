@@ -45,7 +45,7 @@ impl Typmod {
 }
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn _vectors_typmod_in(list: Array<&CStr>) -> i32 {
+fn _vectors_typmod_in_65535(list: Array<&CStr>) -> i32 {
     if list.is_empty() {
         -1
     } else if list.len() == 1 {
