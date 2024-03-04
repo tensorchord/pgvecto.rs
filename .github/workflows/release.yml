@@ -97,7 +97,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download ${{ github.event.inputs.tag }} --pattern "vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}-1_${{ matrix.platform }}.deb" --output pgvecto-rs-binary-release.deb
+          gh release download ${{ github.event.inputs.tag }} --pattern "vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb" --output pgvecto-rs-binary-release.deb
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
