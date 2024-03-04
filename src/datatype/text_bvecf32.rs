@@ -25,7 +25,7 @@ fn _vectors_bvecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> BVecf32Output {
             bad_literal(&e.to_string());
         }
         Ok(vector) => {
-            check_value_dims_u16(vector.len());
+            check_value_dims_65535(vector.len());
             let mut values = BVecf32Owned::new_zeroed(vector.len() as u16);
             for (i, &x) in vector.iter().enumerate() {
                 if x {

@@ -149,7 +149,7 @@ mod tests {
 
     fn vec_to_owned(vec: Vec<F32>) -> Veci8Owned {
         let (v, alpha, offset) = i8_quantization(&vec);
-        Veci8Owned::new(v.len() as u16, v, alpha, offset)
+        Veci8Owned::new(v.len() as u32, v, alpha, offset)
     }
 
     #[test]

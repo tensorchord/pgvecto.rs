@@ -11,13 +11,13 @@ pub struct I8QuantMmap {
     sums: MmapArray<F32>,
     l2_norms: MmapArray<F32>,
     payload: MmapArray<Payload>,
-    dims: u16,
+    dims: u32,
 }
 
 impl Storage for I8QuantMmap {
     type VectorOwned = Veci8Owned;
 
-    fn dims(&self) -> u16 {
+    fn dims(&self) -> u32 {
         self.dims
     }
 

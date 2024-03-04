@@ -19,12 +19,12 @@ fn _vectors_veci8_in(input: &CStr, _oid: Oid, typmod: i32) -> Veci8Output {
             bad_literal(&e.to_string());
         }
         Ok(vector) => {
-            check_value_dims(vector.len());
+            check_value_dims_65535(vector.len());
             let (vector, alpha, offset) = i8_quantization(&vector);
             let (sum, l2_norm) = i8_precompute(&vector, alpha, offset);
             Veci8Output::new(
                 Veci8Borrowed::new_checked(
-                    vector.len() as u16,
+                    vector.len() as u32,
                     &vector,
                     alpha,
                     offset,

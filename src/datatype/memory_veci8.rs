@@ -93,7 +93,7 @@ impl Veci8Header {
 
     pub fn for_borrow(&self) -> Veci8Borrowed<'_> {
         Veci8Borrowed::new(
-            self.len,
+            self.len as u32,
             self.data(),
             self.alpha,
             self.offset,

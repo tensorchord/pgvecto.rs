@@ -23,7 +23,7 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> SVecf32Output {
             bad_literal(&e.to_string());
         }
         Ok(vector) => {
-            check_value_dims_max(vector.len());
+            check_value_dims_1048575(vector.len());
             let mut indexes = Vec::<u32>::new();
             let mut values = Vec::<F32>::new();
             for (i, &x) in vector.iter().enumerate() {

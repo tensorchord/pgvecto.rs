@@ -11,7 +11,7 @@ fn _vectors_cast_array_to_vecf32(
     _typmod: i32,
     _explicit: bool,
 ) -> Vecf32Output {
-    check_value_dims_u16(array.len());
+    check_value_dims_65535(array.len());
     let mut slice = vec![F32::zero(); array.len()];
     for (i, x) in array.iter().enumerate() {
         slice[i] = F32(x.unwrap_or(f32::NAN));
@@ -139,6 +139,6 @@ fn _vectors_cast_vecf32_to_veci8(
     let (data, alpha, offset) = i8_quantization(vector.slice());
     let (sum, l2_norm) = i8_precompute(&data, alpha, offset);
     Veci8Output::new(
-        Veci8Borrowed::new_checked(data.len() as u16, &data, alpha, offset, sum, l2_norm).unwrap(),
+        Veci8Borrowed::new_checked(data.len() as u32, &data, alpha, offset, sum, l2_norm).unwrap(),
     )
 }

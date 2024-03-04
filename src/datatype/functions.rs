@@ -11,7 +11,7 @@ fn _vectors_to_svector(
     index: pgrx::Array<i32>,
     value: pgrx::Array<f32>,
 ) -> SVecf32Output {
-    let dims = check_value_dims_max(dims as usize);
+    let dims = check_value_dims_1048575(dims as usize);
     if index.len() != value.len() {
         bad_literal("Lengths of index and value are not matched.");
     }

@@ -12,7 +12,7 @@ fn _vectors_veci8_operator_add(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> Veci
     let (vector, alpha, offset) = i8_quantization(&data);
     let (sum, l2_norm) = i8_precompute(&vector, alpha, offset);
     Veci8Output::new(
-        Veci8Borrowed::new_checked(lhs.len() as u16, &vector, alpha, offset, sum, l2_norm).unwrap(),
+        Veci8Borrowed::new_checked(lhs.len() as u32, &vector, alpha, offset, sum, l2_norm).unwrap(),
     )
 }
 
@@ -25,7 +25,7 @@ fn _vectors_veci8_operator_minus(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> Ve
     let (vector, alpha, offset) = i8_quantization(&data);
     let (sum, l2_norm) = i8_precompute(&vector, alpha, offset);
     Veci8Output::new(
-        Veci8Borrowed::new_checked(lhs.len() as u16, &vector, alpha, offset, sum, l2_norm).unwrap(),
+        Veci8Borrowed::new_checked(lhs.len() as u32, &vector, alpha, offset, sum, l2_norm).unwrap(),
     )
 }
 

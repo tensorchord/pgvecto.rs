@@ -53,7 +53,7 @@ pub fn i8_precompute(data: &[I8], alpha: F32, offset: F32) -> (F32, F32) {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Veci8Owned {
-    dims: u16,
+    dims: u32,
     data: Vec<I8>,
     alpha: F32,
     offset: F32,
@@ -65,13 +65,13 @@ pub struct Veci8Owned {
 
 impl Veci8Owned {
     #[inline(always)]
-    pub fn new(dims: u16, data: Vec<I8>, alpha: F32, offset: F32) -> Self {
+    pub fn new(dims: u32, data: Vec<I8>, alpha: F32, offset: F32) -> Self {
         Self::new_checked(dims, data, alpha, offset).unwrap()
     }
 
     #[inline(always)]
-    pub fn new_checked(dims: u16, data: Vec<I8>, alpha: F32, offset: F32) -> Option<Self> {
-        if dims == 0 || dims as usize != data.len() {
+    pub fn new_checked(dims: u32, data: Vec<I8>, alpha: F32, offset: F32) -> Option<Self> {
+        if dims == 0 || dims > 65535 {
             return None;
         }
         let (sum, l2_norm) = i8_precompute(&data, alpha, offset);
@@ -84,7 +84,7 @@ impl Veci8Owned {
     /// * `dims` must be equal to `values.len()`.
     #[inline(always)]
     pub unsafe fn new_unchecked(
-        dims: u16,
+        dims: u32,
         data: Vec<I8>,
         alpha: F32,
         offset: F32,
@@ -129,7 +129,7 @@ impl Veci8Owned {
         self.l2_norm
     }
 
-    pub fn dims(&self) -> u16 {
+    pub fn dims(&self) -> u32 {
         self.dims
     }
 }
@@ -140,7 +140,7 @@ impl VectorOwned for Veci8Owned {
     type Borrowed<'a> = Veci8Borrowed<'a>;
 
     #[inline(always)]
-    fn dims(&self) -> u16 {
+    fn dims(&self) -> u32 {
         self.dims
     }
 
@@ -162,7 +162,7 @@ impl VectorOwned for Veci8Owned {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Veci8Borrowed<'a> {
-    dims: u16,
+    dims: u32,
     data: &'a [I8],
     alpha: F32,
     offset: F32,
@@ -175,7 +175,7 @@ pub struct Veci8Borrowed<'a> {
 impl<'a> Veci8Borrowed<'a> {
     #[inline(always)]
     pub fn new(
-        dims: u16,
+        dims: u32,
         data: &'a [I8],
         alpha: F32,
         offset: F32,
@@ -187,14 +187,14 @@ impl<'a> Veci8Borrowed<'a> {
 
     #[inline(always)]
     pub fn new_checked(
-        dims: u16,
+        dims: u32,
         data: &'a [I8],
         alpha: F32,
         offset: F32,
         sum: F32,
         l2_norm: F32,
     ) -> Option<Self> {
-        if dims == 0 || dims as usize != data.len() {
+        if dims == 0 || dims > 65535 {
             return None;
         }
         // TODO: should we check the precomputed result?
@@ -212,7 +212,7 @@ impl<'a> Veci8Borrowed<'a> {
     /// * precomputed result must be correct
     #[inline(always)]
     pub unsafe fn new_unchecked(
-        dims: u16,
+        dims: u32,
         data: &'a [I8],
         alpha: F32,
         offset: F32,
@@ -260,7 +260,7 @@ impl<'a> Veci8Borrowed<'a> {
         self.l2_norm
     }
 
-    pub fn dims(&self) -> u16 {
+    pub fn dims(&self) -> u32 {
         self.dims
     }
 
@@ -289,7 +289,7 @@ impl VectorBorrowed for Veci8Borrowed<'_> {
     type Owned = Veci8Owned;
 
     #[inline(always)]
-    fn dims(&self) -> u16 {
+    fn dims(&self) -> u32 {
         self.dims
     }
 

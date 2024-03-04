@@ -154,7 +154,7 @@ fn _vectors_veci8_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
                             base::vector::i8_precompute(slice, input.alpha(), input.offset());
                         let output = Veci8Output::new(
                             Veci8Borrowed::new_checked(
-                                slice.len() as u16,
+                                slice.len() as u32,
                                 slice,
                                 input.alpha(),
                                 input.offset(),
