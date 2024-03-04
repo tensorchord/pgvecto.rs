@@ -20,19 +20,6 @@ CREATE TYPE vector_index_stat AS (
     idx_options TEXT
 );
 
-CREATE VIEW pg_vector_index_info AS
-    SELECT
-        C.oid AS tablerelid,
-        I.oid AS indexrelid,
-        C.relname AS tablename,
-        I.relname AS indexname,
-        (vector_stat(I.oid)).*
-    FROM pg_class C JOIN
-         pg_index X ON C.oid = X.indrelid JOIN
-         pg_class I ON I.oid = X.indexrelid JOIN
-         pg_am A ON A.oid = I.relam
-    WHERE A.amname = 'vectors';
-
 -- List of shell types
 
 CREATE TYPE vecf16;
