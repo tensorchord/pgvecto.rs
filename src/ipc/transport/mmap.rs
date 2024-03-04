@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::OnceLock;
 use std::time::Duration;
 
-const BUFFER_SIZE: usize = 512 * 1024;
+const BUFFER_SIZE: usize = 1024 * 1024;
 const SPIN_LIMIT: usize = 8;
 const TIMEOUT: Duration = Duration::from_secs(15);
 
@@ -81,6 +81,9 @@ impl Socket {
         }
     }
     pub fn send(&mut self, packet: &[u8]) -> Result<(), ConnectionError> {
+        if packet.len() > BUFFER_SIZE - 8 {
+            return Err(ConnectionError::PacketTooLarge);
+        }
         unsafe {
             if self.is_server {
                 (*self.addr).server_send(packet);

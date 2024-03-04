@@ -120,17 +120,17 @@ pub fn sl2<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
 ))]
 pub fn sl2_2<'a>(lhs: SVecf32Borrowed<'a>, rhs: &[F32]) -> F32 {
     let mut d2 = F32::zero();
-    let mut lhs_pos: u16 = 0;
-    let mut rhs_pos: u16 = 0;
+    let mut lhs_pos = 0;
+    let mut rhs_pos = 0;
     while lhs_pos < lhs.len() {
         let index_eq = lhs.indexes()[lhs_pos as usize] == rhs_pos;
         let d =
             F32(index_eq as u32 as f32) * lhs.values()[lhs_pos as usize] - rhs[rhs_pos as usize];
         d2 += d * d;
-        lhs_pos += index_eq as u16;
+        lhs_pos += index_eq as u32;
         rhs_pos += 1;
     }
-    for i in rhs_pos..rhs.len() as u16 {
+    for i in rhs_pos..rhs.len() as u32 {
         d2 += rhs[i as usize] * rhs[i as usize];
     }
     d2

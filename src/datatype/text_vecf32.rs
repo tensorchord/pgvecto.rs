@@ -20,7 +20,7 @@ fn _vectors_vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
             bad_literal(&e.to_string());
         }
         Ok(vector) => {
-            check_value_dims(vector.len());
+            check_value_dims_u16(vector.len());
             Vecf32Output::new(Vecf32Borrowed::new(&vector))
         }
     }

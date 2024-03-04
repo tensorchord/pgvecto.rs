@@ -50,11 +50,11 @@ unsafe impl<S: G> Sync for Raw<S> {}
 pub struct RawRam<S: G> {
     sealed: Vec<Arc<SealedSegment<S>>>,
     growing: Vec<Arc<GrowingSegment<S>>>,
-    dims: u16,
+    dims: u32,
 }
 
 impl<S: G> RawRam<S> {
-    pub fn dims(&self) -> u16 {
+    pub fn dims(&self) -> u32 {
         self.dims
     }
 

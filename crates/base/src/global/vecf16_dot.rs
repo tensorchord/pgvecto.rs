@@ -95,8 +95,8 @@ impl GlobalProductQuantization for Vecf16Dot {
         "aarch64+neon"
     ))]
     fn product_quantization_distance<'a>(
-        dims: u16,
-        ratio: u16,
+        dims: u32,
+        ratio: u32,
         centroids: &[F16],
         lhs: Vecf16Borrowed<'a>,
         rhs: &[u8],
@@ -122,8 +122,8 @@ impl GlobalProductQuantization for Vecf16Dot {
         "aarch64+neon"
     ))]
     fn product_quantization_distance2(
-        dims: u16,
-        ratio: u16,
+        dims: u32,
+        ratio: u32,
         centroids: &[F16],
         lhs: &[u8],
         rhs: &[u8],
@@ -149,8 +149,8 @@ impl GlobalProductQuantization for Vecf16Dot {
         "aarch64+neon"
     ))]
     fn product_quantization_distance_with_delta<'a>(
-        dims: u16,
-        ratio: u16,
+        dims: u32,
+        ratio: u32,
         centroids: &[F16],
         lhs: Vecf16Borrowed<'a>,
         rhs: &[u8],

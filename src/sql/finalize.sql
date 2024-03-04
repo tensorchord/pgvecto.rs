@@ -34,7 +34,7 @@ CREATE TYPE svector (
     RECEIVE = _vectors_svecf32_recv,
     SEND = _vectors_svecf32_send,
     SUBSCRIPT = _vectors_svecf32_subscript,
-    TYPMOD_IN = _vectors_typmod_in,
+    TYPMOD_IN = _vectors_typmod_in_1048575,
     TYPMOD_OUT = _vectors_typmod_out,
     STORAGE = EXTERNAL,
     INTERNALLENGTH = VARIABLE,

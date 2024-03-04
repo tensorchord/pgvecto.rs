@@ -43,7 +43,7 @@ macro_rules! resolve_closed {
 impl Socket {
     pub fn send(&mut self, packet: &[u8]) -> Result<(), ConnectionError> {
         use byteorder::NativeEndian as N;
-        let len = u32::try_from(packet.len()).expect("Packet is too large.");
+        let len = u32::try_from(packet.len()).map_err(|_| ConnectionError::PacketTooLarge)?;
         resolve_closed!(self.stream.write_u32::<N>(len));
         resolve_closed!(self.stream.write_all(packet));
         Ok(())
