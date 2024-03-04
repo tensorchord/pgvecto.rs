@@ -60,8 +60,8 @@ impl GlobalProductQuantization for SVecf32L2 {
     type ProductQuantizationL2 = SVecf32L2;
 
     fn product_quantization_distance(
-        _dims: u16,
-        _ratio: u16,
+        _dims: u32,
+        _ratio: u32,
         _centroids: &[Scalar<Self>],
         _lhs: SVecf32Borrowed<'_>,
         _rhs: &[u8],
@@ -70,8 +70,8 @@ impl GlobalProductQuantization for SVecf32L2 {
     }
 
     fn product_quantization_distance2(
-        _dims: u16,
-        _ratio: u16,
+        _dims: u32,
+        _ratio: u32,
         _centroids: &[Scalar<Self>],
         _lhs: &[u8],
         _rhs: &[u8],
@@ -80,8 +80,8 @@ impl GlobalProductQuantization for SVecf32L2 {
     }
 
     fn product_quantization_distance_with_delta(
-        _dims: u16,
-        _ratio: u16,
+        _dims: u32,
+        _ratio: u32,
         _centroids: &[Scalar<Self>],
         _lhs: SVecf32Borrowed<'_>,
         _rhs: &[u8],

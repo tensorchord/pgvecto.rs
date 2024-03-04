@@ -5,17 +5,17 @@ use crate::utils::mmap_array::MmapArray;
 use std::path::Path;
 
 pub struct SparseMmap {
-    indexes: MmapArray<u16>,
+    indexes: MmapArray<u32>,
     values: MmapArray<F32>,
     offsets: MmapArray<usize>,
     payload: MmapArray<Payload>,
-    dims: u16,
+    dims: u32,
 }
 
 impl Storage for SparseMmap {
     type VectorOwned = SVecf32Owned;
 
-    fn dims(&self) -> u16 {
+    fn dims(&self) -> u32 {
         self.dims
     }
 

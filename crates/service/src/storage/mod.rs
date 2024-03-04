@@ -15,7 +15,7 @@ use std::path::Path;
 pub trait Storage {
     type VectorOwned: VectorOwned;
 
-    fn dims(&self) -> u16;
+    fn dims(&self) -> u32;
     fn len(&self) -> u32;
     fn vector(&self, i: u32) -> <Self::VectorOwned as VectorOwned>::Borrowed<'_>;
     fn payload(&self, i: u32) -> Payload;

@@ -75,22 +75,22 @@ pub trait GlobalProductQuantization: Global {
         + GlobalElkanKMeans
         + GlobalProductQuantization;
     fn product_quantization_distance(
-        dims: u16,
-        ratio: u16,
+        dims: u32,
+        ratio: u32,
         centroids: &[Scalar<Self>],
         lhs: Borrowed<'_, Self>,
         rhs: &[u8],
     ) -> F32;
     fn product_quantization_distance2(
-        dims: u16,
-        ratio: u16,
+        dims: u32,
+        ratio: u32,
         centroids: &[Scalar<Self>],
         lhs: &[u8],
         rhs: &[u8],
     ) -> F32;
     fn product_quantization_distance_with_delta(
-        dims: u16,
-        ratio: u16,
+        dims: u32,
+        ratio: u32,
         centroids: &[Scalar<Self>],
         lhs: Borrowed<'_, Self>,
         rhs: &[u8],

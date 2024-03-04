@@ -11,7 +11,7 @@ fn _vectors_cast_array_to_vecf32(
     _typmod: i32,
     _explicit: bool,
 ) -> Vecf32Output {
-    check_value_dims(array.len());
+    check_value_dims_u16(array.len());
     let mut slice = vec![F32::zero(); array.len()];
     for (i, x) in array.iter().enumerate() {
         slice[i] = F32(x.unwrap_or(f32::NAN));
@@ -64,12 +64,12 @@ fn _vectors_cast_vecf32_to_svecf32(
         .enumerate()
         .filter(|(_, x)| !x.is_zero())
         .for_each(|(i, &x)| {
-            indexes.push(i as u16);
+            indexes.push(i as u32);
             values.push(x);
         });
 
     SVecf32Output::new(SVecf32Borrowed::new(
-        vector.dims() as u16,
+        vector.dims() as u32,
         &indexes,
         &values,
     ))

@@ -5,19 +5,19 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SVecf32Owned {
-    dims: u16,
-    indexes: Vec<u16>,
+    dims: u32,
+    indexes: Vec<u32>,
     values: Vec<F32>,
 }
 
 impl SVecf32Owned {
     #[inline(always)]
-    pub fn new(dims: u16, indexes: Vec<u16>, values: Vec<F32>) -> Self {
+    pub fn new(dims: u32, indexes: Vec<u32>, values: Vec<F32>) -> Self {
         Self::new_checked(dims, indexes, values).unwrap()
     }
     #[inline(always)]
-    pub fn new_checked(dims: u16, indexes: Vec<u16>, values: Vec<F32>) -> Option<Self> {
-        if dims == 0 {
+    pub fn new_checked(dims: u32, indexes: Vec<u32>, values: Vec<F32>) -> Option<Self> {
+        if !(1..=1_048_575).contains(&dims) {
             return None;
         }
         if indexes.len() != values.len() {
@@ -41,12 +41,12 @@ impl SVecf32Owned {
     }
     /// # Safety
     ///
-    /// * `dims` must be in `1..=65535`.
+    /// * `dims` must be in `1..=1_048_575`.
     /// * `indexes.len()` must be equal to `values.len()`.
     /// * `indexes` must be a strictly increasing sequence and the last in the sequence must be less than `dims`.
     /// * A floating number in `values` must not be positive zero or negative zero.
     #[inline(always)]
-    pub unsafe fn new_unchecked(dims: u16, indexes: Vec<u16>, values: Vec<F32>) -> Self {
+    pub unsafe fn new_unchecked(dims: u32, indexes: Vec<u32>, values: Vec<F32>) -> Self {
         Self {
             dims,
             indexes,
@@ -54,7 +54,7 @@ impl SVecf32Owned {
         }
     }
     #[inline(always)]
-    pub fn indexes(&self) -> &[u16] {
+    pub fn indexes(&self) -> &[u32] {
         &self.indexes
     }
     #[inline(always)]
@@ -68,7 +68,7 @@ impl VectorOwned for SVecf32Owned {
     type Borrowed<'a> = SVecf32Borrowed<'a>;
 
     #[inline(always)]
-    fn dims(&self) -> u16 {
+    fn dims(&self) -> u32 {
         self.dims
     }
 
@@ -91,19 +91,19 @@ impl VectorOwned for SVecf32Owned {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SVecf32Borrowed<'a> {
-    dims: u16,
-    indexes: &'a [u16],
+    dims: u32,
+    indexes: &'a [u32],
     values: &'a [F32],
 }
 
 impl<'a> SVecf32Borrowed<'a> {
     #[inline(always)]
-    pub fn new(dims: u16, indexes: &'a [u16], values: &'a [F32]) -> Self {
+    pub fn new(dims: u32, indexes: &'a [u32], values: &'a [F32]) -> Self {
         Self::new_checked(dims, indexes, values).unwrap()
     }
     #[inline(always)]
-    pub fn new_checked(dims: u16, indexes: &'a [u16], values: &'a [F32]) -> Option<Self> {
-        if dims == 0 {
+    pub fn new_checked(dims: u32, indexes: &'a [u32], values: &'a [F32]) -> Option<Self> {
+        if !(1..=1_048_575).contains(&dims) {
             return None;
         }
         if indexes.len() != values.len() {
@@ -127,12 +127,12 @@ impl<'a> SVecf32Borrowed<'a> {
     }
     /// # Safety
     ///
-    /// * `dims` must be in `1..=65535`.
+    /// * `dims` must be in `1..=1_048_575`.
     /// * `indexes.len()` must be equal to `values.len()`.
     /// * `indexes` must be a strictly increasing sequence and the last in the sequence must be less than `dims`.
     /// * A floating number in `values` must not be positive zero or negative zero.
     #[inline(always)]
-    pub unsafe fn new_unchecked(dims: u16, indexes: &'a [u16], values: &'a [F32]) -> Self {
+    pub unsafe fn new_unchecked(dims: u32, indexes: &'a [u32], values: &'a [F32]) -> Self {
         Self {
             dims,
             indexes,
@@ -140,7 +140,7 @@ impl<'a> SVecf32Borrowed<'a> {
         }
     }
     #[inline(always)]
-    pub fn indexes(&self) -> &[u16] {
+    pub fn indexes(&self) -> &[u32] {
         self.indexes
     }
     #[inline(always)]
@@ -154,7 +154,7 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
     type Owned = SVecf32Owned;
 
     #[inline(always)]
-    fn dims(&self) -> u16 {
+    fn dims(&self) -> u32 {
         self.dims
     }
 
@@ -177,7 +177,7 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
 
 impl<'a> SVecf32Borrowed<'a> {
     #[inline(always)]
-    pub fn len(&self) -> u16 {
+    pub fn len(&self) -> u32 {
         self.indexes.len().try_into().unwrap()
     }
 }

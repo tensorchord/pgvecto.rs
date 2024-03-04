@@ -13,8 +13,8 @@ pub struct BinaryMmap {
 impl Storage for BinaryMmap {
     type VectorOwned = BVecf32Owned;
 
-    fn dims(&self) -> u16 {
-        self.dims
+    fn dims(&self) -> u32 {
+        self.dims as u32
     }
 
     fn len(&self) -> u32 {
@@ -41,7 +41,7 @@ impl Storage for BinaryMmap {
         Self {
             vectors,
             payload,
-            dims: options.vector.dims,
+            dims: options.vector.dims.try_into().unwrap(),
         }
     }
 
@@ -54,7 +54,7 @@ impl Storage for BinaryMmap {
         Self {
             vectors,
             payload,
-            dims: ram.dims(),
+            dims: ram.dims().try_into().unwrap(),
         }
     }
 }

@@ -29,7 +29,7 @@ pub trait VectorOwned: Clone + Serialize + for<'a> Deserialize<'a> + 'static {
 
     fn for_borrow(&self) -> Self::Borrowed<'_>;
 
-    fn dims(&self) -> u16;
+    fn dims(&self) -> u32;
 
     fn to_vec(&self) -> Vec<Self::Scalar>;
 }
@@ -40,7 +40,7 @@ pub trait VectorBorrowed: Copy {
 
     fn for_own(&self) -> Self::Owned;
 
-    fn dims(&self) -> u16;
+    fn dims(&self) -> u32;
 
     fn to_vec(&self) -> Vec<Self::Scalar>;
 }

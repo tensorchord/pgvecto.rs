@@ -44,8 +44,8 @@ impl VectorOwned for BVecf32Owned {
     type Borrowed<'a> = BVecf32Borrowed<'a>;
 
     #[inline(always)]
-    fn dims(&self) -> u16 {
-        self.dims
+    fn dims(&self) -> u32 {
+        self.dims as u32
     }
 
     fn for_borrow(&self) -> BVecf32Borrowed<'_> {
@@ -123,8 +123,8 @@ impl<'a> VectorBorrowed for BVecf32Borrowed<'a> {
     type Owned = BVecf32Owned;
 
     #[inline(always)]
-    fn dims(&self) -> u16 {
-        self.dims
+    fn dims(&self) -> u32 {
+        self.dims as u32
     }
 
     fn for_own(&self) -> BVecf32Owned {

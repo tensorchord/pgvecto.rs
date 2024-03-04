@@ -39,8 +39,8 @@ impl VectorOwned for Vecf16Owned {
     type Scalar = F16;
     type Borrowed<'a> = Vecf16Borrowed<'a>;
 
-    fn dims(&self) -> u16 {
-        self.0.len() as u16
+    fn dims(&self) -> u32 {
+        self.0.len() as u32
     }
 
     fn for_borrow(&self) -> Vecf16Borrowed<'_> {
@@ -85,8 +85,8 @@ impl<'a> VectorBorrowed for Vecf16Borrowed<'a> {
     type Scalar = F16;
     type Owned = Vecf16Owned;
 
-    fn dims(&self) -> u16 {
-        self.0.len() as u16
+    fn dims(&self) -> u32 {
+        self.0.len() as u32
     }
 
     fn for_own(&self) -> Vecf16Owned {
