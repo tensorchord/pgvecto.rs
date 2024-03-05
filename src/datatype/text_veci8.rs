@@ -1,7 +1,6 @@
 use crate::datatype::memory_veci8::{Veci8Input, Veci8Output};
 use crate::datatype::typmod::Typmod;
 use crate::prelude::*;
-use base::vector::Veci8Borrowed;
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 

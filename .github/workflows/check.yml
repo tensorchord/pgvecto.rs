@@ -67,6 +67,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
           key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}
+      - name: Set up PostgreSQL
+        run: ./scripts/ci_setup.sh
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -75,9 +77,10 @@ jobs:
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
       - name: Set up Sqllogictest
         run: cargo binstall sqllogictest-bin -y --force
-      - name: Set up Environment
-        shell: bash
-        run: ./scripts/ci_setup.sh
+      - name: Set up Pgrx
+        run: |
+          cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1) --debug
+          cargo pgrx init --pg$VERSION=$(which pg_config)
       - name: Release build
         run: |
           cargo pgrx install --no-default-features --features "pg$VERSION" --release
@@ -125,9 +128,14 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
           key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}
-      - name: Set up Environment
-        shell: bash
+      - name: Set up PostgreSQL
         run: ./scripts/ci_setup.sh
+      - name: Set up Binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - name: Set up Pgrx
+        run: |
+          cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1) --debug
+          cargo pgrx init --pg$VERSION=$(which pg_config)
       - name: Format check
         run: cargo fmt --check
       - name: Semantic check

@@ -78,10 +78,10 @@ impl VectorOptions {
 #[validate(schema(function = "Self::validate_0"))]
 pub struct SegmentsOptions {
     #[serde(default = "SegmentsOptions::default_max_growing_segment_size")]
-    #[validate(range(min = 1, max = 4_000_000_000))]
+    #[validate(range(min = 1, max = 4_000_000_000u32))]
     pub max_growing_segment_size: u32,
     #[serde(default = "SegmentsOptions::default_max_sealed_segment_size")]
-    #[validate(range(min = 1, max = 4_000_000_000))]
+    #[validate(range(min = 1, max = 4_000_000_000u32))]
     pub max_sealed_segment_size: u32,
 }
 
@@ -119,7 +119,7 @@ pub struct OptimizingOptions {
     #[validate(range(min = 1, max = 60))]
     pub sealing_secs: u64,
     #[serde(default = "OptimizingOptions::default_sealing_size")]
-    #[validate(range(min = 1, max = 4_000_000_000))]
+    #[validate(range(min = 1, max = 4_000_000_000u32))]
     pub sealing_size: u32,
     #[serde(default = "OptimizingOptions::default_delete_threshold")]
     #[validate(range(min = 0.01, max = 1.00))]

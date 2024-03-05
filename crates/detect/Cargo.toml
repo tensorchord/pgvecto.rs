@@ -5,7 +5,7 @@ edition.workspace = true
 
 [dependencies]
 rustix.workspace = true
-std_detect = { git = "https://github.com/tensorchord/stdarch.git", branch = "avx512fp16" }
+std_detect = { git = "https://github.com/tensorchord/stdarch.git", branch = "2024-03-04" }
 
 [lints]
 workspace = true

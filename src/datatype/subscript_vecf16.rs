@@ -1,12 +1,13 @@
 use crate::datatype::memory_vecf16::{Vecf16Input, Vecf16Output};
 use base::vector::Vecf16Borrowed;
 use pgrx::datum::FromDatum;
+use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
 
 #[pgrx::pg_extern(sql = "\
 CREATE FUNCTION _vectors_vecf16_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
-fn _vectors_vecf16_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
+fn _vectors_vecf16_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Internal {
     #[pgrx::pg_guard]
     unsafe extern "C" fn transform(
         subscript: *mut pgrx::pg_sys::SubscriptingRef,
@@ -181,5 +182,5 @@ fn _vectors_vecf16_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
         fetch_leakproof: false,
         store_leakproof: false,
     };
-    std::ptr::addr_of!(SBSROUTINES).into()
+    Internal::from(Some(Datum::from(std::ptr::addr_of!(SBSROUTINES))))
 }

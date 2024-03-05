@@ -1,8 +1,5 @@
 use super::SegmentTracker;
-use crate::index::IndexOptions;
 use crate::index::IndexTracker;
-use crate::index::SearchOptions;
-use crate::index::SegmentStat;
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
 use crate::utils::file_wal::FileWal;

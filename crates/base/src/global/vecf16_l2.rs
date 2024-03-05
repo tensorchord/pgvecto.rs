@@ -19,6 +19,8 @@ impl Global for Vecf16L2 {
 }
 
 impl GlobalElkanKMeans for Vecf16L2 {
+    type VectorNormalized = Self::VectorOwned;
+
     fn elkan_k_means_normalize(_: &mut [F16]) {}
 
     fn elkan_k_means_normalize2(vector: Vecf16Borrowed<'_>) -> Vecf16Owned {

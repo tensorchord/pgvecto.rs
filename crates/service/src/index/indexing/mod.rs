@@ -7,8 +7,6 @@ use self::hnsw::HnswIndexing;
 use self::ivf::IvfIndexing;
 use super::segments::growing::GrowingSegment;
 use super::segments::sealed::SealedSegment;
-use super::IndexOptions;
-use crate::index::SearchOptions;
 use crate::prelude::*;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;

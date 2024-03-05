@@ -42,7 +42,7 @@ use crate::scalar::*;
 use crate::vector::*;
 
 pub trait GlobalElkanKMeans: Global {
-    type VectorNormalized: VectorOwned = Self::VectorOwned;
+    type VectorNormalized: VectorOwned;
 
     fn elkan_k_means_normalize(vector: &mut [Scalar<Self>]);
     fn elkan_k_means_normalize2(vector: Borrowed<'_, Self>) -> Self::VectorNormalized;
