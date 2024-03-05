@@ -122,9 +122,8 @@ pub fn check_connection<T>(result: Result<T, ConnectionError>) -> T {
     match result {
         Err(_) => error!(
             "\
-pgvecto.rs: Indexes can only be built on built-in distance functions.
-ADVICE: If you want pgvecto.rs to support more distance functions, \
-visit `https://github.com/tensorchord/pgvecto.rs/issues` and contribute your ideas."
+pgvecto.rs: IPC connection is closed unexpectedly.
+ADVICE: Visit `https://github.com/tensorchord/pgvecto.rs/issues` for help."
         ),
         Ok(x) => x,
     }

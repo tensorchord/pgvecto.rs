@@ -19,6 +19,8 @@ impl Global for Vecf32Dot {
 }
 
 impl GlobalElkanKMeans for Vecf32Dot {
+    type VectorNormalized = Self::VectorOwned;
+
     fn elkan_k_means_normalize(vector: &mut [F32]) {
         super::vecf32::l2_normalize(vector)
     }

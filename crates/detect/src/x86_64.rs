@@ -8,7 +8,7 @@ pub fn test_avx512fp16() -> bool {
 }
 
 pub fn test_avx512vpopcntdq() -> bool {
-    std_detect::is_x86_feature_detected!("avx512vpopcntdq") && test_v4()
+    std::is_x86_feature_detected!("avx512vpopcntdq") && test_v4()
 }
 
 pub fn ctor_avx512fp16() {
@@ -30,11 +30,11 @@ pub fn detect_avx512vpopcntdq() -> bool {
 static ATOMIC_V4: AtomicBool = AtomicBool::new(false);
 
 pub fn test_v4() -> bool {
-    std_detect::is_x86_feature_detected!("avx512bw")
-        && std_detect::is_x86_feature_detected!("avx512cd")
-        && std_detect::is_x86_feature_detected!("avx512dq")
-        && std_detect::is_x86_feature_detected!("avx512f")
-        && std_detect::is_x86_feature_detected!("avx512vl")
+    std::is_x86_feature_detected!("avx512bw")
+        && std::is_x86_feature_detected!("avx512cd")
+        && std::is_x86_feature_detected!("avx512dq")
+        && std::is_x86_feature_detected!("avx512f")
+        && std::is_x86_feature_detected!("avx512vl")
         && test_v3()
 }
 
@@ -49,15 +49,15 @@ pub fn detect_v4() -> bool {
 static ATOMIC_V3: AtomicBool = AtomicBool::new(false);
 
 pub fn test_v3() -> bool {
-    std_detect::is_x86_feature_detected!("avx")
-        && std_detect::is_x86_feature_detected!("avx2")
-        && std_detect::is_x86_feature_detected!("bmi1")
-        && std_detect::is_x86_feature_detected!("bmi2")
-        && std_detect::is_x86_feature_detected!("f16c")
-        && std_detect::is_x86_feature_detected!("fma")
-        && std_detect::is_x86_feature_detected!("lzcnt")
-        && std_detect::is_x86_feature_detected!("movbe")
-        && std_detect::is_x86_feature_detected!("xsave")
+    std::is_x86_feature_detected!("avx")
+        && std::is_x86_feature_detected!("avx2")
+        && std::is_x86_feature_detected!("bmi1")
+        && std::is_x86_feature_detected!("bmi2")
+        && std::is_x86_feature_detected!("f16c")
+        && std::is_x86_feature_detected!("fma")
+        && std::is_x86_feature_detected!("lzcnt")
+        && std::is_x86_feature_detected!("movbe")
+        && std::is_x86_feature_detected!("xsave")
         && test_v2()
 }
 
@@ -72,15 +72,15 @@ pub fn detect_v3() -> bool {
 static ATOMIC_V2: AtomicBool = AtomicBool::new(false);
 
 pub fn test_v2() -> bool {
-    std_detect::is_x86_feature_detected!("cmpxchg16b")
-        && std_detect::is_x86_feature_detected!("fxsr")
-        && std_detect::is_x86_feature_detected!("popcnt")
-        && std_detect::is_x86_feature_detected!("sse")
-        && std_detect::is_x86_feature_detected!("sse2")
-        && std_detect::is_x86_feature_detected!("sse3")
-        && std_detect::is_x86_feature_detected!("sse4.1")
-        && std_detect::is_x86_feature_detected!("sse4.2")
-        && std_detect::is_x86_feature_detected!("ssse3")
+    std::is_x86_feature_detected!("cmpxchg16b")
+        && std::is_x86_feature_detected!("fxsr")
+        && std::is_x86_feature_detected!("popcnt")
+        && std::is_x86_feature_detected!("sse")
+        && std::is_x86_feature_detected!("sse2")
+        && std::is_x86_feature_detected!("sse3")
+        && std::is_x86_feature_detected!("sse4.1")
+        && std::is_x86_feature_detected!("sse4.2")
+        && std::is_x86_feature_detected!("ssse3")
 }
 
 pub fn ctor_v2() {
@@ -95,7 +95,7 @@ static ATOMIC_AVX512VNNI: AtomicBool = AtomicBool::new(false);
 
 /// check if the CPU supports avx512vnni
 pub fn test_avx512vnni() -> bool {
-    std_detect::is_x86_feature_detected!("avx512vnni") && test_v4()
+    std::is_x86_feature_detected!("avx512vnni") && test_v4()
 }
 
 pub fn ctor_vnni() {

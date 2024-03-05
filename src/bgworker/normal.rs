@@ -1,5 +1,6 @@
 use crate::ipc::ConnectionError;
-use crate::ipc::ServerRpcHandler;
+use crate::ipc::{listen_mmap, listen_unix};
+use crate::ipc::{ServerRpcHandle, ServerRpcHandler};
 use service::Worker;
 use std::convert::Infallible;
 use std::sync::Arc;
@@ -9,7 +10,7 @@ pub fn normal(worker: Arc<Worker>) {
         scope.spawn({
             let worker = worker.clone();
             move || {
-                for rpc_handler in crate::ipc::listen_unix() {
+                for rpc_handler in listen_unix() {
                     let worker = worker.clone();
                     std::thread::spawn({
                         move || {
@@ -24,7 +25,7 @@ pub fn normal(worker: Arc<Worker>) {
         scope.spawn({
             let worker = worker.clone();
             move || {
-                for rpc_handler in crate::ipc::listen_mmap() {
+                for rpc_handler in listen_mmap() {
                     let worker = worker.clone();
                     std::thread::spawn({
                         move || {
@@ -59,7 +60,6 @@ pub fn normal(worker: Arc<Worker>) {
 }
 
 fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<Infallible, ConnectionError> {
-    use crate::ipc::ServerRpcHandle;
     use base::worker::*;
     let mut handler = handler;
     loop {

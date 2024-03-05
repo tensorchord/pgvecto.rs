@@ -19,6 +19,8 @@ impl Global for Vecf32Cos {
 }
 
 impl GlobalElkanKMeans for Vecf32Cos {
+    type VectorNormalized = Self::VectorOwned;
+
     fn elkan_k_means_normalize(vector: &mut [F32]) {
         super::vecf32::l2_normalize(vector)
     }

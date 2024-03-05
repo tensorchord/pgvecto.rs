@@ -1,7 +1,5 @@
 use super::AbstractIndexing;
 use crate::index::segments::growing::GrowingSegment;
-use crate::index::IndexOptions;
-use crate::index::SearchOptions;
 use crate::prelude::*;
 use crate::{algorithms::flat::Flat, index::segments::sealed::SealedSegment};
 use std::cmp::Reverse;

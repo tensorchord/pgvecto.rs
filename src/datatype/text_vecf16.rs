@@ -2,7 +2,6 @@ use super::memory_vecf16::Vecf16Output;
 use crate::datatype::memory_vecf16::Vecf16Input;
 use crate::datatype::typmod::Typmod;
 use crate::prelude::*;
-use base::vector::Vecf16Borrowed;
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 

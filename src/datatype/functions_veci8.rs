@@ -1,6 +1,5 @@
 use crate::datatype::memory_veci8::Veci8Output;
 use crate::prelude::*;
-use base::vector::Veci8Borrowed;
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_to_veci8(len: i32, alpha: f32, offset: f32, values: pgrx::Array<i32>) -> Veci8Output {

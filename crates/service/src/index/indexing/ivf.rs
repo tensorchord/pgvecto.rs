@@ -2,8 +2,6 @@ use super::AbstractIndexing;
 use crate::algorithms::ivf::Ivf;
 use crate::index::segments::growing::GrowingSegment;
 use crate::index::segments::sealed::SealedSegment;
-use crate::index::IndexOptions;
-use crate::index::SearchOptions;
 use crate::prelude::*;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;

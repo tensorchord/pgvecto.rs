@@ -19,6 +19,8 @@ impl Global for Veci8Dot {
 }
 
 impl GlobalElkanKMeans for Veci8Dot {
+    type VectorNormalized = Self::VectorOwned;
+
     fn elkan_k_means_normalize(vector: &mut [Scalar<Self>]) {
         super::vecf32::l2_normalize(vector)
     }

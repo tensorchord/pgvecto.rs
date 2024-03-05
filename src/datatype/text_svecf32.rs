@@ -2,8 +2,6 @@ use super::memory_svecf32::SVecf32Output;
 use crate::datatype::memory_svecf32::SVecf32Input;
 use crate::datatype::typmod::Typmod;
 use crate::prelude::*;
-use base::scalar::F32;
-use base::vector::{SVecf32Borrowed, VectorBorrowed};
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 
