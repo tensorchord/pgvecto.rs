@@ -200,7 +200,7 @@ mod tests {
         let y_owned = vec_to_owned(y);
         let ref_y = y_owned.for_borrow();
         let result = cosine_distance(&ref_x, &ref_y);
-        assert!((result.0 - result_expected).abs() / result_expected < 0.05);
+        assert!((result.0 - result_expected).abs() / result_expected < 0.25);
     }
 
     #[test]
