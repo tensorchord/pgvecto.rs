@@ -1,6 +1,7 @@
 use crate::datatype::memory_veci8::{Veci8Input, Veci8Output};
 use crate::datatype::typmod::Typmod;
-use crate::prelude::*;
+use crate::error::*;
+use base::vector::*;
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 
@@ -19,8 +20,8 @@ fn _vectors_veci8_in(input: &CStr, _oid: Oid, typmod: i32) -> Veci8Output {
         }
         Ok(vector) => {
             check_value_dims_65535(vector.len());
-            let (vector, alpha, offset) = i8_quantization(&vector);
-            let (sum, l2_norm) = i8_precompute(&vector, alpha, offset);
+            let (vector, alpha, offset) = veci8::i8_quantization(&vector);
+            let (sum, l2_norm) = veci8::i8_precompute(&vector, alpha, offset);
             Veci8Output::new(
                 Veci8Borrowed::new_checked(
                     vector.len() as u32,
@@ -38,7 +39,7 @@ fn _vectors_veci8_in(input: &CStr, _oid: Oid, typmod: i32) -> Veci8Output {
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_veci8_out(vector: Veci8Input<'_>) -> CString {
-    let vector = i8_dequantization(vector.data(), vector.alpha(), vector.offset());
+    let vector = veci8::i8_dequantization(vector.data(), vector.alpha(), vector.offset());
     let mut buffer = String::new();
     buffer.push('[');
     if let Some(&x) = vector.first() {

@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 rand.workspace = true
 rustix.workspace = true
+
 detect = { path = "../detect" }
 
 [lints]

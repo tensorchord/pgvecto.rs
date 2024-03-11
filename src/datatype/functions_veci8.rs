@@ -1,5 +1,7 @@
 use crate::datatype::memory_veci8::Veci8Output;
-use crate::prelude::*;
+use crate::error::*;
+use base::scalar::*;
+use base::vector::*;
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_to_veci8(len: i32, alpha: f32, offset: f32, values: pgrx::Array<i32>) -> Veci8Output {
@@ -14,7 +16,7 @@ fn _vectors_to_veci8(len: i32, alpha: f32, offset: f32, values: pgrx::Array<i32>
         .iter()
         .map(|x| I8(x.unwrap() as i8))
         .collect::<Vec<_>>();
-    let (sum, l2_norm) = i8_precompute(&values, F32(alpha), F32(offset));
+    let (sum, l2_norm) = veci8::i8_precompute(&values, F32(alpha), F32(offset));
     Veci8Output::new(
         Veci8Borrowed::new_checked(
             values.len() as u32,

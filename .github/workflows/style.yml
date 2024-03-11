@@ -1,0 +1,28 @@
+name: Style check
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  merge_group:
+  workflow_dispatch:
+
+jobs:
+  run:
+    name: check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Actions Repository
+      uses: actions/checkout@v4
+
+    - name: Typos check
+      uses: crate-ci/typos@master
+
+    - name: Rust format check
+      run: cargo fmt --check
+
+    - name: Toml format check
+      run: |
+        curl -fsSL https://github.com/tamasfe/taplo/releases/download/0.8.1/taplo-full-linux-x86_64.gz | gzip -d - | install -m 755 /dev/stdin /usr/local/bin/taplo
+        taplo fmt --check

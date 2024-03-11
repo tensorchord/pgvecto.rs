@@ -1,4 +1,3 @@
-use crate::error::*;
 use crate::index::*;
 use crate::search::*;
 use crate::vector::*;

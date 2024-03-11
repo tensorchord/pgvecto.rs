@@ -1,0 +1,17 @@
+[package]
+name = "hnsw"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+bytemuck.workspace = true
+parking_lot.workspace = true
+
+base = { path = "../base" }
+common = { path = "../common" }
+quantization = { path = "../quantization" }
+rayon = { path = "../rayon" }
+storage = { path = "../storage" }
+
+[lints]
+workspace = true

@@ -1,0 +1,19 @@
+[package]
+name = "ivf"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+num-traits.workspace = true
+rand.workspace = true
+serde_json.workspace = true
+
+base = { path = "../base" }
+common = { path = "../common" }
+elkan_k_means = { path = "../elkan_k_means" }
+quantization = { path = "../quantization" }
+rayon = { path = "../rayon" }
+storage = { path = "../storage" }
+
+[lints]
+workspace = true

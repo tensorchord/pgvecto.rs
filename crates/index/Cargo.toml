@@ -1,0 +1,35 @@
+[package]
+name = "index"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+arc-swap.workspace = true
+bincode.workspace = true
+byteorder.workspace = true
+crc32fast = "1.4.0"
+crossbeam = "0.8.4"
+dashmap = "5.5.3"
+log.workspace = true
+parking_lot.workspace = true
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+validator.workspace = true
+
+base = { path = "../base" }
+common = { path = "../common" }
+elkan_k_means = { path = "../elkan_k_means" }
+quantization = { path = "../quantization" }
+rayon = { path = "../rayon" }
+storage = { path = "../storage" }
+
+# algorithms
+flat = { path = "../flat" }
+hnsw = { path = "../hnsw" }
+ivf = { path = "../ivf" }
+
+[lints]
+workspace = true

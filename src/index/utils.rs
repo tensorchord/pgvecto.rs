@@ -5,7 +5,9 @@ use crate::datatype::memory_svecf32::SVecf32Header;
 use crate::datatype::memory_vecf16::Vecf16Header;
 use crate::datatype::memory_vecf32::Vecf32Header;
 use crate::datatype::memory_veci8::Veci8Header;
-use crate::prelude::*;
+use crate::utils::cells::PgCell;
+use base::search::*;
+use base::vector::*;
 
 #[repr(C, align(8))]
 struct Header {
@@ -47,4 +49,15 @@ pub unsafe fn from_datum(values: pgrx::pg_sys::Datum, is_null: bool) -> Option<O
         pgrx::pg_sys::pfree(q.cast());
     }
     vector
+}
+
+pub fn get_handle(oid: pgrx::pg_sys::Oid) -> Handle {
+    static SYSTEM_IDENTIFIER: PgCell<u64> = unsafe { PgCell::new(0) };
+    if SYSTEM_IDENTIFIER.get() == 0 {
+        SYSTEM_IDENTIFIER.set(unsafe { pgrx::pg_sys::GetSystemIdentifier() });
+    }
+    let a = 0u128;
+    let b = SYSTEM_IDENTIFIER.get() as u128;
+    let c = oid.as_u32() as u128;
+    Handle::new(a << 96 | b << 32 | c)
 }

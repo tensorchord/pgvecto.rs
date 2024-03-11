@@ -5,9 +5,9 @@ use super::am_scan;
 use super::am_setup;
 use super::am_update;
 use crate::gucs::planning::ENABLE_INDEX;
-use crate::index::utils::from_datum;
-use crate::prelude::*;
+use crate::index::utils::{from_datum, get_handle};
 use crate::utils::cells::PgCell;
+use crate::utils::sys::IntoSys;
 use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
 
@@ -162,11 +162,8 @@ pub unsafe extern "C" fn aminsert(
     _index_unchanged: bool,
     _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
-    #[cfg(any(feature = "pg14", feature = "pg15"))]
-    let oid = (*index_relation).rd_node.relNode;
-    #[cfg(feature = "pg16")]
-    let oid = (*index_relation).rd_locator.relNumber;
-    let id = Handle::from_sys(oid);
+    let oid = (*index_relation).rd_id;
+    let id = get_handle(oid);
     let vector = from_datum(*values.add(0), *is_null.add(0));
     if let Some(v) = vector {
         am_update::update_insert(id, v, *heap_tid);
@@ -221,11 +218,8 @@ pub unsafe extern "C" fn ambulkdelete(
     callback: pgrx::pg_sys::IndexBulkDeleteCallback,
     callback_state: *mut std::os::raw::c_void,
 ) -> *mut pgrx::pg_sys::IndexBulkDeleteResult {
-    #[cfg(any(feature = "pg14", feature = "pg15"))]
-    let oid = (*(*info).index).rd_node.relNode;
-    #[cfg(feature = "pg16")]
-    let oid = (*(*info).index).rd_locator.relNumber;
-    let id = Handle::from_sys(oid);
+    let oid = (*(*info).index).rd_id;
+    let id = get_handle(oid);
     if let Some(callback) = callback {
         am_update::update_delete(id, |pointer| {
             callback(

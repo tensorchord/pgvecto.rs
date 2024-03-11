@@ -1,6 +1,7 @@
 use crate::datatype::memory_vecf32::Vecf32Output;
 use crate::gucs::embedding::openai_options;
-use crate::prelude::*;
+use base::scalar::*;
+use base::vector::*;
 use embedding::openai_embedding;
 use pgrx::error;
 

@@ -1,7 +1,10 @@
 use super::memory_svecf32::SVecf32Output;
 use crate::datatype::memory_svecf32::SVecf32Input;
 use crate::datatype::typmod::Typmod;
-use crate::prelude::*;
+use crate::error::*;
+use base::scalar::*;
+use base::vector::*;
+use num_traits::Zero;
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 

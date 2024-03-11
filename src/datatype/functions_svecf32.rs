@@ -1,5 +1,7 @@
 use super::memory_svecf32::SVecf32Output;
-use crate::prelude::*;
+use crate::error::*;
+use base::scalar::*;
+use base::vector::*;
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_to_svector(

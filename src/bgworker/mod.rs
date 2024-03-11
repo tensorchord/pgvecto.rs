@@ -5,9 +5,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 static STARTED: AtomicBool = AtomicBool::new(false);
 
 pub unsafe fn init() {
-    use service::Worker;
+    use service::Version;
     let path = std::path::Path::new("pg_vectors");
-    if !path.try_exists().unwrap() || Worker::check(path.to_owned()) {
+    if !path.try_exists().unwrap() || Version::read(path.join("VERSION")).is_ok() {
         use pgrx::bgworkers::BackgroundWorkerBuilder;
         use pgrx::bgworkers::BgWorkerStartTime;
         use std::time::Duration;
@@ -65,6 +65,7 @@ extern "C" fn _vectors_main(_arg: pgrx::pg_sys::Datum) {
     std::alloc::set_alloc_error_hook(|layout| {
         std::panic::panic_any(AllocErrorPanicPayload { layout });
     });
+    use service::Version;
     use service::Worker;
     use std::path::Path;
     let path = Path::new("pg_vectors");
@@ -73,6 +74,7 @@ extern "C" fn _vectors_main(_arg: pgrx::pg_sys::Datum) {
         self::normal::normal(worker);
     } else {
         let worker = Worker::create(path.to_owned());
+        Version::write(path.join("VERSION"));
         self::normal::normal(worker);
     }
 }
