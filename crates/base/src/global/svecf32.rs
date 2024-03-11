@@ -3,6 +3,7 @@ use crate::scalar::*;
 use crate::vector::*;
 use num_traits::{Float, Zero};
 use std::arch::x86_64::*;
+use std::cmp::min;
 
 #[inline(always)]
 #[multiversion::multiversion(targets(
@@ -43,6 +44,7 @@ pub fn cosine<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
 pub fn dot<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     #[inline(always)]
     #[multiversion::multiversion(targets(
+        "x86_64/x86-64-v4",
         "x86_64/x86-64-v3",
         "x86_64/x86-64-v2",
         "aarch64+neon"
@@ -73,30 +75,50 @@ pub fn dot<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
         xy
     }
 
-    #[inline(always)]
+    #[inline]
     #[cfg(target_arch = "x86_64")]
-    fn dot_avx<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    unsafe fn dot_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+        #[inline]
+        #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+        pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
+            let mut dst: __m512i;
+            unsafe {
+                std::arch::asm!(
+                    "vmovdqu32 {dst}{{{k}}} {{z}}, [{p}]",
+                    p = in(reg) mem_addr,
+                    k = in(kreg) k,
+                    dst = out(zmm_reg) dst,
+                    options(pure, readonly, nostack)
+                );
+            }
+            dst
+        }
         unsafe {
             const W: usize = 16;
             let mut lhs_pos = 0;
             let mut rhs_pos = 0;
             let size1 = lhs.len() as usize;
             let size2 = rhs.len() as usize;
-            let lhs_size = (size1 + W + 1) / W * W;
-            let rhs_size = (size2 + W + 1) / W * W;
+            let lhs_size = size1 / W * W;
+            let rhs_size = size2 / W * W;
+            let lhs_idx = lhs.indexes().as_ptr() as *const i32;
+            let rhs_idx = rhs.indexes().as_ptr() as *const i32;
+            let lhs_val = lhs.values().as_ptr() as *const f32;
+            let rhs_val = rhs.values().as_ptr() as *const f32;
             let mut xy = _mm512_setzero_ps();
             while lhs_pos < lhs_size && rhs_pos < rhs_size {
-                let i_l = _mm512_loadu_epi32(lhs.indexes()[lhs_pos..].as_ptr().cast());
-                let i_r = _mm512_loadu_epi32(rhs.indexes()[rhs_pos..].as_ptr().cast());
+                let i_l = _mm512_loadu_epi32(lhs_idx.add(lhs_pos));
+                let i_r = _mm512_loadu_epi32(rhs_idx.add(rhs_pos));
                 let (m_l, m_r) = emulate_mm512_2intersect_epi32(i_l, i_r);
-                let v_l = _mm512_loadu_ps(lhs.values()[lhs_pos..].as_ptr().cast());
-                let v_r = _mm512_loadu_ps(rhs.values()[rhs_pos..].as_ptr().cast());
+                let v_l = _mm512_loadu_ps(lhs_val.add(lhs_pos));
+                let v_r = _mm512_loadu_ps(rhs_val.add(rhs_pos));
                 let v_l = _mm512_maskz_compress_ps(m_l, v_l);
                 let v_r = _mm512_maskz_compress_ps(m_r, v_r);
                 xy = _mm512_fmadd_ps(v_l, v_r, xy);
-                let l_max = lhs.indexes()[lhs_pos + W - 1];
-                let r_max = rhs.indexes()[rhs_pos + W - 1];
-                match l_max.cmp(&r_max) {
+                let l_max = lhs.indexes().get_unchecked(lhs_pos + W - 1);
+                let r_max = rhs.indexes().get_unchecked(rhs_pos + W - 1);
+                match l_max.cmp(r_max) {
                     std::cmp::Ordering::Less => {
                         lhs_pos += W;
                     }
@@ -110,24 +132,21 @@ pub fn dot<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
                 }
             }
             while lhs_pos < size1 && rhs_pos < size2 {
-                use std::cmp::min;
                 let len_l = min(W, size1 - lhs_pos);
                 let len_r = min(W, size2 - rhs_pos);
-                let mask_l = _bzhi_u32(0xFF, len_l as u32) as u16;
-                let mask_r = _bzhi_u32(0xFF, len_r as u32) as u16;
-                let i_l =
-                    _mm512_maskz_loadu_epi32(mask_l, lhs.indexes()[lhs_pos..].as_ptr().cast());
-                let i_r =
-                    _mm512_maskz_loadu_epi32(mask_r, rhs.indexes()[rhs_pos..].as_ptr().cast());
+                let mask_l = _bzhi_u32(0xFFFF, len_l as u32) as u16;
+                let mask_r = _bzhi_u32(0xFFFF, len_r as u32) as u16;
+                let i_l = _mm512_maskz_loadu_epi32(mask_l, lhs_idx.add(lhs_pos));
+                let i_r = _mm512_maskz_loadu_epi32(mask_r, rhs_idx.add(rhs_pos));
                 let (m_l, m_r) = emulate_mm512_2intersect_epi32(i_l, i_r);
-                let v_l = _mm512_maskz_loadu_ps(mask_l, lhs.values()[lhs_pos..].as_ptr().cast());
-                let v_r = _mm512_maskz_loadu_ps(mask_r, rhs.values()[rhs_pos..].as_ptr().cast());
+                let v_l = _mm512_maskz_loadu_ps(mask_l, lhs_val.add(lhs_pos));
+                let v_r = _mm512_maskz_loadu_ps(mask_r, rhs_val.add(rhs_pos));
                 let v_l = _mm512_maskz_compress_ps(m_l, v_l);
                 let v_r = _mm512_maskz_compress_ps(m_r, v_r);
                 xy = _mm512_fmadd_ps(v_l, v_r, xy);
-                let l_max = lhs.indexes()[lhs_pos + len_l - 1];
-                let r_max = rhs.indexes()[rhs_pos + len_r - 1];
-                match l_max.cmp(&r_max) {
+                let l_max = lhs.indexes().get_unchecked(lhs_pos + len_l - 1);
+                let r_max = rhs.indexes().get_unchecked(rhs_pos + len_r - 1);
+                match l_max.cmp(r_max) {
                     std::cmp::Ordering::Less => {
                         lhs_pos += W;
                     }
@@ -146,22 +165,20 @@ pub fn dot<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
 
     #[cfg(target_arch = "x86_64")]
     if detect::x86_64::detect_avx512vp2intersect() {
-        unsafe {
-            return F32(c::v_sparse_dot_avx512vp2intersect(
+        return unsafe {
+            F32(c::v_sparse_dot_avx512vp2intersect(
                 lhs.indexes().as_ptr(),
                 rhs.indexes().as_ptr(),
-                lhs.values().as_ptr(),
-                rhs.values().as_ptr(),
-                lhs.len(),
-                rhs.len(),
-            ));
-        }
+                lhs.values().as_ptr().cast(),
+                rhs.values().as_ptr().cast(),
+                lhs.indexes().len(),
+                rhs.indexes().len(),
+            ))
+        };
     }
     #[cfg(target_arch = "x86_64")]
     if detect::x86_64::detect_v4() {
-        unsafe {
-            return dot_avx(lhs, rhs);
-        }
+        return unsafe { dot_v4(lhs, rhs) };
     }
     dot(lhs, rhs)
 }
@@ -275,24 +292,25 @@ pub fn l2_normalize(vector: &mut SVecf32Owned) {
 // VP2INTERSECT emulation.
 // Díez-Cañas, G. (2021). Faster-Than-Native Alternatives for x86 VP2INTERSECT
 // Instructions. arXiv preprint arXiv:2112.06342.
-#[inline(always)]
+#[inline]
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
 unsafe fn emulate_mm512_2intersect_epi32(a: __m512i, b: __m512i) -> (u16, u16) {
     unsafe {
         let a1 = _mm512_alignr_epi32(a, a, 4);
+        let a2 = _mm512_alignr_epi32(a, a, 8);
+        let a3 = _mm512_alignr_epi32(a, a, 12);
         let b1 = _mm512_shuffle_epi32(b, _MM_PERM_ADCB);
-        let m00 = _mm512_cmpeq_epi32_mask(a, b);
         let b2 = _mm512_shuffle_epi32(b, _MM_PERM_BADC);
         let b3 = _mm512_shuffle_epi32(b, _MM_PERM_CBAD);
+        let m00 = _mm512_cmpeq_epi32_mask(a, b);
         let m01 = _mm512_cmpeq_epi32_mask(a, b1);
         let m02 = _mm512_cmpeq_epi32_mask(a, b2);
         let m03 = _mm512_cmpeq_epi32_mask(a, b3);
-        let a2 = _mm512_alignr_epi32(a, a, 8);
         let m10 = _mm512_cmpeq_epi32_mask(a1, b);
         let m11 = _mm512_cmpeq_epi32_mask(a1, b1);
         let m12 = _mm512_cmpeq_epi32_mask(a1, b2);
         let m13 = _mm512_cmpeq_epi32_mask(a1, b3);
-        let a3 = _mm512_alignr_epi32(a, a, 12);
         let m20 = _mm512_cmpeq_epi32_mask(a2, b);
         let m21 = _mm512_cmpeq_epi32_mask(a2, b1);
         let m22 = _mm512_cmpeq_epi32_mask(a2, b2);
