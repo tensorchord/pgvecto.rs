@@ -1,4 +1,3 @@
-use super::SVecf32Owned;
 use crate::scalar::*;
 use crate::vector::*;
 use num_traits::{Float, Zero};

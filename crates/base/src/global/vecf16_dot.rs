@@ -19,6 +19,8 @@ impl Global for Vecf16Dot {
 }
 
 impl GlobalElkanKMeans for Vecf16Dot {
+    type VectorNormalized = Self::VectorOwned;
+
     fn elkan_k_means_normalize(vector: &mut [F16]) {
         super::vecf16::l2_normalize(vector)
     }

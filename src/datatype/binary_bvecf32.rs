@@ -1,15 +1,14 @@
+use super::binary::Bytea;
 use super::memory_bvecf32::BVecf32Input;
 use super::memory_bvecf32::BVecf32Output;
 use base::vector::BVecf32Borrowed;
 use base::vector::BVEC_WIDTH;
+use pgrx::datum::Internal;
 use pgrx::datum::IntoDatum;
-use pgrx::pg_sys::Datum;
 use pgrx::pg_sys::Oid;
 
-#[pgrx::pg_extern(sql = "\
-CREATE FUNCTION _vectors_bvecf32_send(bvector) RETURNS bytea
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
-fn _vectors_bvecf32_send(vector: BVecf32Input<'_>) -> Datum {
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_bvecf32_send(vector: BVecf32Input<'_>) -> Bytea {
     use pgrx::pg_sys::StringInfoData;
     unsafe {
         let mut buf = StringInfoData::default();
@@ -18,14 +17,12 @@ fn _vectors_bvecf32_send(vector: BVecf32Input<'_>) -> Datum {
         pgrx::pg_sys::pq_begintypsend(&mut buf);
         pgrx::pg_sys::pq_sendbytes(&mut buf, (&len) as *const u16 as _, 2);
         pgrx::pg_sys::pq_sendbytes(&mut buf, vector.data().as_ptr() as _, bytes as _);
-        Datum::from(pgrx::pg_sys::pq_endtypsend(&mut buf))
+        Bytea::new(pgrx::pg_sys::pq_endtypsend(&mut buf))
     }
 }
 
-#[pgrx::pg_extern(sql = "
-CREATE FUNCTION _vectors_bvecf32_recv(internal, oid, integer) RETURNS bvector
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
-fn _vectors_bvecf32_recv(internal: pgrx::Internal, _oid: Oid, _typmod: i32) -> BVecf32Output {
+#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+fn _vectors_bvecf32_recv(internal: Internal, _oid: Oid, _typmod: i32) -> BVecf32Output {
     use pgrx::pg_sys::StringInfo;
     unsafe {
         let buf: StringInfo = internal.into_datum().unwrap().cast_mut_ptr();

@@ -80,6 +80,12 @@ pub unsafe fn convert_opfamily_to_distance(
         result = (DistanceKind::Cos, VectorKind::BVecf32);
     } else if operator == regoperatorin("vectors.<~>(vectors.bvector,vectors.bvector)") {
         result = (DistanceKind::Jaccard, VectorKind::BVecf32);
+    } else if operator == regoperatorin("vectors.<->(vectors.veci8,vectors.veci8)") {
+        result = (DistanceKind::L2, VectorKind::Veci8);
+    } else if operator == regoperatorin("vectors.<#>(vectors.veci8,vectors.veci8)") {
+        result = (DistanceKind::Dot, VectorKind::Veci8);
+    } else if operator == regoperatorin("vectors.<=>(vectors.veci8,vectors.veci8)") {
+        result = (DistanceKind::Cos, VectorKind::Veci8);
     } else {
         bad_opclass();
     };

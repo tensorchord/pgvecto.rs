@@ -1,9 +1,11 @@
 mod binary;
 mod dense;
+mod i8_quant;
 mod sparse;
 
 pub use binary::BinaryMmap;
 pub use dense::DenseMmap;
+pub use i8_quant::I8QuantMmap;
 pub use sparse::SparseMmap;
 
 use crate::algorithms::raw::RawRam;
@@ -13,6 +15,7 @@ use std::path::Path;
 pub trait Storage {
     type VectorOwned: VectorOwned;
 
+    #[allow(unused)]
     fn dims(&self) -> u32;
     fn len(&self) -> u32;
     fn vector(&self, i: u32) -> <Self::VectorOwned as VectorOwned>::Borrowed<'_>;
@@ -75,4 +78,16 @@ impl GlobalStorage for BVecf32L2 {
 
 impl GlobalStorage for BVecf32Jaccard {
     type Storage = BinaryMmap;
+}
+
+impl GlobalStorage for Veci8Cos {
+    type Storage = I8QuantMmap;
+}
+
+impl GlobalStorage for Veci8Dot {
+    type Storage = I8QuantMmap;
+}
+
+impl GlobalStorage for Veci8L2 {
+    type Storage = I8QuantMmap;
 }

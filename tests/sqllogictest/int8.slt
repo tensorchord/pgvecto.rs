@@ -1,0 +1,50 @@
+statement ok
+SET search_path TO pg_temp, vectors;
+
+statement ok
+CREATE TABLE t (val veci8(3));
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[]::vector::veci8 FROM generate_series(1, 1000);
+
+statement ok
+CREATE INDEX ON t USING vectors (val veci8_l2_ops)
+WITH (options = "[indexing.hnsw]");
+
+statement ok
+CREATE INDEX ON t USING vectors (val veci8_dot_ops)
+WITH (options = "[indexing.hnsw]");
+
+statement ok
+CREATE INDEX ON t USING vectors (val veci8_cos_ops)
+WITH (options = "[indexing.ivf]");
+
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0.5,0.5,0.5]'::veci8 limit 10) t2;
+----
+10
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <=> '[0.5,0.5,0.5]'::veci8 limit 10) t2;
+----
+10
+
+query I
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0.5,0.5,0.5]'::veci8 limit 10) t2;
+----
+10
+
+statement ok
+DROP TABLE t;
+
+query I
+SELECT to_veci8(5, 1, 0, '{0,1,2,0,0}');
+----
+[0, 1, 2, 0, 0]
+
+statement error Lengths of values and len are not matched.
+SELECT to_veci8(5, 1, 0, '{0,1,2,0,0,0}');
+
+statement error Index or value contains nulls.
+SELECT to_veci8(5, 1, 0, '{0,1,2,NULL,0}');

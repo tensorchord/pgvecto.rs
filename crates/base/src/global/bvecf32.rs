@@ -30,11 +30,28 @@ pub fn cosine<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
         F32(rxy / (rxx * ryy).sqrt())
     }
 
-    #[inline(always)]
+    #[inline]
     #[cfg(target_arch = "x86_64")]
-    unsafe fn cosine_avx(lhs: &[usize], rhs: &[usize]) -> F32 {
+    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+    unsafe fn cosine_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
+        use std::arch::x86_64::*;
+        #[inline]
+        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
+            let mut dst: __m512i;
+            unsafe {
+                std::arch::asm!(
+                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
+                    p = in(reg) mem_addr,
+                    k = in(kreg) k,
+                    dst = out(zmm_reg) dst,
+                    options(pure, readonly, nostack)
+                );
+            }
+            dst
+        }
+        assert_eq!(lhs.len(), rhs.len());
         unsafe {
-            use std::arch::x86_64::*;
             const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
             let mut xy = _mm512_setzero_si512();
             let mut xx = _mm512_setzero_si512();
@@ -70,7 +87,7 @@ pub fn cosine<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     #[cfg(target_arch = "x86_64")]
     if detect::x86_64::detect_avx512vpopcntdq() {
         unsafe {
-            return cosine_avx(lhs, rhs);
+            return cosine_avx512vpopcntdq(lhs, rhs);
         }
     }
     cosine(lhs, rhs)
@@ -97,11 +114,28 @@ pub fn dot<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
         F32(xy as f32)
     }
 
-    #[inline(always)]
+    #[inline]
     #[cfg(target_arch = "x86_64")]
-    unsafe fn dot_avx(lhs: &[usize], rhs: &[usize]) -> F32 {
+    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+    unsafe fn dot_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
+        use std::arch::x86_64::*;
+        #[inline]
+        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
+            let mut dst: __m512i;
+            unsafe {
+                std::arch::asm!(
+                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
+                    p = in(reg) mem_addr,
+                    k = in(kreg) k,
+                    dst = out(zmm_reg) dst,
+                    options(pure, readonly, nostack)
+                );
+            }
+            dst
+        }
+        assert_eq!(lhs.len(), rhs.len());
         unsafe {
-            use std::arch::x86_64::*;
             const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
             let mut xy = _mm512_setzero_si512();
             let mut a = lhs.as_ptr();
@@ -129,7 +163,7 @@ pub fn dot<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     #[cfg(target_arch = "x86_64")]
     if detect::x86_64::detect_avx512vpopcntdq() {
         unsafe {
-            return dot_avx(lhs, rhs);
+            return dot_avx512vpopcntdq(lhs, rhs);
         }
     }
     dot(lhs, rhs)
@@ -156,11 +190,28 @@ pub fn sl2<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
         F32(dd as f32)
     }
 
-    #[inline(always)]
+    #[inline]
     #[cfg(target_arch = "x86_64")]
-    unsafe fn sl2_avx(lhs: &[usize], rhs: &[usize]) -> F32 {
+    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+    unsafe fn sl2_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
+        use std::arch::x86_64::*;
+        #[inline]
+        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
+            let mut dst: __m512i;
+            unsafe {
+                std::arch::asm!(
+                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
+                    p = in(reg) mem_addr,
+                    k = in(kreg) k,
+                    dst = out(zmm_reg) dst,
+                    options(pure, readonly, nostack)
+                );
+            }
+            dst
+        }
+        assert_eq!(lhs.len(), rhs.len());
         unsafe {
-            use std::arch::x86_64::*;
             const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
             let mut dd = _mm512_setzero_si512();
             let mut a = lhs.as_ptr();
@@ -188,7 +239,7 @@ pub fn sl2<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     #[cfg(target_arch = "x86_64")]
     if detect::x86_64::detect_avx512vpopcntdq() {
         unsafe {
-            return sl2_avx(lhs, rhs);
+            return sl2_avx512vpopcntdq(lhs, rhs);
         }
     }
     sl2(lhs, rhs)
@@ -217,11 +268,28 @@ pub fn jaccard<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
         F32(inter as f32 / union as f32)
     }
 
-    #[inline(always)]
+    #[inline]
     #[cfg(target_arch = "x86_64")]
-    unsafe fn jaccard_avx(lhs: &[usize], rhs: &[usize]) -> F32 {
+    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+    unsafe fn jaccard_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
+        use std::arch::x86_64::*;
+        #[inline]
+        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
+            let mut dst: __m512i;
+            unsafe {
+                std::arch::asm!(
+                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
+                    p = in(reg) mem_addr,
+                    k = in(kreg) k,
+                    dst = out(zmm_reg) dst,
+                    options(pure, readonly, nostack)
+                );
+            }
+            dst
+        }
+        assert_eq!(lhs.len(), rhs.len());
         unsafe {
-            use std::arch::x86_64::*;
             const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
             let mut inter = _mm512_setzero_si512();
             let mut union = _mm512_setzero_si512();
@@ -253,7 +321,7 @@ pub fn jaccard<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     #[cfg(target_arch = "x86_64")]
     if detect::x86_64::detect_avx512vpopcntdq() {
         unsafe {
-            return jaccard_avx(lhs, rhs);
+            return jaccard_avx512vpopcntdq(lhs, rhs);
         }
     }
     jaccard(lhs, rhs)
@@ -278,11 +346,27 @@ pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
         F32(l as f32).sqrt()
     }
 
-    #[inline(always)]
+    #[inline]
     #[cfg(target_arch = "x86_64")]
-    unsafe fn length_avx(lhs: &[usize]) -> F32 {
+    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+    unsafe fn length_avx512vpopcntdq(lhs: &[usize]) -> F32 {
+        use std::arch::x86_64::*;
+        #[inline]
+        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
+            let mut dst: __m512i;
+            unsafe {
+                std::arch::asm!(
+                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
+                    p = in(reg) mem_addr,
+                    k = in(kreg) k,
+                    dst = out(zmm_reg) dst,
+                    options(pure, readonly, nostack)
+                );
+            }
+            dst
+        }
         unsafe {
-            use std::arch::x86_64::*;
             const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
             let mut cnt = _mm512_setzero_si512();
             let mut a = lhs.as_ptr();
@@ -294,7 +378,7 @@ pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
                 cnt = _mm512_add_epi64(cnt, _mm512_popcnt_epi64(x));
             }
             if n > 0 {
-                let mask = _bzhi_u32(0xFFFF, n as u32).try_into().unwrap();
+                let mask = _bzhi_u32(0xFFFF, n as u32) as u8;
                 let x = _mm512_maskz_loadu_epi64(mask, a.cast());
                 cnt = _mm512_add_epi64(cnt, _mm512_popcnt_epi64(x));
             }
@@ -306,7 +390,7 @@ pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
     #[cfg(target_arch = "x86_64")]
     if detect::x86_64::detect_avx512vpopcntdq() {
         unsafe {
-            return length_avx(vector);
+            return length_avx512vpopcntdq(vector);
         }
     }
     length(vector)

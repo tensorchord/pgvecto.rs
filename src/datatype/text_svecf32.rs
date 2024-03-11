@@ -2,8 +2,6 @@ use super::memory_svecf32::SVecf32Output;
 use crate::datatype::memory_svecf32::SVecf32Input;
 use crate::datatype::typmod::Typmod;
 use crate::prelude::*;
-use base::scalar::F32;
-use base::vector::{SVecf32Borrowed, VectorBorrowed};
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 
@@ -23,7 +21,7 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> SVecf32Output {
             bad_literal(&e.to_string());
         }
         Ok(vector) => {
-            check_value_dims_max(vector.len());
+            check_value_dims_1048575(vector.len());
             let mut indexes = Vec::<u32>::new();
             let mut values = Vec::<F32>::new();
             for (i, &x) in vector.iter().enumerate() {

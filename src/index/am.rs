@@ -8,6 +8,7 @@ use crate::gucs::planning::ENABLE_INDEX;
 use crate::index::utils::from_datum;
 use crate::prelude::*;
 use crate::utils::cells::PgCell;
+use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
 
 static RELOPT_KIND: PgCell<pgrx::pg_sys::relopt_kind> = unsafe { PgCell::new(0) };
@@ -28,13 +29,12 @@ pub unsafe fn init() {
 #[pgrx::pg_extern(sql = "\
 CREATE FUNCTION _vectors_amhandler(internal) RETURNS index_am_handler
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
-fn _vectors_amhandler(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> pgrx::Internal {
+fn _vectors_amhandler(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Internal {
     type T = pgrx::pg_sys::IndexAmRoutine;
     unsafe {
-        use pgrx::FromDatum;
         let index_am_routine = pgrx::pg_sys::palloc0(std::mem::size_of::<T>()) as *mut T;
         index_am_routine.write(AM_HANDLER);
-        pgrx::Internal::from_datum(Datum::from(index_am_routine), false).unwrap()
+        Internal::from(Some(Datum::from(index_am_routine)))
     }
 }
 

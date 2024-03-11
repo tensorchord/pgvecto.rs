@@ -1,7 +1,7 @@
 use super::growing::GrowingSegment;
 use super::SegmentTracker;
 use crate::index::indexing::DynamicIndexing;
-use crate::index::{IndexOptions, IndexTracker, SearchOptions, SegmentStat};
+use crate::index::IndexTracker;
 use crate::prelude::*;
 use crate::utils::dir_ops::{dir_size, sync_dir};
 use std::cmp::Reverse;

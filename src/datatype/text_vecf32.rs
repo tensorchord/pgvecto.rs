@@ -2,7 +2,6 @@ use super::memory_vecf32::Vecf32Output;
 use crate::datatype::memory_vecf32::Vecf32Input;
 use crate::datatype::typmod::Typmod;
 use crate::prelude::*;
-use base::vector::Vecf32Borrowed;
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 
@@ -20,7 +19,7 @@ fn _vectors_vecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf32Output {
             bad_literal(&e.to_string());
         }
         Ok(vector) => {
-            check_value_dims_u16(vector.len());
+            check_value_dims_65535(vector.len());
             Vecf32Output::new(Vecf32Borrowed::new(&vector))
         }
     }

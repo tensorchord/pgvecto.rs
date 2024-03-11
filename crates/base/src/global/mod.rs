@@ -15,6 +15,10 @@ mod vecf32;
 mod vecf32_cos;
 mod vecf32_dot;
 mod vecf32_l2;
+mod veci8;
+mod veci8_cos;
+mod veci8_dot;
+mod veci8_l2;
 
 pub use bvecf32_cos::BVecf32Cos;
 pub use bvecf32_dot::BVecf32Dot;
@@ -29,13 +33,16 @@ pub use vecf16_l2::Vecf16L2;
 pub use vecf32_cos::Vecf32Cos;
 pub use vecf32_dot::Vecf32Dot;
 pub use vecf32_l2::Vecf32L2;
+pub use veci8_cos::Veci8Cos;
+pub use veci8_dot::Veci8Dot;
+pub use veci8_l2::Veci8L2;
 
 use crate::distance::*;
 use crate::scalar::*;
 use crate::vector::*;
 
 pub trait GlobalElkanKMeans: Global {
-    type VectorNormalized: VectorOwned = Self::VectorOwned;
+    type VectorNormalized: VectorOwned;
 
     fn elkan_k_means_normalize(vector: &mut [Scalar<Self>]);
     fn elkan_k_means_normalize2(vector: Borrowed<'_, Self>) -> Self::VectorNormalized;

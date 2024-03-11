@@ -36,6 +36,7 @@ impl FileWal {
             .create(true)
             .write(true)
             .read(true)
+            .truncate(false)
             .open(path)
             .expect("Failed to open wal.");
         Self {

@@ -40,17 +40,17 @@ service = { path = "crates/service" }
 embedding = { path = "crates/embedding" }
 interprocess_atomic_wait = { path = "crates/interprocess-atomic-wait" }
 memfd = { path = "crates/memfd" }
-pgrx = { version = "0.11.3", default-features = false, features = [] }
+pgrx = { version = "0.12.0-alpha.1", default-features = false, features = [] }
 env_logger = "0.11.2"
 toml = "0.8.10"
 
 [dev-dependencies]
-pgrx-tests = "0.11.3"
+pgrx-tests = "0.12.0-alpha.1"
 httpmock = "0.7"
 
 [patch.crates-io]
-pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.11.3-patch" }
-pgrx-tests = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.11.3-patch" }
+pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.0-alpha.1-patch" }
+pgrx-tests = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.0-alpha.1-patch" }
 
 [lints]
 rust.unsafe_op_in_unsafe_fn = "deny"
@@ -70,7 +70,7 @@ arrayvec = "~0.7"
 bincode = "~1.3"
 bytemuck = { version = "~1.14", features = ["extern_crate_alloc"] }
 byteorder = "~1.5"
-half = { version = "~2.3", features = [
+half = { version = "~2.4", features = [
     "bytemuck",
     "num-traits",
     "serde",
@@ -88,7 +88,7 @@ serde = "~1.0"
 serde_json = "~1.0"
 thiserror = "~1.0"
 uuid = { version = "1.7.0", features = ["v4", "serde"] }
-validator = { version = "~0.16", features = ["derive"] }
+validator = { version = "~0.17", features = ["derive"] }
 
 [workspace.lints]
 rust.unsafe_op_in_unsafe_fn = "forbid"

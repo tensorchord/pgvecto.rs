@@ -1,5 +1,4 @@
 use crate::algorithms::quantization::Quan;
-use crate::algorithms::quantization::QuantizationOptions;
 use crate::algorithms::raw::Raw;
 use crate::prelude::*;
 use crate::utils::dir_ops::sync_dir;
