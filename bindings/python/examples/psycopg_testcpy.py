@@ -4,6 +4,8 @@ import time
 import numpy as np
 import psycopg
 import pyarrow as pa
+import pandas as pd
+import pyarrow.parquet as pq
 from psycopg.adapt import Loader, Dumper
 from psycopg.pq import Format
 from psycopg.types import TypeInfo
@@ -74,7 +76,7 @@ def register_vector(context: psycopg.Connection):
 
 def test_copy(conn: psycopg.Connection):
     # rows = 100000
-    rows = 100
+    rows = 1000
     # rows = 1
     dims = 1536
     conn.execute("DROP TABLE IF EXISTS testv;")
@@ -100,13 +102,37 @@ def test_copy(conn: psycopg.Connection):
         cur = conn.execute("SELECT COUNT(*) FROM testv;")
         print(cur.fetchone()[0])
 
+        # insert 10,000 rows using copy by block
+        bytes = b''
+        with conn.cursor() as cursor:
+            with cursor.copy("COPY testv (embedding) TO STDOUT WITH BINARY") as copy:
+                for data in copy:
+                    bytes += data
+        print(f"Bytes size: {len(bytes)}")
+        # clear the table
+        conn.execute("TRUNCATE TABLE testv;")
+        conn.commit()
+        timer = time.time()
+        with conn.cursor() as cursor:
+            cursor = conn.cursor()
+            with cursor.copy("COPY testv (embedding) FROM STDIN WITH BINARY") as copy:
+                copy.write(bytes)
+        print(
+            f"Copy {rows} rows by block in {(time.time() - timer)*1000:.3f} millseconds")
+        # show the table size
+        cur = conn.execute("SELECT COUNT(*) FROM testv;")
+        print(cur.fetchone()[0])
+
+        # clear the table
+        conn.execute("TRUNCATE TABLE testv;")
+        conn.commit()
         timer = time.time()
         # insert 10,000 rows using copy by row
-        cursor = conn.cursor()
-        with cursor.copy("COPY testv (embedding) FROM STDIN WITH BINARY") as copy:
-            copy.set_types(['vector'])
-            for i in range(rows):
-                copy.write_row([embedding[i]])
+        with conn.cursor() as cursor:
+            with cursor.copy("COPY testv (embedding) FROM STDIN WITH BINARY") as copy:
+                copy.set_types(['vector'])
+                for i in range(rows):
+                    copy.write_row([embedding[i]])
         print(
             f"Copy {rows} rows by row in {(time.time() - timer)*1000:.3f} millseconds")
 
@@ -114,17 +140,23 @@ def test_copy(conn: psycopg.Connection):
         cur = conn.execute("SELECT COUNT(*) FROM testv;")
         print(cur.fetchone()[0])
 
-        # # insert 10,000 rows using copy by block
-        # bytes = b''
-        # for i in range(rows):
-        #     bytes += to_db_binary(embedding[i])
-        # timer = time.time()
-        # # insert 10,000 rows using copy by row
-        # cursor = conn.cursor()
-        # with cursor.copy("COPY testv (embedding) FROM STDIN WITH BINARY") as copy:
-        #     copy.write(bytes)
-        # print(
-        #     f"Copy by block {rows} rows by block in {(time.time() - timer)*1000:.3f} millseconds")
+        # write array to a local parquet file, vector as a single column
+        table = pa.Table.from_pandas(
+            pd.DataFrame({'embedding': embedding.tolist()}))
+        timer = time.time()
+        pq.write_table(table, 'testv.parquet')
+        print(
+            f"Write {rows} rows to parquet in {(time.time() - timer)*1000:.3f} millseconds")
+
+        # example result:
+        # Insert 1000 rows in 154.197 millseconds
+        # 1000
+        # Bytes size: 6152021 > (dims * 4 + 2) * rows
+        # Copy 1000 rows by block in 26.903 millseconds
+        # 1000
+        # Copy 1000 rows by row in 26.125 millseconds
+        # 1000
+        # Write 1000 rows to parquet in 55.226 millseconds
 
     finally:
         # Drop the table
