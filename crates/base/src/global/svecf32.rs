@@ -22,20 +22,28 @@ fn cosine_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F3
     while lhs_pos < size1 && rhs_pos < size2 {
         let lhs_index = lhs.indexes()[lhs_pos];
         let rhs_index = rhs.indexes()[rhs_pos];
-        if lhs_index == rhs_index {
-            xy += lhs.values()[lhs_pos] * rhs.values()[rhs_pos];
-            lhs_pos += 1;
-            rhs_pos += 1;
-        } else if lhs_index < rhs_index {
-            lhs_pos += 1;
-        } else {
-            rhs_pos += 1;
+        match lhs_index.cmp(&rhs_index) {
+            std::cmp::Ordering::Less => {
+                x2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
+                lhs_pos += 1;
+            }
+            std::cmp::Ordering::Greater => {
+                y2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
+                rhs_pos += 1;
+            }
+            std::cmp::Ordering::Equal => {
+                xy += lhs.values()[lhs_pos] * rhs.values()[rhs_pos];
+                x2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
+                y2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
+                lhs_pos += 1;
+                rhs_pos += 1;
+            }
         }
     }
-    for i in 0..size1 {
+    for i in lhs_pos..size1 {
         x2 += lhs.values()[i] * lhs.values()[i];
     }
-    for i in 0..size2 {
+    for i in rhs_pos..size2 {
         y2 += rhs.values()[i] * rhs.values()[i];
     }
     xy / (x2 * y2).sqrt()
@@ -387,17 +395,21 @@ fn sl2_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     while lhs_pos < size1 && rhs_pos < size2 {
         let lhs_index = lhs.indexes()[lhs_pos];
         let rhs_index = rhs.indexes()[rhs_pos];
-        if lhs_index == rhs_index {
-            let d = lhs.values()[lhs_pos] - rhs.values()[rhs_pos];
-            d2 += d * d;
-            lhs_pos += 1;
-            rhs_pos += 1;
-        } else if lhs_index < rhs_index {
-            d2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
-            lhs_pos += 1;
-        } else {
-            d2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
-            rhs_pos += 1;
+        match lhs_index.cmp(&rhs_index) {
+            std::cmp::Ordering::Equal => {
+                let d = lhs.values()[lhs_pos] - rhs.values()[rhs_pos];
+                d2 += d * d;
+                lhs_pos += 1;
+                rhs_pos += 1;
+            }
+            std::cmp::Ordering::Less => {
+                d2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
+                lhs_pos += 1;
+            }
+            std::cmp::Ordering::Greater => {
+                d2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
+                rhs_pos += 1;
+            }
         }
     }
     for i in lhs_pos..size1 {
