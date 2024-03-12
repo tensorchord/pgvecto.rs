@@ -11,7 +11,7 @@ use std::cmp::min;
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn cosine<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+fn cosine_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     let mut lhs_pos = 0;
     let mut rhs_pos = 0;
     let size1 = lhs.len() as usize;
@@ -22,146 +22,320 @@ pub fn cosine<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     while lhs_pos < size1 && rhs_pos < size2 {
         let lhs_index = lhs.indexes()[lhs_pos];
         let rhs_index = rhs.indexes()[rhs_pos];
-        let lhs_value = lhs.values()[lhs_pos];
-        let rhs_value = rhs.values()[rhs_pos];
-        xy += F32((lhs_index == rhs_index) as u32 as f32) * lhs_value * rhs_value;
-        x2 += F32((lhs_index <= rhs_index) as u32 as f32) * lhs_value * lhs_value;
-        y2 += F32((lhs_index >= rhs_index) as u32 as f32) * rhs_value * rhs_value;
-        lhs_pos += (lhs_index <= rhs_index) as usize;
-        rhs_pos += (lhs_index >= rhs_index) as usize;
+        if lhs_index == rhs_index {
+            xy += lhs.values()[lhs_pos] * rhs.values()[rhs_pos];
+            lhs_pos += 1;
+            rhs_pos += 1;
+        } else if lhs_index < rhs_index {
+            lhs_pos += 1;
+        } else {
+            rhs_pos += 1;
+        }
     }
-    for i in lhs_pos..size1 {
+    for i in 0..size1 {
         x2 += lhs.values()[i] * lhs.values()[i];
     }
-    for i in rhs_pos..size2 {
+    for i in 0..size2 {
         y2 += rhs.values()[i] * rhs.values()[i];
     }
     xy / (x2 * y2).sqrt()
 }
 
-#[inline(always)]
-pub fn dot<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
-    fn dot<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+#[inline]
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512bw,avx512f,bmi2")]
+unsafe fn cosine_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+    #[inline]
+    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
+        let mut dst: __m512i;
+        unsafe {
+            std::arch::asm!(
+                "vmovdqu32 {dst}{{{k}}} {{z}}, [{p}]",
+                p = in(reg) mem_addr,
+                k = in(kreg) k,
+                dst = out(zmm_reg) dst,
+                options(pure, readonly, nostack)
+            );
+        }
+        dst
+    }
+    #[inline]
+    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    pub unsafe fn _mm512_maskz_loadu_ps(k: __mmask16, mem_addr: *const f32) -> __m512 {
+        let mut dst: __m512;
+        unsafe {
+            std::arch::asm!(
+                "vmovups {dst}{{{k}}} {{z}}, [{p}]",
+                p = in(reg) mem_addr,
+                k = in(kreg) k,
+                dst = out(zmm_reg) dst,
+                options(pure, readonly, nostack)
+            );
+        }
+        dst
+    }
+    unsafe {
+        const W: usize = 16;
         let mut lhs_pos = 0;
         let mut rhs_pos = 0;
         let size1 = lhs.len() as usize;
         let size2 = rhs.len() as usize;
-        let mut xy = F32::zero();
-        while lhs_pos < size1 && rhs_pos < size2 {
-            let lhs_index = lhs.indexes()[lhs_pos];
-            let rhs_index = rhs.indexes()[rhs_pos];
-            match lhs_index.cmp(&rhs_index) {
+        let lhs_size = size1 / W * W;
+        let rhs_size = size2 / W * W;
+        let lhs_idx = lhs.indexes().as_ptr() as *const i32;
+        let rhs_idx = rhs.indexes().as_ptr() as *const i32;
+        let lhs_val = lhs.values().as_ptr() as *const f32;
+        let rhs_val = rhs.values().as_ptr() as *const f32;
+        let mut xy = _mm512_setzero_ps();
+        while lhs_pos < lhs_size && rhs_pos < rhs_size {
+            let i_l = _mm512_loadu_epi32(lhs_idx.add(lhs_pos));
+            let i_r = _mm512_loadu_epi32(rhs_idx.add(rhs_pos));
+            let (m_l, m_r) = emulate_mm512_2intersect_epi32(i_l, i_r);
+            let v_l = _mm512_loadu_ps(lhs_val.add(lhs_pos));
+            let v_r = _mm512_loadu_ps(rhs_val.add(rhs_pos));
+            let v_l = _mm512_maskz_compress_ps(m_l, v_l);
+            let v_r = _mm512_maskz_compress_ps(m_r, v_r);
+            xy = _mm512_fmadd_ps(v_l, v_r, xy);
+            let l_max = lhs.indexes().get_unchecked(lhs_pos + W - 1);
+            let r_max = rhs.indexes().get_unchecked(rhs_pos + W - 1);
+            match l_max.cmp(r_max) {
                 std::cmp::Ordering::Less => {
-                    lhs_pos += 1;
+                    lhs_pos += W;
                 }
                 std::cmp::Ordering::Greater => {
-                    rhs_pos += 1;
+                    rhs_pos += W;
                 }
                 std::cmp::Ordering::Equal => {
-                    xy += lhs.values()[lhs_pos] * rhs.values()[rhs_pos];
-                    lhs_pos += 1;
-                    rhs_pos += 1;
+                    lhs_pos += W;
+                    rhs_pos += W;
                 }
             }
         }
-        xy
-    }
+        while lhs_pos < size1 && rhs_pos < size2 {
+            let len_l = min(W, size1 - lhs_pos);
+            let len_r = min(W, size2 - rhs_pos);
+            let mask_l = _bzhi_u32(0xFFFF, len_l as u32) as u16;
+            let mask_r = _bzhi_u32(0xFFFF, len_r as u32) as u16;
+            let i_l = _mm512_maskz_loadu_epi32(mask_l, lhs_idx.add(lhs_pos));
+            let i_r = _mm512_maskz_loadu_epi32(mask_r, rhs_idx.add(rhs_pos));
+            let (m_l, m_r) = emulate_mm512_2intersect_epi32(i_l, i_r);
+            let v_l = _mm512_maskz_loadu_ps(mask_l, lhs_val.add(lhs_pos));
+            let v_r = _mm512_maskz_loadu_ps(mask_r, rhs_val.add(rhs_pos));
+            let v_l = _mm512_maskz_compress_ps(m_l, v_l);
+            let v_r = _mm512_maskz_compress_ps(m_r, v_r);
+            xy = _mm512_fmadd_ps(v_l, v_r, xy);
+            let l_max = lhs.indexes().get_unchecked(lhs_pos + len_l - 1);
+            let r_max = rhs.indexes().get_unchecked(rhs_pos + len_r - 1);
+            match l_max.cmp(r_max) {
+                std::cmp::Ordering::Less => {
+                    lhs_pos += W;
+                }
+                std::cmp::Ordering::Greater => {
+                    rhs_pos += W;
+                }
+                std::cmp::Ordering::Equal => {
+                    lhs_pos += W;
+                    rhs_pos += W;
+                }
+            }
+        }
+        let rxy = _mm512_reduce_add_ps(xy);
 
-    #[inline]
+        let mut xx = _mm512_setzero_ps();
+        let mut lhs_pos = 0;
+        while lhs_pos < lhs_size {
+            let v = _mm512_loadu_ps(lhs_val.add(lhs_pos));
+            xx = _mm512_fmadd_ps(v, v, xx);
+            lhs_pos += W;
+        }
+        let v = _mm512_maskz_loadu_ps(
+            _bzhi_u32(0xFFFF, (size1 - lhs_pos) as u32) as u16,
+            lhs_val.add(lhs_pos),
+        );
+        xx = _mm512_fmadd_ps(v, v, xx);
+        let rxx = _mm512_reduce_add_ps(xx);
+
+        let mut yy = _mm512_setzero_ps();
+        let mut rhs_pos = 0;
+        while rhs_pos < rhs_size {
+            let v = _mm512_loadu_ps(rhs_val.add(rhs_pos));
+            yy = _mm512_fmadd_ps(v, v, yy);
+            rhs_pos += W;
+        }
+        let v = _mm512_maskz_loadu_ps(
+            _bzhi_u32(0xFFFF, (size2 - rhs_pos) as u32) as u16,
+            rhs_val.add(rhs_pos),
+        );
+        yy = _mm512_fmadd_ps(v, v, yy);
+        let ryy = _mm512_reduce_add_ps(yy);
+
+        F32(rxy / (rxx * ryy).sqrt())
+    }
+}
+
+#[inline(always)]
+pub fn cosine<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+    assert_eq!(lhs.dims(), rhs.dims());
     #[cfg(target_arch = "x86_64")]
-    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
-    unsafe fn dot_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
-        #[inline]
-        #[target_feature(enable = "avx512bw,avx512f,bmi2")]
-        pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
-            let mut dst: __m512i;
-            unsafe {
-                std::arch::asm!(
-                    "vmovdqu32 {dst}{{{k}}} {{z}}, [{p}]",
-                    p = in(reg) mem_addr,
-                    k = in(kreg) k,
-                    dst = out(zmm_reg) dst,
-                    options(pure, readonly, nostack)
-                );
+    if detect::x86_64::detect_avx512vp2intersect() {
+        return unsafe {
+            F32(c::v_sparse_cosine_avx512vp2intersect(
+                lhs.indexes().as_ptr(),
+                rhs.indexes().as_ptr(),
+                lhs.values().as_ptr().cast(),
+                rhs.values().as_ptr().cast(),
+                lhs.indexes().len(),
+                rhs.indexes().len(),
+            ))
+        };
+    }
+    #[cfg(target_arch = "x86_64")]
+    if detect::x86_64::detect_v4() {
+        return unsafe { cosine_v4(lhs, rhs) };
+    }
+    cosine_fallback(lhs, rhs)
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+fn dot_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+    let mut lhs_pos = 0;
+    let mut rhs_pos = 0;
+    let size1 = lhs.len() as usize;
+    let size2 = rhs.len() as usize;
+    let mut xy = F32::zero();
+    while lhs_pos < size1 && rhs_pos < size2 {
+        let lhs_index = lhs.indexes()[lhs_pos];
+        let rhs_index = rhs.indexes()[rhs_pos];
+        match lhs_index.cmp(&rhs_index) {
+            std::cmp::Ordering::Less => {
+                lhs_pos += 1;
             }
-            dst
-        }
-        unsafe {
-            const W: usize = 16;
-            let mut lhs_pos = 0;
-            let mut rhs_pos = 0;
-            let size1 = lhs.len() as usize;
-            let size2 = rhs.len() as usize;
-            let lhs_size = size1 / W * W;
-            let rhs_size = size2 / W * W;
-            let lhs_idx = lhs.indexes().as_ptr() as *const i32;
-            let rhs_idx = rhs.indexes().as_ptr() as *const i32;
-            let lhs_val = lhs.values().as_ptr() as *const f32;
-            let rhs_val = rhs.values().as_ptr() as *const f32;
-            let mut xy = _mm512_setzero_ps();
-            while lhs_pos < lhs_size && rhs_pos < rhs_size {
-                let i_l = _mm512_loadu_epi32(lhs_idx.add(lhs_pos));
-                let i_r = _mm512_loadu_epi32(rhs_idx.add(rhs_pos));
-                let (m_l, m_r) = emulate_mm512_2intersect_epi32(i_l, i_r);
-                let v_l = _mm512_loadu_ps(lhs_val.add(lhs_pos));
-                let v_r = _mm512_loadu_ps(rhs_val.add(rhs_pos));
-                let v_l = _mm512_maskz_compress_ps(m_l, v_l);
-                let v_r = _mm512_maskz_compress_ps(m_r, v_r);
-                xy = _mm512_fmadd_ps(v_l, v_r, xy);
-                let l_max = lhs.indexes().get_unchecked(lhs_pos + W - 1);
-                let r_max = rhs.indexes().get_unchecked(rhs_pos + W - 1);
-                match l_max.cmp(r_max) {
-                    std::cmp::Ordering::Less => {
-                        lhs_pos += W;
-                    }
-                    std::cmp::Ordering::Greater => {
-                        rhs_pos += W;
-                    }
-                    std::cmp::Ordering::Equal => {
-                        lhs_pos += W;
-                        rhs_pos += W;
-                    }
-                }
+            std::cmp::Ordering::Greater => {
+                rhs_pos += 1;
             }
-            while lhs_pos < size1 && rhs_pos < size2 {
-                let len_l = min(W, size1 - lhs_pos);
-                let len_r = min(W, size2 - rhs_pos);
-                let mask_l = _bzhi_u32(0xFFFF, len_l as u32) as u16;
-                let mask_r = _bzhi_u32(0xFFFF, len_r as u32) as u16;
-                let i_l = _mm512_maskz_loadu_epi32(mask_l, lhs_idx.add(lhs_pos));
-                let i_r = _mm512_maskz_loadu_epi32(mask_r, rhs_idx.add(rhs_pos));
-                let (m_l, m_r) = emulate_mm512_2intersect_epi32(i_l, i_r);
-                let v_l = _mm512_maskz_loadu_ps(mask_l, lhs_val.add(lhs_pos));
-                let v_r = _mm512_maskz_loadu_ps(mask_r, rhs_val.add(rhs_pos));
-                let v_l = _mm512_maskz_compress_ps(m_l, v_l);
-                let v_r = _mm512_maskz_compress_ps(m_r, v_r);
-                xy = _mm512_fmadd_ps(v_l, v_r, xy);
-                let l_max = lhs.indexes().get_unchecked(lhs_pos + len_l - 1);
-                let r_max = rhs.indexes().get_unchecked(rhs_pos + len_r - 1);
-                match l_max.cmp(r_max) {
-                    std::cmp::Ordering::Less => {
-                        lhs_pos += W;
-                    }
-                    std::cmp::Ordering::Greater => {
-                        rhs_pos += W;
-                    }
-                    std::cmp::Ordering::Equal => {
-                        lhs_pos += W;
-                        rhs_pos += W;
-                    }
-                }
+            std::cmp::Ordering::Equal => {
+                xy += lhs.values()[lhs_pos] * rhs.values()[rhs_pos];
+                lhs_pos += 1;
+                rhs_pos += 1;
             }
-            F32(_mm512_reduce_add_ps(xy))
         }
     }
+    xy
+}
 
+#[inline]
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512bw,avx512f,bmi2")]
+unsafe fn dot_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+    #[inline]
+    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
+        let mut dst: __m512i;
+        unsafe {
+            std::arch::asm!(
+                "vmovdqu32 {dst}{{{k}}} {{z}}, [{p}]",
+                p = in(reg) mem_addr,
+                k = in(kreg) k,
+                dst = out(zmm_reg) dst,
+                options(pure, readonly, nostack)
+            );
+        }
+        dst
+    }
+    #[inline]
+    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    pub unsafe fn _mm512_maskz_loadu_ps(k: __mmask16, mem_addr: *const f32) -> __m512 {
+        let mut dst: __m512;
+        unsafe {
+            std::arch::asm!(
+                "vmovups {dst}{{{k}}} {{z}}, [{p}]",
+                p = in(reg) mem_addr,
+                k = in(kreg) k,
+                dst = out(zmm_reg) dst,
+                options(pure, readonly, nostack)
+            );
+        }
+        dst
+    }
+    unsafe {
+        const W: usize = 16;
+        let mut lhs_pos = 0;
+        let mut rhs_pos = 0;
+        let size1 = lhs.len() as usize;
+        let size2 = rhs.len() as usize;
+        let lhs_size = size1 / W * W;
+        let rhs_size = size2 / W * W;
+        let lhs_idx = lhs.indexes().as_ptr() as *const i32;
+        let rhs_idx = rhs.indexes().as_ptr() as *const i32;
+        let lhs_val = lhs.values().as_ptr() as *const f32;
+        let rhs_val = rhs.values().as_ptr() as *const f32;
+        let mut xy = _mm512_setzero_ps();
+        while lhs_pos < lhs_size && rhs_pos < rhs_size {
+            let i_l = _mm512_loadu_epi32(lhs_idx.add(lhs_pos));
+            let i_r = _mm512_loadu_epi32(rhs_idx.add(rhs_pos));
+            let (m_l, m_r) = emulate_mm512_2intersect_epi32(i_l, i_r);
+            let v_l = _mm512_loadu_ps(lhs_val.add(lhs_pos));
+            let v_r = _mm512_loadu_ps(rhs_val.add(rhs_pos));
+            let v_l = _mm512_maskz_compress_ps(m_l, v_l);
+            let v_r = _mm512_maskz_compress_ps(m_r, v_r);
+            xy = _mm512_fmadd_ps(v_l, v_r, xy);
+            let l_max = lhs.indexes().get_unchecked(lhs_pos + W - 1);
+            let r_max = rhs.indexes().get_unchecked(rhs_pos + W - 1);
+            match l_max.cmp(r_max) {
+                std::cmp::Ordering::Less => {
+                    lhs_pos += W;
+                }
+                std::cmp::Ordering::Greater => {
+                    rhs_pos += W;
+                }
+                std::cmp::Ordering::Equal => {
+                    lhs_pos += W;
+                    rhs_pos += W;
+                }
+            }
+        }
+        while lhs_pos < size1 && rhs_pos < size2 {
+            let len_l = min(W, size1 - lhs_pos);
+            let len_r = min(W, size2 - rhs_pos);
+            let mask_l = _bzhi_u32(0xFFFF, len_l as u32) as u16;
+            let mask_r = _bzhi_u32(0xFFFF, len_r as u32) as u16;
+            let i_l = _mm512_maskz_loadu_epi32(mask_l, lhs_idx.add(lhs_pos));
+            let i_r = _mm512_maskz_loadu_epi32(mask_r, rhs_idx.add(rhs_pos));
+            let (m_l, m_r) = emulate_mm512_2intersect_epi32(i_l, i_r);
+            let v_l = _mm512_maskz_loadu_ps(mask_l, lhs_val.add(lhs_pos));
+            let v_r = _mm512_maskz_loadu_ps(mask_r, rhs_val.add(rhs_pos));
+            let v_l = _mm512_maskz_compress_ps(m_l, v_l);
+            let v_r = _mm512_maskz_compress_ps(m_r, v_r);
+            xy = _mm512_fmadd_ps(v_l, v_r, xy);
+            let l_max = lhs.indexes().get_unchecked(lhs_pos + len_l - 1);
+            let r_max = rhs.indexes().get_unchecked(rhs_pos + len_r - 1);
+            match l_max.cmp(r_max) {
+                std::cmp::Ordering::Less => {
+                    lhs_pos += W;
+                }
+                std::cmp::Ordering::Greater => {
+                    rhs_pos += W;
+                }
+                std::cmp::Ordering::Equal => {
+                    lhs_pos += W;
+                    rhs_pos += W;
+                }
+            }
+        }
+        F32(_mm512_reduce_add_ps(xy))
+    }
+}
+
+#[inline(always)]
+pub fn dot<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+    assert_eq!(lhs.dims(), rhs.dims());
     #[cfg(target_arch = "x86_64")]
     if detect::x86_64::detect_avx512vp2intersect() {
         return unsafe {
@@ -179,7 +353,7 @@ pub fn dot<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     if detect::x86_64::detect_v4() {
         return unsafe { dot_v4(lhs, rhs) };
     }
-    dot(lhs, rhs)
+    dot_fallback(lhs, rhs)
 }
 
 #[inline(always)]
@@ -204,7 +378,7 @@ pub fn dot_2<'a>(lhs: SVecf32Borrowed<'a>, rhs: &[F32]) -> F32 {
     "x86_64/x86-64-v2",
     "aarch64+neon"
 ))]
-pub fn sl2<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+fn sl2_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     let mut lhs_pos = 0;
     let mut rhs_pos = 0;
     let size1 = lhs.len() as usize;
@@ -213,13 +387,18 @@ pub fn sl2<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     while lhs_pos < size1 && rhs_pos < size2 {
         let lhs_index = lhs.indexes()[lhs_pos];
         let rhs_index = rhs.indexes()[rhs_pos];
-        let lhs_value = lhs.values()[lhs_pos];
-        let rhs_value = rhs.values()[rhs_pos];
-        let d = F32((lhs_index <= rhs_index) as u32 as f32) * lhs_value
-            - F32((lhs_index >= rhs_index) as u32 as f32) * rhs_value;
-        d2 += d * d;
-        lhs_pos += (lhs_index <= rhs_index) as usize;
-        rhs_pos += (lhs_index >= rhs_index) as usize;
+        if lhs_index == rhs_index {
+            let d = lhs.values()[lhs_pos] - rhs.values()[rhs_pos];
+            d2 += d * d;
+            lhs_pos += 1;
+            rhs_pos += 1;
+        } else if lhs_index < rhs_index {
+            d2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
+            lhs_pos += 1;
+        } else {
+            d2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
+            rhs_pos += 1;
+        }
     }
     for i in lhs_pos..size1 {
         d2 += lhs.values()[i] * lhs.values()[i];
@@ -228,6 +407,162 @@ pub fn sl2<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
         d2 += rhs.values()[i] * rhs.values()[i];
     }
     d2
+}
+
+#[inline]
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512bw,avx512f,bmi2")]
+unsafe fn sl2_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+    #[inline]
+    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
+        let mut dst: __m512i;
+        unsafe {
+            std::arch::asm!(
+                "vmovdqu32 {dst}{{{k}}} {{z}}, [{p}]",
+                p = in(reg) mem_addr,
+                k = in(kreg) k,
+                dst = out(zmm_reg) dst,
+                options(pure, readonly, nostack)
+            );
+        }
+        dst
+    }
+    #[inline]
+    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    pub unsafe fn _mm512_maskz_loadu_ps(k: __mmask16, mem_addr: *const f32) -> __m512 {
+        let mut dst: __m512;
+        unsafe {
+            std::arch::asm!(
+                "vmovups {dst}{{{k}}} {{z}}, [{p}]",
+                p = in(reg) mem_addr,
+                k = in(kreg) k,
+                dst = out(zmm_reg) dst,
+                options(pure, readonly, nostack)
+            );
+        }
+        dst
+    }
+    unsafe {
+        const W: usize = 16;
+        let mut lhs_pos = 0;
+        let mut rhs_pos = 0;
+        let size1 = lhs.len() as usize;
+        let size2 = rhs.len() as usize;
+        let lhs_size = size1 / W * W;
+        let rhs_size = size2 / W * W;
+        let lhs_idx = lhs.indexes().as_ptr() as *const i32;
+        let rhs_idx = rhs.indexes().as_ptr() as *const i32;
+        let lhs_val = lhs.values().as_ptr() as *const f32;
+        let rhs_val = rhs.values().as_ptr() as *const f32;
+        let mut dd = _mm512_setzero_ps();
+        while lhs_pos < lhs_size && rhs_pos < rhs_size {
+            let i_l = _mm512_loadu_epi32(lhs_idx.add(lhs_pos));
+            let i_r = _mm512_loadu_epi32(rhs_idx.add(rhs_pos));
+            let (m_l, m_r) = emulate_mm512_2intersect_epi32(i_l, i_r);
+            let v_l = _mm512_loadu_ps(lhs_val.add(lhs_pos));
+            let v_r = _mm512_loadu_ps(rhs_val.add(rhs_pos));
+            let v_l = _mm512_maskz_compress_ps(m_l, v_l);
+            let v_r = _mm512_maskz_compress_ps(m_r, v_r);
+            let d = _mm512_sub_ps(v_l, v_r);
+            dd = _mm512_fmadd_ps(d, d, dd);
+            dd = _mm512_fmsub_ps(v_l, v_l, dd);
+            dd = _mm512_fmsub_ps(v_r, v_r, dd);
+            let l_max = lhs.indexes().get_unchecked(lhs_pos + W - 1);
+            let r_max = rhs.indexes().get_unchecked(rhs_pos + W - 1);
+            match l_max.cmp(r_max) {
+                std::cmp::Ordering::Less => {
+                    lhs_pos += W;
+                }
+                std::cmp::Ordering::Greater => {
+                    rhs_pos += W;
+                }
+                std::cmp::Ordering::Equal => {
+                    lhs_pos += W;
+                    rhs_pos += W;
+                }
+            }
+        }
+        while lhs_pos < size1 && rhs_pos < size2 {
+            let len_l = min(W, size1 - lhs_pos);
+            let len_r = min(W, size2 - rhs_pos);
+            let mask_l = _bzhi_u32(0xFFFF, len_l as u32) as u16;
+            let mask_r = _bzhi_u32(0xFFFF, len_r as u32) as u16;
+            let i_l = _mm512_maskz_loadu_epi32(mask_l, lhs_idx.add(lhs_pos));
+            let i_r = _mm512_maskz_loadu_epi32(mask_r, rhs_idx.add(rhs_pos));
+            let (m_l, m_r) = emulate_mm512_2intersect_epi32(i_l, i_r);
+            let v_l = _mm512_maskz_loadu_ps(mask_l, lhs_val.add(lhs_pos));
+            let v_r = _mm512_maskz_loadu_ps(mask_r, rhs_val.add(rhs_pos));
+            let v_l = _mm512_maskz_compress_ps(m_l, v_l);
+            let v_r = _mm512_maskz_compress_ps(m_r, v_r);
+            let d = _mm512_sub_ps(v_l, v_r);
+            dd = _mm512_fmadd_ps(d, d, dd);
+            dd = _mm512_fmsub_ps(v_l, v_l, dd);
+            dd = _mm512_fmsub_ps(v_r, v_r, dd);
+            let l_max = lhs.indexes().get_unchecked(lhs_pos + len_l - 1);
+            let r_max = rhs.indexes().get_unchecked(rhs_pos + len_r - 1);
+            match l_max.cmp(r_max) {
+                std::cmp::Ordering::Less => {
+                    lhs_pos += W;
+                }
+                std::cmp::Ordering::Greater => {
+                    rhs_pos += W;
+                }
+                std::cmp::Ordering::Equal => {
+                    lhs_pos += W;
+                    rhs_pos += W;
+                }
+            }
+        }
+
+        let mut lhs_pos = 0;
+        while lhs_pos < lhs_size {
+            let v = _mm512_loadu_ps(lhs_val.add(lhs_pos));
+            dd = _mm512_fmadd_ps(v, v, dd);
+            lhs_pos += W;
+        }
+        let v = _mm512_maskz_loadu_ps(
+            _bzhi_u32(0xFFFF, (size1 - lhs_pos) as u32) as u16,
+            lhs_val.add(lhs_pos),
+        );
+        dd = _mm512_fmadd_ps(v, v, dd);
+        let mut rhs_pos = 0;
+        while rhs_pos < rhs_size {
+            let v = _mm512_loadu_ps(rhs_val.add(rhs_pos));
+            dd = _mm512_fmadd_ps(v, v, dd);
+            rhs_pos += W;
+        }
+        let v = _mm512_maskz_loadu_ps(
+            _bzhi_u32(0xFFFF, (size2 - rhs_pos) as u32) as u16,
+            rhs_val.add(rhs_pos),
+        );
+        dd = _mm512_fmadd_ps(v, v, dd);
+
+        F32(_mm512_reduce_add_ps(dd))
+    }
+}
+
+#[inline(always)]
+pub fn sl2<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+    assert_eq!(lhs.dims(), rhs.dims());
+    #[cfg(target_arch = "x86_64")]
+    if detect::x86_64::detect_avx512vp2intersect() {
+        return unsafe {
+            F32(c::v_sparse_sl2_avx512vp2intersect(
+                lhs.indexes().as_ptr(),
+                rhs.indexes().as_ptr(),
+                lhs.values().as_ptr().cast(),
+                rhs.values().as_ptr().cast(),
+                lhs.indexes().len(),
+                rhs.indexes().len(),
+            ))
+        };
+    }
+    #[cfg(target_arch = "x86_64")]
+    if detect::x86_64::detect_v4() {
+        return unsafe { sl2_v4(lhs, rhs) };
+    }
+    sl2(lhs, rhs)
 }
 
 #[inline(always)]
@@ -293,7 +628,7 @@ pub fn l2_normalize(vector: &mut SVecf32Owned) {
 // Instructions. arXiv preprint arXiv:2112.06342.
 #[inline]
 #[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw,avx512f")]
 unsafe fn emulate_mm512_2intersect_epi32(a: __m512i, b: __m512i) -> (u16, u16) {
     unsafe {
         let a1 = _mm512_alignr_epi32(a, a, 4);
@@ -340,5 +675,136 @@ unsafe fn emulate_mm512_2intersect_epi32(a: __m512i, b: __m512i) -> (u16, u16) {
             | ((0x1111 & m3) << 3)
             | ((m3 >> 1) & 0x7777);
         (res_a, res_b)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const LHS_SIZE: usize = 300;
+    const RHS_SIZE: usize = 350;
+
+    pub fn random_svector(len: usize) -> SVecf32Owned {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        let mut indexes: Vec<u32> = (0..len).map(|_| rng.gen_range(0..30000)).collect();
+        indexes.sort_unstable();
+        indexes.dedup();
+        let values: Vec<F32> = (0..indexes.len())
+            .map(|_| F32(rng.gen_range(-1.0..1.0)))
+            .collect();
+        SVecf32Owned::new(30000, indexes, values)
+    }
+
+    #[test]
+    fn test_cosine_svector() {
+        const EP: F32 = F32(1e-5);
+        let x = random_svector(LHS_SIZE);
+        let y = random_svector(RHS_SIZE);
+        let cosine_fallback = cosine_fallback(x.for_borrow(), y.for_borrow());
+        #[cfg(target_arch = "x86_64")]
+        if detect::x86_64::detect_avx512vp2intersect() {
+            let cosine_avx512vp2intersect = unsafe {
+                F32(c::v_sparse_cosine_avx512vp2intersect(
+                    x.indexes().as_ptr(),
+                    y.indexes().as_ptr(),
+                    x.values().as_ptr().cast(),
+                    y.values().as_ptr().cast(),
+                    x.indexes().len(),
+                    y.indexes().len(),
+                ))
+            };
+            assert!(
+                cosine_fallback - cosine_avx512vp2intersect < EP,
+                "cosine_fallback: {}, cosine_avx512vp2intersect: {}",
+                cosine_fallback,
+                cosine_avx512vp2intersect
+            );
+        }
+        #[cfg(target_arch = "x86_64")]
+        if detect::x86_64::detect_v4() {
+            let cosine_v4 = unsafe { cosine_v4(x.for_borrow(), y.for_borrow()) };
+            assert!(
+                cosine_fallback - cosine_v4 < EP,
+                "cosine_fallback: {}, cosine_v4: {}",
+                cosine_fallback,
+                cosine_v4
+            );
+        }
+    }
+
+    #[test]
+    fn test_dot_svector() {
+        const EP: F32 = F32(1e-5);
+        let x = random_svector(LHS_SIZE);
+        let y = random_svector(RHS_SIZE);
+        let dot_fallback = dot_fallback(x.for_borrow(), y.for_borrow());
+        #[cfg(target_arch = "x86_64")]
+        if detect::x86_64::detect_avx512vp2intersect() {
+            let dot_avx512vp2intersect = unsafe {
+                F32(c::v_sparse_dot_avx512vp2intersect(
+                    x.indexes().as_ptr(),
+                    y.indexes().as_ptr(),
+                    x.values().as_ptr().cast(),
+                    y.values().as_ptr().cast(),
+                    x.indexes().len(),
+                    y.indexes().len(),
+                ))
+            };
+            assert!(
+                dot_fallback - dot_avx512vp2intersect < EP,
+                "dot_fallback: {}, dot_avx512vp2intersect: {}",
+                dot_fallback,
+                dot_avx512vp2intersect
+            );
+        }
+        #[cfg(target_arch = "x86_64")]
+        if detect::x86_64::detect_v4() {
+            let dot_v4 = unsafe { dot_v4(x.for_borrow(), y.for_borrow()) };
+            assert!(
+                dot_fallback - dot_v4 < EP,
+                "dot_fallback: {}, dot_v4: {}",
+                dot_fallback,
+                dot_v4
+            );
+        }
+    }
+
+    #[test]
+    fn test_sl2_svector() {
+        const EP: F32 = F32(1e-5);
+        let x = random_svector(LHS_SIZE);
+        let y = random_svector(RHS_SIZE);
+        let sl2_fallback = sl2_fallback(x.for_borrow(), y.for_borrow());
+        #[cfg(target_arch = "x86_64")]
+        if detect::x86_64::detect_avx512vp2intersect() {
+            let sl2_avx512vp2intersect = unsafe {
+                F32(c::v_sparse_sl2_avx512vp2intersect(
+                    x.indexes().as_ptr(),
+                    y.indexes().as_ptr(),
+                    x.values().as_ptr().cast(),
+                    y.values().as_ptr().cast(),
+                    x.indexes().len(),
+                    y.indexes().len(),
+                ))
+            };
+            assert!(
+                sl2_fallback - sl2_avx512vp2intersect < EP,
+                "sl2_fallback: {}, sl2_avx512vp2intersect: {}",
+                sl2_fallback,
+                sl2_avx512vp2intersect
+            );
+        }
+        #[cfg(target_arch = "x86_64")]
+        if detect::x86_64::detect_v4() {
+            let sl2_v4 = unsafe { sl2_v4(x.for_borrow(), y.for_borrow()) };
+            assert!(
+                sl2_fallback - sl2_v4 < EP,
+                "sl2_fallback: {}, sl2_v4: {}",
+                sl2_fallback,
+                sl2_v4
+            );
+        }
     }
 }

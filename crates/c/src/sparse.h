@@ -3,7 +3,11 @@
 
 #if defined(__x86_64__)
 
+extern float v_sparse_cosine_avx512vp2intersect(uint32_t *, uint32_t *, float *,
+                                                float *, size_t, size_t);
 extern float v_sparse_dot_avx512vp2intersect(uint32_t *, uint32_t *, float *,
-                                            float *, size_t, size_t);
+                                             float *, size_t, size_t);
+extern float v_sparse_sl2_avx512vp2intersect(uint32_t *, uint32_t *, float *,
+                                             float *, size_t, size_t);
 
 #endif
