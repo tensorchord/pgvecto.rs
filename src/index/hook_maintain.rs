@@ -80,7 +80,7 @@ pub unsafe fn maintain_index_in_object_access(
         pgrx::pg_sys::ObjectAccessType_OAT_DROP => {
             let search = pgrx::pg_catalog::PgClass::search_reloid(object_id).unwrap();
             if let Some(pg_class) = search.get() {
-                if let Some(()) = check(pg_class) {
+                if let Some(()) = check_vector_index(pg_class) {
                     let handle = get_handle(object_id);
                     let mut t = TRANSACTION.borrow_mut();
                     match t.index.get(&handle) {
@@ -110,7 +110,7 @@ pub unsafe fn maintain_index_in_object_access(
     }
 }
 
-fn check(pg_class: pgrx::pg_catalog::PgClass<'_>) -> Option<()> {
+fn check_vector_index(pg_class: pgrx::pg_catalog::PgClass<'_>) -> Option<()> {
     if pg_class.relkind() != pgrx::pg_catalog::PgClassRelkind::Index {
         return None;
     }
@@ -124,10 +124,10 @@ fn check(pg_class: pgrx::pg_catalog::PgClass<'_>) -> Option<()> {
         return None;
     }
     // probably a vector index, so enter a slow path to ensure it
-    slow_path(pg_am)
+    check_vector_index_slow_path(pg_am)
 }
 
-fn slow_path(pg_am: pgrx::pg_catalog::PgAm<'_>) -> Option<()> {
+fn check_vector_index_slow_path(pg_am: pgrx::pg_catalog::PgAm<'_>) -> Option<()> {
     let amhandler = pg_am.amhandler();
     let mut flinfo = unsafe {
         let mut flinfo = pgrx::pg_sys::FmgrInfo::default();

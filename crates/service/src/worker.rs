@@ -1,5 +1,4 @@
 use crate::instance::*;
-use crate::version::Version;
 use arc_swap::ArcSwap;
 use base::index::*;
 use base::search::*;
@@ -31,7 +30,6 @@ impl Worker {
         });
         let protect = WorkerProtect { startup, indexes };
         sync_dir(&path);
-        Version::write(path.join("metadata"));
         Arc::new(Worker {
             path,
             protect: Mutex::new(protect),
