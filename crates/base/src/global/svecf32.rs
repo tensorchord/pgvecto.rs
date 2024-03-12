@@ -1,8 +1,6 @@
 use crate::scalar::*;
 use crate::vector::*;
 use num_traits::{Float, Zero};
-use std::arch::x86_64::*;
-use std::cmp::min;
 
 #[inline(always)]
 #[multiversion::multiversion(targets(
@@ -53,6 +51,8 @@ fn cosine_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F3
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512bw,avx512f,bmi2")]
 unsafe fn cosine_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+    use std::arch::x86_64::*;
+    use std::cmp::min;
     #[inline]
     #[target_feature(enable = "avx512bw,avx512f,bmi2")]
     pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
@@ -242,6 +242,8 @@ fn dot_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512bw,avx512f,bmi2")]
 unsafe fn dot_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+    use std::arch::x86_64::*;
+    use std::cmp::min;
     #[inline]
     #[target_feature(enable = "avx512bw,avx512f,bmi2")]
     pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
@@ -425,6 +427,8 @@ fn sl2_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512bw,avx512f,bmi2")]
 unsafe fn sl2_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+    use std::arch::x86_64::*;
+    use std::cmp::min;
     #[inline]
     #[target_feature(enable = "avx512bw,avx512f,bmi2")]
     pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
@@ -641,7 +645,11 @@ pub fn l2_normalize(vector: &mut SVecf32Owned) {
 #[inline]
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512bw,avx512f")]
-unsafe fn emulate_mm512_2intersect_epi32(a: __m512i, b: __m512i) -> (u16, u16) {
+unsafe fn emulate_mm512_2intersect_epi32(
+    a: std::arch::x86_64::__m512i,
+    b: std::arch::x86_64::__m512i,
+) -> (u16, u16) {
+    use std::arch::x86_64::*;
     unsafe {
         let a1 = _mm512_alignr_epi32(a, a, 4);
         let a2 = _mm512_alignr_epi32(a, a, 8);
