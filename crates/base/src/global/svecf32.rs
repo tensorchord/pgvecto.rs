@@ -578,7 +578,7 @@ pub fn sl2<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     if detect::x86_64::detect_v4() {
         return unsafe { sl2_v4(lhs, rhs) };
     }
-    sl2(lhs, rhs)
+    sl2_fallback(lhs, rhs)
 }
 
 #[inline(always)]
