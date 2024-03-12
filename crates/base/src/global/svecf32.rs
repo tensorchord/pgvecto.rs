@@ -186,19 +186,6 @@ unsafe fn cosine_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F
 pub fn cosine<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     assert_eq!(lhs.dims(), rhs.dims());
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vp2intersect() {
-        return unsafe {
-            F32(c::v_sparse_cosine_avx512vp2intersect(
-                lhs.indexes().as_ptr(),
-                rhs.indexes().as_ptr(),
-                lhs.values().as_ptr().cast(),
-                rhs.values().as_ptr().cast(),
-                lhs.indexes().len(),
-                rhs.indexes().len(),
-            ))
-        };
-    }
-    #[cfg(target_arch = "x86_64")]
     if detect::x86_64::detect_v4() {
         return unsafe { cosine_v4(lhs, rhs) };
     }
@@ -346,19 +333,6 @@ unsafe fn dot_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 
 #[inline(always)]
 pub fn dot<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     assert_eq!(lhs.dims(), rhs.dims());
-    #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vp2intersect() {
-        return unsafe {
-            F32(c::v_sparse_dot_avx512vp2intersect(
-                lhs.indexes().as_ptr(),
-                rhs.indexes().as_ptr(),
-                lhs.values().as_ptr().cast(),
-                rhs.values().as_ptr().cast(),
-                lhs.indexes().len(),
-                rhs.indexes().len(),
-            ))
-        };
-    }
     #[cfg(target_arch = "x86_64")]
     if detect::x86_64::detect_v4() {
         return unsafe { dot_v4(lhs, rhs) };
@@ -562,19 +536,6 @@ unsafe fn sl2_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 
 pub fn sl2<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     assert_eq!(lhs.dims(), rhs.dims());
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vp2intersect() {
-        return unsafe {
-            F32(c::v_sparse_sl2_avx512vp2intersect(
-                lhs.indexes().as_ptr(),
-                rhs.indexes().as_ptr(),
-                lhs.values().as_ptr().cast(),
-                rhs.values().as_ptr().cast(),
-                lhs.indexes().len(),
-                rhs.indexes().len(),
-            ))
-        };
-    }
-    #[cfg(target_arch = "x86_64")]
     if detect::x86_64::detect_v4() {
         return unsafe { sl2_v4(lhs, rhs) };
     }
@@ -724,25 +685,6 @@ mod tests {
         let y = random_svector(RHS_SIZE);
         let cosine_fallback = cosine_fallback(x.for_borrow(), y.for_borrow());
         #[cfg(target_arch = "x86_64")]
-        if detect::x86_64::detect_avx512vp2intersect() {
-            let cosine_avx512vp2intersect = unsafe {
-                F32(c::v_sparse_cosine_avx512vp2intersect(
-                    x.indexes().as_ptr(),
-                    y.indexes().as_ptr(),
-                    x.values().as_ptr().cast(),
-                    y.values().as_ptr().cast(),
-                    x.indexes().len(),
-                    y.indexes().len(),
-                ))
-            };
-            assert!(
-                cosine_fallback - cosine_avx512vp2intersect < EP,
-                "cosine_fallback: {}, cosine_avx512vp2intersect: {}",
-                cosine_fallback,
-                cosine_avx512vp2intersect
-            );
-        }
-        #[cfg(target_arch = "x86_64")]
         if detect::x86_64::detect_v4() {
             let cosine_v4 = unsafe { cosine_v4(x.for_borrow(), y.for_borrow()) };
             assert!(
@@ -761,25 +703,6 @@ mod tests {
         let y = random_svector(RHS_SIZE);
         let dot_fallback = dot_fallback(x.for_borrow(), y.for_borrow());
         #[cfg(target_arch = "x86_64")]
-        if detect::x86_64::detect_avx512vp2intersect() {
-            let dot_avx512vp2intersect = unsafe {
-                F32(c::v_sparse_dot_avx512vp2intersect(
-                    x.indexes().as_ptr(),
-                    y.indexes().as_ptr(),
-                    x.values().as_ptr().cast(),
-                    y.values().as_ptr().cast(),
-                    x.indexes().len(),
-                    y.indexes().len(),
-                ))
-            };
-            assert!(
-                dot_fallback - dot_avx512vp2intersect < EP,
-                "dot_fallback: {}, dot_avx512vp2intersect: {}",
-                dot_fallback,
-                dot_avx512vp2intersect
-            );
-        }
-        #[cfg(target_arch = "x86_64")]
         if detect::x86_64::detect_v4() {
             let dot_v4 = unsafe { dot_v4(x.for_borrow(), y.for_borrow()) };
             assert!(
@@ -797,25 +720,6 @@ mod tests {
         let x = random_svector(LHS_SIZE);
         let y = random_svector(RHS_SIZE);
         let sl2_fallback = sl2_fallback(x.for_borrow(), y.for_borrow());
-        #[cfg(target_arch = "x86_64")]
-        if detect::x86_64::detect_avx512vp2intersect() {
-            let sl2_avx512vp2intersect = unsafe {
-                F32(c::v_sparse_sl2_avx512vp2intersect(
-                    x.indexes().as_ptr(),
-                    y.indexes().as_ptr(),
-                    x.values().as_ptr().cast(),
-                    y.values().as_ptr().cast(),
-                    x.indexes().len(),
-                    y.indexes().len(),
-                ))
-            };
-            assert!(
-                sl2_fallback - sl2_avx512vp2intersect < EP,
-                "sl2_fallback: {}, sl2_avx512vp2intersect: {}",
-                sl2_fallback,
-                sl2_avx512vp2intersect
-            );
-        }
         #[cfg(target_arch = "x86_64")]
         if detect::x86_64::detect_v4() {
             let sl2_v4 = unsafe { sl2_v4(x.for_borrow(), y.for_borrow()) };

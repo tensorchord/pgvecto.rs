@@ -4,7 +4,6 @@ fn main() {
     cc::Build::new()
         .compiler("clang-16")
         .file("./src/f16.c")
-        .file("./src/sparse.c")
         .opt_level(3)
         .debug(true)
         .compile("vectorsc");
