@@ -4,25 +4,44 @@ from psycopg.adapt import Dumper, Loader
 from psycopg.pq import Format
 from psycopg.types import TypeInfo
 
-from pgvecto_rs.utils.serializer import from_db_str, to_db_str
+from pgvecto_rs.utils.serializer import (
+    from_db_binary,
+    from_db_str,
+    to_db_binary,
+    to_db_str,
+)
 
 __all__ = ["register_vector"]
 
 
-class VectorDumper(Dumper):
+class VectorTextDumper(Dumper):
     format = Format.TEXT
 
     def dump(self, obj):
         return to_db_str(obj).encode("utf8")
 
 
-class VectorLoader(Loader):
+class VectorBinaryDumper(Dumper):
+    format = Format.BINARY
+
+    def dump(self, obj):
+        return to_db_binary(obj)
+
+
+class VectorTextLoader(Loader):
     format = Format.TEXT
 
     def load(self, data):
         if isinstance(data, memoryview):
             data = bytes(data)
         return from_db_str(data.decode("utf8"))
+
+
+class VectorBinaryLoader(Loader):
+    format = Format.BINARY
+
+    def load(self, data):
+        return from_db_binary(data)
 
 
 def register_vector(context: Connection):
@@ -40,10 +59,13 @@ def register_vector_info(context: Connection, info: TypeInfo):
         raise ProgrammingError(info="vector type not found in the database")
     info.register(context)
 
-    class VectorTextDumper(VectorDumper):
-        oid = info.oid
+    vector_text_dumper = type("", (VectorTextDumper,), {"oid": info.oid})
+    vector_binary_dumper = type("", (VectorBinaryDumper,), {"oid": info.oid})
 
     adapters = context.adapters
-    adapters.register_dumper(list, VectorTextDumper)
-    adapters.register_dumper(ndarray, VectorTextDumper)
-    adapters.register_loader(info.oid, VectorLoader)
+    adapters.register_dumper(list, vector_text_dumper)
+    adapters.register_dumper(ndarray, vector_text_dumper)
+    adapters.register_dumper(list, vector_binary_dumper)
+    adapters.register_dumper(ndarray, vector_binary_dumper)
+    adapters.register_loader(info.oid, VectorTextLoader)
+    adapters.register_loader(info.oid, VectorBinaryLoader)

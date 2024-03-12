@@ -1,16 +1,15 @@
 import os
 import time
+from struct import pack, unpack
 
 import numpy as np
+import pandas as pd
 import psycopg
 import pyarrow as pa
-import pandas as pd
 import pyarrow.parquet as pq
-from psycopg.adapt import Loader, Dumper
+from psycopg.adapt import Dumper, Loader
 from psycopg.pq import Format
 from psycopg.types import TypeInfo
-
-from struct import pack, unpack
 
 URL = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(
     port=os.getenv("DB_PORT", "5432"),
@@ -21,24 +20,27 @@ URL = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(
 )
 
 
-def to_db_binary(value: np.ndarray):
+def to_db_binary(value: np.ndarray) -> bytes:
     if value is None:
         return value
 
-    value = np.asarray(value, dtype='>f')
+    value = np.asarray(value, dtype="<f")
 
     if value.ndim != 1:
         raise ValueError("expected 1d array, not %d" % value.ndim)
-    dims: bytes = pack('<H', value.shape[0], )
+    dims: bytes = pack(
+        "<H",
+        value.shape[0],
+    )
     return dims + value.tobytes()
 
 
-def from_db_binary(value):
+def from_db_binary(value: bytes) -> np.ndarray:
     if value is None:
         return value
 
-    dim = unpack('<H', value[:2])[0]
-    return np.frombuffer(value, dtype='>f', count=dim, offset=2).astype(np.float32)
+    dim = unpack("<H", value[:2])[0]
+    return np.frombuffer(value, dtype="<f", count=dim, offset=2).astype(np.float32)
 
 
 class VectorDumper(Dumper):
@@ -57,8 +59,7 @@ class VectorLoader(Loader):
 
 def register_vector_info(context: psycopg.Connection, info: TypeInfo):
     if info is None:
-        raise psycopg.ProgrammingError(
-            info="vector type not found in the database")
+        raise psycopg.ProgrammingError(info="vector type not found in the database")
     info.register(context)
 
     class VectorBinaryDumper(VectorDumper):
@@ -81,53 +82,56 @@ def test_insert(conn: psycopg.Connection, embedding: np.ndarray, rows: int, dims
     for i in range(rows):
         conn.execute(
             "INSERT INTO testv (embedding) VALUES (%b);",
-            (embedding[i], ),
+            (embedding[i],),
         )
     conn.commit()
-    print(
-        f"Insert {rows} rows in {(time.time() - timer)*1000:.3f} millseconds")
+    print(f"Insert {rows} rows in {(time.time() - timer)*1000:.3f} millseconds")
 
     # show the table rows
     cur = conn.execute("SELECT COUNT(*) FROM testv;")
     print(f"insert {cur.fetchone()[0]} rows")
 
 
-def test_copy_by_block(conn: psycopg.Connection, embedding: np.ndarray, rows: int, dims: int):
+def test_copy_by_block(
+    conn: psycopg.Connection, embedding: np.ndarray, rows: int, dims: int
+):
     # insert 10,000 rows using copy by block
-    bytes = b''
-    with conn.cursor() as cursor:
-        with cursor.copy("COPY testv (embedding) TO STDOUT WITH BINARY") as copy:
-            for data in copy:
-                bytes += data
+    bytes = b""
+    with conn.cursor() as cursor, cursor.copy(
+        "COPY testv (embedding) TO STDOUT WITH BINARY"
+    ) as copy:
+        for data in copy:
+            bytes += data
     print(f"Bytes size: {len(bytes)}")
     # clear the table
     conn.execute("TRUNCATE TABLE testv;")
     conn.commit()
     timer = time.time()
-    with conn.cursor() as cursor:
-        cursor = conn.cursor()
-        with cursor.copy("COPY testv (embedding) FROM STDIN WITH BINARY") as copy:
-            copy.write(bytes)
-    print(
-        f"Copy {rows} rows by block in {(time.time() - timer)*1000:.3f} millseconds")
+    with conn.cursor() as cursor, cursor.copy(
+        "COPY testv (embedding) FROM STDIN WITH BINARY"
+    ) as copy:
+        copy.write(bytes)
+    print(f"Copy {rows} rows by block in {(time.time() - timer)*1000:.3f} millseconds")
     # show the table size
     cur = conn.execute("SELECT COUNT(*) FROM testv;")
     print(f"insert {cur.fetchone()[0]} rows")
 
 
-def test_copy_by_row(conn: psycopg.Connection, embedding: np.ndarray, rows: int, dims: int):
+def test_copy_by_row(
+    conn: psycopg.Connection, embedding: np.ndarray, rows: int, dims: int
+):
     # clear the table
     conn.execute("TRUNCATE TABLE testv;")
     conn.commit()
     timer = time.time()
     # insert 10,000 rows using copy by row
-    with conn.cursor() as cursor:
-        with cursor.copy("COPY testv (embedding) FROM STDIN WITH BINARY") as copy:
-            copy.set_types(['vector'])
-            for i in range(rows):
-                copy.write_row([embedding[i]])
-    print(
-        f"Copy {rows} rows by row in {(time.time() - timer)*1000:.3f} millseconds")
+    with conn.cursor() as cursor, cursor.copy(
+        "COPY testv (embedding) FROM STDIN WITH BINARY"
+    ) as copy:
+        copy.set_types(["vector"])
+        for i in range(rows):
+            copy.write_row([embedding[i]])
+    print(f"Copy {rows} rows by row in {(time.time() - timer)*1000:.3f} millseconds")
 
     # show the table size
     cur = conn.execute("SELECT COUNT(*) FROM testv;")
@@ -136,18 +140,18 @@ def test_copy_by_row(conn: psycopg.Connection, embedding: np.ndarray, rows: int,
 
 def test_insert_parquet(embedding: np.ndarray, rows: int, dims: int):
     # write array to a local parquet file, vector as a single column
-    table = pa.Table.from_pandas(
-        pd.DataFrame({'embedding': embedding.tolist()}))
+    table = pa.Table.from_pandas(pd.DataFrame({"embedding": embedding.tolist()}))
     timer = time.time()
-    pq.write_table(table, 'testv.parquet')
+    pq.write_table(table, "testv.parquet")
     print(
-        f"Write {rows} rows to parquet in {(time.time() - timer)*1000:.3f} millseconds")
+        f"Write {rows} rows to parquet in {(time.time() - timer)*1000:.3f} millseconds"
+    )
 
 
 def benchs(conn: psycopg.Connection):
-    rows = 400000
+    # rows = 400000
     # rows = 1000
-    # rows = 1
+    rows = 1
     dims = 1536
     conn.execute("DROP TABLE IF EXISTS testv;")
     conn.execute(
@@ -156,9 +160,12 @@ def benchs(conn: psycopg.Connection):
     conn.execute("alter table testv alter embedding set storage external;")
     conn.commit()
     try:
-        embedding = np.random.rand(rows, dims).astype(np.float32)
+        # embedding = np.random.rand(rows, dims).astype(np.float32)
+        rng = np.random.default_rng()
+        embedding = rng.random((rows, dims)).astype(np.float32)
         # test_copy_by_row(conn, embedding, rows, dims)
         test_insert(conn, embedding, rows, dims)
+        test_copy_by_block(conn, embedding, rows, dims)
 
         # example result:
         # Insert 1000 rows in 154.197 millseconds
@@ -177,6 +184,7 @@ def benchs(conn: psycopg.Connection):
 
 
 def test_basic(conn: psycopg.Connection):
+    conn.execute("DROP TABLE IF EXISTS documents;")
     conn.execute(
         "CREATE TABLE documents (id SERIAL PRIMARY KEY, embedding vector(3) NOT NULL);",
     )
@@ -185,27 +193,34 @@ def test_basic(conn: psycopg.Connection):
         # Insert 3 rows into the table
         conn.execute(
             "INSERT INTO documents (embedding) VALUES (%b);",
-            (np.array([1, 2, 3]), ),
+            (np.array([1, 2, 3]),),
         )
         conn.execute(
             "INSERT INTO documents (embedding) VALUES (%b);",
-            (np.array([1.0, 2.0, 4.0]), ),
+            (np.array([1.0, 2.0, 4.0]),),
         )
         conn.execute(
             "INSERT INTO documents (embedding) VALUES (%b);",
-            (np.array([1, 3, 4]), ),
+            (np.array([1, 3, 4]),),
         )
         conn.commit()
 
         # Select the row "hello pgvecto.rs"
         cur = conn.execute(
-            "SELECT * FROM documents;", binary=True,
+            "SELECT * FROM documents;",
+            binary=True,
+        )
+        for row in cur.fetchall():
+            print(row[1])
+        # Select the row "hello pgvecto.rs"
+        cur = conn.execute(
+            "SELECT * FROM documents;",
         )
         for row in cur.fetchall():
             print(row[1])
     finally:
         # Drop the table
-        conn.execute("DROP TABLE IF EXISTS documents;")
+        # conn.execute("DROP TABLE IF EXISTS documents;")
         conn.commit()
 
 
@@ -213,6 +228,7 @@ def test_basic(conn: psycopg.Connection):
 with psycopg.connect(URL) as conn:
     conn.execute("CREATE EXTENSION IF NOT EXISTS vectors;")
     register_vector(conn)
-    conn.execute("DROP TABLE IF EXISTS documents;")
+
+    test_basic(conn)
 
     benchs(conn)

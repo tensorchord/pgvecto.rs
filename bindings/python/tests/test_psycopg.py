@@ -79,6 +79,21 @@ def test_insert(conn: Connection):
             assert np.allclose(e[1], VECTORS[i], atol=1e-10)
 
 
+def test_copy(conn: Connection):
+    with conn.cursor() as cursor, cursor.copy(
+        "COPY tb_test_item (embedding) FROM STDIN (FORMAT BINARY)"
+    ) as copy:
+        for e in VECTORS:
+            copy.write_row(e)
+
+    conn.execute("SELECT * FROM tb_test_item;")
+    conn.commit()
+    rows = conn.fetchall()
+    assert len(rows) == len(VECTORS)
+    for i, e in enumerate(rows):
+        assert np.allclose(e[1], VECTORS[i], atol=1e-10)
+
+
 def test_squared_euclidean_distance(conn: Connection):
     cur = conn.execute(
         "SELECT embedding <-> %s FROM tb_test_item;",
