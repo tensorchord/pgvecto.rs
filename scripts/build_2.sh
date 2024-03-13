@@ -7,8 +7,8 @@ printf "ARCH = ${ARCH}\n"
 
 export PLATFORM=$(echo $ARCH | sed 's/aarch64/arm64/; s/x86_64/amd64/')
 
-cargo build --release --no-default-features --features pg$VERSION --target ${ARCH}-unknown-linux-gnu
-cargo pgrx schema --no-default-features --features pg$VERSION | expand -t 4 > ./target/vectors--$SEMVER.sql
+cargo build --no-default-features --features pg$VERSION --release --target ${ARCH}-unknown-linux-gnu
+./tools/schema.sh --no-default-features --features pg$VERSION --release --target ${ARCH}-unknown-linux-gnu | expand -t 4 > ./target/vectors--$SEMVER.sql
 
 rm -rf ./build/dir_zip
 rm -rf ./build/vectors-pg${VERSION}_${ARCH}-unknown-linux-gnu_${SEMVER}.zip

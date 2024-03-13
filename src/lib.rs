@@ -34,8 +34,20 @@ unsafe extern "C" fn _PG_init() {
     }
 }
 
+#[cfg(not(all(target_endian = "little", target_pointer_width = "64")))]
+compile_error!("Target is not supported.");
+
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
-#[cfg(not(all(target_endian = "little", target_pointer_width = "64")))]
-compile_error!("Target is not supported.");
+#[no_mangle]
+unsafe extern "Rust" fn _vectors_jemalloc_alloc(layout: std::alloc::Layout) -> *mut u8 {
+    use std::alloc::GlobalAlloc;
+    unsafe { GLOBAL.alloc(layout) }
+}
+
+#[no_mangle]
+unsafe extern "Rust" fn _vectors_jemalloc_dealloc(ptr: *mut u8, layout: std::alloc::Layout) {
+    use std::alloc::GlobalAlloc;
+    unsafe { GLOBAL.dealloc(ptr, layout) }
+}
