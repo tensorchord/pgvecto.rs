@@ -1,14 +1,14 @@
-mod bvecf32;
-mod svecf32;
-mod vecf16;
-mod vecf32;
-mod veci8;
+pub mod bvecf32;
+pub mod svecf32;
+pub mod vecf16;
+pub mod vecf32;
+pub mod veci8;
 
 pub use bvecf32::{BVecf32Borrowed, BVecf32Owned, BVEC_WIDTH};
 pub use svecf32::{SVecf32Borrowed, SVecf32Owned};
 pub use vecf16::{Vecf16Borrowed, Vecf16Owned};
 pub use vecf32::{Vecf32Borrowed, Vecf32Owned};
-pub use veci8::{i8_dequantization, i8_precompute, i8_quantization, Veci8Borrowed, Veci8Owned};
+pub use veci8::{Veci8Borrowed, Veci8Owned};
 
 use crate::scalar::ScalarLike;
 use serde::{Deserialize, Serialize};
@@ -26,6 +26,8 @@ pub enum VectorKind {
 pub trait VectorOwned: Clone + Serialize + for<'a> Deserialize<'a> + 'static {
     type Scalar: ScalarLike;
     type Borrowed<'a>: VectorBorrowed<Scalar = Self::Scalar, Owned = Self>;
+
+    const VECTOR_KIND: VectorKind;
 
     fn for_borrow(&self) -> Self::Borrowed<'_>;
 

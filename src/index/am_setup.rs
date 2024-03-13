@@ -1,12 +1,15 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use crate::datatype::typmod::Typmod;
-use crate::prelude::*;
+use crate::error::*;
+use base::distance::*;
+use base::index::*;
+use base::vector::*;
 use serde::Deserialize;
 use std::ffi::CStr;
 
 pub fn helper_offset() -> usize {
-    bytemuck::offset_of!(Helper, offset)
+    std::mem::offset_of!(Helper, offset)
 }
 
 pub fn helper_size() -> usize {

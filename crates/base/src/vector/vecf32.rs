@@ -1,5 +1,6 @@
-use super::{VectorBorrowed, VectorOwned};
+use super::{VectorBorrowed, VectorKind, VectorOwned};
 use crate::scalar::F32;
+use num_traits::{Float, Zero};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -38,6 +39,8 @@ impl Vecf32Owned {
 impl VectorOwned for Vecf32Owned {
     type Scalar = F32;
     type Borrowed<'a> = Vecf32Borrowed<'a>;
+
+    const VECTOR_KIND: VectorKind = VectorKind::Vecf32;
 
     fn dims(&self) -> u32 {
         self.0.len() as u32
@@ -96,4 +99,168 @@ impl<'a> VectorBorrowed for Vecf32Borrowed<'a> {
     fn to_vec(&self) -> Vec<F32> {
         self.0.to_vec()
     }
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn cosine(lhs: &[F32], rhs: &[F32]) -> F32 {
+    assert!(lhs.len() == rhs.len());
+    let n = lhs.len();
+    let mut xy = F32::zero();
+    let mut x2 = F32::zero();
+    let mut y2 = F32::zero();
+    for i in 0..n {
+        xy += lhs[i] * rhs[i];
+        x2 += lhs[i] * lhs[i];
+        y2 += rhs[i] * rhs[i];
+    }
+    xy / (x2 * y2).sqrt()
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn dot(lhs: &[F32], rhs: &[F32]) -> F32 {
+    assert!(lhs.len() == rhs.len());
+    let n = lhs.len();
+    let mut xy = F32::zero();
+    for i in 0..n {
+        xy += lhs[i] * rhs[i];
+    }
+    xy
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn sl2(lhs: &[F32], rhs: &[F32]) -> F32 {
+    assert!(lhs.len() == rhs.len());
+    let n = lhs.len();
+    let mut d2 = F32::zero();
+    for i in 0..n {
+        let d = lhs[i] - rhs[i];
+        d2 += d * d;
+    }
+    d2
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn length(vector: &[F32]) -> F32 {
+    let n = vector.len();
+    let mut dot = F32::zero();
+    for i in 0..n {
+        dot += vector[i] * vector[i];
+    }
+    dot.sqrt()
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn l2_normalize(vector: &mut [F32]) {
+    let n = vector.len();
+    let l = length(vector);
+    for i in 0..n {
+        vector[i] /= l;
+    }
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn xy_x2_y2(lhs: &[F32], rhs: &[F32]) -> (F32, F32, F32) {
+    assert!(lhs.len() == rhs.len());
+    let n = lhs.len();
+    let mut xy = F32::zero();
+    let mut x2 = F32::zero();
+    let mut y2 = F32::zero();
+    for i in 0..n {
+        xy += lhs[i] * rhs[i];
+        x2 += lhs[i] * lhs[i];
+        y2 += rhs[i] * rhs[i];
+    }
+    (xy, x2, y2)
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn xy_x2_y2_delta(lhs: &[F32], rhs: &[F32], del: &[F32]) -> (F32, F32, F32) {
+    assert!(lhs.len() == rhs.len());
+    let n = lhs.len();
+    let mut xy = F32::zero();
+    let mut x2 = F32::zero();
+    let mut y2 = F32::zero();
+    for i in 0..n {
+        xy += lhs[i] * (rhs[i] + del[i]);
+        x2 += lhs[i] * lhs[i];
+        y2 += (rhs[i] + del[i]) * (rhs[i] + del[i]);
+    }
+    (xy, x2, y2)
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn dot_delta(lhs: &[F32], rhs: &[F32], del: &[F32]) -> F32 {
+    assert!(lhs.len() == rhs.len());
+    let n: usize = lhs.len();
+    let mut xy = F32::zero();
+    for i in 0..n {
+        xy += lhs[i] * (rhs[i] + del[i]);
+    }
+    xy
+}
+
+#[inline(always)]
+#[multiversion::multiversion(targets(
+    "x86_64/x86-64-v4",
+    "x86_64/x86-64-v3",
+    "x86_64/x86-64-v2",
+    "aarch64+neon"
+))]
+pub fn distance_squared_l2_delta(lhs: &[F32], rhs: &[F32], del: &[F32]) -> F32 {
+    assert!(lhs.len() == rhs.len());
+    let n = lhs.len();
+    let mut d2 = F32::zero();
+    for i in 0..n {
+        let d = lhs[i] - (rhs[i] + del[i]);
+        d2 += d * d;
+    }
+    d2
 }

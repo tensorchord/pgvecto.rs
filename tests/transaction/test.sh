@@ -3,7 +3,7 @@ set -e
 
 d=$(psql -U postgres -tAqX -c "SELECT CURRENT_SETTING('data_directory')")/pg_vectors/indexes
 
-a=$(sudo ls -l $d | wc -l)
+a=$(sudo ls -1 $d | wc -l)
 
 printf "entries = $a\n" 
 
@@ -11,7 +11,7 @@ psql -f $(dirname $0)/test.sql
 
 sleep 1
 
-b=$(sudo ls -l $d | wc -l)
+b=$(sudo ls -1 $d | wc -l)
 
 printf "entries = $b\n" 
 

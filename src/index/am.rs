@@ -5,9 +5,9 @@ use super::am_scan;
 use super::am_setup;
 use super::am_update;
 use crate::gucs::planning::ENABLE_INDEX;
-use crate::index::utils::from_datum;
-use crate::prelude::*;
+use crate::index::utils::{from_datum, get_handle};
 use crate::utils::cells::PgCell;
+use crate::utils::sys::IntoSys;
 use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
 
@@ -143,12 +143,53 @@ pub unsafe extern "C" fn ambuild(
         index_relation,
         Some((heap_relation, index_info, result.as_ptr())),
     );
+    make_well_formed(index_relation);
     result.into_pg()
 }
 
 #[pgrx::pg_guard]
-pub unsafe extern "C" fn ambuildempty(index_relation: pgrx::pg_sys::Relation) {
-    am_build::build(index_relation, None);
+pub unsafe extern "C" fn ambuildempty(_index: pgrx::pg_sys::Relation) {}
+
+#[repr(C)]
+struct VectorsPageOpaqueData {
+    _reserved: [u8; 2048],
+}
+
+const _: () = assert!(std::mem::size_of::<VectorsPageOpaqueData>() == 2048);
+
+unsafe fn make_well_formed(index_relation: pgrx::pg_sys::Relation) {
+    unsafe {
+        let meta_buffer = pgrx::pg_sys::ReadBuffer(index_relation, 0xFFFFFFFF /* P_NEW */);
+        pgrx::pg_sys::LockBuffer(meta_buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
+        assert!(pgrx::pg_sys::BufferGetBlockNumber(meta_buffer) == 0);
+        let state = pgrx::pg_sys::GenericXLogStart(index_relation);
+        let meta_page = pgrx::pg_sys::GenericXLogRegisterBuffer(
+            state,
+            meta_buffer,
+            pgrx::pg_sys::GENERIC_XLOG_FULL_IMAGE as _,
+        );
+        pgrx::pg_sys::PageInit(
+            meta_page,
+            pgrx::pg_sys::BLCKSZ as usize,
+            std::mem::size_of::<VectorsPageOpaqueData>(),
+        );
+        pgrx::pg_sys::GenericXLogFinish(state);
+        pgrx::pg_sys::UnlockReleaseBuffer(meta_buffer);
+    }
+}
+
+unsafe fn check_well_formed(index_relation: pgrx::pg_sys::Relation) {
+    if !test_well_formed(index_relation) {
+        am_build::build(index_relation, None);
+        make_well_formed(index_relation);
+    }
+}
+
+unsafe fn test_well_formed(index_relation: pgrx::pg_sys::Relation) -> bool {
+    pgrx::pg_sys::RelationGetNumberOfBlocksInFork(
+        index_relation,
+        pgrx::pg_sys::ForkNumber_MAIN_FORKNUM,
+    ) == 1
 }
 
 #[pgrx::pg_guard]
@@ -162,11 +203,9 @@ pub unsafe extern "C" fn aminsert(
     _index_unchanged: bool,
     _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
-    #[cfg(any(feature = "pg14", feature = "pg15"))]
-    let oid = (*index_relation).rd_node.relNode;
-    #[cfg(feature = "pg16")]
-    let oid = (*index_relation).rd_locator.relNumber;
-    let id = Handle::from_sys(oid);
+    check_well_formed(index_relation);
+    let oid = (*index_relation).rd_id;
+    let id = get_handle(oid);
     let vector = from_datum(*values.add(0), *is_null.add(0));
     if let Some(v) = vector {
         am_update::update_insert(id, v, *heap_tid);
@@ -180,6 +219,7 @@ pub unsafe extern "C" fn ambeginscan(
     n_keys: std::os::raw::c_int,
     n_orderbys: std::os::raw::c_int,
 ) -> pgrx::pg_sys::IndexScanDesc {
+    check_well_formed(index_relation);
     assert!(n_keys == 0);
     assert!(n_orderbys == 1);
     am_scan::make_scan(index_relation)
@@ -221,11 +261,11 @@ pub unsafe extern "C" fn ambulkdelete(
     callback: pgrx::pg_sys::IndexBulkDeleteCallback,
     callback_state: *mut std::os::raw::c_void,
 ) -> *mut pgrx::pg_sys::IndexBulkDeleteResult {
-    #[cfg(any(feature = "pg14", feature = "pg15"))]
-    let oid = (*(*info).index).rd_node.relNode;
-    #[cfg(feature = "pg16")]
-    let oid = (*(*info).index).rd_locator.relNumber;
-    let id = Handle::from_sys(oid);
+    if !test_well_formed((*info).index) {
+        pgrx::warning!("The vector index is not initialized.");
+    }
+    let oid = (*(*info).index).rd_id;
+    let id = get_handle(oid);
     if let Some(callback) = callback {
         am_update::update_delete(id, |pointer| {
             callback(
@@ -240,9 +280,12 @@ pub unsafe extern "C" fn ambulkdelete(
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn amvacuumcleanup(
-    _info: *mut pgrx::pg_sys::IndexVacuumInfo,
+    info: *mut pgrx::pg_sys::IndexVacuumInfo,
     _stats: *mut pgrx::pg_sys::IndexBulkDeleteResult,
 ) -> *mut pgrx::pg_sys::IndexBulkDeleteResult {
+    if !test_well_formed((*info).index) {
+        pgrx::warning!("The vector index is not initialized.");
+    }
     let result = pgrx::PgBox::<pgrx::pg_sys::IndexBulkDeleteResult>::alloc0();
     result.into_pg()
 }

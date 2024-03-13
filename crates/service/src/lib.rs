@@ -1,12 +1,9 @@
-#![allow(clippy::needless_range_loop)]
+#![feature(trait_alias)]
 #![cfg_attr(target_arch = "x86_64", feature(stdarch_x86_avx512))]
 
-mod algorithms;
-mod index;
 mod instance;
-mod prelude;
-mod storage;
-mod utils;
+mod version;
 mod worker;
 
+pub use version::Version;
 pub use worker::Worker;

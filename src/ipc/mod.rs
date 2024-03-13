@@ -2,10 +2,13 @@ pub mod transport;
 
 use self::transport::ClientSocket;
 use self::transport::ServerSocket;
+use crate::error::*;
 use crate::gucs::internal::{Transport, TRANSPORT};
 use crate::ipc::transport::Packet;
-use crate::prelude::*;
 use crate::utils::cells::PgRefCell;
+use base::index::*;
+use base::search::*;
+use base::vector::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]

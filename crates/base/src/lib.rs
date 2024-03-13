@@ -9,9 +9,8 @@
 #![allow(clippy::nonminimal_bool)]
 
 pub mod distance;
-pub mod error;
-pub mod global;
 pub mod index;
+pub mod operator;
 pub mod scalar;
 pub mod search;
 pub mod vector;

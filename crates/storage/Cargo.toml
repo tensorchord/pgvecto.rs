@@ -1,0 +1,11 @@
+[package]
+name = "storage"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+base = { path = "../base" }
+common = { path = "../common" }
+
+[lints]
+workspace = true

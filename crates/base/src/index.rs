@@ -1,8 +1,82 @@
 use crate::distance::*;
 use crate::vector::*;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 use uuid::Uuid;
 use validator::{Validate, ValidationError};
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum CreateError {
+    #[error("Invalid index options.")]
+    InvalidIndexOptions { reason: String },
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum DropError {
+    #[error("Index not found.")]
+    NotExist,
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum FlushError {
+    #[error("Index not found.")]
+    NotExist,
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum InsertError {
+    #[error("Index not found.")]
+    NotExist,
+    #[error("Invalid vector.")]
+    InvalidVector,
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum DeleteError {
+    #[error("Index not found.")]
+    NotExist,
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum BasicError {
+    #[error("Index not found.")]
+    NotExist,
+    #[error("Invalid vector.")]
+    InvalidVector,
+    #[error("Invalid search options.")]
+    InvalidSearchOptions { reason: String },
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum VbaseError {
+    #[error("Index not found.")]
+    NotExist,
+    #[error("Invalid vector.")]
+    InvalidVector,
+    #[error("Invalid search options.")]
+    InvalidSearchOptions { reason: String },
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum ListError {
+    #[error("Index not found.")]
+    NotExist,
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum StatError {
+    #[error("Index not found.")]
+    NotExist,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]

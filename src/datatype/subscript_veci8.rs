@@ -151,8 +151,9 @@ fn _vectors_veci8_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Internal
                 };
                 if let Some(slice) = slice {
                     if !slice.is_empty() {
+                        use base::vector::veci8;
                         let (sum, l2_norm) =
-                            base::vector::i8_precompute(slice, input.alpha(), input.offset());
+                            veci8::i8_precompute(slice, input.alpha(), input.offset());
                         let output = Veci8Output::new(
                             Veci8Borrowed::new_checked(
                                 slice.len() as u32,
