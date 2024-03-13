@@ -65,6 +65,23 @@ def test_create_index(conn: Connection, index_name: str, index_setting: str):
 # =================================
 
 
+def test_copy(conn: Connection):
+    with conn.cursor() as cursor, cursor.copy(
+        "COPY tb_test_item (embedding) FROM STDIN (FORMAT BINARY)"
+    ) as copy:
+        for e in VECTORS:
+            copy.write_row([e])
+
+    conn.commit()
+    cur = conn.execute("SELECT * FROM tb_test_item;", binary=True)
+    rows = cur.fetchall()
+    assert len(rows) == len(VECTORS)
+    for i, e in enumerate(rows):
+        assert np.allclose(e[1], VECTORS[i], atol=1e-10)
+    conn.execute("Delete FROM tb_test_item;")
+    conn.commit()
+
+
 def test_insert(conn: Connection):
     with conn.cursor() as cur:
         cur.executemany(
@@ -77,21 +94,6 @@ def test_insert(conn: Connection):
         assert len(rows) == len(VECTORS)
         for i, e in enumerate(rows):
             assert np.allclose(e[1], VECTORS[i], atol=1e-10)
-
-
-def test_copy(conn: Connection):
-    with conn.cursor() as cursor, cursor.copy(
-        "COPY tb_test_item (embedding) FROM STDIN (FORMAT BINARY)"
-    ) as copy:
-        for e in VECTORS:
-            copy.write_row(e)
-
-    conn.execute("SELECT * FROM tb_test_item;")
-    conn.commit()
-    rows = conn.fetchall()
-    assert len(rows) == len(VECTORS)
-    for i, e in enumerate(rows):
-        assert np.allclose(e[1], VECTORS[i], atol=1e-10)
 
 
 def test_squared_euclidean_distance(conn: Connection):

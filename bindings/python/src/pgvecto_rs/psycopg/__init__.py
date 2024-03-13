@@ -59,9 +59,11 @@ def register_vector_info(context: Connection, info: TypeInfo):
         raise ProgrammingError(info="vector type not found in the database")
     info.register(context)
 
+    # Dumper for text and binary
     vector_text_dumper = type("", (VectorTextDumper,), {"oid": info.oid})
     vector_binary_dumper = type("", (VectorBinaryDumper,), {"oid": info.oid})
 
+    # Register the dumper and loader
     adapters = context.adapters
     adapters.register_dumper(list, vector_text_dumper)
     adapters.register_dumper(ndarray, vector_text_dumper)
