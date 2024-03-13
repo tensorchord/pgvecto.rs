@@ -1,11 +1,13 @@
-use crate::prelude::*;
+use crate::error::*;
+use crate::index::utils::get_handle;
+use base::index::*;
 
 #[pgrx::pg_extern(volatile, strict)]
 fn _vectors_index_stat(
     oid: pgrx::pg_sys::Oid,
 ) -> pgrx::composite_type!('static, "vectors.vector_index_stat") {
     use pgrx::heap_tuple::PgHeapTuple;
-    let id = Handle::from_sys(oid);
+    let id = get_handle(oid);
     let mut res = PgHeapTuple::new_composite_type("vectors.vector_index_stat").unwrap();
     let mut rpc = check_client(crate::ipc::client());
     let stat = rpc.stat(id);
@@ -60,10 +62,6 @@ fn _vectors_index_stat(
         }
         Err(StatError::NotExist) => {
             bad_service_not_exist();
-        }
-        Err(StatError::Upgrade) => {
-            res.set_by_name("idx_status", "UPGRADE").unwrap();
-            res
         }
     }
 }

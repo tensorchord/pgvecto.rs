@@ -1,6 +1,8 @@
 use crate::datatype::memory_veci8::{Veci8Input, Veci8Output};
-use crate::prelude::*;
-use base::global::*;
+use crate::error::*;
+use base::operator::*;
+use base::scalar::*;
+use base::vector::*;
 use std::ops::Deref;
 
 #[pgrx::pg_extern(immutable, parallel_safe)]
@@ -9,8 +11,8 @@ fn _vectors_veci8_operator_add(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> Veci
     let data = (0..lhs.len())
         .map(|i| lhs.index(i) + rhs.index(i))
         .collect::<Vec<_>>();
-    let (vector, alpha, offset) = i8_quantization(&data);
-    let (sum, l2_norm) = i8_precompute(&vector, alpha, offset);
+    let (vector, alpha, offset) = veci8::i8_quantization(&data);
+    let (sum, l2_norm) = veci8::i8_precompute(&vector, alpha, offset);
     Veci8Output::new(
         Veci8Borrowed::new_checked(lhs.len() as u32, &vector, alpha, offset, sum, l2_norm).unwrap(),
     )
@@ -22,8 +24,8 @@ fn _vectors_veci8_operator_minus(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> Ve
     let data = (0..lhs.len())
         .map(|i| lhs.index(i) - rhs.index(i))
         .collect::<Vec<_>>();
-    let (vector, alpha, offset) = i8_quantization(&data);
-    let (sum, l2_norm) = i8_precompute(&vector, alpha, offset);
+    let (vector, alpha, offset) = veci8::i8_quantization(&data);
+    let (sum, l2_norm) = veci8::i8_precompute(&vector, alpha, offset);
     Veci8Output::new(
         Veci8Borrowed::new_checked(lhs.len() as u32, &vector, alpha, offset, sum, l2_norm).unwrap(),
     )

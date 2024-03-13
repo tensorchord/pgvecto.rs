@@ -1,7 +1,6 @@
-use crate::index::compat::pgvector_stmt_rewrite;
-
 static mut PREV_EXECUTOR_START: pgrx::pg_sys::ExecutorStart_hook_type = None;
 static mut PREV_PROCESS_UTILITY: pgrx::pg_sys::ProcessUtility_hook_type = None;
+static mut NEXT_OBJECT_ACCESS_HOOK: pgrx::pg_sys::object_access_hook_type = None;
 
 #[pgrx::pg_guard]
 unsafe extern "C" fn vectors_executor_start(
@@ -15,13 +14,10 @@ unsafe extern "C" fn vectors_executor_start(
             pgrx::pg_sys::standard_ExecutorStart(query_desc, eflags);
         }
     }
-    unsafe {
-        super::hook_executor::post_executor_start(query_desc);
-    }
 }
 
 #[pgrx::pg_guard]
-unsafe extern "C" fn hook_pgvector_compatibility(
+unsafe extern "C" fn vectors_process_utility(
     pstmt: *mut pgrx::pg_sys::PlannedStmt,
     query_string: *const ::std::os::raw::c_char,
     read_only_tree: bool,
@@ -32,7 +28,7 @@ unsafe extern "C" fn hook_pgvector_compatibility(
     completion_tag: *mut pgrx::pg_sys::QueryCompletion,
 ) {
     unsafe {
-        pgvector_stmt_rewrite(pstmt);
+        super::hook_compat::pgvector_stmt_rewrite(pstmt);
     }
     unsafe {
         if let Some(prev_process_utility) = PREV_PROCESS_UTILITY {
@@ -62,16 +58,34 @@ unsafe extern "C" fn hook_pgvector_compatibility(
 }
 
 #[pgrx::pg_guard]
+unsafe extern "C" fn vectors_object_access(
+    access: pgrx::pg_sys::ObjectAccessType,
+    class_id: pgrx::pg_sys::Oid,
+    object_id: pgrx::pg_sys::Oid,
+    sub_id: i32,
+    arg: *mut libc::c_void,
+) {
+    unsafe {
+        super::hook_maintain::maintain_index_in_object_access(
+            access, class_id, object_id, sub_id, arg,
+        );
+        if let Some(next_object_access) = NEXT_OBJECT_ACCESS_HOOK {
+            next_object_access(access, class_id, object_id, sub_id, arg);
+        }
+    }
+}
+
+#[pgrx::pg_guard]
 unsafe extern "C" fn xact_callback(event: pgrx::pg_sys::XactEvent, _data: pgrx::void_mut_ptr) {
     match event {
         pgrx::pg_sys::XactEvent_XACT_EVENT_PRE_COMMIT
-        | pgrx::pg_sys::XactEvent_XACT_EVENT_PARALLEL_PRE_COMMIT => {
-            super::hook_transaction::commit();
-        }
+        | pgrx::pg_sys::XactEvent_XACT_EVENT_PARALLEL_PRE_COMMIT => unsafe {
+            super::hook_maintain::maintain_index_for_commit();
+        },
         pgrx::pg_sys::XactEvent_XACT_EVENT_ABORT
-        | pgrx::pg_sys::XactEvent_XACT_EVENT_PARALLEL_ABORT => {
-            super::hook_transaction::abort();
-        }
+        | pgrx::pg_sys::XactEvent_XACT_EVENT_PARALLEL_ABORT => unsafe {
+            super::hook_maintain::maintain_index_for_abort();
+        },
         _ => {}
     }
 }
@@ -81,7 +95,9 @@ pub unsafe fn init() {
         PREV_EXECUTOR_START = pgrx::pg_sys::ExecutorStart_hook;
         pgrx::pg_sys::ExecutorStart_hook = Some(vectors_executor_start);
         PREV_PROCESS_UTILITY = pgrx::pg_sys::ProcessUtility_hook;
-        pgrx::pg_sys::ProcessUtility_hook = Some(hook_pgvector_compatibility);
+        pgrx::pg_sys::ProcessUtility_hook = Some(vectors_process_utility);
+        NEXT_OBJECT_ACCESS_HOOK = pgrx::pg_sys::object_access_hook;
+        pgrx::pg_sys::object_access_hook = Some(vectors_object_access);
     }
     unsafe {
         pgrx::pg_sys::RegisterXactCallback(Some(xact_callback), std::ptr::null_mut());

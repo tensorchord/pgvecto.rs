@@ -136,19 +136,17 @@ jobs:
         run: |
           cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1) --debug
           cargo pgrx init --pg$VERSION=$(which pg_config)
-      - name: Format check
-        run: cargo fmt --check
       - name: Semantic check
         run: |
-          cargo clippy --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu
-          cargo clippy --no-default-features --features "pg${{ matrix.version }} pg_test" --target aarch64-unknown-linux-gnu
+          cargo clippy --no-default-features --features "pg${{ matrix.version }}" --target x86_64-unknown-linux-gnu
+          cargo clippy --no-default-features --features "pg${{ matrix.version }}" --target aarch64-unknown-linux-gnu
       - name: Debug build
         run: |
-          cargo build --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu
-          cargo build --no-default-features --features "pg${{ matrix.version }} pg_test" --target aarch64-unknown-linux-gnu
+          cargo build --no-default-features --features "pg${{ matrix.version }}" --target x86_64-unknown-linux-gnu
+          cargo build --no-default-features --features "pg${{ matrix.version }}" --target aarch64-unknown-linux-gnu
       - name: Test
         run: |
-          cargo test --all --no-fail-fast --no-default-features --features "pg${{ matrix.version }} pg_test" --target x86_64-unknown-linux-gnu -- --nocapture
+          cargo test --all --no-fail-fast --no-default-features --features "pg${{ matrix.version }}" --target x86_64-unknown-linux-gnu -- --nocapture
       - name: Cache
         uses: actions/cache/save@v4
         if: ${{ !steps.cache.outputs.cache-hit }}

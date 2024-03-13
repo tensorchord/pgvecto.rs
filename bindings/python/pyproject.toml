@@ -3,42 +3,29 @@ name = "pgvecto-rs"
 version = "0.1.4"
 description = "Python binding for pgvecto.rs"
 authors = [
-{ name = "TensorChord", email = "envd-maintainers@tensorchord.ai" },
-{ name = "盐粒 Yanli", email = "mail@yanli.one" },
+    { name = "TensorChord", email = "envd-maintainers@tensorchord.ai" },
+    { name = "盐粒 Yanli", email = "mail@yanli.one" },
 ]
-dependencies = [
-  "numpy>=1.23",
-  "toml>=0.10",
-]
+dependencies = ["numpy>=1.23", "toml>=0.10"]
 requires-python = ">=3.8"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 classifiers = [
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 
 [build-system]
 build-backend = "pdm.backend"
-requires = [
-  "pdm-backend",
-]
+requires = ["pdm-backend"]
 
 [project.optional-dependencies]
-psycopg3 = [
-  "psycopg[binary]>=3.1.12",
-]
-sdk = [
-  "openai>=1.2.2",
-  "pgvecto_rs[sqlalchemy]",
-]
-sqlalchemy = [
-  "pgvecto_rs[psycopg3]",
-  "SQLAlchemy>=2.0.23",
-]
+psycopg3 = ["psycopg[binary]>=3.1.12"]
+sdk = ["openai>=1.2.2", "pgvecto_rs[sqlalchemy]"]
+sqlalchemy = ["pgvecto_rs[psycopg3]", "SQLAlchemy>=2.0.23"]
 [tool.pdm.dev-dependencies]
 lint = ["ruff>=0.1.5"]
 test = ["pytest>=7.4.3"]
@@ -51,20 +38,20 @@ check = { composite = ["ruff format . --check", "ruff ."] }
 
 [tool.ruff]
 select = [
-  "E", #https://docs.astral.sh/ruff/rules/#error-e
-  "F", #https://docs.astral.sh/ruff/rules/#pyflakes-f
-  "I", #https://docs.astral.sh/ruff/rules/#isort-i
-  "TID", #https://docs.astral.sh/ruff/rules/#flake8-tidy-imports-tid
-  "S", #https://docs.astral.sh/ruff/rules/#flake8-bandit-s
-  "B", #https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
-  "SIM", #https://docs.astral.sh/ruff/rules/#flake8-simplify-sim
-  "N", #https://docs.astral.sh/ruff/rules/#pep8-naming-n
-  "PT", #https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
-  "TRY", #https://docs.astral.sh/ruff/rules/#tryceratops-try
-  "FLY", #https://docs.astral.sh/ruff/rules/#flynt-fly
-  "PL", #https://docs.astral.sh/ruff/rules/#pylint-pl
-  "NPY", #https://docs.astral.sh/ruff/rules/#numpy-specific-rules-npy
-  "RUF", #https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+    "E",   #https://docs.astral.sh/ruff/rules/#error-e
+    "F",   #https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "I",   #https://docs.astral.sh/ruff/rules/#isort-i
+    "TID", #https://docs.astral.sh/ruff/rules/#flake8-tidy-imports-tid
+    "S",   #https://docs.astral.sh/ruff/rules/#flake8-bandit-s
+    "B",   #https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    "SIM", #https://docs.astral.sh/ruff/rules/#flake8-simplify-sim
+    "N",   #https://docs.astral.sh/ruff/rules/#pep8-naming-n
+    "PT",  #https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
+    "TRY", #https://docs.astral.sh/ruff/rules/#tryceratops-try
+    "FLY", #https://docs.astral.sh/ruff/rules/#flynt-fly
+    "PL",  #https://docs.astral.sh/ruff/rules/#pylint-pl
+    "NPY", #https://docs.astral.sh/ruff/rules/#numpy-specific-rules-npy
+    "RUF", #https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
 ]
 ignore = ["S101", "E731", "E501"]
 src = ["src"]

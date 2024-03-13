@@ -12,45 +12,44 @@ path = "./src/bin/pgrx_embed.rs"
 
 [features]
 default = ["pg15"]
-pg14 = ["pgrx/pg14", "pgrx-tests/pg14"]
-pg15 = ["pgrx/pg15", "pgrx-tests/pg15"]
-pg16 = ["pgrx/pg16", "pgrx-tests/pg16"]
-pg_test = []
+pg14 = ["pgrx/pg14"]
+pg15 = ["pgrx/pg15"]
+pg16 = ["pgrx/pg16"]
 
 [dependencies]
 arrayvec.workspace = true
 bincode.workspace = true
 bytemuck.workspace = true
 byteorder.workspace = true
+env_logger = "0.11.2"
 libc.workspace = true
 log.workspace = true
 memmap2.workspace = true
 num-traits.workspace = true
 paste.workspace = true
+pgrx = { version = "0.12.0-alpha.1", default-features = false, features = [] }
 rand.workspace = true
 rustix.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+tikv-jemallocator = { version = "0.5.4", features = [
+    "disable_initial_exec_tls",
+] }
+toml = "0.8.10"
 validator.workspace = true
+
 base = { path = "crates/base" }
 detect = { path = "crates/detect" }
-send_fd = { path = "crates/send_fd" }
-service = { path = "crates/service" }
 embedding = { path = "crates/embedding" }
 interprocess_atomic_wait = { path = "crates/interprocess-atomic-wait" }
 memfd = { path = "crates/memfd" }
-pgrx = { version = "0.12.0-alpha.1", default-features = false, features = [] }
-env_logger = "0.11.2"
-toml = "0.8.10"
-
-[dev-dependencies]
-pgrx-tests = "0.12.0-alpha.1"
-httpmock = "0.7"
+scopeguard = "1.2.0"
+send_fd = { path = "crates/send_fd" }
+service = { path = "crates/service" }
 
 [patch.crates-io]
 pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.0-alpha.1-patch" }
-pgrx-tests = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.0-alpha.1-patch" }
 
 [lints]
 rust.unsafe_op_in_unsafe_fn = "deny"
@@ -66,29 +65,32 @@ version = "0.0.0"
 edition = "2021"
 
 [workspace.dependencies]
-arrayvec = "~0.7"
-bincode = "~1.3"
-bytemuck = { version = "~1.14", features = ["extern_crate_alloc"] }
-byteorder = "~1.5"
-half = { version = "~2.4", features = [
+arc-swap = "1.7.0"
+arrayvec = "0.7.4"
+bincode = "1.3.3"
+bytemuck = { version = "1.14.3", features = ["extern_crate_alloc"] }
+byteorder = "1.5.0"
+half = { version = "2.4.0", features = [
     "bytemuck",
     "num-traits",
+    "rand_distr",
     "serde",
     "use-intrinsics",
-    "rand_distr",
 ] }
-libc = "~0.2"
-log = "~0.4"
+libc = "0.2.153"
+log = "0.4.21"
 memmap2 = "0.9.4"
-num-traits = "~0.2"
-paste = "~1.0"
+multiversion = "0.7.3"
+num-traits = "0.2.18"
+parking_lot = "0.12.1"
+paste = "1.0.14"
 rand = "0.8.5"
-rustix = { version = "~0.38", features = ["fs", "net", "mm"] }
-serde = "~1.0"
-serde_json = "~1.0"
-thiserror = "~1.0"
-uuid = { version = "1.7.0", features = ["v4", "serde"] }
-validator = { version = "~0.17", features = ["derive"] }
+rustix = { version = "0.38.31", features = ["fs", "mm", "net"] }
+serde = "1"
+serde_json = "1"
+thiserror = "1"
+uuid = { version = "1.7.0", features = ["serde", "v4"] }
+validator = { version = "0.17.0", features = ["derive"] }
 
 [workspace.lints]
 rust.unsafe_op_in_unsafe_fn = "forbid"

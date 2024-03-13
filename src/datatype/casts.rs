@@ -3,7 +3,10 @@ use crate::datatype::memory_svecf32::{SVecf32Input, SVecf32Output};
 use crate::datatype::memory_vecf16::{Vecf16Input, Vecf16Output};
 use crate::datatype::memory_vecf32::{Vecf32Input, Vecf32Output};
 use crate::datatype::memory_veci8::{Veci8Input, Veci8Output};
-use crate::prelude::*;
+use crate::error::*;
+use base::scalar::*;
+use base::vector::*;
+use num_traits::Zero;
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_cast_array_to_vecf32(
@@ -136,8 +139,8 @@ fn _vectors_cast_vecf32_to_veci8(
     _typmod: i32,
     _explicit: bool,
 ) -> Veci8Output {
-    let (data, alpha, offset) = i8_quantization(vector.slice());
-    let (sum, l2_norm) = i8_precompute(&data, alpha, offset);
+    let (data, alpha, offset) = veci8::i8_quantization(vector.slice());
+    let (sum, l2_norm) = veci8::i8_precompute(&data, alpha, offset);
     Veci8Output::new(
         Veci8Borrowed::new_checked(data.len() as u32, &data, alpha, offset, sum, l2_norm).unwrap(),
     )

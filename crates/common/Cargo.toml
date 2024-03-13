@@ -1,0 +1,15 @@
+[package]
+name = "common"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+bytemuck.workspace = true
+log.workspace = true
+memmap2.workspace = true
+rustix.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true
