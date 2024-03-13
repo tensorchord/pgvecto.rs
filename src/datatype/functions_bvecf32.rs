@@ -1,6 +1,7 @@
 use super::memory_bvecf32::BVecf32Output;
 use super::memory_vecf32::Vecf32Input;
-use crate::prelude::*;
+use base::scalar::*;
+use base::vector::*;
 
 #[pgrx::pg_extern(immutable, parallel_safe, strict)]
 fn _vectors_binarize(vector: Vecf32Input<'_>) -> BVecf32Output {

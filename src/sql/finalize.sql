@@ -742,4 +742,6 @@ CREATE VIEW pg_vector_index_stat AS
          pg_am A ON A.oid = I.relam
     WHERE A.amname = 'vectors';
 
+GRANT SELECT ON TABLE pg_vector_index_stat TO PUBLIC;
+
 -- finalize end

@@ -1,4 +1,5 @@
-use crate::prelude::*;
+use base::scalar::*;
+use base::vector::*;
 use pgrx::pg_sys::Datum;
 use pgrx::pg_sys::Oid;
 use pgrx::pgrx_sql_entity_graph::metadata::ArgumentError;

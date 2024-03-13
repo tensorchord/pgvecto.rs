@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use base::index::*;
 use pgrx::{GucContext, GucFlags, GucRegistry, GucSetting};
 
 static ENABLE_PREFILTER: GucSetting<bool> = GucSetting::<bool>::new(true);

@@ -1,6 +1,7 @@
 use super::memory_bvecf32::{BVecf32Input, BVecf32Output};
 use crate::datatype::typmod::Typmod;
-use crate::prelude::*;
+use crate::error::*;
+use base::vector::*;
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 use std::fmt::Write;

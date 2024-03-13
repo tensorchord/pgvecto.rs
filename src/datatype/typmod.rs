@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::error::*;
 use pgrx::Array;
 use serde::{Deserialize, Serialize};
 use std::ffi::{CStr, CString};

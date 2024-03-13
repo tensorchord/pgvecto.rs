@@ -1,6 +1,9 @@
 use crate::datatype::memory_vecf32::{Vecf32Input, Vecf32Output};
-use crate::prelude::*;
-use base::global::*;
+use crate::error::*;
+use base::operator::*;
+use base::scalar::*;
+use base::vector::*;
+use num_traits::Zero;
 use std::ops::Deref;
 
 #[pgrx::pg_extern(immutable, parallel_safe)]

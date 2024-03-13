@@ -1,4 +1,4 @@
-use crate::prelude::bad_guc_literal;
+use crate::error::*;
 use pgrx::GucSetting;
 use std::ffi::CStr;
 

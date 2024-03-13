@@ -4,26 +4,15 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-bincode.workspace = true
-bytemuck.workspace = true
-byteorder.workspace = true
-log.workspace = true
-memmap2.workspace = true
-num-traits.workspace = true
-rand.workspace = true
-rustix.workspace = true
+arc-swap.workspace = true
+parking_lot.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
-uuid.workspace = true
-validator.workspace = true
+
 base = { path = "../base" }
-crc32fast = "1.4.0"
-crossbeam = "0.8.4"
-dashmap = "5.5.3"
-parking_lot = "0.12.1"
-rayon = "1.8.1"
-arc-swap = "1.6.0"
+common = { path = "../common" }
+index = { path = "../index" }
 
 [lints]
 workspace = true

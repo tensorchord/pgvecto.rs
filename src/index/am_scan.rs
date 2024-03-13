@@ -1,37 +1,20 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
+use crate::error::*;
 use crate::gucs::executing::search_options;
 use crate::gucs::planning::Mode;
 use crate::gucs::planning::SEARCH_MODE;
-use crate::index::utils::from_datum;
+use crate::index::utils::{from_datum, get_handle};
 use crate::ipc::{ClientBasic, ClientVbase};
-use crate::prelude::*;
+use crate::utils::sys::IntoSys;
+use base::index::*;
+use base::vector::*;
 use pgrx::pg_sys::SK_ISNULL;
-use pgrx::FromDatum;
 
 pub enum Scanner {
-    Initial {
-        node: Option<*mut pgrx::pg_sys::IndexScanState>,
-        vector: Option<OwnedVector>,
-    },
-    Basic {
-        node: *mut pgrx::pg_sys::IndexScanState,
-        basic: ClientBasic,
-    },
-    Vbase {
-        node: *mut pgrx::pg_sys::IndexScanState,
-        vbase: ClientVbase,
-    },
-}
-
-impl Scanner {
-    fn node(&self) -> Option<*mut pgrx::pg_sys::IndexScanState> {
-        match self {
-            Scanner::Initial { node, .. } => *node,
-            Scanner::Basic { node, .. } => Some(*node),
-            Scanner::Vbase { node, .. } => Some(*node),
-        }
-    }
+    Initial { vector: Option<OwnedVector> },
+    Basic { basic: ClientBasic },
+    Vbase { vbase: ClientVbase },
 }
 
 pub unsafe fn make_scan(index_relation: pgrx::pg_sys::Relation) -> pgrx::pg_sys::IndexScanDesc {
@@ -42,11 +25,8 @@ pub unsafe fn make_scan(index_relation: pgrx::pg_sys::Relation) -> pgrx::pg_sys:
     (*scan).xs_recheck = false;
     (*scan).xs_recheckorderby = false;
 
-    (*scan).opaque =
-        PgMemoryContexts::CurrentMemoryContext.leak_and_drop_on_delete(Scanner::Initial {
-            vector: None,
-            node: None,
-        }) as _;
+    (*scan).opaque = PgMemoryContexts::CurrentMemoryContext
+        .leak_and_drop_on_delete(Scanner::Initial { vector: None }) as _;
 
     (*scan).xs_orderbyvals = pgrx::pg_sys::palloc0(std::mem::size_of::<pgrx::pg_sys::Datum>()) as _;
 
@@ -65,13 +45,7 @@ pub unsafe fn start_scan(scan: pgrx::pg_sys::IndexScanDesc, orderbys: pgrx::pg_s
     let vector = from_datum((*orderbys.add(0)).sk_argument, is_null);
 
     let scanner = &mut *((*scan).opaque as *mut Scanner);
-    let scanner = std::mem::replace(
-        scanner,
-        Scanner::Initial {
-            node: scanner.node(),
-            vector,
-        },
-    );
+    let scanner = std::mem::replace(scanner, Scanner::Initial { vector });
 
     match scanner {
         Scanner::Initial { .. } => {}
@@ -86,15 +60,11 @@ pub unsafe fn start_scan(scan: pgrx::pg_sys::IndexScanDesc, orderbys: pgrx::pg_s
 
 pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
     let scanner = &mut *((*scan).opaque as *mut Scanner);
-    if let Scanner::Initial { node, vector } = scanner {
-        let node = node.expect("Hook failed.");
+    if let Scanner::Initial { vector } = scanner {
         let vector = vector.as_ref().expect("Scan failed.");
 
-        #[cfg(any(feature = "pg14", feature = "pg15"))]
-        let oid = (*(*scan).indexRelation).rd_node.relNode;
-        #[cfg(feature = "pg16")]
-        let oid = (*(*scan).indexRelation).rd_locator.relNumber;
-        let id = Handle::from_sys(oid);
+        let oid = (*(*scan).indexRelation).rd_id;
+        let id = get_handle(oid);
 
         let rpc = check_client(crate::ipc::client());
 
@@ -104,22 +74,20 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
                 let basic = match rpc.basic(id, vector.clone(), opts) {
                     Ok(x) => x,
                     Err((_, BasicError::NotExist)) => bad_service_not_exist(),
-                    Err((_, BasicError::Upgrade)) => bad_service_upgrade(),
                     Err((_, BasicError::InvalidVector)) => bad_service_invalid_vector(),
                     Err((_, BasicError::InvalidSearchOptions { reason: _ })) => unreachable!(),
                 };
-                *scanner = Scanner::Basic { node, basic };
+                *scanner = Scanner::Basic { basic };
             }
             Mode::vbase => {
                 let opts = search_options();
                 let vbase = match rpc.vbase(id, vector.clone(), opts) {
                     Ok(x) => x,
                     Err((_, VbaseError::NotExist)) => bad_service_not_exist(),
-                    Err((_, VbaseError::Upgrade)) => bad_service_upgrade(),
                     Err((_, VbaseError::InvalidVector)) => bad_service_invalid_vector(),
                     Err((_, VbaseError::InvalidSearchOptions { reason: _ })) => unreachable!(),
                 };
-                *scanner = Scanner::Vbase { node, vbase };
+                *scanner = Scanner::Vbase { vbase };
             }
         }
     }
@@ -146,13 +114,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
 
 pub unsafe fn end_scan(scan: pgrx::pg_sys::IndexScanDesc) {
     let scanner = &mut *((*scan).opaque as *mut Scanner);
-    let scanner = std::mem::replace(
-        scanner,
-        Scanner::Initial {
-            node: scanner.node(),
-            vector: None,
-        },
-    );
+    let scanner = std::mem::replace(scanner, Scanner::Initial { vector: None });
 
     match scanner {
         Scanner::Initial { .. } => {}
@@ -163,84 +125,4 @@ pub unsafe fn end_scan(scan: pgrx::pg_sys::IndexScanDesc) {
             vbase.leave();
         }
     }
-}
-
-#[allow(unused)]
-unsafe fn execute_boolean_qual(
-    state: *mut pgrx::pg_sys::ExprState,
-    econtext: *mut pgrx::pg_sys::ExprContext,
-) -> bool {
-    use pgrx::PgMemoryContexts;
-    if state.is_null() {
-        return true;
-    }
-    assert!((*state).flags & pgrx::pg_sys::EEO_FLAG_IS_QUAL as u8 != 0);
-    let mut is_null = true;
-    pgrx::pg_sys::MemoryContextReset((*econtext).ecxt_per_tuple_memory);
-    let ret = PgMemoryContexts::For((*econtext).ecxt_per_tuple_memory)
-        .switch_to(|_| (*state).evalfunc.unwrap()(state, econtext, &mut is_null));
-    assert!(!is_null);
-    bool::from_datum(ret, is_null).unwrap()
-}
-
-#[allow(unused)]
-unsafe fn check_quals(node: *mut pgrx::pg_sys::IndexScanState) -> bool {
-    let slot = (*node).ss.ss_ScanTupleSlot;
-    let econtext = (*node).ss.ps.ps_ExprContext;
-    (*econtext).ecxt_scantuple = slot;
-    if (*node).ss.ps.qual.is_null() {
-        return true;
-    }
-    let state = (*node).ss.ps.qual;
-    let econtext = (*node).ss.ps.ps_ExprContext;
-    execute_boolean_qual(state, econtext)
-}
-
-#[allow(unused)]
-unsafe fn check_mvcc(node: *mut pgrx::pg_sys::IndexScanState, p: Pointer) -> bool {
-    let scan_desc = (*node).iss_ScanDesc;
-    let heap_fetch = (*scan_desc).xs_heapfetch;
-    let index_relation = (*heap_fetch).rel;
-    let rd_tableam = (*index_relation).rd_tableam;
-    let snapshot = (*scan_desc).xs_snapshot;
-    let index_fetch_tuple = (*rd_tableam).index_fetch_tuple.unwrap();
-    let mut all_dead = false;
-    let slot = (*node).ss.ss_ScanTupleSlot;
-    let mut heap_continue = false;
-    let found = index_fetch_tuple(
-        heap_fetch,
-        &mut p.into_sys(),
-        snapshot,
-        slot,
-        &mut heap_continue,
-        &mut all_dead,
-    );
-    if found {
-        return true;
-    }
-    while heap_continue {
-        let found = index_fetch_tuple(
-            heap_fetch,
-            &mut p.into_sys(),
-            snapshot,
-            slot,
-            &mut heap_continue,
-            &mut all_dead,
-        );
-        if found {
-            return true;
-        }
-    }
-    false
-}
-
-#[allow(unused)]
-unsafe fn check(node: *mut pgrx::pg_sys::IndexScanState, p: Pointer) -> bool {
-    if !check_mvcc(node, p) {
-        return false;
-    }
-    if !check_quals(node) {
-        return false;
-    }
-    true
 }
