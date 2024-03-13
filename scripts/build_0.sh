@@ -24,7 +24,8 @@ DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y --no-install-recomm
     wget \
     xsltproc \
     zlib1g-dev \
-    zip
+    zip \
+    qemu-user-static
 apt-get install -y --no-install-recommends sudo ca-certificates
 
 echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee -a /etc/apt/sources.list.d/pgdg.list

@@ -69,6 +69,8 @@ jobs:
           key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}
       - name: Set up PostgreSQL
         run: ./scripts/ci_setup.sh
+      - name: Set up Pgrx
+        run: mkdir -p ~/.pgrx && echo "configs.pg$VERSION=\"$(which pg_config)\"" > ~/.pgrx/config.toml
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -77,13 +79,13 @@ jobs:
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
       - name: Set up Sqllogictest
         run: cargo binstall sqllogictest-bin -y --force
-      - name: Set up Pgrx
-        run: |
-          cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1) --debug
-          cargo pgrx init --pg$VERSION=$(which pg_config)
       - name: Release build
         run: |
-          cargo pgrx install --no-default-features --features "pg$VERSION" --release
+          cargo build --no-default-features --features "pg$VERSION" --release
+          ./tools/schema.sh --no-default-features --features "pg$VERSION" --release | sudo tee "/usr/share/postgresql/$VERSION/extension/vectors--0.0.0.sql"
+          sed -e "s/@CARGO_VERSION@/0.0.0/g" < ./vectors.control | sudo tee "/usr/share/postgresql/$VERSION/extension/vectors.control"
+          cp ./target/release/libvectors.so "/usr/lib/postgresql/$VERSION/lib/vectors.so"
+
           psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
           psql -c 'ALTER SYSTEM SET search_path = "$user", public, vectors'
           psql -c 'ALTER SYSTEM SET logging_collector = on'
@@ -130,12 +132,10 @@ jobs:
           key: ${{ github.job }}-${{ matrix.version }}-${{ matrix.os }}-${{ hashFiles('./Cargo.lock') }}
       - name: Set up PostgreSQL
         run: ./scripts/ci_setup.sh
+      - name: Set up Pgrx
+        run: mkdir -p ~/.pgrx && echo "configs.pg$VERSION=\"$(which pg_config)\"" > ~/.pgrx/config.toml
       - name: Set up Binstall
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-      - name: Set up Pgrx
-        run: |
-          cargo install cargo-pgrx@$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1) --debug
-          cargo pgrx init --pg$VERSION=$(which pg_config)
       - name: Semantic check
         run: |
           cargo clippy --no-default-features --features "pg${{ matrix.version }}" --target x86_64-unknown-linux-gnu
