@@ -176,7 +176,7 @@ pub fn cosine<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
         "x86_64/x86-64-v2",
         "aarch64+neon"
     ))]
-    pub fn cosine(lhs: &[usize], rhs: &[usize]) -> F32 {
+    fn cosine(lhs: &[usize], rhs: &[usize]) -> F32 {
         let mut xy = 0;
         let mut xx = 0;
         let mut yy = 0;
@@ -191,6 +191,7 @@ pub fn cosine<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
         F32(rxy / (rxx * ryy).sqrt())
     }
 
+    #[inline]
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
     unsafe fn cosine_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
@@ -266,7 +267,7 @@ pub fn dot<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
         "x86_64/x86-64-v2",
         "aarch64+neon"
     ))]
-    pub fn dot(lhs: &[usize], rhs: &[usize]) -> F32 {
+    fn dot(lhs: &[usize], rhs: &[usize]) -> F32 {
         let mut xy = 0;
         for i in 0..lhs.len() {
             xy += (lhs[i] & rhs[i]).count_ones();
@@ -274,6 +275,7 @@ pub fn dot<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
         F32(xy as f32)
     }
 
+    #[inline]
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
     unsafe fn dot_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
@@ -341,7 +343,7 @@ pub fn sl2<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
         "x86_64/x86-64-v2",
         "aarch64+neon"
     ))]
-    pub fn sl2(lhs: &[usize], rhs: &[usize]) -> F32 {
+    fn sl2(lhs: &[usize], rhs: &[usize]) -> F32 {
         let mut dd = 0;
         for i in 0..lhs.len() {
             dd += (lhs[i] ^ rhs[i]).count_ones();
@@ -349,6 +351,7 @@ pub fn sl2<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
         F32(dd as f32)
     }
 
+    #[inline]
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
     unsafe fn sl2_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
@@ -416,7 +419,7 @@ pub fn jaccard<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
         "x86_64/x86-64-v2",
         "aarch64+neon"
     ))]
-    pub fn jaccard(lhs: &[usize], rhs: &[usize]) -> F32 {
+    fn jaccard(lhs: &[usize], rhs: &[usize]) -> F32 {
         let mut inter = 0;
         let mut union = 0;
         for i in 0..lhs.len() {
@@ -426,6 +429,7 @@ pub fn jaccard<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
         F32(inter as f32 / union as f32)
     }
 
+    #[inline]
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
     unsafe fn jaccard_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
@@ -503,6 +507,7 @@ pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
         F32(l as f32).sqrt()
     }
 
+    #[inline]
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
     unsafe fn length_avx512vpopcntdq(lhs: &[usize]) -> F32 {
