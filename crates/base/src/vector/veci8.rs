@@ -338,7 +338,7 @@ pub fn i8_precompute(data: &[I8], alpha: F32, offset: F32) -> (F32, F32) {
 }
 
 #[cfg(test)]
-mod tests {
+mod tests_0 {
     use super::*;
 
     #[test]
@@ -499,7 +499,7 @@ pub fn dot_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
 }
 
 #[cfg(test)]
-mod tests_2 {
+mod tests_1 {
     use super::*;
 
     fn new_random_vec_f32(size: usize) -> Vec<F32> {
