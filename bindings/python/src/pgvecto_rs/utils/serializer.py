@@ -3,6 +3,8 @@ from typing import Optional
 
 import numpy as np
 
+from pgvecto_rs.types import SparseVector
+
 from . import decorators
 
 
@@ -18,6 +20,17 @@ def from_db_binary(value: bytes) -> np.ndarray:
     dim = unpack("<H", value[:2])[0]
     # start reading buffer from 3th byte (first 2 bytes are for dimension info)
     return np.frombuffer(value, dtype="<f", count=dim, offset=2).astype(np.float32)
+
+
+@decorators.ignore_none
+def from_db_binary_sparse(value: bytes) -> SparseVector:
+    dims = unpack("<I", value[:4])[0]
+    length = unpack("<I", value[4:8])[0]
+    bytes = value[8:]
+    indices = np.frombuffer(bytes, dtype="<I", count=length, offset=0).astype(np.uint32)
+    bytes = bytes[4 * length :]
+    values = np.frombuffer(bytes, dtype="<f", count=length, offset=0).astype(np.float32)
+    return SparseVector(dims, indices, values)
 
 
 @decorators.ignore_none
@@ -49,3 +62,21 @@ def to_db_binary(value: np.ndarray, dim: Optional[int] = None) -> bytes:
     )
     # raise ValueError("expected 1d array, not %d" % value.ndim)
     return dims + value.tobytes()
+
+
+@decorators.ignore_none
+@decorators.validate_sparse_vector
+def to_db_binary_sparse(value: SparseVector) -> bytes:
+    (dims, indices, values) = value
+    indices = np.asarray(indices, dtype="<I")
+    indices_len = indices.shape[0]
+    indices_bytes = indices.tobytes()
+    values = np.asarray(values, dtype="<f")
+    values_len = values.shape[0]
+    values_bytes = values.tobytes()
+    if indices_len != values_len:
+        raise ValueError(
+            "sparse vector expected indices length %d to match values length %d"
+            % (indices_len, values_len)
+        )
+    return pack("<I", dims) + pack("<I", indices_len) + indices_bytes + values_bytes

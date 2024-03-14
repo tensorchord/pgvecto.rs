@@ -4,10 +4,13 @@ from psycopg.adapt import Dumper, Loader
 from psycopg.pq import Format
 from psycopg.types import TypeInfo
 
+from pgvecto_rs.types import SparseVector
 from pgvecto_rs.utils.serializer import (
     from_db_binary,
+    from_db_binary_sparse,
     from_db_str,
     to_db_binary,
+    to_db_binary_sparse,
     to_db_str,
 )
 
@@ -28,6 +31,13 @@ class VectorBinaryDumper(Dumper):
         return to_db_binary(obj)
 
 
+class SparseVectorTextDumper(Dumper):
+    format = Format.BINARY
+
+    def dump(self, obj):
+        return to_db_binary_sparse(obj)
+
+
 class VectorTextLoader(Loader):
     format = Format.TEXT
 
@@ -44,14 +54,25 @@ class VectorBinaryLoader(Loader):
         return from_db_binary(data)
 
 
+class SparseVectorBinaryLoader(Loader):
+    format = Format.BINARY
+
+    def load(self, data):
+        return from_db_binary_sparse(data)
+
+
 def register_vector(context: Connection):
     info = TypeInfo.fetch(context, "vector")
     register_vector_info(context, info)
+    info = TypeInfo.fetch(context, "svector")
+    register_svector_info(context, info)
 
 
 async def register_vector_async(context: Connection):
     info = await TypeInfo.fetch(context, "vector")
     register_vector_info(context, info)
+    info = await TypeInfo.fetch(context, "svector")
+    register_svector_info(context, info)
 
 
 def register_vector_info(context: Connection, info: TypeInfo):
@@ -71,3 +92,17 @@ def register_vector_info(context: Connection, info: TypeInfo):
     adapters.register_dumper(ndarray, vector_binary_dumper)
     adapters.register_loader(info.oid, VectorTextLoader)
     adapters.register_loader(info.oid, VectorBinaryLoader)
+
+
+def register_svector_info(context: Connection, info: TypeInfo):
+    if info is None:
+        raise ProgrammingError(info="svector type not found in the database")
+    info.register(context)
+
+    # Dumper for binary
+    svector_binary_dumper = type("", (SparseVectorTextDumper,), {"oid": info.oid})
+
+    # Register the dumper and loader
+    adapters = context.adapters
+    adapters.register_dumper(SparseVector, svector_binary_dumper)
+    adapters.register_loader(info.oid, SparseVectorBinaryLoader)
