@@ -53,7 +53,7 @@ docker run \
   --name pgvecto-rs-demo \
   -e POSTGRES_PASSWORD=mysecretpassword \
   -p 5432:5432 \
-  -d tensorchord/pgvecto-rs:pg16-v0.2.0
+  -d tensorchord/pgvecto-rs:pg16-v0.2.1
 ```
 
 Then you can connect to the database using the `psql` command line tool. The default username is `postgres`, and the default password is `mysecretpassword`.
