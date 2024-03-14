@@ -32,5 +32,14 @@ class SparseVectorTypeError(PGVectoRsError):
         self, field: str, expected_type: List[type], actual_type: type
     ) -> None:
         super().__init__(
-            f"{field} of SparseVector must be of type { ' or '.join(map(lambda t: t.__name__, expected_type))}, got {actual_type.__name__}"
+            f"{field} in SparseVector must be of type { ' or '.join(map(lambda t: t.__name__, expected_type))}, got {actual_type.__name__}"
+        )
+
+
+class SparseVectorElementTypeError(PGVectoRsError):
+    def __init__(
+        self, field: str, expected_type: List[type], actual_type: type
+    ) -> None:
+        super().__init__(
+            f"elements of {field} in SparseVector must be of type { ' or '.join(map(lambda t: t.__name__, expected_type))}, got {actual_type.__name__}"
         )

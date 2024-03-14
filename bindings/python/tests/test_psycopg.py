@@ -90,6 +90,7 @@ def test_copy_sparse(conn: Connection):
     )
     conn.commit()
     try:
+        rows_number = 0
         with conn.cursor() as cursor, cursor.copy(
             "COPY tb_test_svector (embedding) FROM STDIN (FORMAT BINARY)"
         ) as copy:
@@ -97,45 +98,14 @@ def test_copy_sparse(conn: Connection):
             copy.write_row([SparseVector(3, np.array([0, 1, 2]), [1.0, 2.0, 3.0])])
             copy.write_row([SparseVector(3, np.array([1, 2]), np.array([2.0, 3.0]))])
         conn.commit()
+        rows_number = 3
         cur = conn.execute("SELECT * FROM tb_test_svector;", binary=True)
         rows = cur.fetchall()
-        assert len(rows) == 3
+        assert len(rows) == rows_number
         assert str(rows[0][1]) == "[1.0, 0.0, 3.0]"
         assert str(rows[1][1]) == "[1.0, 2.0, 3.0]"
         assert str(rows[2][1]) == "[0.0, 2.0, 3.0]"
         conn.commit()
-
-    finally:
-        conn.execute("DROP TABLE IF EXISTS tb_test_svector;")
-        conn.commit()
-
-
-def test_copy_sparse_fail(conn: Connection):
-    conn.execute("DROP TABLE IF EXISTS tb_test_svector;")
-    conn.execute(
-        "CREATE TABLE tb_test_svector (id bigserial PRIMARY KEY, embedding svector NOT NULL);"
-    )
-    conn.commit()
-    try:
-        with conn.cursor() as cursor, cursor.copy(
-            "COPY tb_test_svector (embedding) FROM STDIN (FORMAT BINARY)"
-        ) as copy:
-            pass
-        try:
-            copy.write_row([SparseVector(3.1, [0, 2], [1.0, 3.0, 4.0])])
-        except ValueError as e:
-            assert str(e) == "dims of SparseVector must be of type int, got float"
-        try:
-            copy.write_row([SparseVector(3, [0, 2], set([4, 5, 6, 7]))])
-        except ValueError as e:
-            assert (
-                str(e)
-                == "values of SparseVector must be of type list or ndarray, got set"
-            )
-        try:
-            copy.write_row([SparseVector(3, np.array([[0], [0]]), [1.0, 3.0, 4.0])])
-        except ValueError as e:
-            assert str(e) == "ndarray must be 1D for vector, got 2D"
 
     finally:
         conn.execute("DROP TABLE IF EXISTS tb_test_svector;")

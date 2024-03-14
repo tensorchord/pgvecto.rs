@@ -24,9 +24,11 @@ def from_db_binary(value: bytes) -> np.ndarray:
 
 @decorators.ignore_none
 def from_db_binary_sparse(value: bytes) -> SparseVector:
+    # unpack dims and length as little-endian uint32, keep same endian with pgvecto.rs
     dims = unpack("<I", value[:4])[0]
     length = unpack("<I", value[4:8])[0]
     bytes = value[8:]
+    # unpack indices and values as little-endian uint32 and float32, keep same endian with pgvecto.rs
     indices = np.frombuffer(bytes, dtype="<I", count=length, offset=0).astype(np.uint32)
     bytes = bytes[4 * length :]
     values = np.frombuffer(bytes, dtype="<f", count=length, offset=0).astype(np.float32)
@@ -60,7 +62,6 @@ def to_db_binary(value: np.ndarray, dim: Optional[int] = None) -> bytes:
         "<H",
         value.shape[0],
     )
-    # raise ValueError("expected 1d array, not %d" % value.ndim)
     return dims + value.tobytes()
 
 
@@ -68,12 +69,15 @@ def to_db_binary(value: np.ndarray, dim: Optional[int] = None) -> bytes:
 @decorators.validate_sparse_vector
 def to_db_binary_sparse(value: SparseVector) -> bytes:
     (dims, indices, values) = value
+    # convert indices to little-endian uint32
     indices = np.asarray(indices, dtype="<I")
     indices_len = indices.shape[0]
     indices_bytes = indices.tobytes()
+    # convert values to little-endian float32
     values = np.asarray(values, dtype="<f")
     values_len = values.shape[0]
     values_bytes = values.tobytes()
+    # check indices and values length is the same
     if indices_len != values_len:
         raise ValueError(
             "sparse vector expected indices length %d to match values length %d"
