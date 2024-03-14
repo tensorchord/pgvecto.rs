@@ -77,7 +77,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload --clobber ${{ github.event.inputs.tag }} ./build/vectors-pg${{ matrix.version }}_${{ matrix.arch }}-unknown-linux-gnu_${{ github.event.inputs.version }}.zip
-          gh release upload --clobber ${{ github.event.inputs.tag }} ./build/vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}-1_${{ matrix.platform }}.deb
+          gh release upload --clobber ${{ github.event.inputs.tag }} ./build/vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb
   docker_binary_release:
     needs: ["binary", "semver"]
     strategy:
@@ -97,7 +97,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download ${{ github.event.inputs.tag }} --pattern "vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}-1_${{ matrix.platform }}.deb" --output pgvecto-rs-binary-release.deb
+          gh release download ${{ github.event.inputs.tag }} --pattern "vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb" --output pgvecto-rs-binary-release.deb
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
