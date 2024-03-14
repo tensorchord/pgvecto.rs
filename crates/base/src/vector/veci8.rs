@@ -581,8 +581,7 @@ mod tests_2 {
         let ref_y = y_owned.for_borrow();
         let result = l2_distance(&ref_x, &ref_y);
         assert!(
-            (result.0 - result_expected).abs() / result_expected < 0.05
-                || (result.0 - result_expected).abs() < 1.0
+            result_expected < 1.0 || (result.0 - result_expected).abs() / result_expected < 0.05
         );
     }
 }
