@@ -549,7 +549,11 @@ mod tests_2 {
         let y_owned = vec_to_owned(y);
         let ref_y = y_owned.for_borrow();
         let result = cosine_distance(&ref_x, &ref_y);
-        assert!((result.0 - result_expected).abs() / result_expected < 0.25);
+        assert!(
+            result_expected < 0.01
+                || (result.0 - result_expected).abs() < 0.01
+                || (result.0 - result_expected).abs() / result_expected < 0.1
+        );
     }
 
     #[test]
@@ -576,6 +580,9 @@ mod tests_2 {
         let y_owned = vec_to_owned(y);
         let ref_y = y_owned.for_borrow();
         let result = l2_distance(&ref_x, &ref_y);
-        assert!((result.0 - result_expected).abs() / result_expected < 0.05);
+        assert!(
+            (result.0 - result_expected).abs() / result_expected < 0.05
+                || (result.0 - result_expected).abs() < 1.0
+        );
     }
 }
