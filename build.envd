@@ -6,24 +6,44 @@ def build():
     shell("zsh")
     install.apt_packages(
         name=[
-            'bison',
-            'build-essential',
-            'ccache',
-            'flex',
-            'gcc',
-            'git',
-            'gnupg',
-            'libreadline-dev',
-            'libssl-dev',
-            'libxml2-dev',
-            'libxml2-utils',
-            'libxslt-dev',
-            'lsb-release',
-            'pkg-config',
-            'tzdata',
-            'xsltproc',
-            'zlib1g-dev'
+            "bison",
+            "build-essential",
+            "ccache",
+            "flex",
+            "gcc",
+            "git",
+            "gnupg",
+            "libreadline-dev",
+            "libssl-dev",
+            "libxml2-dev",
+            "libxml2-utils",
+            "libxslt-dev",
+            "lsb-release",
+            "pkg-config",
+            "tzdata",
+            "xsltproc",
+            "zlib1g-dev",
+        ]
+    )
+    run(
+        commands=[
+            "echo 'deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-16 main' | sudo tee -a /etc/apt/sources.list",
+            "wget --quiet -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -",
+            "sudo apt-get update",
+            "sudo apt-get install -y clang-16",
         ]
     )
     runtime.environ(extra_path=["/home/envd/.cargo/bin"])
-    run(commands=["bash ./scripts/envd.sh"], mount_host=True)
+    run(
+        commands=[
+            "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
+        ]
+    )
+    run(
+        commands=[
+            "export PGRX=$(grep -o \"pgrx = { version = \\\"=[^\\\"]*\" Cargo.toml | cut -d = -f 4)",
+            "cargo install cargo-pgrx --version $PGRX",
+            "cargo pgrx init",
+        ],
+        mount_host=True,
+    )

@@ -1,0 +1,48 @@
+name: Update Vendor
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  SCCACHE_GHA_ENABLED: true
+  RUSTC_WRAPPER: sccache
+  RUSTFLAGS: "-Dwarnings"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Generate
+        run: |
+          export PGRX=$(grep -o 'pgrx = { version = "=[^"]*' Cargo.toml | cut -d = -f 4)
+          docker run --rm --platform linux/amd64 -v ./:/mnt/build \
+            -e "VERSION=14" -e "PGRX=$PGRX" debian:buster bash /mnt/build/scripts/update_vendor.sh &
+          docker run --rm --platform linux/amd64 -v ./:/mnt/build \
+            -e "VERSION=15" -e "PGRX=$PGRX" debian:buster bash /mnt/build/scripts/update_vendor.sh &
+          docker run --rm --platform linux/amd64 -v ./:/mnt/build \
+            -e "VERSION=16" -e "PGRX=$PGRX" debian:buster bash /mnt/build/scripts/update_vendor.sh &
+          docker run --rm --platform linux/arm64 -v ./:/mnt/build \
+            -e "VERSION=14" -e "PGRX=$PGRX" debian:buster bash /mnt/build/scripts/update_vendor.sh &
+          docker run --rm --platform linux/arm64 -v ./:/mnt/build \
+            -e "VERSION=15" -e "PGRX=$PGRX" debian:buster bash /mnt/build/scripts/update_vendor.sh &
+          docker run --rm --platform linux/arm64 -v ./:/mnt/build \
+            -e "VERSION=16" -e "PGRX=$PGRX" debian:buster bash /mnt/build/scripts/update_vendor.sh &
+          wait
+          sudo chown -R $USER ./vendor
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: 'chore: update vendor'
+          title: 'chore: update vendor'
+          body: 'Update vendor: `pg_config` contents and pgrx bindings.'
+          branch: update-vendor

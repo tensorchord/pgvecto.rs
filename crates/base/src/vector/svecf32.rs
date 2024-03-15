@@ -841,12 +841,14 @@ unsafe fn emulate_mm512_2intersect_epi32(
     }
 }
 
+#[cfg(target_arch = "x86_64")]
 #[cfg(test)]
 mod tests {
     use super::*;
 
     const LHS_SIZE: usize = 300;
     const RHS_SIZE: usize = 350;
+    const EPS: F32 = F32(1e-5);
 
     pub fn random_svector(len: usize) -> SVecf32Owned {
         use rand::Rng;
@@ -862,7 +864,6 @@ mod tests {
 
     #[test]
     fn test_cosine_svector() {
-        const EP: F32 = F32(1e-5);
         let x = random_svector(LHS_SIZE);
         let y = random_svector(RHS_SIZE);
         let cosine_fallback = cosine_fallback(x.for_borrow(), y.for_borrow());
@@ -870,7 +871,7 @@ mod tests {
         if detect::x86_64::detect_v4() {
             let cosine_v4 = unsafe { cosine_v4(x.for_borrow(), y.for_borrow()) };
             assert!(
-                cosine_fallback - cosine_v4 < EP,
+                cosine_fallback - cosine_v4 < EPS,
                 "cosine_fallback: {}, cosine_v4: {}",
                 cosine_fallback,
                 cosine_v4
@@ -880,7 +881,6 @@ mod tests {
 
     #[test]
     fn test_dot_svector() {
-        const EP: F32 = F32(1e-5);
         let x = random_svector(LHS_SIZE);
         let y = random_svector(RHS_SIZE);
         let dot_fallback = dot_fallback(x.for_borrow(), y.for_borrow());
@@ -888,7 +888,7 @@ mod tests {
         if detect::x86_64::detect_v4() {
             let dot_v4 = unsafe { dot_v4(x.for_borrow(), y.for_borrow()) };
             assert!(
-                dot_fallback - dot_v4 < EP,
+                dot_fallback - dot_v4 < EPS,
                 "dot_fallback: {}, dot_v4: {}",
                 dot_fallback,
                 dot_v4
@@ -898,7 +898,6 @@ mod tests {
 
     #[test]
     fn test_sl2_svector() {
-        const EP: F32 = F32(1e-5);
         let x = random_svector(LHS_SIZE);
         let y = random_svector(RHS_SIZE);
         let sl2_fallback = sl2_fallback(x.for_borrow(), y.for_borrow());
@@ -906,7 +905,7 @@ mod tests {
         if detect::x86_64::detect_v4() {
             let sl2_v4 = unsafe { sl2_v4(x.for_borrow(), y.for_borrow()) };
             assert!(
-                sl2_fallback - sl2_v4 < EP,
+                sl2_fallback - sl2_v4 < EPS,
                 "sl2_fallback: {}, sl2_v4: {}",
                 sl2_fallback,
                 sl2_v4
