@@ -9,18 +9,26 @@
 <a href="https://github.com/tensorchord/pgvecto.rs#contributors-"><img alt="all-contributors" src="https://img.shields.io/github/all-contributors/tensorchord/pgvecto.rs/main"></a>
 </p>
 
-pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx). It is currently in the beta status, we invite you to try it out in production and provide us with feedback. Read more at [📝our blog](https://blog.pgvecto.rs/pgvectors-02-unifying-relational-queries-and-vector-search-in-postgresql).
+pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx). Read more at [📝our blog](https://blog.pgvecto.rs/pgvectors-02-unifying-relational-queries-and-vector-search-in-postgresql).
 
 ## Why use pgvecto.rs
 
-- 💃 **User-Friendly**: Effortlessly incorporate pgvecto.rs into your existing database as a Postgres extension, streamlining integration with your current workflows and applications.
-- 🥅 **Join and Filter without Limitation**: Elevate your search capabilities in pgvecto.rs with VBASE filtering. Apply any filter conditions and join with other tables, achieving high recall and low latency, a distinctive edge over other vector databases.
-- 🌓 **Efficient FP16 Support**: Optimize your data storage with pgvecto.rs, supporting FP16 vector type to cut memory and storage usage by half, and boosting throughput.
-- 🧮 **Advanced Quantization**: Utilize scalar and product quantization in pgvecto.rs for up to 64x compression. Achieve up to 4x memory savings with less than 2% recall loss with scalar quantization.
-- 🔍 **Hybrid Search**: Leverage the full-text search functionality in PostgreSQL with pgvecto.rs to search text and vector data within a single query.
-- 🔗 **Async indexing**: The pgvecto.rs index is built asynchronously by background threads, allowing non-blocking inserts and always ready for new queries.
-- ⬆️ **Extended Vector Length**: pgvecto.rs supports vector length up to 65535, suitable for the latest models.
-- 🦀 **Rust-Powered Reliability**: Rust's strict compile-time checks ensure memory safety, reducing the risk of bugs and security issues commonly associated with C extensions.
+| Feature Category           | Feature                   |                                                                                            |
+| -------------------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
+| **Search Capabilities**    | 🔍 Vector Search          | Ultra-low-latency, high-precision vector search.                                           |
+|                            | 🧩 Sparse Vector Search   | Keyword-based vector search using SPLADE or BM25 algorithms.                               |
+|                            | 📄 Full-Text Search       | Comprehensive text search across any language, powered by tsvector.                        |
+| **Data Handling**          | ✔ Complete SQL Support    | Full SQL support, enabling joins and filters without limitations or extra configuration.   |
+|                            | 🔗 Async indexing         | Non-blocking inserts with up-to-date query readiness.                                      |
+|                            | 🔄 Easy Data Management   | No need for syncing vectors and metadata with external vector DB, simplifying development. |
+| **Data Types**             | 🔢 FP16/INT8 Data type    | Supports FP16 and INT8 data types for improved storage and computational efficiency.       |
+|                            | 🌓 Binary vector support  | Vector indexing with binary vectors, and Jaccard distance support.                         |
+|                            | 🔪 Matryoshka embeddings  | Subvector indexing, like vector[0:256], for enhanced Matryoshka embeddings.                |
+|                            | ⬆️ Extended Vector Length | Vector lengths up to 65535 supported, ideal for the latest cutting-edge models.            |
+| **System Performance**     | 🚀 Production Ready       | Battle-tested database ecosystem integrated with PostgreSQL.                               |
+|                            | ⚙️ High Availability      | Logical replication support to ensure high availbility.                                    |
+|                            | 💡 Resource Efficient     | Efficient attribute storage leveraging PostgreSQL.                                         |
+| **Security & Permissions** | 🔒 Permission Control     | Easy access control like read-only roles, powered by PostgreSQL.                           |
 
 ## [Documentation](https://docs.pgvecto.rs/getting-started/overview.html)
 
@@ -45,7 +53,7 @@ docker run \
   --name pgvecto-rs-demo \
   -e POSTGRES_PASSWORD=mysecretpassword \
   -p 5432:5432 \
-  -d tensorchord/pgvecto-rs:pg16-v0.2.0
+  -d tensorchord/pgvecto-rs:pg16-v0.2.1
 ```
 
 Then you can connect to the database using the `psql` command line tool. The default username is `postgres`, and the default password is `mysecretpassword`.
