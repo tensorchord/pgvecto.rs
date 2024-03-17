@@ -210,7 +210,7 @@ pub unsafe extern "C" fn aminsert(
     if let Some(v) = vector {
         am_update::update_insert(id, v, *heap_tid);
     }
-    true
+    false
 }
 
 #[pgrx::pg_guard]
