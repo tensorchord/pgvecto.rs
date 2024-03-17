@@ -42,11 +42,16 @@ impl Pointer {
 pub struct Payload {
     pointer: Pointer,
     time: u64,
+    multicolumn_data: i64,
 }
 
 impl Payload {
-    pub fn new(pointer: Pointer, time: u64) -> Self {
-        Self { pointer, time }
+    pub fn new(pointer: Pointer, time: u64, multicolumn_data: i64) -> Self {
+        Self {
+            pointer,
+            time,
+            multicolumn_data,
+        }
     }
     pub fn pointer(&self) -> Pointer {
         self.pointer

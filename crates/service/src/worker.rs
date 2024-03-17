@@ -136,12 +136,13 @@ impl WorkerOperations for Worker {
         handle: Handle,
         vector: OwnedVector,
         pointer: Pointer,
+        multicolumn_data: i64,
     ) -> Result<(), InsertError> {
         let view = self.view();
         let instance = view.get(handle).ok_or(InsertError::NotExist)?;
         loop {
             let view = instance.view();
-            match view.insert(vector.clone(), pointer)? {
+            match view.insert(vector.clone(), pointer, multicolumn_data)? {
                 Ok(()) => break,
                 Err(_) => instance.refresh(),
             }

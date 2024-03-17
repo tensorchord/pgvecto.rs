@@ -5,13 +5,18 @@ use base::index::*;
 use base::search::*;
 use base::vector::*;
 
-pub fn update_insert(handle: Handle, vector: OwnedVector, tid: pgrx::pg_sys::ItemPointerData) {
+pub fn update_insert(
+    handle: Handle,
+    vector: OwnedVector,
+    tid: pgrx::pg_sys::ItemPointerData,
+    multicolumn_data: i64,
+) {
     maintain_index_in_index_access(handle);
 
     let pointer = Pointer::from_sys(tid);
     let mut rpc = check_client(crate::ipc::client());
 
-    match rpc.insert(handle, vector, pointer) {
+    match rpc.insert(handle, vector, pointer, multicolumn_data) {
         Ok(()) => (),
         Err(InsertError::NotExist) => bad_service_not_exist(),
         Err(InsertError::InvalidVector) => bad_service_invalid_vector(),

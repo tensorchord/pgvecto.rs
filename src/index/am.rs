@@ -51,7 +51,7 @@ const AM_HANDLER: pgrx::pg_sys::IndexAmRoutine = {
     am_routine.amcanorderbyop = true;
     am_routine.amcanbackward = false;
     am_routine.amcanunique = false;
-    am_routine.amcanmulticol = false;
+    am_routine.amcanmulticol = true;
     am_routine.amoptionalkey = true;
     am_routine.amsearcharray = false;
     am_routine.amsearchnulls = false;
@@ -207,8 +207,13 @@ pub unsafe extern "C" fn aminsert(
     let oid = (*index_relation).rd_id;
     let id = get_handle(oid);
     let vector = from_datum(*values.add(0), *is_null.add(0));
+    let multicolumn_data = if (*(*index_relation).rd_index).indnkeyatts == 2 {
+        pgrx::datum::FromDatum::from_datum(*values.add(1), *is_null.add(1)).unwrap()
+    } else {
+        0
+    };
     if let Some(v) = vector {
-        am_update::update_insert(id, v, *heap_tid);
+        am_update::update_insert(id, v, *heap_tid, multicolumn_data);
     }
     true
 }

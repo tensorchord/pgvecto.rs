@@ -661,6 +661,8 @@ CREATE OPERATOR FAMILY veci8_dot_ops USING vectors;
 
 CREATE OPERATOR FAMILY veci8_cos_ops USING vectors;
 
+CREATE OPERATOR FAMILY bigint_attr_ops USING vectors;
+
 -- List of operator classes
 
 CREATE OPERATOR CLASS vector_l2_ops
@@ -726,6 +728,10 @@ CREATE OPERATOR CLASS veci8_dot_ops
 CREATE OPERATOR CLASS veci8_cos_ops
     FOR TYPE veci8 USING vectors AS
     OPERATOR 1 <=> (veci8, veci8) FOR ORDER BY float_ops;
+
+CREATE OPERATOR CLASS bigint_attr_ops
+    DEFAULT FOR TYPE bigint USING vectors AS
+    OPERATOR 1 = (bigint, bigint);
 
 -- List of views
 

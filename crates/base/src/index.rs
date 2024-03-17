@@ -90,6 +90,7 @@ pub struct IndexOptions {
     pub optimizing: OptimizingOptions,
     #[validate]
     pub indexing: IndexingOptions,
+    pub multicolumn: bool,
 }
 
 impl IndexOptions {

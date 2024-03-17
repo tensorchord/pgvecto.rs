@@ -99,15 +99,26 @@ pub unsafe fn convert_opfamily_to_distance(
 
 pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
     let nkeysatts = (*(*index_relation).rd_index).indnkeyatts;
-    assert!(nkeysatts == 1, "Can not be built on multicolumns.");
-    // get distance
+    if nkeysatts > 2 {
+        bad_index_column_number();
+    }
+    // get distance and vector kind
     let opfamily = (*index_relation).rd_opfamily.read();
     let (d, k) = convert_opfamily_to_distance(opfamily);
     // get dims
-    let attrs = (*(*index_relation).rd_att).attrs.as_slice(1);
+    let attrs = (*(*index_relation).rd_att)
+        .attrs
+        .as_slice(nkeysatts as usize);
     let attr = &attrs[0];
     let typmod = Typmod::parse_from_i32(attr.type_mod()).unwrap();
     let dims = check_column_dims(typmod.dims()).get();
+    // verify the second column. Currently only support bigint
+    if nkeysatts == 2 {
+        let attr = &attrs[1];
+        if attr.atttypid != pgrx::pg_sys::INT8OID {
+            bad_index_second_column_type();
+        }
+    }
     // get other options
     let parsed = get_parsed_from_varlena((*index_relation).rd_options);
     IndexOptions {
@@ -115,6 +126,7 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
         segment: parsed.segment,
         optimizing: parsed.optimizing,
         indexing: parsed.indexing,
+        multicolumn: nkeysatts == 2,
     }
 }
 
