@@ -33,218 +33,238 @@ pub enum Instance {
 
 impl Instance {
     pub fn create(path: PathBuf, options: IndexOptions) -> Result<Self, CreateError> {
-        match (options.vector.d, options.vector.v) {
-            (DistanceKind::Cos, VectorKind::Vecf32) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::Vecf32Cos(index))
-            }
-            (DistanceKind::Dot, VectorKind::Vecf32) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::Vecf32Dot(index))
-            }
-            (DistanceKind::L2, VectorKind::Vecf32) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::Vecf32L2(index))
-            }
-            (DistanceKind::Cos, VectorKind::Vecf16) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::Vecf16Cos(index))
-            }
-            (DistanceKind::Dot, VectorKind::Vecf16) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::Vecf16Dot(index))
-            }
-            (DistanceKind::L2, VectorKind::Vecf16) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::Vecf16L2(index))
-            }
-            (DistanceKind::Cos, VectorKind::SVecf32) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::SVecf32Cos(index))
-            }
-            (DistanceKind::Dot, VectorKind::SVecf32) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::SVecf32Dot(index))
-            }
-            (DistanceKind::L2, VectorKind::SVecf32) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::SVecf32L2(index))
-            }
-            (DistanceKind::Cos, VectorKind::BVecf32) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::BVecf32Cos(index))
-            }
-            (DistanceKind::Dot, VectorKind::BVecf32) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::BVecf32Dot(index))
-            }
-            (DistanceKind::L2, VectorKind::BVecf32) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::BVecf32L2(index))
-            }
-            (DistanceKind::Jaccard, VectorKind::BVecf32) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::BVecf32Jaccard(index))
-            }
-            (DistanceKind::L2, VectorKind::Veci8) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::Veci8L2(index))
-            }
-            (DistanceKind::Cos, VectorKind::Veci8) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::Veci8Cos(index))
-            }
-            (DistanceKind::Dot, VectorKind::Veci8) => {
-                let index = Index::create(path.clone(), options)?;
-                Ok(Self::Veci8Dot(index))
-            }
-            (DistanceKind::Jaccard, _) => Err(CreateError::InvalidIndexOptions {
-                reason: "Jaccard distance is only supported for BVecf32 vectors".to_string(),
-            }),
+        macro_rules! match_create {
+            ($(($distance:ident, $vector:ident, $instance:ident)),* ,) => {
+                match (options.vector.d, options.vector.v) {
+                    $((DistanceKind::$distance, VectorKind::$vector) => Ok(Self::$instance(Index::create(path, options)?)),)*
+                    (DistanceKind::Jaccard, _) => Err(CreateError::InvalidIndexOptions {
+                        reason: "Jaccard distance is only supported for BVecf32 vectors".to_string(),
+                    }),
+                }
+            };
+        }
+        match_create! {
+            (Cos, Vecf32, Vecf32Cos),
+            (Dot, Vecf32, Vecf32Dot),
+            (L2, Vecf32, Vecf32L2),
+            (Cos, Vecf16, Vecf16Cos),
+            (Dot, Vecf16, Vecf16Dot),
+            (L2, Vecf16, Vecf16L2),
+            (Cos, SVecf32, SVecf32Cos),
+            (Dot, SVecf32, SVecf32Dot),
+            (L2, SVecf32, SVecf32L2),
+            (Cos, BVecf32, BVecf32Cos),
+            (Dot, BVecf32, BVecf32Dot),
+            (L2, BVecf32, BVecf32L2),
+            (Jaccard, BVecf32, BVecf32Jaccard),
+            (Cos, Veci8, Veci8Cos),
+            (Dot, Veci8, Veci8Dot),
+            (L2, Veci8, Veci8L2),
         }
     }
     pub fn open(path: PathBuf) -> Self {
         let options =
             serde_json::from_slice::<IndexOptions>(&std::fs::read(path.join("options")).unwrap())
                 .unwrap();
-        match (options.vector.d, options.vector.v) {
-            (DistanceKind::Cos, VectorKind::Vecf32) => Self::Vecf32Cos(Index::open(path)),
-            (DistanceKind::Dot, VectorKind::Vecf32) => Self::Vecf32Dot(Index::open(path)),
-            (DistanceKind::L2, VectorKind::Vecf32) => Self::Vecf32L2(Index::open(path)),
-            (DistanceKind::Cos, VectorKind::Vecf16) => Self::Vecf16Cos(Index::open(path)),
-            (DistanceKind::Dot, VectorKind::Vecf16) => Self::Vecf16Dot(Index::open(path)),
-            (DistanceKind::L2, VectorKind::Vecf16) => Self::Vecf16L2(Index::open(path)),
-            (DistanceKind::Cos, VectorKind::SVecf32) => Self::SVecf32Cos(Index::open(path)),
-            (DistanceKind::Dot, VectorKind::SVecf32) => Self::SVecf32Dot(Index::open(path)),
-            (DistanceKind::L2, VectorKind::SVecf32) => Self::SVecf32L2(Index::open(path)),
-            (DistanceKind::Cos, VectorKind::BVecf32) => Self::BVecf32Cos(Index::open(path)),
-            (DistanceKind::Dot, VectorKind::BVecf32) => Self::BVecf32Dot(Index::open(path)),
-            (DistanceKind::L2, VectorKind::BVecf32) => Self::BVecf32L2(Index::open(path)),
-            (DistanceKind::Jaccard, VectorKind::BVecf32) => Self::BVecf32Jaccard(Index::open(path)),
-            (DistanceKind::L2, VectorKind::Veci8) => Self::Veci8L2(Index::open(path)),
-            (DistanceKind::Cos, VectorKind::Veci8) => Self::Veci8Cos(Index::open(path)),
-            (DistanceKind::Dot, VectorKind::Veci8) => Self::Veci8Dot(Index::open(path)),
-            _ => unreachable!(),
+        macro_rules! match_open {
+            ($(($distance:ident, $vector:ident, $instance:ident)),* ,) => {
+                match (options.vector.d, options.vector.v) {
+                    $((DistanceKind::$distance, VectorKind::$vector) => Self::$instance(Index::open(path)),)*
+                    _ => unreachable!(),
+                }
+            };
+        }
+        match_open! {
+            (Cos, Vecf32, Vecf32Cos),
+            (Dot, Vecf32, Vecf32Dot),
+            (L2, Vecf32, Vecf32L2),
+            (Cos, Vecf16, Vecf16Cos),
+            (Dot, Vecf16, Vecf16Dot),
+            (L2, Vecf16, Vecf16L2),
+            (Cos, SVecf32, SVecf32Cos),
+            (Dot, SVecf32, SVecf32Dot),
+            (L2, SVecf32, SVecf32L2),
+            (Cos, BVecf32, BVecf32Cos),
+            (Dot, BVecf32, BVecf32Dot),
+            (L2, BVecf32, BVecf32L2),
+            (Jaccard, BVecf32, BVecf32Jaccard),
+            (Cos, Veci8, Veci8Cos),
+            (Dot, Veci8, Veci8Dot),
+            (L2, Veci8, Veci8L2),
         }
     }
     pub fn refresh(&self) {
-        match self {
-            Instance::Vecf32Cos(x) => x.refresh(),
-            Instance::Vecf32Dot(x) => x.refresh(),
-            Instance::Vecf32L2(x) => x.refresh(),
-            Instance::Vecf16Cos(x) => x.refresh(),
-            Instance::Vecf16Dot(x) => x.refresh(),
-            Instance::Vecf16L2(x) => x.refresh(),
-            Instance::SVecf32Cos(x) => x.refresh(),
-            Instance::SVecf32Dot(x) => x.refresh(),
-            Instance::SVecf32L2(x) => x.refresh(),
-            Instance::BVecf32Cos(x) => x.refresh(),
-            Instance::BVecf32Dot(x) => x.refresh(),
-            Instance::BVecf32L2(x) => x.refresh(),
-            Instance::BVecf32Jaccard(x) => x.refresh(),
-            Instance::Veci8L2(x) => x.refresh(),
-            Instance::Veci8Cos(x) => x.refresh(),
-            Instance::Veci8Dot(x) => x.refresh(),
+        macro_rules! match_refresh {
+            ($($instance:ident),* ,) => {
+                match self {
+                    $(
+                        Instance::$instance(x) => x.refresh(),
+                    )*
+                }
+            };
+        }
+        match_refresh! {
+            Vecf32Cos,
+            Vecf32Dot,
+            Vecf32L2,
+            Vecf16Cos,
+            Vecf16Dot,
+            Vecf16L2,
+            SVecf32Cos,
+            SVecf32Dot,
+            SVecf32L2,
+            BVecf32Cos,
+            BVecf32Dot,
+            BVecf32L2,
+            BVecf32Jaccard,
+            Veci8Cos,
+            Veci8Dot,
+            Veci8L2,
         }
     }
     pub fn view(&self) -> InstanceView {
-        match self {
-            Instance::Vecf32Cos(x) => InstanceView::Vecf32Cos(x.view()),
-            Instance::Vecf32Dot(x) => InstanceView::Vecf32Dot(x.view()),
-            Instance::Vecf32L2(x) => InstanceView::Vecf32L2(x.view()),
-            Instance::Vecf16Cos(x) => InstanceView::Vecf16Cos(x.view()),
-            Instance::Vecf16Dot(x) => InstanceView::Vecf16Dot(x.view()),
-            Instance::Vecf16L2(x) => InstanceView::Vecf16L2(x.view()),
-            Instance::SVecf32Cos(x) => InstanceView::SVecf32Cos(x.view()),
-            Instance::SVecf32Dot(x) => InstanceView::SVecf32Dot(x.view()),
-            Instance::SVecf32L2(x) => InstanceView::SVecf32L2(x.view()),
-            Instance::BVecf32Cos(x) => InstanceView::BVecf32Cos(x.view()),
-            Instance::BVecf32Dot(x) => InstanceView::BVecf32Dot(x.view()),
-            Instance::BVecf32L2(x) => InstanceView::BVecf32L2(x.view()),
-            Instance::BVecf32Jaccard(x) => InstanceView::BVecf32Jaccard(x.view()),
-            Instance::Veci8L2(x) => InstanceView::Veci8L2(x.view()),
-            Instance::Veci8Cos(x) => InstanceView::Veci8Cos(x.view()),
-            Instance::Veci8Dot(x) => InstanceView::Veci8Dot(x.view()),
+        macro_rules! match_view {
+            ($($instance:ident),* ,) => {
+                match self {
+                    $(
+                        Instance::$instance(x) => InstanceView::$instance(x.view()),
+                    )*
+                }
+            };
+        }
+        match_view! {
+            Vecf32Cos,
+            Vecf32Dot,
+            Vecf32L2,
+            Vecf16Cos,
+            Vecf16Dot,
+            Vecf16L2,
+            SVecf32Cos,
+            SVecf32Dot,
+            SVecf32L2,
+            BVecf32Cos,
+            BVecf32Dot,
+            BVecf32L2,
+            BVecf32Jaccard,
+            Veci8Cos,
+            Veci8Dot,
+            Veci8L2,
         }
     }
     pub fn stat(&self) -> IndexStat {
-        match self {
-            Instance::Vecf32Cos(x) => x.stat(),
-            Instance::Vecf32Dot(x) => x.stat(),
-            Instance::Vecf32L2(x) => x.stat(),
-            Instance::Vecf16Cos(x) => x.stat(),
-            Instance::Vecf16Dot(x) => x.stat(),
-            Instance::Vecf16L2(x) => x.stat(),
-            Instance::SVecf32Cos(x) => x.stat(),
-            Instance::SVecf32Dot(x) => x.stat(),
-            Instance::SVecf32L2(x) => x.stat(),
-            Instance::BVecf32Cos(x) => x.stat(),
-            Instance::BVecf32Dot(x) => x.stat(),
-            Instance::BVecf32L2(x) => x.stat(),
-            Instance::BVecf32Jaccard(x) => x.stat(),
-            Instance::Veci8L2(x) => x.stat(),
-            Instance::Veci8Cos(x) => x.stat(),
-            Instance::Veci8Dot(x) => x.stat(),
+        macro_rules! match_stat {
+            ($($instance:ident),* ,) => {
+                match self {
+                    $(
+                        Instance::$instance(x) => x.stat(),
+                    )*
+                }
+            };
+        }
+        match_stat! {
+            Vecf32Cos,
+            Vecf32Dot,
+            Vecf32L2,
+            Vecf16Cos,
+            Vecf16Dot,
+            Vecf16L2,
+            SVecf32Cos,
+            SVecf32Dot,
+            SVecf32L2,
+            BVecf32Cos,
+            BVecf32Dot,
+            BVecf32L2,
+            BVecf32Jaccard,
+            Veci8Cos,
+            Veci8Dot,
+            Veci8L2,
         }
     }
     pub fn start(&self) {
-        match self {
-            Instance::Vecf32Cos(x) => x.start(),
-            Instance::Vecf32Dot(x) => x.start(),
-            Instance::Vecf32L2(x) => x.start(),
-            Instance::Vecf16Cos(x) => x.start(),
-            Instance::Vecf16Dot(x) => x.start(),
-            Instance::Vecf16L2(x) => x.start(),
-            Instance::SVecf32Cos(x) => x.start(),
-            Instance::SVecf32Dot(x) => x.start(),
-            Instance::SVecf32L2(x) => x.start(),
-            Instance::BVecf32Cos(x) => x.start(),
-            Instance::BVecf32Dot(x) => x.start(),
-            Instance::BVecf32L2(x) => x.start(),
-            Instance::BVecf32Jaccard(x) => x.start(),
-            Instance::Veci8Cos(x) => x.start(),
-            Instance::Veci8Dot(x) => x.start(),
-            Instance::Veci8L2(x) => x.start(),
+        macro_rules! match_start {
+            ($($instance:ident),* ,) => {
+                match self {
+                    $(
+                        Instance::$instance(x) => x.start(),
+                    )*
+                }
+            };
+        }
+        match_start! {
+            Vecf32Cos,
+            Vecf32Dot,
+            Vecf32L2,
+            Vecf16Cos,
+            Vecf16Dot,
+            Vecf16L2,
+            SVecf32Cos,
+            SVecf32Dot,
+            SVecf32L2,
+            BVecf32Cos,
+            BVecf32Dot,
+            BVecf32L2,
+            BVecf32Jaccard,
+            Veci8Cos,
+            Veci8Dot,
+            Veci8L2,
         }
     }
     pub fn stop(&self) {
-        match self {
-            Instance::Vecf32Cos(x) => x.stop(),
-            Instance::Vecf32Dot(x) => x.stop(),
-            Instance::Vecf32L2(x) => x.stop(),
-            Instance::Vecf16Cos(x) => x.stop(),
-            Instance::Vecf16Dot(x) => x.stop(),
-            Instance::Vecf16L2(x) => x.stop(),
-            Instance::SVecf32Cos(x) => x.stop(),
-            Instance::SVecf32Dot(x) => x.stop(),
-            Instance::SVecf32L2(x) => x.stop(),
-            Instance::BVecf32Cos(x) => x.stop(),
-            Instance::BVecf32Dot(x) => x.stop(),
-            Instance::BVecf32L2(x) => x.stop(),
-            Instance::BVecf32Jaccard(x) => x.stop(),
-            Instance::Veci8Cos(x) => x.stop(),
-            Instance::Veci8Dot(x) => x.stop(),
-            Instance::Veci8L2(x) => x.stop(),
+        macro_rules! match_stop {
+            ($($instance:ident),* ,) => {
+                match self {
+                    $(
+                        Instance::$instance(x) => x.stop(),
+                    )*
+                }
+            };
+        }
+        match_stop! {
+            Vecf32Cos,
+            Vecf32Dot,
+            Vecf32L2,
+            Vecf16Cos,
+            Vecf16Dot,
+            Vecf16L2,
+            SVecf32Cos,
+            SVecf32Dot,
+            SVecf32L2,
+            BVecf32Cos,
+            BVecf32Dot,
+            BVecf32L2,
+            BVecf32Jaccard,
+            Veci8Cos,
+            Veci8Dot,
+            Veci8L2,
         }
     }
     pub fn wait(&self) -> Arc<IndexTracker> {
-        match self {
-            Instance::Vecf32Cos(x) => x.wait(),
-            Instance::Vecf32Dot(x) => x.wait(),
-            Instance::Vecf32L2(x) => x.wait(),
-            Instance::Vecf16Cos(x) => x.wait(),
-            Instance::Vecf16Dot(x) => x.wait(),
-            Instance::Vecf16L2(x) => x.wait(),
-            Instance::SVecf32Cos(x) => x.wait(),
-            Instance::SVecf32Dot(x) => x.wait(),
-            Instance::SVecf32L2(x) => x.wait(),
-            Instance::BVecf32Cos(x) => x.wait(),
-            Instance::BVecf32Dot(x) => x.wait(),
-            Instance::BVecf32L2(x) => x.wait(),
-            Instance::BVecf32Jaccard(x) => x.wait(),
-            Instance::Veci8Cos(x) => x.wait(),
-            Instance::Veci8Dot(x) => x.wait(),
-            Instance::Veci8L2(x) => x.wait(),
+        macro_rules! match_wait {
+            ($($instance:ident),* ,) => {
+                match self {
+                    $(
+                        Instance::$instance(x) => x.wait(),
+                    )*
+                }
+            };
+        }
+        match_wait! {
+            Vecf32Cos,
+            Vecf32Dot,
+            Vecf32L2,
+            Vecf16Cos,
+            Vecf16Dot,
+            Vecf16L2,
+            SVecf32Cos,
+            SVecf32Dot,
+            SVecf32L2,
+            BVecf32Cos,
+            BVecf32Dot,
+            BVecf32L2,
+            BVecf32Jaccard,
+            Veci8Cos,
+            Veci8Dot,
+            Veci8L2,
         }
     }
 }
@@ -275,57 +295,33 @@ impl ViewBasicOperations for InstanceView {
         opts: &'a SearchOptions,
         filter: F,
     ) -> Result<Box<dyn Iterator<Item = Pointer> + 'a>, BasicError> {
-        match (self, vector) {
-            (InstanceView::Vecf32Cos(x), OwnedVector::Vecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?)
-                    as Box<dyn Iterator<Item = Pointer>>)
-            }
-            (InstanceView::Vecf32Dot(x), OwnedVector::Vecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::Vecf32L2(x), OwnedVector::Vecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::Vecf16Cos(x), OwnedVector::Vecf16(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::Vecf16Dot(x), OwnedVector::Vecf16(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::Vecf16L2(x), OwnedVector::Vecf16(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::SVecf32Cos(x), OwnedVector::SVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::SVecf32Dot(x), OwnedVector::SVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::SVecf32L2(x), OwnedVector::SVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::BVecf32Cos(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::BVecf32Dot(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::BVecf32L2(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::BVecf32Jaccard(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::Veci8Cos(x), OwnedVector::Veci8(vector)) => {
-                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
-            }
-            (InstanceView::Veci8Dot(x), OwnedVector::Veci8(vector)) => {
-                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
-            }
-            (InstanceView::Veci8L2(x), OwnedVector::Veci8(vector)) => {
-                Ok(Box::new(x.basic(vector.into(), opts, filter)?))
-            }
-            _ => Err(BasicError::InvalidVector),
+        macro_rules! match_basic {
+            ($(($instance:ident, $vector:ident)),* ,) => {
+                match (self, vector) {
+                    $(
+                        (InstanceView::$instance(x), OwnedVector::$vector(vector)) => Ok(Box::new(x.basic(vector.for_borrow(), opts, filter)?)),
+                    )*
+                    _ => Err(BasicError::InvalidVector),
+                }
+            };
+        }
+        match_basic! {
+            (Vecf32Cos, Vecf32),
+            (Vecf32Dot, Vecf32),
+            (Vecf32L2, Vecf32),
+            (Vecf16Cos, Vecf16),
+            (Vecf16Dot, Vecf16),
+            (Vecf16L2, Vecf16),
+            (SVecf32Cos, SVecf32),
+            (SVecf32Dot, SVecf32),
+            (SVecf32L2, SVecf32),
+            (BVecf32Cos, BVecf32),
+            (BVecf32Dot, BVecf32),
+            (BVecf32L2, BVecf32),
+            (BVecf32Jaccard, BVecf32),
+            (Veci8Cos, Veci8),
+            (Veci8Dot, Veci8),
+            (Veci8L2, Veci8),
         }
     }
 }
@@ -337,82 +333,65 @@ impl ViewVbaseOperations for InstanceView {
         opts: &'a SearchOptions,
         filter: F,
     ) -> Result<Box<dyn Iterator<Item = Pointer> + 'a>, VbaseError> {
-        match (self, vector) {
-            (InstanceView::Vecf32Cos(x), OwnedVector::Vecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?)
-                    as Box<dyn Iterator<Item = Pointer>>)
-            }
-            (InstanceView::Vecf32Dot(x), OwnedVector::Vecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::Vecf32L2(x), OwnedVector::Vecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::Vecf16Cos(x), OwnedVector::Vecf16(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::Vecf16Dot(x), OwnedVector::Vecf16(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::Vecf16L2(x), OwnedVector::Vecf16(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::SVecf32Cos(x), OwnedVector::SVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::SVecf32Dot(x), OwnedVector::SVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::SVecf32L2(x), OwnedVector::SVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::BVecf32Cos(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::BVecf32Dot(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::BVecf32L2(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::BVecf32Jaccard(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?))
-            }
-            (InstanceView::Veci8Cos(x), OwnedVector::Veci8(vector)) => {
-                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
-            }
-            (InstanceView::Veci8Dot(x), OwnedVector::Veci8(vector)) => {
-                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
-            }
-            (InstanceView::Veci8L2(x), OwnedVector::Veci8(vector)) => {
-                Ok(Box::new(x.vbase(vector.into(), opts, filter)?))
-            }
-            _ => Err(VbaseError::InvalidVector),
+        macro_rules! match_vbase {
+            ($(($instance:ident, $vector:ident)),* ,) => {
+                match (self, vector) {
+                    $(
+                        (InstanceView::$instance(x), OwnedVector::$vector(vector)) => Ok(Box::new(x.vbase(vector.for_borrow(), opts, filter)?)),
+                    )*
+                    _ => Err(VbaseError::InvalidVector),
+                }
+            };
+        }
+        match_vbase! {
+            (Vecf32Cos, Vecf32),
+            (Vecf32Dot, Vecf32),
+            (Vecf32L2, Vecf32),
+            (Vecf16Cos, Vecf16),
+            (Vecf16Dot, Vecf16),
+            (Vecf16L2, Vecf16),
+            (SVecf32Cos, SVecf32),
+            (SVecf32Dot, SVecf32),
+            (SVecf32L2, SVecf32),
+            (BVecf32Cos, BVecf32),
+            (BVecf32Dot, BVecf32),
+            (BVecf32L2, BVecf32),
+            (BVecf32Jaccard, BVecf32),
+            (Veci8Cos, Veci8),
+            (Veci8Dot, Veci8),
+            (Veci8L2, Veci8),
         }
     }
 }
 
 impl ViewListOperations for InstanceView {
     fn list(&self) -> Result<Box<dyn Iterator<Item = Pointer> + '_>, ListError> {
-        match self {
-            InstanceView::Vecf32Cos(x) => {
-                Ok(Box::new(x.list()?) as Box<dyn Iterator<Item = Pointer>>)
-            }
-            InstanceView::Vecf32Dot(x) => Ok(Box::new(x.list()?)),
-            InstanceView::Vecf32L2(x) => Ok(Box::new(x.list()?)),
-            InstanceView::Vecf16Cos(x) => Ok(Box::new(x.list()?)),
-            InstanceView::Vecf16Dot(x) => Ok(Box::new(x.list()?)),
-            InstanceView::Vecf16L2(x) => Ok(Box::new(x.list()?)),
-            InstanceView::SVecf32Cos(x) => Ok(Box::new(x.list()?)),
-            InstanceView::SVecf32Dot(x) => Ok(Box::new(x.list()?)),
-            InstanceView::SVecf32L2(x) => Ok(Box::new(x.list()?)),
-            InstanceView::BVecf32Cos(x) => Ok(Box::new(x.list()?)),
-            InstanceView::BVecf32Dot(x) => Ok(Box::new(x.list()?)),
-            InstanceView::BVecf32L2(x) => Ok(Box::new(x.list()?)),
-            InstanceView::BVecf32Jaccard(x) => Ok(Box::new(x.list()?)),
-            InstanceView::Veci8Cos(x) => Ok(Box::new(x.list()?)),
-            InstanceView::Veci8Dot(x) => Ok(Box::new(x.list()?)),
-            InstanceView::Veci8L2(x) => Ok(Box::new(x.list()?)),
+        macro_rules! match_list {
+            ($($instance:ident),* ,) => {
+                match self {
+                    $(
+                        InstanceView::$instance(x) => Ok(Box::new(x.list()?)),
+                    )*
+                }
+            };
+        }
+        match_list! {
+            Vecf32Cos,
+            Vecf32Dot,
+            Vecf32L2,
+            Vecf16Cos,
+            Vecf16Dot,
+            Vecf16L2,
+            SVecf32Cos,
+            SVecf32Dot,
+            SVecf32L2,
+            BVecf32Cos,
+            BVecf32Dot,
+            BVecf32L2,
+            BVecf32Jaccard,
+            Veci8Cos,
+            Veci8Dot,
+            Veci8L2,
         }
     }
 }
@@ -422,75 +401,93 @@ impl InstanceView {
         &self,
         vector: OwnedVector,
         pointer: Pointer,
+        multicolumn_data: i64,
     ) -> Result<Result<(), OutdatedError>, InsertError> {
-        match (self, vector) {
-            (InstanceView::Vecf32Cos(x), OwnedVector::Vecf32(vector)) => x.insert(vector, pointer),
-            (InstanceView::Vecf32Dot(x), OwnedVector::Vecf32(vector)) => x.insert(vector, pointer),
-            (InstanceView::Vecf32L2(x), OwnedVector::Vecf32(vector)) => x.insert(vector, pointer),
-            (InstanceView::Vecf16Cos(x), OwnedVector::Vecf16(vector)) => x.insert(vector, pointer),
-            (InstanceView::Vecf16Dot(x), OwnedVector::Vecf16(vector)) => x.insert(vector, pointer),
-            (InstanceView::Vecf16L2(x), OwnedVector::Vecf16(vector)) => x.insert(vector, pointer),
-            (InstanceView::SVecf32Cos(x), OwnedVector::SVecf32(vector)) => {
-                x.insert(vector, pointer)
-            }
-            (InstanceView::SVecf32Dot(x), OwnedVector::SVecf32(vector)) => {
-                x.insert(vector, pointer)
-            }
-            (InstanceView::SVecf32L2(x), OwnedVector::SVecf32(vector)) => x.insert(vector, pointer),
-            (InstanceView::BVecf32Cos(x), OwnedVector::BVecf32(vector)) => {
-                x.insert(vector, pointer)
-            }
-            (InstanceView::BVecf32Dot(x), OwnedVector::BVecf32(vector)) => {
-                x.insert(vector, pointer)
-            }
-            (InstanceView::BVecf32L2(x), OwnedVector::BVecf32(vector)) => x.insert(vector, pointer),
-            (InstanceView::BVecf32Jaccard(x), OwnedVector::BVecf32(vector)) => {
-                x.insert(vector, pointer)
-            }
-            (InstanceView::Veci8Cos(x), OwnedVector::Veci8(vector)) => x.insert(vector, pointer),
-            (InstanceView::Veci8Dot(x), OwnedVector::Veci8(vector)) => x.insert(vector, pointer),
-            (InstanceView::Veci8L2(x), OwnedVector::Veci8(vector)) => x.insert(vector, pointer),
-            _ => Err(InsertError::InvalidVector),
+        macro_rules! match_insert {
+            ($(($instance:ident, $vector:ident)),* ,) => {
+                match (self, vector) {
+                    $(
+                        (InstanceView::$instance(x), OwnedVector::$vector(vector)) => x.insert(vector, pointer, multicolumn_data),
+                    )*
+                    _ => Err(InsertError::InvalidVector),
+                }
+            };
+        }
+        match_insert! {
+            (Vecf32Cos, Vecf32),
+            (Vecf32Dot, Vecf32),
+            (Vecf32L2, Vecf32),
+            (Vecf16Cos, Vecf16),
+            (Vecf16Dot, Vecf16),
+            (Vecf16L2, Vecf16),
+            (SVecf32Cos, SVecf32),
+            (SVecf32Dot, SVecf32),
+            (SVecf32L2, SVecf32),
+            (BVecf32Cos, BVecf32),
+            (BVecf32Dot, BVecf32),
+            (BVecf32L2, BVecf32),
+            (BVecf32Jaccard, BVecf32),
+            (Veci8Cos, Veci8),
+            (Veci8Dot, Veci8),
+            (Veci8L2, Veci8),
         }
     }
     pub fn delete(&self, pointer: Pointer) -> Result<(), DeleteError> {
-        match self {
-            InstanceView::Vecf32Cos(x) => x.delete(pointer),
-            InstanceView::Vecf32Dot(x) => x.delete(pointer),
-            InstanceView::Vecf32L2(x) => x.delete(pointer),
-            InstanceView::Vecf16Cos(x) => x.delete(pointer),
-            InstanceView::Vecf16Dot(x) => x.delete(pointer),
-            InstanceView::Vecf16L2(x) => x.delete(pointer),
-            InstanceView::SVecf32Cos(x) => x.delete(pointer),
-            InstanceView::SVecf32Dot(x) => x.delete(pointer),
-            InstanceView::SVecf32L2(x) => x.delete(pointer),
-            InstanceView::BVecf32Cos(x) => x.delete(pointer),
-            InstanceView::BVecf32Dot(x) => x.delete(pointer),
-            InstanceView::BVecf32L2(x) => x.delete(pointer),
-            InstanceView::BVecf32Jaccard(x) => x.delete(pointer),
-            InstanceView::Veci8Cos(x) => x.delete(pointer),
-            InstanceView::Veci8Dot(x) => x.delete(pointer),
-            InstanceView::Veci8L2(x) => x.delete(pointer),
+        macro_rules! match_delete {
+            ($($instance:ident),* ,) => {
+                match self {
+                    $(
+                        InstanceView::$instance(x) => x.delete(pointer),
+                    )*
+                }
+            };
+        }
+        match_delete! {
+            Vecf32Cos,
+            Vecf32Dot,
+            Vecf32L2,
+            Vecf16Cos,
+            Vecf16Dot,
+            Vecf16L2,
+            SVecf32Cos,
+            SVecf32Dot,
+            SVecf32L2,
+            BVecf32Cos,
+            BVecf32Dot,
+            BVecf32L2,
+            BVecf32Jaccard,
+            Veci8Cos,
+            Veci8Dot,
+            Veci8L2,
         }
     }
     pub fn flush(&self) -> Result<(), FlushError> {
-        match self {
-            InstanceView::Vecf32Cos(x) => x.flush(),
-            InstanceView::Vecf32Dot(x) => x.flush(),
-            InstanceView::Vecf32L2(x) => x.flush(),
-            InstanceView::Vecf16Cos(x) => x.flush(),
-            InstanceView::Vecf16Dot(x) => x.flush(),
-            InstanceView::Vecf16L2(x) => x.flush(),
-            InstanceView::SVecf32Cos(x) => x.flush(),
-            InstanceView::SVecf32Dot(x) => x.flush(),
-            InstanceView::SVecf32L2(x) => x.flush(),
-            InstanceView::BVecf32Cos(x) => x.flush(),
-            InstanceView::BVecf32Dot(x) => x.flush(),
-            InstanceView::BVecf32L2(x) => x.flush(),
-            InstanceView::BVecf32Jaccard(x) => x.flush(),
-            InstanceView::Veci8Cos(x) => x.flush(),
-            InstanceView::Veci8Dot(x) => x.flush(),
-            InstanceView::Veci8L2(x) => x.flush(),
+        macro_rules! match_flush {
+            ($($instance:ident),* ,) => {
+                match self {
+                    $(
+                        InstanceView::$instance(x) => x.flush(),
+                    )*
+                }
+            };
+        }
+        match_flush! {
+            Vecf32Cos,
+            Vecf32Dot,
+            Vecf32L2,
+            Vecf16Cos,
+            Vecf16Dot,
+            Vecf16L2,
+            SVecf32Cos,
+            SVecf32Dot,
+            SVecf32L2,
+            BVecf32Cos,
+            BVecf32Dot,
+            BVecf32L2,
+            BVecf32Jaccard,
+            Veci8Cos,
+            Veci8Dot,
+            Veci8L2,
         }
     }
 }

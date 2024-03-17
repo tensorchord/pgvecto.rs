@@ -103,8 +103,26 @@ pgvecto.rs: Dimensions type modifier of a vector column is needed for building t
 pub fn bad_opclass() -> ! {
     error!(
         "\
-pgvecto.rs: Indexes can only be built on built-in distance functions.
+pgvecto.rs: The first column of indexes can only be built on built-in distance functions.
 ADVICE: If you want pgvecto.rs to support more distance functions, \
+visit `https://github.com/tensorchord/pgvecto.rs/issues` and contribute your ideas."
+    );
+}
+
+pub fn bad_index_column_number() -> ! {
+    error!(
+        "\
+pgvecto.rs: Index cannot have more than two columns.
+ADVICE: If you want pgvecto.rs to support more columns, \
+visit `https://github.com/tensorchord/pgvecto.rs/issues` and contribute your ideas."
+    );
+}
+
+pub fn bad_index_second_column_type() -> ! {
+    error!(
+        "\
+pgvecto.rs: The second column of indexes can only be built on bigint type.
+ADVICE: If you want pgvecto.rs to support more types, \
 visit `https://github.com/tensorchord/pgvecto.rs/issues` and contribute your ideas."
     );
 }

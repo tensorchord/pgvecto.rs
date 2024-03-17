@@ -476,12 +476,13 @@ impl<O: Op> IndexView<O> {
         &self,
         vector: Owned<O>,
         pointer: Pointer,
+        multicolumn_data: i64,
     ) -> Result<Result<(), OutdatedError>, InsertError> {
         if self.options.vector.dims != vector.dims() {
             return Err(InsertError::InvalidVector);
         }
 
-        let payload = Payload::new(pointer, self.delete.version(pointer));
+        let payload = Payload::new(pointer, self.delete.version(pointer), multicolumn_data);
         if let Some((_, growing)) = self.write.as_ref() {
             use crate::segments::growing::GrowingSegmentInsertError;
             if let Err(GrowingSegmentInsertError) = growing.insert(vector, payload) {

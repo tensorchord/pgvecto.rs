@@ -79,9 +79,10 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<Infallible,
                 handle,
                 vector,
                 pointer,
+                multicolumn_data,
                 x,
             } => {
-                handler = x.leave(worker.insert(handle, vector, pointer))?;
+                handler = x.leave(worker.insert(handle, vector, pointer, multicolumn_data))?;
             }
             ServerRpcHandle::Delete { handle, pointer, x } => {
                 handler = x.leave(worker.delete(handle, pointer))?;

@@ -323,7 +323,7 @@ defines! {
     unary create(handle: Handle, options: IndexOptions) -> ();
     unary drop(handle: Handle) -> ();
     unary flush(handle: Handle) -> ();
-    unary insert(handle: Handle, vector: OwnedVector, pointer: Pointer) -> ();
+    unary insert(handle: Handle, vector: OwnedVector, pointer: Pointer, multicolumn_data: i64) -> ();
     unary delete(handle: Handle, pointer: Pointer) -> ();
     stream basic(handle: Handle, vector: OwnedVector, opts: SearchOptions) -> Pointer;
     stream vbase(handle: Handle, vector: OwnedVector, opts: SearchOptions) -> Pointer;

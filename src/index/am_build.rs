@@ -70,7 +70,12 @@ unsafe extern "C" fn callback(
         None => unreachable!(),
     };
     let pointer = Pointer::from_sys(*ctid);
-    match state.rpc.insert(id, vector, pointer) {
+    let multicolumn_data = if (*(*index_relation).rd_index).indnkeyatts == 2 {
+        pgrx::datum::FromDatum::from_datum(*values.add(1), *is_null.add(1)).unwrap()
+    } else {
+        0
+    };
+    match state.rpc.insert(id, vector, pointer, multicolumn_data) {
         Ok(()) => (),
         Err(InsertError::NotExist) => bad_service_not_exist(),
         Err(InsertError::InvalidVector) => bad_service_invalid_vector(),
