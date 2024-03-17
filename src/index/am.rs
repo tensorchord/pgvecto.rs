@@ -46,6 +46,15 @@ const AM_HANDLER: pgrx::pg_sys::IndexAmRoutine = {
 
     am_routine.amcanorderbyop = true;
 
+    // Index access methods that set `amoptionalkey` to `false`
+    // must index all tuples, even if the first column is `NULL`.
+    // However, PostgreSQL does not generate a path if there is no
+    // index clauses, even if there is a `ORDER BY` clause.
+    // So we have to set it to `true` and set costs of every path
+    // for vector index scans without `ORDER BY` clauses a large number
+    // and throw errors if someone really wants such a path.
+    am_routine.amoptionalkey = true;
+
     am_routine.amvalidate = Some(amvalidate);
     am_routine.amoptions = Some(amoptions);
     am_routine.amcostestimate = Some(amcostestimate);
