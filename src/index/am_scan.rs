@@ -15,6 +15,7 @@ pub enum Scanner {
     Initial { vector: Option<OwnedVector> },
     Basic { basic: ClientBasic },
     Vbase { vbase: ClientVbase },
+    Empty {},
 }
 
 pub unsafe fn make_scan(index_relation: pgrx::pg_sys::Relation) -> pgrx::pg_sys::IndexScanDesc {
@@ -55,40 +56,43 @@ pub unsafe fn start_scan(scan: pgrx::pg_sys::IndexScanDesc, orderbys: pgrx::pg_s
         Scanner::Vbase { vbase, .. } => {
             vbase.leave();
         }
+        Scanner::Empty {} => {}
     }
 }
 
 pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
     let scanner = &mut *((*scan).opaque as *mut Scanner);
     if let Scanner::Initial { vector } = scanner {
-        let vector = vector.as_ref().expect("Scan failed.");
+        if let Some(vector) = vector.as_ref() {
+            let oid = (*(*scan).indexRelation).rd_id;
+            let id = get_handle(oid);
 
-        let oid = (*(*scan).indexRelation).rd_id;
-        let id = get_handle(oid);
+            let rpc = check_client(crate::ipc::client());
 
-        let rpc = check_client(crate::ipc::client());
-
-        match SEARCH_MODE.get() {
-            Mode::basic => {
-                let opts = search_options();
-                let basic = match rpc.basic(id, vector.clone(), opts) {
-                    Ok(x) => x,
-                    Err((_, BasicError::NotExist)) => bad_service_not_exist(),
-                    Err((_, BasicError::InvalidVector)) => bad_service_invalid_vector(),
-                    Err((_, BasicError::InvalidSearchOptions { reason: _ })) => unreachable!(),
-                };
-                *scanner = Scanner::Basic { basic };
+            match SEARCH_MODE.get() {
+                Mode::basic => {
+                    let opts = search_options();
+                    let basic = match rpc.basic(id, vector.clone(), opts) {
+                        Ok(x) => x,
+                        Err((_, BasicError::NotExist)) => bad_service_not_exist(),
+                        Err((_, BasicError::InvalidVector)) => bad_service_invalid_vector(),
+                        Err((_, BasicError::InvalidSearchOptions { reason: _ })) => unreachable!(),
+                    };
+                    *scanner = Scanner::Basic { basic };
+                }
+                Mode::vbase => {
+                    let opts = search_options();
+                    let vbase = match rpc.vbase(id, vector.clone(), opts) {
+                        Ok(x) => x,
+                        Err((_, VbaseError::NotExist)) => bad_service_not_exist(),
+                        Err((_, VbaseError::InvalidVector)) => bad_service_invalid_vector(),
+                        Err((_, VbaseError::InvalidSearchOptions { reason: _ })) => unreachable!(),
+                    };
+                    *scanner = Scanner::Vbase { vbase };
+                }
             }
-            Mode::vbase => {
-                let opts = search_options();
-                let vbase = match rpc.vbase(id, vector.clone(), opts) {
-                    Ok(x) => x,
-                    Err((_, VbaseError::NotExist)) => bad_service_not_exist(),
-                    Err((_, VbaseError::InvalidVector)) => bad_service_invalid_vector(),
-                    Err((_, VbaseError::InvalidSearchOptions { reason: _ })) => unreachable!(),
-                };
-                *scanner = Scanner::Vbase { vbase };
-            }
+        } else {
+            *scanner = Scanner::Empty {};
         }
     }
     match scanner {
@@ -109,6 +113,7 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
                 false
             }
         }
+        Scanner::Empty {} => false,
     }
 }
 
@@ -124,5 +129,6 @@ pub unsafe fn end_scan(scan: pgrx::pg_sys::IndexScanDesc) {
         Scanner::Vbase { vbase, .. } => {
             vbase.leave();
         }
+        Scanner::Empty {} => {}
     }
 }
