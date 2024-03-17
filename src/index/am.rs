@@ -44,22 +44,16 @@ const AM_HANDLER: pgrx::pg_sys::IndexAmRoutine = {
 
     am_routine.type_ = pgrx::pg_sys::NodeTag::T_IndexAmRoutine;
 
-    am_routine.amstrategies = 1;
-    am_routine.amsupport = 0;
-
-    am_routine.amcanorder = false;
     am_routine.amcanorderbyop = true;
-    am_routine.amcanbackward = false;
-    am_routine.amcanunique = false;
-    am_routine.amcanmulticol = false;
+
+    // Index access methods that set `amoptionalkey` to `false`
+    // must index all tuples, even if the first column is `NULL`.
+    // However, PostgreSQL does not generate a path if there is no
+    // index clauses, even if there is a `ORDER BY` clause.
+    // So we have to set it to `true` and set costs of every path
+    // for vector index scans without `ORDER BY` clauses a large number
+    // and throw errors if someone really wants such a path.
     am_routine.amoptionalkey = true;
-    am_routine.amsearcharray = false;
-    am_routine.amsearchnulls = false;
-    am_routine.amstorage = false;
-    am_routine.amclusterable = false;
-    am_routine.ampredlocks = false;
-    am_routine.amcaninclude = false;
-    am_routine.amkeytype = pgrx::pg_sys::InvalidOid;
 
     am_routine.amvalidate = Some(amvalidate);
     am_routine.amoptions = Some(amoptions);
@@ -82,8 +76,12 @@ const AM_HANDLER: pgrx::pg_sys::IndexAmRoutine = {
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn amvalidate(opclass_oid: pgrx::pg_sys::Oid) -> bool {
-    am_setup::convert_opclass_to_distance(opclass_oid);
-    true
+    if am_setup::convert_opclass_to_vd(opclass_oid).is_some() {
+        pgrx::info!("Vector indexes can only be built on built-in operator classes.");
+        true
+    } else {
+        false
+    }
 }
 
 #[pgrx::pg_guard]
@@ -210,7 +208,7 @@ pub unsafe extern "C" fn aminsert(
     if let Some(v) = vector {
         am_update::update_insert(id, v, *heap_tid);
     }
-    true
+    false
 }
 
 #[pgrx::pg_guard]

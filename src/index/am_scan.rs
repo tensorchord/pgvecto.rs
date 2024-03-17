@@ -64,6 +64,14 @@ pub unsafe fn next_scan(scan: pgrx::pg_sys::IndexScanDesc) -> bool {
     let scanner = &mut *((*scan).opaque as *mut Scanner);
     if let Scanner::Initial { vector } = scanner {
         if let Some(vector) = vector.as_ref() {
+            // https://www.postgresql.org/docs/current/index-locking.html
+            // If heap entries referenced physical pointers are deleted before
+            // they are consumed by PostgreSQL, PostgreSQL will received wrong
+            // physical pointers: no rows or irreverent rows are referenced.
+            if (*(*scan).xs_snapshot).snapshot_type != pgrx::pg_sys::SnapshotType_SNAPSHOT_MVCC {
+                pgrx::error!("scanning with a non-MVCC-compliant snapshot is not supported");
+            }
+
             let oid = (*(*scan).indexRelation).rd_id;
             let id = get_handle(oid);
 
