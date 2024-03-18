@@ -11,15 +11,12 @@ use pgrx::pg_sys::{IndexBuildResult, IndexInfo, RelationData};
 
 pub struct Builder {
     pub rpc: ClientRpc,
-    pub heap_relation: *mut RelationData,
+    pub heap: *mut RelationData,
     pub index_info: *mut IndexInfo,
     pub result: *mut IndexBuildResult,
 }
 
-pub unsafe fn build(
-    index: pgrx::pg_sys::Relation,
-    data: Option<(*mut RelationData, *mut IndexInfo, *mut IndexBuildResult)>,
-) {
+pub unsafe fn build(index: pgrx::pg_sys::Relation) {
     let oid = (*index).rd_id;
     let id = get_handle(oid);
     let options = options(index);
@@ -31,26 +28,27 @@ pub unsafe fn build(
         }
     }
     super::hook_maintain::maintain_index_in_index_create(id);
-    if let Some((heap_relation, index_info, result)) = data {
-        let mut builder = Builder {
-            rpc,
-            heap_relation,
-            index_info,
-            result,
-        };
-        pgrx::pg_sys::IndexBuildHeapScan(
-            heap_relation,
-            index,
-            index_info,
-            Some(callback),
-            &mut builder,
-        );
-    }
+}
+
+pub unsafe fn build_insertions(
+    index: pgrx::pg_sys::Relation,
+    heap: *mut RelationData,
+    index_info: *mut IndexInfo,
+    result: *mut IndexBuildResult,
+) {
+    let rpc = check_client(crate::ipc::client());
+    let mut builder = Builder {
+        rpc,
+        heap,
+        index_info,
+        result,
+    };
+    pgrx::pg_sys::IndexBuildHeapScan(heap, index, index_info, Some(callback), &mut builder);
 }
 
 #[pgrx::pg_guard]
 unsafe extern "C" fn callback(
-    index_relation: pgrx::pg_sys::Relation,
+    index: pgrx::pg_sys::Relation,
     ctid: pgrx::pg_sys::ItemPointer,
     values: *mut pgrx::pg_sys::Datum,
     is_null: *mut bool,
@@ -62,7 +60,7 @@ unsafe extern "C" fn callback(
         (*state.result).heap_tuples += 1.0;
         return;
     }
-    let oid = (*index_relation).rd_id;
+    let oid = (*index).rd_id;
     let id = get_handle(oid);
     let vector = from_datum(*values.add(0), *is_null.add(0));
     let vector = match vector {

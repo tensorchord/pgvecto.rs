@@ -100,9 +100,9 @@ unsafe fn convert_varlena_to_soi(
     }
 }
 
-pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
-    let opfamily = unsafe { (*index_relation).rd_opfamily.read() };
-    let att = unsafe { &mut *(*index_relation).rd_att };
+pub unsafe fn options(index: pgrx::pg_sys::Relation) -> IndexOptions {
+    let opfamily = unsafe { (*index).rd_opfamily.read() };
+    let att = unsafe { &mut *(*index).rd_att };
     let atts = unsafe { att.attrs.as_slice(att.natts as _) };
     if atts.is_empty() {
         pgrx::error!("indexing on no columns is not supported");
@@ -116,8 +116,7 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
     // get v, d
     let (v, d) = convert_opfamily_to_vd(opfamily).unwrap();
     // get segment, optimizing, indexing
-    let (segment, optimizing, indexing) =
-        unsafe { convert_varlena_to_soi((*index_relation).rd_options) };
+    let (segment, optimizing, indexing) = unsafe { convert_varlena_to_soi((*index).rd_options) };
     IndexOptions {
         vector: VectorOptions { dims, v, d },
         segment,

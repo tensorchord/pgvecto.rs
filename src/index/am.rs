@@ -132,77 +132,138 @@ pub unsafe extern "C" fn amcostestimate(
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn ambuild(
-    heap_relation: pgrx::pg_sys::Relation,
-    index_relation: pgrx::pg_sys::Relation,
+    heap: pgrx::pg_sys::Relation,
+    index: pgrx::pg_sys::Relation,
     index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> *mut pgrx::pg_sys::IndexBuildResult {
+    initialize_meta(index, pgrx::pg_sys::ForkNumber_MAIN_FORKNUM);
+    make_well_formed(index);
     let result = pgrx::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0();
-    am_build::build(
-        index_relation,
-        Some((heap_relation, index_info, result.as_ptr())),
-    );
-    make_well_formed(index_relation);
+    am_build::build_insertions(index, heap, index_info, result.as_ptr());
     result.into_pg()
 }
 
 #[pgrx::pg_guard]
-pub unsafe extern "C" fn ambuildempty(_index: pgrx::pg_sys::Relation) {}
+pub unsafe extern "C" fn ambuildempty(index: pgrx::pg_sys::Relation) {
+    initialize_meta(index, pgrx::pg_sys::ForkNumber_INIT_FORKNUM);
+}
+
+unsafe fn initialize_meta(index: pgrx::pg_sys::Relation, forknum: i32) {
+    unsafe {
+        let meta_buffer = scopeguard::guard(
+            {
+                let meta_buffer = pgrx::pg_sys::ReadBufferExtended(
+                    index,
+                    forknum,
+                    0xFFFFFFFF,
+                    pgrx::pg_sys::ReadBufferMode_RBM_NORMAL,
+                    std::ptr::null_mut(),
+                );
+                pgrx::pg_sys::LockBuffer(meta_buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
+                meta_buffer
+            },
+            |meta_buffer| {
+                pgrx::pg_sys::UnlockReleaseBuffer(meta_buffer);
+            },
+        );
+        let xlog = pgrx::pg_sys::GenericXLogStart(index);
+        pgrx::pg_sys::GenericXLogRegisterBuffer(
+            xlog,
+            *meta_buffer,
+            pgrx::pg_sys::GENERIC_XLOG_FULL_IMAGE as _,
+        );
+        pgrx::pg_sys::GenericXLogFinish(xlog);
+    }
+}
 
 #[repr(C)]
 struct VectorsPageOpaqueData {
-    _reserved: [u8; 2048],
+    version: u32,
+    _reserved: [u8; 2044],
 }
 
 const _: () = assert!(std::mem::size_of::<VectorsPageOpaqueData>() == 2048);
 
-unsafe fn make_well_formed(index_relation: pgrx::pg_sys::Relation) {
+unsafe fn make_well_formed(index: pgrx::pg_sys::Relation) {
     unsafe {
-        let meta_buffer = pgrx::pg_sys::ReadBuffer(index_relation, 0xFFFFFFFF /* P_NEW */);
-        pgrx::pg_sys::LockBuffer(meta_buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
-        assert!(pgrx::pg_sys::BufferGetBlockNumber(meta_buffer) == 0);
-        let state = pgrx::pg_sys::GenericXLogStart(index_relation);
-        let meta_page = pgrx::pg_sys::GenericXLogRegisterBuffer(
-            state,
-            meta_buffer,
+        let meta_buffer = scopeguard::guard(
+            {
+                let meta_buffer = pgrx::pg_sys::ReadBuffer(index, 0);
+                pgrx::pg_sys::LockBuffer(meta_buffer, pgrx::pg_sys::BUFFER_LOCK_SHARE as _);
+                meta_buffer
+            },
+            |meta_buffer| {
+                pgrx::pg_sys::UnlockReleaseBuffer(meta_buffer);
+            },
+        );
+        let meta_page = pgrx::pg_sys::BufferGetPage(*meta_buffer);
+        let meta_header = meta_page.cast::<pgrx::pg_sys::PageHeaderData>();
+        let meta_offset = (*meta_header).pd_special as usize;
+        let meta_opaque = meta_page.add(meta_offset).cast::<VectorsPageOpaqueData>();
+        if (*meta_opaque).version != 0 {
+            return;
+        }
+        am_build::build(index);
+        let xlog = pgrx::pg_sys::GenericXLogStart(index);
+        let xlog_meta_page = pgrx::pg_sys::GenericXLogRegisterBuffer(
+            xlog,
+            *meta_buffer,
             pgrx::pg_sys::GENERIC_XLOG_FULL_IMAGE as _,
         );
         pgrx::pg_sys::PageInit(
-            meta_page,
+            xlog_meta_page,
             pgrx::pg_sys::BLCKSZ as usize,
             std::mem::size_of::<VectorsPageOpaqueData>(),
         );
-        pgrx::pg_sys::GenericXLogFinish(state);
-        pgrx::pg_sys::UnlockReleaseBuffer(meta_buffer);
+        let xlog_meta_header = xlog_meta_page.cast::<pgrx::pg_sys::PageHeaderData>();
+        let xlog_meta_offset = (*xlog_meta_header).pd_special as usize;
+        let xlog_meta_opaque = xlog_meta_page
+            .add(xlog_meta_offset)
+            .cast::<VectorsPageOpaqueData>();
+        (*xlog_meta_opaque).version = 1;
+        pgrx::pg_sys::GenericXLogFinish(xlog);
     }
 }
 
-unsafe fn check_well_formed(index_relation: pgrx::pg_sys::Relation) {
-    if !test_well_formed(index_relation) {
-        am_build::build(index_relation, None);
-        make_well_formed(index_relation);
+unsafe fn check_well_formed(index: pgrx::pg_sys::Relation) {
+    if !test_well_formed(index) {
+        make_well_formed(index);
     }
 }
 
-unsafe fn test_well_formed(index_relation: pgrx::pg_sys::Relation) -> bool {
-    pgrx::pg_sys::RelationGetNumberOfBlocksInFork(
-        index_relation,
-        pgrx::pg_sys::ForkNumber_MAIN_FORKNUM,
-    ) == 1
+unsafe fn test_well_formed(index: pgrx::pg_sys::Relation) -> bool {
+    unsafe {
+        let meta_buffer = scopeguard::guard(
+            {
+                let meta_buffer = pgrx::pg_sys::ReadBuffer(index, 0);
+                pgrx::pg_sys::LockBuffer(meta_buffer, pgrx::pg_sys::BUFFER_LOCK_SHARE as _);
+                meta_buffer
+            },
+            |meta_buffer| {
+                pgrx::pg_sys::UnlockReleaseBuffer(meta_buffer);
+            },
+        );
+        let meta_page = pgrx::pg_sys::BufferGetPage(*meta_buffer);
+        let meta_header = meta_page.cast::<pgrx::pg_sys::PageHeaderData>();
+        let meta_offset = (*meta_header).pd_special as usize;
+        let meta_opaque = meta_page.add(meta_offset).cast::<VectorsPageOpaqueData>();
+        (*meta_opaque).version == 1
+    }
 }
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn aminsert(
-    index_relation: pgrx::pg_sys::Relation,
+    index: pgrx::pg_sys::Relation,
     values: *mut Datum,
     is_null: *mut bool,
     heap_tid: pgrx::pg_sys::ItemPointer,
-    _heap_relation: pgrx::pg_sys::Relation,
+    _heap: pgrx::pg_sys::Relation,
     _check_unique: pgrx::pg_sys::IndexUniqueCheck,
     _index_unchanged: bool,
     _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
-    check_well_formed(index_relation);
-    let oid = (*index_relation).rd_id;
+    check_well_formed(index);
+    let oid = (*index).rd_id;
     let id = get_handle(oid);
     let vector = from_datum(*values.add(0), *is_null.add(0));
     if let Some(v) = vector {
@@ -213,14 +274,14 @@ pub unsafe extern "C" fn aminsert(
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn ambeginscan(
-    index_relation: pgrx::pg_sys::Relation,
+    index: pgrx::pg_sys::Relation,
     n_keys: std::os::raw::c_int,
     n_orderbys: std::os::raw::c_int,
 ) -> pgrx::pg_sys::IndexScanDesc {
-    check_well_formed(index_relation);
+    check_well_formed(index);
     assert!(n_keys == 0);
     assert!(n_orderbys == 1);
-    am_scan::make_scan(index_relation)
+    am_scan::make_scan(index)
 }
 
 #[pgrx::pg_guard]
@@ -261,6 +322,8 @@ pub unsafe extern "C" fn ambulkdelete(
 ) -> *mut pgrx::pg_sys::IndexBulkDeleteResult {
     if !test_well_formed((*info).index) {
         pgrx::warning!("The vector index is not initialized.");
+        let result = pgrx::PgBox::<pgrx::pg_sys::IndexBulkDeleteResult>::alloc0();
+        return result.into_pg();
     }
     let oid = (*(*info).index).rd_id;
     let id = get_handle(oid);

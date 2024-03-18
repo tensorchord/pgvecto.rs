@@ -18,10 +18,10 @@ pub enum Scanner {
     Empty {},
 }
 
-pub unsafe fn make_scan(index_relation: pgrx::pg_sys::Relation) -> pgrx::pg_sys::IndexScanDesc {
+pub unsafe fn make_scan(index: pgrx::pg_sys::Relation) -> pgrx::pg_sys::IndexScanDesc {
     use pgrx::PgMemoryContexts;
 
-    let scan = pgrx::pg_sys::RelationGetIndexScan(index_relation, 0, 1);
+    let scan = pgrx::pg_sys::RelationGetIndexScan(index, 0, 1);
 
     (*scan).xs_recheck = false;
     (*scan).xs_recheckorderby = false;
