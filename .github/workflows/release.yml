@@ -41,54 +41,86 @@ jobs:
   binary:
     strategy:
       matrix:
-        include:
-          - { version: 14, platform: amd64, arch: x86_64 }
-          - { version: 14, platform: arm64, arch: aarch64 }
-          - { version: 15, platform: amd64, arch: x86_64 }
-          - { version: 15, platform: arm64, arch: aarch64 }
-          - { version: 16, platform: amd64, arch: x86_64 }
-          - { version: 16, platform: arm64, arch: aarch64 }
+        version: [14, 15, 16]
+        arch: ["x86_64", "aarch64"]
     runs-on: ubuntu-20.04
+    env:
+      SEMVER: ${{ github.event.inputs.version }}
+      VERSION: ${{ matrix.version }}
+      ARCH: ${{ matrix.arch }}
     needs: ["semver"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up Environment
+        run: |
+          sudo apt-get remove -y '^postgres.*' '^libpq.*' '^clang.*' '^llvm.*' '^libclang.*' '^libllvm.*' '^mono-llvm.*'
+          sudo apt-get purge -y '^postgres.*' '^libpq.*' '^clang.*' '^llvm.*' '^libclang.*' '^libllvm.*' '^mono-llvm.*'
+          sudo apt-get update
+          sudo apt-get install -y build-essential crossbuild-essential-arm64
+          sudo apt-get install -y qemu-user-static
+          echo 'target.aarch64-unknown-linux-gnu.linker = "aarch64-linux-gnu-gcc"' | tee ~/.cargo/config.toml
       - name: Set up Sccache
         uses: mozilla-actions/sccache-action@v0.0.4
-      - name: Set up Crossbuild
-        if: ${{ matrix.arch == 'aarch64' }}
+      - name: Set up Cache
+        uses: actions/cache/restore@v4
+        id: cache
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ github.job }}-${{ hashFiles('./Cargo.lock') }}-${{ matrix.version }}-${{ matrix.arch }}
+      - name: Set up Clang-16
         run: |
+          sudo sh -c 'echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-16 main" >> /etc/apt/sources.list'
+          wget --quiet -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
           sudo apt-get update
-          sudo apt-get -y install crossbuild-essential-arm64
-          echo 'target.aarch64-unknown-linux-gnu.linker = "aarch64-linux-gnu-gcc"' | tee ~/.cargo/config.toml
-          echo 'env.BINDGEN_EXTRA_CLANG_ARGS_aarch64_unknown_linux_gnu = "-isystem /usr/aarch64-linux-gnu/include/ -ccc-gcc-name aarch64-linux-gnu-gcc"' | tee -a ~/.cargo/config.toml
-      - name: Build Release
+          sudo apt-get install -y clang-16
+      - name: Set up Pgrx
         run: |
-          export SEMVER=${{ github.event.inputs.version }}
-          export VERSION=${{ matrix.version }}
-          export ARCH=${{ matrix.arch }}
-          export _PGRX=$(grep 'pgrx = {' Cargo.toml | cut -d '"' -f 2 | head -n 1)
-          export _RUST=$(grep -oP 'channel = "\K[^"]+' ./rust-toolchain.toml)
-          sudo -E ./scripts/build_0.sh
-          ./scripts/build_1.sh
-          ./scripts/build_2.sh
+          # pg_config
+          mkdir -p ~/.pg_config
+          touch ~/.pg_config/pg_config
+          chmod 777 ~/.pg_config/pg_config
+          echo "#!/usr/bin/env bash" >> ~/.pg_config/pg_config
+          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg${VERSION}_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg_config/pg_config
+          mkdir -p ~/.pgrx && echo "configs.pg$VERSION=\"$HOME/.pg_config/pg_config\"" > ~/.pgrx/config.toml
+          # pgrx_binding
+          mkdir -p ~/.pgrx_binding
+          cp ./vendor/pgrx_binding/pg${VERSION}_$(uname --machine)-unknown-linux-gnu.rs ~/.pgrx_binding/pg${VERSION}_raw_bindings.rs
+          echo PGRX_TARGET_INFO_PATH_PG$VERSION=$HOME/.pgrx_binding >> "$GITHUB_ENV"
+      - name: Build
+        run: |
+          cargo build --no-default-features --features pg$VERSION --release --target $ARCH-unknown-linux-gnu
+          ./tools/schema.sh --no-default-features --features pg$VERSION --release --target $ARCH-unknown-linux-gnu | expand -t 4 > ./target/vectors--$SEMVER.sql
+      - name: Package
+        run: |
+          export PLATFORM=$(echo $ARCH | sed 's/aarch64/arm64/; s/x86_64/amd64/')
+          ./scripts/package.sh
       - name: Upload
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload --clobber ${{ github.event.inputs.tag }} ./build/vectors-pg${{ matrix.version }}_${{ matrix.arch }}-unknown-linux-gnu_${{ github.event.inputs.version }}.zip
-          gh release upload --clobber ${{ github.event.inputs.tag }} ./build/vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}-1_${{ matrix.platform }}.deb
+          export TAG=${{ github.event.inputs.tag }}
+          export PLATFORM=$(echo $ARCH | sed 's/aarch64/arm64/; s/x86_64/amd64/')
+          gh release upload --clobber $TAG ./build/vectors-pg${VERSION}_${ARCH}-unknown-linux-gnu_${SEMVER}.zip
+          gh release upload --clobber $TAG ./build/vectors-pg${VERSION}_${SEMVER}_${PLATFORM}.deb
+      - name: Post Set up Cache
+        uses: actions/cache/save@v4
+        if: ${{ !steps.cache.outputs.cache-hit }}
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ github.job }}-${{ hashFiles('./Cargo.lock') }}-${{ matrix.version }}-${{ matrix.arch }}
   docker_binary_release:
     needs: ["binary", "semver"]
     strategy:
       matrix:
-        include:
-          - { version: 14, platform: amd64, arch: x86_64 }
-          - { version: 14, platform: arm64, arch: aarch64 }
-          - { version: 15, platform: amd64, arch: x86_64 }
-          - { version: 15, platform: arm64, arch: aarch64 }
-          - { version: 16, platform: amd64, arch: x86_64 }
-          - { version: 16, platform: arm64, arch: aarch64 }
+        version: [14, 15, 16]
+        platform: ["amd64", "arm64"]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -97,7 +129,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download ${{ github.event.inputs.tag }} --pattern "vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}-1_${{ matrix.platform }}.deb" --output pgvecto-rs-binary-release.deb
+          gh release download ${{ github.event.inputs.tag }} --pattern "vectors-pg${{ matrix.version }}_${{ github.event.inputs.version }}_${{ matrix.platform }}.deb" --output pgvecto-rs-binary-release.deb
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx

@@ -136,7 +136,11 @@ impl IntoDatum for Vecf32Output {
     }
 
     fn type_oid() -> Oid {
-        pgrx::wrappers::regtypein("vectors.vector")
+        let namespace = pgrx::pg_catalog::PgNamespace::search_namespacename(c"vectors").unwrap();
+        let namespace = namespace.get().expect("pgvecto.rs is not installed.");
+        let t = pgrx::pg_catalog::PgType::search_typenamensp(c"vector", namespace.oid()).unwrap();
+        let t = t.get().expect("pg_catalog is broken.");
+        t.oid()
     }
 }
 

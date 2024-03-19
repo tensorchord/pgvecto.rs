@@ -1,0 +1,143 @@
+name: PostgreSQL check
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".cargo/**"
+      - ".github/**"
+      - "crates/**"
+      - "scripts/**"
+      - "src/**"
+      - "tests/**"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "rust-toolchain.toml"
+      - "vectors.control"
+      - "vendor/**"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - ".cargo/**"
+      - ".github/**"
+      - "crates/**"
+      - "scripts/**"
+      - "src/**"
+      - "tests/**"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "rust-toolchain.toml"
+      - "vectors.control"
+      - "vendor/**"
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  SCCACHE_GHA_ENABLED: true
+  RUSTC_WRAPPER: sccache
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        version: [14, 15, 16]
+    runs-on: ubuntu-latest
+    env:
+      SEMVER: "0.0.0"
+      VERSION: ${{ matrix.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Environment
+        run: |
+          sudo apt-get remove -y '^postgres.*' '^libpq.*' '^clang.*' '^llvm.*' '^libclang.*' '^libllvm.*' '^mono-llvm.*'
+          sudo apt-get purge -y '^postgres.*' '^libpq.*' '^clang.*' '^llvm.*' '^libclang.*' '^libllvm.*' '^mono-llvm.*'
+          sudo apt-get update
+          sudo apt-get install -y build-essential crossbuild-essential-arm64
+          sudo apt-get install -y qemu-user-static
+          echo 'target.aarch64-unknown-linux-gnu.linker = "aarch64-linux-gnu-gcc"' | tee ~/.cargo/config.toml
+      - name: Set up Sccache
+        uses: mozilla-actions/sccache-action@v0.0.4
+      - name: Set up Cache
+        uses: actions/cache/restore@v4
+        id: cache
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ github.job }}-${{ hashFiles('./Cargo.lock') }}-${{ matrix.version }}
+      - name: Set up Clang-16
+        run: |
+          sudo sh -c 'echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-16 main" >> /etc/apt/sources.list'
+          wget --quiet -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          sudo apt-get update
+          sudo apt-get install -y clang-16
+      - name: Set up Pgrx
+        run: |
+          # pg_config
+          mkdir -p ~/.pg_config
+          touch ~/.pg_config/pg_config
+          chmod 777 ~/.pg_config/pg_config
+          echo "#!/usr/bin/env bash" >> ~/.pg_config/pg_config
+          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg${VERSION}_$(uname --machine)-unknown-linux-gnu.txt" >> ~/.pg_config/pg_config
+          mkdir -p ~/.pgrx && echo "configs.pg$VERSION=\"$HOME/.pg_config/pg_config\"" > ~/.pgrx/config.toml
+          # pgrx_binding
+          mkdir -p ~/.pgrx_binding
+          cp ./vendor/pgrx_binding/pg${VERSION}_$(uname --machine)-unknown-linux-gnu.rs ~/.pgrx_binding/pg${VERSION}_raw_bindings.rs
+          echo PGRX_TARGET_INFO_PATH_PG$VERSION=$HOME/.pgrx_binding >> "$GITHUB_ENV"
+      - name: Build Release
+        run: |
+          cargo build --no-default-features --features "pg$VERSION" --release
+          ./tools/schema.sh --no-default-features --features "pg$VERSION" --release | expand -t 4 > ./target/vectors--$SEMVER.sql
+      - name: Set up PostgreSQL
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update
+          sudo apt-get -y install postgresql-$VERSION
+
+          echo "local all all trust" | sudo tee /etc/postgresql/$VERSION/main/pg_hba.conf
+          echo "host all all 127.0.0.1/32 trust" | sudo tee -a /etc/postgresql/$VERSION/main/pg_hba.conf
+          echo "host all all ::1/128 trust" | sudo tee -a /etc/postgresql/$VERSION/main/pg_hba.conf
+          sudo systemctl restart postgresql
+
+          sudo -iu postgres createuser -s -r $USER
+          createdb
+      - name: Install Release
+        run: |
+          sudo cp ./target/vectors--$SEMVER.sql /usr/share/postgresql/$VERSION/extension/vectors--$SEMVER.sql
+          sudo cp ./target/release/libvectors.so "/usr/lib/postgresql/$VERSION/lib/vectors.so"
+          sed -e "s/@CARGO_VERSION@/$SEMVER/g" < ./vectors.control | sudo tee "/usr/share/postgresql/$VERSION/extension/vectors.control"
+
+          psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
+          psql -c 'ALTER SYSTEM SET search_path = "$user", public, vectors'
+          psql -c 'ALTER SYSTEM SET logging_collector = on'
+
+          sudo systemctl restart postgresql
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Set up cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+      - name: Set up Sqllogictest
+        run: cargo binstall sqllogictest-bin -y --force
+      - name: Test
+        run: ./tests/tests.sh
+      - name: Post Set up Cache
+        uses: actions/cache/save@v4
+        if: ${{ !steps.cache.outputs.cache-hit }}
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ github.job }}-${{ hashFiles('./Cargo.lock') }}-${{ matrix.version }}

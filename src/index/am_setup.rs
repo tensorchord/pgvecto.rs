@@ -1,5 +1,3 @@
-#![allow(unsafe_op_in_unsafe_fn)]
-
 use crate::datatype::typmod::Typmod;
 use crate::error::*;
 use base::distance::*;
@@ -7,6 +5,13 @@ use base::index::*;
 use base::vector::*;
 use serde::Deserialize;
 use std::ffi::CStr;
+
+#[derive(Copy, Clone, Debug, Default)]
+#[repr(C)]
+pub struct Helper {
+    pub vl_len_: i32,
+    pub offset: i32,
+}
 
 pub fn helper_offset() -> usize {
     std::mem::offset_of!(Helper, offset)
@@ -16,144 +21,107 @@ pub fn helper_size() -> usize {
     std::mem::size_of::<Helper>()
 }
 
-pub unsafe fn convert_opclass_to_distance(
-    opclass: pgrx::pg_sys::Oid,
-) -> (DistanceKind, VectorKind) {
-    let opclass_cache_id = pgrx::pg_sys::SysCacheIdentifier_CLAOID as _;
-    let tuple = pgrx::pg_sys::SearchSysCache1(opclass_cache_id, opclass.into());
-    assert!(
-        !tuple.is_null(),
-        "cache lookup failed for operator class {opclass:?}"
-    );
-    let classform = pgrx::pg_sys::GETSTRUCT(tuple).cast::<pgrx::pg_sys::FormData_pg_opclass>();
-    let opfamily = (*classform).opcfamily;
-    let result = convert_opfamily_to_distance(opfamily);
-    pgrx::pg_sys::ReleaseSysCache(tuple);
-    result
+pub fn convert_opclass_to_vd(opclass_oid: pgrx::pg_sys::Oid) -> Option<(VectorKind, DistanceKind)> {
+    let namespace = pgrx::pg_catalog::PgNamespace::search_namespacename(c"vectors").unwrap();
+    let namespace = namespace.get().expect("pgvecto.rs is not installed.");
+    let opclass = pgrx::pg_catalog::PgOpclass::search_claoid(opclass_oid).unwrap();
+    let opclass = opclass.get().expect("pg_catalog is broken.");
+    if opclass.opcnamespace() == namespace.oid() {
+        if let Ok(name) = opclass.opcname().to_str() {
+            if let Some(p) = convert_name_to_vd(name) {
+                return Some(p);
+            }
+        }
+    }
+    None
 }
 
-pub unsafe fn convert_opfamily_to_distance(
-    opfamily: pgrx::pg_sys::Oid,
-) -> (DistanceKind, VectorKind) {
-    let opfamily_cache_id = pgrx::pg_sys::SysCacheIdentifier_OPFAMILYOID as _;
-    let opstrategy_cache_id = pgrx::pg_sys::SysCacheIdentifier_AMOPSTRATEGY as _;
-    let tuple = pgrx::pg_sys::SearchSysCache1(opfamily_cache_id, opfamily.into());
-    assert!(
-        !tuple.is_null(),
-        "cache lookup failed for operator family {opfamily:?}"
-    );
-    let list = pgrx::pg_sys::SearchSysCacheList(
-        opstrategy_cache_id,
-        1,
-        opfamily.into(),
-        0.into(),
-        0.into(),
-    );
-    assert!((*list).n_members == 1);
-    let member = (*list).members.as_slice(1)[0];
-    let member_tuple = &mut (*member).tuple;
-    let amop = pgrx::pg_sys::GETSTRUCT(member_tuple).cast::<pgrx::pg_sys::FormData_pg_amop>();
-    assert!((*amop).amopstrategy == 1);
-    assert!((*amop).amoppurpose == pgrx::pg_sys::AMOP_ORDER as libc::c_char);
-    let operator = (*amop).amopopr;
-    let result;
-    if operator == regoperatorin("vectors.<->(vectors.vector,vectors.vector)") {
-        result = (DistanceKind::L2, VectorKind::Vecf32);
-    } else if operator == regoperatorin("vectors.<#>(vectors.vector,vectors.vector)") {
-        result = (DistanceKind::Dot, VectorKind::Vecf32);
-    } else if operator == regoperatorin("vectors.<=>(vectors.vector,vectors.vector)") {
-        result = (DistanceKind::Cos, VectorKind::Vecf32);
-    } else if operator == regoperatorin("vectors.<->(vectors.vecf16,vectors.vecf16)") {
-        result = (DistanceKind::L2, VectorKind::Vecf16);
-    } else if operator == regoperatorin("vectors.<#>(vectors.vecf16,vectors.vecf16)") {
-        result = (DistanceKind::Dot, VectorKind::Vecf16);
-    } else if operator == regoperatorin("vectors.<=>(vectors.vecf16,vectors.vecf16)") {
-        result = (DistanceKind::Cos, VectorKind::Vecf16);
-    } else if operator == regoperatorin("vectors.<->(vectors.svector,vectors.svector)") {
-        result = (DistanceKind::L2, VectorKind::SVecf32);
-    } else if operator == regoperatorin("vectors.<#>(vectors.svector,vectors.svector)") {
-        result = (DistanceKind::Dot, VectorKind::SVecf32);
-    } else if operator == regoperatorin("vectors.<=>(vectors.svector,vectors.svector)") {
-        result = (DistanceKind::Cos, VectorKind::SVecf32);
-    } else if operator == regoperatorin("vectors.<->(vectors.bvector,vectors.bvector)") {
-        result = (DistanceKind::L2, VectorKind::BVecf32);
-    } else if operator == regoperatorin("vectors.<#>(vectors.bvector,vectors.bvector)") {
-        result = (DistanceKind::Dot, VectorKind::BVecf32);
-    } else if operator == regoperatorin("vectors.<=>(vectors.bvector,vectors.bvector)") {
-        result = (DistanceKind::Cos, VectorKind::BVecf32);
-    } else if operator == regoperatorin("vectors.<~>(vectors.bvector,vectors.bvector)") {
-        result = (DistanceKind::Jaccard, VectorKind::BVecf32);
-    } else if operator == regoperatorin("vectors.<->(vectors.veci8,vectors.veci8)") {
-        result = (DistanceKind::L2, VectorKind::Veci8);
-    } else if operator == regoperatorin("vectors.<#>(vectors.veci8,vectors.veci8)") {
-        result = (DistanceKind::Dot, VectorKind::Veci8);
-    } else if operator == regoperatorin("vectors.<=>(vectors.veci8,vectors.veci8)") {
-        result = (DistanceKind::Cos, VectorKind::Veci8);
-    } else {
-        bad_opclass();
-    };
-    pgrx::pg_sys::ReleaseCatCacheList(list);
-    pgrx::pg_sys::ReleaseSysCache(tuple);
-    result
+pub fn convert_opfamily_to_vd(
+    opfamily_oid: pgrx::pg_sys::Oid,
+) -> Option<(VectorKind, DistanceKind)> {
+    let namespace = pgrx::pg_catalog::PgNamespace::search_namespacename(c"vectors").unwrap();
+    let namespace = namespace.get().expect("pgvecto.rs is not installed.");
+    let opfamily = pgrx::pg_catalog::PgOpfamily::search_opfamilyoid(opfamily_oid).unwrap();
+    let opfamily = opfamily.get().expect("pg_catalog is broken.");
+    if opfamily.opfnamespace() == namespace.oid() {
+        if let Ok(name) = opfamily.opfname().to_str() {
+            if let Some(p) = convert_name_to_vd(name) {
+                return Some(p);
+            }
+        }
+    }
+    None
+}
+
+fn convert_name_to_vd(name: &str) -> Option<(VectorKind, DistanceKind)> {
+    match name.strip_suffix("_ops") {
+        Some("vector_l2") => Some((VectorKind::Vecf32, DistanceKind::L2)),
+        Some("vector_dot") => Some((VectorKind::Vecf32, DistanceKind::Dot)),
+        Some("vector_cos") => Some((VectorKind::Vecf32, DistanceKind::Cos)),
+        Some("vecf16_l2") => Some((VectorKind::Vecf16, DistanceKind::L2)),
+        Some("vecf16_dot") => Some((VectorKind::Vecf16, DistanceKind::Dot)),
+        Some("vecf16_cos") => Some((VectorKind::Vecf16, DistanceKind::Cos)),
+        Some("svector_l2") => Some((VectorKind::SVecf32, DistanceKind::L2)),
+        Some("svector_dot") => Some((VectorKind::SVecf32, DistanceKind::Dot)),
+        Some("svector_cos") => Some((VectorKind::SVecf32, DistanceKind::Cos)),
+        Some("bvector_l2") => Some((VectorKind::BVecf32, DistanceKind::L2)),
+        Some("bvector_dot") => Some((VectorKind::BVecf32, DistanceKind::Dot)),
+        Some("bvector_cos") => Some((VectorKind::BVecf32, DistanceKind::Cos)),
+        Some("bvector_jaccard") => Some((VectorKind::BVecf32, DistanceKind::Jaccard)),
+        Some("veci8_l2") => Some((VectorKind::Veci8, DistanceKind::L2)),
+        Some("veci8_dot") => Some((VectorKind::Veci8, DistanceKind::Dot)),
+        Some("veci8_cos") => Some((VectorKind::Veci8, DistanceKind::Cos)),
+        _ => None,
+    }
+}
+
+unsafe fn convert_varlena_to_soi(
+    varlena: *const pgrx::pg_sys::varlena,
+) -> (SegmentsOptions, OptimizingOptions, IndexingOptions) {
+    #[derive(Debug, Clone, Deserialize, Default)]
+    #[serde(deny_unknown_fields)]
+    struct Parsed {
+        #[serde(default)]
+        segment: SegmentsOptions,
+        #[serde(default)]
+        optimizing: OptimizingOptions,
+        #[serde(default)]
+        indexing: IndexingOptions,
+    }
+    let helper = varlena as *const Helper;
+    if helper.is_null() || unsafe { (*helper).offset == 0 } {
+        return Default::default();
+    }
+    let ptr = unsafe { (helper as *const libc::c_char).offset((*helper).offset as isize) };
+    let s = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().to_string();
+    match toml::from_str::<Parsed>(&s) {
+        Ok(p) => (p.segment, p.optimizing, p.indexing),
+        Err(e) => pgrx::error!("failed to parse options: {}", e),
+    }
 }
 
 pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
-    let nkeysatts = (*(*index_relation).rd_index).indnkeyatts;
-    assert!(nkeysatts == 1, "Can not be built on multicolumns.");
-    // get distance
-    let opfamily = (*index_relation).rd_opfamily.read();
-    let (d, k) = convert_opfamily_to_distance(opfamily);
+    let opfamily = unsafe { (*index_relation).rd_opfamily.read() };
+    let att = unsafe { &mut *(*index_relation).rd_att };
+    let atts = unsafe { att.attrs.as_slice(att.natts as _) };
+    if atts.is_empty() {
+        pgrx::error!("indexing on no columns is not supported");
+    }
+    if atts.len() != 1 {
+        pgrx::error!("multicolumn index is not supported");
+    }
     // get dims
-    let attrs = (*(*index_relation).rd_att).attrs.as_slice(1);
-    let attr = &attrs[0];
-    let typmod = Typmod::parse_from_i32(attr.type_mod()).unwrap();
+    let typmod = Typmod::parse_from_i32(atts[0].type_mod()).unwrap();
     let dims = check_column_dims(typmod.dims()).get();
-    // get other options
-    let parsed = get_parsed_from_varlena((*index_relation).rd_options);
+    // get v, d
+    let (v, d) = convert_opfamily_to_vd(opfamily).unwrap();
+    // get segment, optimizing, indexing
+    let (segment, optimizing, indexing) =
+        unsafe { convert_varlena_to_soi((*index_relation).rd_options) };
     IndexOptions {
-        vector: VectorOptions { dims, d, v: k },
-        segment: parsed.segment,
-        optimizing: parsed.optimizing,
-        indexing: parsed.indexing,
-    }
-}
-
-#[derive(Copy, Clone, Debug, Default)]
-#[repr(C)]
-struct Helper {
-    pub vl_len_: i32,
-    pub offset: i32,
-}
-
-unsafe fn get_parsed_from_varlena(helper: *const pgrx::pg_sys::varlena) -> Parsed {
-    let helper = helper as *const Helper;
-    if helper.is_null() || (*helper).offset == 0 {
-        return Default::default();
-    }
-    let ptr = (helper as *const libc::c_char).offset((*helper).offset as isize);
-    let cstr = CStr::from_ptr(ptr);
-    toml::from_str::<Parsed>(cstr.to_str().unwrap()).unwrap()
-}
-
-#[derive(Debug, Clone, Deserialize, Default)]
-#[serde(deny_unknown_fields)]
-struct Parsed {
-    #[serde(default)]
-    segment: SegmentsOptions,
-    #[serde(default)]
-    optimizing: OptimizingOptions,
-    #[serde(default)]
-    indexing: IndexingOptions,
-}
-
-fn regoperatorin(name: &str) -> pgrx::pg_sys::Oid {
-    use pgrx::IntoDatum;
-    let cstr = std::ffi::CString::new(name).expect("specified name has embedded NULL byte");
-    unsafe {
-        pgrx::direct_function_call::<pgrx::pg_sys::Oid>(
-            pgrx::pg_sys::regoperatorin,
-            &[cstr.as_c_str().into_datum()],
-        )
-        .expect("operator lookup returned NULL")
+        vector: VectorOptions { dims, v, d },
+        segment,
+        optimizing,
+        indexing,
     }
 }

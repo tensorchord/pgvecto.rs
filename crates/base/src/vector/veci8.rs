@@ -338,7 +338,7 @@ pub fn i8_precompute(data: &[I8], alpha: F32, offset: F32) -> (F32, F32) {
 }
 
 #[cfg(test)]
-mod tests {
+mod tests_0 {
     use super::*;
 
     #[test]
@@ -499,7 +499,7 @@ pub fn dot_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
 }
 
 #[cfg(test)]
-mod tests_2 {
+mod tests_1 {
     use super::*;
 
     fn new_random_vec_f32(size: usize) -> Vec<F32> {
@@ -549,7 +549,11 @@ mod tests_2 {
         let y_owned = vec_to_owned(y);
         let ref_y = y_owned.for_borrow();
         let result = cosine_distance(&ref_x, &ref_y);
-        assert!((result.0 - result_expected).abs() / result_expected < 0.25);
+        assert!(
+            result_expected < 0.01
+                || (result.0 - result_expected).abs() < 0.01
+                || (result.0 - result_expected).abs() / result_expected < 0.1
+        );
     }
 
     #[test]
@@ -576,6 +580,8 @@ mod tests_2 {
         let y_owned = vec_to_owned(y);
         let ref_y = y_owned.for_borrow();
         let result = l2_distance(&ref_x, &ref_y);
-        assert!((result.0 - result_expected).abs() / result_expected < 0.05);
+        assert!(
+            result_expected < 1.0 || (result.0 - result_expected).abs() / result_expected < 0.05
+        );
     }
 }

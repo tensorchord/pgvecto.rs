@@ -4,16 +4,12 @@ set -e
 printf "SEMVER = ${SEMVER}\n"
 printf "VERSION = ${VERSION}\n"
 printf "ARCH = ${ARCH}\n"
-
-export PLATFORM=$(echo $ARCH | sed 's/aarch64/arm64/; s/x86_64/amd64/')
-
-cargo build --no-default-features --features pg$VERSION --release --target ${ARCH}-unknown-linux-gnu
-./tools/schema.sh --no-default-features --features pg$VERSION --release --target ${ARCH}-unknown-linux-gnu | expand -t 4 > ./target/vectors--$SEMVER.sql
+printf "PLATFORM = ${PLATFORM}\n"
 
 rm -rf ./build/dir_zip
 rm -rf ./build/vectors-pg${VERSION}_${ARCH}-unknown-linux-gnu_${SEMVER}.zip
 rm -rf ./build/dir_deb
-rm -rf ./build/vectors-pg${VERSION}_${SEMVER}-1_${PLATFORM}.deb
+rm -rf ./build/vectors-pg${VERSION}_${SEMVER}_${PLATFORM}.deb
 
 mkdir -p ./build/dir_zip
 cp -a ./sql/upgrade/. ./build/dir_zip/
@@ -46,4 +42,4 @@ Homepage: https://pgvecto.rs/
 License: apache2" \
 > ./build/dir_deb/DEBIAN/control
 (cd ./build/dir_deb && md5sum usr/share/postgresql/$VERSION/extension/* usr/lib/postgresql/$VERSION/lib/*) > ./build/dir_deb/DEBIAN/md5sums
-dpkg --build ./build/dir_deb/ ./build/vectors-pg${VERSION}_${SEMVER}-1_${PLATFORM}.deb
+dpkg --build ./build/dir_deb/ ./build/vectors-pg${VERSION}_${SEMVER}_${PLATFORM}.deb
