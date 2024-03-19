@@ -8,7 +8,7 @@ use num_traits::Zero;
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 
-#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> SVecf32Output {
     use crate::utils::parse::parse_vector;
     let reserve = Typmod::parse_from_i32(typmod)
@@ -38,7 +38,7 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> SVecf32Output {
     }
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_out(vector: SVecf32Input<'_>) -> CString {
     let mut buffer = String::new();
     buffer.push('[');

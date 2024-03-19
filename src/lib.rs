@@ -13,6 +13,7 @@ mod error;
 mod gucs;
 mod index;
 mod ipc;
+mod upgrade;
 mod utils;
 
 pgrx::pg_module_magic!();

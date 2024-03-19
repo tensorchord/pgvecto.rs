@@ -2,7 +2,7 @@ use crate::error::*;
 use crate::index::utils::get_handle;
 use base::index::*;
 
-#[pgrx::pg_extern(volatile, strict)]
+#[pgrx::pg_extern(volatile, strict, parallel_safe)]
 fn _vectors_index_stat(
     oid: pgrx::pg_sys::Oid,
 ) -> pgrx::composite_type!('static, "vectors.vector_index_stat") {
