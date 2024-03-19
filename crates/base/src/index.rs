@@ -1,6 +1,8 @@
 use crate::distance::*;
 use crate::vector::*;
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::AtomicU16;
+use std::sync::atomic::Ordering;
 use thiserror::Error;
 use uuid::Uuid;
 use validator::{Validate, ValidationError};
@@ -76,6 +78,61 @@ pub enum ListError {
 pub enum StatError {
     #[error("Index not found.")]
     NotExist,
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum SettingError {
+    #[error("Setting key {key} is not exist.")]
+    BadKey { key: String },
+    #[error("Setting key {key} has a wrong value {value}.")]
+    BadValue { key: String, value: String },
+    #[error("Index not found.")]
+    NotExist,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct IndexFlexibleOptions {
+    #[serde(default = "IndexFlexibleOptions::default_optimizing_threads")]
+    pub optimizing_threads: AtomicU16,
+}
+
+impl IndexFlexibleOptions {
+    fn default_optimizing_threads() -> AtomicU16 {
+        match std::thread::available_parallelism() {
+            Ok(threads) => AtomicU16::new((threads.get() as f64).sqrt() as _),
+            Err(_) => AtomicU16::new(1),
+        }
+    }
+    pub fn optimizing_threads_eq(&self, other: &Self) -> bool {
+        self.optimizing_threads.load(Ordering::Relaxed)
+            == other.optimizing_threads.load(Ordering::Relaxed)
+    }
+}
+
+impl Clone for IndexFlexibleOptions {
+    fn clone(&self) -> Self {
+        IndexFlexibleOptions {
+            optimizing_threads: AtomicU16::new(self.optimizing_threads.load(Ordering::Relaxed)),
+        }
+    }
+}
+
+impl PartialEq for IndexFlexibleOptions {
+    fn eq(&self, other: &Self) -> bool {
+        self.optimizing_threads_eq(other)
+    }
+}
+
+impl Eq for IndexFlexibleOptions {}
+
+impl Default for IndexFlexibleOptions {
+    fn default() -> Self {
+        Self {
+            optimizing_threads: Self::default_optimizing_threads(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -198,9 +255,6 @@ pub struct OptimizingOptions {
     #[serde(default = "OptimizingOptions::default_delete_threshold")]
     #[validate(range(min = 0.01, max = 1.00))]
     pub delete_threshold: f64,
-    #[serde(default = "OptimizingOptions::default_optimizing_threads")]
-    #[validate(range(min = 1, max = 65535))]
-    pub optimizing_threads: usize,
 }
 
 impl OptimizingOptions {
@@ -213,12 +267,6 @@ impl OptimizingOptions {
     fn default_delete_threshold() -> f64 {
         0.2
     }
-    fn default_optimizing_threads() -> usize {
-        match std::thread::available_parallelism() {
-            Ok(threads) => (threads.get() as f64).sqrt() as _,
-            Err(_) => 1,
-        }
-    }
 }
 
 impl Default for OptimizingOptions {
@@ -227,7 +275,6 @@ impl Default for OptimizingOptions {
             sealing_secs: Self::default_sealing_secs(),
             sealing_size: Self::default_sealing_size(),
             delete_threshold: Self::default_delete_threshold(),
-            optimizing_threads: Self::default_optimizing_threads(),
         }
     }
 }

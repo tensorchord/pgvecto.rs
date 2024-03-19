@@ -89,6 +89,14 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<Infallible,
             ServerRpcHandle::Stat { handle, x } => {
                 handler = x.leave(worker.stat(handle))?;
             }
+            ServerRpcHandle::Setting {
+                handle,
+                key,
+                value,
+                x,
+            } => {
+                handler = x.leave(worker.setting(handle, key, value))?;
+            }
             ServerRpcHandle::Basic {
                 handle,
                 vector,

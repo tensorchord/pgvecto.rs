@@ -2,6 +2,17 @@ use crate::error::*;
 use crate::index::utils::from_oid_to_handle;
 use crate::ipc::client;
 use base::index::*;
+use pgrx::error;
+
+#[pgrx::pg_extern(volatile, strict)]
+fn _vectors_alter_vector_index(oid: pgrx::pg_sys::Oid, key: String, value: String) {
+    let id = get_handle(oid);
+    let mut rpc = check_client(crate::ipc::client());
+    match rpc.setting(id, key, value) {
+        Ok(_) => {}
+        Err(e) => error!("{}", e.to_string()),
+    }
+}
 
 #[pgrx::pg_extern(volatile, strict, parallel_safe)]
 fn _vectors_index_stat(

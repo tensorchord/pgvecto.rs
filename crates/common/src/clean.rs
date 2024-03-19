@@ -8,6 +8,9 @@ pub fn clean(path: impl AsRef<Path>, wanted: impl Iterator<Item = String>) {
         .unwrap();
     let wanted = HashSet::<String>::from_iter(wanted);
     for dir in dirs {
+        if dir.path().is_file() {
+            log::info!("Unexpected file {:?}, skip.", dir.path());
+        }
         let filename = dir.file_name();
         let filename = filename.to_str().unwrap();
         let p = path.as_ref().join(filename);

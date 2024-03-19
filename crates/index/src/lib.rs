@@ -6,6 +6,7 @@ pub mod indexing;
 pub mod optimizing;
 pub mod segments;
 
+mod setting;
 mod utils;
 
 use self::delete::Delete;
@@ -13,6 +14,7 @@ use self::segments::growing::GrowingSegment;
 use self::segments::sealed::SealedSegment;
 use crate::optimizing::indexing::OptimizerIndexing;
 use crate::optimizing::sealing::OptimizerSealing;
+use crate::setting::FlexibleOptionSyncing;
 use crate::utils::tournament_tree::LoserTree;
 use arc_swap::ArcSwap;
 pub use base::distance::*;
@@ -34,6 +36,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::Infallible;
 use std::path::PathBuf;
+use std::str::FromStr;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::Instant;
@@ -51,6 +55,7 @@ pub struct OutdatedError;
 pub struct Index<O: Op> {
     path: PathBuf,
     options: IndexOptions,
+    flexible: IndexFlexibleOptions,
     delete: Arc<Delete>,
     protect: Mutex<IndexProtect<O>>,
     view: ArcSwap<IndexView<O>>,
@@ -58,11 +63,13 @@ pub struct Index<O: Op> {
     instant_write: AtomicCell<Instant>,
     background_indexing: Mutex<Option<(Sender<Infallible>, JoinHandle<()>)>>,
     background_sealing: Mutex<Option<(Sender<Infallible>, JoinHandle<()>)>>,
+    background_setting: Mutex<Option<(Sender<Infallible>, JoinHandle<()>)>>,
     _tracker: Arc<IndexTracker>,
 }
 
 impl<O: Op> Index<O> {
     pub fn create(path: PathBuf, options: IndexOptions) -> Result<Arc<Self>, CreateError> {
+        let flexible = IndexFlexibleOptions::default();
         if let Err(err) = options.validate() {
             return Err(CreateError::InvalidIndexOptions {
                 reason: err.to_string(),
@@ -87,6 +94,7 @@ impl<O: Op> Index<O> {
         let index = Arc::new(Index {
             path: path.clone(),
             options: options.clone(),
+            flexible,
             delete: delete.clone(),
             protect: Mutex::new(IndexProtect {
                 startup,
@@ -105,6 +113,7 @@ impl<O: Op> Index<O> {
             instant_write: AtomicCell::new(Instant::now()),
             background_indexing: Mutex::new(None),
             background_sealing: Mutex::new(None),
+            background_setting: Mutex::new(None),
             _tracker: Arc::new(IndexTracker { path }),
         });
         Ok(index)
@@ -114,6 +123,10 @@ impl<O: Op> Index<O> {
         let options =
             serde_json::from_slice::<IndexOptions>(&std::fs::read(path.join("options")).unwrap())
                 .unwrap();
+        let flexible = serde_json::from_slice::<IndexFlexibleOptions>(
+            &std::fs::read(path.join("flexible")).unwrap_or_default(),
+        )
+        .unwrap_or_default();
         let tracker = Arc::new(IndexTracker { path: path.clone() });
         let startup = FileAtomic::<IndexStartup>::open(path.join("startup"));
         clean(
@@ -161,6 +174,7 @@ impl<O: Op> Index<O> {
         Arc::new(Index {
             path: path.clone(),
             options: options.clone(),
+            flexible,
             delete: delete.clone(),
             protect: Mutex::new(IndexProtect {
                 startup,
@@ -179,6 +193,7 @@ impl<O: Op> Index<O> {
             instant_write: AtomicCell::new(Instant::now()),
             background_indexing: Mutex::new(None),
             background_sealing: Mutex::new(None),
+            background_setting: Mutex::new(None),
             _tracker: tracker,
         })
     }
@@ -187,6 +202,25 @@ impl<O: Op> Index<O> {
     }
     pub fn view(&self) -> Arc<IndexView<O>> {
         self.view.load_full()
+    }
+    pub fn setting(&self, key: String, value: String) -> Result<(), SettingError> {
+        match key.as_str() {
+            "optimizing.threads" => {
+                let parsed = i32::from_str(value.as_str())
+                    .map_err(|_e| SettingError::BadValue { key, value })?;
+                let threads = match parsed {
+                    -1 => IndexFlexibleOptions::default()
+                        .optimizing_threads
+                        .load(Ordering::Relaxed),
+                    threads_limit => threads_limit as u16,
+                };
+                self.flexible
+                    .optimizing_threads
+                    .store(threads, Ordering::Relaxed);
+            }
+            _ => return Err(SettingError::BadKey { key }),
+        };
+        Ok(())
     }
     pub fn refresh(&self) {
         let mut protect = self.protect.lock();
@@ -256,6 +290,12 @@ impl<O: Op> Index<O> {
                 *background_sealing = Some(OptimizerSealing::new(self.clone()).spawn());
             }
         }
+        {
+            let mut background_setting = self.background_setting.lock();
+            if background_setting.is_none() {
+                *background_setting = Some(FlexibleOptionSyncing::new(self.clone()).spawn());
+            }
+        }
     }
     pub fn stop(&self) {
         {
@@ -268,6 +308,13 @@ impl<O: Op> Index<O> {
         {
             let mut background_sealing = self.background_sealing.lock();
             if let Some((sender, join_handle)) = background_sealing.take() {
+                drop(sender);
+                let _ = join_handle.join();
+            }
+        }
+        {
+            let mut background_setting = self.background_setting.lock();
+            if let Some((sender, join_handle)) = background_setting.take() {
                 drop(sender);
                 let _ = join_handle.join();
             }
