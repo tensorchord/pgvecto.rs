@@ -5,7 +5,7 @@ use base::vector::*;
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 
-#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_in(input: &CStr, _oid: Oid, typmod: i32) -> Veci8Output {
     use crate::utils::parse::parse_vector;
     let reserve = Typmod::parse_from_i32(typmod)
@@ -37,7 +37,7 @@ fn _vectors_veci8_in(input: &CStr, _oid: Oid, typmod: i32) -> Veci8Output {
     }
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_out(vector: Veci8Input<'_>) -> CString {
     let vector = veci8::i8_dequantization(vector.data(), vector.alpha(), vector.offset());
     let mut buffer = String::new();

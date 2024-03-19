@@ -6,7 +6,7 @@ use base::vector::*;
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 
-#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf16Output {
     use crate::utils::parse::parse_vector;
     let reserve = Typmod::parse_from_i32(typmod)
@@ -26,7 +26,7 @@ fn _vectors_vecf16_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf16Output {
     }
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_out(vector: Vecf16Input<'_>) -> CString {
     let mut buffer = String::new();
     buffer.push('[');

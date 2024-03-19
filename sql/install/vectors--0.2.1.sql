@@ -17,7 +17,7 @@ The ordering of items is not stable, it is driven by a dependency graph.
 -- src/datatype/vecf32.rs:316
 -- vectors::datatype::vecf32::_vectors_vecf32_out
 CREATE  FUNCTION vectors."_vectors_vecf32_out"(
-	"vector" vector /* vectors::datatype::vecf32::Vecf32Input */
+    "vector" vector /* vectors::datatype::vecf32::Vecf32Input */
 ) RETURNS cstring /* alloc::ffi::c_str::CString */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -26,8 +26,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_out_wrapper';
 -- src/datatype/operators_f32.rs:101
 -- vectors::datatype::operators_f32::_vectors_vecf32_operator_neq
 CREATE  FUNCTION vectors."_vectors_vecf32_operator_neq"(
-	"lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -36,8 +36,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_neq_wrapper';
 -- src/datatype/operators_f32.rs:24
 -- vectors::datatype::operators_f32::_vectors_vecf32_operator_minus
 CREATE  FUNCTION vectors."_vectors_vecf32_operator_minus"(
-	"lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
 ) RETURNS vector /* vectors::datatype::vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -46,8 +46,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_minus_wrapper';
 -- src/datatype/operators_f32.rs:53
 -- vectors::datatype::operators_f32::_vectors_vecf32_operator_lte
 CREATE  FUNCTION vectors."_vectors_vecf32_operator_lte"(
-	"lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -56,8 +56,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_lte_wrapper';
 -- src/datatype/operators_f32.rs:41
 -- vectors::datatype::operators_f32::_vectors_vecf32_operator_lt
 CREATE  FUNCTION vectors."_vectors_vecf32_operator_lt"(
-	"lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -66,8 +66,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_lt_wrapper';
 -- src/datatype/operators_f32.rs:137
 -- vectors::datatype::operators_f32::_vectors_vecf32_operator_l2
 CREATE  FUNCTION vectors."_vectors_vecf32_operator_l2"(
-	"lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -76,8 +76,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_l2_wrapper';
 -- src/datatype/operators_f32.rs:77
 -- vectors::datatype::operators_f32::_vectors_vecf32_operator_gte
 CREATE  FUNCTION vectors."_vectors_vecf32_operator_gte"(
-	"lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -86,8 +86,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_gte_wrapper';
 -- src/datatype/operators_f32.rs:65
 -- vectors::datatype::operators_f32::_vectors_vecf32_operator_gt
 CREATE  FUNCTION vectors."_vectors_vecf32_operator_gt"(
-	"lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -96,8 +96,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_gt_wrapper';
 -- src/datatype/operators_f32.rs:89
 -- vectors::datatype::operators_f32::_vectors_vecf32_operator_eq
 CREATE  FUNCTION vectors."_vectors_vecf32_operator_eq"(
-	"lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -106,8 +106,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_eq_wrapper';
 -- src/datatype/operators_f32.rs:125
 -- vectors::datatype::operators_f32::_vectors_vecf32_operator_dot
 CREATE  FUNCTION vectors."_vectors_vecf32_operator_dot"(
-	"lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -116,8 +116,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_dot_wrapper';
 -- src/datatype/operators_f32.rs:113
 -- vectors::datatype::operators_f32::_vectors_vecf32_operator_cosine
 CREATE  FUNCTION vectors."_vectors_vecf32_operator_cosine"(
-	"lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -126,8 +126,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_cosine_wrapper';
 -- src/datatype/operators_f32.rs:7
 -- vectors::datatype::operators_f32::_vectors_vecf32_operator_add
 CREATE  FUNCTION vectors."_vectors_vecf32_operator_add"(
-	"lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::vecf32::Vecf32Input */
 ) RETURNS vector /* vectors::datatype::vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -136,9 +136,9 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_add_wrapper';
 -- src/datatype/vecf32.rs:252
 -- vectors::datatype::vecf32::_vectors_vecf32_in
 CREATE  FUNCTION vectors."_vectors_vecf32_in"(
-	"input" cstring, /* &core::ffi::c_str::CStr */
-	"_oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
-	"typmod" INT /* i32 */
+    "input" cstring, /* &core::ffi::c_str::CStr */
+    "_oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
+    "typmod" INT /* i32 */
 ) RETURNS vector /* vectors::datatype::vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -147,7 +147,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_in_wrapper';
 -- src/datatype/vecf16.rs:316
 -- vectors::datatype::vecf16::_vectors_vecf16_out
 CREATE  FUNCTION vectors."_vectors_vecf16_out"(
-	"vector" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
+    "vector" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
 ) RETURNS cstring /* alloc::ffi::c_str::CString */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -156,8 +156,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_out_wrapper';
 -- src/datatype/operators_f16.rs:101
 -- vectors::datatype::operators_f16::_vectors_vecf16_operator_neq
 CREATE  FUNCTION vectors."_vectors_vecf16_operator_neq"(
-	"lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -166,8 +166,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_neq_wrapper';
 -- src/datatype/operators_f16.rs:24
 -- vectors::datatype::operators_f16::_vectors_vecf16_operator_minus
 CREATE  FUNCTION vectors."_vectors_vecf16_operator_minus"(
-	"lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
 ) RETURNS vecf16 /* vectors::datatype::vecf16::Vecf16Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -176,8 +176,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_minus_wrapper';
 -- src/datatype/operators_f16.rs:53
 -- vectors::datatype::operators_f16::_vectors_vecf16_operator_lte
 CREATE  FUNCTION vectors."_vectors_vecf16_operator_lte"(
-	"lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -186,8 +186,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_lte_wrapper';
 -- src/datatype/operators_f16.rs:41
 -- vectors::datatype::operators_f16::_vectors_vecf16_operator_lt
 CREATE  FUNCTION vectors."_vectors_vecf16_operator_lt"(
-	"lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -196,8 +196,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_lt_wrapper';
 -- src/datatype/operators_f16.rs:137
 -- vectors::datatype::operators_f16::_vectors_vecf16_operator_l2
 CREATE  FUNCTION vectors."_vectors_vecf16_operator_l2"(
-	"lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -206,8 +206,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_l2_wrapper';
 -- src/datatype/operators_f16.rs:77
 -- vectors::datatype::operators_f16::_vectors_vecf16_operator_gte
 CREATE  FUNCTION vectors."_vectors_vecf16_operator_gte"(
-	"lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -216,8 +216,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_gte_wrapper';
 -- src/datatype/operators_f16.rs:65
 -- vectors::datatype::operators_f16::_vectors_vecf16_operator_gt
 CREATE  FUNCTION vectors."_vectors_vecf16_operator_gt"(
-	"lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -226,8 +226,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_gt_wrapper';
 -- src/datatype/operators_f16.rs:89
 -- vectors::datatype::operators_f16::_vectors_vecf16_operator_eq
 CREATE  FUNCTION vectors."_vectors_vecf16_operator_eq"(
-	"lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -236,8 +236,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_eq_wrapper';
 -- src/datatype/operators_f16.rs:125
 -- vectors::datatype::operators_f16::_vectors_vecf16_operator_dot
 CREATE  FUNCTION vectors."_vectors_vecf16_operator_dot"(
-	"lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -246,8 +246,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_dot_wrapper';
 -- src/datatype/operators_f16.rs:113
 -- vectors::datatype::operators_f16::_vectors_vecf16_operator_cosine
 CREATE  FUNCTION vectors."_vectors_vecf16_operator_cosine"(
-	"lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -256,8 +256,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_cosine_wrapper';
 -- src/datatype/operators_f16.rs:7
 -- vectors::datatype::operators_f16::_vectors_vecf16_operator_add
 CREATE  FUNCTION vectors."_vectors_vecf16_operator_add"(
-	"lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::vecf16::Vecf16Input */
 ) RETURNS vecf16 /* vectors::datatype::vecf16::Vecf16Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -266,9 +266,9 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_add_wrapper';
 -- src/datatype/vecf16.rs:252
 -- vectors::datatype::vecf16::_vectors_vecf16_in
 CREATE  FUNCTION vectors."_vectors_vecf16_in"(
-	"input" cstring, /* &core::ffi::c_str::CStr */
-	"_oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
-	"typmod" INT /* i32 */
+    "input" cstring, /* &core::ffi::c_str::CStr */
+    "_oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
+    "typmod" INT /* i32 */
 ) RETURNS vecf16 /* vectors::datatype::vecf16::Vecf16Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -277,7 +277,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_in_wrapper';
 -- src/datatype/typmod.rs:71
 -- vectors::datatype::typmod::_vectors_typmod_out
 CREATE  FUNCTION vectors."_vectors_typmod_out"(
-	"typmod" INT /* i32 */
+    "typmod" INT /* i32 */
 ) RETURNS cstring /* alloc::ffi::c_str::CString */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -286,7 +286,7 @@ AS 'MODULE_PATHNAME', '_vectors_typmod_out_wrapper';
 -- src/datatype/typmod.rs:56
 -- vectors::datatype::typmod::_vectors_typmod_in
 CREATE  FUNCTION vectors."_vectors_typmod_in"(
-	"list" cstring[] /* pgrx::datum::array::Array<&core::ffi::c_str::CStr> */
+    "list" cstring[] /* pgrx::datum::array::Array<&core::ffi::c_str::CStr> */
 ) RETURNS INT /* i32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -302,7 +302,7 @@ AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 -- src/index/views.rs:5
 -- vectors::index::views::_vectors_index_stat
 CREATE  FUNCTION vectors."_vectors_index_stat"(
-	"oid" oid /* pgrx_pg_sys::submodules::oids::Oid */
+    "oid" oid /* pgrx_pg_sys::submodules::oids::Oid */
 ) RETURNS vector_index_stat /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 STRICT VOLATILE
 LANGUAGE c /* Rust */
@@ -311,9 +311,9 @@ AS 'MODULE_PATHNAME', '_vectors_index_stat_wrapper';
 -- src/datatype/casts_f32.rs:36
 -- vectors::datatype::casts_f32::_vectors_cast_vecf32_to_vecf16
 CREATE  FUNCTION vectors."_vectors_cast_vecf32_to_vecf16"(
-	"vector" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"_typmod" INT, /* i32 */
-	"_explicit" bool /* bool */
+    "vector" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "_typmod" INT, /* i32 */
+    "_explicit" bool /* bool */
 ) RETURNS vecf16 /* vectors::datatype::vecf16::Vecf16Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -322,9 +322,9 @@ AS 'MODULE_PATHNAME', '_vectors_cast_vecf32_to_vecf16_wrapper';
 -- src/datatype/casts_f32.rs:27
 -- vectors::datatype::casts_f32::_vectors_cast_vecf32_to_array
 CREATE  FUNCTION vectors."_vectors_cast_vecf32_to_array"(
-	"vector" vector, /* vectors::datatype::vecf32::Vecf32Input */
-	"_typmod" INT, /* i32 */
-	"_explicit" bool /* bool */
+    "vector" vector, /* vectors::datatype::vecf32::Vecf32Input */
+    "_typmod" INT, /* i32 */
+    "_explicit" bool /* bool */
 ) RETURNS real[] /* alloc::vec::Vec<f32> */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -333,9 +333,9 @@ AS 'MODULE_PATHNAME', '_vectors_cast_vecf32_to_array_wrapper';
 -- src/datatype/casts_f32.rs:9
 -- vectors::datatype::casts_f32::_vectors_cast_array_to_vecf32
 CREATE  FUNCTION vectors."_vectors_cast_array_to_vecf32"(
-	"array" real[], /* pgrx::datum::array::Array<f32> */
-	"typmod" INT, /* i32 */
-	"_explicit" bool /* bool */
+    "array" real[], /* pgrx::datum::array::Array<f32> */
+    "typmod" INT, /* i32 */
+    "_explicit" bool /* bool */
 ) RETURNS vector /* vectors::datatype::vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -351,7 +351,7 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_amhand
 -- src/embedding/udf.rs:8
 -- vectors::embedding::udf::_vectors_ai_embedding_vector
 CREATE  FUNCTION vectors."_vectors_ai_embedding_vector"(
-	"input" TEXT /* alloc::string::String */
+    "input" TEXT /* alloc::string::String */
 ) RETURNS vector /* vectors::datatype::vecf32::Vecf32Output */
 STRICT VOLATILE
 LANGUAGE c /* Rust */
@@ -395,191 +395,191 @@ CREATE TYPE vector_index_stat AS (
 -- List of operators
 
 CREATE OPERATOR + (
-	PROCEDURE = _vectors_vecf32_operator_add,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = +
+    PROCEDURE = _vectors_vecf32_operator_add,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = +
 );
 
 CREATE OPERATOR + (
-	PROCEDURE = _vectors_vecf16_operator_add,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = +
+    PROCEDURE = _vectors_vecf16_operator_add,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = +
 );
 
 CREATE OPERATOR - (
-	PROCEDURE = _vectors_vecf32_operator_minus,
-	LEFTARG = vector,
-	RIGHTARG = vector
+    PROCEDURE = _vectors_vecf32_operator_minus,
+    LEFTARG = vector,
+    RIGHTARG = vector
 );
 
 CREATE OPERATOR - (
-	PROCEDURE = _vectors_vecf16_operator_minus,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16
+    PROCEDURE = _vectors_vecf16_operator_minus,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16
 );
 
 CREATE OPERATOR = (
-	PROCEDURE = _vectors_vecf32_operator_eq,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = =,
-	NEGATOR = <>,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_vecf32_operator_eq,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = =,
+    NEGATOR = <>,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR = (
-	PROCEDURE = _vectors_vecf16_operator_eq,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = =,
-	NEGATOR = <>,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_vecf16_operator_eq,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = =,
+    NEGATOR = <>,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR <> (
-	PROCEDURE = _vectors_vecf32_operator_neq,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = <>,
-	NEGATOR = =,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_vecf32_operator_neq,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = <>,
+    NEGATOR = =,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR <> (
-	PROCEDURE = _vectors_vecf16_operator_neq,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = <>,
-	NEGATOR = =,
-	RESTRICT = eqsel,
-	JOIN = eqjoinsel
+    PROCEDURE = _vectors_vecf16_operator_neq,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = <>,
+    NEGATOR = =,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel
 );
 
 CREATE OPERATOR < (
-	PROCEDURE = _vectors_vecf32_operator_lt,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = >,
-	NEGATOR = >=,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_vecf32_operator_lt,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = >,
+    NEGATOR = >=,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR < (
-	PROCEDURE = _vectors_vecf16_operator_lt,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = >,
-	NEGATOR = >=,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_vecf16_operator_lt,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = >,
+    NEGATOR = >=,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR > (
-	PROCEDURE = _vectors_vecf32_operator_gt,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = <,
-	NEGATOR = <=,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_vecf32_operator_gt,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = <,
+    NEGATOR = <=,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR > (
-	PROCEDURE = _vectors_vecf16_operator_gt,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = <,
-	NEGATOR = <=,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_vecf16_operator_gt,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = <,
+    NEGATOR = <=,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR <= (
-	PROCEDURE = _vectors_vecf32_operator_lte,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = >=,
-	NEGATOR = >,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_vecf32_operator_lte,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = >=,
+    NEGATOR = >,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR <= (
-	PROCEDURE = _vectors_vecf16_operator_lte,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = >=,
-	NEGATOR = >,
-	RESTRICT = scalarltsel,
-	JOIN = scalarltjoinsel
+    PROCEDURE = _vectors_vecf16_operator_lte,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = >=,
+    NEGATOR = >,
+    RESTRICT = scalarltsel,
+    JOIN = scalarltjoinsel
 );
 
 CREATE OPERATOR >= (
-	PROCEDURE = _vectors_vecf32_operator_gte,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = <=,
-	NEGATOR = <,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_vecf32_operator_gte,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = <=,
+    NEGATOR = <,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR >= (
-	PROCEDURE = _vectors_vecf16_operator_gte,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = <=,
-	NEGATOR = <,
-	RESTRICT = scalargtsel,
-	JOIN = scalargtjoinsel
+    PROCEDURE = _vectors_vecf16_operator_gte,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = <=,
+    NEGATOR = <,
+    RESTRICT = scalargtsel,
+    JOIN = scalargtjoinsel
 );
 
 CREATE OPERATOR <-> (
-	PROCEDURE = _vectors_vecf32_operator_l2,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = <->
+    PROCEDURE = _vectors_vecf32_operator_l2,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = <->
 );
 
 CREATE OPERATOR <-> (
-	PROCEDURE = _vectors_vecf16_operator_l2,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = <->
+    PROCEDURE = _vectors_vecf16_operator_l2,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = <->
 );
 
 CREATE OPERATOR <#> (
-	PROCEDURE = _vectors_vecf32_operator_dot,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = <#>
+    PROCEDURE = _vectors_vecf32_operator_dot,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = <#>
 );
 
 CREATE OPERATOR <#> (
-	PROCEDURE = _vectors_vecf16_operator_dot,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = <#>
+    PROCEDURE = _vectors_vecf16_operator_dot,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = <#>
 );
 
 CREATE OPERATOR <=> (
-	PROCEDURE = _vectors_vecf32_operator_cosine,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = <=>
+    PROCEDURE = _vectors_vecf32_operator_cosine,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = <=>
 );
 
 CREATE OPERATOR <=> (
-	PROCEDURE = _vectors_vecf16_operator_cosine,
-	LEFTARG = vecf16,
-	RIGHTARG = vecf16,
-	COMMUTATOR = <=>
+    PROCEDURE = _vectors_vecf16_operator_cosine,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = <=>
 );
 
 -- List of functions

@@ -565,9 +565,9 @@ CREATE OPERATOR <~> (
 -- List of functions
 
 CREATE FUNCTION pgvectors_upgrade() RETURNS void
-STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 
-CREATE FUNCTION to_svector(dims INT, indexes INT[], "values" real[]) RETURNS svector
+CREATE FUNCTION to_svector("dims" INT, "indexes" INT[], "values" real[]) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_svector_wrapper';
 
 CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
@@ -576,11 +576,11 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_vec
 CREATE FUNCTION binarize("vector" vector) RETURNS bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binarize_wrapper';
 
-CREATE FUNCTION text2vec_openai(input TEXT, model TEXT) RETURNS vector
-STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_text2vec_openai_wrapper';
+CREATE FUNCTION text2vec_openai("input" TEXT, "model" TEXT) RETURNS vector
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_text2vec_openai_wrapper';
 
 CREATE FUNCTION text2vec_openai_v3(input TEXT) RETURNS vector
-STRICT LANGUAGE plpgsql AS
+STRICT PARALLEL SAFE LANGUAGE plpgsql AS
 $$
 DECLARE 
 variable vectors.vector;

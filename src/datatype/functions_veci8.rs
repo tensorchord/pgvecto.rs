@@ -3,7 +3,7 @@ use crate::error::*;
 use base::scalar::*;
 use base::vector::*;
 
-#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_to_veci8(len: i32, alpha: f32, offset: f32, values: pgrx::Array<i32>) -> Veci8Output {
     check_value_dims_65535(len as usize);
     if (len as usize) != values.len() {
