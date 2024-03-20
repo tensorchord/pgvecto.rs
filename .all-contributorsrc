@@ -149,6 +149,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "my-vegetable-has-exploded",
+      "name": "yi wang",
+      "avatar_url": "https://avatars.githubusercontent.com/u/48236141?v=4",
+      "profile": "https://github.com/my-vegetable-has-exploded",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
