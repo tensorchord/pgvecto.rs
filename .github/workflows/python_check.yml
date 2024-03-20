@@ -63,12 +63,15 @@ jobs:
       run: |
         pdm sync -G :all
 
+    - name: Install jq
+      uses: dcarbone/install-jq-action@v2
+
     - name: Start Postgres
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        LATEST_STABLE_VERSION=$(gh release list --repo tensorchord/pgvecto.rs --exclude-drafts --exclude-pre-releases --limit 1 | awk '{print $3}')
-        docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:pg15-${LATEST_STABLE_VERSION}
+        NIGHTLY_VERSION=$(curl 'https://registry.hub.docker.com/v2/repositories/tensorchord/pgvecto-rs/tags/?ordering=last_updated' | jq '.results[].name' | grep pg15 | head -n 1 | sed 's/"//g')
+        docker run --name pgvecto-rs-demo -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d tensorchord/pgvecto-rs:${NIGHTLY_VERSION}
     
     - name: Run Tests
       working-directory: bindings/python
