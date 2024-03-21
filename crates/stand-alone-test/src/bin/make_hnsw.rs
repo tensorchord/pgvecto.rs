@@ -6,7 +6,7 @@ fn main() {
 }
 
 fn make() -> Result<(), std::io::Error> {
-    let path = Path::new("data/hnsw");
+    let path = Path::new("/home/yanqi/stand-alone-test/data/hnsw");
     let options = IndexOptions {
         vector: VectorOptions {
             dims: 128,

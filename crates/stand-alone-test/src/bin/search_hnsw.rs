@@ -12,7 +12,7 @@ impl Filter for FilterStruct {
 
 fn main() {
     let dims = 128;
-    let path = Path::new("data/hnsw");
+    let path = Path::new("/home/yanqi/stand-alone-test/data/hnsw");
     let options = IndexOptions {
         vector: VectorOptions {
             dims,
@@ -24,12 +24,12 @@ fn main() {
         indexing: base::index::IndexingOptions::default(),
     };
     let hnsw = hnsw::mock_open(path, options);
-    let queries = read_vecs_file::<f32>("data/sift_query.fvecs").unwrap();
+    let queries = read_vecs_file::<f32>("/home/yanqi/stand-alone-test/data/sift_query.fvecs").unwrap();
     let nq = queries.len();
     let queries = (0..nq).flat_map(|i| {
         queries.get_vector(i).unwrap().iter().map(|&x| F32(x))
     }).collect::<Vec<F32>>();
-    let gt = read_vecs_file::<i32>("data/sift_groundtruth.ivecs").unwrap();
+    let gt = read_vecs_file::<i32>("/home/yanqi/stand-alone-test/data/sift_groundtruth.ivecs").unwrap();
     let mut results = Vec::new();
     let filter = FilterStruct {};
     let opts = SearchOptions {
