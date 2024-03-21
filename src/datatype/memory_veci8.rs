@@ -87,8 +87,6 @@ impl Veci8Header {
     }
 
     pub fn data(&self) -> &[I8] {
-        debug_assert_eq!(self.varlena & 3, 0);
-        debug_assert_eq!(self.kind, VECI8_KIND);
         unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.len as usize) }
     }
 

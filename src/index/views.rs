@@ -1,5 +1,6 @@
 use crate::error::*;
-use crate::index::utils::get_handle;
+use crate::index::utils::from_oid_to_handle;
+use crate::ipc::client;
 use base::index::*;
 
 #[pgrx::pg_extern(volatile, strict, parallel_safe)]
@@ -7,10 +8,10 @@ fn _vectors_index_stat(
     oid: pgrx::pg_sys::Oid,
 ) -> pgrx::composite_type!('static, "vectors.vector_index_stat") {
     use pgrx::heap_tuple::PgHeapTuple;
-    let id = get_handle(oid);
+    let handle = from_oid_to_handle(oid);
     let mut res = PgHeapTuple::new_composite_type("vectors.vector_index_stat").unwrap();
-    let mut rpc = check_client(crate::ipc::client());
-    let stat = rpc.stat(id);
+    let mut rpc = check_client(client());
+    let stat = rpc.stat(handle);
     match stat {
         Ok(IndexStat {
             indexing,

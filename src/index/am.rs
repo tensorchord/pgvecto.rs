@@ -1,29 +1,32 @@
-#![allow(unsafe_op_in_unsafe_fn)]
-
-use super::am_build;
+use super::am_options;
 use super::am_scan;
-use super::am_setup;
-use super::am_update;
+use crate::error::*;
 use crate::gucs::planning::ENABLE_INDEX;
-use crate::index::utils::{from_datum, get_handle};
+use crate::index::am_scan::Scanner;
+use crate::index::catalog::{on_index_build, on_index_write};
+use crate::index::utils::{ctid_to_pointer, pointer_to_ctid};
+use crate::index::utils::{from_datum_to_vector, from_oid_to_handle};
+use crate::ipc::{client, ClientRpc};
 use crate::utils::cells::PgCell;
-use crate::utils::sys::IntoSys;
+use am_options::Reloption;
+use base::index::*;
 use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
 
-static RELOPT_KIND: PgCell<pgrx::pg_sys::relopt_kind> = unsafe { PgCell::new(0) };
+static RELOPT_KIND_VECTORS: PgCell<pgrx::pg_sys::relopt_kind> = unsafe { PgCell::new(0) };
 
 pub unsafe fn init() {
-    use pgrx::pg_sys::AsPgCStr;
-    RELOPT_KIND.set(pgrx::pg_sys::add_reloption_kind());
-    pgrx::pg_sys::add_string_reloption(
-        RELOPT_KIND.get(),
-        "options".as_pg_cstr(),
-        "".as_pg_cstr(),
-        "".as_pg_cstr(),
-        None,
-        pgrx::pg_sys::AccessExclusiveLock as pgrx::pg_sys::LOCKMODE,
-    );
+    unsafe {
+        RELOPT_KIND_VECTORS.set(pgrx::pg_sys::add_reloption_kind());
+        pgrx::pg_sys::add_string_reloption(
+            RELOPT_KIND_VECTORS.get(),
+            c"options".as_ptr(),
+            c"Vector index options, represented as a TOML string.".as_ptr(),
+            c"".as_ptr(),
+            None,
+            pgrx::pg_sys::AccessExclusiveLock as pgrx::pg_sys::LOCKMODE,
+        );
+    }
 }
 
 #[pgrx::pg_extern(sql = "\
@@ -62,21 +65,20 @@ const AM_HANDLER: pgrx::pg_sys::IndexAmRoutine = {
     am_routine.ambuild = Some(ambuild);
     am_routine.ambuildempty = Some(ambuildempty);
     am_routine.aminsert = Some(aminsert);
+    am_routine.ambulkdelete = Some(ambulkdelete);
+    am_routine.amvacuumcleanup = Some(amvacuumcleanup);
 
     am_routine.ambeginscan = Some(ambeginscan);
     am_routine.amrescan = Some(amrescan);
     am_routine.amgettuple = Some(amgettuple);
     am_routine.amendscan = Some(amendscan);
 
-    am_routine.ambulkdelete = Some(ambulkdelete);
-    am_routine.amvacuumcleanup = Some(amvacuumcleanup);
-
     am_routine
 };
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn amvalidate(opclass_oid: pgrx::pg_sys::Oid) -> bool {
-    if am_setup::convert_opclass_to_vd(opclass_oid).is_some() {
+    if am_options::convert_opclass_to_vd(opclass_oid).is_some() {
         pgrx::info!("Vector indexes can only be built on built-in operator classes.");
         true
     } else {
@@ -86,21 +88,16 @@ pub unsafe extern "C" fn amvalidate(opclass_oid: pgrx::pg_sys::Oid) -> bool {
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn amoptions(reloptions: Datum, validate: bool) -> *mut pgrx::pg_sys::bytea {
-    use pgrx::pg_sys::AsPgCStr;
-
-    let tab: &[pgrx::pg_sys::relopt_parse_elt] = &[pgrx::pg_sys::relopt_parse_elt {
-        optname: "options".as_pg_cstr(),
-        opttype: pgrx::pg_sys::relopt_type_RELOPT_TYPE_STRING,
-        offset: am_setup::helper_offset() as i32,
-    }];
-    let rdopts = pgrx::pg_sys::build_reloptions(
-        reloptions,
-        validate,
-        RELOPT_KIND.get(),
-        am_setup::helper_size(),
-        tab.as_ptr(),
-        tab.len() as _,
-    );
+    let rdopts = unsafe {
+        pgrx::pg_sys::build_reloptions(
+            reloptions,
+            validate,
+            RELOPT_KIND_VECTORS.get(),
+            std::mem::size_of::<Reloption>(),
+            Reloption::TAB.as_ptr(),
+            Reloption::TAB.len() as _,
+        )
+    };
     rdopts as *mut pgrx::pg_sys::bytea
 }
 
@@ -115,127 +112,182 @@ pub unsafe extern "C" fn amcostestimate(
     index_correlation: *mut f64,
     index_pages: *mut f64,
 ) {
-    if (*path).indexorderbys.is_null() || !ENABLE_INDEX.get() {
-        *index_startup_cost = f64::MAX;
-        *index_total_cost = f64::MAX;
-        *index_selectivity = 0.0;
-        *index_correlation = 0.0;
+    unsafe {
+        if (*path).indexorderbys.is_null() || !ENABLE_INDEX.get() {
+            *index_startup_cost = f64::MAX;
+            *index_total_cost = f64::MAX;
+            *index_selectivity = 0.0;
+            *index_correlation = 0.0;
+            *index_pages = 0.0;
+            return;
+        }
+        *index_startup_cost = 0.0;
+        *index_total_cost = 0.0;
+        *index_selectivity = 1.0;
+        *index_correlation = 1.0;
         *index_pages = 0.0;
-        return;
     }
-    *index_startup_cost = 0.0;
-    *index_total_cost = 0.0;
-    *index_selectivity = 1.0;
-    *index_correlation = 1.0;
-    *index_pages = 0.0;
 }
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn ambuild(
-    heap_relation: pgrx::pg_sys::Relation,
-    index_relation: pgrx::pg_sys::Relation,
+    heap: pgrx::pg_sys::Relation,
+    index: pgrx::pg_sys::Relation,
     index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> *mut pgrx::pg_sys::IndexBuildResult {
-    let result = pgrx::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0();
-    am_build::build(
-        index_relation,
-        Some((heap_relation, index_info, result.as_ptr())),
-    );
-    make_well_formed(index_relation);
+    pub struct Builder {
+        pub rpc: ClientRpc,
+        pub heap: *mut pgrx::pg_sys::RelationData,
+        pub index_info: *mut pgrx::pg_sys::IndexInfo,
+        pub result: *mut pgrx::pg_sys::IndexBuildResult,
+    }
+    let oid = unsafe { (*index).rd_id };
+    let handle = from_oid_to_handle(oid);
+    let options = unsafe { am_options::options(index) };
+    let mut rpc = check_client(client());
+    match rpc.create(handle, options) {
+        Ok(()) => (),
+        Err(CreateError::InvalidIndexOptions { reason }) => {
+            bad_service_invalid_index_options(&reason);
+        }
+    }
+    on_index_build(handle);
+    let result = unsafe { pgrx::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0() };
+    let mut builder = Builder {
+        rpc,
+        heap,
+        index_info,
+        result: result.as_ptr(),
+    };
+    let table_am = unsafe { &*(*heap).rd_tableam };
+    unsafe {
+        table_am.index_build_range_scan.unwrap()(
+            heap,
+            index,
+            index_info,
+            true,
+            false,
+            true,
+            0,
+            pgrx::pg_sys::InvalidBlockNumber,
+            Some(callback),
+            (&mut builder) as *mut Builder as *mut std::os::raw::c_void,
+            std::ptr::null_mut(),
+        );
+    }
+    #[pgrx::pg_guard]
+    unsafe extern "C" fn callback(
+        index: pgrx::pg_sys::Relation,
+        ctid: pgrx::pg_sys::ItemPointer,
+        values: *mut Datum,
+        is_null: *mut bool,
+        _tuple_is_alive: bool,
+        state: *mut std::os::raw::c_void,
+    ) {
+        let state = unsafe { &mut *state.cast::<Builder>() };
+        let vector = unsafe { from_datum_to_vector(*values.add(0), *is_null.add(0)) };
+        if let Some(vector) = vector {
+            let oid = unsafe { (*index).rd_id };
+            let handle = from_oid_to_handle(oid);
+            let pointer = ctid_to_pointer(unsafe { ctid.read() });
+            match state.rpc.insert(handle, vector, pointer) {
+                Ok(()) => (),
+                Err(InsertError::NotExist) => bad_service_not_exist(),
+                Err(InsertError::InvalidVector) => bad_service_invalid_vector(),
+            }
+            unsafe {
+                (*state.result).index_tuples += 1.0;
+            }
+        }
+        unsafe {
+            (*state.result).heap_tuples += 1.0;
+        }
+    }
     result.into_pg()
 }
 
 #[pgrx::pg_guard]
-pub unsafe extern "C" fn ambuildempty(_index: pgrx::pg_sys::Relation) {}
-
-#[repr(C)]
-struct VectorsPageOpaqueData {
-    _reserved: [u8; 2048],
-}
-
-const _: () = assert!(std::mem::size_of::<VectorsPageOpaqueData>() == 2048);
-
-unsafe fn make_well_formed(index_relation: pgrx::pg_sys::Relation) {
-    unsafe {
-        let meta_buffer = pgrx::pg_sys::ReadBuffer(index_relation, 0xFFFFFFFF /* P_NEW */);
-        pgrx::pg_sys::LockBuffer(meta_buffer, pgrx::pg_sys::BUFFER_LOCK_EXCLUSIVE as _);
-        assert!(pgrx::pg_sys::BufferGetBlockNumber(meta_buffer) == 0);
-        let state = pgrx::pg_sys::GenericXLogStart(index_relation);
-        let meta_page = pgrx::pg_sys::GenericXLogRegisterBuffer(
-            state,
-            meta_buffer,
-            pgrx::pg_sys::GENERIC_XLOG_FULL_IMAGE as _,
-        );
-        pgrx::pg_sys::PageInit(
-            meta_page,
-            pgrx::pg_sys::BLCKSZ as usize,
-            std::mem::size_of::<VectorsPageOpaqueData>(),
-        );
-        pgrx::pg_sys::GenericXLogFinish(state);
-        pgrx::pg_sys::UnlockReleaseBuffer(meta_buffer);
-    }
-}
-
-unsafe fn check_well_formed(index_relation: pgrx::pg_sys::Relation) {
-    if !test_well_formed(index_relation) {
-        am_build::build(index_relation, None);
-        make_well_formed(index_relation);
-    }
-}
-
-unsafe fn test_well_formed(index_relation: pgrx::pg_sys::Relation) -> bool {
-    pgrx::pg_sys::RelationGetNumberOfBlocksInFork(
-        index_relation,
-        pgrx::pg_sys::ForkNumber_MAIN_FORKNUM,
-    ) == 1
+pub unsafe extern "C" fn ambuildempty(_index: pgrx::pg_sys::Relation) {
+    pgrx::error!("Unlogged indexes are not supported.");
 }
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn aminsert(
-    index_relation: pgrx::pg_sys::Relation,
+    index: pgrx::pg_sys::Relation,
     values: *mut Datum,
     is_null: *mut bool,
     heap_tid: pgrx::pg_sys::ItemPointer,
-    _heap_relation: pgrx::pg_sys::Relation,
+    _heap: pgrx::pg_sys::Relation,
     _check_unique: pgrx::pg_sys::IndexUniqueCheck,
     _index_unchanged: bool,
     _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
-    check_well_formed(index_relation);
-    let oid = (*index_relation).rd_id;
-    let id = get_handle(oid);
-    let vector = from_datum(*values.add(0), *is_null.add(0));
-    if let Some(v) = vector {
-        am_update::update_insert(id, v, *heap_tid);
+    let oid = unsafe { (*index).rd_id };
+    let handle = from_oid_to_handle(oid);
+    let vector = unsafe { from_datum_to_vector(*values.add(0), *is_null.add(0)) };
+    if let Some(vector) = vector {
+        let pointer = ctid_to_pointer(unsafe { heap_tid.read() });
+
+        on_index_write(handle);
+
+        let mut rpc = check_client(client());
+
+        match rpc.insert(handle, vector, pointer) {
+            Ok(()) => (),
+            Err(InsertError::NotExist) => bad_service_not_exist(),
+            Err(InsertError::InvalidVector) => bad_service_invalid_vector(),
+        }
     }
     false
 }
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn ambeginscan(
-    index_relation: pgrx::pg_sys::Relation,
+    index: pgrx::pg_sys::Relation,
     n_keys: std::os::raw::c_int,
     n_orderbys: std::os::raw::c_int,
 ) -> pgrx::pg_sys::IndexScanDesc {
-    check_well_formed(index_relation);
-    assert!(n_keys == 0);
-    assert!(n_orderbys == 1);
-    am_scan::make_scan(index_relation)
+    use pgrx::PgMemoryContexts::CurrentMemoryContext;
+    let scan = unsafe { pgrx::pg_sys::RelationGetIndexScan(index, n_keys, n_orderbys) };
+    unsafe {
+        let scanner = am_scan::scan_make(None);
+        (*scan).opaque = CurrentMemoryContext.leak_and_drop_on_delete(scanner).cast();
+    }
+    scan
 }
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn amrescan(
     scan: pgrx::pg_sys::IndexScanDesc,
-    _keys: pgrx::pg_sys::ScanKey,
-    n_keys: std::os::raw::c_int,
+    keys: pgrx::pg_sys::ScanKey,
+    _n_keys: std::os::raw::c_int,
     orderbys: pgrx::pg_sys::ScanKey,
-    n_orderbys: std::os::raw::c_int,
+    _n_orderbys: std::os::raw::c_int,
 ) {
-    assert!((*scan).numberOfKeys == n_keys);
-    assert!((*scan).numberOfOrderBys == n_orderbys);
-    assert!(n_keys == 0);
-    assert!(n_orderbys == 1);
-    am_scan::start_scan(scan, orderbys);
+    unsafe {
+        if (*scan).numberOfKeys != 0 {
+            pgrx::error!("vector search with attributes is not supported");
+        }
+        if (*scan).numberOfOrderBys == 0 {
+            pgrx::error!("vector search without a ORDER BY clause is not supported");
+        }
+        if (*scan).numberOfOrderBys != 1 {
+            pgrx::error!("vector search with too many ORDER BY clauses is not supported");
+        }
+        if !keys.is_null() && (*scan).numberOfKeys > 0 {
+            std::ptr::copy(keys, (*scan).keyData, (*scan).numberOfKeys as _);
+        }
+        if !orderbys.is_null() && (*scan).numberOfOrderBys > 0 {
+            std::ptr::copy(orderbys, (*scan).orderByData, (*scan).numberOfOrderBys as _);
+        }
+        let main = (*scan).orderByData.add(0);
+        let value = (*main).sk_argument;
+        let is_null = ((*main).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+        let vector = from_datum_to_vector(value, is_null);
+        let scanner = (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked();
+        let scanner = std::mem::replace(scanner, am_scan::scan_make(vector));
+        am_scan::scan_release(scanner);
+    }
 }
 
 #[pgrx::pg_guard]
@@ -243,47 +295,82 @@ pub unsafe extern "C" fn amgettuple(
     scan: pgrx::pg_sys::IndexScanDesc,
     direction: pgrx::pg_sys::ScanDirection,
 ) -> bool {
-    assert!(direction == pgrx::pg_sys::ScanDirection_ForwardScanDirection);
-    am_scan::next_scan(scan)
+    if direction != pgrx::pg_sys::ScanDirection_ForwardScanDirection {
+        pgrx::error!("vector search without a forward scan direction is not supported");
+    }
+    // https://www.postgresql.org/docs/current/index-locking.html
+    // If heap entries referenced physical pointers are deleted before
+    // they are consumed by PostgreSQL, PostgreSQL will received wrong
+    // physical pointers: no rows or irreverent rows are referenced.
+    if unsafe { (*(*scan).xs_snapshot).snapshot_type } != pgrx::pg_sys::SnapshotType_SNAPSHOT_MVCC {
+        pgrx::error!("scanning with a non-MVCC-compliant snapshot is not supported");
+    }
+    let scanner = unsafe { (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked() };
+    let oid = unsafe { (*(*scan).indexRelation).rd_id };
+    let handle = from_oid_to_handle(oid);
+    if let Some(pointer) = am_scan::scan_next(scanner, handle) {
+        let ctid = pointer_to_ctid(pointer);
+        unsafe {
+            (*scan).xs_heaptid = ctid;
+            (*scan).xs_recheck = false;
+            (*scan).xs_recheckorderby = false;
+        }
+        true
+    } else {
+        false
+    }
 }
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn amendscan(scan: pgrx::pg_sys::IndexScanDesc) {
-    am_scan::end_scan(scan);
+    unsafe {
+        let scanner = (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked();
+        let scanner = std::mem::replace(scanner, am_scan::scan_make(None));
+        am_scan::scan_release(scanner);
+    }
 }
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn ambulkdelete(
     info: *mut pgrx::pg_sys::IndexVacuumInfo,
-    _stats: *mut pgrx::pg_sys::IndexBulkDeleteResult,
+    stats: *mut pgrx::pg_sys::IndexBulkDeleteResult,
     callback: pgrx::pg_sys::IndexBulkDeleteCallback,
     callback_state: *mut std::os::raw::c_void,
 ) -> *mut pgrx::pg_sys::IndexBulkDeleteResult {
-    if !test_well_formed((*info).index) {
-        pgrx::warning!("The vector index is not initialized.");
+    let mut stats = stats;
+    if stats.is_null() {
+        stats = unsafe {
+            pgrx::pg_sys::palloc0(std::mem::size_of::<pgrx::pg_sys::IndexBulkDeleteResult>()).cast()
+        };
     }
-    let oid = (*(*info).index).rd_id;
-    let id = get_handle(oid);
+    let oid = unsafe { (*(*info).index).rd_id };
+    let handle = from_oid_to_handle(oid);
     if let Some(callback) = callback {
-        am_update::update_delete(id, |pointer| {
-            callback(
-                &mut pointer.into_sys() as *mut pgrx::pg_sys::ItemPointerData,
-                callback_state,
-            )
-        });
+        on_index_write(handle);
+
+        let mut x = match check_client(client()).list(handle) {
+            Ok(x) => x,
+            Err((_, ListError::NotExist)) => bad_service_not_exist(),
+        };
+        let mut y = check_client(client());
+        while let Some(pointer) = x.next() {
+            let mut ctid = pointer_to_ctid(pointer);
+            if unsafe { callback(&mut ctid, callback_state) } {
+                match y.delete(handle, pointer) {
+                    Ok(()) => (),
+                    Err(DeleteError::NotExist) => (),
+                }
+            }
+        }
+        x.leave();
     }
-    let result = pgrx::PgBox::<pgrx::pg_sys::IndexBulkDeleteResult>::alloc0();
-    result.into_pg()
+    stats
 }
 
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn amvacuumcleanup(
-    info: *mut pgrx::pg_sys::IndexVacuumInfo,
+    _info: *mut pgrx::pg_sys::IndexVacuumInfo,
     _stats: *mut pgrx::pg_sys::IndexBulkDeleteResult,
 ) -> *mut pgrx::pg_sys::IndexBulkDeleteResult {
-    if !test_well_formed((*info).index) {
-        pgrx::warning!("The vector index is not initialized.");
-    }
-    let result = pgrx::PgBox::<pgrx::pg_sys::IndexBulkDeleteResult>::alloc0();
-    result.into_pg()
+    std::ptr::null_mut()
 }

@@ -28,7 +28,7 @@ unsafe extern "C" fn vectors_process_utility(
     completion_tag: *mut pgrx::pg_sys::QueryCompletion,
 ) {
     unsafe {
-        super::hook_compat::pgvector_stmt_rewrite(pstmt);
+        super::compatibility::on_process_utility(pstmt);
     }
     unsafe {
         if let Some(prev_process_utility) = PREV_PROCESS_UTILITY {
@@ -66,9 +66,7 @@ unsafe extern "C" fn vectors_object_access(
     arg: *mut libc::c_void,
 ) {
     unsafe {
-        super::hook_maintain::maintain_index_in_object_access(
-            access, class_id, object_id, sub_id, arg,
-        );
+        super::catalog::on_object_access(access, class_id, object_id, sub_id, arg);
         if let Some(next_object_access) = NEXT_OBJECT_ACCESS_HOOK {
             next_object_access(access, class_id, object_id, sub_id, arg);
         }
@@ -80,11 +78,11 @@ unsafe extern "C" fn xact_callback(event: pgrx::pg_sys::XactEvent, _data: pgrx::
     match event {
         pgrx::pg_sys::XactEvent_XACT_EVENT_PRE_COMMIT
         | pgrx::pg_sys::XactEvent_XACT_EVENT_PARALLEL_PRE_COMMIT => unsafe {
-            super::hook_maintain::maintain_index_for_commit();
+            super::catalog::on_commit();
         },
         pgrx::pg_sys::XactEvent_XACT_EVENT_ABORT
         | pgrx::pg_sys::XactEvent_XACT_EVENT_PARALLEL_ABORT => unsafe {
-            super::hook_maintain::maintain_index_for_abort();
+            super::catalog::on_abort();
         },
         _ => {}
     }
