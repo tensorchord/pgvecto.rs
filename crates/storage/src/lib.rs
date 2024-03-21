@@ -3,7 +3,7 @@
 mod bvector;
 pub mod operator;
 mod svec;
-mod vec;
+pub mod vec;
 mod veci8;
 
 use self::operator::OperatorStorage;
@@ -28,7 +28,7 @@ pub trait Storage {
 }
 
 pub struct StorageCollection<O: OperatorStorage> {
-    storage: O::Storage,
+    pub storage: O::Storage,
 }
 
 impl<O: OperatorStorage> StorageCollection<O> {

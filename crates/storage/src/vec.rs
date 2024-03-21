@@ -8,9 +8,9 @@ use common::mmap_array::MmapArray;
 use std::path::Path;
 
 pub struct VecStorage<T> {
-    vectors: MmapArray<T>,
-    payload: MmapArray<Payload>,
-    dims: u16,
+    pub vectors: MmapArray<T>,
+    pub payload: MmapArray<Payload>,
+    pub dims: u16,
 }
 
 impl Storage for VecStorage<F32> {

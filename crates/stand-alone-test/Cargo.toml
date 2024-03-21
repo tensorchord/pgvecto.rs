@@ -1,0 +1,14 @@
+[package]
+name = "stand-alone-test"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+common = { path = "../common" }
+base = { path = "../base" }
+hnsw = { path = "../hnsw" }
+rayon = { path = "../rayon" }
+thiserror = "1.0.58"
+
+[lints]
+workspace = true

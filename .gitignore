@@ -9,3 +9,4 @@ __pycache__
 .pytest_cache
 rustc-ice-*.txt
 build
+crates/stand-alone-test/data

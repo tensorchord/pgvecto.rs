@@ -2532,6 +2532,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
+name = "stand-alone-test"
+version = "0.0.0"
+dependencies = [
+ "base",
+ "common",
+ "hnsw",
+ "rayon 0.0.0",
+ "thiserror",
+]
+
+[[package]]
 name = "std_detect"
 version = "0.1.5"
 source = "git+https://github.com/tensorchord/stdarch?rev=e50b2f6fa7f8a9a0081c88b1793d8560462d5848#e50b2f6fa7f8a9a0081c88b1793d8560462d5848"
@@ -2641,18 +2652,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.57"
+version = "1.0.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e45bcbe8ed29775f228095caf2cd67af7a4ccf756ebff23a306bf3e8b47b24b"
+checksum = "03468839009160513471e86a034bb2c5c0e4baae3b43f79ffc55c4a5427b3297"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.57"
+version = "1.0.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a953cb265bef375dae3de6663da4d3804eee9682ea80d8e2542529b73c531c81"
+checksum = "c61f3ba182994efc43764a46c018c347bc492c79f024e705f46567b418f6d4f7"
 dependencies = [
  "proc-macro2",
  "quote",
