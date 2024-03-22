@@ -15,7 +15,7 @@ unsafe fn swap_destroy<T>(target: &mut *mut T, value: *mut T) {
     }
 }
 
-pub unsafe fn pgvector_stmt_rewrite(pstmt: *mut pgrx::pg_sys::PlannedStmt) {
+pub unsafe fn on_process_utility(pstmt: *mut pgrx::pg_sys::PlannedStmt) {
     let enabled = ENABLE_PGVECTOR_COMPATIBILITY.get();
     if !enabled {
         return;

@@ -36,10 +36,6 @@ impl Vecf16Header {
         self.dims as usize
     }
     pub fn slice(&self) -> &[F16] {
-        debug_assert_eq!(self.varlena & 3, 0);
-        // TODO: force checking it in the future
-        // debug_assert_eq!(self.kind, 1);
-        // debug_assert_eq!(self.reserved, 0);
         unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.dims as usize) }
     }
     pub fn for_borrow(&self) -> Vecf16Borrowed<'_> {

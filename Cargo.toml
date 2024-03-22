@@ -52,7 +52,7 @@ service = { path = "crates/service" }
 pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.0-alpha.1-patch" }
 
 [lints]
-rust.unsafe_op_in_unsafe_fn = "deny"
+rust.unsafe_op_in_unsafe_fn = "forbid"
 rust.unused_lifetimes = "warn"
 rust.unused_qualifications = "warn"
 

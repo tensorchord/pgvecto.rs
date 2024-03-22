@@ -1,5 +1,5 @@
 use crate::error::*;
-use crate::index::utils::get_handle;
+use crate::index::utils::from_oid_to_handle;
 use crate::ipc::client;
 use crate::utils::cells::PgRefCell;
 use base::search::Handle;
@@ -29,7 +29,7 @@ impl Transaction {
 
 static TRANSACTION: PgRefCell<Transaction> = unsafe { PgRefCell::new(Transaction::new()) };
 
-pub fn maintain_index_in_index_create(handle: Handle) {
+pub fn on_index_build(handle: Handle) {
     let mut t = TRANSACTION.borrow_mut();
     match t.index.get(&handle) {
         Some(TransactionIndex::Create) => {
@@ -39,7 +39,7 @@ pub fn maintain_index_in_index_create(handle: Handle) {
             // It's a reindex
             t.index.insert(handle, TransactionIndex::Create);
         }
-        Some(TransactionIndex::Drop) => panic!("Reuse handle in a transaction."),
+        Some(TransactionIndex::Drop) => unreachable!("reused oid in a transaction."),
         None => {
             // It's an index or reindex
             t.index.insert(handle, TransactionIndex::Create);
@@ -47,7 +47,7 @@ pub fn maintain_index_in_index_create(handle: Handle) {
     }
 }
 
-pub fn maintain_index_in_index_access(handle: Handle) {
+pub fn on_index_write(handle: Handle) {
     let mut t = TRANSACTION.borrow_mut();
     match t.index.get(&handle) {
         Some(TransactionIndex::Create) => (),
@@ -60,7 +60,7 @@ pub fn maintain_index_in_index_access(handle: Handle) {
     }
 }
 
-pub unsafe fn maintain_index_in_object_access(
+pub unsafe fn on_object_access(
     access: pgrx::pg_sys::ObjectAccessType,
     class_id: Oid,
     object_id: Oid,
@@ -81,12 +81,12 @@ pub unsafe fn maintain_index_in_object_access(
             let search = pgrx::pg_catalog::PgClass::search_reloid(object_id).unwrap();
             if let Some(pg_class) = search.get() {
                 if let Some(()) = check_vector_index(pg_class) {
-                    let handle = get_handle(object_id);
+                    let handle = from_oid_to_handle(object_id);
                     let mut t = TRANSACTION.borrow_mut();
                     match t.index.get(&handle) {
                         Some(TransactionIndex::Create) => {
                             // It's created in this transaction, so drop it immediately
-                            let handle = get_handle(object_id);
+                            let handle = from_oid_to_handle(object_id);
                             let mut rpc = check_client(client());
                             if let Err(e) = rpc.drop(handle) {
                                 pgrx::warning!("Failed to drop {handle} for abortting: {e}.");
@@ -161,7 +161,7 @@ fn check_vector_index_slow_path(pg_am: pgrx::pg_catalog::PgAm<'_>) -> Option<()>
     Some(())
 }
 
-pub unsafe fn maintain_index_for_commit() {
+pub unsafe fn on_commit() {
     let t = std::mem::replace(&mut *TRANSACTION.borrow_mut(), Transaction::new());
     if let Err(e) = std::panic::catch_unwind(|| {
         if t.index.is_empty() {
@@ -193,7 +193,7 @@ pub unsafe fn maintain_index_for_commit() {
     }
 }
 
-pub unsafe fn maintain_index_for_abort() {
+pub unsafe fn on_abort() {
     let t = std::mem::replace(&mut *TRANSACTION.borrow_mut(), Transaction::new());
     if let Err(e) = std::panic::catch_unwind(|| {
         if t.index.is_empty() {
