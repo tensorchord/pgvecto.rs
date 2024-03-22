@@ -82,7 +82,8 @@ impl<'a> BVecf32Borrowed<'a> {
         if data.len() != (dims as usize).div_ceil(BVEC_WIDTH) {
             return None;
         }
-        if data[data.len() - 1] >> (dims % BVEC_WIDTH as u16) != 0 {
+        if dims % BVEC_WIDTH as u16 != 0 && data[data.len() - 1] >> (dims % BVEC_WIDTH as u16) != 0
+        {
             return None;
         }
         unsafe { Some(Self::new_unchecked(dims, data)) }
