@@ -766,8 +766,8 @@ fn mock_make(
         ef_construction,
         quantization: quantization_opts,
     } = options.indexing.clone().unwrap_hnsw();
-    let vectors = MmapArray::open(Path::new("data/sift_vectors"));
-    let payload = MmapArray::open(Path::new("data/sift_payload"));
+    let vectors = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_vectors"));
+    let payload = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_payload"));
     let dims = 128;
     let storage = Arc::new(StorageCollection::<Vecf32L2> {
         storage: VecStorage::<F32> {
@@ -984,8 +984,8 @@ pub fn mock_create(path: &Path, options: IndexOptions) -> Hnsw<Vecf32L2> {
 
 pub fn mock_open(path: &Path, options: IndexOptions) -> Hnsw<Vecf32L2> {
     let idx_opts = options.indexing.clone().unwrap_hnsw();
-    let vectors = MmapArray::open(Path::new("data/sift_vectors"));
-    let payload = MmapArray::open(Path::new("data/sift_payload"));
+    let vectors = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_vectors"));
+    let payload = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_payload"));
     let dims = 128;
     let storage = Arc::new(StorageCollection::<Vecf32L2> {
         storage: VecStorage::<F32> {
