@@ -59,10 +59,11 @@ pub fn from_oid_to_handle(oid: pgrx::pg_sys::Oid) -> Handle {
     if SYSTEM_IDENTIFIER.get() == 0 {
         SYSTEM_IDENTIFIER.set(unsafe { pgrx::pg_sys::GetSystemIdentifier() });
     }
-    let a = 0u128;
-    let b = SYSTEM_IDENTIFIER.get() as u128;
-    let c = oid.as_u32() as u128;
-    Handle::new(a << 96 | b << 32 | c)
+    let tenant_id = 0_u128;
+    let cluster_id = SYSTEM_IDENTIFIER.get();
+    let database_id = unsafe { pgrx::pg_sys::MyDatabaseId.as_u32() };
+    let index_id = oid.as_u32();
+    Handle::new(tenant_id, cluster_id, database_id, index_id)
 }
 
 pub fn pointer_to_ctid(pointer: Pointer) -> pgrx::pg_sys::ItemPointerData {
