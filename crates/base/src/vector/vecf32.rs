@@ -101,7 +101,7 @@ impl<'a> VectorBorrowed for Vecf32Borrowed<'a> {
     }
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn cosine(lhs: &[F32], rhs: &[F32]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -116,7 +116,7 @@ pub fn cosine(lhs: &[F32], rhs: &[F32]) -> F32 {
     xy / (x2 * y2).sqrt()
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn dot(lhs: &[F32], rhs: &[F32]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -127,7 +127,7 @@ pub fn dot(lhs: &[F32], rhs: &[F32]) -> F32 {
     xy
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn sl2(lhs: &[F32], rhs: &[F32]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -139,7 +139,7 @@ pub fn sl2(lhs: &[F32], rhs: &[F32]) -> F32 {
     d2
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn length(vector: &[F32]) -> F32 {
     let n = vector.len();
     let mut dot = F32::zero();
@@ -149,7 +149,7 @@ pub fn length(vector: &[F32]) -> F32 {
     dot.sqrt()
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn l2_normalize(vector: &mut [F32]) {
     let n = vector.len();
     let l = length(vector);
@@ -158,7 +158,7 @@ pub fn l2_normalize(vector: &mut [F32]) {
     }
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn xy_x2_y2(lhs: &[F32], rhs: &[F32]) -> (F32, F32, F32) {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -173,7 +173,7 @@ pub fn xy_x2_y2(lhs: &[F32], rhs: &[F32]) -> (F32, F32, F32) {
     (xy, x2, y2)
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn xy_x2_y2_delta(lhs: &[F32], rhs: &[F32], del: &[F32]) -> (F32, F32, F32) {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -188,7 +188,7 @@ pub fn xy_x2_y2_delta(lhs: &[F32], rhs: &[F32], del: &[F32]) -> (F32, F32, F32) 
     (xy, x2, y2)
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn dot_delta(lhs: &[F32], rhs: &[F32], del: &[F32]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n: usize = lhs.len();
@@ -199,7 +199,7 @@ pub fn dot_delta(lhs: &[F32], rhs: &[F32], del: &[F32]) -> F32 {
     xy
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn distance_squared_l2_delta(lhs: &[F32], rhs: &[F32], del: &[F32]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();

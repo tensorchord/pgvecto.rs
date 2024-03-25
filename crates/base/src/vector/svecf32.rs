@@ -184,51 +184,14 @@ impl<'a> SVecf32Borrowed<'a> {
     }
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
-fn cosine_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
-    let mut lhs_pos = 0;
-    let mut rhs_pos = 0;
-    let size1 = lhs.len() as usize;
-    let size2 = rhs.len() as usize;
-    let mut xy = F32::zero();
-    let mut x2 = F32::zero();
-    let mut y2 = F32::zero();
-    while lhs_pos < size1 && rhs_pos < size2 {
-        let lhs_index = lhs.indexes()[lhs_pos];
-        let rhs_index = rhs.indexes()[rhs_pos];
-        match lhs_index.cmp(&rhs_index) {
-            std::cmp::Ordering::Less => {
-                x2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
-                lhs_pos += 1;
-            }
-            std::cmp::Ordering::Greater => {
-                y2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
-                rhs_pos += 1;
-            }
-            std::cmp::Ordering::Equal => {
-                xy += lhs.values()[lhs_pos] * rhs.values()[rhs_pos];
-                x2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
-                y2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
-                lhs_pos += 1;
-                rhs_pos += 1;
-            }
-        }
-    }
-    for i in lhs_pos..size1 {
-        x2 += lhs.values()[i] * lhs.values()[i];
-    }
-    for i in rhs_pos..size2 {
-        y2 += rhs.values()[i] * rhs.values()[i];
-    }
-    xy / (x2 * y2).sqrt()
-}
-
 #[inline]
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", doc))]
+#[doc(cfg(target_arch = "x86_64"))]
 #[detect::target_cpu(enable = "v4")]
-unsafe fn cosine_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+unsafe fn cosine_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
     use std::cmp::min;
+    assert_eq!(lhs.dims(), rhs.dims());
     unsafe {
         const W: usize = 16;
         let mut lhs_pos = 0;
@@ -328,47 +291,51 @@ unsafe fn cosine_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F
     }
 }
 
-#[inline(always)]
-pub fn cosine<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+#[detect::multiversion(v4 = import, v3, v2, neon, fallback = export)]
+pub fn cosine(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
     assert_eq!(lhs.dims(), rhs.dims());
-    #[cfg(target_arch = "x86_64")]
-    if detect::v4::detect() {
-        return unsafe { cosine_v4(lhs, rhs) };
-    }
-    cosine_fallback(lhs, rhs)
-}
-
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
-fn dot_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     let mut lhs_pos = 0;
     let mut rhs_pos = 0;
     let size1 = lhs.len() as usize;
     let size2 = rhs.len() as usize;
     let mut xy = F32::zero();
+    let mut x2 = F32::zero();
+    let mut y2 = F32::zero();
     while lhs_pos < size1 && rhs_pos < size2 {
         let lhs_index = lhs.indexes()[lhs_pos];
         let rhs_index = rhs.indexes()[rhs_pos];
         match lhs_index.cmp(&rhs_index) {
             std::cmp::Ordering::Less => {
+                x2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
                 lhs_pos += 1;
             }
             std::cmp::Ordering::Greater => {
+                y2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
                 rhs_pos += 1;
             }
             std::cmp::Ordering::Equal => {
                 xy += lhs.values()[lhs_pos] * rhs.values()[rhs_pos];
+                x2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
+                y2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
                 lhs_pos += 1;
                 rhs_pos += 1;
             }
         }
     }
-    xy
+    for i in lhs_pos..size1 {
+        x2 += lhs.values()[i] * lhs.values()[i];
+    }
+    for i in rhs_pos..size2 {
+        y2 += rhs.values()[i] * rhs.values()[i];
+    }
+    xy / (x2 * y2).sqrt()
 }
 
 #[inline]
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", doc))]
+#[doc(cfg(target_arch = "x86_64"))]
 #[detect::target_cpu(enable = "v4")]
-unsafe fn dot_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+unsafe fn dot_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
     use std::cmp::min;
     unsafe {
@@ -440,18 +407,36 @@ unsafe fn dot_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 
     }
 }
 
-#[inline(always)]
-pub fn dot<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+#[detect::multiversion(v4 = import, v3, v2, neon, fallback = export)]
+pub fn dot(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
     assert_eq!(lhs.dims(), rhs.dims());
-    #[cfg(target_arch = "x86_64")]
-    if detect::v4::detect() {
-        return unsafe { dot_v4(lhs, rhs) };
+    let mut lhs_pos = 0;
+    let mut rhs_pos = 0;
+    let size1 = lhs.len() as usize;
+    let size2 = rhs.len() as usize;
+    let mut xy = F32::zero();
+    while lhs_pos < size1 && rhs_pos < size2 {
+        let lhs_index = lhs.indexes()[lhs_pos];
+        let rhs_index = rhs.indexes()[rhs_pos];
+        match lhs_index.cmp(&rhs_index) {
+            std::cmp::Ordering::Less => {
+                lhs_pos += 1;
+            }
+            std::cmp::Ordering::Greater => {
+                rhs_pos += 1;
+            }
+            std::cmp::Ordering::Equal => {
+                xy += lhs.values()[lhs_pos] * rhs.values()[rhs_pos];
+                lhs_pos += 1;
+                rhs_pos += 1;
+            }
+        }
     }
-    dot_fallback(lhs, rhs)
+    xy
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
-pub fn dot_2<'a>(lhs: SVecf32Borrowed<'a>, rhs: &[F32]) -> F32 {
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
+pub fn dot_2(lhs: SVecf32Borrowed<'_>, rhs: &[F32]) -> F32 {
     let mut xy = F32::zero();
     for i in 0..lhs.len() as usize {
         xy += lhs.values()[i] * rhs[lhs.indexes()[i] as usize];
@@ -459,48 +444,14 @@ pub fn dot_2<'a>(lhs: SVecf32Borrowed<'a>, rhs: &[F32]) -> F32 {
     xy
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
-fn sl2_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
-    let mut lhs_pos = 0;
-    let mut rhs_pos = 0;
-    let size1 = lhs.len() as usize;
-    let size2 = rhs.len() as usize;
-    let mut d2 = F32::zero();
-    while lhs_pos < size1 && rhs_pos < size2 {
-        let lhs_index = lhs.indexes()[lhs_pos];
-        let rhs_index = rhs.indexes()[rhs_pos];
-        match lhs_index.cmp(&rhs_index) {
-            std::cmp::Ordering::Equal => {
-                let d = lhs.values()[lhs_pos] - rhs.values()[rhs_pos];
-                d2 += d * d;
-                lhs_pos += 1;
-                rhs_pos += 1;
-            }
-            std::cmp::Ordering::Less => {
-                d2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
-                lhs_pos += 1;
-            }
-            std::cmp::Ordering::Greater => {
-                d2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
-                rhs_pos += 1;
-            }
-        }
-    }
-    for i in lhs_pos..size1 {
-        d2 += lhs.values()[i] * lhs.values()[i];
-    }
-    for i in rhs_pos..size2 {
-        d2 += rhs.values()[i] * rhs.values()[i];
-    }
-    d2
-}
-
 #[inline]
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", doc))]
+#[doc(cfg(target_arch = "x86_64"))]
 #[detect::target_cpu(enable = "v4")]
-unsafe fn sl2_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+unsafe fn sl2_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
     use std::cmp::min;
+    assert_eq!(lhs.dims(), rhs.dims());
     unsafe {
         const W: usize = 16;
         let mut lhs_pos = 0;
@@ -600,18 +551,45 @@ unsafe fn sl2_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 
     }
 }
 
-#[inline(always)]
-pub fn sl2<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
+#[detect::multiversion(v4 = import, v3, v2, neon, fallback = export)]
+pub fn sl2(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
     assert_eq!(lhs.dims(), rhs.dims());
-    #[cfg(target_arch = "x86_64")]
-    if detect::v4::detect() {
-        return unsafe { sl2_v4(lhs, rhs) };
+    let mut lhs_pos = 0;
+    let mut rhs_pos = 0;
+    let size1 = lhs.len() as usize;
+    let size2 = rhs.len() as usize;
+    let mut d2 = F32::zero();
+    while lhs_pos < size1 && rhs_pos < size2 {
+        let lhs_index = lhs.indexes()[lhs_pos];
+        let rhs_index = rhs.indexes()[rhs_pos];
+        match lhs_index.cmp(&rhs_index) {
+            std::cmp::Ordering::Equal => {
+                let d = lhs.values()[lhs_pos] - rhs.values()[rhs_pos];
+                d2 += d * d;
+                lhs_pos += 1;
+                rhs_pos += 1;
+            }
+            std::cmp::Ordering::Less => {
+                d2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
+                lhs_pos += 1;
+            }
+            std::cmp::Ordering::Greater => {
+                d2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
+                rhs_pos += 1;
+            }
+        }
     }
-    sl2_fallback(lhs, rhs)
+    for i in lhs_pos..size1 {
+        d2 += lhs.values()[i] * lhs.values()[i];
+    }
+    for i in rhs_pos..size2 {
+        d2 += rhs.values()[i] * rhs.values()[i];
+    }
+    d2
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
-pub fn sl2_2<'a>(lhs: SVecf32Borrowed<'a>, rhs: &[F32]) -> F32 {
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
+pub fn sl2_2(lhs: SVecf32Borrowed<'_>, rhs: &[F32]) -> F32 {
     let mut d2 = F32::zero();
     let mut lhs_pos = 0;
     let mut rhs_pos = 0;
@@ -629,8 +607,8 @@ pub fn sl2_2<'a>(lhs: SVecf32Borrowed<'a>, rhs: &[F32]) -> F32 {
     d2
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
-pub fn length<'a>(vector: SVecf32Borrowed<'a>) -> F32 {
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
+pub fn length(vector: SVecf32Borrowed<'_>) -> F32 {
     let mut dot = F32::zero();
     for &i in vector.values() {
         dot += i * i;
@@ -638,7 +616,7 @@ pub fn length<'a>(vector: SVecf32Borrowed<'a>) -> F32 {
     dot.sqrt()
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn l2_normalize(vector: &mut SVecf32Owned) {
     let l = length(vector.for_borrow());
     let dims = vector.dims();
@@ -734,7 +712,7 @@ mod tests {
     fn test_cosine_svector() {
         let x = random_svector(LHS_SIZE);
         let y = random_svector(RHS_SIZE);
-        let cosine_fallback = cosine_fallback(x.for_borrow(), y.for_borrow());
+        let cosine_fallback = unsafe { cosine_fallback(x.for_borrow(), y.for_borrow()) };
         #[cfg(target_arch = "x86_64")]
         if detect::v4::detect() {
             let cosine_v4 = unsafe { cosine_v4(x.for_borrow(), y.for_borrow()) };
@@ -751,7 +729,7 @@ mod tests {
     fn test_dot_svector() {
         let x = random_svector(LHS_SIZE);
         let y = random_svector(RHS_SIZE);
-        let dot_fallback = dot_fallback(x.for_borrow(), y.for_borrow());
+        let dot_fallback = unsafe { dot_fallback(x.for_borrow(), y.for_borrow()) };
         #[cfg(target_arch = "x86_64")]
         if detect::v4::detect() {
             let dot_v4 = unsafe { dot_v4(x.for_borrow(), y.for_borrow()) };
@@ -768,7 +746,7 @@ mod tests {
     fn test_sl2_svector() {
         let x = random_svector(LHS_SIZE);
         let y = random_svector(RHS_SIZE);
-        let sl2_fallback = sl2_fallback(x.for_borrow(), y.for_borrow());
+        let sl2_fallback = unsafe { sl2_fallback(x.for_borrow(), y.for_borrow()) };
         #[cfg(target_arch = "x86_64")]
         if detect::v4::detect() {
             let sl2_v4 = unsafe { sl2_v4(x.for_borrow(), y.for_borrow()) };

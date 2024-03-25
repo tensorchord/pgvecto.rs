@@ -289,7 +289,7 @@ impl<'a> From<&'a Veci8Owned> for Veci8Borrowed<'a> {
     }
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn i8_quantization(vector: &[F32]) -> (Vec<I8>, F32, F32) {
     let min = vector.iter().copied().fold(F32::infinity(), Float::min);
     let max = vector.iter().copied().fold(F32::neg_infinity(), Float::max);
@@ -302,7 +302,7 @@ pub fn i8_quantization(vector: &[F32]) -> (Vec<I8>, F32, F32) {
     (result, alpha, offset)
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn i8_dequantization(vector: &[I8], alpha: F32, offset: F32) -> Vec<F32> {
     vector
         .iter()
@@ -310,7 +310,7 @@ pub fn i8_dequantization(vector: &[I8], alpha: F32, offset: F32) -> Vec<F32> {
         .collect()
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn i8_precompute(data: &[I8], alpha: F32, offset: F32) -> (F32, F32) {
     let sum = data.iter().map(|&x| x.to_f32() * alpha).sum();
     let l2_norm = data
@@ -339,32 +339,11 @@ mod tests_0 {
     }
 }
 
-pub fn dot(x: &[I8], y: &[I8]) -> F32 {
-    #[cfg(target_arch = "x86_64")]
-    {
-        if detect::v4_avx512vnni::detect() {
-            return unsafe { dot_i8_avx512vnni(x, y) };
-        }
-    }
-    dot_i8_fallback(x, y)
-}
-
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
-fn dot_i8_fallback(x: &[I8], y: &[I8]) -> F32 {
-    // i8 * i8 fall in range of i16. Since our length is less than (2^16 - 1), the result won't overflow.
-    let mut sum = 0;
-    assert_eq!(x.len(), y.len());
-    let length = x.len();
-    // according to https://godbolt.org/z/ff48vW4es, this loop will be autovectorized
-    for i in 0..length {
-        sum += (x[i].0 as i16 * y[i].0 as i16) as i32;
-    }
-    F32(sum as f32)
-}
-
-#[cfg(target_arch = "x86_64")]
+#[inline]
+#[cfg(any(target_arch = "x86_64", doc))]
+#[doc(cfg(target_arch = "x86_64"))]
 #[detect::target_cpu(enable = "v4_avx512vnni")]
-unsafe fn dot_i8_avx512vnni(x: &[I8], y: &[I8]) -> F32 {
+unsafe fn dot_v4_avx512vnni(x: &[I8], y: &[I8]) -> F32 {
     use std::arch::x86_64::*;
     assert_eq!(x.len(), y.len());
     let mut sum = 0;
@@ -402,6 +381,19 @@ unsafe fn dot_i8_avx512vnni(x: &[I8], y: &[I8]) -> F32 {
     F32(sum as f32)
 }
 
+#[detect::multiversion(v4_avx512vnni = import, v4, v3, v2, neon, fallback = export)]
+pub fn dot(x: &[I8], y: &[I8]) -> F32 {
+    // i8 * i8 fall in range of i16. Since our length is less than (2^16 - 1), the result won't overflow.
+    let mut sum = 0;
+    assert_eq!(x.len(), y.len());
+    let length = x.len();
+    // according to https://godbolt.org/z/ff48vW4es, this loop will be autovectorized
+    for i in 0..length {
+        sum += (x[i].0 as i16 * y[i].0 as i16) as i32;
+    }
+    F32(sum as f32)
+}
+
 pub fn dot_distance(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
     // (alpha_x * x[i] + offset_x) * (alpha_y * y[i] + offset_y)
     // = alpha_x * alpha_y * x[i] * y[i] + alpha_x * offset_y * x[i] + alpha_y * offset_x * y[i] + offset_x * offset_y
@@ -427,7 +419,7 @@ pub fn cosine_distance(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
     dot_xy / (l2_x * l2_y)
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn l2_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
     let data = lhs.data();
     assert_eq!(data.len(), rhs.len());
@@ -440,7 +432,7 @@ pub fn l2_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
         .sum::<F32>()
 }
 
-#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn dot_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
     let data = lhs.data();
     assert_eq!(data.len(), rhs.len());
