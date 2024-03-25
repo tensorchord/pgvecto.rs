@@ -321,24 +321,6 @@ pub fn i8_precompute(data: &[I8], alpha: F32, offset: F32) -> (F32, F32) {
     (sum, l2_norm)
 }
 
-#[cfg(test)]
-mod tests_0 {
-    use super::*;
-
-    #[test]
-    fn test_quantization_roundtrip() {
-        let vector = vec![F32(0.0), F32(1.0), F32(2.0), F32(3.0), F32(4.0)];
-        let (result, alpha, offset) = i8_quantization(&vector);
-        assert_eq!(result, vec![I8(-127), I8(-63), I8(0), I8(63), I8(127)]);
-        assert_eq!(alpha, F32(4.0 / 254.0));
-        assert_eq!(offset, F32(2.0));
-        let vector = i8_dequantization(result.as_slice(), alpha, offset);
-        for (i, x) in vector.iter().enumerate() {
-            assert!((x.0 - (i as f32)).abs() < 0.05);
-        }
-    }
-}
-
 #[inline]
 #[cfg(any(target_arch = "x86_64", doc))]
 #[doc(cfg(target_arch = "x86_64"))]
@@ -443,8 +425,21 @@ pub fn dot_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
 }
 
 #[cfg(test)]
-mod tests_1 {
+mod tests {
     use super::*;
+
+    #[test]
+    fn test_quantization_roundtrip() {
+        let vector = vec![F32(0.0), F32(1.0), F32(2.0), F32(3.0), F32(4.0)];
+        let (result, alpha, offset) = i8_quantization(&vector);
+        assert_eq!(result, vec![I8(-127), I8(-63), I8(0), I8(63), I8(127)]);
+        assert_eq!(alpha, F32(4.0 / 254.0));
+        assert_eq!(offset, F32(2.0));
+        let vector = i8_dequantization(result.as_slice(), alpha, offset);
+        for (i, x) in vector.iter().enumerate() {
+            assert!((x.0 - (i as f32)).abs() < 0.05);
+        }
+    }
 
     fn new_random_vec_f32(size: usize) -> Vec<F32> {
         use rand::Rng;

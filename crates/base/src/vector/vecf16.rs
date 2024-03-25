@@ -110,6 +110,26 @@ unsafe fn cosine_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
     unsafe { c::v_f16_cosine_avx512fp16(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn cosine_v4_avx512fp16_test() {
+    detect::init();
+    if !detect::v4_avx512fp16::detect() {
+        println!("test {} ... skipped (v4_avx512fp16)", module_path!());
+        return;
+    }
+    const EPSILON: F32 = F32(half::f16::EPSILON.to_f32_const());
+    let n = 4000;
+    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let specialized = unsafe { cosine_v4_avx512fp16(&lhs, &rhs) };
+    let fallback = unsafe { cosine_fallback(&lhs, &rhs) };
+    assert!(
+        (specialized - fallback).abs() < EPSILON,
+        "specialized = {specialized}, fallback = {fallback}."
+    );
+}
+
 #[inline]
 #[cfg(target_arch = "x86_64")]
 #[doc(cfg(target_arch = "x86_64"))]
@@ -119,6 +139,26 @@ unsafe fn cosine_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
     unsafe { c::v_f16_cosine_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn cosine_v4_test() {
+    detect::init();
+    if !detect::v4::detect() {
+        println!("test {} ... skipped (v4)", module_path!());
+        return;
+    }
+    const EPSILON: F32 = F32(half::f16::EPSILON.to_f32_const());
+    let n = 4000;
+    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let specialized = unsafe { cosine_v4(&lhs, &rhs) };
+    let fallback = unsafe { cosine_fallback(&lhs, &rhs) };
+    assert!(
+        (specialized - fallback).abs() < EPSILON,
+        "specialized = {specialized}, fallback = {fallback}."
+    );
+}
+
 #[inline]
 #[cfg(target_arch = "x86_64")]
 #[doc(cfg(target_arch = "x86_64"))]
@@ -126,6 +166,26 @@ unsafe fn cosine_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
     unsafe { c::v_f16_cosine_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+}
+
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn cosine_v3_test() {
+    detect::init();
+    if !detect::v3::detect() {
+        println!("test {} ... skipped (v3)", module_path!());
+        return;
+    }
+    const EPSILON: F32 = F32(half::f16::EPSILON.to_f32_const());
+    let n = 4000;
+    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let specialized = unsafe { cosine_v3(&lhs, &rhs) };
+    let fallback = unsafe { cosine_fallback(&lhs, &rhs) };
+    assert!(
+        (specialized - fallback).abs() < EPSILON,
+        "specialized = {specialized}, fallback = {fallback}."
+    );
 }
 
 #[detect::multiversion(v4_avx512fp16 = import, v4 = import, v3 = import, v2, neon, fallback = export)]
@@ -152,6 +212,26 @@ unsafe fn dot_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
     unsafe { c::v_f16_dot_avx512fp16(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn dot_v4_avx512fp16_test() {
+    detect::init();
+    if !detect::v4_avx512fp16::detect() {
+        println!("test {} ... skipped (v4_avx512fp16)", module_path!());
+        return;
+    }
+    const EPSILON: F32 = F32(1.0);
+    let n = 4000;
+    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let specialized = unsafe { dot_v4_avx512fp16(&lhs, &rhs) };
+    let fallback = unsafe { dot_fallback(&lhs, &rhs) };
+    assert!(
+        (specialized - fallback).abs() < EPSILON,
+        "specialized = {specialized}, fallback = {fallback}."
+    );
+}
+
 #[inline]
 #[cfg(target_arch = "x86_64")]
 #[doc(cfg(target_arch = "x86_64"))]
@@ -161,6 +241,26 @@ unsafe fn dot_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
     unsafe { c::v_f16_dot_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn dot_v4_test() {
+    detect::init();
+    if !detect::v4::detect() {
+        println!("test {} ... skipped (v4)", module_path!());
+        return;
+    }
+    const EPSILON: F32 = F32(1.0);
+    let n = 4000;
+    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let specialized = unsafe { dot_v4(&lhs, &rhs) };
+    let fallback = unsafe { dot_fallback(&lhs, &rhs) };
+    assert!(
+        (specialized - fallback).abs() < EPSILON,
+        "specialized = {specialized}, fallback = {fallback}."
+    );
+}
+
 #[inline]
 #[cfg(target_arch = "x86_64")]
 #[doc(cfg(target_arch = "x86_64"))]
@@ -168,6 +268,26 @@ unsafe fn dot_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
     unsafe { c::v_f16_dot_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+}
+
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn dot_v3_test() {
+    detect::init();
+    if !detect::v3::detect() {
+        println!("test {} ... skipped (v3)", module_path!());
+        return;
+    }
+    const EPSILON: F32 = F32(1.0);
+    let n = 4000;
+    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let specialized = unsafe { dot_v3(&lhs, &rhs) };
+    let fallback = unsafe { dot_fallback(&lhs, &rhs) };
+    assert!(
+        (specialized - fallback).abs() < EPSILON,
+        "specialized = {specialized}, fallback = {fallback}."
+    );
 }
 
 #[detect::multiversion(v4_avx512fp16 = import, v4 = import, v3 = import, v2, neon, fallback = export)]
@@ -190,6 +310,26 @@ unsafe fn sl2_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
     unsafe { c::v_f16_sl2_avx512fp16(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn sl2_v4_avx512fp16_test() {
+    detect::init();
+    if !detect::v4_avx512fp16::detect() {
+        println!("test {} ... skipped (v4_avx512fp16)", module_path!());
+        return;
+    }
+    const EPSILON: F32 = F32(1.0);
+    let n = 4000;
+    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let specialized = unsafe { sl2_v4_avx512fp16(&lhs, &rhs) };
+    let fallback = unsafe { sl2_fallback(&lhs, &rhs) };
+    assert!(
+        (specialized - fallback).abs() < EPSILON,
+        "specialized = {specialized}, fallback = {fallback}."
+    );
+}
+
 #[inline]
 #[cfg(target_arch = "x86_64")]
 #[doc(cfg(target_arch = "x86_64"))]
@@ -199,6 +339,26 @@ unsafe fn sl2_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
     unsafe { c::v_f16_sl2_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn sl2_v4_test() {
+    detect::init();
+    if !detect::v4::detect() {
+        println!("test {} ... skipped (v4)", module_path!());
+        return;
+    }
+    const EPSILON: F32 = F32(1.0);
+    let n = 4000;
+    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let specialized = unsafe { sl2_v4(&lhs, &rhs) };
+    let fallback = unsafe { sl2_fallback(&lhs, &rhs) };
+    assert!(
+        (specialized - fallback).abs() < EPSILON,
+        "specialized = {specialized}, fallback = {fallback}."
+    );
+}
+
 #[inline]
 #[cfg(target_arch = "x86_64")]
 #[doc(cfg(target_arch = "x86_64"))]
@@ -206,6 +366,26 @@ unsafe fn sl2_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
     unsafe { c::v_f16_sl2_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+}
+
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn sl2_v3_test() {
+    detect::init();
+    if !detect::v3::detect() {
+        println!("test {} ... skipped (v3)", module_path!());
+        return;
+    }
+    const EPSILON: F32 = F32(1.0);
+    let n = 4000;
+    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+    let specialized = unsafe { sl2_v3(&lhs, &rhs) };
+    let fallback = unsafe { sl2_fallback(&lhs, &rhs) };
+    assert!(
+        (specialized - fallback).abs() < EPSILON,
+        "specialized = {specialized}, fallback = {fallback}."
+    );
 }
 
 #[detect::multiversion(v4_avx512fp16 = import, v4 = import, v3 = import, v2, neon, fallback = export)]
