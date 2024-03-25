@@ -1,8 +1,6 @@
 use crate::distance::*;
 use crate::vector::*;
 use serde::{Deserialize, Serialize};
-use std::sync::atomic::AtomicU16;
-use std::sync::atomic::Ordering;
 use thiserror::Error;
 use uuid::Uuid;
 use validator::{Validate, ValidationError};
@@ -91,41 +89,21 @@ pub enum SettingError {
     NotExist,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct IndexFlexibleOptions {
     #[serde(default = "IndexFlexibleOptions::default_optimizing_threads")]
-    pub optimizing_threads: AtomicU16,
+    pub optimizing_threads: u16,
 }
 
 impl IndexFlexibleOptions {
-    fn default_optimizing_threads() -> AtomicU16 {
+    pub fn default_optimizing_threads() -> u16 {
         match std::thread::available_parallelism() {
-            Ok(threads) => AtomicU16::new((threads.get() as f64).sqrt() as _),
-            Err(_) => AtomicU16::new(1),
-        }
-    }
-    pub fn optimizing_threads_eq(&self, other: &Self) -> bool {
-        self.optimizing_threads.load(Ordering::Relaxed)
-            == other.optimizing_threads.load(Ordering::Relaxed)
-    }
-}
-
-impl Clone for IndexFlexibleOptions {
-    fn clone(&self) -> Self {
-        IndexFlexibleOptions {
-            optimizing_threads: AtomicU16::new(self.optimizing_threads.load(Ordering::Relaxed)),
+            Ok(threads) => (threads.get() as f64).sqrt() as _,
+            Err(_) => 1,
         }
     }
 }
-
-impl PartialEq for IndexFlexibleOptions {
-    fn eq(&self, other: &Self) -> bool {
-        self.optimizing_threads_eq(other)
-    }
-}
-
-impl Eq for IndexFlexibleOptions {}
 
 impl Default for IndexFlexibleOptions {
     fn default() -> Self {

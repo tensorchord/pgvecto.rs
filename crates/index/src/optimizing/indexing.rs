@@ -12,7 +12,6 @@ use crossbeam::channel::TryRecvError;
 use crossbeam::channel::{bounded, Receiver, RecvTimeoutError, Sender};
 use std::cmp::Reverse;
 use std::convert::Infallible;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::Instant;
@@ -103,7 +102,10 @@ impl<O: Op> OptimizerIndexing<O> {
     }
     fn main(self, shutdown: Receiver<Infallible>) {
         let index = self.index;
-        let threads = index.flexible.optimizing_threads.load(Ordering::Relaxed);
+        let threads = {
+            let protect = index.protect.lock();
+            protect.flexible_get().optimizing_threads
+        };
         rayon::ThreadPoolBuilder::new()
             .num_threads(threads as usize)
             .build_scoped(|pool| {
