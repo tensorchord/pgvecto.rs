@@ -9,10 +9,10 @@ pub mod planning;
 
 pub unsafe fn init() {
     unsafe {
-        self::planning::init();
-        self::internal::init();
-        self::executing::init();
-        self::embedding::init();
+        planning::init();
+        internal::init();
+        executing::init();
+        embedding::init();
     }
 }
 

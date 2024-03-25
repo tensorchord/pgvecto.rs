@@ -229,36 +229,6 @@ fn cosine_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F3
 unsafe fn cosine_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     use std::arch::x86_64::*;
     use std::cmp::min;
-    #[inline]
-    #[detect::target_cpu(enable = "v4")]
-    pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
-        let mut dst: __m512i;
-        unsafe {
-            std::arch::asm!(
-                "vmovdqu32 {dst}{{{k}}} {{z}}, [{p}]",
-                p = in(reg) mem_addr,
-                k = in(kreg) k,
-                dst = out(zmm_reg) dst,
-                options(pure, readonly, nostack)
-            );
-        }
-        dst
-    }
-    #[inline]
-    #[detect::target_cpu(enable = "v4")]
-    pub unsafe fn _mm512_maskz_loadu_ps(k: __mmask16, mem_addr: *const f32) -> __m512 {
-        let mut dst: __m512;
-        unsafe {
-            std::arch::asm!(
-                "vmovups {dst}{{{k}}} {{z}}, [{p}]",
-                p = in(reg) mem_addr,
-                k = in(kreg) k,
-                dst = out(zmm_reg) dst,
-                options(pure, readonly, nostack)
-            );
-        }
-        dst
-    }
     unsafe {
         const W: usize = 16;
         let mut lhs_pos = 0;
@@ -401,36 +371,6 @@ fn dot_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
 unsafe fn dot_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     use std::arch::x86_64::*;
     use std::cmp::min;
-    #[inline]
-    #[detect::target_cpu(enable = "v4")]
-    pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
-        let mut dst: __m512i;
-        unsafe {
-            std::arch::asm!(
-                "vmovdqu32 {dst}{{{k}}} {{z}}, [{p}]",
-                p = in(reg) mem_addr,
-                k = in(kreg) k,
-                dst = out(zmm_reg) dst,
-                options(pure, readonly, nostack)
-            );
-        }
-        dst
-    }
-    #[inline]
-    #[detect::target_cpu(enable = "v4")]
-    pub unsafe fn _mm512_maskz_loadu_ps(k: __mmask16, mem_addr: *const f32) -> __m512 {
-        let mut dst: __m512;
-        unsafe {
-            std::arch::asm!(
-                "vmovups {dst}{{{k}}} {{z}}, [{p}]",
-                p = in(reg) mem_addr,
-                k = in(kreg) k,
-                dst = out(zmm_reg) dst,
-                options(pure, readonly, nostack)
-            );
-        }
-        dst
-    }
     unsafe {
         const W: usize = 16;
         let mut lhs_pos = 0;
@@ -561,36 +501,6 @@ fn sl2_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
 unsafe fn sl2_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     use std::arch::x86_64::*;
     use std::cmp::min;
-    #[inline]
-    #[detect::target_cpu(enable = "v4")]
-    pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
-        let mut dst: __m512i;
-        unsafe {
-            std::arch::asm!(
-                "vmovdqu32 {dst}{{{k}}} {{z}}, [{p}]",
-                p = in(reg) mem_addr,
-                k = in(kreg) k,
-                dst = out(zmm_reg) dst,
-                options(pure, readonly, nostack)
-            );
-        }
-        dst
-    }
-    #[inline]
-    #[detect::target_cpu(enable = "v4")]
-    pub unsafe fn _mm512_maskz_loadu_ps(k: __mmask16, mem_addr: *const f32) -> __m512 {
-        let mut dst: __m512;
-        unsafe {
-            std::arch::asm!(
-                "vmovups {dst}{{{k}}} {{z}}, [{p}]",
-                p = in(reg) mem_addr,
-                k = in(kreg) k,
-                dst = out(zmm_reg) dst,
-                options(pure, readonly, nostack)
-            );
-        }
-        dst
-    }
     unsafe {
         const W: usize = 16;
         let mut lhs_pos = 0;

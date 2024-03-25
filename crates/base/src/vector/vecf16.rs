@@ -101,46 +101,43 @@ impl<'a> VectorBorrowed for Vecf16Borrowed<'a> {
     }
 }
 
+#[cfg(any(target_arch = "x86_64", doc))]
+#[doc(cfg(target_arch = "x86_64"))]
+unsafe fn cosine_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
+    assert!(lhs.len() == rhs.len());
+    let n = lhs.len();
+    unsafe { c::v_f16_cosine_avx512fp16(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[doc(cfg(target_arch = "x86_64"))]
+unsafe fn cosine_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
+    assert!(lhs.len() == rhs.len());
+    let n = lhs.len();
+    unsafe { c::v_f16_cosine_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[doc(cfg(target_arch = "x86_64"))]
+unsafe fn cosine_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
+    assert!(lhs.len() == rhs.len());
+    let n = lhs.len();
+    unsafe { c::v_f16_cosine_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+}
+
+#[detect::multiversion(v4_avx512fp16 = import, v4 = import, v3 = import, v2, neon, fallback = export)]
 pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
-        assert!(lhs.len() == rhs.len());
-        let n = lhs.len();
-        let mut xy = F32::zero();
-        let mut x2 = F32::zero();
-        let mut y2 = F32::zero();
-        for i in 0..n {
-            xy += lhs[i].to_f() * rhs[i].to_f();
-            x2 += lhs[i].to_f() * lhs[i].to_f();
-            y2 += rhs[i].to_f() * rhs[i].to_f();
-        }
-        xy / (x2 * y2).sqrt()
+    assert!(lhs.len() == rhs.len());
+    let n = lhs.len();
+    let mut xy = F32::zero();
+    let mut x2 = F32::zero();
+    let mut y2 = F32::zero();
+    for i in 0..n {
+        xy += lhs[i].to_f() * rhs[i].to_f();
+        x2 += lhs[i].to_f() * lhs[i].to_f();
+        y2 += rhs[i].to_f() * rhs[i].to_f();
     }
-    #[cfg(target_arch = "x86_64")]
-    if detect::v4_avx512fp16::detect() {
-        assert!(lhs.len() == rhs.len());
-        let n = lhs.len();
-        unsafe {
-            return c::v_f16_cosine_avx512fp16(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
-        }
-    }
-    #[cfg(target_arch = "x86_64")]
-    if detect::v4::detect() {
-        assert!(lhs.len() == rhs.len());
-        let n = lhs.len();
-        unsafe {
-            return c::v_f16_cosine_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
-        }
-    }
-    #[cfg(target_arch = "x86_64")]
-    if detect::v3::detect() {
-        assert!(lhs.len() == rhs.len());
-        let n = lhs.len();
-        unsafe {
-            return c::v_f16_cosine_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into();
-        }
-    }
-    cosine(lhs, rhs)
+    xy / (x2 * y2).sqrt()
 }
 
 pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {

@@ -191,21 +191,6 @@ pub fn cosine<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
     unsafe fn cosine_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
         use std::arch::x86_64::*;
-        #[inline]
-        #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
-            let mut dst: __m512i;
-            unsafe {
-                std::arch::asm!(
-                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
-                    p = in(reg) mem_addr,
-                    k = in(kreg) k,
-                    dst = out(zmm_reg) dst,
-                    options(pure, readonly, nostack)
-                );
-            }
-            dst
-        }
         assert_eq!(lhs.len(), rhs.len());
         unsafe {
             const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
@@ -269,21 +254,6 @@ pub fn dot<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
     unsafe fn dot_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
         use std::arch::x86_64::*;
-        #[inline]
-        #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
-            let mut dst: __m512i;
-            unsafe {
-                std::arch::asm!(
-                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
-                    p = in(reg) mem_addr,
-                    k = in(kreg) k,
-                    dst = out(zmm_reg) dst,
-                    options(pure, readonly, nostack)
-                );
-            }
-            dst
-        }
         assert_eq!(lhs.len(), rhs.len());
         unsafe {
             const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
@@ -339,21 +309,6 @@ pub fn sl2<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
     unsafe fn sl2_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
         use std::arch::x86_64::*;
-        #[inline]
-        #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
-            let mut dst: __m512i;
-            unsafe {
-                std::arch::asm!(
-                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
-                    p = in(reg) mem_addr,
-                    k = in(kreg) k,
-                    dst = out(zmm_reg) dst,
-                    options(pure, readonly, nostack)
-                );
-            }
-            dst
-        }
         assert_eq!(lhs.len(), rhs.len());
         unsafe {
             const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
@@ -411,21 +366,6 @@ pub fn jaccard<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
     unsafe fn jaccard_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
         use std::arch::x86_64::*;
-        #[inline]
-        #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
-            let mut dst: __m512i;
-            unsafe {
-                std::arch::asm!(
-                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
-                    p = in(reg) mem_addr,
-                    k = in(kreg) k,
-                    dst = out(zmm_reg) dst,
-                    options(pure, readonly, nostack)
-                );
-            }
-            dst
-        }
         assert_eq!(lhs.len(), rhs.len());
         unsafe {
             const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
@@ -483,21 +423,6 @@ pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
     #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
     unsafe fn length_avx512vpopcntdq(lhs: &[usize]) -> F32 {
         use std::arch::x86_64::*;
-        #[inline]
-        #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
-            let mut dst: __m512i;
-            unsafe {
-                std::arch::asm!(
-                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
-                    p = in(reg) mem_addr,
-                    k = in(kreg) k,
-                    dst = out(zmm_reg) dst,
-                    options(pure, readonly, nostack)
-                );
-            }
-            dst
-        }
         unsafe {
             const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
             let mut cnt = _mm512_setzero_si512();

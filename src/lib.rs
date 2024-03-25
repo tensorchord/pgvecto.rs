@@ -28,10 +28,10 @@ unsafe extern "C" fn _PG_init() {
     }
     unsafe {
         detect::init();
-        self::gucs::init();
-        self::index::init();
-        self::ipc::init();
-        self::bgworker::init();
+        gucs::init();
+        index::init();
+        ipc::init();
+        bgworker::init();
     }
 }
 

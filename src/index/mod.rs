@@ -10,7 +10,7 @@ mod views;
 
 pub unsafe fn init() {
     unsafe {
-        self::hooks::init();
-        self::am::init();
+        hooks::init();
+        am::init();
     }
 }

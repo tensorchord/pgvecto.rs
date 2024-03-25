@@ -366,21 +366,6 @@ fn dot_i8_fallback(x: &[I8], y: &[I8]) -> F32 {
 #[detect::target_cpu(enable = "v4_avx512vnni")]
 unsafe fn dot_i8_avx512vnni(x: &[I8], y: &[I8]) -> F32 {
     use std::arch::x86_64::*;
-    #[inline]
-    #[detect::target_cpu(enable = "v4_avx512vnni")]
-    pub unsafe fn _mm512_maskz_loadu_epi8(k: __mmask64, mem_addr: *const i8) -> __m512i {
-        let mut dst: __m512i;
-        unsafe {
-            std::arch::asm!(
-                "vmovdqu8 {dst}{{{k}}} {{z}}, [{p}]",
-                p = in(reg) mem_addr,
-                k = in(kreg) k,
-                dst = out(zmm_reg) dst,
-                options(pure, readonly, nostack)
-            );
-        }
-        dst
-    }
     assert_eq!(x.len(), y.len());
     let mut sum = 0;
     let mut i = x.len();
