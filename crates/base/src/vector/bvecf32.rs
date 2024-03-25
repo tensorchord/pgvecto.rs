@@ -170,13 +170,7 @@ pub fn cosine<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
 
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn cosine(lhs: &[usize], rhs: &[usize]) -> F32 {
         let mut xy = 0;
         let mut xx = 0;
@@ -194,11 +188,11 @@ pub fn cosine<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
 
     #[inline]
     #[cfg(target_arch = "x86_64")]
-    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+    #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
     unsafe fn cosine_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
         use std::arch::x86_64::*;
         #[inline]
-        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+        #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
         pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
             let mut dst: __m512i;
             unsafe {
@@ -247,7 +241,7 @@ pub fn cosine<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     }
 
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vpopcntdq() {
+    if detect::v4_avx512vpopcntdq::detect() {
         unsafe {
             return cosine_avx512vpopcntdq(lhs, rhs);
         }
@@ -261,13 +255,7 @@ pub fn dot<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
 
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn dot(lhs: &[usize], rhs: &[usize]) -> F32 {
         let mut xy = 0;
         for i in 0..lhs.len() {
@@ -278,11 +266,11 @@ pub fn dot<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
 
     #[inline]
     #[cfg(target_arch = "x86_64")]
-    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+    #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
     unsafe fn dot_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
         use std::arch::x86_64::*;
         #[inline]
-        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+        #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
         pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
             let mut dst: __m512i;
             unsafe {
@@ -323,7 +311,7 @@ pub fn dot<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     }
 
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vpopcntdq() {
+    if detect::v4_avx512vpopcntdq::detect() {
         unsafe {
             return dot_avx512vpopcntdq(lhs, rhs);
         }
@@ -337,13 +325,7 @@ pub fn sl2<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
 
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn sl2(lhs: &[usize], rhs: &[usize]) -> F32 {
         let mut dd = 0;
         for i in 0..lhs.len() {
@@ -354,11 +336,11 @@ pub fn sl2<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
 
     #[inline]
     #[cfg(target_arch = "x86_64")]
-    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+    #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
     unsafe fn sl2_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
         use std::arch::x86_64::*;
         #[inline]
-        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+        #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
         pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
             let mut dst: __m512i;
             unsafe {
@@ -399,7 +381,7 @@ pub fn sl2<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     }
 
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vpopcntdq() {
+    if detect::v4_avx512vpopcntdq::detect() {
         unsafe {
             return sl2_avx512vpopcntdq(lhs, rhs);
         }
@@ -413,13 +395,7 @@ pub fn jaccard<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
 
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn jaccard(lhs: &[usize], rhs: &[usize]) -> F32 {
         let mut inter = 0;
         let mut union = 0;
@@ -432,11 +408,11 @@ pub fn jaccard<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
 
     #[inline]
     #[cfg(target_arch = "x86_64")]
-    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+    #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
     unsafe fn jaccard_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
         use std::arch::x86_64::*;
         #[inline]
-        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+        #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
         pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
             let mut dst: __m512i;
             unsafe {
@@ -481,7 +457,7 @@ pub fn jaccard<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
     }
 
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vpopcntdq() {
+    if detect::v4_avx512vpopcntdq::detect() {
         unsafe {
             return jaccard_avx512vpopcntdq(lhs, rhs);
         }
@@ -493,13 +469,7 @@ pub fn jaccard<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
 pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
     let vector = vector.data();
 
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     pub fn length(vector: &[usize]) -> F32 {
         let mut l = 0;
         for i in 0..vector.len() {
@@ -510,11 +480,11 @@ pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
 
     #[inline]
     #[cfg(target_arch = "x86_64")]
-    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+    #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
     unsafe fn length_avx512vpopcntdq(lhs: &[usize]) -> F32 {
         use std::arch::x86_64::*;
         #[inline]
-        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
+        #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
         pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
             let mut dst: __m512i;
             unsafe {
@@ -550,7 +520,7 @@ pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
     }
 
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vpopcntdq() {
+    if detect::v4_avx512vpopcntdq::detect() {
         unsafe {
             return length_avx512vpopcntdq(vector);
         }
@@ -558,13 +528,7 @@ pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
     length(vector)
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn l2_normalize<'a>(vector: BVecf32Borrowed<'a>) -> Vecf32Owned {
     let l = length(vector);
     Vecf32Owned::new(vector.iter().map(|i| F32(i as u32 as f32) / l).collect())

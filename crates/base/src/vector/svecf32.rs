@@ -184,13 +184,7 @@ impl<'a> SVecf32Borrowed<'a> {
     }
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 fn cosine_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     let mut lhs_pos = 0;
     let mut rhs_pos = 0;
@@ -231,12 +225,12 @@ fn cosine_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F3
 
 #[inline]
 #[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx512bw,avx512f,bmi2")]
+#[detect::target_cpu(enable = "v4")]
 unsafe fn cosine_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     use std::arch::x86_64::*;
     use std::cmp::min;
     #[inline]
-    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    #[detect::target_cpu(enable = "v4")]
     pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
         let mut dst: __m512i;
         unsafe {
@@ -251,7 +245,7 @@ unsafe fn cosine_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F
         dst
     }
     #[inline]
-    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    #[detect::target_cpu(enable = "v4")]
     pub unsafe fn _mm512_maskz_loadu_ps(k: __mmask16, mem_addr: *const f32) -> __m512 {
         let mut dst: __m512;
         unsafe {
@@ -368,19 +362,13 @@ unsafe fn cosine_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F
 pub fn cosine<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     assert_eq!(lhs.dims(), rhs.dims());
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_v4() {
+    if detect::v4::detect() {
         return unsafe { cosine_v4(lhs, rhs) };
     }
     cosine_fallback(lhs, rhs)
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 fn dot_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     let mut lhs_pos = 0;
     let mut rhs_pos = 0;
@@ -409,12 +397,12 @@ fn dot_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
 
 #[inline]
 #[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx512bw,avx512f,bmi2")]
+#[detect::target_cpu(enable = "v4")]
 unsafe fn dot_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     use std::arch::x86_64::*;
     use std::cmp::min;
     #[inline]
-    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    #[detect::target_cpu(enable = "v4")]
     pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
         let mut dst: __m512i;
         unsafe {
@@ -429,7 +417,7 @@ unsafe fn dot_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 
         dst
     }
     #[inline]
-    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    #[detect::target_cpu(enable = "v4")]
     pub unsafe fn _mm512_maskz_loadu_ps(k: __mmask16, mem_addr: *const f32) -> __m512 {
         let mut dst: __m512;
         unsafe {
@@ -516,19 +504,13 @@ unsafe fn dot_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 
 pub fn dot<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     assert_eq!(lhs.dims(), rhs.dims());
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_v4() {
+    if detect::v4::detect() {
         return unsafe { dot_v4(lhs, rhs) };
     }
     dot_fallback(lhs, rhs)
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn dot_2<'a>(lhs: SVecf32Borrowed<'a>, rhs: &[F32]) -> F32 {
     let mut xy = F32::zero();
     for i in 0..lhs.len() as usize {
@@ -537,13 +519,7 @@ pub fn dot_2<'a>(lhs: SVecf32Borrowed<'a>, rhs: &[F32]) -> F32 {
     xy
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 fn sl2_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     let mut lhs_pos = 0;
     let mut rhs_pos = 0;
@@ -581,12 +557,12 @@ fn sl2_fallback<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
 
 #[inline]
 #[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx512bw,avx512f,bmi2")]
+#[detect::target_cpu(enable = "v4")]
 unsafe fn sl2_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     use std::arch::x86_64::*;
     use std::cmp::min;
     #[inline]
-    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    #[detect::target_cpu(enable = "v4")]
     pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
         let mut dst: __m512i;
         unsafe {
@@ -601,7 +577,7 @@ unsafe fn sl2_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 
         dst
     }
     #[inline]
-    #[target_feature(enable = "avx512bw,avx512f,bmi2")]
+    #[detect::target_cpu(enable = "v4")]
     pub unsafe fn _mm512_maskz_loadu_ps(k: __mmask16, mem_addr: *const f32) -> __m512 {
         let mut dst: __m512;
         unsafe {
@@ -718,19 +694,13 @@ unsafe fn sl2_v4<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 
 pub fn sl2<'a>(lhs: SVecf32Borrowed<'a>, rhs: SVecf32Borrowed<'a>) -> F32 {
     assert_eq!(lhs.dims(), rhs.dims());
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_v4() {
+    if detect::v4::detect() {
         return unsafe { sl2_v4(lhs, rhs) };
     }
     sl2_fallback(lhs, rhs)
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn sl2_2<'a>(lhs: SVecf32Borrowed<'a>, rhs: &[F32]) -> F32 {
     let mut d2 = F32::zero();
     let mut lhs_pos = 0;
@@ -749,13 +719,7 @@ pub fn sl2_2<'a>(lhs: SVecf32Borrowed<'a>, rhs: &[F32]) -> F32 {
     d2
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn length<'a>(vector: SVecf32Borrowed<'a>) -> F32 {
     let mut dot = F32::zero();
     for &i in vector.values() {
@@ -764,13 +728,7 @@ pub fn length<'a>(vector: SVecf32Borrowed<'a>) -> F32 {
     dot.sqrt()
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn l2_normalize(vector: &mut SVecf32Owned) {
     let l = length(vector.for_borrow());
     let dims = vector.dims();
@@ -787,7 +745,7 @@ pub fn l2_normalize(vector: &mut SVecf32Owned) {
 // Instructions. arXiv preprint arXiv:2112.06342.
 #[inline]
 #[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx512bw,avx512f")]
+#[detect::target_cpu(enable = "v4")]
 unsafe fn emulate_mm512_2intersect_epi32(
     a: std::arch::x86_64::__m512i,
     b: std::arch::x86_64::__m512i,
@@ -868,7 +826,7 @@ mod tests {
         let y = random_svector(RHS_SIZE);
         let cosine_fallback = cosine_fallback(x.for_borrow(), y.for_borrow());
         #[cfg(target_arch = "x86_64")]
-        if detect::x86_64::detect_v4() {
+        if detect::v4::detect() {
             let cosine_v4 = unsafe { cosine_v4(x.for_borrow(), y.for_borrow()) };
             assert!(
                 cosine_fallback - cosine_v4 < EPS,
@@ -885,7 +843,7 @@ mod tests {
         let y = random_svector(RHS_SIZE);
         let dot_fallback = dot_fallback(x.for_borrow(), y.for_borrow());
         #[cfg(target_arch = "x86_64")]
-        if detect::x86_64::detect_v4() {
+        if detect::v4::detect() {
             let dot_v4 = unsafe { dot_v4(x.for_borrow(), y.for_borrow()) };
             assert!(
                 dot_fallback - dot_v4 < EPS,
@@ -902,7 +860,7 @@ mod tests {
         let y = random_svector(RHS_SIZE);
         let sl2_fallback = sl2_fallback(x.for_borrow(), y.for_borrow());
         #[cfg(target_arch = "x86_64")]
-        if detect::x86_64::detect_v4() {
+        if detect::v4::detect() {
             let sl2_v4 = unsafe { sl2_v4(x.for_borrow(), y.for_borrow()) };
             assert!(
                 sl2_fallback - sl2_v4 < EPS,

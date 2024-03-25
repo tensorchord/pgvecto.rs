@@ -289,12 +289,7 @@ impl<'a> From<&'a Veci8Owned> for Veci8Borrowed<'a> {
     }
 }
 
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn i8_quantization(vector: &[F32]) -> (Vec<I8>, F32, F32) {
     let min = vector.iter().copied().fold(F32::infinity(), Float::min);
     let max = vector.iter().copied().fold(F32::neg_infinity(), Float::max);
@@ -307,12 +302,7 @@ pub fn i8_quantization(vector: &[F32]) -> (Vec<I8>, F32, F32) {
     (result, alpha, offset)
 }
 
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn i8_dequantization(vector: &[I8], alpha: F32, offset: F32) -> Vec<F32> {
     vector
         .iter()
@@ -320,13 +310,7 @@ pub fn i8_dequantization(vector: &[I8], alpha: F32, offset: F32) -> Vec<F32> {
         .collect()
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn i8_precompute(data: &[I8], alpha: F32, offset: F32) -> (F32, F32) {
     let sum = data.iter().map(|&x| x.to_f32() * alpha).sum();
     let l2_norm = data
@@ -358,19 +342,14 @@ mod tests_0 {
 pub fn dot(x: &[I8], y: &[I8]) -> F32 {
     #[cfg(target_arch = "x86_64")]
     {
-        if detect::x86_64::test_avx512vnni() {
+        if detect::v4_avx512vnni::detect() {
             return unsafe { dot_i8_avx512vnni(x, y) };
         }
     }
     dot_i8_fallback(x, y)
 }
 
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 fn dot_i8_fallback(x: &[I8], y: &[I8]) -> F32 {
     // i8 * i8 fall in range of i16. Since our length is less than (2^16 - 1), the result won't overflow.
     let mut sum = 0;
@@ -384,11 +363,11 @@ fn dot_i8_fallback(x: &[I8], y: &[I8]) -> F32 {
 }
 
 #[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx512vnni,avx512bw,avx512f,bmi2")]
+#[detect::target_cpu(enable = "v4_avx512vnni")]
 unsafe fn dot_i8_avx512vnni(x: &[I8], y: &[I8]) -> F32 {
     use std::arch::x86_64::*;
     #[inline]
-    #[target_feature(enable = "avx512vnni,avx512bw,avx512f,bmi2")]
+    #[detect::target_cpu(enable = "v4_avx512vnni")]
     pub unsafe fn _mm512_maskz_loadu_epi8(k: __mmask64, mem_addr: *const i8) -> __m512i {
         let mut dst: __m512i;
         unsafe {
@@ -463,13 +442,7 @@ pub fn cosine_distance(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
     dot_xy / (l2_x * l2_y)
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn l2_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
     let data = lhs.data();
     assert_eq!(data.len(), rhs.len());
@@ -482,13 +455,7 @@ pub fn l2_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
         .sum::<F32>()
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn dot_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
     let data = lhs.data();
     assert_eq!(data.len(), rhs.len());

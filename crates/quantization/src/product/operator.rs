@@ -338,12 +338,7 @@ impl OperatorProductQuantization for SVecf32L2 {
 impl OperatorProductQuantization for Vecf16Cos {
     type ProductQuantizationL2 = Vecf16L2;
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance<'a>(
         dims: u32,
         ratio: u32,
@@ -369,12 +364,7 @@ impl OperatorProductQuantization for Vecf16Cos {
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance2(
         dims: u32,
         ratio: u32,
@@ -400,12 +390,7 @@ impl OperatorProductQuantization for Vecf16Cos {
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance_with_delta<'a>(
         dims: u32,
         ratio: u32,
@@ -445,12 +430,7 @@ impl OperatorProductQuantization for Vecf16Cos {
 impl OperatorProductQuantization for Vecf16Dot {
     type ProductQuantizationL2 = Vecf16L2;
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance<'a>(
         dims: u32,
         ratio: u32,
@@ -472,12 +452,7 @@ impl OperatorProductQuantization for Vecf16Dot {
         xy * (-1.0)
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance2(
         dims: u32,
         ratio: u32,
@@ -499,12 +474,7 @@ impl OperatorProductQuantization for Vecf16Dot {
         xy * (-1.0)
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance_with_delta<'a>(
         dims: u32,
         ratio: u32,
@@ -540,12 +510,7 @@ impl OperatorProductQuantization for Vecf16Dot {
 impl OperatorProductQuantization for Vecf16L2 {
     type ProductQuantizationL2 = Vecf16L2;
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance<'a>(
         dims: u32,
         ratio: u32,
@@ -566,12 +531,7 @@ impl OperatorProductQuantization for Vecf16L2 {
         result
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance2(
         dims: u32,
         ratio: u32,
@@ -592,12 +552,7 @@ impl OperatorProductQuantization for Vecf16L2 {
         result
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance_with_delta<'a>(
         dims: u32,
         ratio: u32,
@@ -632,12 +587,7 @@ impl OperatorProductQuantization for Vecf16L2 {
 impl OperatorProductQuantization for Vecf32Cos {
     type ProductQuantizationL2 = Vecf32L2;
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance<'a>(
         dims: u32,
         ratio: u32,
@@ -663,12 +613,7 @@ impl OperatorProductQuantization for Vecf32Cos {
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance2(
         dims: u32,
         ratio: u32,
@@ -694,12 +639,7 @@ impl OperatorProductQuantization for Vecf32Cos {
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance_with_delta<'a>(
         dims: u32,
         ratio: u32,
@@ -739,12 +679,7 @@ impl OperatorProductQuantization for Vecf32Cos {
 impl OperatorProductQuantization for Vecf32Dot {
     type ProductQuantizationL2 = Vecf32L2;
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance<'a>(
         dims: u32,
         ratio: u32,
@@ -766,12 +701,7 @@ impl OperatorProductQuantization for Vecf32Dot {
         xy * (-1.0)
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance2(
         dims: u32,
         ratio: u32,
@@ -793,12 +723,7 @@ impl OperatorProductQuantization for Vecf32Dot {
         xy * (-1.0)
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance_with_delta<'a>(
         dims: u32,
         ratio: u32,
@@ -834,12 +759,7 @@ impl OperatorProductQuantization for Vecf32Dot {
 impl OperatorProductQuantization for Vecf32L2 {
     type ProductQuantizationL2 = Vecf32L2;
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance<'a>(
         dims: u32,
         ratio: u32,
@@ -860,12 +780,7 @@ impl OperatorProductQuantization for Vecf32L2 {
         result
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance2(
         dims: u32,
         ratio: u32,
@@ -886,12 +801,7 @@ impl OperatorProductQuantization for Vecf32L2 {
         result
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance_with_delta<'a>(
         dims: u32,
         ratio: u32,

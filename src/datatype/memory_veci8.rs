@@ -80,7 +80,7 @@ impl Veci8Header {
     }
 
     /// return value after dequantization by index
-    /// since index<usize> return &Output, we can't create a new Output and return it as a reference, so we need to use this function to return a new Output directly
+    /// since `index<usize>` return &Output, we can't create a new Output and return it as a reference, so we need to use this function to return a new Output directly
     #[inline(always)]
     pub fn index(&self, index: usize) -> F32 {
         self.data()[index].to_f32() * self.alpha() + self.offset()

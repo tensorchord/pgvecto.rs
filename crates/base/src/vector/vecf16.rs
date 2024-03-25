@@ -102,13 +102,7 @@ impl<'a> VectorBorrowed for Vecf16Borrowed<'a> {
 }
 
 pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
@@ -123,7 +117,7 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         xy / (x2 * y2).sqrt()
     }
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512fp16() {
+    if detect::v4_avx512fp16::detect() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -131,7 +125,7 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_v4() {
+    if detect::v4::detect() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -139,7 +133,7 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_v3() {
+    if detect::v3::detect() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -150,13 +144,7 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
 }
 
 pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
@@ -167,7 +155,7 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         xy
     }
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512fp16() {
+    if detect::v4_avx512fp16::detect() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -175,7 +163,7 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_v4() {
+    if detect::v4::detect() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -183,7 +171,7 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_v3() {
+    if detect::v3::detect() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -194,13 +182,7 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
 }
 
 pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
@@ -212,7 +194,7 @@ pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         d2
     }
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512fp16() {
+    if detect::v4_avx512fp16::detect() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -220,7 +202,7 @@ pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_v4() {
+    if detect::v4::detect() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -228,7 +210,7 @@ pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
         }
     }
     #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_v3() {
+    if detect::v3::detect() {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         unsafe {
@@ -238,13 +220,7 @@ pub fn sl2(lhs: &[F16], rhs: &[F16]) -> F32 {
     sl2(lhs, rhs)
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 fn length(vector: &[F16]) -> F16 {
     let n = vector.len();
     let mut dot = F16::zero();
@@ -254,13 +230,7 @@ fn length(vector: &[F16]) -> F16 {
     dot.sqrt()
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn l2_normalize(vector: &mut [F16]) {
     let n = vector.len();
     let l = length(vector);
@@ -269,13 +239,7 @@ pub fn l2_normalize(vector: &mut [F16]) {
     }
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn xy_x2_y2(lhs: &[F16], rhs: &[F16]) -> (F32, F32, F32) {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -290,13 +254,7 @@ pub fn xy_x2_y2(lhs: &[F16], rhs: &[F16]) -> (F32, F32, F32) {
     (xy, x2, y2)
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn xy_x2_y2_delta(lhs: &[F16], rhs: &[F16], del: &[F16]) -> (F32, F32, F32) {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -311,13 +269,7 @@ pub fn xy_x2_y2_delta(lhs: &[F16], rhs: &[F16], del: &[F16]) -> (F32, F32, F32) 
     (xy, x2, y2)
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn dot_delta(lhs: &[F16], rhs: &[F16], del: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n: usize = lhs.len();
@@ -328,13 +280,7 @@ pub fn dot_delta(lhs: &[F16], rhs: &[F16], del: &[F16]) -> F32 {
     xy
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4 = export, v3 = export, v2 = export, neon = export, fallback = export)]
 pub fn distance_squared_l2_delta(lhs: &[F16], rhs: &[F16], del: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();

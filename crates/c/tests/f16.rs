@@ -2,7 +2,7 @@
 
 #[test]
 fn test_v_f16_cosine() {
-    detect::initialize();
+    detect::init();
     const EPSILON: f32 = f16::EPSILON.to_f32_const();
     use half::f16;
     unsafe fn v_f16_cosine(a: *const u16, b: *const u16, n: usize) -> f32 {
@@ -22,21 +22,21 @@ fn test_v_f16_cosine() {
     let a = (0..n).map(|_| rand::random::<f16>()).collect::<Vec<_>>();
     let b = (0..n).map(|_| rand::random::<f16>()).collect::<Vec<_>>();
     let r = unsafe { v_f16_cosine(a.as_ptr().cast(), b.as_ptr().cast(), n) };
-    if detect::x86_64::detect_avx512fp16() {
+    if detect::v4_avx512fp16::detect() {
         println!("detected avx512fp16");
         let c = unsafe { c::v_f16_cosine_avx512fp16(a.as_ptr().cast(), b.as_ptr().cast(), n) };
         assert!((c - r).abs() < EPSILON, "c = {c}, r = {r}.");
     } else {
         println!("detected no avx512fp16, skipped");
     }
-    if detect::x86_64::detect_v4() {
+    if detect::v4::detect() {
         println!("detected v4");
         let c = unsafe { c::v_f16_cosine_v4(a.as_ptr().cast(), b.as_ptr().cast(), n) };
         assert!((c - r).abs() < EPSILON, "c = {c}, r = {r}.");
     } else {
         println!("detected no v4, skipped");
     }
-    if detect::x86_64::detect_v3() {
+    if detect::v3::detect() {
         println!("detected v3");
         let c = unsafe { c::v_f16_cosine_v3(a.as_ptr().cast(), b.as_ptr().cast(), n) };
         assert!((c - r).abs() < EPSILON, "c = {c}, r = {r}.");
@@ -47,7 +47,7 @@ fn test_v_f16_cosine() {
 
 #[test]
 fn test_v_f16_dot() {
-    detect::initialize();
+    detect::init();
     const EPSILON: f32 = 1.0f32;
     use half::f16;
     unsafe fn v_f16_dot(a: *const u16, b: *const u16, n: usize) -> f32 {
@@ -63,21 +63,21 @@ fn test_v_f16_dot() {
     let a = (0..n).map(|_| rand::random::<f16>()).collect::<Vec<_>>();
     let b = (0..n).map(|_| rand::random::<f16>()).collect::<Vec<_>>();
     let r = unsafe { v_f16_dot(a.as_ptr().cast(), b.as_ptr().cast(), n) };
-    if detect::x86_64::detect_avx512fp16() {
+    if detect::v4_avx512fp16::detect() {
         println!("detected avx512fp16");
         let c = unsafe { c::v_f16_dot_avx512fp16(a.as_ptr().cast(), b.as_ptr().cast(), n) };
         assert!((c - r).abs() < EPSILON, "c = {c}, r = {r}.");
     } else {
         println!("detected no avx512fp16, skipped");
     }
-    if detect::x86_64::detect_v4() {
+    if detect::v4::detect() {
         println!("detected v4");
         let c = unsafe { c::v_f16_dot_v4(a.as_ptr().cast(), b.as_ptr().cast(), n) };
         assert!((c - r).abs() < EPSILON, "c = {c}, r = {r}.");
     } else {
         println!("detected no v4, skipped");
     }
-    if detect::x86_64::detect_v3() {
+    if detect::v3::detect() {
         println!("detected v3");
         let c = unsafe { c::v_f16_dot_v3(a.as_ptr().cast(), b.as_ptr().cast(), n) };
         assert!((c - r).abs() < EPSILON, "c = {c}, r = {r}.");
@@ -88,7 +88,7 @@ fn test_v_f16_dot() {
 
 #[test]
 fn test_v_f16_sl2() {
-    detect::initialize();
+    detect::init();
     const EPSILON: f32 = 1.0f32;
     use half::f16;
     unsafe fn v_f16_sl2(a: *const u16, b: *const u16, n: usize) -> f32 {
@@ -105,21 +105,21 @@ fn test_v_f16_sl2() {
     let a = (0..n).map(|_| rand::random::<f16>()).collect::<Vec<_>>();
     let b = (0..n).map(|_| rand::random::<f16>()).collect::<Vec<_>>();
     let r = unsafe { v_f16_sl2(a.as_ptr().cast(), b.as_ptr().cast(), n) };
-    if detect::x86_64::detect_avx512fp16() {
+    if detect::v4_avx512fp16::detect() {
         println!("detected avx512fp16");
         let c = unsafe { c::v_f16_sl2_avx512fp16(a.as_ptr().cast(), b.as_ptr().cast(), n) };
         assert!((c - r).abs() < EPSILON, "c = {c}, r = {r}.");
     } else {
         println!("detected no avx512fp16, skipped");
     }
-    if detect::x86_64::detect_v4() {
+    if detect::v4::detect() {
         println!("detected v4");
         let c = unsafe { c::v_f16_sl2_v4(a.as_ptr().cast(), b.as_ptr().cast(), n) };
         assert!((c - r).abs() < EPSILON, "c = {c}, r = {r}.");
     } else {
         println!("detected no v4, skipped");
     }
-    if detect::x86_64::detect_v3() {
+    if detect::v3::detect() {
         println!("detected v3");
         let c = unsafe { c::v_f16_sl2_v3(a.as_ptr().cast(), b.as_ptr().cast(), n) };
         assert!((c - r).abs() < EPSILON, "c = {c}, r = {r}.");
