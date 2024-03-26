@@ -518,8 +518,10 @@ unsafe fn sl2_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
             let v_r = _mm512_loadu_ps(rhs_val.add(rhs_pos));
             let v_l = _mm512_maskz_compress_ps(m_l, v_l);
             let v_r = _mm512_maskz_compress_ps(m_r, v_r);
-            dd = _mm512_fmadd_ps(v_l, v_r, dd);
-            dd = _mm512_fmadd_ps(v_l, v_r, dd);
+            let d = _mm512_sub_ps(v_l, v_r);
+            dd = _mm512_fmadd_ps(d, d, dd);
+            dd = _mm512_sub_ps(dd, _mm512_mul_ps(v_l, v_l));
+            dd = _mm512_sub_ps(dd, _mm512_mul_ps(v_r, v_r));
             let l_max = lhs.indexes().get_unchecked(lhs_pos + W - 1);
             let r_max = rhs.indexes().get_unchecked(rhs_pos + W - 1);
             match l_max.cmp(r_max) {
@@ -547,8 +549,10 @@ unsafe fn sl2_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
             let v_r = _mm512_maskz_loadu_ps(mask_r, rhs_val.add(rhs_pos));
             let v_l = _mm512_maskz_compress_ps(m_l, v_l);
             let v_r = _mm512_maskz_compress_ps(m_r, v_r);
-            dd = _mm512_fmadd_ps(v_l, v_r, dd);
-            dd = _mm512_fmadd_ps(v_l, v_r, dd);
+            let d = _mm512_sub_ps(v_l, v_r);
+            dd = _mm512_fmadd_ps(d, d, dd);
+            dd = _mm512_sub_ps(dd, _mm512_mul_ps(v_l, v_l));
+            dd = _mm512_sub_ps(dd, _mm512_mul_ps(v_r, v_r));
             let l_max = lhs.indexes().get_unchecked(lhs_pos + len_l - 1);
             let r_max = rhs.indexes().get_unchecked(rhs_pos + len_r - 1);
             match l_max.cmp(r_max) {
@@ -564,7 +568,6 @@ unsafe fn sl2_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
                 }
             }
         }
-        dd = _mm512_sub_ps(_mm512_setzero_ps(), dd);
         let mut lhs_pos = 0;
         while lhs_pos < lhs_size {
             let v = _mm512_loadu_ps(lhs_val.add(lhs_pos));
@@ -587,7 +590,6 @@ unsafe fn sl2_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
             rhs_val.add(rhs_pos),
         );
         dd = _mm512_fmadd_ps(v, v, dd);
-
         F32(_mm512_reduce_add_ps(dd))
     }
 }
