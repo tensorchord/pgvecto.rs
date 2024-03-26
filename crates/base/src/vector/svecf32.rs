@@ -294,20 +294,25 @@ unsafe fn cosine_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn cosine_v4_test() {
-    const EPSILON: F32 = F32(1e-5);
+    const EPSILON: F32 = F32(5e-7);
     detect::init();
     if !detect::v4::detect() {
         println!("test {} ... skipped (v4)", module_path!());
         return;
     }
-    let lhs = random_svector(300);
-    let rhs = random_svector(350);
-    let specialized = unsafe { cosine_v4(lhs.for_borrow(), rhs.for_borrow()) };
-    let fallback = unsafe { cosine_fallback(lhs.for_borrow(), rhs.for_borrow()) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    let mut eps = F32(0.0);
+    for _ in 0..10000 {
+        let lhs = random_svector(300);
+        let rhs = random_svector(350);
+        let specialized = unsafe { cosine_v4(lhs.for_borrow(), rhs.for_borrow()) };
+        let fallback = unsafe { cosine_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+        eps = std::cmp::max(eps, (specialized - fallback).abs());
+    }
+    dbg!(eps);
 }
 
 #[detect::multiversion(v4 = import, v3, v2, neon, fallback = export)]
@@ -429,20 +434,22 @@ unsafe fn dot_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn dot_v4_test() {
-    const EPSILON: F32 = F32(1e-5);
+    const EPSILON: F32 = F32(1e-6);
     detect::init();
     if !detect::v4::detect() {
         println!("test {} ... skipped (v4)", module_path!());
         return;
     }
-    let lhs = random_svector(300);
-    let rhs = random_svector(350);
-    let specialized = unsafe { dot_v4(lhs.for_borrow(), rhs.for_borrow()) };
-    let fallback = unsafe { dot_fallback(lhs.for_borrow(), rhs.for_borrow()) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let lhs = random_svector(300);
+        let rhs = random_svector(350);
+        let specialized = unsafe { dot_v4(lhs.for_borrow(), rhs.for_borrow()) };
+        let fallback = unsafe { dot_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[detect::multiversion(v4 = import, v3, v2, neon, fallback = export)]
@@ -588,14 +595,13 @@ unsafe fn sl2_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn sl2_v4_test() {
-    let mut m = F32(0.0);
+    const EPSILON: F32 = F32(5e-4);
+    detect::init();
+    if !detect::v4::detect() {
+        println!("test {} ... skipped (v4)", module_path!());
+        return;
+    }
     for _ in 0..10000 {
-        const EPSILON: F32 = F32(1e-3);
-        detect::init();
-        if !detect::v4::detect() {
-            println!("test {} ... skipped (v4)", module_path!());
-            return;
-        }
         let lhs = random_svector(300);
         let rhs = random_svector(350);
         let specialized = unsafe { sl2_v4(lhs.for_borrow(), rhs.for_borrow()) };
@@ -604,9 +610,7 @@ fn sl2_v4_test() {
             (specialized - fallback).abs() < EPSILON,
             "specialized = {specialized}, fallback = {fallback}."
         );
-        m = std::cmp::max(m, (specialized - fallback).abs());
     }
-    dbg!(m);
 }
 
 #[detect::multiversion(v4 = import, v3, v2, neon, fallback = export)]
