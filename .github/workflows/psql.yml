@@ -1,4 +1,4 @@
-name: PostgreSQL check
+name: PostgreSQL
 
 on:
   push:
@@ -44,7 +44,7 @@ env:
   RUSTFLAGS: "-Dwarnings"
 
 jobs:
-  check:
+  test:
     strategy:
       matrix:
         version: [14, 15, 16]
