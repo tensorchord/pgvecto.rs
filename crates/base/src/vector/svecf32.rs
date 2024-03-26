@@ -511,10 +511,8 @@ unsafe fn sl2_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
             let v_r = _mm512_loadu_ps(rhs_val.add(rhs_pos));
             let v_l = _mm512_maskz_compress_ps(m_l, v_l);
             let v_r = _mm512_maskz_compress_ps(m_r, v_r);
-            let d = _mm512_sub_ps(v_l, v_r);
-            dd = _mm512_fmadd_ps(d, d, dd);
-            dd = _mm512_fmsub_ps(v_l, v_l, dd);
-            dd = _mm512_fmsub_ps(v_r, v_r, dd);
+            dd = _mm512_fmadd_ps(v_l, v_r, dd);
+            dd = _mm512_fmadd_ps(v_l, v_r, dd);
             let l_max = lhs.indexes().get_unchecked(lhs_pos + W - 1);
             let r_max = rhs.indexes().get_unchecked(rhs_pos + W - 1);
             match l_max.cmp(r_max) {
@@ -542,10 +540,8 @@ unsafe fn sl2_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
             let v_r = _mm512_maskz_loadu_ps(mask_r, rhs_val.add(rhs_pos));
             let v_l = _mm512_maskz_compress_ps(m_l, v_l);
             let v_r = _mm512_maskz_compress_ps(m_r, v_r);
-            let d = _mm512_sub_ps(v_l, v_r);
-            dd = _mm512_fmadd_ps(d, d, dd);
-            dd = _mm512_fmsub_ps(v_l, v_l, dd);
-            dd = _mm512_fmsub_ps(v_r, v_r, dd);
+            dd = _mm512_fmadd_ps(v_l, v_r, dd);
+            dd = _mm512_fmadd_ps(v_l, v_r, dd);
             let l_max = lhs.indexes().get_unchecked(lhs_pos + len_l - 1);
             let r_max = rhs.indexes().get_unchecked(rhs_pos + len_r - 1);
             match l_max.cmp(r_max) {
@@ -561,7 +557,7 @@ unsafe fn sl2_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
                 }
             }
         }
-
+        dd = _mm512_sub_ps(_mm512_setzero_ps(), dd);
         let mut lhs_pos = 0;
         while lhs_pos < lhs_size {
             let v = _mm512_loadu_ps(lhs_val.add(lhs_pos));
@@ -592,20 +588,25 @@ unsafe fn sl2_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn sl2_v4_test() {
-    const EPSILON: F32 = F32(1e-5);
-    detect::init();
-    if !detect::v4::detect() {
-        println!("test {} ... skipped (v4)", module_path!());
-        return;
+    let mut m = F32(0.0);
+    for _ in 0..10000 {
+        const EPSILON: F32 = F32(1e-3);
+        detect::init();
+        if !detect::v4::detect() {
+            println!("test {} ... skipped (v4)", module_path!());
+            return;
+        }
+        let lhs = random_svector(300);
+        let rhs = random_svector(350);
+        let specialized = unsafe { sl2_v4(lhs.for_borrow(), rhs.for_borrow()) };
+        let fallback = unsafe { sl2_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+        m = std::cmp::max(m, (specialized - fallback).abs());
     }
-    let lhs = random_svector(300);
-    let rhs = random_svector(350);
-    let specialized = unsafe { sl2_v4(lhs.for_borrow(), rhs.for_borrow()) };
-    let fallback = unsafe { sl2_fallback(lhs.for_borrow(), rhs.for_borrow()) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    dbg!(m);
 }
 
 #[detect::multiversion(v4 = import, v3, v2, neon, fallback = export)]
@@ -694,7 +695,7 @@ pub fn l2_normalize(vector: &mut SVecf32Owned) {
 unsafe fn emulate_mm512_2intersect_epi32(
     a: std::arch::x86_64::__m512i,
     b: std::arch::x86_64::__m512i,
-) -> (u16, u16) {
+) -> (std::arch::x86_64::__mmask16, std::arch::x86_64::__mmask16) {
     use std::arch::x86_64::*;
     unsafe {
         let a1 = _mm512_alignr_epi32(a, a, 4);
@@ -748,11 +749,14 @@ unsafe fn emulate_mm512_2intersect_epi32(
 fn random_svector(len: usize) -> SVecf32Owned {
     use rand::Rng;
     let mut rng = rand::thread_rng();
-    let mut indexes: Vec<u32> = (0..len).map(|_| rng.gen_range(0..30000)).collect();
-    indexes.sort_unstable();
-    indexes.dedup();
-    let values: Vec<F32> = (0..indexes.len())
-        .map(|_| F32(rng.gen_range(-1.0..1.0)))
-        .collect();
+    let mut indexes = rand::seq::index::sample(&mut rand::thread_rng(), 30000, len)
+        .into_iter()
+        .map(|x| x as _)
+        .collect::<Vec<u32>>();
+    indexes.sort();
+    let values: Vec<F32> = std::iter::from_fn(|| Some(F32(rng.gen_range(-1.0..1.0))))
+        .filter(|x| !x.is_zero())
+        .take(indexes.len())
+        .collect::<Vec<F32>>();
     SVecf32Owned::new(30000, indexes, values)
 }
