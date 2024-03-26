@@ -176,6 +176,11 @@ impl WorkerOperations for Worker {
         let stat = instance.stat();
         Ok(stat)
     }
+    fn alter(&self, handle: Handle, key: String, value: String) -> Result<(), AlterError> {
+        let view = self.view();
+        let instance = view.get(handle).ok_or(AlterError::NotExist)?;
+        instance.alter(key, value)
+    }
 }
 
 pub struct WorkerView {

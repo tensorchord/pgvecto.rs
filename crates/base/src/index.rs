@@ -78,6 +78,39 @@ pub enum StatError {
     NotExist,
 }
 
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum AlterError {
+    #[error("Setting key {key} is not exist.")]
+    BadKey { key: String },
+    #[error("Setting key {key} has a wrong value {value}.")]
+    BadValue { key: String, value: String },
+    #[error("Index not found.")]
+    NotExist,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct IndexFlexibleOptions {
+    #[serde(default = "IndexFlexibleOptions::default_optimizing_threads")]
+    #[validate(range(min = 1, max = 65535))]
+    pub optimizing_threads: u16,
+}
+
+impl IndexFlexibleOptions {
+    pub fn default_optimizing_threads() -> u16 {
+        1
+    }
+}
+
+impl Default for IndexFlexibleOptions {
+    fn default() -> Self {
+        Self {
+            optimizing_threads: Self::default_optimizing_threads(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
 #[validate(schema(function = "IndexOptions::validate_index_options"))]
@@ -198,9 +231,6 @@ pub struct OptimizingOptions {
     #[serde(default = "OptimizingOptions::default_delete_threshold")]
     #[validate(range(min = 0.01, max = 1.00))]
     pub delete_threshold: f64,
-    #[serde(default = "OptimizingOptions::default_optimizing_threads")]
-    #[validate(range(min = 1, max = 65535))]
-    pub optimizing_threads: usize,
 }
 
 impl OptimizingOptions {
@@ -213,12 +243,6 @@ impl OptimizingOptions {
     fn default_delete_threshold() -> f64 {
         0.2
     }
-    fn default_optimizing_threads() -> usize {
-        match std::thread::available_parallelism() {
-            Ok(threads) => (threads.get() as f64).sqrt() as _,
-            Err(_) => 1,
-        }
-    }
 }
 
 impl Default for OptimizingOptions {
@@ -227,7 +251,6 @@ impl Default for OptimizingOptions {
             sealing_secs: Self::default_sealing_secs(),
             sealing_size: Self::default_sealing_size(),
             delete_threshold: Self::default_delete_threshold(),
-            optimizing_threads: Self::default_optimizing_threads(),
         }
     }
 }

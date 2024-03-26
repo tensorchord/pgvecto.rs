@@ -34,6 +34,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::Infallible;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::Instant;
@@ -80,6 +81,7 @@ impl<O: Op> Index<O> {
             IndexStartup {
                 sealeds: HashSet::new(),
                 growings: HashSet::new(),
+                flexible: IndexFlexibleOptions::default(),
             },
         );
         let delete = Delete::create(path.join("delete"));
@@ -96,6 +98,7 @@ impl<O: Op> Index<O> {
             }),
             view: ArcSwap::new(Arc::new(IndexView {
                 options: options.clone(),
+                flexible: IndexFlexibleOptions::default(),
                 sealed: HashMap::new(),
                 growing: HashMap::new(),
                 delete: delete.clone(),
@@ -116,6 +119,7 @@ impl<O: Op> Index<O> {
                 .unwrap();
         let tracker = Arc::new(IndexTracker { path: path.clone() });
         let startup = FileAtomic::<IndexStartup>::open(path.join("startup"));
+        let flexible = startup.get().flexible.clone();
         clean(
             path.join("segments"),
             startup
@@ -170,6 +174,7 @@ impl<O: Op> Index<O> {
             }),
             view: ArcSwap::new(Arc::new(IndexView {
                 options: options.clone(),
+                flexible,
                 delete: delete.clone(),
                 sealed,
                 growing,
@@ -187,6 +192,23 @@ impl<O: Op> Index<O> {
     }
     pub fn view(&self) -> Arc<IndexView<O>> {
         self.view.load_full()
+    }
+    pub fn alter(self: &Arc<Self>, key: String, value: String) -> Result<(), AlterError> {
+        let mut protect = self.protect.lock();
+        match key.as_str() {
+            "optimizing.threads" => {
+                let parsed = i32::from_str(value.as_str())
+                    .map_err(|_e| AlterError::BadValue { key, value })?;
+                let optimizing_threads = match parsed {
+                    0 => IndexFlexibleOptions::default_optimizing_threads(),
+                    threads_limit => threads_limit as u16,
+                };
+                protect.flexible_set(IndexFlexibleOptions { optimizing_threads });
+                protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
+            }
+            _ => return Err(AlterError::BadKey { key }),
+        };
+        Ok(())
     }
     pub fn refresh(&self) {
         let mut protect = self.protect.lock();
@@ -295,6 +317,7 @@ impl Drop for IndexTracker {
 
 pub struct IndexView<O: Op> {
     pub options: IndexOptions,
+    pub flexible: IndexFlexibleOptions,
     pub delete: Arc<Delete>,
     pub sealed: HashMap<Uuid, Arc<SealedSegment<O>>>,
     pub growing: HashMap<Uuid, Arc<GrowingSegment<O>>>,
@@ -509,6 +532,7 @@ impl<O: Op> IndexView<O> {
 struct IndexStartup {
     sealeds: HashSet<Uuid>,
     growings: HashSet<Uuid>,
+    flexible: IndexFlexibleOptions,
 }
 
 struct IndexProtect<O: Op> {
@@ -519,14 +543,17 @@ struct IndexProtect<O: Op> {
 }
 
 impl<O: Op> IndexProtect<O> {
+    /// Export IndexProtect to IndexView
     fn maintain(
         &mut self,
         options: IndexOptions,
         delete: Arc<Delete>,
         swap: &ArcSwap<IndexView<O>>,
     ) {
+        let old_startup = self.startup.get();
         let view = Arc::new(IndexView {
             options,
+            flexible: old_startup.flexible.clone(),
             delete,
             sealed: self.sealed.clone(),
             growing: self.growing.clone(),
@@ -538,7 +565,16 @@ impl<O: Op> IndexProtect<O> {
         self.startup.set(IndexStartup {
             sealeds: startup_sealeds,
             growings: startup_growings,
+            flexible: old_startup.flexible.clone(),
         });
         swap.swap(view);
+    }
+    fn flexible_set(&mut self, flexible: IndexFlexibleOptions) {
+        let src = self.startup.get();
+        self.startup.set(IndexStartup {
+            sealeds: src.sealeds.clone(),
+            growings: src.sealeds.clone(),
+            flexible,
+        });
     }
 }

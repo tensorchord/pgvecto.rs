@@ -329,4 +329,5 @@ defines! {
     stream vbase(handle: Handle, vector: OwnedVector, opts: SearchOptions) -> Pointer;
     stream list(handle: Handle) -> Pointer;
     unary stat(handle: Handle) -> IndexStat;
+    unary alter(handle: Handle, key: String, value: String) -> ();
 }

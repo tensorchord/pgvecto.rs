@@ -590,6 +590,9 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION alter_vector_index("index" OID, "key" TEXT, "value" TEXT) RETURNS void
+STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_alter_vector_index_wrapper';
+
 -- List of casts
 
 CREATE CAST (real[] AS vector)
