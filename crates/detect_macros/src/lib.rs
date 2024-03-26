@@ -307,8 +307,6 @@ pub fn main(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
         });
     }
     quote::quote! {
-        pub use detect_macros::multiversion;
-        pub use detect_macros::target_cpu;
         #modules
         pub fn init() {
             #init
