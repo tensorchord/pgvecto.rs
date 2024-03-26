@@ -366,7 +366,8 @@ unsafe fn dot_internal_v4_avx512vnni(x: &[I8], y: &[I8]) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn dot_internal_v4_avx512vnni_test() {
-    const EPSILON: F32 = F32(4.0);
+    // A large epsilon is set for loss of precision caused by saturation arithmetic
+    const EPSILON: F32 = F32(512.0);
     detect::init();
     if !detect::v4_avx512vnni::detect() {
         println!("test {} ... skipped (v4_avx512vnni)", module_path!());
