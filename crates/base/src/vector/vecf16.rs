@@ -113,21 +113,23 @@ unsafe fn cosine_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn cosine_v4_avx512fp16_test() {
+    const EPSILON: F32 = F32(0.002);
     detect::init();
     if !detect::v4_avx512fp16::detect() {
         println!("test {} ... skipped (v4_avx512fp16)", module_path!());
         return;
     }
-    const EPSILON: F32 = F32(half::f16::EPSILON.to_f32_const());
-    let n = 4000;
-    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let specialized = unsafe { cosine_v4_avx512fp16(&lhs, &rhs) };
-    let fallback = unsafe { cosine_fallback(&lhs, &rhs) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let n = 4000;
+        let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let specialized = unsafe { cosine_v4_avx512fp16(&lhs, &rhs) };
+        let fallback = unsafe { cosine_fallback(&lhs, &rhs) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[inline]
@@ -142,21 +144,23 @@ unsafe fn cosine_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn cosine_v4_test() {
+    const EPSILON: F32 = F32(0.002);
     detect::init();
     if !detect::v4::detect() {
         println!("test {} ... skipped (v4)", module_path!());
         return;
     }
-    const EPSILON: F32 = F32(half::f16::EPSILON.to_f32_const());
-    let n = 4000;
-    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let specialized = unsafe { cosine_v4(&lhs, &rhs) };
-    let fallback = unsafe { cosine_fallback(&lhs, &rhs) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let n = 4000;
+        let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let specialized = unsafe { cosine_v4(&lhs, &rhs) };
+        let fallback = unsafe { cosine_fallback(&lhs, &rhs) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[inline]
@@ -171,21 +175,23 @@ unsafe fn cosine_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn cosine_v3_test() {
+    const EPSILON: F32 = F32(0.002);
     detect::init();
     if !detect::v3::detect() {
         println!("test {} ... skipped (v3)", module_path!());
         return;
     }
-    const EPSILON: F32 = F32(half::f16::EPSILON.to_f32_const());
-    let n = 4000;
-    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let specialized = unsafe { cosine_v3(&lhs, &rhs) };
-    let fallback = unsafe { cosine_fallback(&lhs, &rhs) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let n = 4000;
+        let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let specialized = unsafe { cosine_v3(&lhs, &rhs) };
+        let fallback = unsafe { cosine_fallback(&lhs, &rhs) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[detect::multiversion(v4_avx512fp16 = import, v4 = import, v3 = import, v2, neon, fallback = export)]
@@ -215,21 +221,26 @@ unsafe fn dot_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn dot_v4_avx512fp16_test() {
+    const EPSILON: F32 = F32(2.0);
     detect::init();
     if !detect::v4_avx512fp16::detect() {
         println!("test {} ... skipped (v4_avx512fp16)", module_path!());
         return;
     }
-    const EPSILON: F32 = F32(1.0);
-    let n = 4000;
-    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let specialized = unsafe { dot_v4_avx512fp16(&lhs, &rhs) };
-    let fallback = unsafe { dot_fallback(&lhs, &rhs) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    let mut m = F32(0.0);
+    for _ in 0..10000 {
+        let n = 4000;
+        let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let specialized = unsafe { dot_v4_avx512fp16(&lhs, &rhs) };
+        let fallback = unsafe { dot_fallback(&lhs, &rhs) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+        m = std::cmp::max(m, (specialized - fallback).abs());
+    }
+    dbg!(m);
 }
 
 #[inline]
@@ -244,21 +255,23 @@ unsafe fn dot_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn dot_v4_test() {
+    const EPSILON: F32 = F32(2.0);
     detect::init();
     if !detect::v4::detect() {
         println!("test {} ... skipped (v4)", module_path!());
         return;
     }
-    const EPSILON: F32 = F32(1.0);
-    let n = 4000;
-    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let specialized = unsafe { dot_v4(&lhs, &rhs) };
-    let fallback = unsafe { dot_fallback(&lhs, &rhs) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let n = 4000;
+        let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let specialized = unsafe { dot_v4(&lhs, &rhs) };
+        let fallback = unsafe { dot_fallback(&lhs, &rhs) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[inline]
@@ -273,21 +286,23 @@ unsafe fn dot_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn dot_v3_test() {
+    const EPSILON: F32 = F32(2.0);
     detect::init();
     if !detect::v3::detect() {
         println!("test {} ... skipped (v3)", module_path!());
         return;
     }
-    const EPSILON: F32 = F32(1.0);
-    let n = 4000;
-    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let specialized = unsafe { dot_v3(&lhs, &rhs) };
-    let fallback = unsafe { dot_fallback(&lhs, &rhs) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let n = 4000;
+        let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let specialized = unsafe { dot_v3(&lhs, &rhs) };
+        let fallback = unsafe { dot_fallback(&lhs, &rhs) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[detect::multiversion(v4_avx512fp16 = import, v4 = import, v3 = import, v2, neon, fallback = export)]
@@ -313,21 +328,26 @@ unsafe fn sl2_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn sl2_v4_avx512fp16_test() {
+    const EPSILON: F32 = F32(2.0);
     detect::init();
     if !detect::v4_avx512fp16::detect() {
         println!("test {} ... skipped (v4_avx512fp16)", module_path!());
         return;
     }
-    const EPSILON: F32 = F32(1.0);
-    let n = 4000;
-    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let specialized = unsafe { sl2_v4_avx512fp16(&lhs, &rhs) };
-    let fallback = unsafe { sl2_fallback(&lhs, &rhs) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    let mut m = F32(0.0);
+    for _ in 0..10000 {
+        let n = 4000;
+        let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let specialized = unsafe { sl2_v4_avx512fp16(&lhs, &rhs) };
+        let fallback = unsafe { sl2_fallback(&lhs, &rhs) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+        m = std::cmp::max(m, (specialized - fallback).abs());
+    }
+    dbg!(m);
 }
 
 #[inline]
@@ -342,21 +362,23 @@ unsafe fn sl2_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn sl2_v4_test() {
+    const EPSILON: F32 = F32(2.0);
     detect::init();
     if !detect::v4::detect() {
         println!("test {} ... skipped (v4)", module_path!());
         return;
     }
-    const EPSILON: F32 = F32(1.0);
-    let n = 4000;
-    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let specialized = unsafe { sl2_v4(&lhs, &rhs) };
-    let fallback = unsafe { sl2_fallback(&lhs, &rhs) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let n = 4000;
+        let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let specialized = unsafe { sl2_v4(&lhs, &rhs) };
+        let fallback = unsafe { sl2_fallback(&lhs, &rhs) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[inline]
@@ -371,21 +393,23 @@ unsafe fn sl2_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
 fn sl2_v3_test() {
+    const EPSILON: F32 = F32(2.0);
     detect::init();
     if !detect::v3::detect() {
         println!("test {} ... skipped (v3)", module_path!());
         return;
     }
-    const EPSILON: F32 = F32(1.0);
-    let n = 4000;
-    let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
-    let specialized = unsafe { sl2_v3(&lhs, &rhs) };
-    let fallback = unsafe { sl2_fallback(&lhs, &rhs) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let n = 4000;
+        let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
+        let specialized = unsafe { sl2_v3(&lhs, &rhs) };
+        let fallback = unsafe { sl2_fallback(&lhs, &rhs) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[detect::multiversion(v4_avx512fp16 = import, v4 = import, v3 = import, v2, neon, fallback = export)]

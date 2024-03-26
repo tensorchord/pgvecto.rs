@@ -300,7 +300,6 @@ fn cosine_v4_test() {
         println!("test {} ... skipped (v4)", module_path!());
         return;
     }
-    let mut eps = F32(0.0);
     for _ in 0..10000 {
         let lhs = random_svector(300);
         let rhs = random_svector(350);
@@ -310,9 +309,7 @@ fn cosine_v4_test() {
             (specialized - fallback).abs() < EPSILON,
             "specialized = {specialized}, fallback = {fallback}."
         );
-        eps = std::cmp::max(eps, (specialized - fallback).abs());
     }
-    dbg!(eps);
 }
 
 #[detect::multiversion(v4 = import, v3, v2, neon, fallback = export)]

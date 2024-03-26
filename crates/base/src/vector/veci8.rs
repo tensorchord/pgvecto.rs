@@ -373,14 +373,16 @@ fn dot_internal_v4_avx512vnni_test() {
         println!("test {} ... skipped (v4_avx512vnni)", module_path!());
         return;
     }
-    let lhs = std::array::from_fn::<_, 400, _>(|_| I8(rand::random()));
-    let rhs = std::array::from_fn::<_, 400, _>(|_| I8(rand::random()));
-    let specialized = unsafe { dot_internal_v4_avx512vnni(&lhs, &rhs) };
-    let fallback = unsafe { dot_internal_fallback(&lhs, &rhs) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let lhs = std::array::from_fn::<_, 400, _>(|_| I8(rand::random()));
+        let rhs = std::array::from_fn::<_, 400, _>(|_| I8(rand::random()));
+        let specialized = unsafe { dot_internal_v4_avx512vnni(&lhs, &rhs) };
+        let fallback = unsafe { dot_internal_fallback(&lhs, &rhs) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[detect::multiversion(v4_avx512vnni = import, v4, v3, v2, neon, fallback = export)]
