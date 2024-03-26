@@ -80,7 +80,7 @@ pub enum StatError {
 
 #[must_use]
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
-pub enum SettingError {
+pub enum AlterError {
     #[error("Setting key {key} is not exist.")]
     BadKey { key: String },
     #[error("Setting key {key} has a wrong value {value}.")]
@@ -89,19 +89,17 @@ pub enum SettingError {
     NotExist,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct IndexFlexibleOptions {
     #[serde(default = "IndexFlexibleOptions::default_optimizing_threads")]
+    #[validate(range(min = 1, max = 65535))]
     pub optimizing_threads: u16,
 }
 
 impl IndexFlexibleOptions {
     pub fn default_optimizing_threads() -> u16 {
-        match std::thread::available_parallelism() {
-            Ok(threads) => (threads.get() as f64).sqrt() as _,
-            Err(_) => 1,
-        }
+        1
     }
 }
 

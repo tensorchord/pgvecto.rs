@@ -176,10 +176,10 @@ impl WorkerOperations for Worker {
         let stat = instance.stat();
         Ok(stat)
     }
-    fn setting(&self, handle: Handle, key: String, value: String) -> Result<(), SettingError> {
+    fn alter(&self, handle: Handle, key: String, value: String) -> Result<(), AlterError> {
         let view = self.view();
-        let instance = view.get(handle).ok_or(SettingError::NotExist)?;
-        instance.setting(key, value)
+        let instance = view.get(handle).ok_or(AlterError::NotExist)?;
+        instance.alter(key, value)
     }
 }
 

@@ -8,7 +8,7 @@ use pgrx::error;
 fn _vectors_alter_vector_index(oid: pgrx::pg_sys::Oid, key: String, value: String) {
     let id = from_oid_to_handle(oid);
     let mut rpc = check_client(client());
-    match rpc.setting(id, key, value) {
+    match rpc.alter(id, key, value) {
         Ok(_) => {}
         Err(e) => error!("{}", e.to_string()),
     }

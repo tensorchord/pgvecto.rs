@@ -187,24 +187,24 @@ impl Instance {
             Instance::Veci8Dot(x) => x.stat(),
         }
     }
-    pub fn setting(&self, key: String, value: String) -> Result<(), SettingError> {
+    pub fn alter(&self, key: String, value: String) -> Result<(), AlterError> {
         match self {
-            Instance::Vecf32Cos(x) => x.setting(key, value),
-            Instance::Vecf32Dot(x) => x.setting(key, value),
-            Instance::Vecf32L2(x) => x.setting(key, value),
-            Instance::Vecf16Cos(x) => x.setting(key, value),
-            Instance::Vecf16Dot(x) => x.setting(key, value),
-            Instance::Vecf16L2(x) => x.setting(key, value),
-            Instance::SVecf32Cos(x) => x.setting(key, value),
-            Instance::SVecf32Dot(x) => x.setting(key, value),
-            Instance::SVecf32L2(x) => x.setting(key, value),
-            Instance::BVecf32Cos(x) => x.setting(key, value),
-            Instance::BVecf32Dot(x) => x.setting(key, value),
-            Instance::BVecf32L2(x) => x.setting(key, value),
-            Instance::BVecf32Jaccard(x) => x.setting(key, value),
-            Instance::Veci8L2(x) => x.setting(key, value),
-            Instance::Veci8Cos(x) => x.setting(key, value),
-            Instance::Veci8Dot(x) => x.setting(key, value),
+            Instance::Vecf32Cos(x) => x.alter(key, value),
+            Instance::Vecf32Dot(x) => x.alter(key, value),
+            Instance::Vecf32L2(x) => x.alter(key, value),
+            Instance::Vecf16Cos(x) => x.alter(key, value),
+            Instance::Vecf16Dot(x) => x.alter(key, value),
+            Instance::Vecf16L2(x) => x.alter(key, value),
+            Instance::SVecf32Cos(x) => x.alter(key, value),
+            Instance::SVecf32Dot(x) => x.alter(key, value),
+            Instance::SVecf32L2(x) => x.alter(key, value),
+            Instance::BVecf32Cos(x) => x.alter(key, value),
+            Instance::BVecf32Dot(x) => x.alter(key, value),
+            Instance::BVecf32L2(x) => x.alter(key, value),
+            Instance::BVecf32Jaccard(x) => x.alter(key, value),
+            Instance::Veci8L2(x) => x.alter(key, value),
+            Instance::Veci8Cos(x) => x.alter(key, value),
+            Instance::Veci8Dot(x) => x.alter(key, value),
         }
     }
     pub fn start(&self) {
