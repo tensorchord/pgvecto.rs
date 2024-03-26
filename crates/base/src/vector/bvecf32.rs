@@ -245,24 +245,16 @@ fn cosine_v4_avx512vpopcntdq_test() {
         println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
         return;
     }
-    let lhs = {
-        let mut x = vec![0; 126];
-        x.fill_with(|| rand::random());
-        x[125] &= 1;
-        BVecf32Owned::new(8001, x)
-    };
-    let rhs = {
-        let mut x = vec![0; 126];
-        x.fill_with(|| rand::random());
-        x[125] &= 1;
-        BVecf32Owned::new(8001, x)
-    };
-    let specialized = unsafe { cosine_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
-    let fallback = unsafe { cosine_fallback(lhs.for_borrow(), rhs.for_borrow()) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let lhs = random_bvector();
+        let rhs = random_bvector();
+        let specialized = unsafe { cosine_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
+        let fallback = unsafe { cosine_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
@@ -327,24 +319,16 @@ fn dot_v4_avx512vpopcntdq_test() {
         println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
         return;
     }
-    let lhs = {
-        let mut x = vec![0; 126];
-        x.fill_with(|| rand::random());
-        x[125] &= 1;
-        BVecf32Owned::new(8001, x)
-    };
-    let rhs = {
-        let mut x = vec![0; 126];
-        x.fill_with(|| rand::random());
-        x[125] &= 1;
-        BVecf32Owned::new(8001, x)
-    };
-    let specialized = unsafe { dot_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
-    let fallback = unsafe { dot_fallback(lhs.for_borrow(), rhs.for_borrow()) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let lhs = random_bvector();
+        let rhs = random_bvector();
+        let specialized = unsafe { dot_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
+        let fallback = unsafe { dot_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
@@ -402,24 +386,16 @@ fn sl2_v4_avx512vpopcntdq_test() {
         println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
         return;
     }
-    let lhs = {
-        let mut x = vec![0; 126];
-        x.fill_with(|| rand::random());
-        x[125] &= 1;
-        BVecf32Owned::new(8001, x)
-    };
-    let rhs = {
-        let mut x = vec![0; 126];
-        x.fill_with(|| rand::random());
-        x[125] &= 1;
-        BVecf32Owned::new(8001, x)
-    };
-    let specialized = unsafe { sl2_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
-    let fallback = unsafe { sl2_fallback(lhs.for_borrow(), rhs.for_borrow()) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let lhs = random_bvector();
+        let rhs = random_bvector();
+        let specialized = unsafe { sl2_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
+        let fallback = unsafe { sl2_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
@@ -481,24 +457,16 @@ fn jaccard_v4_avx512vpopcntdq_test() {
         println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
         return;
     }
-    let lhs = {
-        let mut x = vec![0; 126];
-        x.fill_with(|| rand::random());
-        x[125] &= 1;
-        BVecf32Owned::new(8001, x)
-    };
-    let rhs = {
-        let mut x = vec![0; 126];
-        x.fill_with(|| rand::random());
-        x[125] &= 1;
-        BVecf32Owned::new(8001, x)
-    };
-    let specialized = unsafe { jaccard_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
-    let fallback = unsafe { jaccard_fallback(lhs.for_borrow(), rhs.for_borrow()) };
-    assert!(
-        (specialized - fallback).abs() < EPSILON,
-        "specialized = {specialized}, fallback = {fallback}."
-    );
+    for _ in 0..10000 {
+        let lhs = random_bvector();
+        let rhs = random_bvector();
+        let specialized = unsafe { jaccard_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
+        let fallback = unsafe { jaccard_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
 }
 
 #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
@@ -557,4 +525,12 @@ pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
 pub fn l2_normalize<'a>(vector: BVecf32Borrowed<'a>) -> Vecf32Owned {
     let l = length(vector);
     Vecf32Owned::new(vector.iter().map(|i| F32(i as u32 as f32) / l).collect())
+}
+
+#[cfg(all(target_arch = "x86_64", test))]
+fn random_bvector() -> BVecf32Owned {
+    let mut x = vec![0; 126];
+    x.fill_with(|| rand::random());
+    x[125] &= 1;
+    BVecf32Owned::new(8001, x)
 }
