@@ -12,7 +12,6 @@ use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
 use quantization::operator::OperatorQuantization;
 use quantization::Quantization;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use storage::vec::VecStorage;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::create_dir;
@@ -20,6 +19,7 @@ use std::ops::RangeInclusive;
 use std::path::Path;
 use std::sync::Arc;
 use storage::operator::OperatorStorage;
+use storage::vec::VecStorage;
 use storage::StorageCollection;
 
 pub trait OperatorHnsw = Operator + OperatorQuantization + OperatorStorage;
@@ -757,10 +757,7 @@ impl ElementHeap {
     }
 }
 
-fn mock_make(
-    path: &Path,
-    options: IndexOptions,
-) -> HnswRam<Vecf32L2> {
+fn mock_make(path: &Path, options: IndexOptions) -> HnswRam<Vecf32L2> {
     let HnswIndexingOptions {
         m,
         ef_construction,
@@ -1005,7 +1002,7 @@ pub fn mock_open(path: &Path, options: IndexOptions) -> Hnsw<Vecf32L2> {
     let by_vertex_id = MmapArray::open(&path.join("by_vertex_id"));
     let idx_opts = options.indexing.unwrap_hnsw();
     let n = storage.len();
-    let mmap =HnswMmap {
+    let mmap = HnswMmap {
         storage,
         quantization,
         m: idx_opts.m,

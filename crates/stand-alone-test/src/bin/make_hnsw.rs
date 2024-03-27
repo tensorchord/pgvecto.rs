@@ -1,5 +1,7 @@
+use base::index::{
+    HnswIndexingOptions, IndexOptions, OptimizingOptions, SegmentsOptions, VectorOptions,
+};
 use std::path::Path;
-use base::index::{HnswIndexingOptions, IndexOptions, OptimizingOptions, SegmentsOptions, VectorOptions};
 
 fn main() {
     make().unwrap();
