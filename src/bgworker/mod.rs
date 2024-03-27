@@ -71,10 +71,10 @@ extern "C" fn _vectors_main(_arg: pgrx::pg_sys::Datum) {
     let path = Path::new("pg_vectors");
     if path.try_exists().unwrap() {
         let worker = Worker::open(path.to_owned());
-        self::normal::normal(worker);
+        normal::normal(worker);
     } else {
         let worker = Worker::create(path.to_owned());
         Version::write(path.join("VERSION"));
-        self::normal::normal(worker);
+        normal::normal(worker);
     }
 }

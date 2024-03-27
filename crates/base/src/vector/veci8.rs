@@ -289,12 +289,7 @@ impl<'a> From<&'a Veci8Owned> for Veci8Borrowed<'a> {
     }
 }
 
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn i8_quantization(vector: &[F32]) -> (Vec<I8>, F32, F32) {
     let min = vector.iter().copied().fold(F32::infinity(), Float::min);
     let max = vector.iter().copied().fold(F32::neg_infinity(), Float::max);
@@ -307,12 +302,7 @@ pub fn i8_quantization(vector: &[F32]) -> (Vec<I8>, F32, F32) {
     (result, alpha, offset)
 }
 
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn i8_dequantization(vector: &[I8], alpha: F32, offset: F32) -> Vec<F32> {
     vector
         .iter()
@@ -320,13 +310,7 @@ pub fn i8_dequantization(vector: &[I8], alpha: F32, offset: F32) -> Vec<F32> {
         .collect()
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn i8_precompute(data: &[I8], alpha: F32, offset: F32) -> (F32, F32) {
     let sum = data.iter().map(|&x| x.to_f32() * alpha).sum();
     let l2_norm = data
@@ -337,71 +321,12 @@ pub fn i8_precompute(data: &[I8], alpha: F32, offset: F32) -> (F32, F32) {
     (sum, l2_norm)
 }
 
-#[cfg(test)]
-mod tests_0 {
-    use super::*;
-
-    #[test]
-    fn test_quantization_roundtrip() {
-        let vector = vec![F32(0.0), F32(1.0), F32(2.0), F32(3.0), F32(4.0)];
-        let (result, alpha, offset) = i8_quantization(&vector);
-        assert_eq!(result, vec![I8(-127), I8(-63), I8(0), I8(63), I8(127)]);
-        assert_eq!(alpha, F32(4.0 / 254.0));
-        assert_eq!(offset, F32(2.0));
-        let vector = i8_dequantization(result.as_slice(), alpha, offset);
-        for (i, x) in vector.iter().enumerate() {
-            assert!((x.0 - (i as f32)).abs() < 0.05);
-        }
-    }
-}
-
-pub fn dot(x: &[I8], y: &[I8]) -> F32 {
-    #[cfg(target_arch = "x86_64")]
-    {
-        if detect::x86_64::test_avx512vnni() {
-            return unsafe { dot_i8_avx512vnni(x, y) };
-        }
-    }
-    dot_i8_fallback(x, y)
-}
-
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
-fn dot_i8_fallback(x: &[I8], y: &[I8]) -> F32 {
-    // i8 * i8 fall in range of i16. Since our length is less than (2^16 - 1), the result won't overflow.
-    let mut sum = 0;
-    assert_eq!(x.len(), y.len());
-    let length = x.len();
-    // according to https://godbolt.org/z/ff48vW4es, this loop will be autovectorized
-    for i in 0..length {
-        sum += (x[i].0 as i16 * y[i].0 as i16) as i32;
-    }
-    F32(sum as f32)
-}
-
-#[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx512vnni,avx512bw,avx512f,bmi2")]
-unsafe fn dot_i8_avx512vnni(x: &[I8], y: &[I8]) -> F32 {
+#[inline]
+#[cfg(any(target_arch = "x86_64", doc))]
+#[doc(cfg(target_arch = "x86_64"))]
+#[detect::target_cpu(enable = "v4_avx512vnni")]
+unsafe fn dot_internal_v4_avx512vnni(x: &[I8], y: &[I8]) -> F32 {
     use std::arch::x86_64::*;
-    #[inline]
-    #[target_feature(enable = "avx512vnni,avx512bw,avx512f,bmi2")]
-    pub unsafe fn _mm512_maskz_loadu_epi8(k: __mmask64, mem_addr: *const i8) -> __m512i {
-        let mut dst: __m512i;
-        unsafe {
-            std::arch::asm!(
-                "vmovdqu8 {dst}{{{k}}} {{z}}, [{p}]",
-                p = in(reg) mem_addr,
-                k = in(kreg) k,
-                dst = out(zmm_reg) dst,
-                options(pure, readonly, nostack)
-            );
-        }
-        dst
-    }
     assert_eq!(x.len(), y.len());
     let mut sum = 0;
     let mut i = x.len();
@@ -438,38 +363,67 @@ unsafe fn dot_i8_avx512vnni(x: &[I8], y: &[I8]) -> F32 {
     F32(sum as f32)
 }
 
-pub fn dot_distance(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn dot_internal_v4_avx512vnni_test() {
+    // A large epsilon is set for loss of precision caused by saturation arithmetic
+    const EPSILON: F32 = F32(512.0);
+    detect::init();
+    if !detect::v4_avx512vnni::detect() {
+        println!("test {} ... skipped (v4_avx512vnni)", module_path!());
+        return;
+    }
+    for _ in 0..300 {
+        let lhs = std::array::from_fn::<_, 400, _>(|_| I8(rand::random()));
+        let rhs = std::array::from_fn::<_, 400, _>(|_| I8(rand::random()));
+        let specialized = unsafe { dot_internal_v4_avx512vnni(&lhs, &rhs) };
+        let fallback = unsafe { dot_internal_fallback(&lhs, &rhs) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
+}
+
+#[detect::multiversion(v4_avx512vnni = import, v4, v3, v2, neon, fallback = export)]
+fn dot_internal(x: &[I8], y: &[I8]) -> F32 {
+    // i8 * i8 fall in range of i16. Since our length is less than (2^16 - 1), the result won't overflow.
+    let mut sum = 0;
+    assert_eq!(x.len(), y.len());
+    let length = x.len();
+    // according to https://godbolt.org/z/ff48vW4es, this loop will be autovectorized
+    for i in 0..length {
+        sum += (x[i].0 as i16 * y[i].0 as i16) as i32;
+    }
+    F32(sum as f32)
+}
+
+pub fn dot(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
     // (alpha_x * x[i] + offset_x) * (alpha_y * y[i] + offset_y)
     // = alpha_x * alpha_y * x[i] * y[i] + alpha_x * offset_y * x[i] + alpha_y * offset_x * y[i] + offset_x * offset_y
     // Sum(dot(origin_x[i] , origin_y[i])) = alpha_x * alpha_y * Sum(dot(x[i], y[i])) + offset_y * Sum(alpha_x * x[i]) + offset_x * Sum(alpha_y * y[i]) + offset_x * offset_y * dims
-    let dot_xy = dot(x.data(), y.data());
+    let dot_xy = dot_internal(x.data(), y.data());
     x.alpha() * y.alpha() * dot_xy
         + x.offset() * y.sum()
         + y.offset() * x.sum()
         + x.offset() * y.offset() * F32(x.dims() as f32)
 }
 
-pub fn l2_distance(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
+pub fn sl2(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
     // Sum(l2(origin_x[i] - origin_y[i])) = sum(x[i] ^ 2 - 2 * x[i] * y[i] + y[i] ^ 2)
     // = dot(x, x) - 2 * dot(x, y) + dot(y, y)
-    x.l2_norm() * x.l2_norm() - F32(2.0) * dot_distance(x, y) + y.l2_norm() * y.l2_norm()
+    x.l2_norm() * x.l2_norm() - F32(2.0) * dot(x, y) + y.l2_norm() * y.l2_norm()
 }
 
-pub fn cosine_distance(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
+pub fn cosine(x: &Veci8Borrowed<'_>, y: &Veci8Borrowed<'_>) -> F32 {
     // dot(x, y) / (l2(x) * l2(y))
-    let dot_xy = dot_distance(x, y);
+    let dot_xy = dot(x, y);
     let l2_x = x.l2_norm();
     let l2_y = y.l2_norm();
     dot_xy / (l2_x * l2_y)
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn l2_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
     let data = lhs.data();
     assert_eq!(data.len(), rhs.len());
@@ -482,13 +436,7 @@ pub fn l2_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
         .sum::<F32>()
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn dot_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
     let data = lhs.data();
     assert_eq!(data.len(), rhs.len());
@@ -499,8 +447,21 @@ pub fn dot_2<'a>(lhs: Veci8Borrowed<'a>, rhs: &[F32]) -> F32 {
 }
 
 #[cfg(test)]
-mod tests_1 {
+mod tests {
     use super::*;
+
+    #[test]
+    fn test_quantization_roundtrip() {
+        let vector = vec![F32(0.0), F32(1.0), F32(2.0), F32(3.0), F32(4.0)];
+        let (result, alpha, offset) = i8_quantization(&vector);
+        assert_eq!(result, vec![I8(-127), I8(-63), I8(0), I8(63), I8(127)]);
+        assert_eq!(alpha, F32(4.0 / 254.0));
+        assert_eq!(offset, F32(2.0));
+        let vector = i8_dequantization(result.as_slice(), alpha, offset);
+        for (i, x) in vector.iter().enumerate() {
+            assert!((x.0 - (i as f32)).abs() < 0.05);
+        }
+    }
 
     fn new_random_vec_f32(size: usize) -> Vec<F32> {
         use rand::Rng;
@@ -523,7 +484,7 @@ mod tests_1 {
         let ref_x = x_owned.for_borrow();
         let y_owned = vec_to_owned(y);
         let ref_y = y_owned.for_borrow();
-        let result = dot_distance(&ref_x, &ref_y);
+        let result = dot(&ref_x, &ref_y);
         assert!((result.0 - 10.0).abs() < 0.1);
     }
 
@@ -535,7 +496,7 @@ mod tests_1 {
         let ref_x = x_owned.for_borrow();
         let y_owned = vec_to_owned(y);
         let ref_y = y_owned.for_borrow();
-        let result = cosine_distance(&ref_x, &ref_y);
+        let result = cosine(&ref_x, &ref_y);
         assert!((result.0 - (10.0 / 14.0)).abs() < 0.1);
         // test cos_i8 using random generated data, check the precision
         let x = new_random_vec_f32(1000);
@@ -548,7 +509,7 @@ mod tests_1 {
         let ref_x = x_owned.for_borrow();
         let y_owned = vec_to_owned(y);
         let ref_y = y_owned.for_borrow();
-        let result = cosine_distance(&ref_x, &ref_y);
+        let result = cosine(&ref_x, &ref_y);
         assert!(
             result_expected < 0.01
                 || (result.0 - result_expected).abs() < 0.01
@@ -564,7 +525,7 @@ mod tests_1 {
         let ref_x = x_owned.for_borrow();
         let y_owned = vec_to_owned(y);
         let ref_y = y_owned.for_borrow();
-        let result = l2_distance(&ref_x, &ref_y);
+        let result = sl2(&ref_x, &ref_y);
         assert!((result.0 - 8.0).abs() < 0.1);
         // test l2_i8 using random generated data, check the precision
         let x = new_random_vec_f32(1000);
@@ -579,7 +540,7 @@ mod tests_1 {
         let ref_x = x_owned.for_borrow();
         let y_owned = vec_to_owned(y);
         let ref_y = y_owned.for_borrow();
-        let result = l2_distance(&ref_x, &ref_y);
+        let result = sl2(&ref_x, &ref_y);
         assert!(
             result_expected < 1.0 || (result.0 - result_expected).abs() / result_expected < 0.05
         );

@@ -1,9 +1,9 @@
-mod f16;
 mod f32;
+mod half_f16;
 mod i8;
 
-pub use f16::F16;
 pub use f32::F32;
+pub use half_f16::F16;
 pub use i8::I8;
 
 pub trait ScalarLike:
