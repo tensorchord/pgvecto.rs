@@ -284,12 +284,12 @@ pub fn main(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
                 #[cfg(target_arch = "x86_64")]
                 pub fn test() -> bool {
-                    true #(&& std_detect::is_x86_feature_detected!(#target_features))*
+                    true #(&& std::arch::is_x86_feature_detected!(#target_features))*
                 }
 
                 #[cfg(target_arch = "aarch64")]
                 pub fn test() -> bool {
-                    true #(&& std_detect::is_aarch64_feature_detected!(#target_features))*
+                    true #(&& std::arch::is_aarch64_feature_detected!(#target_features))*
                 }
 
                 pub(crate) fn init() {
