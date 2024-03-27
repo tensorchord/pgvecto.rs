@@ -4,8 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-common = { path = "../common" }
 base = { path = "../base" }
+common = { path = "../common" }
 hnsw = { path = "../hnsw" }
 rayon = { path = "../rayon" }
 thiserror = "1.0.58"
