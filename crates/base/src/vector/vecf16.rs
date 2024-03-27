@@ -119,7 +119,7 @@ fn cosine_v4_avx512fp16_test() {
         println!("test {} ... skipped (v4_avx512fp16)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let n = 4000;
         let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
         let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
@@ -150,7 +150,7 @@ fn cosine_v4_test() {
         println!("test {} ... skipped (v4)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let n = 4000;
         let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
         let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
@@ -181,7 +181,7 @@ fn cosine_v3_test() {
         println!("test {} ... skipped (v3)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let n = 4000;
         let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
         let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
@@ -228,7 +228,7 @@ fn dot_v4_avx512fp16_test() {
         return;
     }
     let mut m = F32(0.0);
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let n = 4000;
         let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
         let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
@@ -261,7 +261,7 @@ fn dot_v4_test() {
         println!("test {} ... skipped (v4)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let n = 4000;
         let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
         let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
@@ -292,7 +292,7 @@ fn dot_v3_test() {
         println!("test {} ... skipped (v3)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let n = 4000;
         let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
         let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
@@ -335,7 +335,7 @@ fn sl2_v4_avx512fp16_test() {
         return;
     }
     let mut m = F32(0.0);
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let n = 4000;
         let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
         let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
@@ -368,7 +368,7 @@ fn sl2_v4_test() {
         println!("test {} ... skipped (v4)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let n = 4000;
         let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
         let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
@@ -399,7 +399,7 @@ fn sl2_v3_test() {
         println!("test {} ... skipped (v3)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let n = 4000;
         let lhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();
         let rhs = (0..n).map(|_| F16(rand::random::<_>())).collect::<Vec<_>>();

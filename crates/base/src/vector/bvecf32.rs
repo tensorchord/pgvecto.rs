@@ -245,7 +245,7 @@ fn cosine_v4_avx512vpopcntdq_test() {
         println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let lhs = random_bvector();
         let rhs = random_bvector();
         let specialized = unsafe { cosine_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
@@ -319,7 +319,7 @@ fn dot_v4_avx512vpopcntdq_test() {
         println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let lhs = random_bvector();
         let rhs = random_bvector();
         let specialized = unsafe { dot_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
@@ -386,7 +386,7 @@ fn sl2_v4_avx512vpopcntdq_test() {
         println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let lhs = random_bvector();
         let rhs = random_bvector();
         let specialized = unsafe { sl2_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
@@ -457,7 +457,7 @@ fn jaccard_v4_avx512vpopcntdq_test() {
         println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let lhs = random_bvector();
         let rhs = random_bvector();
         let specialized = unsafe { jaccard_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };

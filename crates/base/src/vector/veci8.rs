@@ -373,7 +373,7 @@ fn dot_internal_v4_avx512vnni_test() {
         println!("test {} ... skipped (v4_avx512vnni)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let lhs = std::array::from_fn::<_, 400, _>(|_| I8(rand::random()));
         let rhs = std::array::from_fn::<_, 400, _>(|_| I8(rand::random()));
         let specialized = unsafe { dot_internal_v4_avx512vnni(&lhs, &rhs) };

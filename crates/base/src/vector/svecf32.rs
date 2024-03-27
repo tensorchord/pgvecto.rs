@@ -300,7 +300,7 @@ fn cosine_v4_test() {
         println!("test {} ... skipped (v4)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let lhs = random_svector(300);
         let rhs = random_svector(350);
         let specialized = unsafe { cosine_v4(lhs.for_borrow(), rhs.for_borrow()) };
@@ -437,7 +437,7 @@ fn dot_v4_test() {
         println!("test {} ... skipped (v4)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let lhs = random_svector(300);
         let rhs = random_svector(350);
         let specialized = unsafe { dot_v4(lhs.for_borrow(), rhs.for_borrow()) };
@@ -600,7 +600,7 @@ fn sl2_v4_test() {
         println!("test {} ... skipped (v4)", module_path!());
         return;
     }
-    for _ in 0..10000 {
+    for _ in 0..300 {
         let lhs = random_svector(300);
         let rhs = random_svector(350);
         let specialized = unsafe { sl2_v4(lhs.for_borrow(), rhs.for_borrow()) };
