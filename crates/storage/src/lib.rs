@@ -28,10 +28,14 @@ pub trait Storage {
 }
 
 pub struct StorageCollection<O: OperatorStorage> {
-    pub storage: O::Storage,
+    storage: O::Storage,
 }
 
 impl<O: OperatorStorage> StorageCollection<O> {
+    pub fn new(storage: O::Storage) -> Self {
+        Self { storage }
+    }
+
     pub fn create<C: Collection<O>>(path: &Path, source: &C) -> Self {
         std::fs::create_dir(path).unwrap();
         let storage = O::Storage::save(path, source);

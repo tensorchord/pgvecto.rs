@@ -110,11 +110,11 @@ static STOP: OnceCell<Arc<AtomicBool>> = OnceCell::new();
 struct CheckPanic;
 
 pub fn check() {
-    // if let Some(stop) = STOP.get() {
-    //     if stop.load(Ordering::Relaxed) {
-    //         std::panic::panic_any(CheckPanic);
-    //     }
-    // } else {
-    //     panic!("`check` is called outside rayon")
-    // }
+    if let Some(stop) = STOP.get() {
+        if stop.load(Ordering::Relaxed) {
+            std::panic::panic_any(CheckPanic);
+        }
+    } else {
+        panic!("`check` is called outside rayon")
+    }
 }

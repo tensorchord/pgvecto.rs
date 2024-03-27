@@ -4,10 +4,6 @@ use base::index::{
 use std::path::Path;
 
 fn main() {
-    make().unwrap();
-}
-
-fn make() -> Result<(), std::io::Error> {
     let path = Path::new("/home/yanqi/stand-alone-test/data/hnsw");
     let options = IndexOptions {
         vector: VectorOptions {
@@ -24,5 +20,4 @@ fn make() -> Result<(), std::io::Error> {
         }),
     };
     hnsw::mock_create(path, options);
-    Ok(())
 }

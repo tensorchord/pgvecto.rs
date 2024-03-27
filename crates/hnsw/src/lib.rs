@@ -766,14 +766,9 @@ fn mock_make(path: &Path, options: IndexOptions) -> HnswRam<Vecf32L2> {
     let vectors = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_vectors"));
     let payload = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_payload"));
     let dims = 128;
-    let storage = Arc::new(StorageCollection::<Vecf32L2> {
-        storage: VecStorage::<F32> {
-            vectors,
-            payload,
-            dims,
-        },
-    });
-    rayon::check();
+    let storage = Arc::new(StorageCollection::<Vecf32L2>::new(VecStorage::<F32>::new(
+        vectors, payload, dims,
+    )));
     let quantization = Quantization::create(
         &path.join("quantization"),
         options.clone(),
@@ -781,7 +776,6 @@ fn mock_make(path: &Path, options: IndexOptions) -> HnswRam<Vecf32L2> {
         &storage,
         (0..storage.len()).collect::<Vec<_>>(),
     );
-    rayon::check();
     let n = storage.len();
     let graph = HnswRamGraph {
         vertexs: (0..n)
@@ -886,7 +880,6 @@ fn mock_make(path: &Path, options: IndexOptions) -> HnswRam<Vecf32L2> {
             }
             *input = res;
         }
-        rayon::check();
         let mut visited = visited.fetch();
         let target = storage.vector(i);
         let levels = graph.vertexs[i as usize].levels();
@@ -984,13 +977,9 @@ pub fn mock_open(path: &Path, options: IndexOptions) -> Hnsw<Vecf32L2> {
     let vectors = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_vectors"));
     let payload = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_payload"));
     let dims = 128;
-    let storage = Arc::new(StorageCollection::<Vecf32L2> {
-        storage: VecStorage::<F32> {
-            vectors,
-            payload,
-            dims,
-        },
-    });
+    let storage = Arc::new(StorageCollection::<Vecf32L2>::new(VecStorage::<F32>::new(
+        vectors, payload, dims,
+    )));
     let quantization = Quantization::open(
         &path.join("quantization"),
         options.clone(),
