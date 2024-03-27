@@ -5,7 +5,7 @@ use base::vector::*;
 use embedding::openai_embedding;
 use pgrx::error;
 
-#[pgrx::pg_extern(volatile, strict)]
+#[pgrx::pg_extern(volatile, strict, parallel_safe)]
 fn _vectors_text2vec_openai(input: String, model: String) -> Vecf32Output {
     let options = openai_options();
     let resp = match openai_embedding(input, model, options) {

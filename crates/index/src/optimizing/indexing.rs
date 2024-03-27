@@ -8,7 +8,6 @@ use base::operator::Borrowed;
 pub use base::search::*;
 pub use base::vector::*;
 use crossbeam::channel::RecvError;
-use crossbeam::channel::TryRecvError;
 use crossbeam::channel::{bounded, Receiver, RecvTimeoutError, Sender};
 use std::cmp::Reverse;
 use std::convert::Infallible;
@@ -102,34 +101,29 @@ impl<O: Op> OptimizerIndexing<O> {
     }
     fn main(self, shutdown: Receiver<Infallible>) {
         let index = self.index;
-        rayon::ThreadPoolBuilder::new()
-            .num_threads(index.options.optimizing.optimizing_threads)
-            .build_scoped(|pool| {
-                std::thread::scope(|scope| {
-                    scope.spawn(|| match shutdown.recv() {
-                        Ok(never) => match never {},
-                        Err(RecvError) => {
-                            pool.stop();
-                        }
-                    });
-                    loop {
-                        if let Ok(()) = pool.install(|| optimizing_indexing(index.clone())) {
-                            match shutdown.try_recv() {
-                                Ok(never) => match never {},
-                                Err(TryRecvError::Disconnected) => return,
-                                Err(TryRecvError::Empty) => (),
-                            }
-                            continue;
-                        }
-                        match shutdown.recv_timeout(std::time::Duration::from_secs(60)) {
+        loop {
+            let view = index.view();
+            let threads = view.flexible.optimizing_threads;
+            rayon::ThreadPoolBuilder::new()
+                .num_threads(threads as usize)
+                .build_scoped(|pool| {
+                    std::thread::scope(|scope| {
+                        scope.spawn(|| match shutdown.recv() {
                             Ok(never) => match never {},
-                            Err(RecvTimeoutError::Disconnected) => return,
-                            Err(RecvTimeoutError::Timeout) => (),
-                        }
-                    }
-                });
-            })
-            .unwrap();
+                            Err(RecvError) => {
+                                pool.stop();
+                            }
+                        });
+                        let _ = pool.install(|| optimizing_indexing(index.clone()));
+                    })
+                })
+                .unwrap();
+            match shutdown.recv_timeout(std::time::Duration::from_secs(60)) {
+                Ok(never) => match never {},
+                Err(RecvTimeoutError::Disconnected) => return,
+                Err(RecvTimeoutError::Timeout) => (),
+            }
+        }
     }
 }
 

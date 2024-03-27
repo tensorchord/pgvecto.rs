@@ -5,7 +5,7 @@ use base::scalar::*;
 use base::vector::*;
 use std::ops::Deref;
 
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_operator_add(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> Veci8Output {
     check_matched_dims(lhs.len(), rhs.len());
     let data = (0..lhs.len())
@@ -18,7 +18,7 @@ fn _vectors_veci8_operator_add(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> Veci
     )
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_operator_minus(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> Veci8Output {
     check_matched_dims(lhs.len(), rhs.len());
     let data = (0..lhs.len())
@@ -31,55 +31,55 @@ fn _vectors_veci8_operator_minus(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> Ve
     )
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_operator_lt(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> bool {
     check_matched_dims(lhs.len(), rhs.len());
     lhs.deref().dequantization().as_slice() < rhs.deref().dequantization().as_slice()
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_operator_lte(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> bool {
     check_matched_dims(lhs.len(), rhs.len());
     lhs.deref().dequantization().as_slice() <= rhs.deref().dequantization().as_slice()
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_operator_gt(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> bool {
     check_matched_dims(lhs.len(), rhs.len());
     lhs.deref().dequantization().as_slice() > rhs.deref().dequantization().as_slice()
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_operator_gte(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> bool {
     check_matched_dims(lhs.len(), rhs.len());
     lhs.deref().dequantization().as_slice() >= rhs.deref().dequantization().as_slice()
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_operator_eq(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> bool {
     check_matched_dims(lhs.len(), rhs.len());
     lhs.deref().dequantization().as_slice() == rhs.deref().dequantization().as_slice()
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_operator_neq(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> bool {
     check_matched_dims(lhs.len(), rhs.len());
     lhs.deref().dequantization().as_slice() != rhs.deref().dequantization().as_slice()
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_operator_cosine(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> f32 {
     check_matched_dims(lhs.len(), rhs.len());
     Veci8Cos::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_operator_dot(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> f32 {
     check_matched_dims(lhs.len(), rhs.len());
     Veci8Dot::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_veci8_operator_l2(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> f32 {
     check_matched_dims(lhs.len(), rhs.len());
     Veci8L2::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()

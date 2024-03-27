@@ -175,12 +175,7 @@ impl OperatorScalarQuantization for SVecf32L2 {
 }
 
 impl OperatorScalarQuantization for Vecf16Cos {
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn scalar_quantization_distance<'a>(
         dims: u16,
         max: &[F16],
@@ -202,12 +197,7 @@ impl OperatorScalarQuantization for Vecf16Cos {
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn scalar_quantization_distance2(
         dims: u16,
         max: &[F16],
@@ -230,12 +220,7 @@ impl OperatorScalarQuantization for Vecf16Cos {
 }
 
 impl OperatorScalarQuantization for Vecf16Dot {
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn scalar_quantization_distance<'a>(
         dims: u16,
         max: &[F16],
@@ -253,12 +238,7 @@ impl OperatorScalarQuantization for Vecf16Dot {
         xy * (-1.0)
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn scalar_quantization_distance2(
         dims: u16,
         max: &[F16],
@@ -277,12 +257,7 @@ impl OperatorScalarQuantization for Vecf16Dot {
 }
 
 impl OperatorScalarQuantization for Vecf16L2 {
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn scalar_quantization_distance<'a>(
         dims: u16,
         max: &[F16],
@@ -300,12 +275,7 @@ impl OperatorScalarQuantization for Vecf16L2 {
         result
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn scalar_quantization_distance2(
         dims: u16,
         max: &[F16],
@@ -324,12 +294,7 @@ impl OperatorScalarQuantization for Vecf16L2 {
 }
 
 impl OperatorScalarQuantization for Vecf32Cos {
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn scalar_quantization_distance<'a>(
         dims: u16,
         max: &[F32],
@@ -351,12 +316,7 @@ impl OperatorScalarQuantization for Vecf32Cos {
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn scalar_quantization_distance2(
         dims: u16,
         max: &[F32],
@@ -379,12 +339,7 @@ impl OperatorScalarQuantization for Vecf32Cos {
 }
 
 impl OperatorScalarQuantization for Vecf32Dot {
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn scalar_quantization_distance<'a>(
         dims: u16,
         max: &[F32],
@@ -402,12 +357,7 @@ impl OperatorScalarQuantization for Vecf32Dot {
         xy * (-1.0)
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn scalar_quantization_distance2(
         dims: u16,
         max: &[F32],
@@ -426,12 +376,7 @@ impl OperatorScalarQuantization for Vecf32Dot {
 }
 
 impl OperatorScalarQuantization for Vecf32L2 {
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn scalar_quantization_distance<'a>(
         dims: u16,
         max: &[F32],
@@ -449,12 +394,7 @@ impl OperatorScalarQuantization for Vecf32L2 {
         result
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn scalar_quantization_distance2(
         dims: u16,
         max: &[F32],

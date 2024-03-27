@@ -17,6 +17,7 @@ pub trait WorkerOperations {
     fn view_vbase(&self, handle: Handle) -> Result<impl ViewVbaseOperations, VbaseError>;
     fn view_list(&self, handle: Handle) -> Result<impl ViewListOperations, ListError>;
     fn stat(&self, handle: Handle) -> Result<IndexStat, StatError>;
+    fn alter(&self, handle: Handle, key: String, value: String) -> Result<(), AlterError>;
 }
 
 pub trait ViewBasicOperations {

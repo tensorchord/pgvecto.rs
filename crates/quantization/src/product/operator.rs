@@ -112,7 +112,7 @@ impl OperatorProductQuantization for BVecf32Dot {
     }
 
     fn product_quantization_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf32::sl2(lhs, rhs)
+        vecf32::sl2(lhs, rhs)
     }
 
     fn product_quantization_dense_distance(_: &[Scalar<Self>], _: &[Scalar<Self>]) -> F32 {
@@ -155,7 +155,7 @@ impl OperatorProductQuantization for BVecf32Jaccard {
     }
 
     fn product_quantization_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf32::sl2(lhs, rhs)
+        vecf32::sl2(lhs, rhs)
     }
 
     fn product_quantization_dense_distance(_: &[Scalar<Self>], _: &[Scalar<Self>]) -> F32 {
@@ -198,7 +198,7 @@ impl OperatorProductQuantization for BVecf32L2 {
     }
 
     fn product_quantization_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf32::sl2(lhs, rhs)
+        vecf32::sl2(lhs, rhs)
     }
 
     fn product_quantization_dense_distance(_: &[Scalar<Self>], _: &[Scalar<Self>]) -> F32 {
@@ -241,7 +241,7 @@ impl OperatorProductQuantization for SVecf32Cos {
     }
 
     fn product_quantization_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf32::sl2(lhs, rhs)
+        vecf32::sl2(lhs, rhs)
     }
 
     fn product_quantization_dense_distance(_: &[Scalar<Self>], _: &[Scalar<Self>]) -> F32 {
@@ -284,7 +284,7 @@ impl OperatorProductQuantization for SVecf32Dot {
     }
 
     fn product_quantization_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf32::sl2(lhs, rhs)
+        vecf32::sl2(lhs, rhs)
     }
 
     fn product_quantization_dense_distance(_: &[Scalar<Self>], _: &[Scalar<Self>]) -> F32 {
@@ -327,7 +327,7 @@ impl OperatorProductQuantization for SVecf32L2 {
     }
 
     fn product_quantization_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf32::sl2(lhs, rhs)
+        vecf32::sl2(lhs, rhs)
     }
 
     fn product_quantization_dense_distance(_: &[Scalar<Self>], _: &[Scalar<Self>]) -> F32 {
@@ -338,12 +338,7 @@ impl OperatorProductQuantization for SVecf32L2 {
 impl OperatorProductQuantization for Vecf16Cos {
     type ProductQuantizationL2 = Vecf16L2;
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance<'a>(
         dims: u32,
         ratio: u32,
@@ -361,7 +356,7 @@ impl OperatorProductQuantization for Vecf16Cos {
             let lhs = &lhs[(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            let (_xy, _x2, _y2) = super::vecf16::xy_x2_y2(lhs, rhs);
+            let (_xy, _x2, _y2) = vecf16::xy_x2_y2(lhs, rhs);
             xy += _xy;
             x2 += _x2;
             y2 += _y2;
@@ -369,12 +364,7 @@ impl OperatorProductQuantization for Vecf16Cos {
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance2(
         dims: u32,
         ratio: u32,
@@ -392,7 +382,7 @@ impl OperatorProductQuantization for Vecf16Cos {
             let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            let (_xy, _x2, _y2) = super::vecf16::xy_x2_y2(lhs, rhs);
+            let (_xy, _x2, _y2) = vecf16::xy_x2_y2(lhs, rhs);
             xy += _xy;
             x2 += _x2;
             y2 += _y2;
@@ -400,12 +390,7 @@ impl OperatorProductQuantization for Vecf16Cos {
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance_with_delta<'a>(
         dims: u32,
         ratio: u32,
@@ -425,7 +410,7 @@ impl OperatorProductQuantization for Vecf16Cos {
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
             let del = &delta[(i * ratio) as usize..][..k as usize];
-            let (_xy, _x2, _y2) = super::vecf16::xy_x2_y2_delta(lhs, rhs, del);
+            let (_xy, _x2, _y2) = vecf16::xy_x2_y2_delta(lhs, rhs, del);
             xy += _xy;
             x2 += _x2;
             y2 += _y2;
@@ -434,23 +419,18 @@ impl OperatorProductQuantization for Vecf16Cos {
     }
 
     fn product_quantization_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf16::sl2(lhs, rhs)
+        vecf16::sl2(lhs, rhs)
     }
 
     fn product_quantization_dense_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        F32(1.0) - super::vecf16::cosine(lhs, rhs)
+        F32(1.0) - vecf16::cosine(lhs, rhs)
     }
 }
 
 impl OperatorProductQuantization for Vecf16Dot {
     type ProductQuantizationL2 = Vecf16L2;
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance<'a>(
         dims: u32,
         ratio: u32,
@@ -466,18 +446,13 @@ impl OperatorProductQuantization for Vecf16Dot {
             let lhs = &lhs[(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            let _xy = super::vecf16::dot(lhs, rhs);
+            let _xy = vecf16::dot(lhs, rhs);
             xy += _xy;
         }
         xy * (-1.0)
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance2(
         dims: u32,
         ratio: u32,
@@ -493,18 +468,13 @@ impl OperatorProductQuantization for Vecf16Dot {
             let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            let _xy = super::vecf16::dot(lhs, rhs);
+            let _xy = vecf16::dot(lhs, rhs);
             xy += _xy;
         }
         xy * (-1.0)
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance_with_delta<'a>(
         dims: u32,
         ratio: u32,
@@ -522,30 +492,25 @@ impl OperatorProductQuantization for Vecf16Dot {
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
             let del = &delta[(i * ratio) as usize..][..k as usize];
-            let _xy = super::vecf16::dot_delta(lhs, rhs, del);
+            let _xy = vecf16::dot_delta(lhs, rhs, del);
             xy += _xy;
         }
         xy * (-1.0)
     }
 
     fn product_quantization_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf16::sl2(lhs, rhs)
+        vecf16::sl2(lhs, rhs)
     }
 
     fn product_quantization_dense_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf16::dot(lhs, rhs) * (-1.0)
+        vecf16::dot(lhs, rhs) * (-1.0)
     }
 }
 
 impl OperatorProductQuantization for Vecf16L2 {
     type ProductQuantizationL2 = Vecf16L2;
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance<'a>(
         dims: u32,
         ratio: u32,
@@ -561,17 +526,12 @@ impl OperatorProductQuantization for Vecf16L2 {
             let lhs = &lhs[(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            result += super::vecf16::sl2(lhs, rhs);
+            result += vecf16::sl2(lhs, rhs);
         }
         result
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance2(
         dims: u32,
         ratio: u32,
@@ -587,17 +547,12 @@ impl OperatorProductQuantization for Vecf16L2 {
             let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            result += super::vecf16::sl2(lhs, rhs);
+            result += vecf16::sl2(lhs, rhs);
         }
         result
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance_with_delta<'a>(
         dims: u32,
         ratio: u32,
@@ -615,29 +570,24 @@ impl OperatorProductQuantization for Vecf16L2 {
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
             let del = &delta[(i * ratio) as usize..][..k as usize];
-            result += super::vecf16::distance_squared_l2_delta(lhs, rhs, del);
+            result += vecf16::distance_squared_l2_delta(lhs, rhs, del);
         }
         result
     }
 
     fn product_quantization_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf16::sl2(lhs, rhs)
+        vecf16::sl2(lhs, rhs)
     }
 
     fn product_quantization_dense_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf16::sl2(lhs, rhs)
+        vecf16::sl2(lhs, rhs)
     }
 }
 
 impl OperatorProductQuantization for Vecf32Cos {
     type ProductQuantizationL2 = Vecf32L2;
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance<'a>(
         dims: u32,
         ratio: u32,
@@ -655,7 +605,7 @@ impl OperatorProductQuantization for Vecf32Cos {
             let lhs = &lhs[(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            let (_xy, _x2, _y2) = super::vecf32::xy_x2_y2(lhs, rhs);
+            let (_xy, _x2, _y2) = vecf32::xy_x2_y2(lhs, rhs);
             xy += _xy;
             x2 += _x2;
             y2 += _y2;
@@ -663,12 +613,7 @@ impl OperatorProductQuantization for Vecf32Cos {
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance2(
         dims: u32,
         ratio: u32,
@@ -686,7 +631,7 @@ impl OperatorProductQuantization for Vecf32Cos {
             let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            let (_xy, _x2, _y2) = super::vecf32::xy_x2_y2(lhs, rhs);
+            let (_xy, _x2, _y2) = vecf32::xy_x2_y2(lhs, rhs);
             xy += _xy;
             x2 += _x2;
             y2 += _y2;
@@ -694,12 +639,7 @@ impl OperatorProductQuantization for Vecf32Cos {
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance_with_delta<'a>(
         dims: u32,
         ratio: u32,
@@ -719,7 +659,7 @@ impl OperatorProductQuantization for Vecf32Cos {
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
             let del = &delta[(i * ratio) as usize..][..k as usize];
-            let (_xy, _x2, _y2) = super::vecf32::xy_x2_y2_delta(lhs, rhs, del);
+            let (_xy, _x2, _y2) = vecf32::xy_x2_y2_delta(lhs, rhs, del);
             xy += _xy;
             x2 += _x2;
             y2 += _y2;
@@ -728,23 +668,18 @@ impl OperatorProductQuantization for Vecf32Cos {
     }
 
     fn product_quantization_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf32::sl2(lhs, rhs)
+        vecf32::sl2(lhs, rhs)
     }
 
     fn product_quantization_dense_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        F32(1.0) - super::vecf32::cosine(lhs, rhs)
+        F32(1.0) - vecf32::cosine(lhs, rhs)
     }
 }
 
 impl OperatorProductQuantization for Vecf32Dot {
     type ProductQuantizationL2 = Vecf32L2;
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance<'a>(
         dims: u32,
         ratio: u32,
@@ -760,18 +695,13 @@ impl OperatorProductQuantization for Vecf32Dot {
             let lhs = &lhs[(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            let _xy = super::vecf32::dot(lhs, rhs);
+            let _xy = vecf32::dot(lhs, rhs);
             xy += _xy;
         }
         xy * (-1.0)
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance2(
         dims: u32,
         ratio: u32,
@@ -787,18 +717,13 @@ impl OperatorProductQuantization for Vecf32Dot {
             let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            let _xy = super::vecf32::dot(lhs, rhs);
+            let _xy = vecf32::dot(lhs, rhs);
             xy += _xy;
         }
         xy * (-1.0)
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance_with_delta<'a>(
         dims: u32,
         ratio: u32,
@@ -816,30 +741,25 @@ impl OperatorProductQuantization for Vecf32Dot {
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
             let del = &delta[(i * ratio) as usize..][..k as usize];
-            let _xy = super::vecf32::dot_delta(lhs, rhs, del);
+            let _xy = vecf32::dot_delta(lhs, rhs, del);
             xy += _xy;
         }
         xy * (-1.0)
     }
 
     fn product_quantization_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf32::sl2(lhs, rhs)
+        vecf32::sl2(lhs, rhs)
     }
 
     fn product_quantization_dense_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf32::dot(lhs, rhs) * (-1.0)
+        vecf32::dot(lhs, rhs) * (-1.0)
     }
 }
 
 impl OperatorProductQuantization for Vecf32L2 {
     type ProductQuantizationL2 = Vecf32L2;
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance<'a>(
         dims: u32,
         ratio: u32,
@@ -855,17 +775,12 @@ impl OperatorProductQuantization for Vecf32L2 {
             let lhs = &lhs[(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            result += super::vecf32::sl2(lhs, rhs);
+            result += vecf32::sl2(lhs, rhs);
         }
         result
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance2(
         dims: u32,
         ratio: u32,
@@ -881,17 +796,12 @@ impl OperatorProductQuantization for Vecf32L2 {
             let lhs = &centroids[lhsp..][(i * ratio) as usize..][..k as usize];
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
-            result += super::vecf32::sl2(lhs, rhs);
+            result += vecf32::sl2(lhs, rhs);
         }
         result
     }
 
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn product_quantization_distance_with_delta<'a>(
         dims: u32,
         ratio: u32,
@@ -909,17 +819,17 @@ impl OperatorProductQuantization for Vecf32L2 {
             let rhsp = rhs[i as usize] as usize * dims as usize;
             let rhs = &centroids[rhsp..][(i * ratio) as usize..][..k as usize];
             let del = &delta[(i * ratio) as usize..][..k as usize];
-            result += super::vecf32::distance_squared_l2_delta(lhs, rhs, del);
+            result += vecf32::distance_squared_l2_delta(lhs, rhs, del);
         }
         result
     }
 
     fn product_quantization_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf32::sl2(lhs, rhs)
+        vecf32::sl2(lhs, rhs)
     }
 
     fn product_quantization_dense_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        super::vecf32::sl2(lhs, rhs)
+        vecf32::sl2(lhs, rhs)
     }
 }
 

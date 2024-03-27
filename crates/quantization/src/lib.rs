@@ -1,3 +1,4 @@
+#![feature(doc_cfg)]
 #![feature(avx512_target_feature)]
 
 pub mod operator;

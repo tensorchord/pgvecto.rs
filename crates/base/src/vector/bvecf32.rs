@@ -13,6 +13,35 @@ pub struct BVecf32Owned {
 }
 
 impl BVecf32Owned {
+    #[inline(always)]
+    pub fn new(dims: u16, data: Vec<usize>) -> Self {
+        Self::new_checked(dims, data).unwrap()
+    }
+    #[inline(always)]
+    pub fn new_checked(dims: u16, data: Vec<usize>) -> Option<Self> {
+        if dims == 0 {
+            return None;
+        }
+        if data.len() != (dims as usize).div_ceil(BVEC_WIDTH) {
+            return None;
+        }
+        if dims % BVEC_WIDTH as u16 != 0 && data[data.len() - 1] >> (dims % BVEC_WIDTH as u16) != 0
+        {
+            return None;
+        }
+        unsafe { Some(Self::new_unchecked(dims, data)) }
+    }
+    /// # Safety
+    ///
+    /// * `dims` must be in `1..=65535`.
+    /// * `data` must be of the correct length.
+    /// * The padding bits must be zero.
+    #[inline(always)]
+    pub unsafe fn new_unchecked(dims: u16, data: Vec<usize>) -> Self {
+        Self { dims, data }
+    }
+
+    #[inline(always)]
     pub fn new_zeroed(dims: u16) -> Self {
         assert!((1..=65535).contains(&dims));
         let size = (dims as usize).div_ceil(BVEC_WIDTH);
@@ -22,6 +51,7 @@ impl BVecf32Owned {
         }
     }
 
+    #[inline(always)]
     pub fn set(&mut self, index: usize, value: bool) {
         assert!(index < self.dims as usize);
         if value {
@@ -82,7 +112,8 @@ impl<'a> BVecf32Borrowed<'a> {
         if data.len() != (dims as usize).div_ceil(BVEC_WIDTH) {
             return None;
         }
-        if data[data.len() - 1] >> (dims % BVEC_WIDTH as u16) != 0 {
+        if dims % BVEC_WIDTH as u16 != 0 && data[data.len() - 1] >> (dims % BVEC_WIDTH as u16) != 0
+        {
             return None;
         }
         unsafe { Some(Self::new_unchecked(dims, data)) }
@@ -163,408 +194,343 @@ impl<'a> PartialOrd for BVecf32Borrowed<'a> {
     }
 }
 
-#[inline(always)]
-pub fn cosine<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
+#[inline]
+#[cfg(any(target_arch = "x86_64", doc))]
+#[doc(cfg(target_arch = "x86_64"))]
+#[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
+unsafe fn cosine_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
+    use std::arch::x86_64::*;
     let lhs = lhs.data();
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
-
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
-    fn cosine(lhs: &[usize], rhs: &[usize]) -> F32 {
-        let mut xy = 0;
-        let mut xx = 0;
-        let mut yy = 0;
-        for i in 0..lhs.len() {
-            xy += (lhs[i] & rhs[i]).count_ones();
-            xx += lhs[i].count_ones();
-            yy += rhs[i].count_ones();
+    unsafe {
+        const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
+        let mut xy = _mm512_setzero_si512();
+        let mut xx = _mm512_setzero_si512();
+        let mut yy = _mm512_setzero_si512();
+        let mut a = lhs.as_ptr();
+        let mut b = rhs.as_ptr();
+        let mut n = lhs.len();
+        while n >= WIDTH {
+            let x = _mm512_loadu_si512(a.cast());
+            let y = _mm512_loadu_si512(b.cast());
+            a = a.add(WIDTH);
+            b = b.add(WIDTH);
+            n -= WIDTH;
+            xy = _mm512_add_epi64(xy, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
+            xx = _mm512_add_epi64(xx, _mm512_popcnt_epi64(x));
+            yy = _mm512_add_epi64(yy, _mm512_popcnt_epi64(y));
         }
-        let rxy = xy as f32;
-        let rxx = xx as f32;
-        let ryy = yy as f32;
+        if n > 0 {
+            let mask = _bzhi_u32(0xFFFF, n as u32) as u8;
+            let x = _mm512_maskz_loadu_epi64(mask, a.cast());
+            let y = _mm512_maskz_loadu_epi64(mask, b.cast());
+            xy = _mm512_add_epi64(xy, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
+            xx = _mm512_add_epi64(xx, _mm512_popcnt_epi64(x));
+            yy = _mm512_add_epi64(yy, _mm512_popcnt_epi64(y));
+        }
+        let rxy = _mm512_reduce_add_epi64(xy) as f32;
+        let rxx = _mm512_reduce_add_epi64(xx) as f32;
+        let ryy = _mm512_reduce_add_epi64(yy) as f32;
         F32(rxy / (rxx * ryy).sqrt())
     }
-
-    #[inline]
-    #[cfg(target_arch = "x86_64")]
-    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
-    unsafe fn cosine_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
-        use std::arch::x86_64::*;
-        #[inline]
-        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
-        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
-            let mut dst: __m512i;
-            unsafe {
-                std::arch::asm!(
-                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
-                    p = in(reg) mem_addr,
-                    k = in(kreg) k,
-                    dst = out(zmm_reg) dst,
-                    options(pure, readonly, nostack)
-                );
-            }
-            dst
-        }
-        assert_eq!(lhs.len(), rhs.len());
-        unsafe {
-            const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
-            let mut xy = _mm512_setzero_si512();
-            let mut xx = _mm512_setzero_si512();
-            let mut yy = _mm512_setzero_si512();
-            let mut a = lhs.as_ptr();
-            let mut b = rhs.as_ptr();
-            let mut n = lhs.len();
-            while n >= WIDTH {
-                let x = _mm512_loadu_si512(a.cast());
-                let y = _mm512_loadu_si512(b.cast());
-                a = a.add(WIDTH);
-                b = b.add(WIDTH);
-                n -= WIDTH;
-                xy = _mm512_add_epi64(xy, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
-                xx = _mm512_add_epi64(xx, _mm512_popcnt_epi64(x));
-                yy = _mm512_add_epi64(yy, _mm512_popcnt_epi64(y));
-            }
-            if n > 0 {
-                let mask = _bzhi_u32(0xFFFF, n as u32) as u8;
-                let x = _mm512_maskz_loadu_epi64(mask, a.cast());
-                let y = _mm512_maskz_loadu_epi64(mask, b.cast());
-                xy = _mm512_add_epi64(xy, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
-                xx = _mm512_add_epi64(xx, _mm512_popcnt_epi64(x));
-                yy = _mm512_add_epi64(yy, _mm512_popcnt_epi64(y));
-            }
-            let rxy = _mm512_reduce_add_epi64(xy) as f32;
-            let rxx = _mm512_reduce_add_epi64(xx) as f32;
-            let ryy = _mm512_reduce_add_epi64(yy) as f32;
-            F32(rxy / (rxx * ryy).sqrt())
-        }
-    }
-
-    #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vpopcntdq() {
-        unsafe {
-            return cosine_avx512vpopcntdq(lhs, rhs);
-        }
-    }
-    cosine(lhs, rhs)
 }
 
-#[inline(always)]
-pub fn dot<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn cosine_v4_avx512vpopcntdq_test() {
+    const EPSILON: F32 = F32(1e-5);
+    detect::init();
+    if !detect::v4_avx512vpopcntdq::detect() {
+        println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
+        return;
+    }
+    for _ in 0..300 {
+        let lhs = random_bvector();
+        let rhs = random_bvector();
+        let specialized = unsafe { cosine_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
+        let fallback = unsafe { cosine_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
+}
+
+#[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
+pub fn cosine(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
     let lhs = lhs.data();
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
-
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
-    fn dot(lhs: &[usize], rhs: &[usize]) -> F32 {
-        let mut xy = 0;
-        for i in 0..lhs.len() {
-            xy += (lhs[i] & rhs[i]).count_ones();
-        }
-        F32(xy as f32)
+    let mut xy = 0;
+    let mut xx = 0;
+    let mut yy = 0;
+    for i in 0..lhs.len() {
+        xy += (lhs[i] & rhs[i]).count_ones();
+        xx += lhs[i].count_ones();
+        yy += rhs[i].count_ones();
     }
-
-    #[inline]
-    #[cfg(target_arch = "x86_64")]
-    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
-    unsafe fn dot_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
-        use std::arch::x86_64::*;
-        #[inline]
-        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
-        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
-            let mut dst: __m512i;
-            unsafe {
-                std::arch::asm!(
-                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
-                    p = in(reg) mem_addr,
-                    k = in(kreg) k,
-                    dst = out(zmm_reg) dst,
-                    options(pure, readonly, nostack)
-                );
-            }
-            dst
-        }
-        assert_eq!(lhs.len(), rhs.len());
-        unsafe {
-            const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
-            let mut xy = _mm512_setzero_si512();
-            let mut a = lhs.as_ptr();
-            let mut b = rhs.as_ptr();
-            let mut n = lhs.len();
-            while n >= WIDTH {
-                let x = _mm512_loadu_si512(a.cast());
-                let y = _mm512_loadu_si512(b.cast());
-                a = a.add(WIDTH);
-                b = b.add(WIDTH);
-                n -= WIDTH;
-                xy = _mm512_add_epi64(xy, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
-            }
-            if n > 0 {
-                let mask = _bzhi_u32(0xFFFF, n as u32) as u8;
-                let x = _mm512_maskz_loadu_epi64(mask, a.cast());
-                let y = _mm512_maskz_loadu_epi64(mask, b.cast());
-                xy = _mm512_add_epi64(xy, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
-            }
-            let rxy = _mm512_reduce_add_epi64(xy) as f32;
-            F32(rxy)
-        }
-    }
-
-    #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vpopcntdq() {
-        unsafe {
-            return dot_avx512vpopcntdq(lhs, rhs);
-        }
-    }
-    dot(lhs, rhs)
+    let rxy = xy as f32;
+    let rxx = xx as f32;
+    let ryy = yy as f32;
+    F32(rxy / (rxx * ryy).sqrt())
 }
 
-#[inline(always)]
-pub fn sl2<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
+#[inline]
+#[cfg(any(target_arch = "x86_64", doc))]
+#[doc(cfg(target_arch = "x86_64"))]
+#[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
+unsafe fn dot_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
+    use std::arch::x86_64::*;
     let lhs = lhs.data();
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
-
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
-    fn sl2(lhs: &[usize], rhs: &[usize]) -> F32 {
-        let mut dd = 0;
-        for i in 0..lhs.len() {
-            dd += (lhs[i] ^ rhs[i]).count_ones();
+    unsafe {
+        const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
+        let mut xy = _mm512_setzero_si512();
+        let mut a = lhs.as_ptr();
+        let mut b = rhs.as_ptr();
+        let mut n = lhs.len();
+        while n >= WIDTH {
+            let x = _mm512_loadu_si512(a.cast());
+            let y = _mm512_loadu_si512(b.cast());
+            a = a.add(WIDTH);
+            b = b.add(WIDTH);
+            n -= WIDTH;
+            xy = _mm512_add_epi64(xy, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
         }
-        F32(dd as f32)
+        if n > 0 {
+            let mask = _bzhi_u32(0xFFFF, n as u32) as u8;
+            let x = _mm512_maskz_loadu_epi64(mask, a.cast());
+            let y = _mm512_maskz_loadu_epi64(mask, b.cast());
+            xy = _mm512_add_epi64(xy, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
+        }
+        let rxy = _mm512_reduce_add_epi64(xy) as f32;
+        F32(rxy)
     }
-
-    #[inline]
-    #[cfg(target_arch = "x86_64")]
-    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
-    unsafe fn sl2_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
-        use std::arch::x86_64::*;
-        #[inline]
-        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
-        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
-            let mut dst: __m512i;
-            unsafe {
-                std::arch::asm!(
-                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
-                    p = in(reg) mem_addr,
-                    k = in(kreg) k,
-                    dst = out(zmm_reg) dst,
-                    options(pure, readonly, nostack)
-                );
-            }
-            dst
-        }
-        assert_eq!(lhs.len(), rhs.len());
-        unsafe {
-            const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
-            let mut dd = _mm512_setzero_si512();
-            let mut a = lhs.as_ptr();
-            let mut b = rhs.as_ptr();
-            let mut n = lhs.len();
-            while n >= WIDTH {
-                let x = _mm512_loadu_si512(a.cast());
-                let y = _mm512_loadu_si512(b.cast());
-                a = a.add(WIDTH);
-                b = b.add(WIDTH);
-                n -= WIDTH;
-                dd = _mm512_add_epi64(dd, _mm512_popcnt_epi64(_mm512_xor_si512(x, y)));
-            }
-            if n > 0 {
-                let mask = _bzhi_u32(0xFFFF, n as u32) as u8;
-                let x = _mm512_maskz_loadu_epi64(mask, a.cast());
-                let y = _mm512_maskz_loadu_epi64(mask, b.cast());
-                dd = _mm512_add_epi64(dd, _mm512_popcnt_epi64(_mm512_xor_si512(x, y)));
-            }
-            let rdd = _mm512_reduce_add_epi64(dd) as f32;
-            F32(rdd)
-        }
-    }
-
-    #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vpopcntdq() {
-        unsafe {
-            return sl2_avx512vpopcntdq(lhs, rhs);
-        }
-    }
-    sl2(lhs, rhs)
 }
 
-#[inline(always)]
-pub fn jaccard<'a>(lhs: BVecf32Borrowed<'a>, rhs: BVecf32Borrowed<'a>) -> F32 {
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn dot_v4_avx512vpopcntdq_test() {
+    const EPSILON: F32 = F32(1e-5);
+    detect::init();
+    if !detect::v4_avx512vpopcntdq::detect() {
+        println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
+        return;
+    }
+    for _ in 0..300 {
+        let lhs = random_bvector();
+        let rhs = random_bvector();
+        let specialized = unsafe { dot_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
+        let fallback = unsafe { dot_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
+}
+
+#[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
+pub fn dot(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
     let lhs = lhs.data();
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
-
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
-    fn jaccard(lhs: &[usize], rhs: &[usize]) -> F32 {
-        let mut inter = 0;
-        let mut union = 0;
-        for i in 0..lhs.len() {
-            inter += (lhs[i] & rhs[i]).count_ones();
-            union += (lhs[i] | rhs[i]).count_ones();
-        }
-        F32(inter as f32 / union as f32)
+    let mut xy = 0;
+    for i in 0..lhs.len() {
+        xy += (lhs[i] & rhs[i]).count_ones();
     }
-
-    #[inline]
-    #[cfg(target_arch = "x86_64")]
-    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
-    unsafe fn jaccard_avx512vpopcntdq(lhs: &[usize], rhs: &[usize]) -> F32 {
-        use std::arch::x86_64::*;
-        #[inline]
-        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
-        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
-            let mut dst: __m512i;
-            unsafe {
-                std::arch::asm!(
-                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
-                    p = in(reg) mem_addr,
-                    k = in(kreg) k,
-                    dst = out(zmm_reg) dst,
-                    options(pure, readonly, nostack)
-                );
-            }
-            dst
-        }
-        assert_eq!(lhs.len(), rhs.len());
-        unsafe {
-            const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
-            let mut inter = _mm512_setzero_si512();
-            let mut union = _mm512_setzero_si512();
-            let mut a = lhs.as_ptr();
-            let mut b = rhs.as_ptr();
-            let mut n = lhs.len();
-            while n >= WIDTH {
-                let x = _mm512_loadu_si512(a.cast());
-                let y = _mm512_loadu_si512(b.cast());
-                a = a.add(WIDTH);
-                b = b.add(WIDTH);
-                n -= WIDTH;
-                inter = _mm512_add_epi64(inter, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
-                union = _mm512_add_epi64(union, _mm512_popcnt_epi64(_mm512_or_si512(x, y)));
-            }
-            if n > 0 {
-                let mask = _bzhi_u32(0xFFFF, n as u32) as u8;
-                let x = _mm512_maskz_loadu_epi64(mask, a.cast());
-                let y = _mm512_maskz_loadu_epi64(mask, b.cast());
-                inter = _mm512_add_epi64(inter, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
-                union = _mm512_add_epi64(union, _mm512_popcnt_epi64(_mm512_or_si512(x, y)));
-            }
-            let rinter = _mm512_reduce_add_epi64(inter) as f32;
-            let runion = _mm512_reduce_add_epi64(union) as f32;
-            F32(rinter / runion)
-        }
-    }
-
-    #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vpopcntdq() {
-        unsafe {
-            return jaccard_avx512vpopcntdq(lhs, rhs);
-        }
-    }
-    jaccard(lhs, rhs)
+    F32(xy as f32)
 }
 
-#[inline(always)]
+#[inline]
+#[cfg(any(target_arch = "x86_64", doc))]
+#[doc(cfg(target_arch = "x86_64"))]
+#[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
+unsafe fn sl2_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
+    use std::arch::x86_64::*;
+    let lhs = lhs.data();
+    let rhs = rhs.data();
+    assert!(lhs.len() == rhs.len());
+    unsafe {
+        const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
+        let mut dd = _mm512_setzero_si512();
+        let mut a = lhs.as_ptr();
+        let mut b = rhs.as_ptr();
+        let mut n = lhs.len();
+        while n >= WIDTH {
+            let x = _mm512_loadu_si512(a.cast());
+            let y = _mm512_loadu_si512(b.cast());
+            a = a.add(WIDTH);
+            b = b.add(WIDTH);
+            n -= WIDTH;
+            dd = _mm512_add_epi64(dd, _mm512_popcnt_epi64(_mm512_xor_si512(x, y)));
+        }
+        if n > 0 {
+            let mask = _bzhi_u32(0xFFFF, n as u32) as u8;
+            let x = _mm512_maskz_loadu_epi64(mask, a.cast());
+            let y = _mm512_maskz_loadu_epi64(mask, b.cast());
+            dd = _mm512_add_epi64(dd, _mm512_popcnt_epi64(_mm512_xor_si512(x, y)));
+        }
+        let rdd = _mm512_reduce_add_epi64(dd) as f32;
+        F32(rdd)
+    }
+}
+
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn sl2_v4_avx512vpopcntdq_test() {
+    const EPSILON: F32 = F32(1e-5);
+    detect::init();
+    if !detect::v4_avx512vpopcntdq::detect() {
+        println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
+        return;
+    }
+    for _ in 0..300 {
+        let lhs = random_bvector();
+        let rhs = random_bvector();
+        let specialized = unsafe { sl2_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
+        let fallback = unsafe { sl2_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
+}
+
+#[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
+pub fn sl2(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
+    let lhs = lhs.data();
+    let rhs = rhs.data();
+    assert!(lhs.len() == rhs.len());
+    let mut dd = 0;
+    for i in 0..lhs.len() {
+        dd += (lhs[i] ^ rhs[i]).count_ones();
+    }
+    F32(dd as f32)
+}
+
+#[inline]
+#[cfg(any(target_arch = "x86_64", doc))]
+#[doc(cfg(target_arch = "x86_64"))]
+#[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
+unsafe fn jaccard_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
+    use std::arch::x86_64::*;
+    let lhs = lhs.data();
+    let rhs = rhs.data();
+    assert!(lhs.len() == rhs.len());
+    unsafe {
+        const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
+        let mut inter = _mm512_setzero_si512();
+        let mut union = _mm512_setzero_si512();
+        let mut a = lhs.as_ptr();
+        let mut b = rhs.as_ptr();
+        let mut n = lhs.len();
+        while n >= WIDTH {
+            let x = _mm512_loadu_si512(a.cast());
+            let y = _mm512_loadu_si512(b.cast());
+            a = a.add(WIDTH);
+            b = b.add(WIDTH);
+            n -= WIDTH;
+            inter = _mm512_add_epi64(inter, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
+            union = _mm512_add_epi64(union, _mm512_popcnt_epi64(_mm512_or_si512(x, y)));
+        }
+        if n > 0 {
+            let mask = _bzhi_u32(0xFFFF, n as u32) as u8;
+            let x = _mm512_maskz_loadu_epi64(mask, a.cast());
+            let y = _mm512_maskz_loadu_epi64(mask, b.cast());
+            inter = _mm512_add_epi64(inter, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
+            union = _mm512_add_epi64(union, _mm512_popcnt_epi64(_mm512_or_si512(x, y)));
+        }
+        let rinter = _mm512_reduce_add_epi64(inter) as f32;
+        let runion = _mm512_reduce_add_epi64(union) as f32;
+        F32(rinter / runion)
+    }
+}
+
+#[cfg(all(target_arch = "x86_64", test))]
+#[test]
+fn jaccard_v4_avx512vpopcntdq_test() {
+    const EPSILON: F32 = F32(1e-5);
+    detect::init();
+    if !detect::v4_avx512vpopcntdq::detect() {
+        println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
+        return;
+    }
+    for _ in 0..300 {
+        let lhs = random_bvector();
+        let rhs = random_bvector();
+        let specialized = unsafe { jaccard_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
+        let fallback = unsafe { jaccard_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        assert!(
+            (specialized - fallback).abs() < EPSILON,
+            "specialized = {specialized}, fallback = {fallback}."
+        );
+    }
+}
+
+#[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
+pub fn jaccard(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
+    let lhs = lhs.data();
+    let rhs = rhs.data();
+    assert!(lhs.len() == rhs.len());
+    let mut inter = 0;
+    let mut union = 0;
+    for i in 0..lhs.len() {
+        inter += (lhs[i] & rhs[i]).count_ones();
+        union += (lhs[i] | rhs[i]).count_ones();
+    }
+    F32(inter as f32 / union as f32)
+}
+
+#[inline]
+#[cfg(any(target_arch = "x86_64", doc))]
+#[doc(cfg(target_arch = "x86_64"))]
+#[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
+unsafe fn length_v4_avx512vpopcntdq(vector: BVecf32Borrowed<'_>) -> F32 {
+    use std::arch::x86_64::*;
+    let lhs = vector.data();
+    unsafe {
+        const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
+        let mut cnt = _mm512_setzero_si512();
+        let mut a = lhs.as_ptr();
+        let mut n = lhs.len();
+        while n >= WIDTH {
+            let x = _mm512_loadu_si512(a.cast());
+            a = a.add(WIDTH);
+            n -= WIDTH;
+            cnt = _mm512_add_epi64(cnt, _mm512_popcnt_epi64(x));
+        }
+        if n > 0 {
+            let mask = _bzhi_u32(0xFFFF, n as u32) as u8;
+            let x = _mm512_maskz_loadu_epi64(mask, a.cast());
+            cnt = _mm512_add_epi64(cnt, _mm512_popcnt_epi64(x));
+        }
+        let rcnt = _mm512_reduce_add_epi64(cnt) as f32;
+        F32(rcnt.sqrt())
+    }
+}
+
+#[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
 pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
     let vector = vector.data();
-
-    #[inline(always)]
-    #[multiversion::multiversion(targets(
-        "x86_64/x86-64-v4",
-        "x86_64/x86-64-v3",
-        "x86_64/x86-64-v2",
-        "aarch64+neon"
-    ))]
-    pub fn length(vector: &[usize]) -> F32 {
-        let mut l = 0;
-        for i in 0..vector.len() {
-            l += vector[i].count_ones();
-        }
-        F32(l as f32).sqrt()
+    let mut l = 0;
+    for i in 0..vector.len() {
+        l += vector[i].count_ones();
     }
-
-    #[inline]
-    #[cfg(target_arch = "x86_64")]
-    #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
-    unsafe fn length_avx512vpopcntdq(lhs: &[usize]) -> F32 {
-        use std::arch::x86_64::*;
-        #[inline]
-        #[target_feature(enable = "avx512vpopcntdq,avx512bw,avx512f,bmi2")]
-        pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i8) -> __m512i {
-            let mut dst: __m512i;
-            unsafe {
-                std::arch::asm!(
-                    "vmovdqu64 {dst}{{{k}}} {{z}}, [{p}]",
-                    p = in(reg) mem_addr,
-                    k = in(kreg) k,
-                    dst = out(zmm_reg) dst,
-                    options(pure, readonly, nostack)
-                );
-            }
-            dst
-        }
-        unsafe {
-            const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
-            let mut cnt = _mm512_setzero_si512();
-            let mut a = lhs.as_ptr();
-            let mut n = lhs.len();
-            while n >= WIDTH {
-                let x = _mm512_loadu_si512(a.cast());
-                a = a.add(WIDTH);
-                n -= WIDTH;
-                cnt = _mm512_add_epi64(cnt, _mm512_popcnt_epi64(x));
-            }
-            if n > 0 {
-                let mask = _bzhi_u32(0xFFFF, n as u32) as u8;
-                let x = _mm512_maskz_loadu_epi64(mask, a.cast());
-                cnt = _mm512_add_epi64(cnt, _mm512_popcnt_epi64(x));
-            }
-            let rcnt = _mm512_reduce_add_epi64(cnt) as f32;
-            F32(rcnt.sqrt())
-        }
-    }
-
-    #[cfg(target_arch = "x86_64")]
-    if detect::x86_64::detect_avx512vpopcntdq() {
-        unsafe {
-            return length_avx512vpopcntdq(vector);
-        }
-    }
-    length(vector)
+    F32(l as f32).sqrt()
 }
 
-#[inline(always)]
-#[multiversion::multiversion(targets(
-    "x86_64/x86-64-v4",
-    "x86_64/x86-64-v3",
-    "x86_64/x86-64-v2",
-    "aarch64+neon"
-))]
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn l2_normalize<'a>(vector: BVecf32Borrowed<'a>) -> Vecf32Owned {
     let l = length(vector);
     Vecf32Owned::new(vector.iter().map(|i| F32(i as u32 as f32) / l).collect())
+}
+
+#[cfg(all(target_arch = "x86_64", test))]
+fn random_bvector() -> BVecf32Owned {
+    let mut x = vec![0; 126];
+    x.fill_with(|| rand::random());
+    x[125] &= 1;
+    BVecf32Owned::new(8001, x)
 }

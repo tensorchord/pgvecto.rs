@@ -4,6 +4,7 @@ import pytest
 from psycopg import Connection, sql
 
 from pgvecto_rs.psycopg import register_vector
+from pgvecto_rs.types import SparseVector
 from tests import (
     EXPECTED_NEG_COS_DIS,
     EXPECTED_NEG_DOT_PROD_DIS,
@@ -63,6 +64,52 @@ def test_create_index(conn: Connection, index_name: str, index_setting: str):
 # =================================
 # Semetic search tests
 # =================================
+
+
+def test_copy(conn: Connection):
+    with conn.cursor() as cursor, cursor.copy(
+        "COPY tb_test_item (embedding) FROM STDIN (FORMAT BINARY)"
+    ) as copy:
+        for e in VECTORS:
+            copy.write_row([e])
+
+    conn.commit()
+    cur = conn.execute("SELECT * FROM tb_test_item;", binary=True)
+    rows = cur.fetchall()
+    assert len(rows) == len(VECTORS)
+    for i, e in enumerate(rows):
+        assert np.allclose(e[1], VECTORS[i], atol=1e-10)
+    conn.execute("Delete FROM tb_test_item;")
+    conn.commit()
+
+
+def test_copy_sparse(conn: Connection):
+    conn.execute("DROP TABLE IF EXISTS tb_test_svector;")
+    conn.execute(
+        "CREATE TABLE tb_test_svector (id bigserial PRIMARY KEY, embedding svector NOT NULL);"
+    )
+    conn.commit()
+    try:
+        rows_number = 0
+        with conn.cursor() as cursor, cursor.copy(
+            "COPY tb_test_svector (embedding) FROM STDIN (FORMAT BINARY)"
+        ) as copy:
+            copy.write_row([SparseVector(3, [0, 2], [1.0, 3.0])])
+            copy.write_row([SparseVector(3, np.array([0, 1, 2]), [1.0, 2.0, 3.0])])
+            copy.write_row([SparseVector(3, np.array([1, 2]), np.array([2.0, 3.0]))])
+        conn.commit()
+        rows_number = 3
+        cur = conn.execute("SELECT * FROM tb_test_svector;", binary=True)
+        rows = cur.fetchall()
+        assert len(rows) == rows_number
+        assert str(rows[0][1]) == "[1.0, 0.0, 3.0]"
+        assert str(rows[1][1]) == "[1.0, 2.0, 3.0]"
+        assert str(rows[2][1]) == "[0.0, 2.0, 3.0]"
+        conn.commit()
+
+    finally:
+        conn.execute("DROP TABLE IF EXISTS tb_test_svector;")
+        conn.commit()
 
 
 def test_insert(conn: Connection):

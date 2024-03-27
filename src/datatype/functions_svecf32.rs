@@ -3,7 +3,7 @@ use crate::error::*;
 use base::scalar::*;
 use base::vector::*;
 
-#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_to_svector(
     dims: i32,
     index: pgrx::Array<i32>,

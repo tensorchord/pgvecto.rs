@@ -14,7 +14,7 @@ impl Bytea {
 impl IntoDatum for Bytea {
     fn into_datum(self) -> Option<Datum> {
         if !self.0.is_null() {
-            Some(pgrx::pg_sys::Datum::from(self.0))
+            Some(Datum::from(self.0))
         } else {
             None
         }

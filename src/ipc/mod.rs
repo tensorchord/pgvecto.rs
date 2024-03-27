@@ -21,29 +21,29 @@ pub enum ConnectionError {
 
 pub fn listen_unix() -> impl Iterator<Item = ServerRpcHandler> {
     std::iter::from_fn(move || {
-        let socket = self::transport::ServerSocket::Unix(self::transport::unix::accept());
-        Some(self::ServerRpcHandler::new(socket))
+        let socket = ServerSocket::Unix(transport::unix::accept());
+        Some(ServerRpcHandler::new(socket))
     })
 }
 
 pub fn listen_mmap() -> impl Iterator<Item = ServerRpcHandler> {
     std::iter::from_fn(move || {
-        let socket = self::transport::ServerSocket::Mmap(self::transport::mmap::accept());
-        Some(self::ServerRpcHandler::new(socket))
+        let socket = ServerSocket::Mmap(transport::mmap::accept());
+        Some(ServerRpcHandler::new(socket))
     })
 }
 
 pub fn connect_unix() -> ClientSocket {
-    self::transport::ClientSocket::Unix(self::transport::unix::connect())
+    ClientSocket::Unix(transport::unix::connect())
 }
 
 pub fn connect_mmap() -> ClientSocket {
-    self::transport::ClientSocket::Mmap(self::transport::mmap::connect())
+    ClientSocket::Mmap(transport::mmap::connect())
 }
 
 pub fn init() {
-    self::transport::mmap::init();
-    self::transport::unix::init();
+    transport::mmap::init();
+    transport::unix::init();
 }
 
 impl Drop for ClientRpc {
@@ -329,4 +329,5 @@ defines! {
     stream vbase(handle: Handle, vector: OwnedVector, opts: SearchOptions) -> Pointer;
     stream list(handle: Handle) -> Pointer;
     unary stat(handle: Handle) -> IndexStat;
+    unary alter(handle: Handle, key: String, value: String) -> ();
 }

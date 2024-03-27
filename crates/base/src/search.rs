@@ -5,35 +5,44 @@ use std::fmt::Display;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Handle {
-    newtype: u128,
+    tenant_id: u128,
+    cluster_id: u64,
+    database_id: u32,
+    index_id: u32,
 }
 
 impl Handle {
-    pub fn new(newtype: u128) -> Self {
-        Self { newtype }
-    }
-    pub fn as_u128(self) -> u128 {
-        self.newtype
+    pub fn new(tenant_id: u128, cluster_id: u64, database_id: u32, index_id: u32) -> Self {
+        Self {
+            tenant_id,
+            cluster_id,
+            database_id,
+            index_id,
+        }
     }
 }
 
 impl Display for Handle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:x}", self.as_u128())
+        write!(
+            f,
+            "{:032x}{:016x}{:08x}{:08x}",
+            self.tenant_id, self.cluster_id, self.database_id, self.index_id
+        )
     }
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Pointer {
-    newtype: u64,
+    value: u64,
 }
 
 impl Pointer {
     pub fn new(value: u64) -> Self {
-        Self { newtype: value }
+        Self { value }
     }
     pub fn as_u64(self) -> u64 {
-        self.newtype
+        self.value
     }
 }
 

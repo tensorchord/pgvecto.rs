@@ -13,6 +13,7 @@ mod error;
 mod gucs;
 mod index;
 mod ipc;
+mod upgrade;
 mod utils;
 
 pgrx::pg_module_magic!();
@@ -26,11 +27,11 @@ unsafe extern "C" fn _PG_init() {
         bad_init();
     }
     unsafe {
-        detect::initialize();
-        self::gucs::init();
-        self::index::init();
-        self::ipc::init();
-        self::bgworker::init();
+        detect::init();
+        gucs::init();
+        index::init();
+        ipc::init();
+        bgworker::init();
     }
 }
 

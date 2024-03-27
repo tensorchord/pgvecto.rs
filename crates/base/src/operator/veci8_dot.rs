@@ -12,6 +12,6 @@ impl Operator for Veci8Dot {
     const DISTANCE_KIND: DistanceKind = DistanceKind::Dot;
 
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> F32 {
-        veci8::dot_distance(&lhs, &rhs) * (-1.0)
+        veci8::dot(&lhs, &rhs) * (-1.0)
     }
 }

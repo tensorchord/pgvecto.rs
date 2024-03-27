@@ -80,15 +80,13 @@ impl Veci8Header {
     }
 
     /// return value after dequantization by index
-    /// since index<usize> return &Output, we can't create a new Output and return it as a reference, so we need to use this function to return a new Output directly
+    /// since `index<usize>` return &Output, we can't create a new Output and return it as a reference, so we need to use this function to return a new Output directly
     #[inline(always)]
     pub fn index(&self, index: usize) -> F32 {
         self.data()[index].to_f32() * self.alpha() + self.offset()
     }
 
     pub fn data(&self) -> &[I8] {
-        debug_assert_eq!(self.varlena & 3, 0);
-        debug_assert_eq!(self.kind, VECI8_KIND);
         unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.len as usize) }
     }
 

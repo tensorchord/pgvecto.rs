@@ -8,17 +8,25 @@ use std::ffi::CStr;
 
 #[derive(Copy, Clone, Debug, Default)]
 #[repr(C)]
-pub struct Helper {
-    pub vl_len_: i32,
-    pub offset: i32,
+pub struct Reloption {
+    vl_len_: i32,
+    pub options: i32,
 }
 
-pub fn helper_offset() -> usize {
-    std::mem::offset_of!(Helper, offset)
-}
-
-pub fn helper_size() -> usize {
-    std::mem::size_of::<Helper>()
+impl Reloption {
+    pub const TAB: &'static [pgrx::pg_sys::relopt_parse_elt] = &[pgrx::pg_sys::relopt_parse_elt {
+        optname: c"options".as_ptr(),
+        opttype: pgrx::pg_sys::relopt_type_RELOPT_TYPE_STRING,
+        offset: std::mem::offset_of!(Reloption, options) as i32,
+    }];
+    unsafe fn options(&self) -> &CStr {
+        unsafe {
+            let ptr = std::ptr::addr_of!(*self)
+                .cast::<std::ffi::c_char>()
+                .offset(self.options as _);
+            CStr::from_ptr(ptr)
+        }
+    }
 }
 
 pub fn convert_opclass_to_vd(opclass_oid: pgrx::pg_sys::Oid) -> Option<(VectorKind, DistanceKind)> {
@@ -75,8 +83,8 @@ fn convert_name_to_vd(name: &str) -> Option<(VectorKind, DistanceKind)> {
     }
 }
 
-unsafe fn convert_varlena_to_soi(
-    varlena: *const pgrx::pg_sys::varlena,
+unsafe fn convert_reloptions_to_options(
+    reloptions: *const pgrx::pg_sys::varlena,
 ) -> (SegmentsOptions, OptimizingOptions, IndexingOptions) {
     #[derive(Debug, Clone, Deserialize, Default)]
     #[serde(deny_unknown_fields)]
@@ -88,21 +96,20 @@ unsafe fn convert_varlena_to_soi(
         #[serde(default)]
         indexing: IndexingOptions,
     }
-    let helper = varlena as *const Helper;
-    if helper.is_null() || unsafe { (*helper).offset == 0 } {
+    let reloption = reloptions as *const Reloption;
+    if reloption.is_null() || unsafe { (*reloption).options == 0 } {
         return Default::default();
     }
-    let ptr = unsafe { (helper as *const libc::c_char).offset((*helper).offset as isize) };
-    let s = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().to_string();
+    let s = unsafe { (*reloption).options() }.to_string_lossy();
     match toml::from_str::<Parsed>(&s) {
         Ok(p) => (p.segment, p.optimizing, p.indexing),
         Err(e) => pgrx::error!("failed to parse options: {}", e),
     }
 }
 
-pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
-    let opfamily = unsafe { (*index_relation).rd_opfamily.read() };
-    let att = unsafe { &mut *(*index_relation).rd_att };
+pub unsafe fn options(index: pgrx::pg_sys::Relation) -> IndexOptions {
+    let opfamily = unsafe { (*index).rd_opfamily.read() };
+    let att = unsafe { &mut *(*index).rd_att };
     let atts = unsafe { att.attrs.as_slice(att.natts as _) };
     if atts.is_empty() {
         pgrx::error!("indexing on no columns is not supported");
@@ -117,7 +124,7 @@ pub unsafe fn options(index_relation: pgrx::pg_sys::Relation) -> IndexOptions {
     let (v, d) = convert_opfamily_to_vd(opfamily).unwrap();
     // get segment, optimizing, indexing
     let (segment, optimizing, indexing) =
-        unsafe { convert_varlena_to_soi((*index_relation).rd_options) };
+        unsafe { convert_reloptions_to_options((*index).rd_options) };
     IndexOptions {
         vector: VectorOptions { dims, v, d },
         segment,

@@ -1,4 +1,4 @@
-name: Style check
+name: Style
 
 on:
   push:
@@ -9,8 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  run:
-    name: check
+  check:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Actions Repository

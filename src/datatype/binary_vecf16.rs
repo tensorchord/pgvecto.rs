@@ -7,7 +7,7 @@ use pgrx::datum::IntoDatum;
 use pgrx::pg_sys::Oid;
 use std::ffi::c_char;
 
-#[pgrx::pg_extern(immutable, parallel_safe, strict)]
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_send(vector: Vecf16Input<'_>) -> Bytea {
     use pgrx::pg_sys::StringInfoData;
     unsafe {
@@ -21,8 +21,9 @@ fn _vectors_vecf16_send(vector: Vecf16Input<'_>) -> Bytea {
     }
 }
 
-#[pgrx::pg_extern(immutable, parallel_safe, strict)]
-fn _vectors_vecf16_recv(internal: Internal, _oid: Oid, _typmod: i32) -> Vecf16Output {
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_vecf16_recv(internal: Internal, oid: Oid, typmod: i32) -> Vecf16Output {
+    let _ = (oid, typmod);
     use pgrx::pg_sys::StringInfo;
     unsafe {
         let buf: StringInfo = internal.into_datum().unwrap().cast_mut_ptr();
