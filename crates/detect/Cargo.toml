@@ -5,7 +5,8 @@ edition.workspace = true
 
 [dependencies]
 rustix.workspace = true
-std_detect = { git = "https://github.com/tensorchord/stdarch", rev = "e50b2f6fa7f8a9a0081c88b1793d8560462d5848" }
+
+detect_macros = { path = "../detect_macros" }
 
 [lints]
 workspace = true

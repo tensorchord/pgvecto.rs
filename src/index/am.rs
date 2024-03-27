@@ -137,8 +137,6 @@ pub unsafe extern "C" fn ambuild(
 ) -> *mut pgrx::pg_sys::IndexBuildResult {
     pub struct Builder {
         pub rpc: ClientRpc,
-        pub heap: *mut pgrx::pg_sys::RelationData,
-        pub index_info: *mut pgrx::pg_sys::IndexInfo,
         pub result: *mut pgrx::pg_sys::IndexBuildResult,
     }
     let oid = unsafe { (*index).rd_id };
@@ -155,8 +153,6 @@ pub unsafe extern "C" fn ambuild(
     let result = unsafe { pgrx::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0() };
     let mut builder = Builder {
         rpc,
-        heap,
-        index_info,
         result: result.as_ptr(),
     };
     let table_am = unsafe { &*(*heap).rd_tableam };
