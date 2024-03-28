@@ -32,6 +32,7 @@ pub struct StorageCollection<O: OperatorStorage> {
 }
 
 impl<O: OperatorStorage> StorageCollection<O> {
+    #[cfg(feature = "stand-alone-test")]
     pub fn new(storage: O::Storage) -> Self {
         Self { storage }
     }

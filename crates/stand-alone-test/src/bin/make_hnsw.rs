@@ -1,9 +1,15 @@
-use base::index::{
-    HnswIndexingOptions, IndexOptions, OptimizingOptions, SegmentsOptions, VectorOptions,
-};
-use std::path::Path;
-
 fn main() {
+    #[cfg(feature = "stand-alone-test")]
+    make_hnsw();
+}
+
+#[cfg(feature = "stand-alone-test")]
+fn make_hnsw() {
+    use base::index::{
+        HnswIndexingOptions, IndexOptions, OptimizingOptions, SegmentsOptions, VectorOptions,
+    };
+    use std::path::Path;
+
     let path = Path::new("/home/yanqi/stand-alone-test/data/hnsw");
     let options = IndexOptions {
         vector: VectorOptions {

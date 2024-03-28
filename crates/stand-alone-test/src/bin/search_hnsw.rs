@@ -1,21 +1,27 @@
-use base::{
-    index::{IndexOptions, OptimizingOptions, SearchOptions, SegmentsOptions, VectorOptions},
-    scalar::F32,
-    search::{Filter, Payload},
-    vector::Vecf32Borrowed,
-};
-use stand_alone_test::utils::read_vecs_file;
-use std::path::Path;
-
-#[derive(Clone)]
-struct FilterStruct {}
-impl Filter for FilterStruct {
-    fn check(&mut self, _: Payload) -> bool {
-        true
-    }
+fn main() {
+    #[cfg(feature = "stand-alone-test")]
+    search_hnsw();
 }
 
-fn main() {
+#[cfg(feature = "stand-alone-test")]
+fn search_hnsw() {
+    use base::{
+        index::{IndexOptions, OptimizingOptions, SearchOptions, SegmentsOptions, VectorOptions},
+        scalar::F32,
+        search::{Filter, Payload},
+        vector::Vecf32Borrowed,
+    };
+    use stand_alone_test::utils::read_vecs_file;
+    use std::path::Path;
+
+    #[derive(Clone)]
+    struct FilterStruct {}
+    impl Filter for FilterStruct {
+        fn check(&mut self, _: Payload) -> bool {
+            true
+        }
+    }
+
     let dims = 128;
     let path = Path::new("/home/yanqi/stand-alone-test/data/hnsw");
     let options = IndexOptions {

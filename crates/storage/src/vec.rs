@@ -13,6 +13,7 @@ pub struct VecStorage<T> {
     dims: u16,
 }
 
+#[cfg(feature = "stand-alone-test")]
 impl<T> VecStorage<T> {
     pub fn new(vectors: MmapArray<T>, payload: MmapArray<Payload>, dims: u16) -> Self {
         Self {

@@ -1,7 +1,10 @@
 [package]
-name = "stand-alone-test"
+name = "stand_alone_test"
 version.workspace = true
 edition.workspace = true
+
+[features]
+stand-alone-test = []
 
 [dependencies]
 base = { path = "../base" }

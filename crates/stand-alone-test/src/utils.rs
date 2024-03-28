@@ -1,3 +1,5 @@
+#![allow(clippy::len_without_is_empty)]
+
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::Path;

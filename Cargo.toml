@@ -10,11 +10,31 @@ crate-type = ["cdylib", "lib"]
 name = "pgrx_embed_vectors"
 path = "./src/bin/pgrx_embed.rs"
 
+[[bin]]
+name = "prepare_dataset"
+path = "./crates/stand-alone-test/src/bin/prepare_dataset.rs"
+required-features = ["stand-alone-test"]
+
+[[bin]]
+name = "make_hnsw"
+path = "./crates/stand-alone-test/src/bin/make_hnsw.rs"
+required-features = ["stand-alone-test"]
+
+[[bin]]
+name = "search_hnsw"
+path = "./crates/stand-alone-test/src/bin/search_hnsw.rs"
+required-features = ["stand-alone-test"]
+
 [features]
 default = ["pg15"]
 pg14 = ["pgrx/pg14"]
 pg15 = ["pgrx/pg15"]
 pg16 = ["pgrx/pg16"]
+stand-alone-test = [
+    "hnsw/stand-alone-test",
+    "storage/stand-alone-test",
+    "stand_alone_test/stand-alone-test",
+]
 
 [dependencies]
 arrayvec.workspace = true
@@ -40,13 +60,17 @@ toml = "0.8.10"
 validator.workspace = true
 
 base = { path = "crates/base" }
+common = { path = "crates/common" }
 detect = { path = "crates/detect" }
 embedding = { path = "crates/embedding" }
+hnsw = { path = "crates/hnsw" }
 interprocess_atomic_wait = { path = "crates/interprocess-atomic-wait" }
 memfd = { path = "crates/memfd" }
 scopeguard = "1.2.0"
 send_fd = { path = "crates/send_fd" }
 service = { path = "crates/service" }
+stand_alone_test = { path = "crates/stand-alone-test" }
+storage = { path = "crates/storage" }
 
 [patch.crates-io]
 pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.0-alpha.1-patch" }

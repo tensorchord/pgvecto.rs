@@ -19,8 +19,10 @@ use std::ops::RangeInclusive;
 use std::path::Path;
 use std::sync::Arc;
 use storage::operator::OperatorStorage;
-use storage::vec::VecStorage;
 use storage::StorageCollection;
+
+#[cfg(feature = "stand-alone-test")]
+use storage::vec::VecStorage;
 
 pub trait OperatorHnsw = Operator + OperatorQuantization + OperatorStorage;
 
@@ -757,6 +759,7 @@ impl ElementHeap {
     }
 }
 
+#[cfg(feature = "stand-alone-test")]
 fn mock_make(path: &Path, options: IndexOptions) -> HnswRam<Vecf32L2> {
     let HnswIndexingOptions {
         m,
@@ -964,6 +967,7 @@ fn mock_make(path: &Path, options: IndexOptions) -> HnswRam<Vecf32L2> {
     }
 }
 
+#[cfg(feature = "stand-alone-test")]
 pub fn mock_create(path: &Path, options: IndexOptions) -> Hnsw<Vecf32L2> {
     create_dir(path).unwrap();
     let ram = mock_make(path, options);
@@ -972,6 +976,7 @@ pub fn mock_create(path: &Path, options: IndexOptions) -> Hnsw<Vecf32L2> {
     Hnsw { mmap }
 }
 
+#[cfg(feature = "stand-alone-test")]
 pub fn mock_open(path: &Path, options: IndexOptions) -> Hnsw<Vecf32L2> {
     let idx_opts = options.indexing.clone().unwrap_hnsw();
     let vectors = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_vectors"));
