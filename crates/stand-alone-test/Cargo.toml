@@ -1,5 +1,5 @@
 [package]
-name = "hnsw"
+name = "stand_alone_test"
 version.workspace = true
 edition.workspace = true
 
@@ -7,14 +7,11 @@ edition.workspace = true
 stand-alone-test = []
 
 [dependencies]
-bytemuck.workspace = true
-parking_lot.workspace = true
-
 base = { path = "../base" }
 common = { path = "../common" }
-quantization = { path = "../quantization" }
+hnsw = { path = "../hnsw" }
 rayon = { path = "../rayon" }
-storage = { path = "../storage" }
+thiserror = "1.0.58"
 
 [lints]
 workspace = true

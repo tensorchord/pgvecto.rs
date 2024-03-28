@@ -13,6 +13,17 @@ pub struct VecStorage<T> {
     dims: u16,
 }
 
+#[cfg(feature = "stand-alone-test")]
+impl<T> VecStorage<T> {
+    pub fn new(vectors: MmapArray<T>, payload: MmapArray<Payload>, dims: u16) -> Self {
+        Self {
+            vectors,
+            payload,
+            dims,
+        }
+    }
+}
+
 impl Storage for VecStorage<F32> {
     type VectorOwned = Vecf32Owned;
 
