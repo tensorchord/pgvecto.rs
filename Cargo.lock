@@ -1598,6 +1598,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "logger"
+version = "0.0.0"
+dependencies = [
+ "pgrx",
+]
+
+[[package]]
 name = "memchr"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2931,6 +2938,7 @@ dependencies = [
  "interprocess_atomic_wait",
  "libc",
  "log",
+ "logger",
  "memfd",
  "memmap2",
  "num-traits",

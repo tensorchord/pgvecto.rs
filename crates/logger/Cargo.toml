@@ -1,0 +1,10 @@
+[package]
+name = "logger"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+pgrx.workspace = true
+
+[lints]
+workspace = true

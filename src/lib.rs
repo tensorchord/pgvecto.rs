@@ -20,6 +20,11 @@ pgrx::pg_module_magic!();
 pgrx::extension_sql_file!("./sql/bootstrap.sql", bootstrap);
 pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
 
+#[pgrx::pg_extern]
+fn test_log() -> String {
+    unsafe { logger::get_log_destination_flag().to_string() }
+}
+
 #[pgrx::pg_guard]
 unsafe extern "C" fn _PG_init() {
     use crate::error::*;
