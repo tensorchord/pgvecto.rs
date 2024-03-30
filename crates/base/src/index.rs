@@ -127,7 +127,10 @@ pub struct IndexOptions {
 
 impl IndexOptions {
     fn validate_index_options(options: &IndexOptions) -> Result<(), ValidationError> {
-        if options.vector.v != VectorKind::SVecf32 && options.vector.v != VectorKind::BVecf32 {
+        if options.vector.v != VectorKind::SVecf32
+            && options.vector.v != VectorKind::BVecf32
+            && options.vector.v != VectorKind::Veci8
+        {
             return Ok(());
         }
         let is_trivial = match &options.indexing {
@@ -137,7 +140,7 @@ impl IndexOptions {
         };
         if !is_trivial {
             return Err(ValidationError::new(
-                "Quantization is not supported for svector and bvector.",
+                "Quantization is not supported for svector, bvector, and vecint8.",
             ));
         }
         Ok(())
