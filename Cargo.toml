@@ -75,7 +75,6 @@ half = { version = "2.4.0", features = [
     "num-traits",
     "rand_distr",
     "serde",
-    "use-intrinsics",
 ] }
 libc = "0.2.153"
 log = "0.4.21"
