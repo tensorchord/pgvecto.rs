@@ -4,10 +4,13 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-base = { path = "../base" }
 clap = { version = "4.5.4", features = ["derive"] }
+parking_lot.workspace = true
+
+base = { path = "../base" }
 common = { path = "../common" }
 hnsw = { path = "../hnsw", features = ["stand-alone-test"] }
+quantization = { path = "../quantization" }
 rayon = { path = "../rayon" }
 storage = { path = "../storage", features = ["stand-alone-test"] }
 thiserror = "1.0.58"

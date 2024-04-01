@@ -1,3 +1,4 @@
+pub mod hnsw;
 pub mod utils;
 
 use base::index::{
@@ -11,7 +12,7 @@ use common::mmap_array::MmapArray;
 use std::path::Path;
 use utils::read_vecs_file;
 
-pub fn prepare_dataset(data_file: &String, output_dir: &String) {
+pub fn prepare_dataset(data_file: &str, output_dir: &str) {
     let vecs = read_vecs_file::<f32>(data_file).unwrap();
     println!("vecs len: {}", vecs.len());
     println!("vecs dim: {}", vecs.get_d());
@@ -53,8 +54,8 @@ pub fn search_hnsw(
     data_dir: &String,
     dims: u32,
     hnsw_dir: &String,
-    query_file: &String,
-    gt_file: &String,
+    query_file: &str,
+    gt_file: &str,
     ef: usize,
 ) {
     let path = Path::new(hnsw_dir);
