@@ -760,15 +760,15 @@ impl ElementHeap {
 }
 
 #[cfg(feature = "stand-alone-test")]
-fn mock_make(path: &Path, options: IndexOptions) -> HnswRam<Vecf32L2> {
+fn mock_make(path: &Path, data_path: &Path, options: IndexOptions) -> HnswRam<Vecf32L2> {
     let HnswIndexingOptions {
         m,
         ef_construction,
         quantization: quantization_opts,
     } = options.indexing.clone().unwrap_hnsw();
-    let vectors = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_vectors"));
-    let payload = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_payload"));
-    let dims = 128;
+    let vectors = MmapArray::open(&Path::new(data_path).join("vectors"));
+    let payload = MmapArray::open(&Path::new(data_path).join("payload"));
+    let dims = options.vector.dims as u16;
     let storage = Arc::new(StorageCollection::<Vecf32L2>::new(VecStorage::<F32>::new(
         vectors, payload, dims,
     )));
@@ -968,20 +968,20 @@ fn mock_make(path: &Path, options: IndexOptions) -> HnswRam<Vecf32L2> {
 }
 
 #[cfg(feature = "stand-alone-test")]
-pub fn mock_create(path: &Path, options: IndexOptions) -> Hnsw<Vecf32L2> {
+pub fn mock_create(path: &Path, data_path: &Path, options: IndexOptions) -> Hnsw<Vecf32L2> {
     create_dir(path).unwrap();
-    let ram = mock_make(path, options);
+    let ram = mock_make(path, data_path, options);
     let mmap = save(ram, path);
     sync_dir(path);
     Hnsw { mmap }
 }
 
 #[cfg(feature = "stand-alone-test")]
-pub fn mock_open(path: &Path, options: IndexOptions) -> Hnsw<Vecf32L2> {
+pub fn mock_open(path: &Path, data_path: &Path, options: IndexOptions) -> Hnsw<Vecf32L2> {
     let idx_opts = options.indexing.clone().unwrap_hnsw();
-    let vectors = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_vectors"));
-    let payload = MmapArray::open(Path::new("/home/yanqi/stand-alone-test/data/sift_payload"));
-    let dims = 128;
+    let vectors = MmapArray::open(&Path::new(data_path).join("vectors"));
+    let payload = MmapArray::open(&Path::new(data_path).join("payload"));
+    let dims = options.vector.dims as u16;
     let storage = Arc::new(StorageCollection::<Vecf32L2>::new(VecStorage::<F32>::new(
         vectors, payload, dims,
     )));
