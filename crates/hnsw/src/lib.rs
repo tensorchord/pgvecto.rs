@@ -1,6 +1,8 @@
 #![feature(trait_alias)]
 #![allow(clippy::len_without_is_empty)]
 
+pub mod visited;
+
 use base::index::*;
 use base::operator::*;
 use base::scalar::F32;
@@ -8,7 +10,7 @@ use base::search::*;
 use bytemuck::{Pod, Zeroable};
 use common::dir_ops::sync_dir;
 use common::mmap_array::MmapArray;
-use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
+use parking_lot::{RwLock, RwLockWriteGuard};
 use quantization::operator::OperatorQuantization;
 use quantization::Quantization;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -20,6 +22,7 @@ use std::path::Path;
 use std::sync::Arc;
 use storage::operator::OperatorStorage;
 use storage::StorageCollection;
+use visited::{VisitedGuard, VisitedPool};
 
 pub trait OperatorHnsw = Operator + OperatorQuantization + OperatorStorage;
 
@@ -28,6 +31,11 @@ pub struct Hnsw<O: OperatorHnsw> {
 }
 
 impl<O: OperatorHnsw> Hnsw<O> {
+    #[cfg(feature = "stand-alone-test")]
+    pub fn new(mmap: HnswMmap<O>) -> Self {
+        Self { mmap }
+    }
+
     pub fn create<S: Source<O>>(path: &Path, options: IndexOptions, source: &S) -> Self {
         create_dir(path).unwrap();
         let ram = make(path, options, source);
@@ -86,22 +94,41 @@ pub struct HnswRam<O: OperatorHnsw> {
     visited: VisitedPool,
 }
 
-struct HnswRamGraph {
-    vertexs: Vec<HnswRamVertex>,
+impl<O: OperatorHnsw> HnswRam<O> {
+    #[cfg(feature = "stand-alone-test")]
+    pub fn new(
+        storage: Arc<StorageCollection<O>>,
+        quantization: Quantization<O, StorageCollection<O>>,
+        m: u32,
+        graph: HnswRamGraph,
+        visited: VisitedPool,
+    ) -> Self {
+        Self {
+            storage,
+            quantization,
+            m,
+            graph,
+            visited,
+        }
+    }
 }
 
-struct HnswRamVertex {
-    layers: Vec<RwLock<HnswRamLayer>>,
+pub struct HnswRamGraph {
+    pub vertexs: Vec<HnswRamVertex>,
+}
+
+pub struct HnswRamVertex {
+    pub layers: Vec<RwLock<HnswRamLayer>>,
 }
 
 impl HnswRamVertex {
-    fn levels(&self) -> u8 {
+    pub fn levels(&self) -> u8 {
         self.layers.len() as u8 - 1
     }
 }
 
-struct HnswRamLayer {
-    edges: Vec<(F32, u32)>,
+pub struct HnswRamLayer {
+    pub edges: Vec<(F32, u32)>,
 }
 
 pub struct HnswMmap<O: OperatorHnsw> {
@@ -117,8 +144,31 @@ pub struct HnswMmap<O: OperatorHnsw> {
     visited: VisitedPool,
 }
 
+impl<O: OperatorHnsw> HnswMmap<O> {
+    #[cfg(feature = "stand-alone-test")]
+    pub fn new(
+        storage: Arc<StorageCollection<O>>,
+        quantization: Quantization<O, StorageCollection<O>>,
+        m: u32,
+        edges: MmapArray<HnswMmapEdge>,
+        by_layer_id: MmapArray<usize>,
+        by_vertex_id: MmapArray<usize>,
+        visited: VisitedPool,
+    ) -> Self {
+        Self {
+            storage,
+            quantization,
+            m,
+            edges,
+            by_layer_id,
+            by_vertex_id,
+            visited,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default)]
-struct HnswMmapEdge(#[allow(dead_code)] F32, u32);
+pub struct HnswMmapEdge(#[allow(dead_code)] F32, u32);
 // we may convert a memory-mapped graph to a memory graph
 // so that it speeds merging sealed segments
 
@@ -574,7 +624,7 @@ pub fn local_search_vbase<'a, O: OperatorHnsw>(
     })
 }
 
-fn count_layers_of_a_vertex(m: u32, i: u32) -> u8 {
+pub fn count_layers_of_a_vertex(m: u32, i: u32) -> u8 {
     let mut x = i + 1;
     let mut ans = 1;
     while x % m == 0 {
@@ -584,7 +634,7 @@ fn count_layers_of_a_vertex(m: u32, i: u32) -> u8 {
     ans
 }
 
-fn count_max_edges_of_a_layer(m: u32, j: u8) -> u32 {
+pub fn count_max_edges_of_a_layer(m: u32, j: u8) -> u32 {
     if j == 0 {
         m * 2
     } else {
@@ -608,123 +658,6 @@ fn find_edges<O: OperatorHnsw>(mmap: &HnswMmap<O>, u: u32, level: u8) -> &[HnswM
     let offset = index.start + level as usize;
     let index = mmap.by_layer_id[offset]..mmap.by_layer_id[offset + 1];
     &mmap.edges[index]
-}
-
-struct VisitedPool {
-    n: u32,
-    locked_buffers: Mutex<Vec<VisitedBuffer>>,
-}
-
-impl VisitedPool {
-    pub fn new(n: u32) -> Self {
-        Self {
-            n,
-            locked_buffers: Mutex::new(Vec::new()),
-        }
-    }
-    pub fn fetch(&self) -> VisitedGuard {
-        let buffer = self
-            .locked_buffers
-            .lock()
-            .pop()
-            .unwrap_or_else(|| VisitedBuffer::new(self.n as _));
-        VisitedGuard { buffer, pool: self }
-    }
-
-    fn fetch2(&self) -> VisitedGuardChecker {
-        let mut buffer = self
-            .locked_buffers
-            .lock()
-            .pop()
-            .unwrap_or_else(|| VisitedBuffer::new(self.n as _));
-        {
-            buffer.version = buffer.version.wrapping_add(1);
-            if buffer.version == 0 {
-                buffer.data.fill(0);
-            }
-        }
-        VisitedGuardChecker { buffer, pool: self }
-    }
-}
-
-struct VisitedGuard<'a> {
-    buffer: VisitedBuffer,
-    pool: &'a VisitedPool,
-}
-
-impl<'a> VisitedGuard<'a> {
-    fn fetch(&mut self) -> VisitedChecker<'_> {
-        self.buffer.version = self.buffer.version.wrapping_add(1);
-        if self.buffer.version == 0 {
-            self.buffer.data.fill(0);
-        }
-        VisitedChecker {
-            buffer: &mut self.buffer,
-        }
-    }
-}
-
-impl<'a> Drop for VisitedGuard<'a> {
-    fn drop(&mut self) {
-        let src = VisitedBuffer {
-            version: 0,
-            data: Vec::new(),
-        };
-        let buffer = std::mem::replace(&mut self.buffer, src);
-        self.pool.locked_buffers.lock().push(buffer);
-    }
-}
-
-struct VisitedChecker<'a> {
-    buffer: &'a mut VisitedBuffer,
-}
-
-impl<'a> VisitedChecker<'a> {
-    fn check(&mut self, i: u32) -> bool {
-        self.buffer.data[i as usize] != self.buffer.version
-    }
-    fn mark(&mut self, i: u32) {
-        self.buffer.data[i as usize] = self.buffer.version;
-    }
-}
-
-struct VisitedGuardChecker<'a> {
-    buffer: VisitedBuffer,
-    pool: &'a VisitedPool,
-}
-
-impl<'a> VisitedGuardChecker<'a> {
-    fn check(&mut self, i: u32) -> bool {
-        self.buffer.data[i as usize] != self.buffer.version
-    }
-    fn mark(&mut self, i: u32) {
-        self.buffer.data[i as usize] = self.buffer.version;
-    }
-}
-
-impl<'a> Drop for VisitedGuardChecker<'a> {
-    fn drop(&mut self) {
-        let src = VisitedBuffer {
-            version: 0,
-            data: Vec::new(),
-        };
-        let buffer = std::mem::replace(&mut self.buffer, src);
-        self.pool.locked_buffers.lock().push(buffer);
-    }
-}
-
-struct VisitedBuffer {
-    version: usize,
-    data: Vec<usize>,
-}
-
-impl VisitedBuffer {
-    fn new(capacity: usize) -> Self {
-        Self {
-            version: 0,
-            data: bytemuck::zeroed_vec(capacity),
-        }
-    }
 }
 
 pub struct ElementHeap {

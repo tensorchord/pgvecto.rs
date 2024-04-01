@@ -530,7 +530,7 @@ pub fn l2_normalize<'a>(vector: BVecf32Borrowed<'a>) -> Vecf32Owned {
 #[cfg(all(target_arch = "x86_64", test))]
 fn random_bvector() -> BVecf32Owned {
     let mut x = vec![0; 126];
-    x.fill_with(|| rand::random());
+    x.fill_with(rand::random);
     x[125] &= 1;
     BVecf32Owned::new(8001, x)
 }
