@@ -3,17 +3,13 @@ name = "stand_alone_test"
 version.workspace = true
 edition.workspace = true
 
-[features]
-default = ["stand-alone-test"]
-stand-alone-test = ["hnsw/stand-alone-test", "storage/stand-alone-test"]
-
 [dependencies]
 base = { path = "../base" }
 clap = { version = "4.5.4", features = ["derive"] }
 common = { path = "../common" }
-hnsw = { path = "../hnsw" }
+hnsw = { path = "../hnsw", features = ["stand-alone-test"] }
 rayon = { path = "../rayon" }
-storage = { path = "../storage" }
+storage = { path = "../storage", features = ["stand-alone-test"] }
 thiserror = "1.0.58"
 
 [lints]
