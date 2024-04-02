@@ -49,8 +49,15 @@ impl ThreadPoolBuilder {
         f: impl FnOnce(&ThreadPool),
     ) -> Result<(), rayon::ThreadPoolBuildError> {
         let stop = Arc::new(AtomicBool::new(false));
+        let stop_value = stop.clone();
         match std::panic::catch_unwind(AssertUnwindSafe(|| {
             self.builder
+                .start_handler(move |_| {
+                    unsafe { STOP.set(stop_value.clone()).unwrap() };
+                })
+                .exit_handler(|_| {
+                    unsafe { STOP.take() };
+                })
                 .panic_handler(|e| {
                     if e.downcast_ref::<CheckPanic>().is_some() {
                         return;
@@ -60,9 +67,6 @@ impl ThreadPoolBuilder {
                 .build_scoped(
                     |thread| thread.run(),
                     |pool| {
-                        pool.broadcast(|_| {
-                            STOP.set(stop.clone()).unwrap();
-                        });
                         let pool = ThreadPool::new(stop.clone(), pool);
                         f(&pool)
                     },
@@ -105,12 +109,12 @@ impl<'a> ThreadPool<'a> {
 }
 
 #[thread_local]
-static STOP: OnceCell<Arc<AtomicBool>> = OnceCell::new();
+static mut STOP: OnceCell<Arc<AtomicBool>> = OnceCell::new();
 
 struct CheckPanic;
 
 pub fn check() {
-    if let Some(stop) = STOP.get() {
+    if let Some(stop) = unsafe { STOP.get() } {
         if stop.load(Ordering::Relaxed) {
             std::panic::panic_any(CheckPanic);
         }

@@ -7,7 +7,6 @@ pub use base::index::*;
 use base::operator::Borrowed;
 pub use base::search::*;
 pub use base::vector::*;
-use crossbeam::channel::RecvError;
 use crossbeam::channel::{bounded, Receiver, RecvTimeoutError, Sender};
 use std::cmp::Reverse;
 use std::convert::Infallible;
@@ -104,17 +103,20 @@ impl<O: Op> OptimizerIndexing<O> {
         loop {
             let view = index.view();
             let threads = view.flexible.optimizing_threads;
+            let (finish_tx, finish) = bounded::<Infallible>(1);
             rayon::ThreadPoolBuilder::new()
                 .num_threads(threads as usize)
                 .build_scoped(|pool| {
                     std::thread::scope(|scope| {
-                        scope.spawn(|| match shutdown.recv() {
-                            Ok(never) => match never {},
-                            Err(RecvError) => {
-                                pool.stop();
-                            }
+                        let handler = scope.spawn(|| {
+                            monitor(&finish, &shutdown);
+                            pool.stop();
                         });
-                        let _ = pool.install(|| optimizing_indexing(index.clone()));
+                        pool.install(|| {
+                            let _ = optimizing_indexing(index.clone());
+                            drop(finish_tx);
+                        });
+                        let _ = handler.join();
                     })
                 })
                 .unwrap();
@@ -123,6 +125,27 @@ impl<O: Op> OptimizerIndexing<O> {
                 Err(RecvTimeoutError::Disconnected) => return,
                 Err(RecvTimeoutError::Timeout) => (),
             }
+        }
+    }
+}
+
+/// Monitor the internal finish and the external shutdown of `optimizing_indexing`
+fn monitor(finish: &Receiver<Infallible>, shutdown: &Receiver<Infallible>) {
+    let timeout = std::time::Duration::from_secs(1);
+    loop {
+        match finish.recv_timeout(timeout) {
+            Ok(never) => match never {},
+            Err(RecvTimeoutError::Disconnected) => {
+                return;
+            }
+            Err(RecvTimeoutError::Timeout) => (),
+        }
+        match shutdown.recv_timeout(timeout) {
+            Ok(never) => match never {},
+            Err(RecvTimeoutError::Disconnected) => {
+                return;
+            }
+            Err(RecvTimeoutError::Timeout) => (),
         }
     }
 }
