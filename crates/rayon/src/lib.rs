@@ -49,7 +49,6 @@ impl ThreadPoolBuilder {
         f: impl FnOnce(&ThreadPool),
     ) -> Result<(), rayon::ThreadPoolBuildError> {
         let stop = Arc::new(AtomicBool::new(false));
-        let stop_value = stop.clone();
         match std::panic::catch_unwind(AssertUnwindSafe(|| {
             self.builder
                 .start_handler({
