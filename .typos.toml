@@ -1,5 +1,13 @@
 [default.extend-words]
 ND = "ND"
+DUR = "DUR"
+ANS = "ANS"
+
+[default]
+extend-ignore-re = [
+    # Latex formula
+    "\\$.+?\\$",
+]
 
 [files]
 extend-exclude = ["vendor/pg_config/*.txt", "vendor/pgrx_binding/*.rs"]
