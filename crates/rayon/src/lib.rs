@@ -52,8 +52,11 @@ impl ThreadPoolBuilder {
         let stop_value = stop.clone();
         match std::panic::catch_unwind(AssertUnwindSafe(|| {
             self.builder
-                .start_handler(move |_| {
-                    STOP.replace(Some(stop_value.clone()));
+                .start_handler({
+                    let stop = stop.clone();
+                    move |_| {
+                        STOP.replace(Some(stop.clone()));
+                    }
                 })
                 .exit_handler(|_| {
                     STOP.take();
