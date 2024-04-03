@@ -1,7 +1,7 @@
 #![feature(thread_local)]
 
 use rayoff as rayon;
-use std::cell::OnceCell;
+use std::cell::RefCell;
 use std::panic::AssertUnwindSafe;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
@@ -53,10 +53,10 @@ impl ThreadPoolBuilder {
         match std::panic::catch_unwind(AssertUnwindSafe(|| {
             self.builder
                 .start_handler(move |_| {
-                    unsafe { STOP.set(stop_value.clone()).unwrap() };
+                    STOP.replace(Some(stop_value.clone()));
                 })
                 .exit_handler(|_| {
-                    unsafe { STOP.take() };
+                    STOP.take();
                 })
                 .panic_handler(|e| {
                     if e.downcast_ref::<CheckPanic>().is_some() {
@@ -109,12 +109,12 @@ impl<'a> ThreadPool<'a> {
 }
 
 #[thread_local]
-static mut STOP: OnceCell<Arc<AtomicBool>> = OnceCell::new();
+static STOP: RefCell<Option<Arc<AtomicBool>>> = RefCell::new(None);
 
 struct CheckPanic;
 
 pub fn check() {
-    if let Some(stop) = unsafe { STOP.get() } {
+    if let Some(stop) = STOP.borrow().as_ref() {
         if stop.load(Ordering::Relaxed) {
             std::panic::panic_any(CheckPanic);
         }
