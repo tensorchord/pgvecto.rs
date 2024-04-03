@@ -110,8 +110,11 @@ impl<O: Op> OptimizerIndexing<O> {
                 .build_scoped(|pool| {
                     std::thread::scope(|scope| {
                         let handler = scope.spawn(|| {
-                            monitor(&finish_rx, &shutdown_rx);
-                            pool.stop();
+                            let status = monitor(&finish_rx, &shutdown_rx);
+                            match status {
+                                MonitorStatus::Finished => (),
+                                MonitorStatus::Shutdown => pool.stop(),
+                            }
                         });
                         pool.install(|| {
                             let _finish_tx = finish_tx;
@@ -130,21 +133,26 @@ impl<O: Op> OptimizerIndexing<O> {
     }
 }
 
+pub enum MonitorStatus {
+    Finished,
+    Shutdown,
+}
+
 /// Monitor the internal finish and the external shutdown of `optimizing_indexing`
-fn monitor(finish_rx: &Receiver<Infallible>, shutdown_rx: &Receiver<Infallible>) {
+fn monitor(finish_rx: &Receiver<Infallible>, shutdown_rx: &Receiver<Infallible>) -> MonitorStatus {
     let timeout = std::time::Duration::from_secs(1);
     loop {
         match finish_rx.try_recv() {
             Ok(never) => match never {},
             Err(TryRecvError::Disconnected) => {
-                return;
+                return MonitorStatus::Finished;
             }
             Err(TryRecvError::Empty) => (),
         }
         match shutdown_rx.recv_timeout(timeout) {
             Ok(never) => match never {},
             Err(RecvTimeoutError::Disconnected) => {
-                return;
+                return MonitorStatus::Shutdown;
             }
             Err(RecvTimeoutError::Timeout) => (),
         }
