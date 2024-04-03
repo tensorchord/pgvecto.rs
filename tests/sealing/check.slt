@@ -1,0 +1,17 @@
+query I
+SELECT idx_indexing FROM pg_vector_index_stat WHERE indexname = 'i';
+----
+f
+
+query I
+SELECT idx_growing FROM pg_vector_index_stat WHERE indexname = 'i';
+----
+{}
+
+query I
+SELECT idx_sealed FROM pg_vector_index_stat WHERE indexname = 'i';
+----
+{1000}
+
+statement ok
+DROP TABLE t;

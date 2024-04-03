@@ -26,7 +26,7 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 |                            | 🔪 Matryoshka embeddings  | Subvector indexing, like vector[0:256], for enhanced Matryoshka embeddings.                |
 |                            | ⬆️ Extended Vector Length | Vector lengths up to 65535 supported, ideal for the latest cutting-edge models.            |
 | **System Performance**     | 🚀 Production Ready       | Battle-tested database ecosystem integrated with PostgreSQL.                               |
-|                            | ⚙️ High Availability      | Logical replication support to ensure high availbility.                                    |
+|                            | ⚙️ High Availability      | Logical replication support to ensure high availability.                                    |
 |                            | 💡 Resource Efficient     | Efficient attribute storage leveraging PostgreSQL.                                         |
 | **Security & Permissions** | 🔒 Permission Control     | Easy access control like read-only roles, powered by PostgreSQL.                           |
 

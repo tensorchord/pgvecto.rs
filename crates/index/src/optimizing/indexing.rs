@@ -7,7 +7,7 @@ pub use base::index::*;
 use base::operator::Borrowed;
 pub use base::search::*;
 pub use base::vector::*;
-use crossbeam::channel::RecvError;
+use crossbeam::channel::TryRecvError;
 use crossbeam::channel::{bounded, Receiver, RecvTimeoutError, Sender};
 use std::cmp::Reverse;
 use std::convert::Infallible;
@@ -99,30 +99,62 @@ impl<O: Op> OptimizerIndexing<O> {
             }),
         )
     }
-    fn main(self, shutdown: Receiver<Infallible>) {
+    fn main(self, shutdown_rx: Receiver<Infallible>) {
         let index = self.index;
         loop {
             let view = index.view();
             let threads = view.flexible.optimizing_threads;
+            let (finish_tx, finish_rx) = bounded::<Infallible>(1);
             rayon::ThreadPoolBuilder::new()
                 .num_threads(threads as usize)
                 .build_scoped(|pool| {
                     std::thread::scope(|scope| {
-                        scope.spawn(|| match shutdown.recv() {
-                            Ok(never) => match never {},
-                            Err(RecvError) => {
-                                pool.stop();
+                        let handler = scope.spawn(|| {
+                            let status = monitor(&finish_rx, &shutdown_rx);
+                            match status {
+                                MonitorStatus::Finished => (),
+                                MonitorStatus::Shutdown => pool.stop(),
                             }
                         });
-                        let _ = pool.install(|| optimizing_indexing(index.clone()));
+                        pool.install(|| {
+                            let _finish_tx = finish_tx;
+                            let _ = optimizing_indexing(index.clone());
+                        });
+                        let _ = handler.join();
                     })
                 })
                 .unwrap();
-            match shutdown.recv_timeout(std::time::Duration::from_secs(60)) {
+            match shutdown_rx.recv_timeout(std::time::Duration::from_secs(60)) {
                 Ok(never) => match never {},
                 Err(RecvTimeoutError::Disconnected) => return,
                 Err(RecvTimeoutError::Timeout) => (),
             }
+        }
+    }
+}
+
+pub enum MonitorStatus {
+    Finished,
+    Shutdown,
+}
+
+/// Monitor the internal finish and the external shutdown of `optimizing_indexing`
+fn monitor(finish_rx: &Receiver<Infallible>, shutdown_rx: &Receiver<Infallible>) -> MonitorStatus {
+    let timeout = std::time::Duration::from_secs(1);
+    loop {
+        match finish_rx.try_recv() {
+            Ok(never) => match never {},
+            Err(TryRecvError::Disconnected) => {
+                return MonitorStatus::Finished;
+            }
+            Err(TryRecvError::Empty) => (),
+        }
+        match shutdown_rx.recv_timeout(timeout) {
+            Ok(never) => match never {},
+            Err(RecvTimeoutError::Disconnected) => {
+                return MonitorStatus::Shutdown;
+            }
+            Err(RecvTimeoutError::Timeout) => (),
         }
     }
 }
