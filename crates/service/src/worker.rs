@@ -7,6 +7,7 @@ use base::worker::*;
 use common::clean::clean;
 use common::dir_ops::sync_dir;
 use common::file_atomic::FileAtomic;
+use index::OutdatedError;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -46,6 +47,7 @@ impl Worker {
         for &id in startup.get().indexes.iter() {
             let path = path.join("indexes").join(id.to_string());
             let index = Instance::open(path);
+            index.start();
             indexes.insert(id, index);
         }
         let view = Arc::new(WorkerView {
@@ -64,13 +66,21 @@ impl Worker {
 }
 
 impl WorkerOperations for Worker {
-    fn create(&self, handle: Handle, options: IndexOptions) -> Result<(), CreateError> {
+    fn create(
+        &self,
+        handle: Handle,
+        options: IndexOptions,
+        options_2: IndexOptions2,
+    ) -> Result<(), CreateError> {
         use std::collections::hash_map::Entry;
         let mut protect = self.protect.lock();
         match protect.indexes.entry(handle) {
             Entry::Vacant(o) => {
-                let index =
-                    Instance::create(self.path.join("indexes").join(handle.to_string()), options)?;
+                let index = Instance::create(
+                    self.path.join("indexes").join(handle.to_string()),
+                    options,
+                    options_2,
+                )?;
                 index.start();
                 o.insert(index);
                 protect.maintain(&self.view);
@@ -96,6 +106,7 @@ impl WorkerOperations for Worker {
                     let index = Instance::create(
                         self.path.join("indexes").join(handle.to_string()),
                         options,
+                        options_2,
                     )?;
                     index.start();
                     protect.indexes.insert(handle, index);
@@ -143,7 +154,9 @@ impl WorkerOperations for Worker {
             let view = instance.view();
             match view.insert(vector.clone(), pointer)? {
                 Ok(()) => break,
-                Err(_) => instance.refresh(),
+                Err(OutdatedError) => {
+                    instance.refresh();
+                }
             }
         }
         Ok(())
@@ -176,10 +189,22 @@ impl WorkerOperations for Worker {
         let stat = instance.stat();
         Ok(stat)
     }
-    fn alter(&self, handle: Handle, key: String, value: String) -> Result<(), AlterError> {
+    fn alter(&self, handle: Handle, key: &str, value: &str) -> Result<(), AlterError> {
         let view = self.view();
         let instance = view.get(handle).ok_or(AlterError::NotExist)?;
         instance.alter(key, value)
+    }
+    fn stop(&self, handle: Handle) -> Result<(), StopError> {
+        let view = self.view();
+        let instance = view.get(handle).ok_or(StopError::NotExist)?;
+        instance.stop();
+        Ok(())
+    }
+    fn start(&self, handle: Handle) -> Result<(), StartError> {
+        let view = self.view();
+        let instance = view.get(handle).ok_or(StartError::NotExist)?;
+        instance.start();
+        Ok(())
     }
 }
 

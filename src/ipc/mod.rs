@@ -320,7 +320,7 @@ macro_rules! defines {
 }
 
 defines! {
-    unary create(handle: Handle, options: IndexOptions) -> ();
+    unary create(handle: Handle, options: IndexOptions, options_2: IndexOptions2) -> ();
     unary drop(handle: Handle) -> ();
     unary flush(handle: Handle) -> ();
     unary insert(handle: Handle, vector: OwnedVector, pointer: Pointer) -> ();
@@ -330,4 +330,6 @@ defines! {
     stream list(handle: Handle) -> Pointer;
     unary stat(handle: Handle) -> IndexStat;
     unary alter(handle: Handle, key: String, value: String) -> ();
+    unary stop(handle: Handle) -> ();
+    unary start(handle: Handle) -> ();
 }

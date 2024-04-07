@@ -7,15 +7,19 @@ use base::index::*;
 use base::operator::*;
 use base::search::*;
 use common::dir_ops::sync_dir;
+use crossbeam::atomic::AtomicCell;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
+use std::time::Instant;
 use uuid::Uuid;
 
 pub struct SealedSegment<O: Op> {
     uuid: Uuid,
     indexing: Indexing<O>,
+    deletes: AtomicCell<(Instant, u32)>,
     _tracker: Arc<SegmentTracker>,
 }
 
@@ -33,6 +37,7 @@ impl<O: Op> SealedSegment<O> {
         Arc::new(Self {
             uuid,
             indexing,
+            deletes: AtomicCell::new((Instant::now(), 0)),
             _tracker: Arc::new(SegmentTracker { path, _tracker }),
         })
     }
@@ -47,6 +52,7 @@ impl<O: Op> SealedSegment<O> {
         Arc::new(Self {
             uuid,
             indexing,
+            deletes: AtomicCell::new((Instant::now(), 0)),
             _tracker: Arc::new(SegmentTracker { path, _tracker }),
         })
     }
@@ -93,5 +99,21 @@ impl<O: Op> SealedSegment<O> {
 
     pub fn payload(&self, i: u32) -> Payload {
         self.indexing.payload(i)
+    }
+
+    pub fn inspect(&self, d: Duration, check: impl Fn(u64) -> bool) -> Result<u32, u32> {
+        let (t, c) = self.deletes.load();
+        if t.elapsed() > d {
+            let mut counter = 0_u32;
+            for i in 0..self.len() {
+                if check(self.payload(i).time()) {
+                    counter += 1;
+                }
+            }
+            self.deletes.store((Instant::now(), counter));
+            Ok(counter)
+        } else {
+            Err(c)
+        }
     }
 }

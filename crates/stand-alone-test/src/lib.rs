@@ -1,10 +1,7 @@
 pub mod hnsw;
 pub mod utils;
 
-use base::index::{
-    HnswIndexingOptions, IndexOptions, OptimizingOptions, SearchOptions, SegmentsOptions,
-    VectorOptions,
-};
+use base::index::*;
 use base::scalar::F32;
 use base::search::{Filter, Payload, Pointer};
 use base::vector::Vecf32Borrowed;
@@ -40,8 +37,7 @@ pub fn make_hnsw(
             d: base::distance::DistanceKind::L2,
         },
         segment: SegmentsOptions::default(),
-        optimizing: OptimizingOptions::default(),
-        indexing: base::index::IndexingOptions::Hnsw(HnswIndexingOptions {
+        indexing: IndexingOptions::Hnsw(HnswIndexingOptions {
             m,
             ef_construction,
             quantization: Default::default(),
@@ -67,8 +63,7 @@ pub fn search_hnsw(
             d: base::distance::DistanceKind::L2,
         },
         segment: SegmentsOptions::default(),
-        optimizing: OptimizingOptions::default(),
-        indexing: base::index::IndexingOptions::default(),
+        indexing: IndexingOptions::default(),
     };
     let hnsw = hnsw::mock_open(path, data_path, options);
     let queries = read_vecs_file::<f32>(query_file).unwrap();

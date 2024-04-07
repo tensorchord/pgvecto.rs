@@ -141,15 +141,19 @@ pub unsafe extern "C" fn ambuild(
     }
     let oid = unsafe { (*index).rd_id };
     let handle = from_oid_to_handle(oid);
-    let options = unsafe { am_options::options(index) };
+    let (options, options_2) = unsafe { am_options::options(index) };
     let mut rpc = check_client(client());
-    match rpc.create(handle, options) {
+    match rpc.create(handle, options, options_2) {
         Ok(()) => (),
         Err(CreateError::InvalidIndexOptions { reason }) => {
             bad_service_invalid_index_options(&reason);
         }
     }
     on_index_build(handle);
+    match rpc.stop(handle) {
+        Ok(()) => (),
+        Err(StopError::NotExist) => pgrx::error!("internal error"),
+    }
     let result = unsafe { pgrx::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0() };
     let mut builder = Builder {
         rpc,
@@ -197,6 +201,33 @@ pub unsafe extern "C" fn ambuild(
         }
         unsafe {
             (*state.result).heap_tuples += 1.0;
+        }
+    }
+    let mut rpc = builder.rpc;
+    match rpc.start(handle) {
+        Ok(()) => (),
+        Err(StartError::NotExist) => pgrx::error!("internal error"),
+    }
+    loop {
+        pgrx::check_for_interrupts!();
+        match rpc.stat(handle) {
+            Ok(s) => {
+                if !s.indexing {
+                    break;
+                }
+            }
+            Err(StatError::NotExist) => pgrx::error!("internal error"),
+        }
+        unsafe {
+            pgrx::pg_sys::WaitLatch(
+                pgrx::pg_sys::MyLatch,
+                (pgrx::pg_sys::WL_LATCH_SET
+                    | pgrx::pg_sys::WL_TIMEOUT
+                    | pgrx::pg_sys::WL_EXIT_ON_PM_DEATH) as _,
+                1000,
+                pgrx::pg_sys::WaitEventTimeout_WAIT_EVENT_PG_SLEEP,
+            );
+            pgrx::pg_sys::ResetLatch(pgrx::pg_sys::MyLatch);
         }
     }
     result.into_pg()

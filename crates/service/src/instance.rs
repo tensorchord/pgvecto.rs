@@ -32,70 +32,74 @@ pub enum Instance {
 }
 
 impl Instance {
-    pub fn create(path: PathBuf, options: IndexOptions) -> Result<Self, CreateError> {
+    pub fn create(
+        path: PathBuf,
+        options: IndexOptions,
+        options_2: IndexOptions2,
+    ) -> Result<Self, CreateError> {
         match (options.vector.d, options.vector.v) {
             (DistanceKind::Cos, VectorKind::Vecf32) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::Vecf32Cos(index))
             }
             (DistanceKind::Dot, VectorKind::Vecf32) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::Vecf32Dot(index))
             }
             (DistanceKind::L2, VectorKind::Vecf32) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::Vecf32L2(index))
             }
             (DistanceKind::Cos, VectorKind::Vecf16) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::Vecf16Cos(index))
             }
             (DistanceKind::Dot, VectorKind::Vecf16) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::Vecf16Dot(index))
             }
             (DistanceKind::L2, VectorKind::Vecf16) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::Vecf16L2(index))
             }
             (DistanceKind::Cos, VectorKind::SVecf32) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::SVecf32Cos(index))
             }
             (DistanceKind::Dot, VectorKind::SVecf32) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::SVecf32Dot(index))
             }
             (DistanceKind::L2, VectorKind::SVecf32) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::SVecf32L2(index))
             }
             (DistanceKind::Cos, VectorKind::BVecf32) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::BVecf32Cos(index))
             }
             (DistanceKind::Dot, VectorKind::BVecf32) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::BVecf32Dot(index))
             }
             (DistanceKind::L2, VectorKind::BVecf32) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::BVecf32L2(index))
             }
             (DistanceKind::Jaccard, VectorKind::BVecf32) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::BVecf32Jaccard(index))
             }
             (DistanceKind::L2, VectorKind::Veci8) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::Veci8L2(index))
             }
             (DistanceKind::Cos, VectorKind::Veci8) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::Veci8Cos(index))
             }
             (DistanceKind::Dot, VectorKind::Veci8) => {
-                let index = Index::create(path.clone(), options)?;
+                let index = Index::create(path.clone(), options, options_2)?;
                 Ok(Self::Veci8Dot(index))
             }
             (DistanceKind::Jaccard, _) => Err(CreateError::InvalidIndexOptions {
@@ -187,7 +191,7 @@ impl Instance {
             Instance::Veci8Dot(x) => x.stat(),
         }
     }
-    pub fn alter(&self, key: String, value: String) -> Result<(), AlterError> {
+    pub fn alter(&self, key: &str, value: &str) -> Result<(), AlterError> {
         match self {
             Instance::Vecf32Cos(x) => x.alter(key, value),
             Instance::Vecf32Dot(x) => x.alter(key, value),

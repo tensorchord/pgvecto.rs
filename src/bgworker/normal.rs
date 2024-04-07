@@ -65,8 +65,18 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<Infallible,
     loop {
         match handler.handle()? {
             // control plane
-            ServerRpcHandle::Create { handle, options, x } => {
-                handler = x.leave(WorkerOperations::create(worker.as_ref(), handle, options))?;
+            ServerRpcHandle::Create {
+                handle,
+                options,
+                options_2,
+                x,
+            } => {
+                handler = x.leave(WorkerOperations::create(
+                    worker.as_ref(),
+                    handle,
+                    options,
+                    options_2,
+                ))?;
             }
             ServerRpcHandle::Drop { handle, x } => {
                 handler = x.leave(WorkerOperations::drop(worker.as_ref(), handle))?;
@@ -95,7 +105,7 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<Infallible,
                 value,
                 x,
             } => {
-                handler = x.leave(worker.alter(handle, key, value))?;
+                handler = x.leave(worker.alter(handle, &key, &value))?;
             }
             ServerRpcHandle::Basic {
                 handle,
@@ -187,6 +197,12 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<Infallible,
                     }
                     Err(e) => handler = x.error_err(e)?,
                 };
+            }
+            ServerRpcHandle::Stop { handle, x } => {
+                handler = x.leave(worker.stop(handle))?;
+            }
+            ServerRpcHandle::Start { handle, x } => {
+                handler = x.leave(worker.start(handle))?;
             }
         }
     }

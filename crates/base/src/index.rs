@@ -81,47 +81,37 @@ pub enum StatError {
 #[must_use]
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
 pub enum AlterError {
-    #[error("Setting key {key} is not exist.")]
-    BadKey { key: String },
-    #[error("Setting key {key} has a wrong value {value}.")]
-    BadValue { key: String, value: String },
+    #[error("Index not found.")]
+    NotExist,
+    #[error("Key {key} not found.")]
+    KeyNotExists { key: String },
+    #[error("Invalid index options.")]
+    InvalidIndexOptions { reason: String },
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum StopError {
+    #[error("Index not found.")]
+    NotExist,
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum StartError {
     #[error("Index not found.")]
     NotExist,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
-pub struct IndexFlexibleOptions {
-    #[serde(default = "IndexFlexibleOptions::default_optimizing_threads")]
-    #[validate(range(min = 1, max = 65535))]
-    pub optimizing_threads: u16,
-}
-
-impl IndexFlexibleOptions {
-    pub fn default_optimizing_threads() -> u16 {
-        1
-    }
-}
-
-impl Default for IndexFlexibleOptions {
-    fn default() -> Self {
-        Self {
-            optimizing_threads: Self::default_optimizing_threads(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-#[serde(deny_unknown_fields)]
 #[validate(schema(function = "IndexOptions::validate_index_options"))]
 pub struct IndexOptions {
-    #[validate]
+    #[validate(nested)]
     pub vector: VectorOptions,
-    #[validate]
+    #[validate(nested)]
     pub segment: SegmentsOptions,
-    #[validate]
-    pub optimizing: OptimizingOptions,
-    #[validate]
+    #[validate(nested)]
     pub indexing: IndexingOptions,
 }
 
@@ -145,6 +135,13 @@ impl IndexOptions {
         }
         Ok(())
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct IndexOptions2 {
+    #[validate(nested)]
+    pub optimizing: OptimizingOptions,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -225,6 +222,9 @@ impl Default for SegmentsOptions {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct OptimizingOptions {
+    #[serde(default = "OptimizingOptions::default_optimizing_threads")]
+    #[validate(range(min = 1, max = 65535))]
+    pub optimizing_threads: u16,
     #[serde(default = "OptimizingOptions::default_sealing_secs")]
     #[validate(range(min = 1, max = 60))]
     pub sealing_secs: u64,
@@ -237,6 +237,9 @@ pub struct OptimizingOptions {
 }
 
 impl OptimizingOptions {
+    fn default_optimizing_threads() -> u16 {
+        1
+    }
     fn default_sealing_secs() -> u64 {
         60
     }
@@ -251,6 +254,7 @@ impl OptimizingOptions {
 impl Default for OptimizingOptions {
     fn default() -> Self {
         Self {
+            optimizing_threads: Self::default_optimizing_threads(),
             sealing_secs: Self::default_sealing_secs(),
             sealing_size: Self::default_sealing_size(),
             delete_threshold: Self::default_delete_threshold(),
@@ -308,7 +312,7 @@ impl Validate for IndexingOptions {
 #[serde(deny_unknown_fields)]
 pub struct FlatIndexingOptions {
     #[serde(default)]
-    #[validate]
+    #[validate(nested)]
     pub quantization: QuantizationOptions,
 }
 
@@ -336,7 +340,7 @@ pub struct IvfIndexingOptions {
     #[validate(range(min = 1, max = 1_000_000))]
     pub nsample: u32,
     #[serde(default)]
-    #[validate]
+    #[validate(nested)]
     pub quantization: QuantizationOptions,
 }
 
@@ -377,7 +381,7 @@ pub struct HnswIndexingOptions {
     #[validate(range(min = 10, max = 2000))]
     pub ef_construction: usize,
     #[serde(default)]
-    #[validate]
+    #[validate(nested)]
     pub quantization: QuantizationOptions,
 }
 
