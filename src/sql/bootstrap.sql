@@ -8,5 +8,6 @@ CREATE TYPE svector;
 CREATE TYPE bvector;
 CREATE TYPE veci8;
 CREATE TYPE vector_index_stat;
+CREATE TYPE vector_accum_state;
 
 -- bootstrap end

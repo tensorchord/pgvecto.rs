@@ -78,6 +78,11 @@ CREATE TYPE vector_index_stat AS (
     idx_options TEXT
 );
 
+CREATE TYPE vector_accum_state AS (
+	count BIGINT,
+	sum double precision[]
+);
+
 -- List of operators
 
 CREATE OPERATOR + (
@@ -592,6 +597,33 @@ $$;
 
 CREATE FUNCTION alter_vector_index("index" OID, "key" TEXT, "value" TEXT) RETURNS void
 STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_alter_vector_index_wrapper';
+
+CREATE FUNCTION vector_accum("state" vector_accum_state, "value" vector) RETURNS vector_accum_state	
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_accum_wrapper';
+
+CREATE FUNCTION vector_combine("state1" vector_accum_state, "state2" vector_accum_state) RETURNS vector_accum_state
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_combine_wrapper';
+
+CREATE FUNCTION vector_final("state" vector_accum_state) RETURNS vector
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_final_wrapper';
+
+-- List of aggregates
+
+CREATE AGGREGATE avg(vector) (
+	SFUNC = vector_accum,
+	STYPE = vector_accum_state,
+	COMBINEFUNC = vector_combine,
+	FINALFUNC = vector_final,
+	INITCOND = '(0, {})',
+	PARALLEL = SAFE
+);
+
+-- CREATE AGGREGATE sum(vector) (
+-- 	SFUNC = vector_add,
+-- 	STYPE = vector,
+-- 	COMBINEFUNC = vector_add,
+-- 	PARALLEL = SAFE
+-- );
 
 -- List of casts
 
