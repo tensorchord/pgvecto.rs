@@ -65,7 +65,7 @@ impl<O: Op> SealedSegment<O> {
         let path = self._tracker.path.join("indexing");
         SegmentStat {
             id: self.uuid,
-            typ: "sealed".to_string(),
+            r#type: "sealed".to_string(),
             length: self.len() as usize,
             size: dir_size(&path).unwrap(),
         }

@@ -33,7 +33,6 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::Infallible;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::Instant;
@@ -203,28 +202,8 @@ impl<O: Op> Index<O> {
     pub fn alter(self: &Arc<Self>, key: &str, value: &str) -> Result<(), AlterError> {
         let mut protect = self.protect.lock();
         let mut options_2 = protect.options_2.clone();
-        let e = AlterError::InvalidIndexOptions {
-            reason: "value is of incorrect type".to_string(),
-        };
-        match key {
-            "optimizing.optimizing_threads" => {
-                let v = FromStr::from_str(value).map_err(|_| e)?;
-                options_2.optimizing.optimizing_threads = v;
-            }
-            "optimizing.sealing_secs" => {
-                let v = FromStr::from_str(value).map_err(|_| e)?;
-                options_2.optimizing.sealing_secs = v;
-            }
-            "optimizing.sealing_size" => {
-                let v = FromStr::from_str(value).map_err(|_| e)?;
-                options_2.optimizing.sealing_size = v;
-            }
-            _ => {
-                return Err(AlterError::KeyNotExists {
-                    key: key.to_string(),
-                })
-            }
-        };
+        let key = key.split('.').collect::<Vec<_>>();
+        options_2.alter(key.as_slice(), value)?;
         if let Err(e) = options_2.validate() {
             return Err(AlterError::InvalidIndexOptions {
                 reason: e.to_string(),

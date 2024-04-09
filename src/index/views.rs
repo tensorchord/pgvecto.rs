@@ -40,7 +40,7 @@ fn _vectors_index_stat(
                 "idx_sealed",
                 segments
                     .iter()
-                    .filter(|x| x.typ == "sealed")
+                    .filter(|x| x.r#type == "sealed")
                     .map(|x| x.length as i64)
                     .collect::<Vec<_>>(),
             )
@@ -49,7 +49,7 @@ fn _vectors_index_stat(
                 "idx_growing",
                 segments
                     .iter()
-                    .filter(|x| x.typ == "growing")
+                    .filter(|x| x.r#type == "growing")
                     .map(|x| x.length as i64)
                     .collect::<Vec<_>>(),
             )
@@ -58,7 +58,7 @@ fn _vectors_index_stat(
                 "idx_write",
                 segments
                     .iter()
-                    .filter(|x| x.typ == "write")
+                    .filter(|x| x.r#type == "write")
                     .map(|x| x.length as i64)
                     .sum::<i64>(),
             )

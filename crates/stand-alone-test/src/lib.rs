@@ -21,13 +21,7 @@ pub fn prepare_dataset(data_file: &str, output_dir: &str) {
     );
 }
 
-pub fn make_hnsw(
-    data_dir: &String,
-    dims: u32,
-    m: u32,
-    ef_construction: usize,
-    output_dir: &String,
-) {
+pub fn make_hnsw(data_dir: &str, dims: u32, m: u32, ef_construction: u32, output_dir: &str) {
     let path = Path::new(output_dir);
     let data_path = Path::new(data_dir);
     let options = IndexOptions {
@@ -47,12 +41,12 @@ pub fn make_hnsw(
 }
 
 pub fn search_hnsw(
-    data_dir: &String,
+    data_dir: &str,
     dims: u32,
-    hnsw_dir: &String,
+    hnsw_dir: &str,
     query_file: &str,
     gt_file: &str,
-    ef: usize,
+    ef: u32,
 ) {
     let path = Path::new(hnsw_dir);
     let data_path = Path::new(data_dir);
