@@ -107,7 +107,7 @@ unsafe fn convert_reloptions_to_options(
     }
 }
 
-pub unsafe fn options(index: pgrx::pg_sys::Relation) -> IndexOptions {
+pub unsafe fn options(index: pgrx::pg_sys::Relation) -> (IndexOptions, IndexAlterableOptions) {
     let opfamily = unsafe { (*index).rd_opfamily.read() };
     let att = unsafe { &mut *(*index).rd_att };
     let atts = unsafe { att.attrs.as_slice(att.natts as _) };
@@ -125,10 +125,12 @@ pub unsafe fn options(index: pgrx::pg_sys::Relation) -> IndexOptions {
     // get segment, optimizing, indexing
     let (segment, optimizing, indexing) =
         unsafe { convert_reloptions_to_options((*index).rd_options) };
-    IndexOptions {
-        vector: VectorOptions { dims, v, d },
-        segment,
-        optimizing,
-        indexing,
-    }
+    (
+        IndexOptions {
+            vector: VectorOptions { dims, v, d },
+            segment,
+            indexing,
+        },
+        IndexAlterableOptions { optimizing },
+    )
 }

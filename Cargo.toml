@@ -36,7 +36,7 @@ thiserror.workspace = true
 tikv-jemallocator = { version = "0.5.4", features = [
     "disable_initial_exec_tls",
 ] }
-toml = "0.8.10"
+toml.workspace = true
 validator.workspace = true
 
 base = { path = "crates/base" }
@@ -87,8 +87,9 @@ rustix = { version = "0.38.31", features = ["fs", "mm", "net"] }
 serde = "1"
 serde_json = "1"
 thiserror = "1"
+toml = "0.8.10"
 uuid = { version = "1.7.0", features = ["serde", "v4"] }
-validator = { version = "0.17.0", features = ["derive"] }
+validator = { version = "0.18.0", features = ["derive"] }
 
 [workspace.lints]
 rust.unsafe_op_in_unsafe_fn = "forbid"

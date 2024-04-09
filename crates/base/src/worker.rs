@@ -3,7 +3,12 @@ use crate::search::*;
 use crate::vector::*;
 
 pub trait WorkerOperations {
-    fn create(&self, handle: Handle, options: IndexOptions) -> Result<(), CreateError>;
+    fn create(
+        &self,
+        handle: Handle,
+        options: IndexOptions,
+        alterable_options: IndexAlterableOptions,
+    ) -> Result<(), CreateError>;
     fn drop(&self, handle: Handle) -> Result<(), DropError>;
     fn flush(&self, handle: Handle) -> Result<(), FlushError>;
     fn insert(
@@ -17,7 +22,9 @@ pub trait WorkerOperations {
     fn view_vbase(&self, handle: Handle) -> Result<impl ViewVbaseOperations, VbaseError>;
     fn view_list(&self, handle: Handle) -> Result<impl ViewListOperations, ListError>;
     fn stat(&self, handle: Handle) -> Result<IndexStat, StatError>;
-    fn alter(&self, handle: Handle, key: String, value: String) -> Result<(), AlterError>;
+    fn alter(&self, handle: Handle, key: &str, value: &str) -> Result<(), AlterError>;
+    fn stop(&self, handle: Handle) -> Result<(), StopError>;
+    fn start(&self, handle: Handle) -> Result<(), StartError>;
 }
 
 pub trait ViewBasicOperations {

@@ -11,8 +11,7 @@ mod utils;
 use self::delete::Delete;
 use self::segments::growing::GrowingSegment;
 use self::segments::sealed::SealedSegment;
-use crate::optimizing::indexing::OptimizerIndexing;
-use crate::optimizing::sealing::OptimizerSealing;
+use crate::optimizing::Optimizing;
 use crate::utils::tournament_tree::LoserTree;
 use arc_swap::ArcSwap;
 pub use base::distance::*;
@@ -34,7 +33,6 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::Infallible;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::Instant;
@@ -55,18 +53,26 @@ pub struct Index<O: Op> {
     delete: Arc<Delete>,
     protect: Mutex<IndexProtect<O>>,
     view: ArcSwap<IndexView<O>>,
-    instant_index: AtomicCell<Instant>,
-    instant_write: AtomicCell<Instant>,
-    background_indexing: Mutex<Option<(Sender<Infallible>, JoinHandle<()>)>>,
-    background_sealing: Mutex<Option<(Sender<Infallible>, JoinHandle<()>)>>,
+    instant_indexed: AtomicCell<Instant>,
+    instant_written: AtomicCell<Instant>,
+    optimizing: Mutex<Option<(Sender<Infallible>, JoinHandle<()>)>>,
     _tracker: Arc<IndexTracker>,
 }
 
 impl<O: Op> Index<O> {
-    pub fn create(path: PathBuf, options: IndexOptions) -> Result<Arc<Self>, CreateError> {
+    pub fn create(
+        path: PathBuf,
+        options: IndexOptions,
+        alterable_options: IndexAlterableOptions,
+    ) -> Result<Arc<Self>, CreateError> {
         if let Err(err) = options.validate() {
             return Err(CreateError::InvalidIndexOptions {
                 reason: err.to_string(),
+            });
+        }
+        if let Err(e) = alterable_options.validate() {
+            return Err(CreateError::InvalidIndexOptions {
+                reason: e.to_string(),
             });
         }
         std::fs::create_dir(&path).unwrap();
@@ -81,7 +87,7 @@ impl<O: Op> Index<O> {
             IndexStartup {
                 sealeds: HashSet::new(),
                 growings: HashSet::new(),
-                flexible: IndexFlexibleOptions::default(),
+                alterable_options: alterable_options.clone(),
             },
         );
         let delete = Delete::create(path.join("delete"));
@@ -95,19 +101,19 @@ impl<O: Op> Index<O> {
                 sealed: HashMap::new(),
                 growing: HashMap::new(),
                 write: None,
+                alterable_options: alterable_options.clone(),
             }),
             view: ArcSwap::new(Arc::new(IndexView {
                 options: options.clone(),
-                flexible: IndexFlexibleOptions::default(),
+                alterable_options: alterable_options.clone(),
                 sealed: HashMap::new(),
                 growing: HashMap::new(),
                 delete: delete.clone(),
                 write: None,
             })),
-            instant_index: AtomicCell::new(Instant::now()),
-            instant_write: AtomicCell::new(Instant::now()),
-            background_indexing: Mutex::new(None),
-            background_sealing: Mutex::new(None),
+            instant_indexed: AtomicCell::new(Instant::now()),
+            instant_written: AtomicCell::new(Instant::now()),
+            optimizing: Mutex::new(None),
             _tracker: Arc::new(IndexTracker { path }),
         });
         Ok(index)
@@ -119,7 +125,7 @@ impl<O: Op> Index<O> {
                 .unwrap();
         let tracker = Arc::new(IndexTracker { path: path.clone() });
         let startup = FileAtomic::<IndexStartup>::open(path.join("startup"));
-        let flexible = startup.get().flexible.clone();
+        let alterable_options = startup.get().alterable_options.clone();
         clean(
             path.join("segments"),
             startup
@@ -171,19 +177,19 @@ impl<O: Op> Index<O> {
                 sealed: sealed.clone(),
                 growing: growing.clone(),
                 write: None,
+                alterable_options: alterable_options.clone(),
             }),
             view: ArcSwap::new(Arc::new(IndexView {
                 options: options.clone(),
-                flexible,
+                alterable_options: alterable_options.clone(),
                 delete: delete.clone(),
                 sealed,
                 growing,
                 write: None,
             })),
-            instant_index: AtomicCell::new(Instant::now()),
-            instant_write: AtomicCell::new(Instant::now()),
-            background_indexing: Mutex::new(None),
-            background_sealing: Mutex::new(None),
+            instant_indexed: AtomicCell::new(Instant::now()),
+            instant_written: AtomicCell::new(Instant::now()),
+            optimizing: Mutex::new(None),
             _tracker: tracker,
         })
     }
@@ -193,21 +199,18 @@ impl<O: Op> Index<O> {
     pub fn view(&self) -> Arc<IndexView<O>> {
         self.view.load_full()
     }
-    pub fn alter(self: &Arc<Self>, key: String, value: String) -> Result<(), AlterError> {
+    pub fn alter(self: &Arc<Self>, key: &str, value: &str) -> Result<(), AlterError> {
         let mut protect = self.protect.lock();
-        match key.as_str() {
-            "optimizing.threads" => {
-                let parsed = i32::from_str(value.as_str())
-                    .map_err(|_e| AlterError::BadValue { key, value })?;
-                let optimizing_threads = match parsed {
-                    0 => IndexFlexibleOptions::default_optimizing_threads(),
-                    threads_limit => threads_limit as u16,
-                };
-                protect.flexible_set(IndexFlexibleOptions { optimizing_threads });
-                protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
-            }
-            _ => return Err(AlterError::BadKey { key }),
-        };
+        let mut alterable_options = protect.alterable_options.clone();
+        let key = key.split('.').collect::<Vec<_>>();
+        alterable_options.alter(key.as_slice(), value)?;
+        if let Err(e) = alterable_options.validate() {
+            return Err(AlterError::InvalidIndexOptions {
+                reason: e.to_string(),
+            });
+        }
+        protect.alterable_options = alterable_options;
+        protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
         Ok(())
     }
     pub fn refresh(&self) {
@@ -230,7 +233,7 @@ impl<O: Op> Index<O> {
         );
         protect.write = Some((write_segment_uuid, write_segment));
         protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
-        self.instant_write.store(Instant::now());
+        self.instant_written.store(Instant::now());
     }
     pub fn seal(&self, check: Uuid) {
         let mut protect = self.protect.lock();
@@ -243,12 +246,12 @@ impl<O: Op> Index<O> {
         }
         protect.write = None;
         protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
-        self.instant_write.store(Instant::now());
+        self.instant_written.store(Instant::now());
     }
     pub fn stat(&self) -> IndexStat {
         let view = self.view();
         IndexStat {
-            indexing: self.instant_index.load() < self.instant_write.load(),
+            indexing: self.instant_indexed.load() < self.instant_written.load(),
             options: self.options().clone(),
             segments: {
                 let mut segments = Vec::new();
@@ -266,42 +269,21 @@ impl<O: Op> Index<O> {
         }
     }
     pub fn start(self: &Arc<Self>) {
-        {
-            let mut background_indexing = self.background_indexing.lock();
-            if background_indexing.is_none() {
-                *background_indexing = Some(OptimizerIndexing::new(self.clone()).spawn());
-            }
-        }
-        {
-            let mut background_sealing = self.background_sealing.lock();
-            if background_sealing.is_none() {
-                *background_sealing = Some(OptimizerSealing::new(self.clone()).spawn());
-            }
+        let mut optimizing = self.optimizing.lock();
+        if optimizing.is_none() {
+            *optimizing = Some(Optimizing::new(self.clone()).spawn());
         }
     }
     pub fn stop(&self) {
-        {
-            let mut background_indexing = self.background_indexing.lock();
-            if let Some((sender, join_handle)) = background_indexing.take() {
-                drop(sender);
-                let _ = join_handle.join();
-            }
-        }
-        {
-            let mut background_sealing = self.background_sealing.lock();
-            if let Some((sender, join_handle)) = background_sealing.take() {
-                drop(sender);
-                let _ = join_handle.join();
-            }
+        let mut optimizing = self.optimizing.lock();
+        if let Some((sender, join_handle)) = optimizing.take() {
+            drop(sender);
+            let _ = join_handle.join();
         }
     }
     pub fn wait(&self) -> Arc<IndexTracker> {
         Arc::clone(&self._tracker)
     }
-}
-
-impl<O: Op> Drop for Index<O> {
-    fn drop(&mut self) {}
 }
 
 #[derive(Debug, Clone)]
@@ -317,7 +299,7 @@ impl Drop for IndexTracker {
 
 pub struct IndexView<O: Op> {
     pub options: IndexOptions,
-    pub flexible: IndexFlexibleOptions,
+    pub alterable_options: IndexAlterableOptions,
     pub delete: Arc<Delete>,
     pub sealed: HashMap<Uuid, Arc<SealedSegment<O>>>,
     pub growing: HashMap<Uuid, Arc<GrowingSegment<O>>>,
@@ -532,7 +514,7 @@ impl<O: Op> IndexView<O> {
 struct IndexStartup {
     sealeds: HashSet<Uuid>,
     growings: HashSet<Uuid>,
-    flexible: IndexFlexibleOptions,
+    alterable_options: IndexAlterableOptions,
 }
 
 struct IndexProtect<O: Op> {
@@ -540,20 +522,19 @@ struct IndexProtect<O: Op> {
     sealed: HashMap<Uuid, Arc<SealedSegment<O>>>,
     growing: HashMap<Uuid, Arc<GrowingSegment<O>>>,
     write: Option<(Uuid, Arc<GrowingSegment<O>>)>,
+    alterable_options: IndexAlterableOptions,
 }
 
 impl<O: Op> IndexProtect<O> {
-    /// Export IndexProtect to IndexView
     fn maintain(
         &mut self,
         options: IndexOptions,
         delete: Arc<Delete>,
         swap: &ArcSwap<IndexView<O>>,
     ) {
-        let old_startup = self.startup.get();
         let view = Arc::new(IndexView {
             options,
-            flexible: old_startup.flexible.clone(),
+            alterable_options: self.alterable_options.clone(),
             delete,
             sealed: self.sealed.clone(),
             growing: self.growing.clone(),
@@ -565,16 +546,8 @@ impl<O: Op> IndexProtect<O> {
         self.startup.set(IndexStartup {
             sealeds: startup_sealeds,
             growings: startup_growings,
-            flexible: old_startup.flexible.clone(),
+            alterable_options: self.alterable_options.clone(),
         });
         swap.swap(view);
-    }
-    fn flexible_set(&mut self, flexible: IndexFlexibleOptions) {
-        let src = self.startup.get();
-        self.startup.set(IndexStartup {
-            sealeds: src.sealeds.clone(),
-            growings: src.sealeds.clone(),
-            flexible,
-        });
     }
 }
