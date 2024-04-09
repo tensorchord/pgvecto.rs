@@ -3,14 +3,9 @@ use crate::error::*;
 use base::scalar::*;
 use base::vector::*;
 
-// sql
-// CREATE TYPE vector_accum_state AS (
-// 	count BIGINT,
-// 	sum double precision[]
-// );
-
+/// accumulate intermediate state for vector average
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_accum(
+fn _vectors_vector_accum(
     mut state: pgrx::composite_type!('static, "vectors.vector_accum_state"),
     value: Vecf32Input<'_>,
 ) -> pgrx::composite_type!('static, "vectors.vector_accum_state") {
@@ -19,6 +14,7 @@ fn _vectors_accum(
         .unwrap()
         .unwrap_or_default();
     if count == 0 {
+        // state is empty
         let mut result =
             pgrx::heap_tuple::PgHeapTuple::new_composite_type("vectors.vector_accum_state")
                 .unwrap();
@@ -45,7 +41,7 @@ fn _vectors_accum(
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_combine(
+fn _vectors_vector_combine(
     state1: pgrx::composite_type!('static, "vectors.vector_accum_state"),
     state2: pgrx::composite_type!('static, "vectors.vector_accum_state"),
 ) -> pgrx::composite_type!('static, "vectors.vector_accum_state") {
@@ -79,6 +75,7 @@ fn _vectors_combine(
         let mut result =
             pgrx::heap_tuple::PgHeapTuple::new_composite_type("vectors.vector_accum_state")
                 .unwrap();
+        // merge two accumulate states
         result.set_by_name("count", count1 + count2).unwrap();
         result.set_by_name("sum", sum).unwrap();
         result
@@ -86,24 +83,43 @@ fn _vectors_combine(
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_final(
+fn _vectors_vector_final(
     state: pgrx::composite_type!('static, "vectors.vector_accum_state"),
-) -> Vecf32Output {
+) -> Option<Vecf32Output> {
     let count = state
         .get_by_name::<i64>("count")
         .unwrap()
         .unwrap_or_default();
+    // return null datum if all inputs vector are null
     if count == 0 {
-        //TODO: it is possible to return NULL datum here?
-        bad_literal("No input data.");
+        return None;
     }
     let sum = state
         .get_by_name::<pgrx::Array<f64>>("sum")
         .unwrap()
         .unwrap();
+    // compute the average of vectors by dividing the sum by the count
     let sum = sum
         .iter_deny_null()
         .map(|x| F32((x / count as f64) as f32))
         .collect::<Vec<_>>();
-    Vecf32Output::new(Vecf32Borrowed::new_checked(&sum).unwrap())
+    Some(Vecf32Output::new(
+        Vecf32Borrowed::new_checked(&sum).unwrap(),
+    ))
+}
+
+/// Get the dimensions of a vector.
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_vector_dims(vector: Vecf32Input<'_>) -> i32 {
+    vector.dims() as i32
+}
+
+/// Calculate the l2 norm of a vector.
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_vector_norm(vector: Vecf32Input<'_>) -> f32 {
+    vector
+        .iter()
+        .map(|x: &F32| x.0 as f64 * x.0 as f64)
+        .sum::<f64>()
+        .sqrt() as f32
 }

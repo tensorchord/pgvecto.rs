@@ -598,14 +598,23 @@ $$;
 CREATE FUNCTION alter_vector_index("index" OID, "key" TEXT, "value" TEXT) RETURNS void
 STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_alter_vector_index_wrapper';
 
+CREATE FUNCTION vector_dims("v" vector) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_dims_wrapper';
+
+CREATE FUNCTION vector_norm("v" vector) RETURNS real
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_norm_wrapper';
+
+CREATE FUNCTION vector_add("v1" vector, "v2" vector) RETURNS vector 
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_add_wrapper';
+
 CREATE FUNCTION vector_accum("state" vector_accum_state, "value" vector) RETURNS vector_accum_state	
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_accum_wrapper';
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_accum_wrapper';
 
 CREATE FUNCTION vector_combine("state1" vector_accum_state, "state2" vector_accum_state) RETURNS vector_accum_state
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_combine_wrapper';
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_combine_wrapper';
 
 CREATE FUNCTION vector_final("state" vector_accum_state) RETURNS vector
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_final_wrapper';
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_final_wrapper';
 
 -- List of aggregates
 
@@ -618,12 +627,12 @@ CREATE AGGREGATE avg(vector) (
 	PARALLEL = SAFE
 );
 
--- CREATE AGGREGATE sum(vector) (
--- 	SFUNC = vector_add,
--- 	STYPE = vector,
--- 	COMBINEFUNC = vector_add,
--- 	PARALLEL = SAFE
--- );
+CREATE AGGREGATE sum(vector) (
+	SFUNC = vector_add,
+	STYPE = vector,
+	COMBINEFUNC = vector_add,
+	PARALLEL = SAFE
+);
 
 -- List of casts
 
