@@ -44,7 +44,7 @@ impl<O: Op> Optimizing<O> {
                     .map(|(uuid, segment)| (*uuid, segment.len()));
                 if first || stamp == check {
                     if let Some((uuid, len)) = stamp {
-                        if len >= view.options_2.optimizing.sealing_size {
+                        if len >= view.alterable_options.optimizing.sealing_size {
                             index.seal(uuid);
                         }
                     }
@@ -52,7 +52,7 @@ impl<O: Op> Optimizing<O> {
                     check = stamp;
                 }
                 first = false;
-                Instant::now() + Duration::from_secs(view.options_2.optimizing.sealing_secs)
+                Instant::now() + Duration::from_secs(view.alterable_options.optimizing.sealing_secs)
             })
         });
         tasks.insert(
@@ -61,7 +61,7 @@ impl<O: Op> Optimizing<O> {
                 let view = index.view();
                 if let Some(source) = scan(index.clone()) {
                     rayon::ThreadPoolBuilder::new()
-                        .num_threads(view.options_2.optimizing.optimizing_threads as usize)
+                        .num_threads(view.alterable_options.optimizing.optimizing_threads as usize)
                         .build_scoped(|pool| {
                             let (stop_tx, stop_rx) = bounded::<Infallible>(0);
                             std::thread::scope(|scope| {

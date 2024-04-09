@@ -141,9 +141,9 @@ pub unsafe extern "C" fn ambuild(
     }
     let oid = unsafe { (*index).rd_id };
     let handle = from_oid_to_handle(oid);
-    let (options, options_2) = unsafe { am_options::options(index) };
+    let (options, alterable_options) = unsafe { am_options::options(index) };
     let mut rpc = check_client(client());
-    match rpc.create(handle, options, options_2) {
+    match rpc.create(handle, options, alterable_options) {
         Ok(()) => (),
         Err(CreateError::InvalidIndexOptions { reason }) => {
             bad_service_invalid_index_options(&reason);

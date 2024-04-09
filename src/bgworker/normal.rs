@@ -68,14 +68,14 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<Infallible,
             ServerRpcHandle::Create {
                 handle,
                 options,
-                options_2,
+                alterable_options,
                 x,
             } => {
                 handler = x.leave(WorkerOperations::create(
                     worker.as_ref(),
                     handle,
                     options,
-                    options_2,
+                    alterable_options,
                 ))?;
             }
             ServerRpcHandle::Drop { handle, x } => {

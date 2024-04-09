@@ -7,7 +7,7 @@ pub trait WorkerOperations {
         &self,
         handle: Handle,
         options: IndexOptions,
-        options_2: IndexOptions2,
+        alterable_options: IndexAlterableOptions,
     ) -> Result<(), CreateError>;
     fn drop(&self, handle: Handle) -> Result<(), DropError>;
     fn flush(&self, handle: Handle) -> Result<(), FlushError>;

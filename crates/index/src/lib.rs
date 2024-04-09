@@ -63,14 +63,14 @@ impl<O: Op> Index<O> {
     pub fn create(
         path: PathBuf,
         options: IndexOptions,
-        options_2: IndexOptions2,
+        alterable_options: IndexAlterableOptions,
     ) -> Result<Arc<Self>, CreateError> {
         if let Err(err) = options.validate() {
             return Err(CreateError::InvalidIndexOptions {
                 reason: err.to_string(),
             });
         }
-        if let Err(e) = options_2.validate() {
+        if let Err(e) = alterable_options.validate() {
             return Err(CreateError::InvalidIndexOptions {
                 reason: e.to_string(),
             });
@@ -87,7 +87,7 @@ impl<O: Op> Index<O> {
             IndexStartup {
                 sealeds: HashSet::new(),
                 growings: HashSet::new(),
-                options_2: options_2.clone(),
+                alterable_options: alterable_options.clone(),
             },
         );
         let delete = Delete::create(path.join("delete"));
@@ -101,11 +101,11 @@ impl<O: Op> Index<O> {
                 sealed: HashMap::new(),
                 growing: HashMap::new(),
                 write: None,
-                options_2: options_2.clone(),
+                alterable_options: alterable_options.clone(),
             }),
             view: ArcSwap::new(Arc::new(IndexView {
                 options: options.clone(),
-                options_2: options_2.clone(),
+                alterable_options: alterable_options.clone(),
                 sealed: HashMap::new(),
                 growing: HashMap::new(),
                 delete: delete.clone(),
@@ -125,7 +125,7 @@ impl<O: Op> Index<O> {
                 .unwrap();
         let tracker = Arc::new(IndexTracker { path: path.clone() });
         let startup = FileAtomic::<IndexStartup>::open(path.join("startup"));
-        let options_2 = startup.get().options_2.clone();
+        let alterable_options = startup.get().alterable_options.clone();
         clean(
             path.join("segments"),
             startup
@@ -177,11 +177,11 @@ impl<O: Op> Index<O> {
                 sealed: sealed.clone(),
                 growing: growing.clone(),
                 write: None,
-                options_2: options_2.clone(),
+                alterable_options: alterable_options.clone(),
             }),
             view: ArcSwap::new(Arc::new(IndexView {
                 options: options.clone(),
-                options_2: options_2.clone(),
+                alterable_options: alterable_options.clone(),
                 delete: delete.clone(),
                 sealed,
                 growing,
@@ -201,15 +201,15 @@ impl<O: Op> Index<O> {
     }
     pub fn alter(self: &Arc<Self>, key: &str, value: &str) -> Result<(), AlterError> {
         let mut protect = self.protect.lock();
-        let mut options_2 = protect.options_2.clone();
+        let mut alterable_options = protect.alterable_options.clone();
         let key = key.split('.').collect::<Vec<_>>();
-        options_2.alter(key.as_slice(), value)?;
-        if let Err(e) = options_2.validate() {
+        alterable_options.alter(key.as_slice(), value)?;
+        if let Err(e) = alterable_options.validate() {
             return Err(AlterError::InvalidIndexOptions {
                 reason: e.to_string(),
             });
         }
-        protect.options_2 = options_2;
+        protect.alterable_options = alterable_options;
         protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
         Ok(())
     }
@@ -299,7 +299,7 @@ impl Drop for IndexTracker {
 
 pub struct IndexView<O: Op> {
     pub options: IndexOptions,
-    pub options_2: IndexOptions2,
+    pub alterable_options: IndexAlterableOptions,
     pub delete: Arc<Delete>,
     pub sealed: HashMap<Uuid, Arc<SealedSegment<O>>>,
     pub growing: HashMap<Uuid, Arc<GrowingSegment<O>>>,
@@ -514,7 +514,7 @@ impl<O: Op> IndexView<O> {
 struct IndexStartup {
     sealeds: HashSet<Uuid>,
     growings: HashSet<Uuid>,
-    options_2: IndexOptions2,
+    alterable_options: IndexAlterableOptions,
 }
 
 struct IndexProtect<O: Op> {
@@ -522,7 +522,7 @@ struct IndexProtect<O: Op> {
     sealed: HashMap<Uuid, Arc<SealedSegment<O>>>,
     growing: HashMap<Uuid, Arc<GrowingSegment<O>>>,
     write: Option<(Uuid, Arc<GrowingSegment<O>>)>,
-    options_2: IndexOptions2,
+    alterable_options: IndexAlterableOptions,
 }
 
 impl<O: Op> IndexProtect<O> {
@@ -534,7 +534,7 @@ impl<O: Op> IndexProtect<O> {
     ) {
         let view = Arc::new(IndexView {
             options,
-            options_2: self.options_2.clone(),
+            alterable_options: self.alterable_options.clone(),
             delete,
             sealed: self.sealed.clone(),
             growing: self.growing.clone(),
@@ -546,7 +546,7 @@ impl<O: Op> IndexProtect<O> {
         self.startup.set(IndexStartup {
             sealeds: startup_sealeds,
             growings: startup_growings,
-            options_2: self.options_2.clone(),
+            alterable_options: self.alterable_options.clone(),
         });
         swap.swap(view);
     }

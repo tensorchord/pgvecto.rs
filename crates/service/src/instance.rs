@@ -35,71 +35,71 @@ impl Instance {
     pub fn create(
         path: PathBuf,
         options: IndexOptions,
-        options_2: IndexOptions2,
+        alterable_options: IndexAlterableOptions,
     ) -> Result<Self, CreateError> {
         match (options.vector.d, options.vector.v) {
             (DistanceKind::Cos, VectorKind::Vecf32) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::Vecf32Cos(index))
             }
             (DistanceKind::Dot, VectorKind::Vecf32) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::Vecf32Dot(index))
             }
             (DistanceKind::L2, VectorKind::Vecf32) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::Vecf32L2(index))
             }
             (DistanceKind::Cos, VectorKind::Vecf16) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::Vecf16Cos(index))
             }
             (DistanceKind::Dot, VectorKind::Vecf16) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::Vecf16Dot(index))
             }
             (DistanceKind::L2, VectorKind::Vecf16) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::Vecf16L2(index))
             }
             (DistanceKind::Cos, VectorKind::SVecf32) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::SVecf32Cos(index))
             }
             (DistanceKind::Dot, VectorKind::SVecf32) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::SVecf32Dot(index))
             }
             (DistanceKind::L2, VectorKind::SVecf32) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::SVecf32L2(index))
             }
             (DistanceKind::Cos, VectorKind::BVecf32) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::BVecf32Cos(index))
             }
             (DistanceKind::Dot, VectorKind::BVecf32) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::BVecf32Dot(index))
             }
             (DistanceKind::L2, VectorKind::BVecf32) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::BVecf32L2(index))
             }
             (DistanceKind::Jaccard, VectorKind::BVecf32) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::BVecf32Jaccard(index))
             }
             (DistanceKind::L2, VectorKind::Veci8) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::Veci8L2(index))
             }
             (DistanceKind::Cos, VectorKind::Veci8) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::Veci8Cos(index))
             }
             (DistanceKind::Dot, VectorKind::Veci8) => {
-                let index = Index::create(path.clone(), options, options_2)?;
+                let index = Index::create(path.clone(), options, alterable_options)?;
                 Ok(Self::Veci8Dot(index))
             }
             (DistanceKind::Jaccard, _) => Err(CreateError::InvalidIndexOptions {

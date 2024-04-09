@@ -140,7 +140,7 @@ impl IndexOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, Alter)]
 #[serde(deny_unknown_fields)]
-pub struct IndexOptions2 {
+pub struct IndexAlterableOptions {
     #[validate(nested)]
     pub optimizing: OptimizingOptions,
 }

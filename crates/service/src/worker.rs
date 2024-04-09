@@ -70,7 +70,7 @@ impl WorkerOperations for Worker {
         &self,
         handle: Handle,
         options: IndexOptions,
-        options_2: IndexOptions2,
+        alterable_options: IndexAlterableOptions,
     ) -> Result<(), CreateError> {
         use std::collections::hash_map::Entry;
         let mut protect = self.protect.lock();
@@ -79,7 +79,7 @@ impl WorkerOperations for Worker {
                 let index = Instance::create(
                     self.path.join("indexes").join(handle.to_string()),
                     options,
-                    options_2,
+                    alterable_options,
                 )?;
                 index.start();
                 o.insert(index);
@@ -106,7 +106,7 @@ impl WorkerOperations for Worker {
                     let index = Instance::create(
                         self.path.join("indexes").join(handle.to_string()),
                         options,
-                        options_2,
+                        alterable_options,
                     )?;
                     index.start();
                     protect.indexes.insert(handle, index);

@@ -320,7 +320,7 @@ macro_rules! defines {
 }
 
 defines! {
-    unary create(handle: Handle, options: IndexOptions, options_2: IndexOptions2) -> ();
+    unary create(handle: Handle, options: IndexOptions, alterable_options: IndexAlterableOptions) -> ();
     unary drop(handle: Handle) -> ();
     unary flush(handle: Handle) -> ();
     unary insert(handle: Handle, vector: OwnedVector, pointer: Pointer) -> ();
