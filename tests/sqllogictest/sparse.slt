@@ -17,7 +17,7 @@ WITH (options = "[indexing.hnsw]");
 
 statement ok
 CREATE INDEX ON t USING vectors (val svector_cos_ops)
-WITH (options = "[indexing.ivf]");
+WITH (options = "[indexing.hnsw]");
 
 query I
 SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0.5,0.5,0.5,0.5,0.5,0.5]'::svector limit 10) t2;

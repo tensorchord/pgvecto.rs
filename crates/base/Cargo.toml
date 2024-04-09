@@ -11,9 +11,11 @@ num-traits.workspace = true
 rand.workspace = true
 serde.workspace = true
 thiserror.workspace = true
+toml.workspace = true
 uuid.workspace = true
 validator.workspace = true
 
+base_macros = { path = "../base_macros" }
 c = { path = "../c" }
 detect = { path = "../detect" }
 

@@ -1,5 +1,6 @@
 use crate::distance::*;
 use crate::vector::*;
+use base_macros::Alter;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
@@ -8,7 +9,7 @@ use validator::{Validate, ValidationError};
 #[must_use]
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
 pub enum CreateError {
-    #[error("Invalid index options.")]
+    #[error("Invalid index options: {reason}.")]
     InvalidIndexOptions { reason: String },
 }
 
@@ -81,47 +82,37 @@ pub enum StatError {
 #[must_use]
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
 pub enum AlterError {
-    #[error("Setting key {key} is not exist.")]
-    BadKey { key: String },
-    #[error("Setting key {key} has a wrong value {value}.")]
-    BadValue { key: String, value: String },
+    #[error("Index not found.")]
+    NotExist,
+    #[error("Key {key} not found.")]
+    KeyNotExists { key: String },
+    #[error("Invalid index options: {reason}.")]
+    InvalidIndexOptions { reason: String },
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum StopError {
+    #[error("Index not found.")]
+    NotExist,
+}
+
+#[must_use]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum StartError {
     #[error("Index not found.")]
     NotExist,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
-pub struct IndexFlexibleOptions {
-    #[serde(default = "IndexFlexibleOptions::default_optimizing_threads")]
-    #[validate(range(min = 1, max = 65535))]
-    pub optimizing_threads: u16,
-}
-
-impl IndexFlexibleOptions {
-    pub fn default_optimizing_threads() -> u16 {
-        1
-    }
-}
-
-impl Default for IndexFlexibleOptions {
-    fn default() -> Self {
-        Self {
-            optimizing_threads: Self::default_optimizing_threads(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-#[serde(deny_unknown_fields)]
 #[validate(schema(function = "IndexOptions::validate_index_options"))]
 pub struct IndexOptions {
-    #[validate]
+    #[validate(nested)]
     pub vector: VectorOptions,
-    #[validate]
+    #[validate(nested)]
     pub segment: SegmentsOptions,
-    #[validate]
-    pub optimizing: OptimizingOptions,
-    #[validate]
+    #[validate(nested)]
     pub indexing: IndexingOptions,
 }
 
@@ -140,11 +131,18 @@ impl IndexOptions {
         };
         if !is_trivial {
             return Err(ValidationError::new(
-                "Quantization is not supported for svector, bvector, and vecint8.",
+                "Quantization is not supported for svector, bvector, and veci8.",
             ));
         }
         Ok(())
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Alter)]
+#[serde(deny_unknown_fields)]
+pub struct IndexAlterableOptions {
+    #[validate(nested)]
+    pub optimizing: OptimizingOptions,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -222,9 +220,12 @@ impl Default for SegmentsOptions {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Alter)]
 #[serde(deny_unknown_fields)]
 pub struct OptimizingOptions {
+    #[serde(default = "OptimizingOptions::default_optimizing_threads")]
+    #[validate(range(min = 1, max = 65535))]
+    pub optimizing_threads: u16,
     #[serde(default = "OptimizingOptions::default_sealing_secs")]
     #[validate(range(min = 1, max = 60))]
     pub sealing_secs: u64,
@@ -237,6 +238,9 @@ pub struct OptimizingOptions {
 }
 
 impl OptimizingOptions {
+    fn default_optimizing_threads() -> u16 {
+        1
+    }
     fn default_sealing_secs() -> u64 {
         60
     }
@@ -251,6 +255,7 @@ impl OptimizingOptions {
 impl Default for OptimizingOptions {
     fn default() -> Self {
         Self {
+            optimizing_threads: Self::default_optimizing_threads(),
             sealing_secs: Self::default_sealing_secs(),
             sealing_size: Self::default_sealing_size(),
             delete_threshold: Self::default_delete_threshold(),
@@ -308,7 +313,7 @@ impl Validate for IndexingOptions {
 #[serde(deny_unknown_fields)]
 pub struct FlatIndexingOptions {
     #[serde(default)]
-    #[validate]
+    #[validate(nested)]
     pub quantization: QuantizationOptions,
 }
 
@@ -336,7 +341,7 @@ pub struct IvfIndexingOptions {
     #[validate(range(min = 1, max = 1_000_000))]
     pub nsample: u32,
     #[serde(default)]
-    #[validate]
+    #[validate(nested)]
     pub quantization: QuantizationOptions,
 }
 
@@ -375,9 +380,9 @@ pub struct HnswIndexingOptions {
     pub m: u32,
     #[serde(default = "HnswIndexingOptions::default_ef_construction")]
     #[validate(range(min = 10, max = 2000))]
-    pub ef_construction: usize,
+    pub ef_construction: u32,
     #[serde(default)]
-    #[validate]
+    #[validate(nested)]
     pub quantization: QuantizationOptions,
 }
 
@@ -385,7 +390,7 @@ impl HnswIndexingOptions {
     fn default_m() -> u32 {
         12
     }
-    fn default_ef_construction() -> usize {
+    fn default_ef_construction() -> u32 {
         300
     }
 }
@@ -492,7 +497,7 @@ impl Default for ProductQuantizationOptionsRatio {
 pub struct SearchOptions {
     pub prefilter_enable: bool,
     #[validate(range(min = 1, max = 65535))]
-    pub hnsw_ef_search: usize,
+    pub hnsw_ef_search: u32,
     #[validate(range(min = 1, max = 1_000_000))]
     pub ivf_nprobe: u32,
 }
@@ -507,8 +512,30 @@ pub struct IndexStat {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SegmentStat {
     pub id: Uuid,
-    #[serde(rename = "type")]
-    pub typ: String,
+    pub r#type: String,
     pub length: usize,
     pub size: u64,
+}
+
+pub trait Alter {
+    fn alter(&mut self, key: &[&str], value: &str) -> Result<(), AlterError>;
+}
+
+macro_rules! impl_alter_for {
+    {$($t:ty)*} => {
+        $(impl Alter for $t {
+            fn alter(&mut self, key: &[&str], value: &str) -> Result<(), AlterError> {
+                use std::str::FromStr;
+                if key.is_empty() {
+                    *self = FromStr::from_str(value).map_err(|_| AlterError::InvalidIndexOptions { reason: "failed to parse".to_string() })?;
+                    return Ok(());
+                }
+                Err(AlterError::KeyNotExists { key: key.join(".") })
+            }
+        })*
+    };
+}
+
+impl_alter_for! {
+    String u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 bool
 }

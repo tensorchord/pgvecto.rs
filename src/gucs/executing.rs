@@ -41,7 +41,7 @@ pub unsafe fn init() {
 pub fn search_options() -> SearchOptions {
     SearchOptions {
         prefilter_enable: ENABLE_PREFILTER.get(),
-        hnsw_ef_search: HNSW_EF_SEARCH.get() as usize,
+        hnsw_ef_search: HNSW_EF_SEARCH.get() as u32,
         ivf_nprobe: IVF_NPROBE.get() as u32,
     }
 }

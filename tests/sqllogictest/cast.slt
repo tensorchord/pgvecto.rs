@@ -1,3 +1,6 @@
+statement ok
+SET search_path TO pg_temp, vectors;
+
 # cast string to vector
 query I
 SELECT '[1,2,3]'::vector;

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-# Test the background threads `optimizing.indexing` and `optimizing.sealing` working properly
+# Test the background threads `optimizing.optimizing_indexing` and `optimizing.sealing_*` working properly
 sqllogictest -u runner -d runner $(dirname $0)/create.slt
-sleep 240
+sleep 20
 sqllogictest -u runner -d runner $(dirname $0)/check.slt

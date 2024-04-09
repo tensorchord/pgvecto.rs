@@ -1,4 +1,7 @@
 statement ok
+SET search_path TO pg_temp, vectors;
+
+statement ok
 SET vectors.pgvector_compatibility=off;
 
 query I

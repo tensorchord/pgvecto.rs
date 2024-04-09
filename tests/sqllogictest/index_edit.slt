@@ -19,14 +19,17 @@ SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0.5,0.5,0.5]' limit 10)
 statement error does not exist
 SELECT alter_vector_index('unknown_index'::regclass::oid, 'optimizing.threads', '1');
 
-statement error Setting key
+statement error not found
 SELECT alter_vector_index('hnsw_1'::regclass::oid, 'unknown_key', '1');
 
-statement error wrong value
-SELECT alter_vector_index('hnsw_1'::regclass::oid, 'optimizing.threads', 'unknown_value');
+statement error Invalid index options
+SELECT alter_vector_index('hnsw_1'::regclass::oid, 'optimizing.optimizing_threads', 'unknown_value');
+
+statement error Invalid index options
+SELECT alter_vector_index('hnsw_1'::regclass::oid, 'optimizing.optimizing_threads', '0');
 
 statement ok
-SELECT alter_vector_index('hnsw_1'::regclass::oid, 'optimizing.threads', '1');
+SELECT alter_vector_index('hnsw_1'::regclass::oid, 'optimizing.optimizing_threads', '1');
 
 query I
 SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0.5,0.5,0.5]' limit 10) t2;
