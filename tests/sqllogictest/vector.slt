@@ -69,7 +69,7 @@ NULL
 query ?
 SELECT avg(v) FROM unnest(ARRAY['[3e38]'::vector, '[3e38]']) v;
 ----
-[300000000000000000000000000000000000000]
+[inf]
 
 statement error differs in dimensions
 SELECT avg(v) FROM unnest(ARRAY['[1,2]'::vector, '[3]']) v;

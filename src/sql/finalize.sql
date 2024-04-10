@@ -78,9 +78,12 @@ CREATE TYPE vector_index_stat AS (
     idx_options TEXT
 );
 
-CREATE TYPE vector_accum_state AS (
-	count BIGINT,
-	sum double precision[]
+CREATE TYPE accumulate_state (
+    INPUT = _vectors_accumulate_state_in,
+    OUTPUT = _vectors_accumulate_state_out,
+    STORAGE = EXTERNAL,
+    INTERNALLENGTH = VARIABLE,
+    ALIGNMENT = double
 );
 
 -- List of operators
@@ -604,34 +607,22 @@ STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_dims_wrap
 CREATE FUNCTION vector_norm("v" vector) RETURNS real
 STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_norm_wrapper';
 
-CREATE FUNCTION vector_add("v1" vector, "v2" vector) RETURNS vector 
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_add_wrapper';
-
-CREATE FUNCTION vector_accum("state" vector_accum_state, "value" vector) RETURNS vector_accum_state	
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_accum_wrapper';
-
-CREATE FUNCTION vector_combine("state1" vector_accum_state, "state2" vector_accum_state) RETURNS vector_accum_state
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_combine_wrapper';
-
-CREATE FUNCTION vector_final("state" vector_accum_state) RETURNS vector
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_final_wrapper';
-
 -- List of aggregates
 
 CREATE AGGREGATE avg(vector) (
-	SFUNC = vector_accum,
-	STYPE = vector_accum_state,
-	COMBINEFUNC = vector_combine,
-	FINALFUNC = vector_final,
-	INITCOND = '(0, {})',
-	PARALLEL = SAFE
+    SFUNC = _vectors_vector_accum,
+    STYPE = accumulate_state,
+    COMBINEFUNC = _vectors_vector_combine,
+    FINALFUNC = _vectors_vector_final,
+    INITCOND = '0, []',
+    PARALLEL = SAFE
 );
 
 CREATE AGGREGATE sum(vector) (
-	SFUNC = vector_add,
-	STYPE = vector,
-	COMBINEFUNC = vector_add,
-	PARALLEL = SAFE
+    SFUNC = _vectors_vecf32_operator_add,
+    STYPE = vector,
+    COMBINEFUNC = _vectors_vecf32_operator_add,
+    PARALLEL = SAFE
 );
 
 -- List of casts
