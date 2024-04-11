@@ -286,7 +286,5 @@ fn _vectors_vector_dims(vector: Vecf32Input<'_>) -> i32 {
 /// Calculate the l2 norm of a vector.
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vector_norm(vector: Vecf32Input<'_>) -> f32 {
-    Vecf32Dot::distance(vector.for_borrow(), vector.for_borrow())
-        .to_f32()
-        .sqrt()
+    (-Vecf32Dot::distance(vector.for_borrow(), vector.for_borrow()).to_f32()).sqrt()
 }
