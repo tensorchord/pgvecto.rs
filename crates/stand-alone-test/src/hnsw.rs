@@ -188,7 +188,7 @@ fn mock_make(path: &Path, data_path: &Path, options: IndexOptions) -> HnswRam<Ve
                 &mut visited,
                 target,
                 u,
-                ef_construction,
+                ef_construction as usize,
                 j,
             );
             edges.sort();

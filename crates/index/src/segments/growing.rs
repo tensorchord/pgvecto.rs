@@ -158,7 +158,7 @@ impl<O: Op> GrowingSegment<O> {
     pub fn stat_growing(&self) -> SegmentStat {
         SegmentStat {
             id: self.uuid,
-            typ: "growing".to_string(),
+            r#type: "growing".to_string(),
             length: self.len() as usize,
             size: (self.len() as u64) * (std::mem::size_of::<Log<O>>() as u64),
         }
@@ -167,7 +167,7 @@ impl<O: Op> GrowingSegment<O> {
     pub fn stat_write(&self) -> SegmentStat {
         SegmentStat {
             id: self.uuid,
-            typ: "write".to_string(),
+            r#type: "write".to_string(),
             length: self.len() as usize,
             size: (self.len() as u64) * (std::mem::size_of::<Log<O>>() as u64),
         }

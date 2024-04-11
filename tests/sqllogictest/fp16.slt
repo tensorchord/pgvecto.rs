@@ -17,7 +17,7 @@ WITH (options = "[indexing.hnsw]");
 
 statement ok
 CREATE INDEX ON t USING vectors (val vecf16_cos_ops)
-WITH (options = "[indexing.ivf]");
+WITH (options = "[indexing.hnsw]");
 
 
 query I
@@ -26,12 +26,12 @@ SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0.5,0.5,0.5]'::vecf16 l
 10
 
 query I
-SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <=> '[0.5,0.5,0.5]'::vecf16 limit 10) t2;
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0.5,0.5,0.5]'::vecf16 limit 10) t2;
 ----
 10
 
 query I
-SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0.5,0.5,0.5]'::vecf16 limit 10) t2;
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <=> '[0.5,0.5,0.5]'::vecf16 limit 10) t2;
 ----
 10
 

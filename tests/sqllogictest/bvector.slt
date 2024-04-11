@@ -17,11 +17,11 @@ WITH (options = "[indexing.hnsw]");
 
 statement ok
 CREATE INDEX ON t USING vectors (val bvector_cos_ops)
-WITH (options = "[indexing.ivf]");
+WITH (options = "[indexing.hnsw]");
 
 statement ok
 CREATE INDEX ON t USING vectors (val bvector_jaccard_ops)
-WITH (options = "[indexing.ivf]");
+WITH (options = "[indexing.hnsw]");
 
 query I
 SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0,1,0]'::bvector limit 10) t2;
@@ -29,12 +29,12 @@ SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0,1,0]'::bvector limit 
 10
 
 query I
-SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <=> '[0,1,0]'::bvector limit 10) t2;
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0,1,0]'::bvector limit 10) t2;
 ----
 10
 
 query I
-SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0,1,0]'::bvector limit 10) t2;
+SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <=> '[0,1,0]'::bvector limit 10) t2;
 ----
 10
 

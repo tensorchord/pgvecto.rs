@@ -36,7 +36,7 @@ enum Commands {
 
         /// ef_construction parameter for HNSW index
         #[arg(short, long)]
-        ef_construction: usize,
+        ef_construction: u32,
 
         /// directory to save the hnsw index
         #[arg(short, long)]
@@ -67,7 +67,7 @@ enum Commands {
 
         /// ef_search parameter for HNSW search
         #[arg(long)]
-        ef: usize,
+        ef: u32,
     },
 }
 

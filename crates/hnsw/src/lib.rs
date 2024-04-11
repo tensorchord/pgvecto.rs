@@ -349,7 +349,7 @@ pub fn make<O: OperatorHnsw, S: Source<O>>(
                 &mut visited,
                 target,
                 u,
-                ef_construction,
+                ef_construction as usize,
                 j,
             );
             edges.sort();
@@ -449,7 +449,7 @@ pub fn open<O: OperatorHnsw>(path: &Path, options: IndexOptions) -> HnswMmap<O> 
 pub fn basic<O: OperatorHnsw>(
     mmap: &HnswMmap<O>,
     vector: Borrowed<'_, O>,
-    ef_search: usize,
+    ef_search: u32,
     filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
     let Some(s) = entry(mmap, filter.clone()) else {
@@ -457,13 +457,13 @@ pub fn basic<O: OperatorHnsw>(
     };
     let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
     let u = fast_search(mmap, 1..=levels, s, vector, filter.clone());
-    local_search_basic(mmap, ef_search, u, vector, filter).into_reversed_heap()
+    local_search_basic(mmap, ef_search as usize, u, vector, filter).into_reversed_heap()
 }
 
 pub fn vbase<'a, O: OperatorHnsw>(
     mmap: &'a HnswMmap<O>,
     vector: Borrowed<'a, O>,
-    range: usize,
+    ef_search: u32,
     filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
     let Some(s) = entry(mmap, filter.clone()) else {
@@ -472,14 +472,14 @@ pub fn vbase<'a, O: OperatorHnsw>(
     let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
     let u = fast_search(mmap, 1..=levels, s, vector, filter.clone());
     let mut iter = local_search_vbase(mmap, u, vector, filter.clone());
-    let mut queue = BinaryHeap::<Element>::with_capacity(1 + range);
+    let mut queue = BinaryHeap::<Element>::with_capacity(1 + ef_search as usize);
     let mut stage1 = Vec::new();
     for x in &mut iter {
-        if queue.len() == range && queue.peek().unwrap().distance < x.distance {
+        if queue.len() == ef_search as usize && queue.peek().unwrap().distance < x.distance {
             stage1.push(x);
             break;
         }
-        if queue.len() == range {
+        if queue.len() == ef_search as usize {
             queue.pop();
         }
         queue.push(x);

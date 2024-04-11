@@ -32,7 +32,7 @@ SELECT COUNT(1) FROM (SELECT 1 FROM items ORDER BY val <-> '[0.5,0.5,0.5]' limit
 
 statement ok
 CREATE INDEX ON id_123 USING vectors (val vector_cos_ops)
-WITH (options = "[indexing.ivf]");
+WITH (options = "[indexing.hnsw]");
 
 query I
 SELECT COUNT(1) FROM (SELECT 1 FROM items ORDER BY val <=> '[0.5,0.5,0.5]' limit 10) t2;
@@ -42,7 +42,7 @@ SELECT COUNT(1) FROM (SELECT 1 FROM items ORDER BY val <=> '[0.5,0.5,0.5]' limit
 # partial index
 statement ok
 CREATE INDEX ON items USING vectors (val vector_dot_ops)
-WITH (options = "[indexing.ivf]") WHERE (category_id = 1);
+WITH (options = "[indexing.hnsw]") WHERE (category_id = 1);
 
 query I
 SELECT COUNT(1) FROM
