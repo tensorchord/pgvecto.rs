@@ -25,6 +25,12 @@ fn test_log() -> String {
     unsafe { logger::get_log_destination_flag().to_string() }
 }
 
+#[pgrx::pg_extern]
+fn log_write() -> &'static str {
+    unsafe { logger::protocol::pipe_msg(&String::from("pjw-真的很不错").as_str(), 0x41); }
+    "ok"
+}
+
 #[pgrx::pg_guard]
 unsafe extern "C" fn _PG_init() {
     use crate::error::*;

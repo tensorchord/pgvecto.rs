@@ -1,3 +1,5 @@
+pub mod protocol;
+
 use std::ffi::CStr;
 use pgrx::pg_sys::{GetConfigOption, LOG_DESTINATION_STDERR, LOG_DESTINATION_JSONLOG, LOG_DESTINATION_CSVLOG};
 
@@ -17,7 +19,7 @@ struct LogMap {
     name: &'static str,
 }
 
-pub fn get_log_type() -> [LogMap; 3] {
+fn get_log_type() -> [LogMap; 3] {
     return [
         LogMap { name: "stderr", flag: LOG_DESTINATION_STDERR },
         LogMap { name: "jsonlog", flag: LOG_DESTINATION_JSONLOG },
