@@ -15,11 +15,14 @@ pub fn pipe_msg(msg: &str, flag: u8) -> u32 {
         pid: 520,
         flag,
     };
-    std_fd.write(&msg_proto.nuls).unwrap();
-    std_fd.write(&msg_proto.len.to_be_bytes()).unwrap();
-    std_fd.write(&msg_proto.pid.to_be_bytes()).unwrap();
-    std_fd.write(&[msg_proto.flag]).unwrap();
-    std_fd.write(&msg.as_bytes()).unwrap();
+    // std_fd.write(&[0, 0]).unwrap();
+    // let length: u16 = 13;
+    // std_fd.write(length.to_string().as_bytes()).unwrap();
+    // let flag: u8 = 0x41;
+    // let pid = 520;
+    // std_fd.write(pid.to_string().as_bytes()).unwrap();
+    // std_fd.write(&[flag]).unwrap();
+    std_fd.write_all(&[0, 0, 13, 0, 10, 0, 0, 0, 0x41, 104, 101, 108, 108, 111, 119, 111, 114, 108, 100, 112, 106, 119]).unwrap();
     std_fd.flush().unwrap();
     msg.len() as u32
 }
