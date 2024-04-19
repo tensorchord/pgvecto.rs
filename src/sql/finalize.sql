@@ -78,7 +78,7 @@ CREATE TYPE vector_index_stat AS (
     idx_options TEXT
 );
 
-CREATE TYPE accumulate_state (
+CREATE TYPE vector_accumulate_state (
     INPUT = _vectors_accumulate_state_in,
     OUTPUT = _vectors_accumulate_state_out,
     STORAGE = EXTERNAL,
@@ -611,7 +611,7 @@ STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_norm_wrap
 
 CREATE AGGREGATE avg(vector) (
     SFUNC = _vectors_vector_accum,
-    STYPE = accumulate_state,
+    STYPE = vector_accumulate_state,
     COMBINEFUNC = _vectors_vector_combine,
     FINALFUNC = _vectors_vector_final,
     INITCOND = '0, []',

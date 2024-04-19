@@ -2,7 +2,6 @@
 #![allow(clippy::extra_unused_lifetimes)]
 use crate::datatype::memory_vecf32::{Vecf32Input, Vecf32Output};
 use crate::error::*;
-use base::operator::{Operator, Vecf32Dot};
 use base::scalar::*;
 use base::vector::*;
 use pgrx::pg_sys::Datum;
@@ -147,8 +146,11 @@ impl IntoDatum for AccumulateState<'_> {
     fn type_oid() -> Oid {
         let namespace = pgrx::pg_catalog::PgNamespace::search_namespacename(c"vectors").unwrap();
         let namespace = namespace.get().expect("pgvecto.rs is not installed.");
-        let t = pgrx::pg_catalog::PgType::search_typenamensp(c"accumulate_state", namespace.oid())
-            .unwrap();
+        let t = pgrx::pg_catalog::PgType::search_typenamensp(
+            c"vector_accumulate_state ",
+            namespace.oid(),
+        )
+        .unwrap();
         let t = t.get().expect("pg_catalog is broken.");
         t.oid()
     }
@@ -156,11 +158,11 @@ impl IntoDatum for AccumulateState<'_> {
 
 unsafe impl SqlTranslatable for AccumulateState<'_> {
     fn argument_sql() -> Result<SqlMapping, ArgumentError> {
-        Ok(SqlMapping::As(String::from("accumulate_state")))
+        Ok(SqlMapping::As(String::from("vector_accumulate_state ")))
     }
     fn return_sql() -> Result<Returns, ReturnsError> {
         Ok(Returns::One(SqlMapping::As(String::from(
-            "accumulate_state",
+            "vector_accumulate_state ",
         ))))
     }
 }
@@ -286,5 +288,5 @@ fn _vectors_vector_dims(vector: Vecf32Input<'_>) -> i32 {
 /// Calculate the l2 norm of a vector.
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vector_norm(vector: Vecf32Input<'_>) -> f32 {
-    (-Vecf32Dot::distance(vector.for_borrow(), vector.for_borrow()).to_f32()).sqrt()
+    vector.for_borrow().l2_norm().to_f32()
 }
