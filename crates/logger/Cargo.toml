@@ -5,6 +5,9 @@ edition.workspace = true
 
 [dependencies]
 pgrx.workspace = true
+chrono.workspace = true
+serde_json.workspace = true
+serde.workspace = true
 
 [lints]
 workspace = true

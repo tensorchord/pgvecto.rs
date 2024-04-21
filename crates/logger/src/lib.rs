@@ -1,4 +1,5 @@
 pub mod protocol;
+mod message;
 
 use std::ffi::CStr;
 use pgrx::pg_sys::{GetConfigOption, LOG_DESTINATION_STDERR, LOG_DESTINATION_JSONLOG, LOG_DESTINATION_CSVLOG};

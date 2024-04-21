@@ -21,14 +21,14 @@ pgrx::extension_sql_file!("./sql/bootstrap.sql", bootstrap);
 pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
 
 #[pgrx::pg_extern]
-fn test_log() -> String {
+fn get_info() -> String {
     unsafe { logger::get_log_destination_flag().to_string() }
 }
 
 #[pgrx::pg_extern]
-fn log_write() -> &'static str {
-    unsafe { logger::protocol::pipe_msg(&String::from("pjw-真的很不错").as_str(), 0x41); }
-    "ok"
+fn test_log() -> String {
+    let size = logger::protocol::pipe_msg(&String::from("pjw-真的很不错").as_str());
+    return size.to_string();
 }
 
 #[pgrx::pg_guard]

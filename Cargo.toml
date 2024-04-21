@@ -92,6 +92,7 @@ thiserror = "1"
 toml = "0.8.10"
 uuid = { version = "1.7.0", features = ["serde", "v4"] }
 validator = { version = "0.18.0", features = ["derive"] }
+chrono = "0.4.38"
 
 [workspace.lints]
 rust.unsafe_op_in_unsafe_fn = "forbid"
