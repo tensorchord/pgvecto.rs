@@ -1,6 +1,7 @@
 use crate::error::*;
 use crate::index::utils::from_oid_to_handle;
 use crate::ipc::client;
+use crate::schema::pgvectors_index_stat_name;
 use base::index::*;
 use pgrx::error;
 
@@ -17,10 +18,10 @@ fn _vectors_alter_vector_index(oid: pgrx::pg_sys::Oid, key: String, value: Strin
 #[pgrx::pg_extern(volatile, strict, parallel_safe)]
 fn _vectors_index_stat(
     oid: pgrx::pg_sys::Oid,
-) -> pgrx::composite_type!('static, "vectors.vector_index_stat") {
+) -> pgrx::composite_type!('static, pgvectors_index_stat_name()) {
     use pgrx::heap_tuple::PgHeapTuple;
     let handle = from_oid_to_handle(oid);
-    let mut res = PgHeapTuple::new_composite_type("vectors.vector_index_stat").unwrap();
+    let mut res = PgHeapTuple::new_composite_type(&pgvectors_index_stat_name()).unwrap();
     let mut rpc = check_client(client());
     let stat = rpc.stat(handle);
     match stat {

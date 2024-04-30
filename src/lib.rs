@@ -13,6 +13,7 @@ mod error;
 mod gucs;
 mod index;
 mod ipc;
+mod schema;
 mod upgrade;
 mod utils;
 

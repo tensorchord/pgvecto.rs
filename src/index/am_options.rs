@@ -1,5 +1,6 @@
 use crate::datatype::typmod::Typmod;
 use crate::error::*;
+use crate::schema::pgvectors_schema_cstr;
 use base::distance::*;
 use base::index::*;
 use base::vector::*;
@@ -30,7 +31,8 @@ impl Reloption {
 }
 
 pub fn convert_opclass_to_vd(opclass_oid: pgrx::pg_sys::Oid) -> Option<(VectorKind, DistanceKind)> {
-    let namespace = pgrx::pg_catalog::PgNamespace::search_namespacename(c"vectors").unwrap();
+    let namespace =
+        pgrx::pg_catalog::PgNamespace::search_namespacename(&pgvectors_schema_cstr()).unwrap();
     let namespace = namespace.get().expect("pgvecto.rs is not installed.");
     let opclass = pgrx::pg_catalog::PgOpclass::search_claoid(opclass_oid).unwrap();
     let opclass = opclass.get().expect("pg_catalog is broken.");
@@ -47,7 +49,8 @@ pub fn convert_opclass_to_vd(opclass_oid: pgrx::pg_sys::Oid) -> Option<(VectorKi
 pub fn convert_opfamily_to_vd(
     opfamily_oid: pgrx::pg_sys::Oid,
 ) -> Option<(VectorKind, DistanceKind)> {
-    let namespace = pgrx::pg_catalog::PgNamespace::search_namespacename(c"vectors").unwrap();
+    let namespace =
+        pgrx::pg_catalog::PgNamespace::search_namespacename(&pgvectors_schema_cstr()).unwrap();
     let namespace = namespace.get().expect("pgvecto.rs is not installed.");
     let opfamily = pgrx::pg_catalog::PgOpfamily::search_opfamilyoid(opfamily_oid).unwrap();
     let opfamily = opfamily.get().expect("pg_catalog is broken.");
