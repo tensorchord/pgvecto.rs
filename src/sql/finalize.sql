@@ -78,6 +78,14 @@ CREATE TYPE vector_index_stat AS (
     idx_options TEXT
 );
 
+CREATE TYPE vector_accumulate_state (
+    INPUT = _vectors_accumulate_state_in,
+    OUTPUT = _vectors_accumulate_state_out,
+    STORAGE = EXTERNAL,
+    INTERNALLENGTH = VARIABLE,
+    ALIGNMENT = double
+);
+
 -- List of operators
 
 CREATE OPERATOR + (
@@ -592,6 +600,30 @@ $$;
 
 CREATE FUNCTION alter_vector_index("index" OID, "key" TEXT, "value" TEXT) RETURNS void
 STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_alter_vector_index_wrapper';
+
+CREATE FUNCTION vector_dims("v" vector) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_dims_wrapper';
+
+CREATE FUNCTION vector_norm("v" vector) RETURNS real
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_norm_wrapper';
+
+-- List of aggregates
+
+CREATE AGGREGATE avg(vector) (
+    SFUNC = _vectors_vector_accum,
+    STYPE = vector_accumulate_state,
+    COMBINEFUNC = _vectors_vector_combine,
+    FINALFUNC = _vectors_vector_final,
+    INITCOND = '0, []',
+    PARALLEL = SAFE
+);
+
+CREATE AGGREGATE sum(vector) (
+    SFUNC = _vectors_vecf32_operator_add,
+    STYPE = vector,
+    COMBINEFUNC = _vectors_vecf32_operator_add,
+    PARALLEL = SAFE
+);
 
 -- List of casts
 

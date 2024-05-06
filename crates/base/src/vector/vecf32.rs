@@ -82,6 +82,9 @@ impl<'a> Vecf32Borrowed<'a> {
     pub fn slice(&self) -> &[F32] {
         self.0
     }
+    pub fn l2_norm(&self) -> F32 {
+        dot(self.slice(), self.slice()).sqrt()
+    }
 }
 
 impl<'a> VectorBorrowed for Vecf32Borrowed<'a> {
