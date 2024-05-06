@@ -2,6 +2,7 @@
 //!
 //! Provides an easy-to-use extension for vector similarity search.
 #![feature(alloc_error_hook)]
+#![feature(slice_split_once)]
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::single_match)]
 #![allow(clippy::too_many_arguments)]
