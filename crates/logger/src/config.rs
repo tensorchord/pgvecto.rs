@@ -4,6 +4,10 @@ use std::ffi::CStr;
 pub const PIPE_PROTO_DEST_STDERR: u8 = 0x10;
 pub const PIPE_PROTO_DEST_CSVLOG: u8 = 0x20;
 pub const PIPE_PROTO_DEST_JSONLOG: u8 = 0x40;
+pub const LAST_CHUNK: u8 = 0x01;
+pub const LOG_ERROR: &str = "stderr";
+pub const LOG_CSV: &str = "csvlog";
+pub const LOG_JSON: &str = "jsonlog";
 
 fn c_char_to_string(c_str: *const i8) -> String {
     unsafe {
@@ -16,21 +20,8 @@ fn c_char_to_string(c_str: *const i8) -> String {
     }
 }
 
-fn need(log: &str) -> bool {
+pub fn need(log_type: &str) -> bool {
     let log_destination = unsafe { GetConfigOption(c"log_destination".as_ptr(), false, false) };
     let log_destination = c_char_to_string(log_destination);
-    let mut flag = 0;
-    return log_destination.contains(log);
-}
-
-pub fn need_stderr() -> bool {
-    return { need("stderr") };
-}
-
-pub fn need_json() -> bool {
-    return { need("jsonlog") };
-}
-
-pub fn need_csv() -> bool {
-    return { need("csvlog") };
+    return log_destination.contains(log_type);
 }

@@ -1,21 +1,17 @@
-use super::config::{need_csv, need_json, need_stderr};
+use super::config::{need, LOG_CSV, LOG_JSON, LOG_ERROR};
 use super::message::Message;
 use std::io::{stderr, Write};
 
-pub fn pipe_msg(msg: &str) -> usize {
+pub fn pipe_log(msg: &str) {
     let mut std_fd = stderr();
-    if need_csv() {
-        // TODO: CSV
+    let message = Message::new(msg);
+    if need(LOG_CSV) {
+        let _ = std_fd.write(&message.csv_chunk()).unwrap();
     }
-    if need_stderr() {
-        if let Ok(buf_size) = std_fd.write(&Message::new(msg).get_stderr_chunk()) {
-            std_fd.flush().unwrap();
-        }
+    if need(LOG_ERROR) {
+        let _ = std_fd.write(&message.stderr_chunk()).unwrap();
     }
-    if need_json() {
-        if let Ok(buf_size) = std_fd.write(&Message::new(msg).get_json_chunk()) {
-            std_fd.flush().unwrap();
-        }
+    if need(LOG_JSON) {
+        let _ = std_fd.write(&message.json_chunk()).unwrap();
     }
-    0
 }

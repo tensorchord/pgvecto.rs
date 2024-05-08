@@ -1,4 +1,4 @@
-use crate::protocol::pipe_msg;
+use crate::protocol::pipe_log;
 use log::{set_boxed_logger, set_max_level, Level, LevelFilter, Metadata, Record};
 
 pub struct VectorLogger;
@@ -10,7 +10,7 @@ impl log::Log for VectorLogger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            pipe_msg(&record.args().to_string());
+            pipe_log(&record.args().to_string());
         }
     }
 
