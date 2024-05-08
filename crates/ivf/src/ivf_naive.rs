@@ -146,11 +146,11 @@ pub fn make<O: Op, S: Source<O>>(path: &Path, options: IndexOptions, source: &S)
     let mut idx = vec![0usize; n as usize];
     idx.par_iter_mut().enumerate().for_each(|(i, x)| {
         rayon::check();
-        let vector = storage.vector(i as u32);
-        let vector = O::elkan_k_means_normalize2(vector);
+        let mut vector = storage.vector(i as u32).to_vec();
+        O::elkan_k_means_normalize(&mut vector);
         let mut result = (F32::infinity(), 0);
         for i in 0..nlist as usize {
-            let dis = O::elkan_k_means_distance2(vector.for_borrow(), &centroids[i]);
+            let dis = O::elkan_k_means_distance(&vector, &centroids[i]);
             result = std::cmp::min(result, (dis, i));
         }
         *x = result.1;
@@ -242,11 +242,12 @@ pub fn basic<O: Op>(
     nprobe: u32,
     mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
-    let target = O::elkan_k_means_normalize2(vector);
+    let mut target = vector.to_vec();
+    O::elkan_k_means_normalize(&mut target);
     let mut lists = Vec::with_capacity(mmap.nlist as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = O::elkan_k_means_distance2(target.for_borrow(), centroid);
+        let distance = O::elkan_k_means_distance(&target, centroid);
         lists.push((distance, i));
     }
     if nprobe < mmap.nlist {
@@ -274,11 +275,12 @@ pub fn vbase<'a, O: Op>(
     nprobe: u32,
     mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-    let target = O::elkan_k_means_normalize2(vector);
+    let mut target = vector.to_vec();
+    O::elkan_k_means_normalize(&mut target);
     let mut lists = Vec::with_capacity(mmap.nlist as usize);
     for i in 0..mmap.nlist {
         let centroid = mmap.centroids(i);
-        let distance = O::elkan_k_means_distance2(target.for_borrow(), centroid);
+        let distance = O::elkan_k_means_distance(&target, centroid);
         lists.push((distance, i));
     }
     if nprobe < mmap.nlist {
