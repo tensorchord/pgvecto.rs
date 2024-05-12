@@ -674,6 +674,9 @@ CREATE FUNCTION _vectors_svector_accum("state" svector_accumulate_state, "value"
 DECLARE 
 	result svector_accumulate_state;
 BEGIN
+	IF value IS NULL THEN
+		RETURN state;
+	END IF;
 	IF state.count = 0 THEN
 		result.count := 1;
 		result.sum := value;
