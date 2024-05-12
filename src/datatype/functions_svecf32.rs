@@ -58,3 +58,29 @@ fn _vectors_to_svector(
     }
     SVecf32Output::new(SVecf32Borrowed::new(dims.get(), &indexes, &values))
 }
+
+/// divide a sparse vector by a scalar.
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_svecf32_div(vector: SVecf32Input<'_>, scalar: f32) -> SVecf32Output {
+    let scalar = F32(scalar);
+    let vector = vector.for_borrow();
+    let indexes = vector.indexes();
+    let values = vector.values();
+    let mut new_values = Vec::<F32>::with_capacity(values.len());
+    for value in values {
+        new_values.push(*value / scalar);
+    }
+    SVecf32Output::new(SVecf32Borrowed::new(vector.dims(), indexes, &new_values))
+}
+
+/// Get the dimensions of a sparse vector.
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_svectorf32_dims(vector: SVecf32Input<'_>) -> i32 {
+    vector.dims() as i32
+}
+
+/// Calculate the l2 norm of a sparse vector.
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_svectorf32_norm(vector: SVecf32Input<'_>) -> f32 {
+    vector.for_borrow().l2_norm().to_f32()
+}
