@@ -741,7 +741,7 @@ CREATE AGGREGATE avg(svector) (
 	STYPE = svector_accumulate_state,
 	COMBINEFUNC = _vectors_svector_combine,
 	FINALFUNC = _vectors_svector_final,
-	INITCOND = '(0, [0])',
+	INITCOND = '(0,)',
 	PARALLEL = SAFE
 );
 
