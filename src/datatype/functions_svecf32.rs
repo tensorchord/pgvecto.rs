@@ -66,10 +66,7 @@ fn _vectors_svecf32_div(vector: SVecf32Input<'_>, scalar: f32) -> SVecf32Output 
     let vector = vector.for_borrow();
     let indexes = vector.indexes();
     let values = vector.values();
-    let mut new_values = Vec::<F32>::with_capacity(values.len());
-    for value in values {
-        new_values.push(*value / scalar);
-    }
+    let new_values = values.iter().map(|&x| x / scalar).collect::<Vec<F32>>();
     SVecf32Output::new(SVecf32Borrowed::new(vector.dims(), indexes, &new_values))
 }
 
