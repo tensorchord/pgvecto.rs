@@ -775,7 +775,7 @@ CREATE VIEW pg_vector_index_stat AS
          pg_index X ON C.oid = X.indrelid JOIN
          pg_class I ON I.oid = X.indexrelid JOIN
          pg_am A ON A.oid = I.relam
-    WHERE A.amname = 'vectors';
+    WHERE A.amname = 'vectors' AND C.relkind = 'r';
 
 GRANT SELECT ON TABLE pg_vector_index_stat TO PUBLIC;
 
