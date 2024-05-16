@@ -86,9 +86,12 @@ CREATE TYPE _vectors_vecf32_aggregate_avg_stype (
     ALIGNMENT = double
 );
 
-CREATE TYPE svector_accumulate_state AS (
-	count INT,
-	sum svector
+CREATE TYPE svector_accumulate_state (
+	INPUT = _vectors_sparse_accumulate_state_in,
+	OUTPUT = _vectors_sparse_accumulate_state_out,
+	STORAGE = EXTERNAL,
+	INTERNALLENGTH = VARIABLE,
+	ALIGNMENT = double
 );
 
 -- List of operators
@@ -670,54 +673,6 @@ STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svectorf32_dims_
 CREATE FUNCTION vector_norm("v" svector) RETURNS real
 STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svectorf32_norm_wrapper';
 
-CREATE FUNCTION _vectors_svector_accum("state" svector_accumulate_state, "value" svector) RETURNS svector_accumulate_state AS $$
-DECLARE 
-	result svector_accumulate_state;
-BEGIN
-	IF value IS NULL THEN
-		RETURN state;
-	END IF;
-	IF state.count = 0 THEN
-		result.count := 1;
-		result.sum := value;
-	    RETURN result;
-	END IF;
-	result.count := state.count + 1;
-	result.sum := state.sum + value;
-	RETURN result;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE FUNCTION _vectors_svector_combine("state1" svector_accumulate_state, "state2" svector_accumulate_state) RETURNS svector_accumulate_state AS $$
-DECLARE 
-	result svector_accumulate_state;
-BEGIN
-	IF state1.count = 0 THEN
-		RETURN state2;
-	END IF;
-	IF state2.count = 0 THEN
-		RETURN state1;
-	END IF;
-	result.count := state1.count + state2.count;
-	result.sum := state1.sum + state2.sum;
-	RETURN result;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE FUNCTION _vectors_svector_final("state" svector_accumulate_state) RETURNS svector AS $$
-DECLARE 
-	result svector;
-	count INT;
-BEGIN
-	count := state.count;
-	IF count = 0 THEN
-		RETURN NULL;
-	END IF;	
-	result := _vectors_svecf32_div(state.sum, count::real);
-	RETURN result;
-END;
-$$ LANGUAGE plpgsql;
-
 -- List of aggregates
 
 CREATE AGGREGATE avg(vector) (
@@ -730,9 +685,11 @@ CREATE AGGREGATE avg(vector) (
 );
 
 CREATE AGGREGATE sum(vector) (
-    SFUNC = _vectors_vecf32_operator_add,
-    STYPE = vector,
-    COMBINEFUNC = _vectors_vecf32_operator_add,
+	SFUNC = _vectors_vector_accum,
+    STYPE = vector_accumulate_state,
+    COMBINEFUNC = _vectors_vector_combine,
+    FINALFUNC = _vectors_vector_final_sum,
+    INITCOND = '0, []',
     PARALLEL = SAFE
 );
 
@@ -740,15 +697,17 @@ CREATE AGGREGATE avg(svector) (
 	SFUNC = _vectors_svector_accum,
 	STYPE = svector_accumulate_state,
 	COMBINEFUNC = _vectors_svector_combine,
-	FINALFUNC = _vectors_svector_final,
-	INITCOND = '(0,)',
+	FINALFUNC = _vectors_svector_final_avg,
+	INITCOND = '0, []',
 	PARALLEL = SAFE
 );
 
 CREATE AGGREGATE sum(svector) (
-	SFUNC = _vectors_svecf32_operator_add,
-	STYPE = svector,
-	COMBINEFUNC = _vectors_svecf32_operator_add,
+	SFUNC = _vectors_svector_accum,
+	STYPE = svector_accumulate_state,
+	COMBINEFUNC = _vectors_svector_combine,
+	FINALFUNC = _vectors_svector_final_sum,
+	INITCOND = '0, []',
 	PARALLEL = SAFE
 );
 
