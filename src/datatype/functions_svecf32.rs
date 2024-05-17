@@ -77,6 +77,93 @@ impl SparseAccumulateStateHeader {
     }
 }
 
+pub struct SparseAccumulateStateBorrowed<'a> {
+    #[allow(dead_code)]
+    dims: u32,
+    len: u32,
+    capacity: u32,
+    #[allow(dead_code)]
+    count: u64,
+    indexes: &'a mut [u32],
+    values: &'a mut [F32],
+}
+
+impl<'a> SparseAccumulateStateBorrowed<'a> {
+    pub fn new(
+        dims: u32,
+        len: u32,
+        capacity: u32,
+        count: u64,
+        indexes: &'a mut [u32],
+        values: &'a mut [F32],
+    ) -> Self {
+        Self {
+            dims,
+            len,
+            capacity,
+            count,
+            indexes,
+            values,
+        }
+    }
+
+    /// Try to merge a sparse vector into the state in place.
+    pub fn merge_in_place(&mut self, svec: SVecf32Borrowed<'_>) -> Result<(), AccumulateError> {
+        let sindexes = svec.indexes();
+        let svalues = svec.values();
+        let slen = sindexes.len();
+        let len = self.len;
+        let capacity = self.capacity as usize;
+        // To reduce the memory usage, we try to merge the sparse vector in place firstly.
+        // If the state capacity is enough, we can merge the sparse vector from the end. Then copy the result to the beginning. The merge process compares the indexes of the sparse vector and the state from end to start, and the result is stored in the state from the end to start to avoid the conflict.
+        // If result index meets with the state index, the capacity can't match requirement, return an error to tell the caller to allocate a new state.
+        let mut i = (len as i32) - 1;
+        let mut j = (slen as i32) - 1;
+        let mut p = (capacity as i32) - 1;
+        while i >= 0 && j >= 0 {
+            let index = self.indexes[i as usize];
+            let sindex = sindexes[j as usize];
+            let value = self.values[i as usize];
+            let svalue = svalues[j as usize];
+            let pi = std::cmp::max(index, sindex);
+            let pv = F32((pi == index) as usize as f32) * value
+                + F32((pi == sindex) as usize as f32) * svalue;
+            i -= (index >= sindex) as i32;
+            j -= (index <= sindex) as i32;
+            if p <= i {
+                // The state capacity is not enough. Conflict occurs.
+                return Err(AccumulateError::InPlaceMergeFailed);
+            }
+            self.indexes[p as usize] = pi;
+            self.values[p as usize] = pv;
+            p -= 1;
+        }
+        while j >= 0 {
+            if p <= i {
+                return Err(AccumulateError::InPlaceMergeFailed);
+            }
+            self.indexes[p as usize] = sindexes[j as usize];
+            self.values[p as usize] = svalues[j as usize];
+            p -= 1;
+            j -= 1;
+        }
+        self.len = if i < 0 {
+            // move the whole state [p+1..capacity] to the beginning
+            self.indexes.copy_within(((p + 1) as usize)..capacity, 0);
+            self.values.copy_within(((p + 1) as usize)..capacity, 0);
+            ((capacity as i32) - p - 1) as u32
+        } else {
+            // concatenate the state [p+1..capacity] and remaining state [0..i]
+            self.indexes
+                .copy_within(((p + 1) as usize)..capacity, (i as usize) + 1);
+            self.values
+                .copy_within(((p + 1) as usize)..capacity, (i as usize) + 1);
+            ((capacity as i32) - p + i) as u32
+        };
+        Ok(())
+    }
+}
+
 fn next_power_of_two(a: usize) -> usize {
     let mut n = a;
     n -= 1;
@@ -110,6 +197,7 @@ impl SparseAccumulateState<'_> {
         }
     }
 
+    /// Create a new sparse accumulate state with a given capacity.
     pub fn new_with_capacity(dims: u32, capacity: usize) -> Self {
         // set capacity at least 16
         let capacity = std::cmp::max(next_power_of_two(capacity), 16);
@@ -128,58 +216,13 @@ impl SparseAccumulateState<'_> {
         }
     }
 
-    pub fn merge_in_place(&mut self, svec: SVecf32Borrowed<'_>) -> Result<(), AccumulateError> {
-        let sindexes = svec.indexes();
-        let svalues = svec.values();
-        let slen = sindexes.len();
-        let len = self.len();
-        let capacity = self.capacity();
+    pub fn for_mut_borrow(&mut self) -> SparseAccumulateStateBorrowed<'_> {
+        let dims = self.dims() as u32;
+        let len = self.len() as u32;
+        let capacity = self.capacity() as u32;
+        let count = self.count() as u64;
         let (indexes, values) = self.indexes_values_mut();
-        // To reduce the memory usage, we try to merge the sparse vector in place firstly.
-        // If the state capacity is enough, we can merge the sparse vector from the end. Then copy the result to the beginning. The merge process compares the indexes of the sparse vector and the state from end to start, and the result is stored in the state from the end to start to avoid the conflict.
-        // If result index meets with the state index, the capacity can't match requirement, return an error to tell the caller to allocate a new state.
-        let mut i = (len as i32) - 1;
-        let mut j = (slen as i32) - 1;
-        let mut p = (capacity as i32) - 1;
-        while i >= 0 && j >= 0 {
-            let index = indexes[i as usize];
-            let sindex = sindexes[j as usize];
-            let value = values[i as usize];
-            let svalue = svalues[j as usize];
-            let pi = std::cmp::max(index, sindex);
-            let pv = F32((pi == index) as usize as f32) * value
-                + F32((pi == sindex) as usize as f32) * svalue;
-            i -= (index >= sindex) as i32;
-            j -= (index <= sindex) as i32;
-            if p <= i {
-                // The state capacity is not enough. Conflict occurs.
-                return Err(AccumulateError::InPlaceMergeFailed);
-            }
-            indexes[p as usize] = pi;
-            values[p as usize] = pv;
-            p -= 1;
-        }
-        while j >= 0 {
-            if p <= i {
-                return Err(AccumulateError::InPlaceMergeFailed);
-            }
-            indexes[p as usize] = sindexes[j as usize];
-            values[p as usize] = svalues[j as usize];
-            p -= 1;
-            j -= 1;
-        }
-        self.len = if i < 0 {
-            // move the whole state [p+1..capacity] to the beginning
-            indexes.copy_within(((p + 1) as usize)..capacity, 0);
-            values.copy_within(((p + 1) as usize)..capacity, 0);
-            ((capacity as i32) - p - 1) as u32
-        } else {
-            // concatenate the state [p+1..capacity] and remaining state [0..i]
-            indexes.copy_within(((p + 1) as usize)..capacity, (i as usize) + 1);
-            values.copy_within(((p + 1) as usize)..capacity, (i as usize) + 1);
-            ((capacity as i32) - p + i) as u32
-        };
-        Ok(())
+        SparseAccumulateStateBorrowed::new(dims, len, capacity, count, indexes, values)
     }
 
     pub fn into_raw(self) -> *mut SparseAccumulateStateHeader {
@@ -290,7 +333,7 @@ fn _vectors_sparse_accumulate_state_in(
             let mut state =
                 SparseAccumulateState::new_with_capacity(vector.len() as u32, indexes.len());
             if !indexes.is_empty() {
-                let _ = state.merge_in_place(SVecf32Borrowed::new(
+                let _ = state.for_mut_borrow().merge_in_place(SVecf32Borrowed::new(
                     vector.len() as u32,
                     &indexes,
                     &values,
@@ -336,7 +379,7 @@ fn _vectors_svector_accum<'a>(
         0 => {
             let mut state =
                 SparseAccumulateState::new_with_capacity(value.dims() as u32, value.len());
-            let _ = state.merge_in_place(value.for_borrow());
+            let _ = state.for_mut_borrow().merge_in_place(value.for_borrow());
             state.count = 1;
             state
         }
@@ -345,7 +388,7 @@ fn _vectors_svector_accum<'a>(
             let value_dims = value.dims();
             check_matched_dims(dims, value_dims);
             let mut state = state;
-            match state.merge_in_place(value.for_borrow()) {
+            match state.for_mut_borrow().merge_in_place(value.for_borrow()) {
                 Ok(_) => {}
                 Err(_) => {
                     // fallback to allocate a new state and merge the input vector
@@ -353,7 +396,7 @@ fn _vectors_svector_accum<'a>(
                         dims as u32,
                         state.len() + value.len(),
                     );
-                    let _ = state.merge_in_place(value.for_borrow());
+                    let _ = state.for_mut_borrow().merge_in_place(value.for_borrow());
                 }
             }
             state.count += 1;
@@ -379,7 +422,7 @@ fn _vectors_svector_combine<'a>(
         let dims2 = state2.dims();
         check_matched_dims(dims1, dims2);
         let mut state1 = state1;
-        match state1.merge_in_place(SVecf32Borrowed::new(
+        match state1.for_mut_borrow().merge_in_place(SVecf32Borrowed::new(
             dims1 as u32,
             state2.indexes(),
             state2.values(),
@@ -391,12 +434,12 @@ fn _vectors_svector_combine<'a>(
                     dims1 as u32,
                     state1.len() + state2.len(),
                 );
-                let _ = state.merge_in_place(SVecf32Borrowed::new(
+                let _ = state.for_mut_borrow().merge_in_place(SVecf32Borrowed::new(
                     dims1 as u32,
                     state1.indexes(),
                     state1.values(),
                 ));
-                let _ = state.merge_in_place(SVecf32Borrowed::new(
+                let _ = state.for_mut_borrow().merge_in_place(SVecf32Borrowed::new(
                     dims2 as u32,
                     state2.indexes(),
                     state2.values(),
@@ -525,4 +568,141 @@ fn _vectors_svectorf32_dims(vector: SVecf32Input<'_>) -> i32 {
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svectorf32_norm(vector: SVecf32Input<'_>) -> f32 {
     vector.for_borrow().l2_norm().to_f32()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_merge_in_place() {
+        // test merge_in_place success
+        let indexes_20: Vec<u32> = vec![
+            1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let values_20: Vec<F32> = vec![
+            1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]
+        .iter()
+        .map(|&x| F32(x as f32))
+        .collect();
+        let mut indexes = indexes_20.clone();
+        let mut values = values_20.clone();
+        let dims = 20;
+        let mut len = 10;
+        let mut capacity = 20;
+        let count = 1;
+        let mut state = SparseAccumulateStateBorrowed::new(
+            dims,
+            len,
+            capacity,
+            count,
+            indexes.as_mut_slice(),
+            values.as_mut_slice(),
+        );
+        let sindexes = vec![0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
+        let svalues: Vec<F32> = vec![1, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+            .iter()
+            .map(|&x| F32(x as f32))
+            .collect();
+        let svec = SVecf32Borrowed::new(dims, sindexes.as_slice(), svalues.as_slice());
+        let result = state.merge_in_place(svec);
+        assert!(result.is_ok());
+        assert_eq!(state.len, 20);
+        assert_eq!(
+            indexes,
+            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].as_slice()
+        );
+        assert_eq!(
+            values,
+            vec![1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+                .iter()
+                .map(|&x| F32(x as f32))
+                .collect::<Vec<F32>>()
+                .as_slice()
+        );
+        // test merge_in_place result is full
+        len = 6;
+        capacity = 16;
+        let mut indexes = indexes_20.clone();
+        let mut values = values_20.clone();
+        let mut state = SparseAccumulateStateBorrowed::new(
+            dims,
+            len,
+            capacity,
+            count,
+            indexes.as_mut_slice(),
+            values.as_mut_slice(),
+        );
+        let result = state.merge_in_place(svec);
+        assert!(result.is_ok());
+        let result_len = state.len;
+        assert_eq!(result_len, 16);
+        assert_eq!(
+            indexes[0..(result_len as usize)],
+            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18]
+                .iter()
+                .map(|&x| x as u32)
+                .collect::<Vec<u32>>()
+        );
+        assert_eq!(
+            values[0..(result_len as usize)],
+            vec![1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18]
+                .iter()
+                .map(|&x| F32(x as f32))
+                .collect::<Vec<F32>>()
+        );
+        // test merge_in_place failed, the state capacity is not enough
+        let mut indexes = indexes_20.clone();
+        let mut values = values_20.clone();
+        len = 6;
+        capacity = 15;
+        let mut state = SparseAccumulateStateBorrowed::new(
+            dims,
+            len,
+            capacity,
+            count,
+            indexes.as_mut_slice(),
+            values.as_mut_slice(),
+        );
+        let result = state.merge_in_place(svec);
+        assert!(result.is_err());
+        // test indexes overlap
+        let mut indexes = indexes_20.clone();
+        let mut values = values_20.clone();
+        len = 10;
+        capacity = 20;
+        let mut state = SparseAccumulateStateBorrowed::new(
+            dims,
+            len,
+            capacity,
+            count,
+            indexes.as_mut_slice(),
+            values.as_mut_slice(),
+        );
+        let sindexes = vec![0, 3, 6, 9, 12, 15, 18];
+        let svalues: Vec<F32> = vec![1, 1, 1, 1, 1, 1, 1]
+            .iter()
+            .map(|&x| F32(x as f32))
+            .collect();
+        let svec = SVecf32Borrowed::new(dims, sindexes.as_slice(), svalues.as_slice());
+        let result = state.merge_in_place(svec);
+        assert!(result.is_ok());
+        let result_len = state.len;
+        assert_eq!(result_len, 14);
+        assert_eq!(
+            indexes[0..(result_len as usize)],
+            vec![0, 1, 3, 5, 6, 7, 9, 11, 12, 13, 15, 17, 18, 19]
+                .iter()
+                .map(|&x| x as u32)
+                .collect::<Vec<u32>>()
+        );
+        assert_eq!(
+            values[0..(result_len as usize)],
+            vec![1, 1, 4, 5, 1, 7, 10, 11, 1, 13, 16, 17, 1, 19]
+                .iter()
+                .map(|&x| F32(x as f32))
+                .collect::<Vec<F32>>()
+        );
+    }
 }
