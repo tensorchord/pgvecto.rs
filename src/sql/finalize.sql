@@ -141,17 +141,17 @@ CREATE OPERATOR - (
 );
 
 CREATE OPERATOR * (
-	PROCEDURE = _vectors_vecf32_operator_mul,
-	LEFTARG = vector,
-	RIGHTARG = vector,
-	COMMUTATOR = *
+    PROCEDURE = _vectors_vecf32_operator_mul,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = *
 );
 
 CREATE OPERATOR * (
-	PROCEDURE = _vectors_svecf32_operator_mul,
-	LEFTARG = svector,
-	RIGHTARG = svector,
-	COMMUTATOR = *
+    PROCEDURE = _vectors_svecf32_operator_mul,
+    LEFTARG = svector,
+    RIGHTARG = svector,
+    COMMUTATOR = *
 );
 
 CREATE OPERATOR & (
