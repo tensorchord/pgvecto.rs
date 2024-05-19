@@ -148,9 +148,23 @@ CREATE OPERATOR * (
 );
 
 CREATE OPERATOR * (
+    PROCEDURE = _vectors_vecf16_operator_mul,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = *
+);
+
+CREATE OPERATOR * (
     PROCEDURE = _vectors_svecf32_operator_mul,
     LEFTARG = svector,
     RIGHTARG = svector,
+    COMMUTATOR = *
+);
+
+CREATE OPERATOR * (
+    PROCEDURE = _vectors_veci8_operator_mul,
+    LEFTARG = veci8,
+    RIGHTARG = veci8,
     COMMUTATOR = *
 );
 

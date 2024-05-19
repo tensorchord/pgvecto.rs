@@ -43,6 +43,11 @@ SELECT to_veci8(5, 1, 0, '{0,1,2,0,0}');
 ----
 [0, 1, 2, 0, 0]
 
+query I
+SELECT '[2,2,2]'::veci8 * '[2,2,2]'::veci8;
+----
+[4, 4, 4]
+
 statement error Lengths of values and len are not matched.
 SELECT to_veci8(5, 1, 0, '{0,1,2,0,0,0}');
 
