@@ -87,11 +87,11 @@ CREATE TYPE _vectors_vecf32_aggregate_avg_stype (
 );
 
 CREATE TYPE svector_accumulate_state (
-	INPUT = _vectors_sparse_accumulate_state_in,
-	OUTPUT = _vectors_sparse_accumulate_state_out,
-	STORAGE = EXTERNAL,
-	INTERNALLENGTH = VARIABLE,
-	ALIGNMENT = double
+    INPUT = _vectors_sparse_accumulate_state_in,
+    OUTPUT = _vectors_sparse_accumulate_state_out,
+    STORAGE = EXTERNAL,
+    INTERNALLENGTH = VARIABLE,
+    ALIGNMENT = double
 );
 
 -- List of operators
@@ -685,7 +685,7 @@ CREATE AGGREGATE avg(vector) (
 );
 
 CREATE AGGREGATE sum(vector) (
-	SFUNC = _vectors_vector_accum,
+    SFUNC = _vectors_vector_accum,
     STYPE = vector_accumulate_state,
     COMBINEFUNC = _vectors_vector_combine,
     FINALFUNC = _vectors_vector_final_sum,
@@ -694,21 +694,21 @@ CREATE AGGREGATE sum(vector) (
 );
 
 CREATE AGGREGATE avg(svector) (
-	SFUNC = _vectors_svector_accum,
-	STYPE = svector_accumulate_state,
-	COMBINEFUNC = _vectors_svector_combine,
-	FINALFUNC = _vectors_svector_final_avg,
-	INITCOND = '0, []',
-	PARALLEL = SAFE
+    SFUNC = _vectors_svector_accum,
+    STYPE = svector_accumulate_state,
+    COMBINEFUNC = _vectors_svector_combine,
+    FINALFUNC = _vectors_svector_final_avg,
+    INITCOND = '0, []',
+    PARALLEL = SAFE
 );
 
 CREATE AGGREGATE sum(svector) (
-	SFUNC = _vectors_svector_accum,
-	STYPE = svector_accumulate_state,
-	COMBINEFUNC = _vectors_svector_combine,
-	FINALFUNC = _vectors_svector_final_sum,
-	INITCOND = '0, []',
-	PARALLEL = SAFE
+    SFUNC = _vectors_svector_accum,
+    STYPE = svector_accumulate_state,
+    COMBINEFUNC = _vectors_svector_combine,
+    FINALFUNC = _vectors_svector_final_sum,
+    INITCOND = '0, []',
+    PARALLEL = SAFE
 );
 
 -- List of casts
