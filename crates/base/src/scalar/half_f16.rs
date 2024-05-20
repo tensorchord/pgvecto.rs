@@ -441,14 +441,14 @@ impl Add<F16> for F16 {
 
     #[inline(always)]
     fn add(self, rhs: F16) -> F16 {
-        unsafe { intrinsics::fadd_fast(self.0, rhs.0).into() }
+        intrinsics::fadd_algebraic(self.0, rhs.0).into()
     }
 }
 
 impl AddAssign<F16> for F16 {
     #[inline(always)]
     fn add_assign(&mut self, rhs: F16) {
-        unsafe { self.0 = intrinsics::fadd_fast(self.0, rhs.0) }
+        self.0 = intrinsics::fadd_algebraic(self.0, rhs.0)
     }
 }
 
@@ -457,14 +457,14 @@ impl Sub<F16> for F16 {
 
     #[inline(always)]
     fn sub(self, rhs: F16) -> F16 {
-        unsafe { intrinsics::fsub_fast(self.0, rhs.0).into() }
+        intrinsics::fsub_algebraic(self.0, rhs.0).into()
     }
 }
 
 impl SubAssign<F16> for F16 {
     #[inline(always)]
     fn sub_assign(&mut self, rhs: F16) {
-        unsafe { self.0 = intrinsics::fsub_fast(self.0, rhs.0) }
+        self.0 = intrinsics::fsub_algebraic(self.0, rhs.0)
     }
 }
 
@@ -473,14 +473,14 @@ impl Mul<F16> for F16 {
 
     #[inline(always)]
     fn mul(self, rhs: F16) -> F16 {
-        unsafe { intrinsics::fmul_fast(self.0, rhs.0).into() }
+        intrinsics::fmul_algebraic(self.0, rhs.0).into()
     }
 }
 
 impl MulAssign<F16> for F16 {
     #[inline(always)]
     fn mul_assign(&mut self, rhs: F16) {
-        unsafe { self.0 = intrinsics::fmul_fast(self.0, rhs.0) }
+        self.0 = intrinsics::fmul_algebraic(self.0, rhs.0)
     }
 }
 
@@ -489,14 +489,14 @@ impl Div<F16> for F16 {
 
     #[inline(always)]
     fn div(self, rhs: F16) -> F16 {
-        unsafe { intrinsics::fdiv_fast(self.0, rhs.0).into() }
+        intrinsics::fdiv_algebraic(self.0, rhs.0).into()
     }
 }
 
 impl DivAssign<F16> for F16 {
     #[inline(always)]
     fn div_assign(&mut self, rhs: F16) {
-        unsafe { self.0 = intrinsics::fdiv_fast(self.0, rhs.0) }
+        self.0 = intrinsics::fdiv_algebraic(self.0, rhs.0)
     }
 }
 
@@ -505,14 +505,14 @@ impl Rem<F16> for F16 {
 
     #[inline(always)]
     fn rem(self, rhs: F16) -> F16 {
-        unsafe { intrinsics::frem_fast(self.0, rhs.0).into() }
+        intrinsics::frem_algebraic(self.0, rhs.0).into()
     }
 }
 
 impl RemAssign<F16> for F16 {
     #[inline(always)]
     fn rem_assign(&mut self, rhs: F16) {
-        unsafe { self.0 = intrinsics::frem_fast(self.0, rhs.0) }
+        self.0 = intrinsics::frem_algebraic(self.0, rhs.0)
     }
 }
 
@@ -549,13 +549,13 @@ impl Add<f16> for F16 {
 
     #[inline(always)]
     fn add(self, rhs: f16) -> F16 {
-        unsafe { intrinsics::fadd_fast(self.0, rhs).into() }
+        intrinsics::fadd_algebraic(self.0, rhs).into()
     }
 }
 
 impl AddAssign<f16> for F16 {
     fn add_assign(&mut self, rhs: f16) {
-        unsafe { self.0 = intrinsics::fadd_fast(self.0, rhs) }
+        self.0 = intrinsics::fadd_algebraic(self.0, rhs)
     }
 }
 
@@ -564,14 +564,14 @@ impl Sub<f16> for F16 {
 
     #[inline(always)]
     fn sub(self, rhs: f16) -> F16 {
-        unsafe { intrinsics::fsub_fast(self.0, rhs).into() }
+        intrinsics::fsub_algebraic(self.0, rhs).into()
     }
 }
 
 impl SubAssign<f16> for F16 {
     #[inline(always)]
     fn sub_assign(&mut self, rhs: f16) {
-        unsafe { self.0 = intrinsics::fsub_fast(self.0, rhs) }
+        self.0 = intrinsics::fsub_algebraic(self.0, rhs)
     }
 }
 
@@ -580,14 +580,14 @@ impl Mul<f16> for F16 {
 
     #[inline(always)]
     fn mul(self, rhs: f16) -> F16 {
-        unsafe { intrinsics::fmul_fast(self.0, rhs).into() }
+        intrinsics::fmul_algebraic(self.0, rhs).into()
     }
 }
 
 impl MulAssign<f16> for F16 {
     #[inline(always)]
     fn mul_assign(&mut self, rhs: f16) {
-        unsafe { self.0 = intrinsics::fmul_fast(self.0, rhs) }
+        self.0 = intrinsics::fmul_algebraic(self.0, rhs)
     }
 }
 
@@ -596,14 +596,14 @@ impl Div<f16> for F16 {
 
     #[inline(always)]
     fn div(self, rhs: f16) -> F16 {
-        unsafe { intrinsics::fdiv_fast(self.0, rhs).into() }
+        intrinsics::fdiv_algebraic(self.0, rhs).into()
     }
 }
 
 impl DivAssign<f16> for F16 {
     #[inline(always)]
     fn div_assign(&mut self, rhs: f16) {
-        unsafe { self.0 = intrinsics::fdiv_fast(self.0, rhs) }
+        self.0 = intrinsics::fdiv_algebraic(self.0, rhs)
     }
 }
 
@@ -612,33 +612,38 @@ impl Rem<f16> for F16 {
 
     #[inline(always)]
     fn rem(self, rhs: f16) -> F16 {
-        unsafe { intrinsics::frem_fast(self.0, rhs).into() }
+        intrinsics::frem_algebraic(self.0, rhs).into()
     }
 }
 
 impl RemAssign<f16> for F16 {
     #[inline(always)]
     fn rem_assign(&mut self, rhs: f16) {
-        unsafe { self.0 = intrinsics::frem_fast(self.0, rhs) }
+        self.0 = intrinsics::frem_algebraic(self.0, rhs)
     }
 }
 
 mod intrinsics {
     use half::f16;
 
-    pub unsafe fn fadd_fast(lhs: f16, rhs: f16) -> f16 {
+    #[inline(always)]
+    pub fn fadd_algebraic(lhs: f16, rhs: f16) -> f16 {
         lhs + rhs
     }
-    pub unsafe fn fsub_fast(lhs: f16, rhs: f16) -> f16 {
+    #[inline(always)]
+    pub fn fsub_algebraic(lhs: f16, rhs: f16) -> f16 {
         lhs - rhs
     }
-    pub unsafe fn fmul_fast(lhs: f16, rhs: f16) -> f16 {
+    #[inline(always)]
+    pub fn fmul_algebraic(lhs: f16, rhs: f16) -> f16 {
         lhs * rhs
     }
-    pub unsafe fn fdiv_fast(lhs: f16, rhs: f16) -> f16 {
+    #[inline(always)]
+    pub fn fdiv_algebraic(lhs: f16, rhs: f16) -> f16 {
         lhs / rhs
     }
-    pub unsafe fn frem_fast(lhs: f16, rhs: f16) -> f16 {
+    #[inline(always)]
+    pub fn frem_algebraic(lhs: f16, rhs: f16) -> f16 {
         lhs % rhs
     }
 }
