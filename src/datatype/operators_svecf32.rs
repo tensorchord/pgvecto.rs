@@ -88,6 +88,49 @@ fn _vectors_svecf32_operator_minus(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>)
     SVecf32Output::new(SVecf32Borrowed::new(lhs.dims(), &indexes, &values))
 }
 
+/// Calculate the element-wise multiplication of two sparse vectors.
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_svecf32_operator_mul(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> SVecf32Output {
+    check_matched_dims(lhs.dims() as _, rhs.dims() as _);
+
+    let size1 = lhs.len();
+    let size2 = rhs.len();
+    let mut pos1 = 0;
+    let mut pos2 = 0;
+    let mut pos = 0;
+    let mut indexes = vec![0; std::cmp::min(size1, size2)];
+    let mut values = vec![F32::zero(); std::cmp::min(size1, size2)];
+    let lhs = lhs.for_borrow();
+    let rhs = rhs.for_borrow();
+    while pos1 < size1 && pos2 < size2 {
+        let lhs_index = lhs.indexes()[pos1];
+        let rhs_index = rhs.indexes()[pos2];
+        match lhs_index.cmp(&rhs_index) {
+            std::cmp::Ordering::Less => {
+                pos1 += 1;
+            }
+            std::cmp::Ordering::Equal => {
+                // only both indexes are not zero, values are multiplied
+                let lhs_value = lhs.values()[pos1];
+                let rhs_value = rhs.values()[pos2];
+                indexes[pos] = lhs_index;
+                values[pos] = lhs_value * rhs_value;
+                pos1 += 1;
+                pos2 += 1;
+                // only increment pos if the value is not zero
+                pos += (!values[pos].is_zero()) as usize;
+            }
+            std::cmp::Ordering::Greater => {
+                pos2 += 1;
+            }
+        }
+    }
+    indexes.truncate(pos);
+    values.truncate(pos);
+
+    SVecf32Output::new(SVecf32Borrowed::new(lhs.dims(), &indexes, &values))
+}
+
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_operator_lt(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> bool {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
