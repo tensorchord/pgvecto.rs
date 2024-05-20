@@ -26,6 +26,17 @@ fn _vectors_vecf32_operator_minus(lhs: Vecf32Input<'_>, rhs: Vecf32Input<'_>) ->
     Vecf32Output::new(Vecf32Borrowed::new(&v))
 }
 
+/// Calculate the element-wise multiplication of two vectors.
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_vecf32_operator_mul(lhs: Vecf32Input<'_>, rhs: Vecf32Input<'_>) -> Vecf32Output {
+    let n = check_matched_dims(lhs.dims(), rhs.dims());
+    let mut v = vec![F32::zero(); n];
+    for i in 0..n {
+        v[i] = lhs[i] * rhs[i];
+    }
+    Vecf32Output::new(Vecf32Borrowed::new(&v))
+}
+
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf32_operator_lt(lhs: Vecf32Input<'_>, rhs: Vecf32Input<'_>) -> bool {
     check_matched_dims(lhs.dims(), rhs.dims());

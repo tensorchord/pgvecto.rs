@@ -35,5 +35,10 @@ SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <=> '[0.5,0.5,0.5]'::vecf16 l
 ----
 10
 
+query I
+SELECT '[1,2,3]'::vecf16 * '[4,5,6]'::vecf16;
+----
+[4, 10, 18]
+
 statement ok
 DROP TABLE t;

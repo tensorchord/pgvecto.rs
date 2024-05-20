@@ -26,6 +26,17 @@ fn _vectors_vecf16_operator_minus(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) ->
     Vecf16Output::new(Vecf16Borrowed::new(&v))
 }
 
+/// Calculate the element-wise multiplication of two f16 vectors.
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_vecf16_operator_mul(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> Vecf16Output {
+    let n = check_matched_dims(lhs.dims(), rhs.dims());
+    let mut v = vec![F16::zero(); n];
+    for i in 0..n {
+        v[i] = lhs[i] * rhs[i];
+    }
+    Vecf16Output::new(Vecf16Borrowed::new(&v))
+}
+
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_lt(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     check_matched_dims(lhs.dims(), rhs.dims());
