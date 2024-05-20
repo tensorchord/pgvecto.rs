@@ -110,13 +110,15 @@ fn _vectors_svecf32_operator_mul(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -
                 pos1 += 1;
             }
             std::cmp::Ordering::Equal => {
+                // only both indexes are not zero, values are multiplied
                 let lhs_value = lhs.values()[pos1];
                 let rhs_value = rhs.values()[pos2];
                 indexes[pos] = lhs_index;
                 values[pos] = lhs_value * rhs_value;
                 pos1 += 1;
                 pos2 += 1;
-                pos += 1;
+                // only increment pos if the value is not zero
+                pos += (!values[pos].is_zero()) as usize;
             }
             std::cmp::Ordering::Greater => {
                 pos2 += 1;
