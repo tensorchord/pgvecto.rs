@@ -23,34 +23,35 @@ impl Message {
     }
 
     pub fn csv_chunk(&self) -> Vec<u8> {
-        let mut wtr = csv::Writer::from_writer(vec![]);
+        let mut wtr = csv::WriterBuilder::new()
+            .has_headers(false)
+            .from_writer(vec![]);
         wtr.serialize(self).unwrap();
-        get_protocol_chunk(
-            &String::from_utf8(wtr.into_inner().unwrap()).unwrap(),
-            PIPE_PROTO_DEST_CSVLOG,
-        )
+        get_protocol_chunk(wtr.into_inner().unwrap(), PIPE_PROTO_DEST_CSVLOG)
     }
 
     pub fn stderr_chunk(&self) -> Vec<u8> {
         let err = format!("{} [{}] LOG:  {}", self.timestamp, self.pid, self.message);
-        get_protocol_chunk(&err, PIPE_PROTO_DEST_STDERR)
+        let mut data: Vec<u8> = Vec::new();
+        writeln!(&mut data, "{}", &err).unwrap();
+        get_protocol_chunk(data, PIPE_PROTO_DEST_STDERR)
     }
 
     pub fn json_chunk(&self) -> Vec<u8> {
         let json = serde_json::to_string(self).unwrap();
-        get_protocol_chunk(&json, PIPE_PROTO_DEST_JSONLOG)
+        let mut data: Vec<u8> = Vec::new();
+        writeln!(&mut data, "{}", &json).unwrap();
+        get_protocol_chunk(data, PIPE_PROTO_DEST_JSONLOG)
     }
 }
 
-fn get_protocol_chunk(log_msg: &str, flag: u8) -> Vec<u8> {
+fn get_protocol_chunk(msg_buf: Vec<u8>, flag: u8) -> Vec<u8> {
     let mut chunk = Vec::from([0, 0]);
-    let mut data: Vec<u8> = Vec::new();
     let pid = process::id();
-    writeln!(&mut data, "{}", &log_msg).unwrap();
-    let data_len = data.len() as u16;
+    let data_len = msg_buf.len() as u16;
     chunk.extend_from_slice(&data_len.to_le_bytes());
     chunk.extend_from_slice(&pid.to_le_bytes());
     chunk.push(flag | LAST_CHUNK);
-    chunk.extend_from_slice(&data);
+    chunk.extend_from_slice(&msg_buf);
     chunk
 }
