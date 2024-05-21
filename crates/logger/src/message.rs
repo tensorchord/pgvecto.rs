@@ -25,20 +25,20 @@ impl Message {
     pub fn csv_chunk(&self) -> Vec<u8> {
         let mut wtr = csv::Writer::from_writer(vec![]);
         wtr.serialize(self).unwrap();
-        return get_protocol_chunk(
+        get_protocol_chunk(
             &String::from_utf8(wtr.into_inner().unwrap()).unwrap(),
             PIPE_PROTO_DEST_CSVLOG,
-        );
+        )
     }
 
     pub fn stderr_chunk(&self) -> Vec<u8> {
         let err = format!("{} [{}] LOG:  {}", self.timestamp, self.pid, self.message);
-        return get_protocol_chunk(&err, PIPE_PROTO_DEST_STDERR);
+        get_protocol_chunk(&err, PIPE_PROTO_DEST_STDERR)
     }
 
     pub fn json_chunk(&self) -> Vec<u8> {
         let json = serde_json::to_string(self).unwrap();
-        return get_protocol_chunk(&json, PIPE_PROTO_DEST_JSONLOG);
+        get_protocol_chunk(&json, PIPE_PROTO_DEST_JSONLOG)
     }
 }
 

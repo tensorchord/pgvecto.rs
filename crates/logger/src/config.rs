@@ -23,5 +23,5 @@ fn c_char_to_string(c_str: *const i8) -> String {
 pub fn need(log_type: &str) -> bool {
     let log_destination = unsafe { GetConfigOption(c"log_destination".as_ptr(), false, false) };
     let log_destination = c_char_to_string(log_destination);
-    return log_destination.contains(log_type);
+    log_destination.contains(log_type)
 }
