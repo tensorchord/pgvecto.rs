@@ -43,11 +43,11 @@ base = { path = "crates/base" }
 detect = { path = "crates/detect" }
 embedding = { path = "crates/embedding" }
 interprocess_atomic_wait = { path = "crates/interprocess-atomic-wait" }
+logger = { path = "crates/logger" }
 memfd = { path = "crates/memfd" }
 scopeguard = "1.2.0"
 send_fd = { path = "crates/send_fd" }
 service = { path = "crates/service" }
-logger = { path = "crates/logger" }
 
 [patch.crates-io]
 pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.0-alpha.1-patch" }
@@ -66,12 +66,13 @@ version = "0.0.0"
 edition = "2021"
 
 [workspace.dependencies]
-pgrx = { version = "=0.12.0-alpha.1", default-features = false, features = [] }
 arc-swap = "1.7.0"
 arrayvec = "0.7.4"
 bincode = "1.3.3"
 bytemuck = { version = "1.14.3", features = ["extern_crate_alloc"] }
 byteorder = "1.5.0"
+chrono = "0.4.38"
+csv = "1.3.0"
 half = { version = "2.4.0", features = [
     "bytemuck",
     "num-traits",
@@ -84,6 +85,7 @@ memmap2 = "0.9.4"
 num-traits = "0.2.18"
 parking_lot = "0.12.1"
 paste = "1.0.14"
+pgrx = { version = "=0.12.0-alpha.1", default-features = false, features = [] }
 rand = "0.8.5"
 rustix = { version = "0.38.31", features = ["fs", "mm", "net"] }
 serde = "1"
@@ -92,8 +94,6 @@ thiserror = "1"
 toml = "0.8.10"
 uuid = { version = "1.7.0", features = ["serde", "v4"] }
 validator = { version = "0.18.0", features = ["derive"] }
-chrono = "0.4.38"
-csv = "1.3.0"
 
 [workspace.lints]
 rust.unsafe_op_in_unsafe_fn = "forbid"
