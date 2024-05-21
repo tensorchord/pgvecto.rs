@@ -1,0 +1,15 @@
+[package]
+name = "logger"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+chrono.workspace = true
+csv.workspace = true
+log.workspace = true
+pgrx.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true
