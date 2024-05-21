@@ -34,15 +34,14 @@ extern "C" fn _vectors_main(_arg: pgrx::pg_sys::Datum) {
         pub layout: std::alloc::Layout,
     }
     {
-        let mut builder = env_logger::builder();
-        builder.target(env_logger::Target::Stderr);
+        let mut builder = logger::VectorLogger::build();
         #[cfg(not(debug_assertions))]
         {
-            builder.filter(None, log::LevelFilter::Info);
+            builder.filter_level(log::LevelFilter::Info);
         }
         #[cfg(debug_assertions)]
         {
-            builder.filter(None, log::LevelFilter::Trace);
+            builder.filter_level(log::LevelFilter::Trace);
         }
         builder.init();
     }
