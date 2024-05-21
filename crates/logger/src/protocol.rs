@@ -1,4 +1,4 @@
-use super::config::{need, LOG_CSV, LOG_JSON, LOG_ERROR};
+use super::config::{need, LOG_CSV, LOG_ERROR, LOG_JSON};
 use super::message::Message;
 use std::io::{stderr, Write};
 
