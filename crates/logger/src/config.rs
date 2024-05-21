@@ -1,5 +1,6 @@
 use pgrx::pg_sys::GetConfigOption;
 use std::ffi::CStr;
+use std::os::raw::c_char;
 
 pub const PIPE_PROTO_DEST_STDERR: u8 = 0x10;
 pub const PIPE_PROTO_DEST_CSVLOG: u8 = 0x20;
@@ -9,7 +10,7 @@ pub const LOG_ERROR: &str = "stderr";
 pub const LOG_CSV: &str = "csvlog";
 pub const LOG_JSON: &str = "jsonlog";
 
-fn c_char_to_string(c_str: *const i8) -> String {
+fn c_char_to_string(c_str: *const c_char) -> String {
     unsafe {
         if c_str.is_null() {
             return String::new();
