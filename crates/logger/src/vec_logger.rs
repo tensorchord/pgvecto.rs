@@ -1,11 +1,14 @@
 use crate::protocol::pipe_log;
 use log::{set_boxed_logger, set_max_level, Level, LevelFilter, Metadata, Record};
 
-pub struct VectorLogger;
+#[derive(Debug, Clone)]
+pub struct VectorLogger {
+    level: LevelFilter,
+}
 
 impl log::Log for VectorLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Info
+        metadata.level() <= self.level
     }
 
     fn log(&self, record: &Record) {
@@ -18,9 +21,18 @@ impl log::Log for VectorLogger {
 }
 
 impl VectorLogger {
-    pub fn init() {
-        let log_level = LevelFilter::Info;
-        set_boxed_logger(Box::new(VectorLogger)).unwrap();
-        set_max_level(log_level);
+    pub fn init(&self) {
+        set_boxed_logger(Box::new(self.clone())).unwrap();
+        set_max_level(self.level);
+    }
+
+    pub fn build() -> Self {
+        VectorLogger {
+            level: LevelFilter::Info,
+        }
+    }
+
+    pub fn filter_level(&mut self, level: LevelFilter) {
+        self.level = level;
     }
 }
