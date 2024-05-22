@@ -4,45 +4,10 @@ set -e
 # CONTROL_FILEPATH
 # SO_FILEPATH
 
-cat << EOF
-extern "Rust" {
-    fn _vectors_jemalloc_alloc(layout: std::alloc::Layout) -> *mut u8;
-    fn _vectors_jemalloc_dealloc(ptr: *mut u8, layout: std::alloc::Layout);
-}
-
-struct Jemalloc;
-
-unsafe impl std::alloc::GlobalAlloc for Jemalloc {
-    unsafe fn alloc(&self, layout: std::alloc::Layout) -> *mut u8 {
-        unsafe { _vectors_jemalloc_alloc(layout) }
-    }
-
-    unsafe fn dealloc(&self, ptr: *mut u8, layout: std::alloc::Layout) {
-        unsafe { _vectors_jemalloc_dealloc(ptr, layout) }
-    }
-}
-
-#[global_allocator]
-static GLOBAL: Jemalloc = Jemalloc;
-EOF
-
-while read -r sym; do
-    if [ "$sym" = "__gmon_start__" ]; then
-        continue
-    fi
-cat << EOF
-#[no_mangle]
-extern "C" fn $sym() {
-    eprintln!("Calling undefined symbol: {}", "$sym");
-    std::process::exit(1);
-}
-EOF
-done <<< $(nm -u $SO_FILEPATH | grep -v "@" | awk '{print $2}')
-
 printf "fn main() {\n"
 
 cat << EOF
-    // vectors::__pgrx_marker();
+    vectors::__pgrx_marker();
 
     let mut entities = Vec::new();
     let control_file_path = std::path::PathBuf::from("$CONTROL_FILEPATH");

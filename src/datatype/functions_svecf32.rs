@@ -1,7 +1,22 @@
-use super::memory_svecf32::SVecf32Output;
+use super::memory_svecf32::*;
 use crate::error::*;
 use base::scalar::*;
 use base::vector::*;
+
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_svecf32_dims(vector: SVecf32Input<'_>) -> i32 {
+    vector.for_borrow().dims() as i32
+}
+
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_svecf32_norm(vector: SVecf32Input<'_>) -> f32 {
+    vector.for_borrow().length().to_f32()
+}
+
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_svecf32_normalize(vector: SVecf32Input<'_>) -> SVecf32Output {
+    SVecf32Output::new(vector.for_borrow().normalize().for_borrow())
+}
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_to_svector(

@@ -7,7 +7,9 @@ CREATE TYPE vecf16;
 CREATE TYPE svector;
 CREATE TYPE bvector;
 CREATE TYPE veci8;
+
 CREATE TYPE vector_index_stat;
-CREATE TYPE vector_accumulate_state;
+
+CREATE TYPE _vectors_vecf32_aggregate_avg_stype;
 
 -- bootstrap end

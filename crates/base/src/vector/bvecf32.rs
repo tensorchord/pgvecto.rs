@@ -17,6 +17,7 @@ impl BVecf32Owned {
     pub fn new(dims: u16, data: Vec<usize>) -> Self {
         Self::new_checked(dims, data).unwrap()
     }
+
     #[inline(always)]
     pub fn new_checked(dims: u16, data: Vec<usize>) -> Option<Self> {
         if dims == 0 {
@@ -31,6 +32,7 @@ impl BVecf32Owned {
         }
         unsafe { Some(Self::new_unchecked(dims, data)) }
     }
+
     /// # Safety
     ///
     /// * `dims` must be in `1..=65535`.
@@ -50,24 +52,6 @@ impl BVecf32Owned {
             data: vec![0; size],
         }
     }
-
-    #[inline(always)]
-    pub fn set(&mut self, index: usize, value: bool) {
-        assert!(index < self.dims as usize);
-        if value {
-            self.data[index / BVEC_WIDTH] |= 1 << (index % BVEC_WIDTH);
-        } else {
-            self.data[index / BVEC_WIDTH] &= !(1 << (index % BVEC_WIDTH));
-        }
-    }
-
-    /// # Safety
-    ///
-    /// The caller must ensure that it won't modify the padding bits
-    #[inline(always)]
-    pub unsafe fn data_mut(&mut self) -> &mut [usize] {
-        &mut self.data
-    }
 }
 
 impl VectorOwned for BVecf32Owned {
@@ -81,6 +65,7 @@ impl VectorOwned for BVecf32Owned {
         self.dims as u32
     }
 
+    #[inline(always)]
     fn for_borrow(&self) -> BVecf32Borrowed<'_> {
         BVecf32Borrowed {
             dims: self.dims,
@@ -88,6 +73,7 @@ impl VectorOwned for BVecf32Owned {
         }
     }
 
+    #[inline(always)]
     fn to_vec(&self) -> Vec<F32> {
         self.for_borrow().to_vec()
     }
@@ -104,6 +90,7 @@ impl<'a> BVecf32Borrowed<'a> {
     pub fn new(dims: u16, data: &'a [usize]) -> Self {
         Self::new_checked(dims, data).unwrap()
     }
+
     #[inline(always)]
     pub fn new_checked(dims: u16, data: &'a [usize]) -> Option<Self> {
         if dims == 0 {
@@ -118,6 +105,7 @@ impl<'a> BVecf32Borrowed<'a> {
         }
         unsafe { Some(Self::new_unchecked(dims, data)) }
     }
+
     /// # Safety
     ///
     /// * `dims` must be in `1..=65535`.
@@ -128,6 +116,18 @@ impl<'a> BVecf32Borrowed<'a> {
         Self { dims, data }
     }
 
+    #[inline(always)]
+    pub fn data(&self) -> &'a [usize] {
+        self.data
+    }
+
+    #[inline(always)]
+    pub fn get(&self, index: usize) -> bool {
+        assert!(index < self.dims as usize);
+        self.data[index / BVEC_WIDTH] & (1 << (index % BVEC_WIDTH)) != 0
+    }
+
+    #[inline(always)]
     pub fn iter(self) -> impl Iterator<Item = bool> + 'a {
         let mut index = 0;
         std::iter::from_fn(move || {
@@ -139,16 +139,6 @@ impl<'a> BVecf32Borrowed<'a> {
                 None
             }
         })
-    }
-
-    pub fn get(&self, index: usize) -> bool {
-        assert!(index < self.dims as usize);
-        self.data[index / BVEC_WIDTH] & (1 << (index % BVEC_WIDTH)) != 0
-    }
-
-    #[inline(always)]
-    pub fn data(&self) -> &'a [usize] {
-        self.data
     }
 }
 
@@ -168,8 +158,19 @@ impl<'a> VectorBorrowed for BVecf32Borrowed<'a> {
         }
     }
 
+    #[inline(always)]
     fn to_vec(&self) -> Vec<F32> {
         self.iter().map(|i| F32(i as u32 as f32)).collect()
+    }
+
+    #[inline(always)]
+    fn length(&self) -> F32 {
+        length(*self)
+    }
+
+    #[inline(always)]
+    fn normalize(&self) -> BVecf32Owned {
+        unimplemented!()
     }
 }
 

@@ -12,6 +12,7 @@ impl Vecf16Owned {
     pub fn new(slice: Vec<F16>) -> Self {
         Self::new_checked(slice).unwrap()
     }
+
     #[inline(always)]
     pub fn new_checked(slice: Vec<F16>) -> Option<Self> {
         if !(1 <= slice.len() && slice.len() <= 65535) {
@@ -19,6 +20,7 @@ impl Vecf16Owned {
         }
         Some(unsafe { Self::new_unchecked(slice) })
     }
+
     /// # Safety
     ///
     /// * `slice.len()` must not be zero.
@@ -26,10 +28,12 @@ impl Vecf16Owned {
     pub unsafe fn new_unchecked(slice: Vec<F16>) -> Self {
         Self(slice)
     }
+
     #[inline(always)]
     pub fn slice(&self) -> &[F16] {
         self.0.as_slice()
     }
+
     #[inline(always)]
     pub fn slice_mut(&mut self) -> &mut [F16] {
         self.0.as_mut_slice()
@@ -42,14 +46,17 @@ impl VectorOwned for Vecf16Owned {
 
     const VECTOR_KIND: VectorKind = VectorKind::Vecf16;
 
+    #[inline(always)]
     fn dims(&self) -> u32 {
         self.0.len() as u32
     }
 
+    #[inline(always)]
     fn for_borrow(&self) -> Vecf16Borrowed<'_> {
         Vecf16Borrowed(self.0.as_slice())
     }
 
+    #[inline(always)]
     fn to_vec(&self) -> Vec<F16> {
         self.0.clone()
     }
@@ -64,6 +71,7 @@ impl<'a> Vecf16Borrowed<'a> {
     pub fn new(slice: &'a [F16]) -> Self {
         Self::new_checked(slice).unwrap()
     }
+
     #[inline(always)]
     pub fn new_checked(slice: &'a [F16]) -> Option<Self> {
         if !(1 <= slice.len() && slice.len() <= 65535) {
@@ -71,6 +79,7 @@ impl<'a> Vecf16Borrowed<'a> {
         }
         Some(unsafe { Self::new_unchecked(slice) })
     }
+
     /// # Safety
     ///
     /// * `slice.len()` must not be zero.
@@ -78,6 +87,7 @@ impl<'a> Vecf16Borrowed<'a> {
     pub unsafe fn new_unchecked(slice: &'a [F16]) -> Self {
         Self(slice)
     }
+
     #[inline(always)]
     pub fn slice(&self) -> &[F16] {
         self.0
@@ -88,16 +98,31 @@ impl<'a> VectorBorrowed for Vecf16Borrowed<'a> {
     type Scalar = F16;
     type Owned = Vecf16Owned;
 
+    #[inline(always)]
     fn dims(&self) -> u32 {
         self.0.len() as u32
     }
 
+    #[inline(always)]
     fn for_own(&self) -> Vecf16Owned {
         Vecf16Owned(self.0.to_vec())
     }
 
+    #[inline(always)]
     fn to_vec(&self) -> Vec<F16> {
         self.0.to_vec()
+    }
+
+    #[inline(always)]
+    fn length(&self) -> F32 {
+        length(self.0).to_f()
+    }
+
+    #[inline(always)]
+    fn normalize(&self) -> Vecf16Owned {
+        let mut data = self.0.to_vec();
+        l2_normalize(&mut data);
+        Vecf16Owned(data)
     }
 }
 

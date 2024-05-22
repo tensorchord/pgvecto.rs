@@ -31,7 +31,7 @@ SELECT sum(val) FROM t;
 [5, 7, 9]
 
 query R
-SELECT vector_norm('[3,4]');
+SELECT vector_norm('[3,4]'::vector);
 ----
 5
 

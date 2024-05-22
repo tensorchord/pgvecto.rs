@@ -15,6 +15,7 @@ impl SVecf32Owned {
     pub fn new(dims: u32, indexes: Vec<u32>, values: Vec<F32>) -> Self {
         Self::new_checked(dims, indexes, values).unwrap()
     }
+
     #[inline(always)]
     pub fn new_checked(dims: u32, indexes: Vec<u32>, values: Vec<F32>) -> Option<Self> {
         if !(1..=1_048_575).contains(&dims) {
@@ -39,6 +40,7 @@ impl SVecf32Owned {
         }
         unsafe { Some(Self::new_unchecked(dims, indexes, values)) }
     }
+
     /// # Safety
     ///
     /// * `dims` must be in `1..=1_048_575`.
@@ -53,10 +55,12 @@ impl SVecf32Owned {
             values,
         }
     }
+
     #[inline(always)]
     pub fn indexes(&self) -> &[u32] {
         &self.indexes
     }
+
     #[inline(always)]
     pub fn values(&self) -> &[F32] {
         &self.values
@@ -74,6 +78,7 @@ impl VectorOwned for SVecf32Owned {
         self.dims
     }
 
+    #[inline(always)]
     fn for_borrow(&self) -> SVecf32Borrowed<'_> {
         SVecf32Borrowed {
             dims: self.dims,
@@ -82,6 +87,7 @@ impl VectorOwned for SVecf32Owned {
         }
     }
 
+    #[inline(always)]
     fn to_vec(&self) -> Vec<F32> {
         let mut dense = vec![F32::zero(); self.dims as usize];
         for (&index, &value) in self.indexes.iter().zip(self.values.iter()) {
@@ -103,6 +109,7 @@ impl<'a> SVecf32Borrowed<'a> {
     pub fn new(dims: u32, indexes: &'a [u32], values: &'a [F32]) -> Self {
         Self::new_checked(dims, indexes, values).unwrap()
     }
+
     #[inline(always)]
     pub fn new_checked(dims: u32, indexes: &'a [u32], values: &'a [F32]) -> Option<Self> {
         if !(1..=1_048_575).contains(&dims) {
@@ -127,6 +134,7 @@ impl<'a> SVecf32Borrowed<'a> {
         }
         unsafe { Some(Self::new_unchecked(dims, indexes, values)) }
     }
+
     /// # Safety
     ///
     /// * `dims` must be in `1..=1_048_575`.
@@ -141,13 +149,20 @@ impl<'a> SVecf32Borrowed<'a> {
             values,
         }
     }
+
     #[inline(always)]
     pub fn indexes(&self) -> &[u32] {
         self.indexes
     }
+
     #[inline(always)]
     pub fn values(&self) -> &[F32] {
         self.values
+    }
+
+    #[inline(always)]
+    pub fn len(&self) -> u32 {
+        self.indexes.len().try_into().unwrap()
     }
 }
 
@@ -160,6 +175,7 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
         self.dims
     }
 
+    #[inline(always)]
     fn for_own(&self) -> SVecf32Owned {
         SVecf32Owned {
             dims: self.dims,
@@ -168,6 +184,7 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
         }
     }
 
+    #[inline(always)]
     fn to_vec(&self) -> Vec<F32> {
         let mut dense = vec![F32::zero(); self.dims as usize];
         for (&index, &value) in self.indexes.iter().zip(self.values.iter()) {
@@ -175,12 +192,17 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
         }
         dense
     }
-}
 
-impl<'a> SVecf32Borrowed<'a> {
     #[inline(always)]
-    pub fn len(&self) -> u32 {
-        self.indexes.len().try_into().unwrap()
+    fn length(&self) -> F32 {
+        length(*self)
+    }
+
+    #[inline(always)]
+    fn normalize(&self) -> SVecf32Owned {
+        let mut own = self.for_own();
+        l2_normalize(&mut own);
+        own
     }
 }
 

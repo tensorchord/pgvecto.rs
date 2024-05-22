@@ -53,36 +53,29 @@ impl Veci8Owned {
         }
     }
 
+    #[inline(always)]
     pub fn data(&self) -> &[I8] {
         &self.data
     }
 
+    #[inline(always)]
     pub fn alpha(&self) -> F32 {
         self.alpha
     }
 
-    pub fn alpha_mut(&mut self) -> &mut F32 {
-        &mut self.alpha
-    }
-
-    pub fn offset_mut(&mut self) -> &mut F32 {
-        &mut self.offset
-    }
-
+    #[inline(always)]
     pub fn offset(&self) -> F32 {
         self.offset
     }
 
+    #[inline(always)]
     pub fn sum(&self) -> F32 {
         self.sum
     }
 
+    #[inline(always)]
     pub fn l2_norm(&self) -> F32 {
         self.l2_norm
-    }
-
-    pub fn dims(&self) -> u32 {
-        self.dims
     }
 }
 
@@ -213,28 +206,6 @@ impl<'a> Veci8Borrowed<'a> {
     pub fn l2_norm(&self) -> F32 {
         self.l2_norm
     }
-
-    pub fn dims(&self) -> u32 {
-        self.dims
-    }
-
-    pub fn normalize(&self) -> Veci8Owned {
-        let l = self.l2_norm();
-        let alpha = self.alpha() / l;
-        let offset = self.offset() / l;
-        let sum = self.sum() / l;
-        let l2_norm = F32(1.0);
-        unsafe {
-            Veci8Owned::new_unchecked(
-                self.dims(),
-                self.data().to_vec(),
-                alpha,
-                offset,
-                sum,
-                l2_norm,
-            )
-        }
-    }
 }
 
 impl VectorBorrowed for Veci8Borrowed<'_> {
@@ -247,6 +218,7 @@ impl VectorBorrowed for Veci8Borrowed<'_> {
         self.dims
     }
 
+    #[inline(always)]
     fn for_own(&self) -> Veci8Owned {
         Veci8Owned {
             dims: self.dims,
@@ -258,8 +230,33 @@ impl VectorBorrowed for Veci8Borrowed<'_> {
         }
     }
 
+    #[inline(always)]
     fn to_vec(&self) -> Vec<F32> {
         i8_dequantization(self.data, self.alpha, self.offset)
+    }
+
+    #[inline(always)]
+    fn length(&self) -> F32 {
+        self.l2_norm
+    }
+
+    #[inline(always)]
+    fn normalize(&self) -> Veci8Owned {
+        let l = self.l2_norm;
+        let alpha = self.alpha / l;
+        let offset = self.offset / l;
+        let sum = self.sum / l;
+        let l2_norm = F32(1.0);
+        unsafe {
+            Veci8Owned::new_unchecked(
+                self.dims(),
+                self.data().to_vec(),
+                alpha,
+                offset,
+                sum,
+                l2_norm,
+            )
+        }
     }
 }
 

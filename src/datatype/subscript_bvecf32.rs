@@ -1,5 +1,5 @@
 use crate::datatype::memory_bvecf32::{BVecf32Input, BVecf32Output};
-use base::vector::{BVecf32Owned, VectorOwned, BVEC_WIDTH};
+use base::vector::BVecf32Borrowed;
 use pgrx::datum::FromDatum;
 use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
@@ -165,25 +165,26 @@ fn _vectors_bvecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Intern
                     return;
                 }
                 let dims = end - start;
-                let mut values = BVecf32Owned::new_zeroed(dims);
-                if start % BVEC_WIDTH as u16 == 0 {
-                    let start_idx = start as usize / BVEC_WIDTH;
-                    let end_idx = (end as usize).div_ceil(BVEC_WIDTH);
-                    let slice = values.data_mut();
-                    slice.copy_from_slice(&input.for_borrow().data()[start_idx..end_idx]);
-                    if end as usize % BVEC_WIDTH != 0 {
-                        slice[end_idx - start_idx - 1] &= (1 << (end as usize % BVEC_WIDTH)) - 1;
+                let mut data = vec![0usize; dims.div_ceil(usize::BITS as _) as _];
+                if start % usize::BITS as u16 == 0 {
+                    let start_idx = start as usize / usize::BITS as usize;
+                    let end_idx = (end as usize).div_ceil(usize::BITS as _);
+                    data.copy_from_slice(&input.for_borrow().data()[start_idx..end_idx]);
+                    if end % usize::BITS as u16 != 0 {
+                        data[end_idx - start_idx - 1] &= (1 << (end % usize::BITS as u16)) - 1;
                     }
                 } else {
                     let mut i = 0;
                     let mut j = start as usize;
                     while j < end as usize {
-                        values.set(i, input.for_borrow().get(j));
+                        if input.for_borrow().get(j) {
+                            data[i / usize::BITS as usize] |= 1 << (i % usize::BITS as usize);
+                        }
                         i += 1;
                         j += 1;
                     }
                 }
-                let output = BVecf32Output::new(values.for_borrow());
+                let output = BVecf32Output::new(BVecf32Borrowed::new(dims, &data));
                 (*op).resnull.write(false);
                 (*op).resvalue.write(Datum::from(output.into_raw()));
             }

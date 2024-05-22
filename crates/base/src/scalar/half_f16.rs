@@ -1,9 +1,11 @@
 use super::ScalarLike;
 use crate::scalar::F32;
 use half::f16;
+use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display};
+use std::iter::Sum;
 use std::num::ParseFloatError;
 use std::ops::*;
 use std::str::FromStr;
@@ -51,7 +53,7 @@ unsafe impl bytemuck::Zeroable for F16 {}
 
 unsafe impl bytemuck::Pod for F16 {}
 
-impl num_traits::Zero for F16 {
+impl Zero for F16 {
     fn zero() -> Self {
         Self(f16::zero())
     }
@@ -449,6 +451,12 @@ impl AddAssign<F16> for F16 {
     #[inline(always)]
     fn add_assign(&mut self, rhs: F16) {
         self.0 = intrinsics::fadd_algebraic(self.0, rhs.0)
+    }
+}
+
+impl Sum for F16 {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(F16::zero(), Add::add)
     }
 }
 

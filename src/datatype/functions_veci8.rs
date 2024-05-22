@@ -1,7 +1,22 @@
-use crate::datatype::memory_veci8::Veci8Output;
+use crate::datatype::memory_veci8::*;
 use crate::error::*;
 use base::scalar::*;
 use base::vector::*;
+
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_veci8_dims(vector: Veci8Input<'_>) -> i32 {
+    vector.for_borrow().dims() as i32
+}
+
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_veci8_norm(vector: Veci8Input<'_>) -> f32 {
+    vector.for_borrow().length().to_f32()
+}
+
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_veci8_normalize(vector: Veci8Input<'_>) -> Veci8Output {
+    Veci8Output::new(vector.for_borrow().normalize().for_borrow())
+}
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_to_veci8(len: i32, alpha: f32, offset: f32, values: pgrx::Array<i32>) -> Veci8Output {
