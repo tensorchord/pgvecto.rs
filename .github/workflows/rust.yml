@@ -100,7 +100,7 @@ jobs:
       - name: Clippy
         run: cargo clippy --no-default-features --features "pg$VERSION" --target $ARCH-unknown-linux-gnu
       - name: Build
-        run: cargo build --no-default-features --features "pg$VERSION" --target $ARCH-unknown-linux-gnu
+        run: cargo build --lib --no-default-features --features "pg$VERSION" --target $ARCH-unknown-linux-gnu
       - name: Post Set up Cache
         uses: actions/cache/save@v4
         if: ${{ !steps.cache.outputs.cache-hit }}

@@ -8,34 +8,31 @@ use std::ops::Deref;
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_bvecf32_operator_and(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> BVecf32Output {
     let n = check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    let mut results = BVecf32Owned::new_zeroed(n.try_into().unwrap());
-    let slice = unsafe { results.data_mut() };
-    for i in 0..slice.len() {
-        slice[i] = lhs.data()[i] & rhs.data()[i];
+    let mut data = vec![0_usize; n.div_ceil(usize::BITS as _)];
+    for i in 0..data.len() {
+        data[i] = lhs.data()[i] & rhs.data()[i];
     }
-    BVecf32Output::new(results.for_borrow())
+    BVecf32Output::new(BVecf32Borrowed::new(n as _, &data))
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_bvecf32_operator_or(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> BVecf32Output {
-    check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    let mut results = BVecf32Owned::new_zeroed(lhs.dims().try_into().unwrap());
-    let slice = unsafe { results.data_mut() };
-    for i in 0..slice.len() {
-        slice[i] = lhs.data()[i] | rhs.data()[i];
+    let n = check_matched_dims(lhs.dims() as _, rhs.dims() as _);
+    let mut data = vec![0_usize; n.div_ceil(usize::BITS as _)];
+    for i in 0..data.len() {
+        data[i] = lhs.data()[i] | rhs.data()[i];
     }
-    BVecf32Output::new(results.for_borrow())
+    BVecf32Output::new(BVecf32Borrowed::new(n as _, &data))
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_bvecf32_operator_xor(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> BVecf32Output {
-    check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    let mut results = BVecf32Owned::new_zeroed(lhs.dims().try_into().unwrap());
-    let slice = unsafe { results.data_mut() };
-    for i in 0..slice.len() {
-        slice[i] = lhs.data()[i] ^ rhs.data()[i];
+    let n = check_matched_dims(lhs.dims() as _, rhs.dims() as _);
+    let mut data = vec![0_usize; n.div_ceil(usize::BITS as _)];
+    for i in 0..data.len() {
+        data[i] = lhs.data()[i] ^ rhs.data()[i];
     }
-    BVecf32Output::new(results.for_borrow())
+    BVecf32Output::new(BVecf32Borrowed::new(n as _, &data))
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]

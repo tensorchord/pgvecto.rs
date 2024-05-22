@@ -78,9 +78,9 @@ CREATE TYPE vector_index_stat AS (
     idx_options TEXT
 );
 
-CREATE TYPE vector_accumulate_state (
-    INPUT = _vectors_accumulate_state_in,
-    OUTPUT = _vectors_accumulate_state_out,
+CREATE TYPE _vectors_vecf32_aggregate_avg_stype (
+    INPUT = _vectors_vecf32_aggregate_avg_stype_in,
+    OUTPUT = _vectors_vecf32_aggregate_avg_stype_out,
     STORAGE = EXTERNAL,
     INTERNALLENGTH = VARIABLE,
     ALIGNMENT = double
@@ -603,15 +603,6 @@ CREATE OPERATOR <~> (
 CREATE FUNCTION pgvectors_upgrade() RETURNS void
 STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 
-CREATE FUNCTION to_svector("dims" INT, "indexes" INT[], "values" real[]) RETURNS svector
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_svector_wrapper';
-
-CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
-
-CREATE FUNCTION binarize("vector" vector) RETURNS bvector
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binarize_wrapper';
-
 CREATE FUNCTION text2vec_openai("input" TEXT, "model" TEXT) RETURNS vector
 STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_text2vec_openai_wrapper';
 
@@ -629,19 +620,52 @@ $$;
 CREATE FUNCTION alter_vector_index("index" OID, "key" TEXT, "value" TEXT) RETURNS void
 STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_alter_vector_index_wrapper';
 
-CREATE FUNCTION vector_dims("v" vector) RETURNS INT
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_dims_wrapper';
+CREATE FUNCTION vector_dims(vector) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_dims_wrapper';
 
-CREATE FUNCTION vector_norm("v" vector) RETURNS real
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vector_norm_wrapper';
+CREATE FUNCTION vector_dims(vecf16) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_dims_wrapper';
+
+CREATE FUNCTION vector_dims(svector) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_dims_wrapper';
+
+CREATE FUNCTION vector_dims(bvector) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_dims_wrapper';
+
+CREATE FUNCTION vector_dims(veci8) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_dims_wrapper';
+
+CREATE FUNCTION vector_norm(vector) RETURNS real
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_norm_wrapper';
+
+CREATE FUNCTION vector_norm(vecf16) RETURNS real
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_norm_wrapper';
+
+CREATE FUNCTION vector_norm(svector) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_norm_wrapper';
+
+CREATE FUNCTION vector_norm(bvector) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_norm_wrapper';
+
+CREATE FUNCTION vector_norm(veci8) RETURNS real
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_norm_wrapper';
+
+CREATE FUNCTION to_svector("dims" INT, "indexes" INT[], "values" real[]) RETURNS svector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_svector_wrapper';
+
+CREATE FUNCTION binarize("vector" vector) RETURNS bvector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binarize_wrapper';
+
+CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
 
 -- List of aggregates
 
 CREATE AGGREGATE avg(vector) (
-    SFUNC = _vectors_vector_accum,
-    STYPE = vector_accumulate_state,
-    COMBINEFUNC = _vectors_vector_combine,
-    FINALFUNC = _vectors_vector_final,
+    SFUNC = _vectors_vecf32_aggregate_avg_sfunc,
+    STYPE = _vectors_vecf32_aggregate_avg_stype,
+    COMBINEFUNC = _vectors_vecf32_aggregate_avg_combinefunc,
+    FINALFUNC = _vectors_vecf32_aggregate_avg_finalfunc,
     INITCOND = '0, []',
     PARALLEL = SAFE
 );

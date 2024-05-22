@@ -134,14 +134,7 @@ unsafe fn rewrite_opclass(istmt: *mut pgrx::pg_sys::IndexStmt) {
                 Ok("vector_l2_ops") => "vector_l2_ops",
                 Ok("vector_ip_ops") => "vector_dot_ops",
                 Ok("vector_cosine_ops") => "vector_cos_ops",
-                Ok(other) => {
-                    pgrx::warning!(
-                        "Operator class '{other}' not recognized, will not be overwritten"
-                    );
-                    return;
-                }
-                Err(_) => {
-                    pgrx::warning!("Operator class parse failed, will not be overwritten");
+                Ok(_) | Err(_) => {
                     return;
                 }
             };

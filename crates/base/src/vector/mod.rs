@@ -11,6 +11,7 @@ pub use vecf32::{Vecf32Borrowed, Vecf32Owned};
 pub use veci8::{Veci8Borrowed, Veci8Owned};
 
 use crate::scalar::ScalarLike;
+use crate::scalar::F32;
 use serde::{Deserialize, Serialize};
 
 #[repr(u8)]
@@ -45,6 +46,10 @@ pub trait VectorBorrowed: Copy {
     fn dims(&self) -> u32;
 
     fn to_vec(&self) -> Vec<Self::Scalar>;
+
+    fn length(&self) -> F32;
+
+    fn normalize(&self) -> Self::Owned;
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

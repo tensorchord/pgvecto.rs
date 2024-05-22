@@ -1,6 +1,7 @@
 [toolchain]
-channel = "nightly-2024-03-27"
+channel = "nightly-2024-05-22"
 profile = "default"
+components = ["rust-analyzer", "rust-src"]
 targets = [
     "aarch64-apple-darwin",
     "aarch64-unknown-linux-gnu",

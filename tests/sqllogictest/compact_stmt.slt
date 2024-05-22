@@ -2,9 +2,6 @@ statement ok
 SET search_path TO pg_temp, vectors;
 
 statement ok
-DROP TABLE IF EXISTS t;
-
-statement ok
 SET vectors.pgvector_compatibility=on;
 
 statement ok

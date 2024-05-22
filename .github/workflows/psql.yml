@@ -95,7 +95,7 @@ jobs:
           echo PGRX_TARGET_INFO_PATH_PG$VERSION=$HOME/.pgrx_binding >> "$GITHUB_ENV"
       - name: Build Release
         run: |
-          cargo build --no-default-features --features "pg$VERSION" --release
+          cargo build --lib --no-default-features --features "pg$VERSION" --release
           ./tools/schema.sh --no-default-features --features "pg$VERSION" --release | expand -t 4 > ./target/vectors--$SEMVER.sql
       - name: Set up PostgreSQL
         run: |

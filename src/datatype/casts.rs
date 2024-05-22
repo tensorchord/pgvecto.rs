@@ -93,15 +93,16 @@ fn _vectors_cast_vecf32_to_bvecf32(
     _typmod: i32,
     _explicit: bool,
 ) -> BVecf32Output {
-    let mut values = BVecf32Owned::new_zeroed(vector.len() as u16);
+    let n = vector.dims();
+    let mut data = vec![0_usize; n.div_ceil(usize::BITS as _)];
     for (i, &x) in vector.slice().iter().enumerate() {
         match x.to_f32() {
-            x if x == 0. => {}
-            x if x == 1. => values.set(i, true),
+            x if x == 0.0 => (),
+            x if x == 1.0 => data[i / BVEC_WIDTH] |= 1 << (i % BVEC_WIDTH),
             _ => bad_literal("The vector contains a non-binary value."),
         }
     }
-    BVecf32Output::new(values.for_borrow())
+    BVecf32Output::new(BVecf32Borrowed::new(n as _, &data))
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]

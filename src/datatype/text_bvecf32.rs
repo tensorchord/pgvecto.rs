@@ -26,14 +26,14 @@ fn _vectors_bvecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> BVecf32Output {
             bad_literal(&e.to_string());
         }
         Ok(vector) => {
-            check_value_dims_65535(vector.len());
-            let mut values = BVecf32Owned::new_zeroed(vector.len() as u16);
+            let n = check_value_dims_65535(vector.len()).get() as usize;
+            let mut data = vec![0_usize; n.div_ceil(usize::BITS as _)];
             for (i, &x) in vector.iter().enumerate() {
                 if x {
-                    values.set(i, true);
+                    data[i / BVEC_WIDTH] |= 1 << (i % BVEC_WIDTH);
                 }
             }
-            BVecf32Output::new(values.for_borrow())
+            BVecf32Output::new(BVecf32Borrowed::new(n as _, &data))
         }
     }
 }

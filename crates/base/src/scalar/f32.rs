@@ -1,4 +1,5 @@
 use super::ScalarLike;
+use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display};
@@ -65,7 +66,7 @@ unsafe impl bytemuck::Zeroable for F32 {}
 
 unsafe impl bytemuck::Pod for F32 {}
 
-impl num_traits::Zero for F32 {
+impl Zero for F32 {
     fn zero() -> Self {
         Self(f32::zero())
     }
@@ -468,7 +469,7 @@ impl AddAssign<F32> for F32 {
 
 impl Sum for F32 {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.fold(F32(0.0), Add::add)
+        iter.fold(F32::zero(), Add::add)
     }
 }
 
