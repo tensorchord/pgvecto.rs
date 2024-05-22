@@ -369,7 +369,7 @@ fn _vectors_svector_accum<'a>(
             let mut state = match state.check_capacity(value.len()) {
                 true => state,
                 false => {
-                    // allocate a new state and merge the input vector
+                    // allocate a new state and merge the old state
                     let mut new_state = SparseAccumulateState::new_with_capacity(
                         dims as u32,
                         state.len() + value.len(),
@@ -382,6 +382,7 @@ fn _vectors_svector_accum<'a>(
                     new_state
                 }
             };
+            // merge the input vector into state
             state.merge_in_place(value.for_borrow());
             state.count = count + 1;
             state
@@ -405,6 +406,7 @@ fn _vectors_svector_combine<'a>(
         let dims1 = state1.dims();
         let dims2 = state2.dims();
         check_matched_dims(dims1, dims2);
+        // ensure state1 has larger capacity
         let (state1, state2) = if state1.capacity() > state2.capacity() {
             (state1, state2)
         } else {
@@ -413,7 +415,7 @@ fn _vectors_svector_combine<'a>(
         let mut state = match state1.check_capacity(state2.len()) {
             true => state1,
             false => {
-                // allocate a new state and merge the another state
+                // allocate a new state and merge the old state
                 let mut new_state = SparseAccumulateState::new_with_capacity(
                     dims1 as u32,
                     state1.len() + state2.len(),
@@ -426,6 +428,7 @@ fn _vectors_svector_combine<'a>(
                 new_state
             }
         };
+        // merge state2 into state
         state.merge_in_place(SVecf32Borrowed::new(
             state2.dims() as u32,
             state2.indexes(),

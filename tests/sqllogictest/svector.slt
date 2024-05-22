@@ -30,6 +30,21 @@ SELECT sum(val) FROM t;
 ----
 [5, 7, 9]
 
+statement ok
+CREATE TABLE test_vectors (id serial, data vector(1000));
+
+statement ok
+INSERT INTO test_vectors (data)
+SELECT 
+    ARRAY_AGG(CASE WHEN random() < 0.95 THEN 0 ELSE (random() * 99 + 1)::real END)::real[]::vector AS v 
+FROM generate_series(1, 1000 * 5000) i
+GROUP BY i % 5000;
+
+query ?
+SELECT count(*) FROM test_vectors;
+----
+5000
+
 query R
 SELECT vector_norm('[3,4]'::svector);
 ----
@@ -89,6 +104,12 @@ SELECT avg(v) FROM unnest(ARRAY[to_svector(32, '{0,1,2,3,4,5,6,7,8,9,10,11,12,13
 ----
 [0.33333334, 0.6666667, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.6666667, 0.33333334, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
+# test avg(svector) get the same result as avg(vector)
+query ?
+SELECT avg(data) = avg(data::svector)::vector FROM test_vectors;
+----
+t
+
 query ?
 SELECT sum(v) FROM unnest(ARRAY['[1,2,3]'::svector, '[3,5,7]']) v;
 ----
@@ -133,3 +154,12 @@ query ?
 SELECT sum(v) FROM unnest(ARRAY[to_svector(32, '{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}', '{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}'), to_svector(32, '{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}', '{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}'), to_svector(32, '{2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}', '{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}') ]) v;
 ----
 [1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+# test sum(svector) get the same result as sum(vector)
+query ?
+SELECT sum(data) = sum(data::svector)::vector FROM test_vectors;
+----
+t
+
+statement ok
+DROP TABLE t, test_vectors;
