@@ -1,4 +1,3 @@
-mod config;
 mod message;
 mod protocol;
 

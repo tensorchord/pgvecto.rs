@@ -1,6 +1,7 @@
-use super::config::{
-    LAST_CHUNK, PIPE_PROTO_DEST_CSVLOG, PIPE_PROTO_DEST_JSONLOG, PIPE_PROTO_DEST_STDERR,
-};
+const PIPE_PROTO_DEST_STDERR: u8 = 0x10;
+const PIPE_PROTO_DEST_CSVLOG: u8 = 0x20;
+const PIPE_PROTO_DEST_JSONLOG: u8 = 0x40;
+const LAST_CHUNK: u8 = 0x01;
 use chrono::Local;
 use serde::Serialize;
 use std::io::Write;
