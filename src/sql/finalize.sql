@@ -667,12 +667,6 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binari
 CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
 
-CREATE FUNCTION vector_dims("v" svector) RETURNS INT
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svectorf32_dims_wrapper';
-
-CREATE FUNCTION vector_norm("v" svector) RETURNS real
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svectorf32_norm_wrapper';
-
 -- List of aggregates
 
 CREATE AGGREGATE avg(vector) (
