@@ -17,12 +17,21 @@ mod error;
 mod gucs;
 mod index;
 mod ipc;
+mod logger;
 mod upgrade;
 mod utils;
 
 pgrx::pg_module_magic!();
 pgrx::extension_sql_file!("./sql/bootstrap.sql", bootstrap);
 pgrx::extension_sql_file!("./sql/finalize.sql", finalize);
+#[pgrx::pg_extern]
+fn test_logger() -> String {
+    log::error!("pjw-测试");
+    let des = unsafe { pgrx::pg_sys::Log_destination };
+    log::error!("{}", des);
+    log::trace!("测试");
+    String::from("OK")
+}
 
 #[pgrx::pg_guard]
 unsafe extern "C" fn _PG_init() {
@@ -31,6 +40,9 @@ unsafe extern "C" fn _PG_init() {
         bad_init();
     }
     unsafe {
+        let mut log = logger::VectorLogger::build();
+        log.filter_level(log::LevelFilter::Trace);
+        log.init();
         detect::init();
         gucs::init();
         index::init();

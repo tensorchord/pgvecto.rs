@@ -34,7 +34,7 @@ extern "C" fn _vectors_main(_arg: pgrx::pg_sys::Datum) {
         pub layout: std::alloc::Layout,
     }
     {
-        let mut builder = logger::VectorLogger::build();
+        let mut builder = crate::logger::VectorLogger::build();
         #[cfg(not(debug_assertions))]
         {
             builder.filter_level(log::LevelFilter::Info);

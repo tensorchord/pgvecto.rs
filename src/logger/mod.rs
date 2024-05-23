@@ -1,8 +1,8 @@
 mod message;
 mod protocol;
 
-use crate::protocol::pipe_log;
 use log::{set_boxed_logger, set_max_level, LevelFilter, Metadata, Record};
+use protocol::pipe_log;
 
 #[derive(Debug, Clone)]
 pub struct VectorLogger {

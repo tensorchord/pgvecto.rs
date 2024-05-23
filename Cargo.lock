@@ -1764,18 +1764,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "logger"
-version = "0.0.0"
-dependencies = [
- "chrono",
- "csv",
- "log",
- "pgrx",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "memchr"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3120,13 +3108,14 @@ dependencies = [
  "bincode",
  "bytemuck",
  "byteorder",
+ "chrono",
+ "csv",
  "detect",
  "embedding",
  "env_logger",
  "interprocess_atomic_wait",
  "libc",
  "log",
- "logger",
  "memfd",
  "memmap2",
  "num-traits",
