@@ -19,20 +19,20 @@ use std::ops::{Deref, DerefMut};
 use std::ptr::NonNull;
 
 #[repr(C, align(8))]
-pub struct Vecf32AggregateStypeHeader {
+pub struct Vecf32AggregateAvgSumStypeHeader {
     varlena: u32,
     dims: u16,
     count: u64,
     phantom: [F32; 0],
 }
 
-impl Vecf32AggregateStypeHeader {
+impl Vecf32AggregateAvgSumStypeHeader {
     fn varlena(size: usize) -> u32 {
         (size << 2) as u32
     }
     fn layout(len: usize) -> Layout {
         let _ = u16::try_from(len).unwrap();
-        let layout_alpha = Layout::new::<Vecf32AggregateStypeHeader>();
+        let layout_alpha = Layout::new::<Vecf32AggregateAvgSumStypeHeader>();
         let layout_beta = Layout::array::<F32>(len).unwrap();
         let layout = layout_alpha.extend(layout_beta).unwrap().0;
         layout.pad_to_align()
@@ -51,44 +51,45 @@ impl Vecf32AggregateStypeHeader {
     }
 }
 
-pub enum Vecf32AggregateStype<'a> {
-    Owned(NonNull<Vecf32AggregateStypeHeader>),
-    Borrowed(&'a mut Vecf32AggregateStypeHeader),
+pub enum Vecf32AggregateAvgSumStype<'a> {
+    Owned(NonNull<Vecf32AggregateAvgSumStypeHeader>),
+    Borrowed(&'a mut Vecf32AggregateAvgSumStypeHeader),
 }
 
-impl<'a> Vecf32AggregateStype<'a> {
-    unsafe fn new(p: NonNull<Vecf32AggregateStypeHeader>) -> Self {
+impl<'a> Vecf32AggregateAvgSumStype<'a> {
+    unsafe fn new(p: NonNull<Vecf32AggregateAvgSumStypeHeader>) -> Self {
         let q = unsafe {
             NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.as_ptr().cast()).cast()).unwrap()
         };
         if p != q {
-            Vecf32AggregateStype::Owned(q)
+            Vecf32AggregateAvgSumStype::Owned(q)
         } else {
-            unsafe { Vecf32AggregateStype::Borrowed(&mut *p.as_ptr()) }
+            unsafe { Vecf32AggregateAvgSumStype::Borrowed(&mut *p.as_ptr()) }
         }
     }
 
     pub fn new_with_slice(count: u64, slice: &[F32]) -> Self {
         let dims = slice.len();
-        let layout = Vecf32AggregateStypeHeader::layout(dims);
+        let layout = Vecf32AggregateAvgSumStypeHeader::layout(dims);
         unsafe {
-            let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut Vecf32AggregateStypeHeader;
+            let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut Vecf32AggregateAvgSumStypeHeader;
             std::ptr::addr_of_mut!((*ptr).varlena)
-                .write(Vecf32AggregateStypeHeader::varlena(layout.size()));
+                .write(Vecf32AggregateAvgSumStypeHeader::varlena(layout.size()));
             std::ptr::addr_of_mut!((*ptr).dims).write(dims as u16);
             std::ptr::addr_of_mut!((*ptr).count).write(count);
             if dims > 0 {
                 std::ptr::copy_nonoverlapping(slice.as_ptr(), (*ptr).phantom.as_mut_ptr(), dims);
             }
-            Vecf32AggregateStype::Owned(NonNull::new(ptr).unwrap())
+            Vecf32AggregateAvgSumStype::Owned(NonNull::new(ptr).unwrap())
         }
     }
 
-    pub fn into_raw(self) -> *mut Vecf32AggregateStypeHeader {
+    pub fn into_raw(self) -> *mut Vecf32AggregateAvgSumStypeHeader {
         let result = match self {
-            Vecf32AggregateStype::Owned(p) => p.as_ptr(),
-            Vecf32AggregateStype::Borrowed(ref p) => {
-                *p as *const Vecf32AggregateStypeHeader as *mut Vecf32AggregateStypeHeader
+            Vecf32AggregateAvgSumStype::Owned(p) => p.as_ptr(),
+            Vecf32AggregateAvgSumStype::Borrowed(ref p) => {
+                *p as *const Vecf32AggregateAvgSumStypeHeader
+                    as *mut Vecf32AggregateAvgSumStypeHeader
             }
         };
         std::mem::forget(self);
@@ -96,49 +97,50 @@ impl<'a> Vecf32AggregateStype<'a> {
     }
 }
 
-impl Deref for Vecf32AggregateStype<'_> {
-    type Target = Vecf32AggregateStypeHeader;
+impl Deref for Vecf32AggregateAvgSumStype<'_> {
+    type Target = Vecf32AggregateAvgSumStypeHeader;
 
     fn deref(&self) -> &Self::Target {
         match self {
-            Vecf32AggregateStype::Owned(p) => unsafe { p.as_ref() },
-            Vecf32AggregateStype::Borrowed(p) => p,
+            Vecf32AggregateAvgSumStype::Owned(p) => unsafe { p.as_ref() },
+            Vecf32AggregateAvgSumStype::Borrowed(p) => p,
         }
     }
 }
 
-impl DerefMut for Vecf32AggregateStype<'_> {
+impl DerefMut for Vecf32AggregateAvgSumStype<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match self {
-            Vecf32AggregateStype::Owned(p) => unsafe { p.as_mut() },
-            Vecf32AggregateStype::Borrowed(p) => p,
+            Vecf32AggregateAvgSumStype::Owned(p) => unsafe { p.as_mut() },
+            Vecf32AggregateAvgSumStype::Borrowed(p) => p,
         }
     }
 }
 
-impl Drop for Vecf32AggregateStype<'_> {
+impl Drop for Vecf32AggregateAvgSumStype<'_> {
     fn drop(&mut self) {
         match self {
-            Vecf32AggregateStype::Owned(p) => unsafe {
+            Vecf32AggregateAvgSumStype::Owned(p) => unsafe {
                 pgrx::pg_sys::pfree(p.as_ptr().cast());
             },
-            Vecf32AggregateStype::Borrowed(_) => {}
+            Vecf32AggregateAvgSumStype::Borrowed(_) => {}
         }
     }
 }
 
-impl FromDatum for Vecf32AggregateStype<'_> {
+impl FromDatum for Vecf32AggregateAvgSumStype<'_> {
     unsafe fn from_polymorphic_datum(datum: Datum, is_null: bool, _typmod: Oid) -> Option<Self> {
         if is_null {
             None
         } else {
-            let ptr = NonNull::new(datum.cast_mut_ptr::<Vecf32AggregateStypeHeader>()).unwrap();
-            unsafe { Some(Vecf32AggregateStype::new(ptr)) }
+            let ptr =
+                NonNull::new(datum.cast_mut_ptr::<Vecf32AggregateAvgSumStypeHeader>()).unwrap();
+            unsafe { Some(Vecf32AggregateAvgSumStype::new(ptr)) }
         }
     }
 }
 
-impl IntoDatum for Vecf32AggregateStype<'_> {
+impl IntoDatum for Vecf32AggregateAvgSumStype<'_> {
     fn into_datum(self) -> Option<Datum> {
         Some(Datum::from(self.into_raw() as *mut ()))
     }
@@ -147,7 +149,7 @@ impl IntoDatum for Vecf32AggregateStype<'_> {
         let namespace = pgrx::pg_catalog::PgNamespace::search_namespacename(c"vectors").unwrap();
         let namespace = namespace.get().expect("pgvecto.rs is not installed.");
         let t = pgrx::pg_catalog::PgType::search_typenamensp(
-            c"_vectors_vecf32_aggregate_stype",
+            c"_vectors_vecf32_aggregate_avg_sum_stype",
             namespace.oid(),
         )
         .unwrap();
@@ -156,25 +158,25 @@ impl IntoDatum for Vecf32AggregateStype<'_> {
     }
 }
 
-unsafe impl SqlTranslatable for Vecf32AggregateStype<'_> {
+unsafe impl SqlTranslatable for Vecf32AggregateAvgSumStype<'_> {
     fn argument_sql() -> Result<SqlMapping, ArgumentError> {
         Ok(SqlMapping::As(String::from(
-            "_vectors_vecf32_aggregate_stype",
+            "_vectors_vecf32_aggregate_avg_sum_stype",
         )))
     }
     fn return_sql() -> Result<Returns, ReturnsError> {
         Ok(Returns::One(SqlMapping::As(String::from(
-            "_vectors_vecf32_aggregate_stype",
+            "_vectors_vecf32_aggregate_avg_sum_stype",
         ))))
     }
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_vecf32_aggregate_stype_in(
+fn _vectors_vecf32_aggregate_avg_sum_stype_in(
     input: &CStr,
     _oid: Oid,
     _typmod: i32,
-) -> Vecf32AggregateStype<'_> {
+) -> Vecf32AggregateAvgSumStype<'_> {
     fn parse(input: &[u8]) -> Result<(u64, Vec<F32>), String> {
         use crate::utils::parse::parse_vector;
         let hint = "Invalid input format for _vecf32_aggregate_avg_stype, using \'bigint, array \' like \'1, [1]\'";
@@ -195,12 +197,12 @@ fn _vectors_vecf32_aggregate_stype_in(
         Err(e) => {
             bad_literal(&e.to_string());
         }
-        Ok((count, vector)) => Vecf32AggregateStype::new_with_slice(count, &vector),
+        Ok((count, vector)) => Vecf32AggregateAvgSumStype::new_with_slice(count, &vector),
     }
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_vecf32_aggregate_stype_out(state: Vecf32AggregateStype<'_>) -> CString {
+fn _vectors_vecf32_aggregate_avg_sum_stype_out(state: Vecf32AggregateAvgSumStype<'_>) -> CString {
     let mut buffer = String::new();
     buffer.push_str(format!("{}, ", state.count()).as_str());
     buffer.push('[');
@@ -216,14 +218,14 @@ fn _vectors_vecf32_aggregate_stype_out(state: Vecf32AggregateStype<'_>) -> CStri
 
 /// accumulate intermediate state for vector average
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_vecf32_aggregate_sfunc<'a>(
-    mut state: Vecf32AggregateStype<'a>,
+fn _vectors_vecf32_aggregate_avg_sum_sfunc<'a>(
+    mut state: Vecf32AggregateAvgSumStype<'a>,
     value: Vecf32Input<'_>,
-) -> Vecf32AggregateStype<'a> {
+) -> Vecf32AggregateAvgSumStype<'a> {
     let count = state.count();
     match count {
         // if the state is empty, copy the input vector
-        0 => Vecf32AggregateStype::new_with_slice(1, value.iter().as_slice()),
+        0 => Vecf32AggregateAvgSumStype::new_with_slice(1, value.iter().as_slice()),
         _ => {
             let dims = state.dims();
             let value_dims = value.dims();
@@ -243,9 +245,9 @@ fn _vectors_vecf32_aggregate_sfunc<'a>(
 /// combine two intermediate states for vector average
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf32_aggregate_combinefunc<'a>(
-    mut state1: Vecf32AggregateStype<'a>,
-    state2: Vecf32AggregateStype<'a>,
-) -> Vecf32AggregateStype<'a> {
+    mut state1: Vecf32AggregateAvgSumStype<'a>,
+    state2: Vecf32AggregateAvgSumStype<'a>,
+) -> Vecf32AggregateAvgSumStype<'a> {
     let count1 = state1.count();
     let count2 = state2.count();
     if count1 == 0 {
@@ -269,7 +271,7 @@ fn _vectors_vecf32_aggregate_combinefunc<'a>(
 /// finalize the intermediate state for vector average
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf32_aggregate_avg_finalfunc(
-    state: Vecf32AggregateStype<'_>,
+    state: Vecf32AggregateAvgSumStype<'_>,
 ) -> Option<Vecf32Output> {
     let count = state.count();
     if count == 0 {
@@ -289,7 +291,7 @@ fn _vectors_vecf32_aggregate_avg_finalfunc(
 /// finalize the intermediate state for vector average
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf32_aggregate_sum_finalfunc(
-    state: Vecf32AggregateStype<'_>,
+    state: Vecf32AggregateAvgSumStype<'_>,
 ) -> Option<Vecf32Output> {
     let count = state.count();
     if count == 0 {

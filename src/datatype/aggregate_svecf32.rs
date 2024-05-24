@@ -20,7 +20,7 @@ use std::ops::{Deref, DerefMut};
 use std::ptr::NonNull;
 
 #[repr(C, align(8))]
-pub struct SVecf32AggregateStypeHeader {
+pub struct SVecf32AggregateAvgSumStypeHeader {
     varlena: u32,
     dims: u32,
     len: u32,
@@ -29,13 +29,13 @@ pub struct SVecf32AggregateStypeHeader {
     phantom: [F32; 0],
 }
 
-impl SVecf32AggregateStypeHeader {
+impl SVecf32AggregateAvgSumStypeHeader {
     fn varlena(size: usize) -> u32 {
         (size << 2) as u32
     }
     fn layout(capacity: usize) -> Layout {
         u32::try_from(capacity).expect("Vector is too large.");
-        let layout_alpha = Layout::new::<SVecf32AggregateStypeHeader>();
+        let layout_alpha = Layout::new::<SVecf32AggregateAvgSumStypeHeader>();
         let layout1 = Layout::array::<u32>(capacity).unwrap();
         let layout2 = Layout::array::<F32>(capacity).unwrap();
         let layout = layout_alpha.extend(layout1).unwrap().0.pad_to_align();
@@ -96,7 +96,7 @@ impl SVecf32AggregateStypeHeader {
     }
 }
 
-pub struct SVecf32AggregateStypeBorrowed<'a> {
+pub struct SVecf32AggregateAvgSumStypeBorrowed<'a> {
     #[allow(dead_code)]
     dims: u32,
     len: u32,
@@ -107,7 +107,7 @@ pub struct SVecf32AggregateStypeBorrowed<'a> {
     values: &'a mut [F32],
 }
 
-impl<'a> SVecf32AggregateStypeBorrowed<'a> {
+impl<'a> SVecf32AggregateAvgSumStypeBorrowed<'a> {
     pub fn new(
         dims: u32,
         len: u32,
@@ -179,20 +179,20 @@ impl<'a> SVecf32AggregateStypeBorrowed<'a> {
     }
 }
 
-pub enum SVecf32AggregateStype<'a> {
-    Owned(NonNull<SVecf32AggregateStypeHeader>),
-    Borrowed(&'a mut SVecf32AggregateStypeHeader),
+pub enum SVecf32AggregateAvgSumStype<'a> {
+    Owned(NonNull<SVecf32AggregateAvgSumStypeHeader>),
+    Borrowed(&'a mut SVecf32AggregateAvgSumStypeHeader),
 }
 
-impl SVecf32AggregateStype<'_> {
-    unsafe fn new(p: NonNull<SVecf32AggregateStypeHeader>) -> Self {
+impl SVecf32AggregateAvgSumStype<'_> {
+    unsafe fn new(p: NonNull<SVecf32AggregateAvgSumStypeHeader>) -> Self {
         let q = unsafe {
             NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.as_ptr().cast()).cast()).unwrap()
         };
         if p != q {
-            SVecf32AggregateStype::Owned(q)
+            SVecf32AggregateAvgSumStype::Owned(q)
         } else {
-            unsafe { SVecf32AggregateStype::Borrowed(&mut *p.as_ptr()) }
+            unsafe { SVecf32AggregateAvgSumStype::Borrowed(&mut *p.as_ptr()) }
         }
     }
 
@@ -202,26 +202,26 @@ impl SVecf32AggregateStype<'_> {
         let capacity = std::cmp::max(usize::next_power_of_two(capacity), 16);
         // set capacity at most dims
         let capacity = std::cmp::min(capacity, dims as usize);
-        let layout = SVecf32AggregateStypeHeader::layout(capacity);
+        let layout = SVecf32AggregateAvgSumStypeHeader::layout(capacity);
         unsafe {
-            let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut SVecf32AggregateStypeHeader;
+            let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut SVecf32AggregateAvgSumStypeHeader;
             std::ptr::addr_of_mut!((*ptr).varlena)
-                .write(SVecf32AggregateStypeHeader::varlena(layout.size()));
+                .write(SVecf32AggregateAvgSumStypeHeader::varlena(layout.size()));
             std::ptr::addr_of_mut!((*ptr).dims).write(dims);
             std::ptr::addr_of_mut!((*ptr).len).write(0);
             std::ptr::addr_of_mut!((*ptr).capacity).write(capacity as u32);
             std::ptr::addr_of_mut!((*ptr).count).write(0);
-            SVecf32AggregateStype::Owned(NonNull::new(ptr).unwrap())
+            SVecf32AggregateAvgSumStype::Owned(NonNull::new(ptr).unwrap())
         }
     }
 
-    pub fn for_mut_borrow(&mut self) -> SVecf32AggregateStypeBorrowed<'_> {
+    pub fn for_mut_borrow(&mut self) -> SVecf32AggregateAvgSumStypeBorrowed<'_> {
         let dims = self.dims() as u32;
         let len = self.len() as u32;
         let capacity = self.capacity() as u32;
         let count = self.count();
         let (indexes, values) = self.indexes_values_mut();
-        SVecf32AggregateStypeBorrowed::new(dims, len, capacity, count, indexes, values)
+        SVecf32AggregateAvgSumStypeBorrowed::new(dims, len, capacity, count, indexes, values)
     }
 
     /// check whether the rest of the state is enough to append the sparse vector of the given length. Approximately predict the rest of the state is enough.
@@ -236,11 +236,12 @@ impl SVecf32AggregateStype<'_> {
         self.len = len;
     }
 
-    pub fn into_raw(self) -> *mut SVecf32AggregateStypeHeader {
+    pub fn into_raw(self) -> *mut SVecf32AggregateAvgSumStypeHeader {
         let result = match self {
-            SVecf32AggregateStype::Owned(p) => p.as_ptr(),
-            SVecf32AggregateStype::Borrowed(ref p) => {
-                *p as *const SVecf32AggregateStypeHeader as *mut SVecf32AggregateStypeHeader
+            SVecf32AggregateAvgSumStype::Owned(p) => p.as_ptr(),
+            SVecf32AggregateAvgSumStype::Borrowed(ref p) => {
+                *p as *const SVecf32AggregateAvgSumStypeHeader
+                    as *mut SVecf32AggregateAvgSumStypeHeader
             }
         };
         std::mem::forget(self);
@@ -248,49 +249,50 @@ impl SVecf32AggregateStype<'_> {
     }
 }
 
-impl Deref for SVecf32AggregateStype<'_> {
-    type Target = SVecf32AggregateStypeHeader;
+impl Deref for SVecf32AggregateAvgSumStype<'_> {
+    type Target = SVecf32AggregateAvgSumStypeHeader;
 
     fn deref(&self) -> &Self::Target {
         match self {
-            SVecf32AggregateStype::Owned(p) => unsafe { p.as_ref() },
-            SVecf32AggregateStype::Borrowed(p) => p,
+            SVecf32AggregateAvgSumStype::Owned(p) => unsafe { p.as_ref() },
+            SVecf32AggregateAvgSumStype::Borrowed(p) => p,
         }
     }
 }
 
-impl DerefMut for SVecf32AggregateStype<'_> {
+impl DerefMut for SVecf32AggregateAvgSumStype<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match self {
-            SVecf32AggregateStype::Owned(p) => unsafe { p.as_mut() },
-            SVecf32AggregateStype::Borrowed(p) => p,
+            SVecf32AggregateAvgSumStype::Owned(p) => unsafe { p.as_mut() },
+            SVecf32AggregateAvgSumStype::Borrowed(p) => p,
         }
     }
 }
 
-impl Drop for SVecf32AggregateStype<'_> {
+impl Drop for SVecf32AggregateAvgSumStype<'_> {
     fn drop(&mut self) {
         match self {
-            SVecf32AggregateStype::Owned(p) => unsafe {
+            SVecf32AggregateAvgSumStype::Owned(p) => unsafe {
                 pgrx::pg_sys::pfree(p.as_ptr().cast());
             },
-            SVecf32AggregateStype::Borrowed(_) => {}
+            SVecf32AggregateAvgSumStype::Borrowed(_) => {}
         }
     }
 }
 
-impl FromDatum for SVecf32AggregateStype<'_> {
+impl FromDatum for SVecf32AggregateAvgSumStype<'_> {
     unsafe fn from_polymorphic_datum(datum: Datum, is_null: bool, _typmod: Oid) -> Option<Self> {
         if is_null {
             None
         } else {
-            let ptr = NonNull::new(datum.cast_mut_ptr::<SVecf32AggregateStypeHeader>()).unwrap();
-            unsafe { Some(SVecf32AggregateStype::new(ptr)) }
+            let ptr =
+                NonNull::new(datum.cast_mut_ptr::<SVecf32AggregateAvgSumStypeHeader>()).unwrap();
+            unsafe { Some(SVecf32AggregateAvgSumStype::new(ptr)) }
         }
     }
 }
 
-impl IntoDatum for SVecf32AggregateStype<'_> {
+impl IntoDatum for SVecf32AggregateAvgSumStype<'_> {
     fn into_datum(self) -> Option<Datum> {
         Some(Datum::from(self.into_raw() as *mut ()))
     }
@@ -299,7 +301,7 @@ impl IntoDatum for SVecf32AggregateStype<'_> {
         let namespace = pgrx::pg_catalog::PgNamespace::search_namespacename(c"vectors").unwrap();
         let namespace = namespace.get().expect("pgvecto.rs is not installed.");
         let t = pgrx::pg_catalog::PgType::search_typenamensp(
-            c"_vectors_svecf32_aggregate_stype ",
+            c"_vectors_svecf32_aggregate_avg_sum_stype ",
             namespace.oid(),
         )
         .unwrap();
@@ -308,25 +310,25 @@ impl IntoDatum for SVecf32AggregateStype<'_> {
     }
 }
 
-unsafe impl SqlTranslatable for SVecf32AggregateStype<'_> {
+unsafe impl SqlTranslatable for SVecf32AggregateAvgSumStype<'_> {
     fn argument_sql() -> Result<SqlMapping, ArgumentError> {
         Ok(SqlMapping::As(String::from(
-            "_vectors_svecf32_aggregate_stype",
+            "_vectors_svecf32_aggregate_avg_sum_stype",
         )))
     }
     fn return_sql() -> Result<Returns, ReturnsError> {
         Ok(Returns::One(SqlMapping::As(String::from(
-            "_vectors_svecf32_aggregate_stype",
+            "_vectors_svecf32_aggregate_avg_sum_stype",
         ))))
     }
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_aggregate_stype_in(
+fn _vectors_svecf32_aggregate_avg_sum_stype_in(
     input: &CStr,
     _oid: Oid,
     _typmod: i32,
-) -> SVecf32AggregateStype<'_> {
+) -> SVecf32AggregateAvgSumStype<'_> {
     fn parse(input: &[u8]) -> Result<(u64, Vec<F32>), String> {
         use crate::utils::parse::parse_vector;
         let hint = "Invalid input format for _vecf32_aggregate_avg_stype, using \'bigint, array \' like \'1, [1]\'";
@@ -348,7 +350,7 @@ fn _vectors_svecf32_aggregate_stype_in(
         }
         Ok((count, vector)) => {
             // This function only used for create a new empty state.
-            let mut state = SVecf32AggregateStype::new_with_capacity(vector.len() as u32, 0);
+            let mut state = SVecf32AggregateAvgSumStype::new_with_capacity(vector.len() as u32, 0);
             state.count = count;
             state
         }
@@ -356,7 +358,7 @@ fn _vectors_svecf32_aggregate_stype_in(
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_aggregate_stype_out(state: SVecf32AggregateStype<'_>) -> CString {
+fn _vectors_svecf32_aggregate_avg_sum_stype_out(state: SVecf32AggregateAvgSumStype<'_>) -> CString {
     let mut buffer = String::new();
     buffer.push_str(format!("{}, ", state.count()).as_str());
     // This function is never used.
@@ -366,16 +368,16 @@ fn _vectors_svecf32_aggregate_stype_out(state: SVecf32AggregateStype<'_>) -> CSt
 
 /// accumulate intermediate state for sparse vector
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_aggregate_sfunc<'a>(
-    state: SVecf32AggregateStype<'a>,
+fn _vectors_svecf32_aggregate_avg_sum_sfunc<'a>(
+    state: SVecf32AggregateAvgSumStype<'a>,
     value: SVecf32Input<'_>,
-) -> SVecf32AggregateStype<'a> {
+) -> SVecf32AggregateAvgSumStype<'a> {
     let count = state.count();
     match count {
         // if the state is empty, copy the input vector
         0 => {
             let mut state =
-                SVecf32AggregateStype::new_with_capacity(value.dims() as u32, value.len());
+                SVecf32AggregateAvgSumStype::new_with_capacity(value.dims() as u32, value.len());
             state.merge_in_place(value.for_borrow());
             state.count = 1;
             state
@@ -388,7 +390,7 @@ fn _vectors_svecf32_aggregate_sfunc<'a>(
                 true => state,
                 false => {
                     // allocate a new state and merge the old state
-                    let mut new_state = SVecf32AggregateStype::new_with_capacity(
+                    let mut new_state = SVecf32AggregateAvgSumStype::new_with_capacity(
                         dims as u32,
                         state.len() + value.len(),
                     );
@@ -410,10 +412,10 @@ fn _vectors_svecf32_aggregate_sfunc<'a>(
 
 /// combine two intermediate states for sparse vector
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_aggregate_combinefunc<'a>(
-    state1: SVecf32AggregateStype<'a>,
-    state2: SVecf32AggregateStype<'a>,
-) -> SVecf32AggregateStype<'a> {
+fn _vectors_svecf32_aggregate_avg_sum_combinefunc<'a>(
+    state1: SVecf32AggregateAvgSumStype<'a>,
+    state2: SVecf32AggregateAvgSumStype<'a>,
+) -> SVecf32AggregateAvgSumStype<'a> {
     let count1 = state1.count();
     let count2 = state2.count();
     if count1 == 0 {
@@ -434,7 +436,7 @@ fn _vectors_svecf32_aggregate_combinefunc<'a>(
             true => state1,
             false => {
                 // allocate a new state and merge the old state
-                let mut new_state = SVecf32AggregateStype::new_with_capacity(
+                let mut new_state = SVecf32AggregateAvgSumStype::new_with_capacity(
                     dims1 as u32,
                     state1.len() + state2.len(),
                 );
@@ -460,7 +462,7 @@ fn _vectors_svecf32_aggregate_combinefunc<'a>(
 /// finalize the intermediate state for sparse vector average
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_aggregate_avg_finalfunc(
-    mut state: SVecf32AggregateStype<'_>,
+    mut state: SVecf32AggregateAvgSumStype<'_>,
 ) -> Option<SVecf32Output> {
     let count = state.count();
     if count == 0 {
@@ -485,7 +487,7 @@ fn _vectors_svecf32_aggregate_avg_finalfunc(
 /// finalize the intermediate state for sparse vector sum
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_aggregate_sum_finalfunc(
-    mut state: SVecf32AggregateStype<'_>,
+    mut state: SVecf32AggregateAvgSumStype<'_>,
 ) -> Option<SVecf32Output> {
     let count = state.count();
     if count == 0 {
@@ -525,7 +527,7 @@ mod tests {
         let mut len = 10;
         let mut capacity = 20;
         let count = 1;
-        let mut state = SVecf32AggregateStypeBorrowed::new(
+        let mut state = SVecf32AggregateAvgSumStypeBorrowed::new(
             dims,
             len,
             capacity,
@@ -558,7 +560,7 @@ mod tests {
         capacity = 16;
         let mut indexes = indexes_20.clone();
         let mut values = values_20.clone();
-        let mut state = SVecf32AggregateStypeBorrowed::new(
+        let mut state = SVecf32AggregateAvgSumStypeBorrowed::new(
             dims,
             len,
             capacity,
@@ -588,7 +590,7 @@ mod tests {
         let mut values = values_20.clone();
         len = 10;
         capacity = 20;
-        let mut state = SVecf32AggregateStypeBorrowed::new(
+        let mut state = SVecf32AggregateAvgSumStypeBorrowed::new(
             dims,
             len,
             capacity,
