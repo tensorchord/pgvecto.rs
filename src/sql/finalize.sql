@@ -649,10 +649,10 @@ STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_norm_wrap
 CREATE FUNCTION vector_norm(vecf16) RETURNS real
 STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_norm_wrapper';
 
-CREATE FUNCTION vector_norm(svector) RETURNS INT
+CREATE FUNCTION vector_norm(svector) RETURNS real
 STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_norm_wrapper';
 
-CREATE FUNCTION vector_norm(bvector) RETURNS INT
+CREATE FUNCTION vector_norm(bvector) RETURNS real
 STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_norm_wrapper';
 
 CREATE FUNCTION vector_norm(veci8) RETURNS real
