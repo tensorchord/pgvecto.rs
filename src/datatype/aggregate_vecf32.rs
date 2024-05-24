@@ -244,7 +244,7 @@ fn _vectors_vecf32_aggregate_avg_sum_sfunc<'a>(
 
 /// combine two intermediate states for vector average
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_vecf32_aggregate_combinefunc<'a>(
+fn _vectors_vecf32_aggregate_avg_sum_combinefunc<'a>(
     mut state1: Vecf32AggregateAvgSumStype<'a>,
     state2: Vecf32AggregateAvgSumStype<'a>,
 ) -> Vecf32AggregateAvgSumStype<'a> {
