@@ -78,22 +78,6 @@ CREATE TYPE vector_index_stat AS (
     idx_options TEXT
 );
 
-CREATE TYPE _vectors_vecf32_aggregate_avg_sum_stype (
-    INPUT = _vectors_vecf32_aggregate_avg_sum_stype_in,
-    OUTPUT = _vectors_vecf32_aggregate_avg_sum_stype_out,
-    STORAGE = EXTERNAL,
-    INTERNALLENGTH = VARIABLE,
-    ALIGNMENT = double
-);
-
-CREATE TYPE _vectors_svecf32_aggregate_avg_sum_stype (
-    INPUT = _vectors_svecf32_aggregate_avg_sum_stype_in,
-    OUTPUT = _vectors_svecf32_aggregate_avg_sum_stype_out,
-    STORAGE = EXTERNAL,
-    INTERNALLENGTH = VARIABLE,
-    ALIGNMENT = double
-);
-
 -- List of operators
 
 CREATE OPERATOR + (
@@ -671,37 +655,33 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_vec
 
 CREATE AGGREGATE avg(vector) (
     SFUNC = _vectors_vecf32_aggregate_avg_sum_sfunc,
-    STYPE = _vectors_vecf32_aggregate_avg_sum_stype,
+    STYPE = internal,
     COMBINEFUNC = _vectors_vecf32_aggregate_avg_sum_combinefunc,
     FINALFUNC = _vectors_vecf32_aggregate_avg_finalfunc,
-    INITCOND = '0, []',
     PARALLEL = SAFE
 );
 
 CREATE AGGREGATE sum(vector) (
     SFUNC = _vectors_vecf32_aggregate_avg_sum_sfunc,
-    STYPE = _vectors_vecf32_aggregate_avg_sum_stype,
+    STYPE = internal,
     COMBINEFUNC = _vectors_vecf32_aggregate_avg_sum_combinefunc,
     FINALFUNC = _vectors_vecf32_aggregate_sum_finalfunc,
-    INITCOND = '0, []',
     PARALLEL = SAFE
 );
 
 CREATE AGGREGATE avg(svector) (
     SFUNC = _vectors_svecf32_aggregate_avg_sum_sfunc,
-    STYPE = _vectors_svecf32_aggregate_avg_sum_stype,
+    STYPE = internal,
     COMBINEFUNC = _vectors_svecf32_aggregate_avg_sum_combinefunc,
     FINALFUNC = _vectors_svecf32_aggregate_avg_finalfunc,
-    INITCOND = '0, []',
     PARALLEL = SAFE
 );
 
 CREATE AGGREGATE sum(svector) (
     SFUNC = _vectors_svecf32_aggregate_avg_sum_sfunc,
-    STYPE = _vectors_svecf32_aggregate_avg_sum_stype,
+    STYPE = internal,
     COMBINEFUNC = _vectors_svecf32_aggregate_avg_sum_combinefunc,
     FINALFUNC = _vectors_svecf32_aggregate_sum_finalfunc,
-    INITCOND = '0, []',
     PARALLEL = SAFE
 );
 

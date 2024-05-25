@@ -15,7 +15,6 @@ use pgrx::pgrx_sql_entity_graph::metadata::SqlMapping;
 use pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
 use pgrx::{FromDatum, IntoDatum};
 use std::alloc::Layout;
-use std::ffi::{CStr, CString};
 use std::ops::{Deref, DerefMut};
 use std::ptr::NonNull;
 
@@ -179,20 +178,16 @@ impl<'a> SVecf32AggregateAvgSumStypeBorrowed<'a> {
     }
 }
 
-pub enum SVecf32AggregateAvgSumStype<'a> {
-    Owned(NonNull<SVecf32AggregateAvgSumStypeHeader>),
-    Borrowed(&'a mut SVecf32AggregateAvgSumStypeHeader),
+pub struct SVecf32AggregateAvgSumStype<'a> {
+    header: &'a mut SVecf32AggregateAvgSumStypeHeader,
 }
 
 impl SVecf32AggregateAvgSumStype<'_> {
     unsafe fn new(p: NonNull<SVecf32AggregateAvgSumStypeHeader>) -> Self {
-        let q = unsafe {
-            NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.as_ptr().cast()).cast()).unwrap()
-        };
-        if p != q {
-            SVecf32AggregateAvgSumStype::Owned(q)
-        } else {
-            unsafe { SVecf32AggregateAvgSumStype::Borrowed(&mut *p.as_ptr()) }
+        unsafe {
+            SVecf32AggregateAvgSumStype {
+                header: &mut *p.as_ptr(),
+            }
         }
     }
 
@@ -211,7 +206,7 @@ impl SVecf32AggregateAvgSumStype<'_> {
             std::ptr::addr_of_mut!((*ptr).len).write(0);
             std::ptr::addr_of_mut!((*ptr).capacity).write(capacity as u32);
             std::ptr::addr_of_mut!((*ptr).count).write(0);
-            SVecf32AggregateAvgSumStype::Owned(NonNull::new(ptr).unwrap())
+            SVecf32AggregateAvgSumStype { header: &mut *ptr }
         }
     }
 
@@ -237,15 +232,8 @@ impl SVecf32AggregateAvgSumStype<'_> {
     }
 
     pub fn into_raw(self) -> *mut SVecf32AggregateAvgSumStypeHeader {
-        let result = match self {
-            SVecf32AggregateAvgSumStype::Owned(p) => p.as_ptr(),
-            SVecf32AggregateAvgSumStype::Borrowed(ref p) => {
-                *p as *const SVecf32AggregateAvgSumStypeHeader
-                    as *mut SVecf32AggregateAvgSumStypeHeader
-            }
-        };
-        std::mem::forget(self);
-        result
+        (self.header) as *const SVecf32AggregateAvgSumStypeHeader
+            as *mut SVecf32AggregateAvgSumStypeHeader
     }
 }
 
@@ -253,31 +241,18 @@ impl Deref for SVecf32AggregateAvgSumStype<'_> {
     type Target = SVecf32AggregateAvgSumStypeHeader;
 
     fn deref(&self) -> &Self::Target {
-        match self {
-            SVecf32AggregateAvgSumStype::Owned(p) => unsafe { p.as_ref() },
-            SVecf32AggregateAvgSumStype::Borrowed(p) => p,
-        }
+        self.header
     }
 }
 
 impl DerefMut for SVecf32AggregateAvgSumStype<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        match self {
-            SVecf32AggregateAvgSumStype::Owned(p) => unsafe { p.as_mut() },
-            SVecf32AggregateAvgSumStype::Borrowed(p) => p,
-        }
+        self.header
     }
 }
 
 impl Drop for SVecf32AggregateAvgSumStype<'_> {
-    fn drop(&mut self) {
-        match self {
-            SVecf32AggregateAvgSumStype::Owned(p) => unsafe {
-                pgrx::pg_sys::pfree(p.as_ptr().cast());
-            },
-            SVecf32AggregateAvgSumStype::Borrowed(_) => {}
-        }
-    }
+    fn drop(&mut self) {}
 }
 
 impl FromDatum for SVecf32AggregateAvgSumStype<'_> {
@@ -298,94 +273,43 @@ impl IntoDatum for SVecf32AggregateAvgSumStype<'_> {
     }
 
     fn type_oid() -> Oid {
-        let namespace = pgrx::pg_catalog::PgNamespace::search_namespacename(c"vectors").unwrap();
-        let namespace = namespace.get().expect("pgvecto.rs is not installed.");
-        let t = pgrx::pg_catalog::PgType::search_typenamensp(
-            c"_vectors_svecf32_aggregate_avg_sum_stype ",
-            namespace.oid(),
-        )
-        .unwrap();
-        let t = t.get().expect("pg_catalog is broken.");
-        t.oid()
+        pgrx::pg_sys::INTERNALOID
     }
 }
 
 unsafe impl SqlTranslatable for SVecf32AggregateAvgSumStype<'_> {
     fn argument_sql() -> Result<SqlMapping, ArgumentError> {
-        Ok(SqlMapping::As(String::from(
-            "_vectors_svecf32_aggregate_avg_sum_stype",
-        )))
+        Ok(SqlMapping::As(String::from("internal")))
     }
     fn return_sql() -> Result<Returns, ReturnsError> {
-        Ok(Returns::One(SqlMapping::As(String::from(
-            "_vectors_svecf32_aggregate_avg_sum_stype",
-        ))))
+        Ok(Returns::One(SqlMapping::As(String::from("internal"))))
     }
-}
-
-#[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_aggregate_avg_sum_stype_in(
-    input: &CStr,
-    _oid: Oid,
-    _typmod: i32,
-) -> SVecf32AggregateAvgSumStype<'_> {
-    fn parse(input: &[u8]) -> Result<(u64, Vec<F32>), String> {
-        use crate::utils::parse::parse_vector;
-        let hint = "Invalid input format for _vecf32_aggregate_avg_stype, using \'bigint, array \' like \'1, [1]\'";
-        let (count, slice) = input.split_once(|&c| c == b',').ok_or(hint)?;
-        let count = std::str::from_utf8(count)
-            .map_err(|e| e.to_string() + "\n" + hint)?
-            .parse::<u64>()
-            .map_err(|e| e.to_string() + "\n" + hint)?;
-        let v = parse_vector(slice, 0, |s| s.parse().ok());
-        match v {
-            Err(e) => Err(e.to_string() + "\n" + hint),
-            Ok(vector) => Ok((count, vector)),
-        }
-    }
-    let result = parse(input.to_bytes());
-    match result {
-        Err(e) => {
-            bad_literal(&e);
-        }
-        Ok((count, vector)) => {
-            // This function only used for create a new empty state.
-            let mut state = SVecf32AggregateAvgSumStype::new_with_capacity(vector.len() as u32, 0);
-            state.count = count;
-            state
-        }
-    }
-}
-
-#[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_aggregate_avg_sum_stype_out(state: SVecf32AggregateAvgSumStype<'_>) -> CString {
-    let mut buffer = String::new();
-    buffer.push_str(format!("{}, ", state.count()).as_str());
-    // This function is never used.
-    buffer.push_str("[]");
-    CString::new(buffer).unwrap()
 }
 
 /// accumulate intermediate state for sparse vector
-#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+#[pgrx::pg_extern(immutable, parallel_safe)]
 fn _vectors_svecf32_aggregate_avg_sum_sfunc<'a>(
-    state: SVecf32AggregateAvgSumStype<'a>,
-    value: SVecf32Input<'_>,
-) -> SVecf32AggregateAvgSumStype<'a> {
-    let count = state.count();
-    match count {
+    state: Option<SVecf32AggregateAvgSumStype<'a>>,
+    value: Option<SVecf32Input<'_>>,
+) -> Option<SVecf32AggregateAvgSumStype<'a>> {
+    if value.is_none() {
+        return state;
+    }
+    let value = value.unwrap();
+    match state {
         // if the state is empty, copy the input vector
-        0 => {
+        None => {
             let mut state =
                 SVecf32AggregateAvgSumStype::new_with_capacity(value.dims() as u32, value.len());
             state.merge_in_place(value.for_borrow());
             state.count = 1;
-            state
+            Some(state)
         }
-        _ => {
+        Some(state) => {
             let dims = state.dims();
             let value_dims = value.dims();
             check_matched_dims(dims, value_dims);
+            let count = state.count() + 1;
             let mut state = match state.check_capacity(value.len()) {
                 true => state,
                 false => {
@@ -404,58 +328,58 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc<'a>(
             };
             // merge the input vector into state
             state.merge_in_place(value.for_borrow());
-            state.count = count + 1;
-            state
+            state.count = count;
+            Some(state)
         }
     }
 }
 
 /// combine two intermediate states for sparse vector
-#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+#[pgrx::pg_extern(immutable, parallel_safe)]
 fn _vectors_svecf32_aggregate_avg_sum_combinefunc<'a>(
-    state1: SVecf32AggregateAvgSumStype<'a>,
-    state2: SVecf32AggregateAvgSumStype<'a>,
-) -> SVecf32AggregateAvgSumStype<'a> {
-    let count1 = state1.count();
-    let count2 = state2.count();
-    if count1 == 0 {
-        state2
-    } else if count2 == 0 {
-        state1
-    } else {
-        let dims1 = state1.dims();
-        let dims2 = state2.dims();
-        check_matched_dims(dims1, dims2);
-        // ensure state1 has larger capacity
-        let (state1, state2) = if state1.capacity() > state2.capacity() {
-            (state1, state2)
-        } else {
-            (state2, state1)
-        };
-        let mut state = match state1.check_capacity(state2.len()) {
-            true => state1,
-            false => {
-                // allocate a new state and merge the old state
-                let mut new_state = SVecf32AggregateAvgSumStype::new_with_capacity(
-                    dims1 as u32,
-                    state1.len() + state2.len(),
-                );
-                new_state.merge_in_place(SVecf32Borrowed::new(
-                    dims1 as u32,
-                    state1.indexes(),
-                    state1.values(),
-                ));
-                new_state
-            }
-        };
-        // merge state2 into state
-        state.merge_in_place(SVecf32Borrowed::new(
-            state2.dims() as u32,
-            state2.indexes(),
-            state2.values(),
-        ));
-        state.count = count1 + count2;
-        state
+    state1: Option<SVecf32AggregateAvgSumStype<'a>>,
+    state2: Option<SVecf32AggregateAvgSumStype<'a>>,
+) -> Option<SVecf32AggregateAvgSumStype<'a>> {
+    match (state1, state2) {
+        (None, None) => None,
+        (Some(state1), None) => Some(state1),
+        (None, Some(state2)) => Some(state2),
+        (Some(state1), Some(state2)) => {
+            let dims1 = state1.dims();
+            let dims2 = state2.dims();
+            check_matched_dims(dims1, dims2);
+            // ensure state1 has larger capacity
+            let (state1, state2) = if state1.capacity() > state2.capacity() {
+                (state1, state2)
+            } else {
+                (state2, state1)
+            };
+            let total_count = state1.count() + state2.count();
+            let mut state = match state1.check_capacity(state2.len()) {
+                true => state1,
+                false => {
+                    // allocate a new state and merge the old state
+                    let mut new_state = SVecf32AggregateAvgSumStype::new_with_capacity(
+                        dims1 as u32,
+                        state1.len() + state2.len(),
+                    );
+                    new_state.merge_in_place(SVecf32Borrowed::new(
+                        dims1 as u32,
+                        state1.indexes(),
+                        state1.values(),
+                    ));
+                    new_state
+                }
+            };
+            // merge state2 into state
+            state.merge_in_place(SVecf32Borrowed::new(
+                state2.dims() as u32,
+                state2.indexes(),
+                state2.values(),
+            ));
+            state.count = total_count;
+            Some(state)
+        }
     }
 }
 
@@ -464,24 +388,19 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc<'a>(
 fn _vectors_svecf32_aggregate_avg_finalfunc(
     mut state: SVecf32AggregateAvgSumStype<'_>,
 ) -> Option<SVecf32Output> {
+    let len = state.len();
     let count = state.count();
-    if count == 0 {
-        // return NULL if all inputs are NULL
-        None
-    } else {
-        let len = state.len();
-        state.indexes_values_mut().1[..len]
-            .iter_mut()
-            .for_each(|x| *x /= count as f32);
-        state.filter_zero();
-        let indexes = state.indexes();
-        let values = state.values();
-        Some(SVecf32Output::new(SVecf32Borrowed::new(
-            state.dims() as u32,
-            indexes,
-            values,
-        )))
-    }
+    state.indexes_values_mut().1[..len]
+        .iter_mut()
+        .for_each(|x| *x /= count as f32);
+    state.filter_zero();
+    let indexes = state.indexes();
+    let values = state.values();
+    Some(SVecf32Output::new(SVecf32Borrowed::new(
+        state.dims() as u32,
+        indexes,
+        values,
+    )))
 }
 
 /// finalize the intermediate state for sparse vector sum
@@ -489,20 +408,14 @@ fn _vectors_svecf32_aggregate_avg_finalfunc(
 fn _vectors_svecf32_aggregate_sum_finalfunc(
     mut state: SVecf32AggregateAvgSumStype<'_>,
 ) -> Option<SVecf32Output> {
-    let count = state.count();
-    if count == 0 {
-        // return NULL if all inputs are NULL
-        None
-    } else {
-        state.filter_zero();
-        let indexes = state.indexes();
-        let values = state.values();
-        Some(SVecf32Output::new(SVecf32Borrowed::new(
-            state.dims() as u32,
-            indexes,
-            values,
-        )))
-    }
+    state.filter_zero();
+    let indexes = state.indexes();
+    let values = state.values();
+    Some(SVecf32Output::new(SVecf32Borrowed::new(
+        state.dims() as u32,
+        indexes,
+        values,
+    )))
 }
 
 #[cfg(test)]
