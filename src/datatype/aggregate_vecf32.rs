@@ -134,8 +134,120 @@ unsafe impl SqlTranslatable for Vecf32AggregateAvgSumStype<'_> {
     }
 }
 
-/// accumulate intermediate state for vector average
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[no_mangle]
+#[doc(hidden)]
+#[allow(unknown_lints, clippy::no_mangle_with_rust_abi, non_snake_case)]
+pub extern "Rust" fn __pgrx_internals_fn__vectors_vecf32_aggregate_avg_sum_sfunc(
+) -> ::pgrx::pgrx_sql_entity_graph::SqlGraphEntity {
+    extern crate alloc;
+    #[allow(unused_imports)]
+    use alloc::{vec, vec::Vec};
+    type FunctionPointer = for<'a> fn(
+        Option<Vecf32AggregateAvgSumStype<'a>>,
+        Option<Vecf32Input<'_>>,
+    ) -> Option<Vecf32AggregateAvgSumStype<'a>>;
+    let submission = ::pgrx::pgrx_sql_entity_graph::PgExternEntity {
+        name: "_vectors_vecf32_aggregate_avg_sum_sfunc",
+        unaliased_name: stringify!(_vectors_vecf32_aggregate_avg_sum_sfunc),
+        module_path: core::module_path!(),
+        full_path: concat!(
+            core::module_path!(),
+            "::",
+            stringify!(_vectors_vecf32_aggregate_avg_sum_sfunc)
+        ),
+        metadata: <FunctionPointer as ::pgrx::pgrx_sql_entity_graph::metadata::FunctionMetadata<
+            _,
+        >>::entity(),
+        fn_args: vec![
+            ::pgrx::pgrx_sql_entity_graph::PgExternArgumentEntity {
+                pattern: stringify!(state),
+                used_ty: ::pgrx::pgrx_sql_entity_graph::UsedTypeEntity {
+                    ty_source: "Option < Vecf32AggregateAvgSumStype < '_ > >",
+                    ty_id: core::any::TypeId::of::<Option<Vecf32AggregateAvgSumStype<'_>>>(),
+                    full_path: core::any::type_name::<Option<Vecf32AggregateAvgSumStype<'_>>>(),
+                    module_path: {
+                        let ty_name =
+                            core::any::type_name::<Option<Vecf32AggregateAvgSumStype<'_>>>();
+                        let mut path_items: Vec<_> = ty_name.split("::").collect();
+                        let _ = path_items.pop();
+                        path_items.join("::")
+                    },
+                    composite_type: None,
+                    variadic: false,
+                    default: None,
+                    optional: true,
+                    metadata: {
+                        use ::pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
+                        <Option<Vecf32AggregateAvgSumStype<'_>>>::entity()
+                    },
+                },
+            },
+            ::pgrx::pgrx_sql_entity_graph::PgExternArgumentEntity {
+                pattern: stringify!(value),
+                used_ty: ::pgrx::pgrx_sql_entity_graph::UsedTypeEntity {
+                    ty_source: "Option < Vecf32Input < '_ > >",
+                    ty_id: core::any::TypeId::of::<Option<Vecf32Input<'_>>>(),
+                    full_path: core::any::type_name::<Option<Vecf32Input<'_>>>(),
+                    module_path: {
+                        let ty_name = core::any::type_name::<Option<Vecf32Input<'_>>>();
+                        let mut path_items: Vec<_> = ty_name.split("::").collect();
+                        let _ = path_items.pop();
+                        path_items.join("::")
+                    },
+                    composite_type: None,
+                    variadic: false,
+                    default: None,
+                    optional: true,
+                    metadata: {
+                        use ::pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
+                        <Option<Vecf32Input<'_>>>::entity()
+                    },
+                },
+            },
+        ],
+        fn_return: ::pgrx::pgrx_sql_entity_graph::PgExternReturnEntity::Type {
+            ty: ::pgrx::pgrx_sql_entity_graph::UsedTypeEntity {
+                ty_source: "Option < Vecf32AggregateAvgSumStype < '_ > >",
+                ty_id: core::any::TypeId::of::<Option<Vecf32AggregateAvgSumStype<'_>>>(),
+                full_path: core::any::type_name::<Option<Vecf32AggregateAvgSumStype<'_>>>(),
+                module_path: {
+                    let ty_name = core::any::type_name::<Option<Vecf32AggregateAvgSumStype<'_>>>();
+                    let mut path_items: Vec<_> = ty_name.split("::").collect();
+                    let _ = path_items.pop();
+                    path_items.join("::")
+                },
+                composite_type: None,
+                variadic: false,
+                default: None,
+                optional: true,
+                metadata: {
+                    use ::pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
+                    <Option<Vecf32AggregateAvgSumStype<'_>>>::entity()
+                },
+            },
+        },
+        #[allow(clippy::or_fun_call)]
+        schema: None,
+        file: file!(),
+        line: line!(),
+        extern_attrs: vec![
+            ::pgrx::pgrx_sql_entity_graph::ExternArgs::Immutable,
+            ::pgrx::pgrx_sql_entity_graph::ExternArgs::ParallelSafe,
+        ],
+        #[allow(clippy::or_fun_call)]
+        search_path: None,
+        #[allow(clippy::or_fun_call)]
+        operator: None,
+        cast: None,
+        to_sql_config: ::pgrx::pgrx_sql_entity_graph::ToSqlConfigEntity {
+            enabled: true,
+            callback: None,
+            content: None,
+        },
+    };
+    ::pgrx::pgrx_sql_entity_graph::SqlGraphEntity::Function(submission)
+}
+#[doc = r" accumulate intermediate state for vector average"]
 fn _vectors_vecf32_aggregate_avg_sum_sfunc<'a>(
     state: Option<Vecf32AggregateAvgSumStype<'a>>,
     value: Option<Vecf32Input<'_>>,
@@ -145,7 +257,6 @@ fn _vectors_vecf32_aggregate_avg_sum_sfunc<'a>(
     }
     let value = value.unwrap();
     match state {
-        // if the state is empty, copy the input vector
         None => Some(Vecf32AggregateAvgSumStype::new_with_slice(
             1,
             value.iter().as_slice(),
@@ -155,19 +266,172 @@ fn _vectors_vecf32_aggregate_avg_sum_sfunc<'a>(
             let value_dims = value.dims();
             check_matched_dims(dims, value_dims);
             let sum = state.slice_mut();
-            // accumulate the input vector
             for (x, y) in sum.iter_mut().zip(value.iter()) {
                 *x += *y;
             }
-            // increase the count
             state.count += 1;
             Some(state)
         }
     }
 }
+#[no_mangle]
+#[doc(hidden)]
+pub unsafe extern "C" fn _vectors_vecf32_aggregate_avg_sum_sfunc_wrapper<'a>(
+    _fcinfo: ::pgrx::pg_sys::FunctionCallInfo,
+) -> ::pgrx::pg_sys::Datum {
+    #[allow(non_snake_case)]
+    unsafe fn _vectors_vecf32_aggregate_avg_sum_sfunc_wrapper_inner<'a>(
+        _fcinfo: ::pgrx::pg_sys::FunctionCallInfo,
+    ) -> ::pgrx::pg_sys::Datum {
+        let state_ =
+            unsafe { ::pgrx::fcinfo::pg_getarg::<Vecf32AggregateAvgSumStype<'a>>(_fcinfo, 0usize) };
+        let value_ = unsafe { ::pgrx::fcinfo::pg_getarg::<Vecf32Input<'_>>(_fcinfo, 1usize) };
+        #[allow(unused_unsafe)]
+        let result = unsafe { _vectors_vecf32_aggregate_avg_sum_sfunc(state_, value_) };
+        match result {
+            Some(result) => ::pgrx::datum::IntoDatum::into_datum(result)
+                .unwrap_or_else(|| panic!("returned Option<T> was NULL")),
+            None => unsafe { ::pgrx::fcinfo::pg_return_null(_fcinfo) },
+        }
+    }
+    #[allow(unused_unsafe)]
+    unsafe {
+        pgrx::pg_sys::submodules::panic::pgrx_extern_c_guard(move || {
+            let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData = std::ptr::null_mut();
+            if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
+                ::pgrx::error!("aggregate function called in non-aggregate context",);
+            }
+            let old_context = ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context);
+            let result = _vectors_vecf32_aggregate_avg_sum_sfunc_wrapper_inner(_fcinfo);
+            ::pgrx::pg_sys::MemoryContextSwitchTo(old_context);
+            result
+        })
+    }
+}
+#[no_mangle]
+#[doc(hidden)]
+pub extern "C" fn pg_finfo__vectors_vecf32_aggregate_avg_sum_sfunc_wrapper(
+) -> &'static ::pgrx::pg_sys::Pg_finfo_record {
+    const V1_API: ::pgrx::pg_sys::Pg_finfo_record =
+        ::pgrx::pg_sys::Pg_finfo_record { api_version: 1 };
+    &V1_API
+}
 
-/// combine two intermediate states for vector average
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[no_mangle]
+#[doc(hidden)]
+#[allow(unknown_lints, clippy::no_mangle_with_rust_abi, non_snake_case)]
+pub extern "Rust" fn __pgrx_internals_fn__vectors_vecf32_aggregate_avg_sum_combinefunc(
+) -> ::pgrx::pgrx_sql_entity_graph::SqlGraphEntity {
+    extern crate alloc;
+    #[allow(unused_imports)]
+    use alloc::{vec, vec::Vec};
+    type FunctionPointer = for<'a> fn(
+        Option<Vecf32AggregateAvgSumStype<'a>>,
+        Option<Vecf32AggregateAvgSumStype<'a>>,
+    ) -> Option<Vecf32AggregateAvgSumStype<'a>>;
+    let submission = ::pgrx::pgrx_sql_entity_graph::PgExternEntity {
+        name: "_vectors_vecf32_aggregate_avg_sum_combinefunc",
+        unaliased_name: stringify!(_vectors_vecf32_aggregate_avg_sum_combinefunc),
+        module_path: core::module_path!(),
+        full_path: concat!(
+            core::module_path!(),
+            "::",
+            stringify!(_vectors_vecf32_aggregate_avg_sum_combinefunc)
+        ),
+        metadata: <FunctionPointer as ::pgrx::pgrx_sql_entity_graph::metadata::FunctionMetadata<
+            _,
+        >>::entity(),
+        fn_args: vec![
+            ::pgrx::pgrx_sql_entity_graph::PgExternArgumentEntity {
+                pattern: stringify!(state1),
+                used_ty: ::pgrx::pgrx_sql_entity_graph::UsedTypeEntity {
+                    ty_source: "Option < Vecf32AggregateAvgSumStype < '_ > >",
+                    ty_id: core::any::TypeId::of::<Option<Vecf32AggregateAvgSumStype<'_>>>(),
+                    full_path: core::any::type_name::<Option<Vecf32AggregateAvgSumStype<'_>>>(),
+                    module_path: {
+                        let ty_name =
+                            core::any::type_name::<Option<Vecf32AggregateAvgSumStype<'_>>>();
+                        let mut path_items: Vec<_> = ty_name.split("::").collect();
+                        let _ = path_items.pop();
+                        path_items.join("::")
+                    },
+                    composite_type: None,
+                    variadic: false,
+                    default: None,
+                    optional: true,
+                    metadata: {
+                        use ::pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
+                        <Option<Vecf32AggregateAvgSumStype<'_>>>::entity()
+                    },
+                },
+            },
+            ::pgrx::pgrx_sql_entity_graph::PgExternArgumentEntity {
+                pattern: stringify!(state2),
+                used_ty: ::pgrx::pgrx_sql_entity_graph::UsedTypeEntity {
+                    ty_source: "Option < Vecf32AggregateAvgSumStype < '_ > >",
+                    ty_id: core::any::TypeId::of::<Option<Vecf32AggregateAvgSumStype<'_>>>(),
+                    full_path: core::any::type_name::<Option<Vecf32AggregateAvgSumStype<'_>>>(),
+                    module_path: {
+                        let ty_name =
+                            core::any::type_name::<Option<Vecf32AggregateAvgSumStype<'_>>>();
+                        let mut path_items: Vec<_> = ty_name.split("::").collect();
+                        let _ = path_items.pop();
+                        path_items.join("::")
+                    },
+                    composite_type: None,
+                    variadic: false,
+                    default: None,
+                    optional: true,
+                    metadata: {
+                        use ::pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
+                        <Option<Vecf32AggregateAvgSumStype<'_>>>::entity()
+                    },
+                },
+            },
+        ],
+        fn_return: ::pgrx::pgrx_sql_entity_graph::PgExternReturnEntity::Type {
+            ty: ::pgrx::pgrx_sql_entity_graph::UsedTypeEntity {
+                ty_source: "Option < Vecf32AggregateAvgSumStype < '_ > >",
+                ty_id: core::any::TypeId::of::<Option<Vecf32AggregateAvgSumStype<'_>>>(),
+                full_path: core::any::type_name::<Option<Vecf32AggregateAvgSumStype<'_>>>(),
+                module_path: {
+                    let ty_name = core::any::type_name::<Option<Vecf32AggregateAvgSumStype<'_>>>();
+                    let mut path_items: Vec<_> = ty_name.split("::").collect();
+                    let _ = path_items.pop();
+                    path_items.join("::")
+                },
+                composite_type: None,
+                variadic: false,
+                default: None,
+                optional: true,
+                metadata: {
+                    use ::pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
+                    <Option<Vecf32AggregateAvgSumStype<'_>>>::entity()
+                },
+            },
+        },
+        #[allow(clippy::or_fun_call)]
+        schema: None,
+        file: file!(),
+        line: line!(),
+        extern_attrs: vec![
+            ::pgrx::pgrx_sql_entity_graph::ExternArgs::Immutable,
+            ::pgrx::pgrx_sql_entity_graph::ExternArgs::ParallelSafe,
+        ],
+        #[allow(clippy::or_fun_call)]
+        search_path: None,
+        #[allow(clippy::or_fun_call)]
+        operator: None,
+        cast: None,
+        to_sql_config: ::pgrx::pgrx_sql_entity_graph::ToSqlConfigEntity {
+            enabled: true,
+            callback: None,
+            content: None,
+        },
+    };
+    ::pgrx::pgrx_sql_entity_graph::SqlGraphEntity::Function(submission)
+}
+#[doc = r" combine two intermediate states for vector average"]
 fn _vectors_vecf32_aggregate_avg_sum_combinefunc<'a>(
     state1: Option<Vecf32AggregateAvgSumStype<'a>>,
     state2: Option<Vecf32AggregateAvgSumStype<'a>>,
@@ -189,6 +453,49 @@ fn _vectors_vecf32_aggregate_avg_sum_combinefunc<'a>(
             Some(state1)
         }
     }
+}
+#[no_mangle]
+#[doc(hidden)]
+pub unsafe extern "C" fn _vectors_vecf32_aggregate_avg_sum_combinefunc_wrapper<'a>(
+    _fcinfo: ::pgrx::pg_sys::FunctionCallInfo,
+) -> ::pgrx::pg_sys::Datum {
+    #[allow(non_snake_case)]
+    unsafe fn _vectors_vecf32_aggregate_avg_sum_combinefunc_wrapper_inner<'a>(
+        _fcinfo: ::pgrx::pg_sys::FunctionCallInfo,
+    ) -> ::pgrx::pg_sys::Datum {
+        let state1_ =
+            unsafe { ::pgrx::fcinfo::pg_getarg::<Vecf32AggregateAvgSumStype<'a>>(_fcinfo, 0usize) };
+        let state2_ =
+            unsafe { ::pgrx::fcinfo::pg_getarg::<Vecf32AggregateAvgSumStype<'a>>(_fcinfo, 1usize) };
+        #[allow(unused_unsafe)]
+        let result = unsafe { _vectors_vecf32_aggregate_avg_sum_combinefunc(state1_, state2_) };
+        match result {
+            Some(result) => ::pgrx::datum::IntoDatum::into_datum(result)
+                .unwrap_or_else(|| panic!("returned Option<T> was NULL")),
+            None => unsafe { ::pgrx::fcinfo::pg_return_null(_fcinfo) },
+        }
+    }
+    #[allow(unused_unsafe)]
+    unsafe {
+        pgrx::pg_sys::submodules::panic::pgrx_extern_c_guard(move || {
+            let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData = std::ptr::null_mut();
+            if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
+                ::pgrx::error!("aggregate function called in non-aggregate context",);
+            }
+            let old_context = ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context);
+            let result = _vectors_vecf32_aggregate_avg_sum_combinefunc_wrapper_inner(_fcinfo);
+            ::pgrx::pg_sys::MemoryContextSwitchTo(old_context);
+            result
+        })
+    }
+}
+#[no_mangle]
+#[doc(hidden)]
+pub extern "C" fn pg_finfo__vectors_vecf32_aggregate_avg_sum_combinefunc_wrapper(
+) -> &'static ::pgrx::pg_sys::Pg_finfo_record {
+    const V1_API: ::pgrx::pg_sys::Pg_finfo_record =
+        ::pgrx::pg_sys::Pg_finfo_record { api_version: 1 };
+    &V1_API
 }
 
 /// finalize the intermediate state for vector average
