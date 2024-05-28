@@ -88,6 +88,10 @@ impl SVecf32AggregateAvgSumStype {
 
     /// check whether the rest of the state is enough to append the sparse vector of the given length. Approximately predict the rest of the state is enough.
     pub fn check_capacity(&self, length: usize) -> bool {
+        // If the state is full, return true. So we can enlarger the state less than log2(n) times.
+        if self.capacity() == self.dims() {
+            return true;
+        }
         let capacity = self.capacity();
         let rest = capacity - self.len();
         rest >= length
