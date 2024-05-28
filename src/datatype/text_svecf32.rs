@@ -48,10 +48,10 @@ fn _vectors_svecf32_out(vector: SVecf32Input<'_>) -> CString {
     for (&index, &value) in svec.indexes().iter().zip(svec.values().iter()) {
         match need_splitter {
             true => {
-                buffer.push_str(format!("{}:{}", index + 1, value).as_str());
+                buffer.push_str(format!("{}:{}", index, value).as_str());
                 need_splitter = false;
             }
-            false => buffer.push_str(format!(", {}:{}", index + 1, value).as_str()),
+            false => buffer.push_str(format!(", {}:{}", index, value).as_str()),
         }
     }
     buffer.push_str(format!("}}/{}", dims).as_str());

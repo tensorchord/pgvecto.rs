@@ -165,8 +165,7 @@ where
                     let s = unsafe { std::str::from_utf8_unchecked(&token[1..]) };
                     index = s
                         .parse::<usize>()
-                        .map_err(|_| ParseVectorError::BadParsing { position })?
-                        - 1;
+                        .map_err(|_| ParseVectorError::BadParsing { position })?;
                     token.clear();
                 } else {
                     return Err(ParseVectorError::TooShortNumber { position });
