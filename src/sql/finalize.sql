@@ -664,12 +664,6 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binari
 CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
 
-CREATE FUNCTION vector_dims("v" svector) RETURNS INT
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svectorf32_dims_wrapper';
-
-CREATE FUNCTION vector_norm("v" svector) RETURNS real
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svectorf32_norm_wrapper';
-
 CREATE FUNCTION _vectors_svector_accum("state" svector_accumulate_state, "value" svector) RETURNS svector_accumulate_state AS $$
 DECLARE 
 	result svector_accumulate_state;
@@ -683,7 +677,7 @@ BEGIN
 	result.sum := state.sum + value;
 	RETURN result;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STRICT PARALLEL SAFE;
 
 CREATE FUNCTION _vectors_svector_combine("state1" svector_accumulate_state, "state2" svector_accumulate_state) RETURNS svector_accumulate_state AS $$
 DECLARE 
@@ -699,7 +693,7 @@ BEGIN
 	result.sum := state1.sum + state2.sum;
 	RETURN result;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STRICT PARALLEL SAFE;
 
 CREATE FUNCTION _vectors_svector_final("state" svector_accumulate_state) RETURNS svector AS $$
 DECLARE 
@@ -713,7 +707,7 @@ BEGIN
 	result := _vectors_svecf32_div(state.sum, count::real);
 	RETURN result;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STRICT PARALLEL SAFE;
 
 -- List of aggregates
 
