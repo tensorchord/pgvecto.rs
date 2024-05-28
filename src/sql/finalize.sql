@@ -86,6 +86,11 @@ CREATE TYPE _vectors_vecf32_aggregate_avg_stype (
     ALIGNMENT = double
 );
 
+CREATE TYPE svector_accumulate_state AS (
+	count INT,
+	sum svector
+);
+
 -- List of operators
 
 CREATE OPERATOR + (
@@ -659,6 +664,51 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binari
 CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
 
+CREATE FUNCTION _vectors_svector_accum("state" svector_accumulate_state, "value" svector) RETURNS svector_accumulate_state AS $$
+DECLARE 
+	result svector_accumulate_state;
+BEGIN
+	IF state.count = 0 THEN
+		result.count := 1;
+		result.sum := value;
+	    RETURN result;
+	END IF;
+	result.count := state.count + 1;
+	result.sum := state.sum + value;
+	RETURN result;
+END;
+$$ LANGUAGE plpgsql STRICT PARALLEL SAFE;
+
+CREATE FUNCTION _vectors_svector_combine("state1" svector_accumulate_state, "state2" svector_accumulate_state) RETURNS svector_accumulate_state AS $$
+DECLARE 
+	result svector_accumulate_state;
+BEGIN
+	IF state1.count = 0 THEN
+		RETURN state2;
+	END IF;
+	IF state2.count = 0 THEN
+		RETURN state1;
+	END IF;
+	result.count := state1.count + state2.count;
+	result.sum := state1.sum + state2.sum;
+	RETURN result;
+END;
+$$ LANGUAGE plpgsql STRICT PARALLEL SAFE;
+
+CREATE FUNCTION _vectors_svector_final("state" svector_accumulate_state) RETURNS svector AS $$
+DECLARE 
+	result svector;
+	count INT;
+BEGIN
+	count := state.count;
+	IF count = 0 THEN
+		RETURN NULL;
+	END IF;	
+	result := _vectors_svecf32_div(state.sum, count::real);
+	RETURN result;
+END;
+$$ LANGUAGE plpgsql STRICT PARALLEL SAFE;
+
 -- List of aggregates
 
 CREATE AGGREGATE avg(vector) (
@@ -675,6 +725,22 @@ CREATE AGGREGATE sum(vector) (
     STYPE = vector,
     COMBINEFUNC = _vectors_vecf32_operator_add,
     PARALLEL = SAFE
+);
+
+CREATE AGGREGATE avg(svector) (
+	SFUNC = _vectors_svector_accum,
+	STYPE = svector_accumulate_state,
+	COMBINEFUNC = _vectors_svector_combine,
+	FINALFUNC = _vectors_svector_final,
+	INITCOND = '(0, [0])',
+	PARALLEL = SAFE
+);
+
+CREATE AGGREGATE sum(svector) (
+	SFUNC = _vectors_svecf32_operator_add,
+	STYPE = svector,
+	COMBINEFUNC = _vectors_svecf32_operator_add,
+	PARALLEL = SAFE
 );
 
 -- List of casts
