@@ -40,6 +40,7 @@ toml.workspace = true
 validator.workspace = true
 
 base = { path = "crates/base" }
+base_macros = { path = "crates/base_macros" }
 detect = { path = "crates/detect" }
 embedding = { path = "crates/embedding" }
 interprocess_atomic_wait = { path = "crates/interprocess-atomic-wait" }

@@ -33,3 +33,11 @@ pub mod text_vecf16;
 pub mod text_vecf32;
 pub mod text_veci8;
 pub mod typmod;
+
+use pgrx::Internal;
+
+fn get_mut_internal<T>(internal: &mut Option<Internal>) -> Option<&mut T> {
+    internal
+        .as_ref()
+        .and_then(|internal| unsafe { internal.get_mut::<T>() })
+}

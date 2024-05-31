@@ -1,6 +1,7 @@
 #![allow(unused_lifetimes)]
 #![allow(clippy::extra_unused_lifetimes)]
 
+use super::get_mut_internal;
 use super::memory_svecf32::*;
 use crate::error::*;
 use base::scalar::*;
@@ -186,125 +187,28 @@ impl<'a> SVecf32AggregateAvgSumStypeBorrowed<'a> {
     }
 }
 
-#[no_mangle]
-#[doc(hidden)]
-#[allow(unknown_lints, clippy::no_mangle_with_rust_abi, non_snake_case)]
-pub extern "Rust" fn __pgrx_internals_fn__vectors_svecf32_aggregate_avg_sum_sfunc(
-) -> ::pgrx::pgrx_sql_entity_graph::SqlGraphEntity {
-    extern crate alloc;
-    #[allow(unused_imports)]
-    use alloc::{vec, vec::Vec};
-    type FunctionPointer = fn(Internal, Option<SVecf32Input<'_>>) -> Internal;
-    let submission = ::pgrx::pgrx_sql_entity_graph::PgExternEntity {
-        name: "_vectors_svecf32_aggregate_avg_sum_sfunc",
-        unaliased_name: stringify!(_vectors_svecf32_aggregate_avg_sum_sfunc),
-        module_path: core::module_path!(),
-        full_path: concat!(
-            core::module_path!(),
-            "::",
-            stringify!(_vectors_svecf32_aggregate_avg_sum_sfunc)
-        ),
-        metadata: <FunctionPointer as ::pgrx::pgrx_sql_entity_graph::metadata::FunctionMetadata<
-            _,
-        >>::entity(),
-        fn_args: vec![
-            ::pgrx::pgrx_sql_entity_graph::PgExternArgumentEntity {
-                pattern: stringify!(current),
-                used_ty: ::pgrx::pgrx_sql_entity_graph::UsedTypeEntity {
-                    ty_source: "Internal",
-                    ty_id: core::any::TypeId::of::<Internal>(),
-                    full_path: core::any::type_name::<Internal>(),
-                    module_path: {
-                        let ty_name = core::any::type_name::<Internal>();
-                        let mut path_items: Vec<_> = ty_name.split("::").collect();
-                        let _ = path_items.pop();
-                        path_items.join("::")
-                    },
-                    composite_type: None,
-                    variadic: false,
-                    default: None,
-                    optional: false,
-                    metadata: {
-                        use ::pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
-                        <Internal>::entity()
-                    },
-                },
-            },
-            ::pgrx::pgrx_sql_entity_graph::PgExternArgumentEntity {
-                pattern: stringify!(value),
-                used_ty: ::pgrx::pgrx_sql_entity_graph::UsedTypeEntity {
-                    ty_source: "Option < SVecf32Input < '_ > >",
-                    ty_id: core::any::TypeId::of::<Option<SVecf32Input<'_>>>(),
-                    full_path: core::any::type_name::<Option<SVecf32Input<'_>>>(),
-                    module_path: {
-                        let ty_name = core::any::type_name::<Option<SVecf32Input<'_>>>();
-                        let mut path_items: Vec<_> = ty_name.split("::").collect();
-                        let _ = path_items.pop();
-                        path_items.join("::")
-                    },
-                    composite_type: None,
-                    variadic: false,
-                    default: None,
-                    optional: true,
-                    metadata: {
-                        use ::pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
-                        <Option<SVecf32Input<'_>>>::entity()
-                    },
-                },
-            },
-        ],
-        fn_return: ::pgrx::pgrx_sql_entity_graph::PgExternReturnEntity::Type {
-            ty: ::pgrx::pgrx_sql_entity_graph::UsedTypeEntity {
-                ty_source: "Internal",
-                ty_id: core::any::TypeId::of::<Internal>(),
-                full_path: core::any::type_name::<Internal>(),
-                module_path: {
-                    let ty_name = core::any::type_name::<Internal>();
-                    let mut path_items: Vec<_> = ty_name.split("::").collect();
-                    let _ = path_items.pop();
-                    path_items.join("::")
-                },
-                composite_type: None,
-                variadic: false,
-                default: None,
-                optional: false,
-                metadata: {
-                    use ::pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
-                    <Internal>::entity()
-                },
-            },
-        },
-        #[allow(clippy::or_fun_call)]
-        schema: None,
-        file: file!(),
-        line: line!(),
-        extern_attrs: vec![
-            ::pgrx::pgrx_sql_entity_graph::ExternArgs::Immutable,
-            ::pgrx::pgrx_sql_entity_graph::ExternArgs::ParallelSafe,
-        ],
-        #[allow(clippy::or_fun_call)]
-        search_path: None,
-        #[allow(clippy::or_fun_call)]
-        operator: None,
-        cast: None,
-        to_sql_config: ::pgrx::pgrx_sql_entity_graph::ToSqlConfigEntity {
-            enabled: true,
-            callback: None,
-            content: None,
-        },
-    };
-    ::pgrx::pgrx_sql_entity_graph::SqlGraphEntity::Function(submission)
-}
-#[doc = r" accumulate intermediate state for sparse vector"]
+/// accumulate intermediate state for sparse vector
+#[base_macros::aggregate_func]
+#[pgrx::pg_extern(immutable, parallel_safe)]
 fn _vectors_svecf32_aggregate_avg_sum_sfunc(
-    current: Internal,
+    mut current: Option<Internal>,
     value: Option<SVecf32Input<'_>>,
-) -> Internal {
+) -> Option<Internal> {
     if value.is_none() {
-        return current;
+        // It would get error "returned Datum was NULL" if we use Internal directly when execute `SELECT sum(v) FROM unnest(ARRAY[NULL]::svector[]) v;`
+        // so we return a optional here. But it is so reasonable though.
+        match get_mut_internal::<SVecf32AggregateAvgSumStype>(&mut current) {
+            Some(_) => {
+                return current;
+            }
+            None => {
+                return None;
+            }
+        }
     }
     let value = value.unwrap();
-    match unsafe { current.get_mut::<SVecf32AggregateAvgSumStype>() } {
+    match get_mut_internal::<SVecf32AggregateAvgSumStype>(&mut current) {
+        // if the state is empty, copy the input vector
         None => {
             let internal = Internal::new(SVecf32AggregateAvgSumStype::new_with_capacity(
                 value.dims() as u32,
@@ -313,7 +217,7 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
             let state = unsafe { internal.get_mut::<SVecf32AggregateAvgSumStype>().unwrap() };
             state.merge_in_place(value.for_borrow());
             state.count = 1;
-            internal
+            Some(internal)
         }
         Some(state) => {
             let dims = state.dims();
@@ -322,18 +226,14 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
             let count = state.count() + 1;
             match state.check_capacity(value.len()) {
                 true => {
+                    // merge the input vector into state
                     state.merge_in_place(value.for_borrow());
                     state.count = count;
+                    // return old state
                     current
                 }
                 false => {
-                    eprintln!(
-                        "old state: indexes{:?} values{:?} indexes ptr{:p} values ptr{:p}",
-                        state.indexes(),
-                        state.values(),
-                        state.indexes().as_ptr(),
-                        state.values().as_ptr()
-                    );
+                    // allocate a new state and merge the old state
                     let new_internal =
                         Internal::new(SVecf32AggregateAvgSumStype::new_with_capacity(
                             dims as u32,
@@ -344,191 +244,32 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
                             .get_mut::<SVecf32AggregateAvgSumStype>()
                             .unwrap()
                     };
-                    eprintln!(
-                        "new state: indexes{:?} values{:?} indexes ptr{:p} values ptr{:p}",
-                        new_state.indexes(),
-                        new_state.values(),
-                        new_state.indexes.as_ptr(),
-                        new_state.values.as_ptr()
-                    );
                     new_state.merge_in_place(SVecf32Borrowed::new(
                         dims as u32,
                         state.indexes(),
                         state.values(),
                     ));
+                    // merge the input vector into state
                     new_state.merge_in_place(value.for_borrow());
                     new_state.count = count;
-                    new_internal
+                    Some(new_internal)
                 }
             }
         }
     }
 }
-#[no_mangle]
-#[doc(hidden)]
-pub unsafe extern "C" fn _vectors_svecf32_aggregate_avg_sum_sfunc_wrapper(
-    _fcinfo: ::pgrx::pg_sys::FunctionCallInfo,
-) -> ::pgrx::pg_sys::Datum {
-    #[allow(non_snake_case)]
-    unsafe fn _vectors_svecf32_aggregate_avg_sum_sfunc_wrapper_inner(
-        _fcinfo: ::pgrx::pg_sys::FunctionCallInfo,
-    ) -> ::pgrx::pg_sys::Datum {
-        let current_ = unsafe {
-            ::pgrx::fcinfo::pg_getarg::<Internal>(_fcinfo, 0usize).unwrap_or_else(|| {
-                panic!(
-                    "{} is null",
-                    stringify! {
-                      current_
-                    }
-                )
-            })
-        };
-        let value_ = unsafe { ::pgrx::fcinfo::pg_getarg::<SVecf32Input<'_>>(_fcinfo, 1usize) };
-        #[allow(unused_unsafe)]
-        let result = unsafe { _vectors_svecf32_aggregate_avg_sum_sfunc(current_, value_) };
-        ::pgrx::datum::IntoDatum::into_datum(result)
-            .unwrap_or_else(|| panic!("returned Datum was NULL"))
-    }
-    #[allow(unused_unsafe)]
-    unsafe {
-        pgrx::pg_sys::submodules::panic::pgrx_extern_c_guard(move || {
-            let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData = std::ptr::null_mut();
-            if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
-                ::pgrx::error!("aggregate function called in non-aggregate context",);
-            }
-            let old_context = ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context);
-            let result = _vectors_svecf32_aggregate_avg_sum_sfunc_wrapper_inner(_fcinfo);
-            ::pgrx::pg_sys::MemoryContextSwitchTo(old_context);
-            result
-        })
-    }
-}
-#[no_mangle]
-#[doc(hidden)]
-pub extern "C" fn pg_finfo__vectors_svecf32_aggregate_avg_sum_sfunc_wrapper(
-) -> &'static ::pgrx::pg_sys::Pg_finfo_record {
-    const V1_API: ::pgrx::pg_sys::Pg_finfo_record =
-        ::pgrx::pg_sys::Pg_finfo_record { api_version: 1 };
-    &V1_API
-}
 
-#[no_mangle]
-#[doc(hidden)]
-#[allow(unknown_lints, clippy::no_mangle_with_rust_abi, non_snake_case)]
-pub extern "Rust" fn __pgrx_internals_fn__vectors_svecf32_aggregate_avg_sum_combinefunc(
-) -> ::pgrx::pgrx_sql_entity_graph::SqlGraphEntity {
-    extern crate alloc;
-    #[allow(unused_imports)]
-    use alloc::{vec, vec::Vec};
-    type FunctionPointer = fn(Internal, Internal) -> Internal;
-    let submission = ::pgrx::pgrx_sql_entity_graph::PgExternEntity {
-        name: "_vectors_svecf32_aggregate_avg_sum_combinefunc",
-        unaliased_name: stringify!(_vectors_svecf32_aggregate_avg_sum_combinefunc),
-        module_path: core::module_path!(),
-        full_path: concat!(
-            core::module_path!(),
-            "::",
-            stringify!(_vectors_svecf32_aggregate_avg_sum_combinefunc)
-        ),
-        metadata: <FunctionPointer as ::pgrx::pgrx_sql_entity_graph::metadata::FunctionMetadata<
-            _,
-        >>::entity(),
-        fn_args: vec![
-            ::pgrx::pgrx_sql_entity_graph::PgExternArgumentEntity {
-                pattern: stringify!(state1),
-                used_ty: ::pgrx::pgrx_sql_entity_graph::UsedTypeEntity {
-                    ty_source: "Internal",
-                    ty_id: core::any::TypeId::of::<Internal>(),
-                    full_path: core::any::type_name::<Internal>(),
-                    module_path: {
-                        let ty_name = core::any::type_name::<Internal>();
-                        let mut path_items: Vec<_> = ty_name.split("::").collect();
-                        let _ = path_items.pop();
-                        path_items.join("::")
-                    },
-                    composite_type: None,
-                    variadic: false,
-                    default: None,
-                    optional: false,
-                    metadata: {
-                        use ::pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
-                        <Internal>::entity()
-                    },
-                },
-            },
-            ::pgrx::pgrx_sql_entity_graph::PgExternArgumentEntity {
-                pattern: stringify!(state2),
-                used_ty: ::pgrx::pgrx_sql_entity_graph::UsedTypeEntity {
-                    ty_source: "Internal",
-                    ty_id: core::any::TypeId::of::<Internal>(),
-                    full_path: core::any::type_name::<Internal>(),
-                    module_path: {
-                        let ty_name = core::any::type_name::<Internal>();
-                        let mut path_items: Vec<_> = ty_name.split("::").collect();
-                        let _ = path_items.pop();
-                        path_items.join("::")
-                    },
-                    composite_type: None,
-                    variadic: false,
-                    default: None,
-                    optional: false,
-                    metadata: {
-                        use ::pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
-                        <Internal>::entity()
-                    },
-                },
-            },
-        ],
-        fn_return: ::pgrx::pgrx_sql_entity_graph::PgExternReturnEntity::Type {
-            ty: ::pgrx::pgrx_sql_entity_graph::UsedTypeEntity {
-                ty_source: "Internal",
-                ty_id: core::any::TypeId::of::<Internal>(),
-                full_path: core::any::type_name::<Internal>(),
-                module_path: {
-                    let ty_name = core::any::type_name::<Internal>();
-                    let mut path_items: Vec<_> = ty_name.split("::").collect();
-                    let _ = path_items.pop();
-                    path_items.join("::")
-                },
-                composite_type: None,
-                variadic: false,
-                default: None,
-                optional: false,
-                metadata: {
-                    use ::pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
-                    <Internal>::entity()
-                },
-            },
-        },
-        #[allow(clippy::or_fun_call)]
-        schema: None,
-        file: file!(),
-        line: line!(),
-        extern_attrs: vec![
-            ::pgrx::pgrx_sql_entity_graph::ExternArgs::Immutable,
-            ::pgrx::pgrx_sql_entity_graph::ExternArgs::ParallelSafe,
-        ],
-        #[allow(clippy::or_fun_call)]
-        search_path: None,
-        #[allow(clippy::or_fun_call)]
-        operator: None,
-        cast: None,
-        to_sql_config: ::pgrx::pgrx_sql_entity_graph::ToSqlConfigEntity {
-            enabled: true,
-            callback: None,
-            content: None,
-        },
-    };
-    ::pgrx::pgrx_sql_entity_graph::SqlGraphEntity::Function(submission)
-}
-#[doc = r" combine two intermediate states for sparse vector"]
-fn _vectors_svecf32_aggregate_avg_sum_combinefunc(state1: Internal, state2: Internal) -> Internal {
-    match unsafe {
-        (
-            state1.get_mut::<SVecf32AggregateAvgSumStype>(),
-            state2.get_mut::<SVecf32AggregateAvgSumStype>(),
-        )
-    } {
+/// combine two intermediate states for sparse vector
+#[base_macros::aggregate_func]
+#[pgrx::pg_extern(immutable, parallel_safe)]
+fn _vectors_svecf32_aggregate_avg_sum_combinefunc(
+    mut state1: Option<Internal>,
+    mut state2: Option<Internal>,
+) -> Option<Internal> {
+    match (
+        get_mut_internal::<SVecf32AggregateAvgSumStype>(&mut state1),
+        get_mut_internal::<SVecf32AggregateAvgSumStype>(&mut state2),
+    ) {
         (None, None) => state1,
         (Some(_), None) => state1,
         (None, Some(_)) => state2,
@@ -536,6 +277,7 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(state1: Internal, state2: Inte
             let dims1 = s1.dims();
             let dims2 = s2.dims();
             check_matched_dims(dims1, dims2);
+            // ensure state1 has larger capacity
             let (s1, s2, larger_internal) = if s1.capacity() > s2.capacity() {
                 (s1, s2, 0)
             } else {
@@ -544,6 +286,7 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(state1: Internal, state2: Inte
             let total_count = s1.count() + s2.count();
             match s1.check_capacity(s2.len()) {
                 true => {
+                    // merge state2 into state
                     s1.merge_in_place(SVecf32Borrowed::new(
                         s2.dims() as u32,
                         s2.indexes(),
@@ -557,6 +300,7 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(state1: Internal, state2: Inte
                     }
                 }
                 false => {
+                    // allocate a new state and merge the old state
                     let mut new_state = SVecf32AggregateAvgSumStype::new_with_capacity(
                         dims1 as u32,
                         s1.len() + s2.len(),
@@ -566,79 +310,24 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(state1: Internal, state2: Inte
                         s1.indexes(),
                         s1.values(),
                     ));
+                    // merge state2 into state
                     new_state.merge_in_place(SVecf32Borrowed::new(
                         s2.dims() as u32,
                         s2.indexes(),
                         s2.values(),
                     ));
                     new_state.count = total_count;
-                    Internal::new(new_state)
+                    Some(Internal::new(new_state))
                 }
             }
         }
     }
 }
-#[no_mangle]
-#[doc(hidden)]
-pub unsafe extern "C" fn _vectors_svecf32_aggregate_avg_sum_combinefunc_wrapper(
-    _fcinfo: ::pgrx::pg_sys::FunctionCallInfo,
-) -> ::pgrx::pg_sys::Datum {
-    #[allow(non_snake_case)]
-    unsafe fn _vectors_svecf32_aggregate_avg_sum_combinefunc_wrapper_inner(
-        _fcinfo: ::pgrx::pg_sys::FunctionCallInfo,
-    ) -> ::pgrx::pg_sys::Datum {
-        let state1_ = unsafe {
-            ::pgrx::fcinfo::pg_getarg::<Internal>(_fcinfo, 0usize).unwrap_or_else(|| {
-                panic!(
-                    "{} is null",
-                    stringify! {
-                      state1_
-                    }
-                )
-            })
-        };
-        let state2_ = unsafe {
-            ::pgrx::fcinfo::pg_getarg::<Internal>(_fcinfo, 1usize).unwrap_or_else(|| {
-                panic!(
-                    "{} is null",
-                    stringify! {
-                      state2_
-                    }
-                )
-            })
-        };
-        #[allow(unused_unsafe)]
-        let result = unsafe { _vectors_svecf32_aggregate_avg_sum_combinefunc(state1_, state2_) };
-        ::pgrx::datum::IntoDatum::into_datum(result)
-            .unwrap_or_else(|| panic!("returned Datum was NULL"))
-    }
-    #[allow(unused_unsafe)]
-    unsafe {
-        pgrx::pg_sys::submodules::panic::pgrx_extern_c_guard(move || {
-            let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData = std::ptr::null_mut();
-            if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
-                ::pgrx::error!("aggregate function called in non-aggregate context",);
-            }
-            let old_context = ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context);
-            let result = _vectors_svecf32_aggregate_avg_sum_combinefunc_wrapper_inner(_fcinfo);
-            ::pgrx::pg_sys::MemoryContextSwitchTo(old_context);
-            result
-        })
-    }
-}
-#[no_mangle]
-#[doc(hidden)]
-pub extern "C" fn pg_finfo__vectors_svecf32_aggregate_avg_sum_combinefunc_wrapper(
-) -> &'static ::pgrx::pg_sys::Pg_finfo_record {
-    const V1_API: ::pgrx::pg_sys::Pg_finfo_record =
-        ::pgrx::pg_sys::Pg_finfo_record { api_version: 1 };
-    &V1_API
-}
 
 /// finalize the intermediate state for sparse vector average
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_aggregate_avg_finalfunc(state: Internal) -> Option<SVecf32Output> {
-    match unsafe { state.get_mut::<SVecf32AggregateAvgSumStype>() } {
+fn _vectors_svecf32_aggregate_avg_finalfunc(mut state: Option<Internal>) -> Option<SVecf32Output> {
+    match get_mut_internal::<SVecf32AggregateAvgSumStype>(&mut state) {
         Some(state) => {
             let len = state.len();
             let count = state.count();
@@ -660,8 +349,8 @@ fn _vectors_svecf32_aggregate_avg_finalfunc(state: Internal) -> Option<SVecf32Ou
 
 /// finalize the intermediate state for sparse vector sum
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_aggregate_sum_finalfunc(state: Internal) -> Option<SVecf32Output> {
-    match unsafe { state.get_mut::<SVecf32AggregateAvgSumStype>() } {
+fn _vectors_svecf32_aggregate_sum_finalfunc(mut state: Option<Internal>) -> Option<SVecf32Output> {
+    match get_mut_internal::<SVecf32AggregateAvgSumStype>(&mut state) {
         Some(state) => {
             state.filter_zero();
             let indexes = state.indexes();
