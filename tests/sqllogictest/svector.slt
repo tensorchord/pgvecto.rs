@@ -162,4 +162,4 @@ SELECT sum(data) = sum(data::svector)::vector FROM test_vectors;
 t
 
 statement ok
-DROP TABLE t, test_vectors;
+DROP TABLE t, test_vectors; 

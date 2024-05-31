@@ -78,6 +78,14 @@ CREATE TYPE vector_index_stat AS (
     idx_options TEXT
 );
 
+CREATE TYPE _vectors_vecf32_aggregate_avg_stype (
+    INPUT = _vectors_vecf32_aggregate_avg_stype_in,
+    OUTPUT = _vectors_vecf32_aggregate_avg_stype_out,
+    STORAGE = EXTERNAL,
+    INTERNALLENGTH = VARIABLE,
+    ALIGNMENT = double
+);
+
 -- List of operators
 
 CREATE OPERATOR + (
