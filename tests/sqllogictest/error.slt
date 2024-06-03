@@ -12,3 +12,6 @@ INSERT INTO t (val) VALUES ('[0, 1, 2, 3]');
 
 statement error The dimension of a vector does not matched that in a vector index column.
 SELECT * FROM t ORDER BY val <-> '[0, 1, 2, 3]';
+
+statement ok
+DROP TABLE t;

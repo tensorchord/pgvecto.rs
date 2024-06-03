@@ -32,6 +32,12 @@ CREATE FUNCTION vectors."_vectors_veci8_operator_neq"(
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_neq_wrapper';
 
+CREATE  FUNCTION vectors."_vectors_veci8_operator_mul"(
+	"lhs" veci8,
+	"rhs" veci8
+) RETURNS veci8
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_mul_wrapper';
+
 CREATE FUNCTION vectors."_vectors_veci8_operator_minus"(
     "lhs" veci8,
     "rhs" veci8
@@ -92,12 +98,27 @@ CREATE FUNCTION vectors."_vectors_veci8_operator_add"(
 ) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_add_wrapper';
 
+CREATE  FUNCTION vectors."_vectors_veci8_normalize"(
+	"vector" veci8
+) RETURNS veci8
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_normalize_wrapper';
+
+CREATE  FUNCTION vectors."_vectors_veci8_norm"(
+	"vector" veci8
+) RETURNS real
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_norm_wrapper';
+
 CREATE FUNCTION vectors."_vectors_veci8_in"(
     "input" cstring,
     "_oid" oid,
     "typmod" INT
 ) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_in_wrapper';
+
+CREATE  FUNCTION vectors."_vectors_veci8_dims"(
+	"vector" veci8
+) RETURNS INT
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_dims_wrapper';
 
 CREATE FUNCTION _vectors_vecf32_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_subscript_wrapper';
@@ -114,6 +135,43 @@ CREATE FUNCTION vectors."_vectors_vecf32_recv"(
 ) RETURNS vector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_recv_wrapper';
 
+CREATE FUNCTION vectors."_vectors_vecf32_operator_mul"(
+	"lhs" vector,
+	"rhs" vector
+) RETURNS vector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_mul_wrapper';
+
+CREATE FUNCTION vectors."_vectors_vecf32_normalize"(
+	"vector" vector
+) RETURNS vector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_normalize_wrapper';
+
+CREATE FUNCTION vectors."_vectors_vecf32_norm"(
+	"vector" vector
+) RETURNS real
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_norm_wrapper';
+
+CREATE FUNCTION vectors."_vectors_vecf32_dims"(
+	"vector" vector
+) RETURNS INT
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_dims_wrapper';
+
+CREATE  FUNCTION "_vectors_vecf32_aggregate_sum_finalfunc"(
+	"state" internal
+) RETURNS vector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_aggregate_sum_finalfunc_wrapper';
+
+CREATE FUNCTION _vectors_vecf32_aggregate_avg_sum_sfunc(internal, vector) RETURNS internal IMMUTABLE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_aggregate_avg_sum_sfunc_wrapper';
+
+CREATE FUNCTION _vectors_vecf32_aggregate_avg_sum_combinefunc(internal, internal) RETURNS internal IMMUTABLE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_aggregate_avg_sum_combinefunc_wrapper';
+
+CREATE  FUNCTION "_vectors_vecf32_aggregate_avg_finalfunc"(
+	"state" internal
+) RETURNS vector
+IMMUTABLE STRICT PARALLEL SAFE
+LANGUAGE c
+AS 'MODULE_PATHNAME', '_vectors_vecf32_aggregate_avg_finalfunc_wrapper';
+
 CREATE FUNCTION _vectors_vecf16_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_subscript_wrapper';
 
@@ -128,6 +186,28 @@ CREATE FUNCTION vectors."_vectors_vecf16_recv"(
     "typmod" INT
 ) RETURNS vecf16
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_recv_wrapper';
+
+CREATE  FUNCTION vectors."_vectors_vecf16_operator_mul"(
+	"lhs" vecf16,
+	"rhs" vecf16
+) RETURNS vecf16
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c
+AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_mul_wrapper';
+
+CREATE  FUNCTION vectors."_vectors_vecf16_normalize"(
+	"vector" vecf16
+) RETURNS vecf16
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_normalize_wrapper';
+
+CREATE  FUNCTION vectors."_vectors_vecf16_norm"(
+	"vector" vecf16
+) RETURNS real
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_norm_wrapper';
+
+CREATE  FUNCTION vectors."_vectors_vecf16_dims"(
+	"vector" vecf16
+) RETURNS INT
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_dims_wrapper';
 
 CREATE FUNCTION vectors."_vectors_typmod_in_65535"(
     "list" cstring[]
@@ -185,6 +265,12 @@ CREATE FUNCTION vectors."_vectors_svecf32_operator_neq"(
     "rhs" svector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_neq_wrapper';
+
+CREATE  FUNCTION vectors."_vectors_svecf32_operator_mul"(
+	"lhs" svector,
+	"rhs" svector
+) RETURNS svector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_mul_wrapper';
 
 CREATE FUNCTION vectors."_vectors_svecf32_operator_minus"(
     "lhs" svector,
@@ -246,6 +332,16 @@ CREATE FUNCTION vectors."_vectors_svecf32_operator_add"(
 ) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_add_wrapper';
 
+CREATE  FUNCTION vectors."_vectors_svecf32_normalize"(
+	"vector" svector
+) RETURNS svector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_normalize_wrapper';
+
+CREATE  FUNCTION vectors."_vectors_svecf32_norm"(
+	"vector" svector
+) RETURNS real
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_norm_wrapper';
+
 CREATE FUNCTION vectors."_vectors_svecf32_in"(
     "input" cstring,
     "_oid" oid,
@@ -253,12 +349,38 @@ CREATE FUNCTION vectors."_vectors_svecf32_in"(
 ) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_in_wrapper';
 
+CREATE  FUNCTION vectors."_vectors_svecf32_div"(
+	"vector" svector,
+	"scalar" real
+) RETURNS svector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_div_wrapper';
+
+CREATE  FUNCTION vectors."_vectors_svecf32_dims"(
+	"vector" svector
+) RETURNS INT
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_dims_wrapper';
+
+CREATE  FUNCTION "_vectors_svecf32_aggregate_sum_finalfunc"(
+	"state" internal
+) RETURNS svector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_aggregate_sum_finalfunc_wrapper';
+
+CREATE FUNCTION _vectors_svecf32_aggregate_avg_sum_sfunc(internal, svector) RETURNS internal IMMUTABLE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_aggregate_avg_sum_sfunc_wrapper';
+
+CREATE FUNCTION _vectors_svecf32_aggregate_avg_sum_combinefunc(internal, internal) RETURNS internal IMMUTABLE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_aggregate_avg_sum_combinefunc_wrapper';
+
+CREATE  FUNCTION "_vectors_svecf32_aggregate_avg_finalfunc"(
+	"state" internal
+) RETURNS svector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_aggregate_avg_finalfunc_wrapper';
+
+
 CREATE OR REPLACE FUNCTION vectors."_vectors_pgvectors_upgrade"() RETURNS void
 STRICT VOLATILE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 
 CREATE OR REPLACE FUNCTION vectors."_vectors_index_stat"(
     "oid" oid
-) RETURNS vectors.vector_index_stat /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+) RETURNS vectors.vector_index_stat
 STRICT VOLATILE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_index_stat_wrapper';
 
 CREATE FUNCTION vectors."_vectors_cast_veci8_to_vecf32"(
@@ -408,6 +530,11 @@ CREATE FUNCTION vectors."_vectors_bvecf32_operator_and"(
 ) RETURNS bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_and_wrapper';
 
+CREATE  FUNCTION vectors."_vectors_bvecf32_norm"(
+	"vector" bvector
+) RETURNS real
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_norm_wrapper';
+
 CREATE FUNCTION vectors."_vectors_bvecf32_in"(
     "input" cstring,
     "_oid" oid,
@@ -415,10 +542,22 @@ CREATE FUNCTION vectors."_vectors_bvecf32_in"(
 ) RETURNS bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_in_wrapper';
 
+CREATE  FUNCTION vectors."_vectors_bvecf32_dims"(
+	"vector" bvector
+) RETURNS INT
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_dims_wrapper';
+
 CREATE FUNCTION vectors."_vectors_binarize"(
     "vector" vector
 ) RETURNS bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binarize_wrapper';
+
+CREATE  FUNCTION vectors."_vectors_alter_vector_index"(
+	"oid" oid,
+	"key" TEXT,
+	"value" TEXT
+) RETURNS void
+STRICT VOLATILE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_alter_vector_index_wrapper';
 
 -- List of data types
 
@@ -503,6 +642,34 @@ CREATE OPERATOR - (
     PROCEDURE = _vectors_veci8_operator_minus,
     LEFTARG = veci8,
     RIGHTARG = veci8
+);
+
+CREATE OPERATOR * (
+    PROCEDURE = _vectors_vecf32_operator_mul,
+    LEFTARG = vector,
+    RIGHTARG = vector,
+    COMMUTATOR = *
+);
+
+CREATE OPERATOR * (
+    PROCEDURE = _vectors_vecf16_operator_mul,
+    LEFTARG = vecf16,
+    RIGHTARG = vecf16,
+    COMMUTATOR = *
+);
+
+CREATE OPERATOR * (
+    PROCEDURE = _vectors_svecf32_operator_mul,
+    LEFTARG = svector,
+    RIGHTARG = svector,
+    COMMUTATOR = *
+);
+
+CREATE OPERATOR * (
+    PROCEDURE = _vectors_veci8_operator_mul,
+    LEFTARG = veci8,
+    RIGHTARG = veci8,
+    COMMUTATOR = *
 );
 
 CREATE OPERATOR & (
@@ -778,15 +945,6 @@ CREATE OPERATOR <~> (
 CREATE OR REPLACE FUNCTION pgvectors_upgrade() RETURNS void
 STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 
-CREATE FUNCTION to_svector("dims" INT, "indexes" INT[], "values" real[]) RETURNS svector
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_svector_wrapper';
-
-CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
-
-CREATE FUNCTION binarize("vector" vector) RETURNS bvector
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binarize_wrapper';
-
 CREATE FUNCTION text2vec_openai("input" TEXT, "model" TEXT) RETURNS vector
 STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_text2vec_openai_wrapper';
 
@@ -794,12 +952,88 @@ CREATE FUNCTION text2vec_openai_v3(input TEXT) RETURNS vector
 STRICT PARALLEL SAFE LANGUAGE plpgsql AS
 $$
 DECLARE 
-variable vectors.vector;
+variable vector;
 BEGIN
-  variable := vectors.text2vec_openai(input, 'text-embedding-3-small');
+  variable := text2vec_openai(input, 'text-embedding-3-small');
   RETURN variable;
 END;
 $$;
+
+CREATE FUNCTION alter_vector_index("index" OID, "key" TEXT, "value" TEXT) RETURNS void
+STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_alter_vector_index_wrapper';
+
+CREATE FUNCTION vector_dims(vector) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_dims_wrapper';
+
+CREATE FUNCTION vector_dims(vecf16) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_dims_wrapper';
+
+CREATE FUNCTION vector_dims(svector) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_dims_wrapper';
+
+CREATE FUNCTION vector_dims(bvector) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_dims_wrapper';
+
+CREATE FUNCTION vector_dims(veci8) RETURNS INT
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_dims_wrapper';
+
+CREATE FUNCTION vector_norm(vector) RETURNS real
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_norm_wrapper';
+
+CREATE FUNCTION vector_norm(vecf16) RETURNS real
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_norm_wrapper';
+
+CREATE FUNCTION vector_norm(svector) RETURNS real
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_norm_wrapper';
+
+CREATE FUNCTION vector_norm(bvector) RETURNS real
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_norm_wrapper';
+
+CREATE FUNCTION vector_norm(veci8) RETURNS real
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_norm_wrapper';
+
+CREATE FUNCTION to_svector("dims" INT, "indexes" INT[], "values" real[]) RETURNS svector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_svector_wrapper';
+
+CREATE FUNCTION binarize("vector" vector) RETURNS bvector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binarize_wrapper';
+
+CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
+
+-- List of aggregates
+
+CREATE AGGREGATE avg(vector) (
+    SFUNC = _vectors_vecf32_aggregate_avg_sum_sfunc,
+    STYPE = internal,
+    COMBINEFUNC = _vectors_vecf32_aggregate_avg_sum_combinefunc,
+    FINALFUNC = _vectors_vecf32_aggregate_avg_finalfunc,
+    PARALLEL = SAFE
+);
+
+CREATE AGGREGATE sum(vector) (
+    SFUNC = _vectors_vecf32_aggregate_avg_sum_sfunc,
+    STYPE = internal,
+    COMBINEFUNC = _vectors_vecf32_aggregate_avg_sum_combinefunc,
+    FINALFUNC = _vectors_vecf32_aggregate_sum_finalfunc,
+    PARALLEL = SAFE
+);
+
+CREATE AGGREGATE avg(svector) (
+    SFUNC = _vectors_svecf32_aggregate_avg_sum_sfunc,
+    STYPE = internal,
+    COMBINEFUNC = _vectors_svecf32_aggregate_avg_sum_combinefunc,
+    FINALFUNC = _vectors_svecf32_aggregate_avg_finalfunc,
+    PARALLEL = SAFE
+);
+
+CREATE AGGREGATE sum(svector) (
+    SFUNC = _vectors_svecf32_aggregate_avg_sum_sfunc,
+    STYPE = internal,
+    COMBINEFUNC = _vectors_svecf32_aggregate_avg_sum_combinefunc,
+    FINALFUNC = _vectors_svecf32_aggregate_sum_finalfunc,
+    PARALLEL = SAFE
+);
 
 -- List of casts
 
@@ -901,7 +1135,7 @@ CREATE OR REPLACE VIEW pg_vector_index_stat AS
          pg_index X ON C.oid = X.indrelid JOIN
          pg_class I ON I.oid = X.indexrelid JOIN
          pg_am A ON A.oid = I.relam
-    WHERE A.amname = 'vectors';
+    WHERE A.amname = 'vectors' AND C.relkind = 'r';
 
 GRANT SELECT ON TABLE pg_vector_index_stat TO PUBLIC;
 
