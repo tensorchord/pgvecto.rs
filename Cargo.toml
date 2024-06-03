@@ -49,7 +49,7 @@ send_fd = { path = "crates/send_fd" }
 service = { path = "crates/service" }
 
 [patch.crates-io]
-pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.0-alpha.1-patch" }
+pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.0-alpha.1-patch3" }
 
 [lints]
 rust.unsafe_op_in_unsafe_fn = "forbid"
