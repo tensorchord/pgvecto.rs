@@ -17,7 +17,6 @@ mod error;
 mod gucs;
 mod index;
 mod ipc;
-mod logger;
 mod upgrade;
 mod utils;
 
