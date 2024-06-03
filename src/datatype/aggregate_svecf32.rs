@@ -1,7 +1,6 @@
 #![allow(unused_lifetimes)]
 #![allow(clippy::extra_unused_lifetimes)]
 
-use super::get_mut_internal;
 use super::memory_svecf32::*;
 use crate::error::*;
 use base::scalar::*;
@@ -188,26 +187,18 @@ impl<'a> SVecf32AggregateAvgSumStypeBorrowed<'a> {
 }
 
 /// accumulate intermediate state for sparse vector
-#[base_macros::aggregate_func]
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(sql = "\
+CREATE FUNCTION _vectors_svecf32_aggregate_avg_sum_sfunc(internal, svector) RETURNS internal IMMUTABLE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
 fn _vectors_svecf32_aggregate_avg_sum_sfunc(
-    mut current: Option<Internal>,
+    current: Internal,
     value: Option<SVecf32Input<'_>>,
-) -> Option<Internal> {
+    _fcinfo: pgrx::pg_sys::FunctionCallInfo,
+) -> Internal {
     if value.is_none() {
-        // It would get error "returned Datum was NULL" if we use Internal directly when execute `SELECT sum(v) FROM unnest(ARRAY[NULL]::svector[]) v;`
-        // so we return a optional here. But it is so reasonable though.
-        match get_mut_internal::<SVecf32AggregateAvgSumStype>(&mut current) {
-            Some(_) => {
-                return current;
-            }
-            None => {
-                return None;
-            }
-        }
+        return current;
     }
     let value = value.unwrap();
-    match get_mut_internal::<SVecf32AggregateAvgSumStype>(&mut current) {
+    match unsafe { current.get_mut::<SVecf32AggregateAvgSumStype>() } {
         // if the state is empty, copy the input vector
         None => {
             let internal = Internal::new(SVecf32AggregateAvgSumStype::new_with_capacity(
@@ -217,7 +208,7 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
             let state = unsafe { internal.get_mut::<SVecf32AggregateAvgSumStype>().unwrap() };
             state.merge_in_place(value.for_borrow());
             state.count = 1;
-            Some(internal)
+            internal
         }
         Some(state) => {
             let dims = state.dims();
@@ -234,15 +225,22 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
                 }
                 false => {
                     // allocate a new state and merge the old state
-                    let new_internal =
-                        Internal::new(SVecf32AggregateAvgSumStype::new_with_capacity(
+                    let mut new_state = unsafe {
+                        let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData =
+                            std::ptr::null_mut();
+                        if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
+                            ::pgrx::error!("aggregate function called in non-aggregate context");
+                        }
+                        // pg will switch to a temporary memory context when call aggregate trans function.
+                        // https://github.com/postgres/postgres/blob/52b49b796cc7fd976f4da6aa49c9679ecdae8bd5/src/backend/executor/nodeAgg.c#L761-L801
+                        // If want to reuse the state in aggregate, we need to switch to aggregate context like https://github.com/postgres/postgres/blob/7c655a04a2dc84b59ed6dce97bd38b79e734ecca/src/backend/utils/adt/numeric.c#L5635-L5648.
+                        let old_context = ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context);
+                        let state = SVecf32AggregateAvgSumStype::new_with_capacity(
                             dims as u32,
                             state.len() + value.len(),
-                        ));
-                    let new_state = unsafe {
-                        new_internal
-                            .get_mut::<SVecf32AggregateAvgSumStype>()
-                            .unwrap()
+                        );
+                        ::pgrx::pg_sys::MemoryContextSwitchTo(old_context);
+                        state
                     };
                     new_state.merge_in_place(SVecf32Borrowed::new(
                         dims as u32,
@@ -252,7 +250,7 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
                     // merge the input vector into state
                     new_state.merge_in_place(value.for_borrow());
                     new_state.count = count;
-                    Some(new_internal)
+                    Internal::new(new_state)
                 }
             }
         }
@@ -260,15 +258,16 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
 }
 
 /// combine two intermediate states for sparse vector
-#[base_macros::aggregate_func]
-#[pgrx::pg_extern(immutable, parallel_safe)]
+#[pgrx::pg_extern(sql = "\
+CREATE FUNCTION _vectors_svecf32_aggregate_avg_sum_combinefunc(internal, internal) RETURNS internal IMMUTABLE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
 fn _vectors_svecf32_aggregate_avg_sum_combinefunc(
-    mut state1: Option<Internal>,
-    mut state2: Option<Internal>,
-) -> Option<Internal> {
+    state1: Internal,
+    state2: Internal,
+    _fcinfo: pgrx::pg_sys::FunctionCallInfo,
+) -> Internal {
     match (
-        get_mut_internal::<SVecf32AggregateAvgSumStype>(&mut state1),
-        get_mut_internal::<SVecf32AggregateAvgSumStype>(&mut state2),
+        unsafe { state1.get_mut::<SVecf32AggregateAvgSumStype>() },
+        unsafe { state2.get_mut::<SVecf32AggregateAvgSumStype>() },
     ) {
         (None, None) => state1,
         (Some(_), None) => state1,
@@ -301,10 +300,20 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(
                 }
                 false => {
                     // allocate a new state and merge the old state
-                    let mut new_state = SVecf32AggregateAvgSumStype::new_with_capacity(
-                        dims1 as u32,
-                        s1.len() + s2.len(),
-                    );
+                    let mut new_state = unsafe {
+                        let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData =
+                            std::ptr::null_mut();
+                        if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
+                            ::pgrx::error!("aggregate function called in non-aggregate context");
+                        }
+                        let old_context = ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context);
+                        let state = SVecf32AggregateAvgSumStype::new_with_capacity(
+                            dims1 as u32,
+                            s1.len() + s2.len(),
+                        );
+                        ::pgrx::pg_sys::MemoryContextSwitchTo(old_context);
+                        state
+                    };
                     new_state.merge_in_place(SVecf32Borrowed::new(
                         dims1 as u32,
                         s1.indexes(),
@@ -317,7 +326,7 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(
                         s2.values(),
                     ));
                     new_state.count = total_count;
-                    Some(Internal::new(new_state))
+                    Internal::new(new_state)
                 }
             }
         }
@@ -326,8 +335,8 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(
 
 /// finalize the intermediate state for sparse vector average
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_aggregate_avg_finalfunc(mut state: Option<Internal>) -> Option<SVecf32Output> {
-    match get_mut_internal::<SVecf32AggregateAvgSumStype>(&mut state) {
+fn _vectors_svecf32_aggregate_avg_finalfunc(state: Internal) -> Option<SVecf32Output> {
+    match unsafe { state.get_mut::<SVecf32AggregateAvgSumStype>() } {
         Some(state) => {
             let len = state.len();
             let count = state.count();
@@ -349,8 +358,8 @@ fn _vectors_svecf32_aggregate_avg_finalfunc(mut state: Option<Internal>) -> Opti
 
 /// finalize the intermediate state for sparse vector sum
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_aggregate_sum_finalfunc(mut state: Option<Internal>) -> Option<SVecf32Output> {
-    match get_mut_internal::<SVecf32AggregateAvgSumStype>(&mut state) {
+fn _vectors_svecf32_aggregate_sum_finalfunc(state: Internal) -> Option<SVecf32Output> {
+    match unsafe { state.get_mut::<SVecf32AggregateAvgSumStype>() } {
         Some(state) => {
             state.filter_zero();
             let indexes = state.indexes();

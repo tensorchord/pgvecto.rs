@@ -3032,7 +3032,6 @@ version = "0.0.0"
 dependencies = [
  "arrayvec",
  "base",
- "base_macros",
  "bincode",
  "bytemuck",
  "byteorder",

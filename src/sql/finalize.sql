@@ -651,44 +651,36 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binari
 CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
 
-CREATE FUNCTION _vectors_vecf32_aggregate_avg_sum_sfunc_agg(internal, vector) RETURNS internal IMMUTABLE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_aggregate_avg_sum_sfunc_agg_wrapper';
-
-CREATE FUNCTION _vectors_vecf32_aggregate_avg_sum_combinefunc_agg(internal, internal) RETURNS internal IMMUTABLE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_aggregate_avg_sum_combinefunc_agg_wrapper';
-
-CREATE FUNCTION _vectors_svecf32_aggregate_avg_sum_sfunc_agg(internal, svector) RETURNS internal IMMUTABLE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_aggregate_avg_sum_sfunc_agg_wrapper';
-
-CREATE FUNCTION _vectors_svecf32_aggregate_avg_sum_combinefunc_agg(internal, internal) RETURNS internal IMMUTABLE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_aggregate_avg_sum_combinefunc_agg_wrapper';
-
 -- List of aggregates
 
 CREATE AGGREGATE avg(vector) (
-    SFUNC = _vectors_vecf32_aggregate_avg_sum_sfunc_agg,
+    SFUNC = _vectors_vecf32_aggregate_avg_sum_sfunc,
     STYPE = internal,
-    COMBINEFUNC = _vectors_vecf32_aggregate_avg_sum_combinefunc_agg,
+    COMBINEFUNC = _vectors_vecf32_aggregate_avg_sum_combinefunc,
     FINALFUNC = _vectors_vecf32_aggregate_avg_finalfunc,
     PARALLEL = SAFE
 );
 
 CREATE AGGREGATE sum(vector) (
-    SFUNC = _vectors_vecf32_aggregate_avg_sum_sfunc_agg,
+    SFUNC = _vectors_vecf32_aggregate_avg_sum_sfunc,
     STYPE = internal,
-    COMBINEFUNC = _vectors_vecf32_aggregate_avg_sum_combinefunc_agg,
+    COMBINEFUNC = _vectors_vecf32_aggregate_avg_sum_combinefunc,
     FINALFUNC = _vectors_vecf32_aggregate_sum_finalfunc,
     PARALLEL = SAFE
 );
 
 CREATE AGGREGATE avg(svector) (
-    SFUNC = _vectors_svecf32_aggregate_avg_sum_sfunc_agg,
+    SFUNC = _vectors_svecf32_aggregate_avg_sum_sfunc,
     STYPE = internal,
-    COMBINEFUNC = _vectors_svecf32_aggregate_avg_sum_combinefunc_agg,
+    COMBINEFUNC = _vectors_svecf32_aggregate_avg_sum_combinefunc,
     FINALFUNC = _vectors_svecf32_aggregate_avg_finalfunc,
     PARALLEL = SAFE
 );
 
 CREATE AGGREGATE sum(svector) (
-    SFUNC = _vectors_svecf32_aggregate_avg_sum_sfunc_agg,
+    SFUNC = _vectors_svecf32_aggregate_avg_sum_sfunc,
     STYPE = internal,
-    COMBINEFUNC = _vectors_svecf32_aggregate_avg_sum_combinefunc_agg,
+    COMBINEFUNC = _vectors_svecf32_aggregate_avg_sum_combinefunc,
     FINALFUNC = _vectors_svecf32_aggregate_sum_finalfunc,
     PARALLEL = SAFE
 );
