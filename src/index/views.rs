@@ -17,10 +17,11 @@ fn _vectors_alter_vector_index(oid: pgrx::pg_sys::Oid, key: String, value: Strin
 #[pgrx::pg_extern(volatile, strict, parallel_safe)]
 fn _vectors_index_stat(
     oid: pgrx::pg_sys::Oid,
-) -> pgrx::composite_type!('static, "vectors.vector_index_stat") {
+) -> pgrx::composite_type!('static, "vector_index_stat") {
     use pgrx::heap_tuple::PgHeapTuple;
     let handle = from_oid_to_handle(oid);
-    let mut res = PgHeapTuple::new_composite_type("vectors.vector_index_stat").unwrap();
+    let type_name = crate::SCHEMA.to_string() + ".vector_index_stat";
+    let mut res = PgHeapTuple::new_composite_type(&type_name).unwrap();
     let mut rpc = check_client(client());
     let stat = rpc.stat(handle);
     match stat {
