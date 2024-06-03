@@ -225,3 +225,10 @@ unsafe impl SqlTranslatable for Veci8Output {
         Ok(Returns::One(SqlMapping::As(String::from("veci8"))))
     }
 }
+
+unsafe impl pgrx::callconv::BoxRet for Veci8Output {
+    unsafe fn box_in_fcinfo(self, fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
+        self.into_datum()
+            .unwrap_or_else(|| unsafe { pgrx::fcinfo::pg_return_null(fcinfo) })
+    }
+}
