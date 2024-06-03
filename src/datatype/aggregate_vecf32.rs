@@ -44,6 +44,129 @@ impl Vecf32AggregateAvgSumStype {
     }
 }
 
+impl DerefMut for Vecf32AggregateAvgStype<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        match self {
+            Vecf32AggregateAvgStype::Owned(p) => unsafe { p.as_mut() },
+            Vecf32AggregateAvgStype::Borrowed(p) => p,
+        }
+    }
+}
+
+impl Drop for Vecf32AggregateAvgStype<'_> {
+    fn drop(&mut self) {
+        match self {
+            Vecf32AggregateAvgStype::Owned(p) => unsafe {
+                pgrx::pg_sys::pfree(p.as_ptr().cast());
+            },
+            Vecf32AggregateAvgStype::Borrowed(_) => {}
+        }
+    }
+}
+
+impl FromDatum for Vecf32AggregateAvgStype<'_> {
+    unsafe fn from_polymorphic_datum(datum: Datum, is_null: bool, _typmod: Oid) -> Option<Self> {
+        if is_null {
+            None
+        } else {
+            let ptr = NonNull::new(datum.cast_mut_ptr::<Vecf32AggregateAvgStypeHeader>()).unwrap();
+            unsafe { Some(Vecf32AggregateAvgStype::new(ptr)) }
+        }
+    }
+}
+
+impl IntoDatum for Vecf32AggregateAvgStype<'_> {
+    fn into_datum(self) -> Option<Datum> {
+        Some(Datum::from(self.into_raw() as *mut ()))
+    }
+
+    fn type_oid() -> Oid {
+        let namespace =
+            pgrx::pg_catalog::PgNamespace::search_namespacename(crate::SCHEMA_C_STR).unwrap();
+        let namespace = namespace.get().expect("pgvecto.rs is not installed.");
+        let t = pgrx::pg_catalog::PgType::search_typenamensp(
+            c"_vectors_vecf32_aggregate_avg_stype",
+            namespace.oid(),
+        )
+        .unwrap();
+        let t = t.get().expect("pg_catalog is broken.");
+        t.oid()
+    }
+}
+
+unsafe impl SqlTranslatable for Vecf32AggregateAvgStype<'_> {
+    fn argument_sql() -> Result<SqlMapping, ArgumentError> {
+        Ok(SqlMapping::As(String::from(
+            "_vectors_vecf32_aggregate_avg_stype",
+        )))
+    }
+    fn return_sql() -> Result<Returns, ReturnsError> {
+        Ok(Returns::One(SqlMapping::As(String::from(
+            "_vectors_vecf32_aggregate_avg_stype",
+        ))))
+    }
+}
+
+unsafe impl pgrx::callconv::BoxRet for Vecf32AggregateAvgStype<'_> {
+    unsafe fn box_in_fcinfo(self, fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
+        self.into_datum()
+            .unwrap_or_else(|| unsafe { pgrx::fcinfo::pg_return_null(fcinfo) })
+    }
+}
+
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_vecf32_aggregate_avg_stype_in(
+    input: &CStr,
+    _oid: Oid,
+    _typmod: i32,
+) -> Vecf32AggregateAvgStype<'_> {
+    fn parse(input: &[u8]) -> Result<(u64, Vec<F32>), String> {
+        use crate::utils::parse::parse_vector;
+        let hint = "Invalid input format for _vecf32_aggregate_avg_stype, using \'bigint, array \' like \'1, [1]\'";
+        let (count, slice) = input.split_once(|&c| c == b',').ok_or(hint)?;
+        let count = std::str::from_utf8(count)
+            .map_err(|e| e.to_string() + "\n" + hint)?
+            .parse::<u64>()
+            .map_err(|e| e.to_string() + "\n" + hint)?;
+        let v = parse_vector(slice, 0, |s| s.parse().ok());
+        match v {
+            Err(e) => Err(e.to_string() + "\n" + hint),
+            Ok(vector) => Ok((count, vector)),
+        }
+    }
+    // parse one bigint and a vector of f32, split with a comma
+    let res = parse(input.to_bytes());
+    match res {
+        Err(e) => {
+            bad_literal(&e.to_string());
+        }
+        Ok((count, vector)) => Vecf32AggregateAvgStype::new_with_slice(count, &vector),
+    }
+}
+
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_vecf32_aggregate_avg_stype_out(state: Vecf32AggregateAvgStype<'_>) -> CString {
+    let mut buffer = String::new();
+    buffer.push_str(format!("{}, ", state.count()).as_str());
+    buffer.push('[');
+    if let Some(&x) = state.slice().first() {
+        buffer.push_str(format!("{}", x).as_str());
+    }
+    for &x in state.slice().iter().skip(1) {
+        buffer.push_str(format!(", {}", x).as_str());
+    }
+    buffer.push(']');
+    CString::new(buffer).unwrap()
+}
+
+/// accumulate intermediate state for vector average
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_vecf32_aggregate_avg_sfunc<'a>(
+    mut state: Vecf32AggregateAvgStype<'a>,
+    value: Vecf32Input<'_>,
+) -> Vecf32AggregateAvgStype<'a> {
+    let count = state.count();
+    match count {
 /// accumulate intermediate state for vector average
 #[base_macros::aggregate_func]
 #[pgrx::pg_extern(immutable, parallel_safe)]

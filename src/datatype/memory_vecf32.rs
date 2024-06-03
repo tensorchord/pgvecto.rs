@@ -136,7 +136,8 @@ impl IntoDatum for Vecf32Output {
     }
 
     fn type_oid() -> Oid {
-        let namespace = pgrx::pg_catalog::PgNamespace::search_namespacename(c"vectors").unwrap();
+        let namespace =
+            pgrx::pg_catalog::PgNamespace::search_namespacename(crate::SCHEMA_C_STR).unwrap();
         let namespace = namespace.get().expect("pgvecto.rs is not installed.");
         let t = pgrx::pg_catalog::PgType::search_typenamensp(c"vector", namespace.oid()).unwrap();
         let t = t.get().expect("pg_catalog is broken.");
@@ -159,5 +160,12 @@ unsafe impl SqlTranslatable for Vecf32Output {
     }
     fn return_sql() -> Result<Returns, ReturnsError> {
         Ok(Returns::One(SqlMapping::As(String::from("vector"))))
+    }
+}
+
+unsafe impl pgrx::callconv::BoxRet for Vecf32Output {
+    unsafe fn box_in_fcinfo(self, fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
+        self.into_datum()
+            .unwrap_or_else(|| unsafe { pgrx::fcinfo::pg_return_null(fcinfo) })
     }
 }

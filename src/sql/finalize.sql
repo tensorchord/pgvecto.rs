@@ -602,9 +602,9 @@ CREATE FUNCTION text2vec_openai_v3(input TEXT) RETURNS vector
 STRICT PARALLEL SAFE LANGUAGE plpgsql AS
 $$
 DECLARE 
-variable vectors.vector;
+variable vector;
 BEGIN
-  variable := vectors.text2vec_openai(input, 'text-embedding-3-small');
+  variable := text2vec_openai(input, 'text-embedding-3-small');
   RETURN variable;
 END;
 $$;

@@ -134,7 +134,7 @@ pub const ALIGNOF_LONG: u32 = 8;
 pub const ALIGNOF_PG_INT128_TYPE: u32 = 16;
 pub const ALIGNOF_SHORT: u32 = 2;
 pub const BLCKSZ: u32 = 8192;
-pub const CONFIGURE_ARGS : & [u8 ; 1597] = b" '--build=aarch64-linux-gnu' '--prefix=/usr' '--includedir=${prefix}/include' '--mandir=${prefix}/share/man' '--infodir=${prefix}/share/info' '--sysconfdir=/etc' '--localstatedir=/var' '--disable-silent-rules' '--libdir=${prefix}/lib/aarch64-linux-gnu' '--runstatedir=/run' '--disable-maintainer-mode' '--disable-dependency-tracking' '--with-tcl' '--with-perl' '--with-python' '--with-pam' '--with-openssl' '--with-libxml' '--with-libxslt' '--mandir=/usr/share/postgresql/15/man' '--docdir=/usr/share/doc/postgresql-doc-15' '--sysconfdir=/etc/postgresql-common' '--datarootdir=/usr/share/' '--datadir=/usr/share/postgresql/15' '--bindir=/usr/lib/postgresql/15/bin' '--libdir=/usr/lib/aarch64-linux-gnu/' '--libexecdir=/usr/lib/postgresql/' '--includedir=/usr/include/postgresql/' '--with-extra-version= (Debian 15.6-1.pgdg100+1)' '--enable-nls' '--enable-thread-safety' '--enable-debug' '--enable-dtrace' '--disable-rpath' '--with-uuid=e2fs' '--with-gnu-ld' '--with-gssapi' '--with-ldap' '--with-pgport=5432' '--with-system-tzdata=/usr/share/zoneinfo' 'AWK=mawk' 'MKDIR_P=/bin/mkdir -p' 'PROVE=/usr/bin/prove' 'PYTHON=/usr/bin/python3' 'TAR=/bin/tar' 'XSLTPROC=xsltproc --nonet' 'CFLAGS=-g -O2 -fstack-protector-strong -Wformat -Werror=format-security' 'LDFLAGS=-Wl,-z,relro -Wl,-z,now' '--enable-tap-tests' '--with-icu' '--with-llvm' 'LLVM_CONFIG=/usr/bin/llvm-config-13' 'CLANG=/usr/bin/clang-13' '--with-lz4' '--with-systemd' '--with-selinux' 'build_alias=aarch64-linux-gnu' 'CPPFLAGS=-Wdate-time -D_FORTIFY_SOURCE=2' 'CXXFLAGS=-g -O2 -fstack-protector-strong -Wformat -Werror=format-security'\0" ;
+pub const CONFIGURE_ARGS : & [u8 ; 1625] = b" '--build=aarch64-linux-gnu' '--prefix=/usr' '--includedir=${prefix}/include' '--mandir=${prefix}/share/man' '--infodir=${prefix}/share/info' '--sysconfdir=/etc' '--localstatedir=/var' '--disable-option-checking' '--disable-silent-rules' '--libdir=${prefix}/lib/aarch64-linux-gnu' '--runstatedir=/run' '--disable-maintainer-mode' '--disable-dependency-tracking' '--with-tcl' '--with-perl' '--with-python' '--with-pam' '--with-openssl' '--with-libxml' '--with-libxslt' '--mandir=/usr/share/postgresql/15/man' '--docdir=/usr/share/doc/postgresql-doc-15' '--sysconfdir=/etc/postgresql-common' '--datarootdir=/usr/share/' '--datadir=/usr/share/postgresql/15' '--bindir=/usr/lib/postgresql/15/bin' '--libdir=/usr/lib/aarch64-linux-gnu/' '--libexecdir=/usr/lib/postgresql/' '--includedir=/usr/include/postgresql/' '--with-extra-version= (Debian 15.7-1.pgdg100+1)' '--enable-nls' '--enable-thread-safety' '--enable-debug' '--enable-dtrace' '--disable-rpath' '--with-uuid=e2fs' '--with-gnu-ld' '--with-gssapi' '--with-ldap' '--with-pgport=5432' '--with-system-tzdata=/usr/share/zoneinfo' 'AWK=mawk' 'MKDIR_P=/bin/mkdir -p' 'PROVE=/usr/bin/prove' 'PYTHON=/usr/bin/python3' 'TAR=/bin/tar' 'XSLTPROC=xsltproc --nonet' 'CFLAGS=-g -O2 -fstack-protector-strong -Wformat -Werror=format-security' 'LDFLAGS=-Wl,-z,relro -Wl,-z,now' '--enable-tap-tests' '--with-icu' '--with-llvm' 'LLVM_CONFIG=/usr/bin/llvm-config-13' 'CLANG=/usr/bin/clang-13' '--with-lz4' '--with-systemd' '--with-selinux' 'build_alias=aarch64-linux-gnu' 'CPPFLAGS=-Wdate-time -D_FORTIFY_SOURCE=2' 'CXXFLAGS=-g -O2 -fstack-protector-strong -Wformat -Werror=format-security'\0" ;
 pub const DEF_PGPORT: u32 = 5432;
 pub const DEF_PGPORT_STR: &[u8; 5] = b"5432\0";
 pub const DLSUFFIX: &[u8; 4] = b".so\0";
@@ -313,18 +313,18 @@ pub const MEMSET_LOOP_LIMIT: u32 = 1024;
 pub const OPENSSL_API_COMPAT: u32 = 268439552;
 pub const PACKAGE_BUGREPORT: &[u8; 32] = b"pgsql-bugs@lists.postgresql.org\0";
 pub const PACKAGE_NAME: &[u8; 11] = b"PostgreSQL\0";
-pub const PACKAGE_STRING: &[u8; 16] = b"PostgreSQL 15.6\0";
+pub const PACKAGE_STRING: &[u8; 16] = b"PostgreSQL 15.7\0";
 pub const PACKAGE_TARNAME: &[u8; 11] = b"postgresql\0";
 pub const PACKAGE_URL: &[u8; 28] = b"https://www.postgresql.org/\0";
-pub const PACKAGE_VERSION: &[u8; 5] = b"15.6\0";
+pub const PACKAGE_VERSION: &[u8; 5] = b"15.7\0";
 pub const PG_KRB_SRVNAM: &[u8; 9] = b"postgres\0";
 pub const PG_MAJORVERSION: &[u8; 3] = b"15\0";
 pub const PG_MAJORVERSION_NUM: u32 = 15;
-pub const PG_MINORVERSION_NUM: u32 = 6;
+pub const PG_MINORVERSION_NUM: u32 = 7;
 pub const PG_USE_STDBOOL: u32 = 1;
-pub const PG_VERSION: &[u8; 31] = b"15.6 (Debian 15.6-1.pgdg100+1)\0";
-pub const PG_VERSION_NUM: u32 = 150006;
-pub const PG_VERSION_STR : & [u8 ; 119] = b"PostgreSQL 15.6 (Debian 15.6-1.pgdg100+1) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 8.3.0-6) 8.3.0, 64-bit\0" ;
+pub const PG_VERSION: &[u8; 31] = b"15.7 (Debian 15.7-1.pgdg100+1)\0";
+pub const PG_VERSION_NUM: u32 = 150007;
+pub const PG_VERSION_STR : & [u8 ; 119] = b"PostgreSQL 15.7 (Debian 15.7-1.pgdg100+1) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 8.3.0-6) 8.3.0, 64-bit\0" ;
 pub const RELSEG_SIZE: u32 = 131072;
 pub const SIZEOF_BOOL: u32 = 1;
 pub const SIZEOF_LONG: u32 = 8;
@@ -766,7 +766,7 @@ pub const PG_BINARY_W: &[u8; 2] = b"w\0";
 pub const _CTYPE_H: u32 = 1;
 pub const PGINVALID_SOCKET: i32 = -1;
 pub const PG_BACKEND_VERSIONSTR: &[u8; 54] =
-    b"postgres (PostgreSQL) 15.6 (Debian 15.6-1.pgdg100+1)\n\0";
+    b"postgres (PostgreSQL) 15.7 (Debian 15.7-1.pgdg100+1)\n\0";
 pub const EXE: &[u8; 1] = b"\0";
 pub const DEVNULL: &[u8; 10] = b"/dev/null\0";
 pub const USE_REPL_SNPRINTF: u32 = 1;
@@ -13820,6 +13820,8 @@ pub struct IndexOnlyScanState {
     pub ioss_TableSlot: *mut TupleTableSlot,
     pub ioss_VMBuffer: Buffer,
     pub ioss_PscanLen: Size,
+    pub ioss_NameCStringAttNums: *mut AttrNumber,
+    pub ioss_NameCStringCount: ::std::os::raw::c_int,
 }
 impl Default for IndexOnlyScanState {
     fn default() -> Self {
@@ -19282,8 +19284,8 @@ pub struct TableAmRoutine {
         ::std::option::Option<unsafe extern "C" fn(rel: Relation, newrnode: *const RelFileNode)>,
     pub relation_copy_for_cluster: ::std::option::Option<
         unsafe extern "C" fn(
-            NewTable: Relation,
             OldTable: Relation,
+            NewTable: Relation,
             OldIndex: Relation,
             use_sort: bool,
             OldestXmin: TransactionId,
@@ -41592,6 +41594,7 @@ extern "C" {
     pub fn plpgsql_dumptree(func: *mut PLpgSQL_function);
     pub fn plpgsql_base_yylex() -> ::std::os::raw::c_int;
     pub fn plpgsql_yylex() -> ::std::os::raw::c_int;
+    pub fn plpgsql_token_length() -> ::std::os::raw::c_int;
     pub fn plpgsql_push_back_token(token: ::std::os::raw::c_int);
     pub fn plpgsql_token_is_unreserved_keyword(token: ::std::os::raw::c_int) -> bool;
     pub fn plpgsql_append_source_text(
@@ -42358,6 +42361,12 @@ extern "C" {
     pub fn SpeculativeInsertionLockRelease(xid: TransactionId);
     pub fn SpeculativeInsertionWait(xid: TransactionId, token: uint32);
     pub fn LockDatabaseObject(classid: Oid, objid: Oid, objsubid: uint16, lockmode: LOCKMODE);
+    pub fn ConditionalLockDatabaseObject(
+        classid: Oid,
+        objid: Oid,
+        objsubid: uint16,
+        lockmode: LOCKMODE,
+    ) -> bool;
     pub fn UnlockDatabaseObject(classid: Oid, objid: Oid, objsubid: uint16, lockmode: LOCKMODE);
     pub fn LockSharedObject(classid: Oid, objid: Oid, objsubid: uint16, lockmode: LOCKMODE);
     pub fn UnlockSharedObject(classid: Oid, objid: Oid, objsubid: uint16, lockmode: LOCKMODE);

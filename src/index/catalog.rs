@@ -120,7 +120,7 @@ fn check_vector_index(pg_class: pgrx::pg_catalog::PgClass<'_>) -> Option<()> {
     }
     let search = pgrx::pg_catalog::PgAm::search_amoid(relam)?;
     let pg_am = search.get()?;
-    if pg_am.amname() != c"vectors" {
+    if pg_am.amname() != crate::SCHEMA_C_STR {
         return None;
     }
     // probably a vector index, so enter a slow path to ensure it

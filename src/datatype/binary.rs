@@ -34,3 +34,10 @@ unsafe impl SqlTranslatable for Bytea {
         Ok(Returns::One(SqlMapping::As(String::from("bytea"))))
     }
 }
+
+unsafe impl pgrx::callconv::BoxRet for Bytea {
+    unsafe fn box_in_fcinfo(self, fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
+        self.into_datum()
+            .unwrap_or_else(|| unsafe { pgrx::fcinfo::pg_return_null(fcinfo) })
+    }
+}

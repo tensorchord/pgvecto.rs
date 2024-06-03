@@ -6,6 +6,9 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::single_match)]
 #![allow(clippy::too_many_arguments)]
+// for pgrx
+#![allow(non_snake_case)]
+#![allow(clippy::let_unit_value)]
 
 mod bgworker;
 mod datatype;
@@ -41,3 +44,20 @@ compile_error!("Target is not supported.");
 
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
+const SCHEMA: &str = include_str!("../.schema");
+
+const SCHEMA_C_BYTES: [u8; SCHEMA.len() + 1] = {
+    let mut bytes = [0u8; SCHEMA.len() + 1];
+    let mut i = 0_usize;
+    while i < SCHEMA.len() {
+        bytes[i] = SCHEMA.as_bytes()[i];
+        i += 1;
+    }
+    bytes
+};
+
+const SCHEMA_C_STR: &std::ffi::CStr = match std::ffi::CStr::from_bytes_with_nul(&SCHEMA_C_BYTES) {
+    Ok(x) => x,
+    Err(_) => panic!("there are null characters in schema"),
+};
