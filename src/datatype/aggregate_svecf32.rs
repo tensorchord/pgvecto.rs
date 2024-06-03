@@ -198,7 +198,17 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
         return current;
     }
     let value = value.unwrap();
-    match unsafe { current.get_mut::<SVecf32AggregateAvgSumStype>() } {
+    let old_context = unsafe {
+        let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData = std::ptr::null_mut();
+        if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
+            ::pgrx::error!("aggregate function called in non-aggregate context");
+        }
+        // pg will switch to a temporary memory context when call aggregate trans function.
+        // https://github.com/postgres/postgres/blob/52b49b796cc7fd976f4da6aa49c9679ecdae8bd5/src/backend/executor/nodeAgg.c#L761-L801
+        // If want to reuse the state in aggregate, we need to switch to aggregate context like https://github.com/postgres/postgres/blob/7c655a04a2dc84b59ed6dce97bd38b79e734ecca/src/backend/utils/adt/numeric.c#L5635-L5648.
+        ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context)
+    };
+    let result = match unsafe { current.get_mut::<SVecf32AggregateAvgSumStype>() } {
         // if the state is empty, copy the input vector
         None => {
             let internal = Internal::new(SVecf32AggregateAvgSumStype::new_with_capacity(
@@ -225,23 +235,10 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
                 }
                 false => {
                     // allocate a new state and merge the old state
-                    let mut new_state = unsafe {
-                        let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData =
-                            std::ptr::null_mut();
-                        if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
-                            ::pgrx::error!("aggregate function called in non-aggregate context");
-                        }
-                        // pg will switch to a temporary memory context when call aggregate trans function.
-                        // https://github.com/postgres/postgres/blob/52b49b796cc7fd976f4da6aa49c9679ecdae8bd5/src/backend/executor/nodeAgg.c#L761-L801
-                        // If want to reuse the state in aggregate, we need to switch to aggregate context like https://github.com/postgres/postgres/blob/7c655a04a2dc84b59ed6dce97bd38b79e734ecca/src/backend/utils/adt/numeric.c#L5635-L5648.
-                        let old_context = ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context);
-                        let state = SVecf32AggregateAvgSumStype::new_with_capacity(
-                            dims as u32,
-                            state.len() + value.len(),
-                        );
-                        ::pgrx::pg_sys::MemoryContextSwitchTo(old_context);
-                        state
-                    };
+                    let mut new_state = SVecf32AggregateAvgSumStype::new_with_capacity(
+                        dims as u32,
+                        state.len() + value.len(),
+                    );
                     new_state.merge_in_place(SVecf32Borrowed::new(
                         dims as u32,
                         state.indexes(),
@@ -254,7 +251,9 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
                 }
             }
         }
-    }
+    };
+    unsafe { ::pgrx::pg_sys::MemoryContextSwitchTo(old_context) };
+    result
 }
 
 /// combine two intermediate states for sparse vector
@@ -265,7 +264,14 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(
     state2: Internal,
     _fcinfo: pgrx::pg_sys::FunctionCallInfo,
 ) -> Internal {
-    match (
+    let old_context = unsafe {
+        let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData = std::ptr::null_mut();
+        if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
+            ::pgrx::error!("aggregate function called in non-aggregate context");
+        }
+        ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context)
+    };
+    let result = match (
         unsafe { state1.get_mut::<SVecf32AggregateAvgSumStype>() },
         unsafe { state2.get_mut::<SVecf32AggregateAvgSumStype>() },
     ) {
@@ -300,20 +306,10 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(
                 }
                 false => {
                     // allocate a new state and merge the old state
-                    let mut new_state = unsafe {
-                        let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData =
-                            std::ptr::null_mut();
-                        if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
-                            ::pgrx::error!("aggregate function called in non-aggregate context");
-                        }
-                        let old_context = ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context);
-                        let state = SVecf32AggregateAvgSumStype::new_with_capacity(
-                            dims1 as u32,
-                            s1.len() + s2.len(),
-                        );
-                        ::pgrx::pg_sys::MemoryContextSwitchTo(old_context);
-                        state
-                    };
+                    let mut new_state = SVecf32AggregateAvgSumStype::new_with_capacity(
+                        dims1 as u32,
+                        s1.len() + s2.len(),
+                    );
                     new_state.merge_in_place(SVecf32Borrowed::new(
                         dims1 as u32,
                         s1.indexes(),
@@ -330,7 +326,9 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(
                 }
             }
         }
-    }
+    };
+    unsafe { ::pgrx::pg_sys::MemoryContextSwitchTo(old_context) };
+    result
 }
 
 /// finalize the intermediate state for sparse vector average

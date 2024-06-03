@@ -54,22 +54,19 @@ fn _vectors_vecf32_aggregate_avg_sum_sfunc(
         return current;
     }
     let value = value.unwrap();
-    match unsafe { current.get_mut::<Vecf32AggregateAvgSumStype>() } {
+    let old_context = unsafe {
+        let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData = std::ptr::null_mut();
+        if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
+            ::pgrx::error!("aggregate function called in non-aggregate context");
+        }
+        ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context)
+    };
+    let result = match unsafe { current.get_mut::<Vecf32AggregateAvgSumStype>() } {
         // if the state is empty, copy the input vector
-        None => unsafe {
-            let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData = std::ptr::null_mut();
-            if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
-                ::pgrx::error!("aggregate function called in non-aggregate context");
-            }
-            // need to switch to aggregate context to allocate state memory
-            let old_context = ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context);
-            let result = Internal::new(Vecf32AggregateAvgSumStype::new_with_slice(
-                1,
-                value.iter().as_slice(),
-            ));
-            ::pgrx::pg_sys::MemoryContextSwitchTo(old_context);
-            result
-        },
+        None => Internal::new(Vecf32AggregateAvgSumStype::new_with_slice(
+            1,
+            value.iter().as_slice(),
+        )),
         Some(state) => {
             let dims = state.dims();
             let value_dims = value.dims();
@@ -83,14 +80,29 @@ fn _vectors_vecf32_aggregate_avg_sum_sfunc(
             state.count += 1;
             current
         }
+    };
+    unsafe {
+        ::pgrx::pg_sys::MemoryContextSwitchTo(old_context);
     }
+    result
 }
 
 /// combine two intermediate states for vector average
 #[pgrx::pg_extern(sql = "\
 CREATE FUNCTION _vectors_vecf32_aggregate_avg_sum_combinefunc(internal, internal) RETURNS internal IMMUTABLE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
-fn _vectors_vecf32_aggregate_avg_sum_combinefunc(state1: Internal, state2: Internal) -> Internal {
-    match (
+fn _vectors_vecf32_aggregate_avg_sum_combinefunc(
+    state1: Internal,
+    state2: Internal,
+    _fcinfo: pgrx::pg_sys::FunctionCallInfo,
+) -> Internal {
+    let old_context = unsafe {
+        let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData = std::ptr::null_mut();
+        if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
+            ::pgrx::error!("aggregate function called in non-aggregate context");
+        }
+        ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context)
+    };
+    let result = match (
         unsafe { state1.get_mut::<Vecf32AggregateAvgSumStype>() },
         unsafe { state2.get_mut::<Vecf32AggregateAvgSumStype>() },
     ) {
@@ -108,7 +120,11 @@ fn _vectors_vecf32_aggregate_avg_sum_combinefunc(state1: Internal, state2: Inter
             }
             state1
         }
+    };
+    unsafe {
+        ::pgrx::pg_sys::MemoryContextSwitchTo(old_context);
     }
+    result
 }
 
 /// finalize the intermediate state for vector average
