@@ -1,5 +1,5 @@
 use chrono::Local;
-use pgrx::pg_sys::PIPE_BUF;
+use pgrx::pg_sys::PipeProtoChunk;
 use serde::Serialize;
 use std::io::{stderr, Write};
 use std::{process, vec};
@@ -9,7 +9,7 @@ const PIPE_PROTO_DEST_CSVLOG: u8 = 0x20;
 const PIPE_PROTO_DEST_JSONLOG: u8 = 0x40;
 const PIPE_PROTO_IS_LAST: u8 = 0x01;
 
-const PIPE_CHUNK_SIZE: usize = PIPE_BUF as usize;
+const PIPE_CHUNK_SIZE: usize = std::mem::size_of::<PipeProtoChunk>();
 const PIPE_HEADER_SIZE: usize = 9;
 const PIPE_MAX_PAYLOAD: usize = PIPE_CHUNK_SIZE - PIPE_HEADER_SIZE;
 
