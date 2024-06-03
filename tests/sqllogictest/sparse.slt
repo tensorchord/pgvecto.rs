@@ -40,12 +40,12 @@ DROP TABLE t;
 query I
 SELECT to_svector(5, '{1,2}', '{1,2}');
 ----
-{2:1, 3:2}/5
+{1:1, 2:2}/5
 
 query I
 SELECT to_svector(5, '{1,2}', '{1,1}') * to_svector(5, '{1,3}', '{2,2}');
 ----
-[0, 2, 0, 0, 0]
+{1:2}/5
 
 statement error Lengths of index and value are not matched.
 SELECT to_svector(5, '{1,2,3}', '{1,2}');

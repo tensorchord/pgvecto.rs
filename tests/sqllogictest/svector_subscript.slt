@@ -2,83 +2,83 @@ statement ok
 SET search_path TO pg_temp, vectors;
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[3:6];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[3:6];
 ----
-{1:3, 2:4, 3:5}/3
+{0:3, 1:4, 2:5}/3
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[:4];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[:4];
 ----
-{2:1, 3:2, 4:3}/4
+{1:1, 2:2, 3:3}/4
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[5:];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[5:];
 ----
-{1:5, 2:6, 3:7}/3
+{0:5, 1:6, 2:7}/3
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[1:8];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[1:8];
 ----
-{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/7
+{0:1, 1:2, 2:3, 3:4, 4:5, 5:6, 6:7}/7
 
 statement error type svector does only support one subscript
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[3:3][1:1];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[3:3][1:1];
 
 statement error type svector does only support slice fetch
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[3];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[3];
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[5:4];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[5:4];
 ----
 NULL
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[9:];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[9:];
 ----
 NULL
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[:0];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[:0];
 ----
 NULL
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[:-1];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[:-1];
 ----
 NULL
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[NULL:NULL];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[NULL:NULL];
 ----
 NULL
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[NULL:8];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[NULL:8];
 ----
 NULL
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[1:NULL];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[1:NULL];
 ----
 NULL
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[NULL:];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[NULL:];
 ----
 NULL
 
 query I
-SELECT ('{2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}/8'::svector)[:NULL];
+SELECT ('{1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}/8'::svector)[:NULL];
 ----
 NULL
 
 query I
-SELECT ('{3:2, 5:4, 8:7}/8'::svector)[3:7];
+SELECT ('{2:2, 4:4, 7:7}/8'::svector)[3:7];
 ----
-{2:4}/4
+{1:4}/4
 
 query I
-SELECT ('{3:2, 5:4, 8:7}/8'::svector)[5:7];
+SELECT ('{2:2, 4:4, 7:7}/8'::svector)[5:7];
 ----
 {}/2
 

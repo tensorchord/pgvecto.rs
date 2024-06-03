@@ -88,9 +88,8 @@ where
 #[inline(always)]
 pub fn parse_pgvector_svector<T: Zero + Clone, F>(
     input: &[u8],
-    reserve: usize,
     f: F,
-) -> Result<Vec<T>, ParseVectorError>
+) -> Result<(Vec<u32>, Vec<T>, usize), ParseVectorError>
 where
     F: Fn(&str) -> Option<T>,
 {
@@ -98,6 +97,7 @@ where
     if input.is_empty() {
         return Err(ParseVectorError::EmptyString {});
     }
+    let mut dims: usize = 0;
     let left = 'a: {
         for position in 0..input.len() - 1 {
             match input[position] {
@@ -109,7 +109,6 @@ where
         return Err(ParseVectorError::BadParentheses { character: '{' });
     };
     let mut token: ArrayVec<u8, 48> = ArrayVec::new();
-    let mut capacity = reserve;
     let right = 'a: {
         for position in (1..input.len()).rev() {
             match input[position] {
@@ -121,7 +120,7 @@ where
                 b'/' => {
                     token.reverse();
                     let s = unsafe { std::str::from_utf8_unchecked(&token[..]) };
-                    capacity = s
+                    dims = s
                         .parse::<usize>()
                         .map_err(|_| ParseVectorError::BadParsing { position })?;
                 }
@@ -135,8 +134,9 @@ where
         }
         return Err(ParseVectorError::BadParentheses { character: '}' });
     };
-    let mut vector = vec![T::zero(); capacity];
-    let mut index: usize = 0;
+    let mut indexes = Vec::<u32>::new();
+    let mut values = Vec::<T>::new();
+    let mut index: u32 = 0;
     for position in left + 1..right {
         let c = input[position];
         match c {
@@ -153,7 +153,8 @@ where
                     // Safety: all bytes in `token` are ascii characters
                     let s = unsafe { std::str::from_utf8_unchecked(&token[1..]) };
                     let num = f(s).ok_or(ParseVectorError::BadParsing { position })?;
-                    vector[index] = num;
+                    indexes.push(index);
+                    values.push(num);
                     token.clear();
                 } else {
                     return Err(ParseVectorError::TooShortNumber { position });
@@ -164,7 +165,7 @@ where
                     // Safety: all bytes in `token` are ascii characters
                     let s = unsafe { std::str::from_utf8_unchecked(&token[1..]) };
                     index = s
-                        .parse::<usize>()
+                        .parse::<u32>()
                         .map_err(|_| ParseVectorError::BadParsing { position })?;
                     token.clear();
                 } else {
@@ -180,8 +181,9 @@ where
         // Safety: all bytes in `token` are ascii characters
         let s = unsafe { std::str::from_utf8_unchecked(&token[1..]) };
         let num = f(s).ok_or(ParseVectorError::BadParsing { position })?;
-        vector[index] = num;
+        indexes.push(index);
+        values.push(num);
         token.clear();
     }
-    Ok(vector)
+    Ok((indexes, values, dims))
 }
