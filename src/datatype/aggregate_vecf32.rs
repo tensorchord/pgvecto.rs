@@ -144,7 +144,8 @@ impl IntoDatum for Vecf32AggregateAvgStype<'_> {
     }
 
     fn type_oid() -> Oid {
-        let namespace = pgrx::pg_catalog::PgNamespace::search_namespacename(c"vectors").unwrap();
+        let namespace =
+            pgrx::pg_catalog::PgNamespace::search_namespacename(crate::SCHEMA_C_STR).unwrap();
         let namespace = namespace.get().expect("pgvecto.rs is not installed.");
         let t = pgrx::pg_catalog::PgType::search_typenamensp(
             c"_vectors_vecf32_aggregate_avg_stype",
