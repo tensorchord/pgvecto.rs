@@ -169,6 +169,13 @@ unsafe impl SqlTranslatable for Vecf32AggregateAvgStype<'_> {
     }
 }
 
+unsafe impl pgrx::callconv::BoxRet for Vecf32AggregateAvgStype<'_> {
+    unsafe fn box_in_fcinfo(self, fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
+        self.into_datum()
+            .unwrap_or_else(|| unsafe { pgrx::fcinfo::pg_return_null(fcinfo) })
+    }
+}
+
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf32_aggregate_avg_stype_in(
     input: &CStr,

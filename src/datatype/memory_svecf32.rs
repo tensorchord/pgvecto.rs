@@ -184,3 +184,10 @@ unsafe impl SqlTranslatable for SVecf32Output {
         Ok(Returns::One(SqlMapping::As(String::from("svector"))))
     }
 }
+
+unsafe impl pgrx::callconv::BoxRet for SVecf32Output {
+    unsafe fn box_in_fcinfo(self, fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
+        self.into_datum()
+            .unwrap_or_else(|| unsafe { pgrx::fcinfo::pg_return_null(fcinfo) })
+    }
+}

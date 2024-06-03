@@ -161,3 +161,10 @@ unsafe impl SqlTranslatable for Vecf16Output {
         Ok(Returns::One(SqlMapping::As(String::from("vecf16"))))
     }
 }
+
+unsafe impl pgrx::callconv::BoxRet for Vecf16Output {
+    unsafe fn box_in_fcinfo(self, fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
+        self.into_datum()
+            .unwrap_or_else(|| unsafe { pgrx::fcinfo::pg_return_null(fcinfo) })
+    }
+}

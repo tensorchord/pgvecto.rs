@@ -6,6 +6,9 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::single_match)]
 #![allow(clippy::too_many_arguments)]
+// for pgrx
+#![allow(non_snake_case)]
+#![allow(clippy::let_unit_value)]
 
 mod bgworker;
 mod datatype;
