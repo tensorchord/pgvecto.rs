@@ -1,6 +1,3 @@
-#![allow(unused_lifetimes)]
-#![allow(clippy::extra_unused_lifetimes)]
-
 use crate::datatype::memory_vecf32::{Vecf32Input, Vecf32Output};
 use crate::error::*;
 use base::scalar::*;
@@ -48,15 +45,12 @@ CREATE FUNCTION _vectors_vecf32_aggregate_avg_sum_sfunc(internal, vector) RETURN
 fn _vectors_vecf32_aggregate_avg_sum_sfunc(
     current: Internal,
     value: Option<Vecf32Input<'_>>,
-    _fcinfo: pgrx::pg_sys::FunctionCallInfo,
+    fcinfo: pgrx::pg_sys::FunctionCallInfo,
 ) -> Internal {
-    if value.is_none() {
-        return current;
-    }
-    let value = value.unwrap();
+    let Some(value) = value else { return current };
     let old_context = unsafe {
         let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData = std::ptr::null_mut();
-        if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
+        if ::pgrx::pg_sys::AggCheckCallContext(fcinfo, &mut agg_context) == 0 {
             ::pgrx::error!("aggregate function called in non-aggregate context");
         }
         ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context)
@@ -93,11 +87,11 @@ CREATE FUNCTION _vectors_vecf32_aggregate_avg_sum_combinefunc(internal, internal
 fn _vectors_vecf32_aggregate_avg_sum_combinefunc(
     state1: Internal,
     state2: Internal,
-    _fcinfo: pgrx::pg_sys::FunctionCallInfo,
+    fcinfo: pgrx::pg_sys::FunctionCallInfo,
 ) -> Internal {
     let old_context = unsafe {
         let mut agg_context: *mut ::pgrx::pg_sys::MemoryContextData = std::ptr::null_mut();
-        if ::pgrx::pg_sys::AggCheckCallContext(_fcinfo, &mut agg_context) == 0 {
+        if ::pgrx::pg_sys::AggCheckCallContext(fcinfo, &mut agg_context) == 0 {
             ::pgrx::error!("aggregate function called in non-aggregate context");
         }
         ::pgrx::pg_sys::MemoryContextSwitchTo(agg_context)
