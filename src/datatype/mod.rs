@@ -1,3 +1,4 @@
+pub mod aggregate_svecf32;
 pub mod aggregate_vecf32;
 pub mod binary;
 pub mod binary_bvecf32;

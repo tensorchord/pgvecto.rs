@@ -10,7 +10,4 @@ CREATE TYPE veci8;
 
 CREATE TYPE vector_index_stat;
 
-CREATE TYPE _vectors_vecf32_aggregate_avg_stype;
-CREATE TYPE svector_accumulate_state;
-
 -- bootstrap end
