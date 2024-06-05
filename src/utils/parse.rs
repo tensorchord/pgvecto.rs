@@ -107,7 +107,7 @@ where
     if input.is_empty() {
         return Err(ParseVectorError::EmptyString {});
     }
-    let mut dims: usize = 0;
+    let mut dims: usize = usize::MAX;
     let left = 'a: {
         for position in 0..input.len() - 1 {
             match input[position] {
@@ -130,6 +130,10 @@ where
                 b'/' => {
                     token.reverse();
                     let s = unsafe { std::str::from_utf8_unchecked(&token[..]) };
+                    // two `dims` are found
+                    if dims != usize::MAX {
+                        return Err(ParseVectorError::BadCharacter { position });
+                    }
                     dims = s
                         .parse::<usize>()
                         .map_err(|_| ParseVectorError::BadParsing { position })?;
@@ -144,6 +148,12 @@ where
         }
         return Err(ParseVectorError::BadParentheses { character: '}' });
     };
+    // `dims` is not found
+    if dims == usize::MAX {
+        return Err(ParseVectorError::BadCharacter {
+            position: input.len(),
+        });
+    }
     let mut indexes = Vec::<u32>::new();
     let mut values = Vec::<T>::new();
     let mut index: u32 = u32::MAX;
@@ -203,6 +213,9 @@ where
             _ => return Err(ParseVectorError::BadCharacter { position }),
         }
     }
+    // A valid case is either
+    // - empty string: ""
+    // - end with number when a index is extracted:"1:2, 3:4"
     if state != ParseState::Start && (state != ParseState::Number || index == u32::MAX) {
         return Err(ParseVectorError::BadCharacter { position: right });
     }
@@ -283,6 +296,7 @@ mod tests {
             "{0:, 1:2}/5",
             "{0:1, 1}/5",
             "/2",
+            "{}/1/2",
         ];
         for e in exprs {
             let ret = parse_pgvector_svector(e.as_bytes(), |s| s.parse::<F32>().ok());
