@@ -1,7 +1,7 @@
 use num_traits::Zero;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq)]
 pub enum ParseVectorError {
     #[error("The input string is empty.")]
     EmptyString {},
@@ -89,12 +89,15 @@ where
 
 #[derive(PartialEq)]
 enum ParseState {
-    Number,
+    Start,
+    Index,
+    Value,
     Comma,
     Colon,
-    Start,
+    End,
 }
 
+// Index -> Colon -> Value -> Comma
 #[inline(always)]
 pub fn parse_pgvector_svector<T: Zero + Clone, F>(
     input: &[u8],
@@ -157,24 +160,59 @@ where
     let mut indexes = Vec::<u32>::new();
     let mut values = Vec::<T>::new();
     let mut index: u32 = u32::MAX;
-    let mut state = ParseState::Start;
 
-    for position in left + 1..right {
-        let c = input[position];
-        match c {
-            b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | b'.' | b'+' | b'-' => {
-                if token.is_empty() {
-                    token.push(b'$');
-                }
-                if token.try_push(c).is_err() {
-                    return Err(ParseVectorError::TooLongNumber { position });
-                }
-                state = ParseState::Number;
+    let mut state = ParseState::Start;
+    let mut position = left;
+    loop {
+        if position == right {
+            let end_with_number = state == ParseState::Value && !token.is_empty();
+            let end_with_comma = state == ParseState::Index && token.is_empty();
+            if end_with_number || end_with_comma {
+                state = ParseState::End;
+            } else {
+                return Err(ParseVectorError::BadCharacter { position });
             }
-            b',' => {
-                if state != ParseState::Number {
-                    return Err(ParseVectorError::BadCharacter { position });
+        }
+        match state {
+            ParseState::Index => {
+                let c = input[position];
+                match c {
+                    b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | b'.' | b'+' | b'-' => {
+                        if token.is_empty() {
+                            token.push(b'$');
+                        }
+                        if token.try_push(c).is_err() {
+                            return Err(ParseVectorError::TooLongNumber { position });
+                        }
+                        position += 1;
+                    }
+                    b':' => {
+                        state = ParseState::Colon;
+                    }
+                    b' ' => position += 1,
+                    _ => return Err(ParseVectorError::BadCharacter { position }),
                 }
+            }
+            ParseState::Value => {
+                let c = input[position];
+                match c {
+                    b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | b'.' | b'+' | b'-' => {
+                        if token.is_empty() {
+                            token.push(b'$');
+                        }
+                        if token.try_push(c).is_err() {
+                            return Err(ParseVectorError::TooLongNumber { position });
+                        }
+                        position += 1;
+                    }
+                    b',' => {
+                        state = ParseState::Comma;
+                    }
+                    b' ' => position += 1,
+                    _ => return Err(ParseVectorError::BadCharacter { position }),
+                }
+            }
+            e @ (ParseState::Comma | ParseState::End) => {
                 if !token.is_empty() {
                     // Safety: all bytes in `token` are ascii characters
                     let s = unsafe { std::str::from_utf8_unchecked(&token[1..]) };
@@ -191,12 +229,17 @@ where
                     }
                     index = u32::MAX;
                     token.clear();
-                    state = ParseState::Comma;
-                } else {
+                } else if e != ParseState::End {
                     return Err(ParseVectorError::TooShortNumber { position });
                 }
+                if e == ParseState::End {
+                    break;
+                } else {
+                    state = ParseState::Index;
+                    position += 1;
+                }
             }
-            b':' => {
+            ParseState::Colon => {
                 if !token.is_empty() {
                     // Safety: all bytes in `token` are ascii characters
                     let s = unsafe { std::str::from_utf8_unchecked(&token[1..]) };
@@ -204,47 +247,26 @@ where
                         .parse::<u32>()
                         .map_err(|_| ParseVectorError::BadParsing { position })?;
                     token.clear();
-                    state = ParseState::Colon;
                 } else {
                     return Err(ParseVectorError::TooShortNumber { position });
                 }
+                state = ParseState::Value;
+                position += 1;
             }
-            b' ' => (),
-            _ => return Err(ParseVectorError::BadCharacter { position }),
+            ParseState::Start => {
+                state = ParseState::Index;
+                position += 1;
+            }
         }
     }
-    // A valid case is either
-    // - empty string: ""
-    // - end with number when a index is extracted:"1:2, 3:4"
-    if state != ParseState::Start && (state != ParseState::Number || index == u32::MAX) {
-        return Err(ParseVectorError::BadCharacter { position: right });
-    }
-    if !token.is_empty() {
-        let position = right;
-        // Safety: all bytes in `token` are ascii characters
-        let s = unsafe { std::str::from_utf8_unchecked(&token[1..]) };
-        let num = f(s).ok_or(ParseVectorError::BadParsing { position })?;
-        if index as usize >= dims {
-            return Err(ParseVectorError::OutOfBound {
-                dims,
-                index: index as usize,
-            });
-        }
-        if !num.is_zero() {
-            indexes.push(index);
-            values.push(num);
-        }
-        token.clear();
-    }
-    // sort values and indexes ascend by indexes
     let mut indices = (0..indexes.len()).collect::<Vec<_>>();
     indices.sort_by_key(|&i| &indexes[i]);
-    let sortedValues: Vec<T> = indices
+    let sorted_values: Vec<T> = indices
         .iter()
         .map(|i| values.get(*i).unwrap().clone())
         .collect();
     indexes.sort();
-    Ok((indexes, sortedValues, dims))
+    Ok((indexes, sorted_values, dims))
 }
 
 #[cfg(test)]
@@ -260,6 +282,10 @@ mod tests {
         let exprs: HashMap<&str, (Vec<u32>, Vec<F32>, usize)> = HashMap::from([
             ("{}/1", (vec![], vec![], 1)),
             ("{0:1}/1", (vec![0], vec![F32(1.0)], 1)),
+            (
+                "{0:1, 1:-2, }/2",
+                (vec![0, 1], vec![F32(1.0), F32(-2.0)], 2),
+            ),
             ("{0:1, 1:1.5}/2", (vec![0, 1], vec![F32(1.0), F32(1.5)], 2)),
             (
                 "{0:+3, 2:-4.1}/3",
@@ -280,27 +306,47 @@ mod tests {
 
     #[test]
     fn test_svector_parse_reject() {
-        let exprs: Vec<&str> = vec![
-            "{",
-            "}",
-            "{:",
-            ":}",
-            "{0:1, 1:1.5}/1",
-            "{0:0, 1:0, 2:0}/2",
-            "{0:1, 1:2, 2:3}",
-            "{0:1, 1:2, 2:3",
-            "{0:1, 1:2}/",
-            "{0}/5",
-            "{0:}/5",
-            "{:0}/5",
-            "{0:, 1:2}/5",
-            "{0:1, 1}/5",
-            "/2",
-            "{}/1/2",
-        ];
-        for e in exprs {
+        let exprs: HashMap<&str, ParseVectorError> = HashMap::from([
+            ("{", ParseVectorError::BadParentheses { character: '{' }),
+            ("}", ParseVectorError::BadParentheses { character: '{' }),
+            ("{:", ParseVectorError::BadCharacter { position: 1 }),
+            (":}", ParseVectorError::BadCharacter { position: 0 }),
+            (
+                "{0:1, 1:1.5}/1",
+                ParseVectorError::OutOfBound { dims: 1, index: 1 },
+            ),
+            (
+                "{0:0, 1:0, 2:0}/2",
+                ParseVectorError::OutOfBound { dims: 2, index: 2 },
+            ),
+            (
+                "{0:1, 1:2, 2:3}",
+                ParseVectorError::BadCharacter { position: 15 },
+            ),
+            (
+                "{0:1, 1:2, 2:3",
+                ParseVectorError::BadCharacter { position: 12 },
+            ),
+            ("{0:1, 1:2}/", ParseVectorError::BadParsing { position: 10 }),
+            ("{0}/5", ParseVectorError::BadCharacter { position: 2 }),
+            ("{0:}/5", ParseVectorError::BadCharacter { position: 3 }),
+            ("{:0}/5", ParseVectorError::TooShortNumber { position: 1 }),
+            (
+                "{0:, 1:2}/5",
+                ParseVectorError::TooShortNumber { position: 3 },
+            ),
+            ("{0:1, 1}/5", ParseVectorError::BadCharacter { position: 7 }),
+            ("/2", ParseVectorError::BadCharacter { position: 0 }),
+            ("{}/1/2", ParseVectorError::BadCharacter { position: 2 }),
+            (
+                "{1,2,3,4}/5",
+                ParseVectorError::BadCharacter { position: 2 },
+            ),
+        ]);
+        for (e, err) in exprs {
             let ret = parse_pgvector_svector(e.as_bytes(), |s| s.parse::<F32>().ok());
-            assert!(ret.is_err(), "at expr {e}")
+            assert!(ret.is_err(), "at expr {e}");
+            assert_eq!(ret.unwrap_err(), err, "at expr {e}");
         }
     }
 }
