@@ -24,19 +24,19 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Generate
         run: |
-          export PGRX=$(grep -o 'pgrx = { version = "=[^"]*' Cargo.toml | cut -d = -f 4)
+          export BRANCH=$(grep -o 'pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "[^"]*' Cargo.toml | cut -d '"' -f 4)
           docker run --rm --platform linux/amd64 -v ./:/mnt/build \
-            -e "VERSION=14" -e "PGRX=$PGRX" debian:buster bash /mnt/build/scripts/update_vendor.sh &
+            -e "VERSION=14" -e "BRANCH=$BRANCH" debian:buster bash /mnt/build/scripts/update_vendor.sh &
           docker run --rm --platform linux/amd64 -v ./:/mnt/build \
-            -e "VERSION=15" -e "PGRX=$PGRX" debian:buster bash /mnt/build/scripts/update_vendor.sh &
+            -e "VERSION=15" -e "BRANCH=$BRANCH" debian:buster bash /mnt/build/scripts/update_vendor.sh &
           docker run --rm --platform linux/amd64 -v ./:/mnt/build \
-            -e "VERSION=16" -e "PGRX=$PGRX" debian:buster bash /mnt/build/scripts/update_vendor.sh &
+            -e "VERSION=16" -e "BRANCH=$BRANCH" debian:buster bash /mnt/build/scripts/update_vendor.sh &
           docker run --rm --platform linux/arm64 -v ./:/mnt/build \
-            -e "VERSION=14" -e "PGRX=$PGRX" debian:buster bash /mnt/build/scripts/update_vendor.sh &
+            -e "VERSION=14" -e "BRANCH=$BRANCH" debian:buster bash /mnt/build/scripts/update_vendor.sh &
           docker run --rm --platform linux/arm64 -v ./:/mnt/build \
-            -e "VERSION=15" -e "PGRX=$PGRX" debian:buster bash /mnt/build/scripts/update_vendor.sh &
+            -e "VERSION=15" -e "BRANCH=$BRANCH" debian:buster bash /mnt/build/scripts/update_vendor.sh &
           docker run --rm --platform linux/arm64 -v ./:/mnt/build \
-            -e "VERSION=16" -e "PGRX=$PGRX" debian:buster bash /mnt/build/scripts/update_vendor.sh &
+            -e "VERSION=16" -e "BRANCH=$BRANCH" debian:buster bash /mnt/build/scripts/update_vendor.sh &
           wait
           sudo chown -R $USER ./vendor
       - name: Create Pull Request
