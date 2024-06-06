@@ -9,113 +9,113 @@ CREATE TYPE veci8;
 CREATE FUNCTION _vectors_veci8_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_subscript_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_send"(
+CREATE FUNCTION "_vectors_veci8_send"(
     "vector" veci8
 ) RETURNS bytea
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_send_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_recv"(
+CREATE FUNCTION "_vectors_veci8_recv"(
     "internal" internal,
     "oid" oid,
     "typmod" INT
 ) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_recv_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_out"(
+CREATE FUNCTION "_vectors_veci8_out"(
     "vector" veci8
 ) RETURNS cstring
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_out_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_operator_neq"(
+CREATE FUNCTION "_vectors_veci8_operator_neq"(
     "lhs" veci8,
     "rhs" veci8
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_neq_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_veci8_operator_mul"(
+CREATE  FUNCTION "_vectors_veci8_operator_mul"(
 	"lhs" veci8,
 	"rhs" veci8
 ) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_mul_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_operator_minus"(
+CREATE FUNCTION "_vectors_veci8_operator_minus"(
     "lhs" veci8,
     "rhs" veci8
 ) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_minus_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_operator_lte"(
+CREATE FUNCTION "_vectors_veci8_operator_lte"(
     "lhs" veci8,
     "rhs" veci8
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_lte_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_operator_lt"(
+CREATE FUNCTION "_vectors_veci8_operator_lt"(
     "lhs" veci8,
     "rhs" veci8
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_lt_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_operator_l2"(
+CREATE FUNCTION "_vectors_veci8_operator_l2"(
     "lhs" veci8,
     "rhs" veci8
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_l2_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_operator_gte"(
+CREATE FUNCTION "_vectors_veci8_operator_gte"(
     "lhs" veci8,
     "rhs" veci8
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_gte_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_operator_gt"(
+CREATE FUNCTION "_vectors_veci8_operator_gt"(
     "lhs" veci8,
     "rhs" veci8
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_gt_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_operator_eq"(
+CREATE FUNCTION "_vectors_veci8_operator_eq"(
     "lhs" veci8,
     "rhs" veci8
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_eq_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_operator_dot"(
+CREATE FUNCTION "_vectors_veci8_operator_dot"(
     "lhs" veci8,
     "rhs" veci8
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_dot_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_operator_cosine"(
+CREATE FUNCTION "_vectors_veci8_operator_cosine"(
     "lhs" veci8,
     "rhs" veci8
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_cosine_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_operator_add"(
+CREATE FUNCTION "_vectors_veci8_operator_add"(
     "lhs" veci8,
     "rhs" veci8
 ) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_operator_add_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_veci8_normalize"(
+CREATE  FUNCTION "_vectors_veci8_normalize"(
 	"vector" veci8
 ) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_normalize_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_veci8_norm"(
+CREATE  FUNCTION "_vectors_veci8_norm"(
 	"vector" veci8
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_norm_wrapper';
 
-CREATE FUNCTION vectors."_vectors_veci8_in"(
+CREATE FUNCTION "_vectors_veci8_in"(
     "input" cstring,
     "_oid" oid,
     "typmod" INT
 ) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_in_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_veci8_dims"(
+CREATE  FUNCTION "_vectors_veci8_dims"(
 	"vector" veci8
 ) RETURNS INT
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_dims_wrapper';
@@ -123,35 +123,35 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_
 CREATE FUNCTION _vectors_vecf32_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_subscript_wrapper';
 
-CREATE FUNCTION vectors."_vectors_vecf32_send"(
+CREATE FUNCTION "_vectors_vecf32_send"(
     "vector" vector
 ) RETURNS bytea
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_send_wrapper';
 
-CREATE FUNCTION vectors."_vectors_vecf32_recv"(
+CREATE FUNCTION "_vectors_vecf32_recv"(
     "internal" internal,
     "oid" oid,
     "typmod" INT
 ) RETURNS vector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_recv_wrapper';
 
-CREATE FUNCTION vectors."_vectors_vecf32_operator_mul"(
+CREATE FUNCTION "_vectors_vecf32_operator_mul"(
 	"lhs" vector,
 	"rhs" vector
 ) RETURNS vector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_mul_wrapper';
 
-CREATE FUNCTION vectors."_vectors_vecf32_normalize"(
+CREATE FUNCTION "_vectors_vecf32_normalize"(
 	"vector" vector
 ) RETURNS vector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_normalize_wrapper';
 
-CREATE FUNCTION vectors."_vectors_vecf32_norm"(
+CREATE FUNCTION "_vectors_vecf32_norm"(
 	"vector" vector
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_norm_wrapper';
 
-CREATE FUNCTION vectors."_vectors_vecf32_dims"(
+CREATE FUNCTION "_vectors_vecf32_dims"(
 	"vector" vector
 ) RETURNS INT
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_dims_wrapper';
@@ -175,51 +175,51 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_aggregate_avg_finalfunc_wrapper';
 CREATE FUNCTION _vectors_vecf16_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_subscript_wrapper';
 
-CREATE FUNCTION vectors."_vectors_vecf16_send"(
+CREATE FUNCTION "_vectors_vecf16_send"(
     "vector" vecf16
 ) RETURNS bytea
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_send_wrapper';
 
-CREATE FUNCTION vectors."_vectors_vecf16_recv"(
+CREATE FUNCTION "_vectors_vecf16_recv"(
     "internal" internal,
     "oid" oid,
     "typmod" INT
 ) RETURNS vecf16
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_recv_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_vecf16_operator_mul"(
+CREATE  FUNCTION "_vectors_vecf16_operator_mul"(
 	"lhs" vecf16,
 	"rhs" vecf16
 ) RETURNS vecf16
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c
 AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_mul_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_vecf16_normalize"(
+CREATE  FUNCTION "_vectors_vecf16_normalize"(
 	"vector" vecf16
 ) RETURNS vecf16
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_normalize_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_vecf16_norm"(
+CREATE  FUNCTION "_vectors_vecf16_norm"(
 	"vector" vecf16
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_norm_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_vecf16_dims"(
+CREATE  FUNCTION "_vectors_vecf16_dims"(
 	"vector" vecf16
 ) RETURNS INT
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_dims_wrapper';
 
-CREATE FUNCTION vectors."_vectors_typmod_in_65535"(
+CREATE FUNCTION "_vectors_typmod_in_65535"(
     "list" cstring[]
 ) RETURNS INT
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_typmod_in_65535_wrapper';
 
-CREATE FUNCTION vectors."_vectors_typmod_in_1048575"(
+CREATE FUNCTION "_vectors_typmod_in_1048575"(
     "list" cstring[]
 ) RETURNS INT
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_typmod_in_1048575_wrapper';
 
-CREATE FUNCTION vectors."_vectors_to_veci8"(
+CREATE FUNCTION "_vectors_to_veci8"(
     "len" INT,
     "alpha" real,
     "offset" real,
@@ -227,14 +227,14 @@ CREATE FUNCTION vectors."_vectors_to_veci8"(
 ) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
 
-CREATE FUNCTION vectors."_vectors_to_svector"(
+CREATE FUNCTION "_vectors_to_svector"(
     "dims" INT,
     "index" INT[],
     "value" real[]
 ) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_svector_wrapper';
 
-CREATE FUNCTION vectors."_vectors_text2vec_openai"(
+CREATE FUNCTION "_vectors_text2vec_openai"(
     "input" TEXT,
     "model" TEXT
 ) RETURNS vector
@@ -243,119 +243,119 @@ STRICT VOLATILE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_text2ve
 CREATE FUNCTION _vectors_svecf32_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_subscript_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_send"(
+CREATE FUNCTION "_vectors_svecf32_send"(
     "vector" svector
 ) RETURNS bytea
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_send_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_recv"(
+CREATE FUNCTION "_vectors_svecf32_recv"(
     "internal" internal,
     "oid" oid,
     "typmod" INT
 ) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_recv_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_out"(
+CREATE FUNCTION "_vectors_svecf32_out"(
     "vector" svector
 ) RETURNS cstring
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_out_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_operator_neq"(
+CREATE FUNCTION "_vectors_svecf32_operator_neq"(
     "lhs" svector,
     "rhs" svector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_neq_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_svecf32_operator_mul"(
+CREATE  FUNCTION "_vectors_svecf32_operator_mul"(
 	"lhs" svector,
 	"rhs" svector
 ) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_mul_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_operator_minus"(
+CREATE FUNCTION "_vectors_svecf32_operator_minus"(
     "lhs" svector,
     "rhs" svector
 ) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_minus_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_operator_lte"(
+CREATE FUNCTION "_vectors_svecf32_operator_lte"(
     "lhs" svector,
     "rhs" svector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_lte_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_operator_lt"(
+CREATE FUNCTION "_vectors_svecf32_operator_lt"(
     "lhs" svector,
     "rhs" svector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_lt_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_operator_l2"(
+CREATE FUNCTION "_vectors_svecf32_operator_l2"(
     "lhs" svector,
     "rhs" svector
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_l2_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_operator_gte"(
+CREATE FUNCTION "_vectors_svecf32_operator_gte"(
     "lhs" svector,
     "rhs" svector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_gte_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_operator_gt"(
+CREATE FUNCTION "_vectors_svecf32_operator_gt"(
     "lhs" svector,
     "rhs" svector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_gt_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_operator_eq"(
+CREATE FUNCTION "_vectors_svecf32_operator_eq"(
     "lhs" svector,
     "rhs" svector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_eq_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_operator_dot"(
+CREATE FUNCTION "_vectors_svecf32_operator_dot"(
     "lhs" svector,
     "rhs" svector
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_dot_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_operator_cosine"(
+CREATE FUNCTION "_vectors_svecf32_operator_cosine"(
     "lhs" svector,
     "rhs" svector
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_cosine_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_operator_add"(
+CREATE FUNCTION "_vectors_svecf32_operator_add"(
     "lhs" svector,
     "rhs" svector
 ) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_add_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_svecf32_normalize"(
+CREATE  FUNCTION "_vectors_svecf32_normalize"(
 	"vector" svector
 ) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_normalize_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_svecf32_norm"(
+CREATE  FUNCTION "_vectors_svecf32_norm"(
 	"vector" svector
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_norm_wrapper';
 
-CREATE FUNCTION vectors."_vectors_svecf32_in"(
+CREATE FUNCTION "_vectors_svecf32_in"(
     "input" cstring,
     "_oid" oid,
     "typmod" INT
 ) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_in_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_svecf32_div"(
+CREATE  FUNCTION "_vectors_svecf32_div"(
 	"vector" svector,
 	"scalar" real
 ) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_div_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_svecf32_dims"(
+CREATE  FUNCTION "_vectors_svecf32_dims"(
 	"vector" svector
 ) RETURNS INT
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_dims_wrapper';
@@ -375,57 +375,57 @@ CREATE  FUNCTION "_vectors_svecf32_aggregate_avg_finalfunc"(
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_aggregate_avg_finalfunc_wrapper';
 
 
-CREATE OR REPLACE FUNCTION vectors."_vectors_pgvectors_upgrade"() RETURNS void
+CREATE OR REPLACE FUNCTION "_vectors_pgvectors_upgrade"() RETURNS void
 STRICT VOLATILE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 
-CREATE OR REPLACE FUNCTION vectors."_vectors_index_stat"(
+CREATE OR REPLACE FUNCTION "_vectors_index_stat"(
     "oid" oid
-) RETURNS vectors.vector_index_stat
+) RETURNS vector_index_stat
 STRICT VOLATILE PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_index_stat_wrapper';
 
-CREATE FUNCTION vectors."_vectors_cast_veci8_to_vecf32"(
+CREATE FUNCTION "_vectors_cast_veci8_to_vecf32"(
     "vector" veci8,
     "_typmod" INT,
     "_explicit" bool
 ) RETURNS vector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_cast_veci8_to_vecf32_wrapper';
 
-CREATE FUNCTION vectors."_vectors_cast_vecf32_to_veci8"(
+CREATE FUNCTION "_vectors_cast_vecf32_to_veci8"(
     "vector" vector,
     "_typmod" INT,
     "_explicit" bool
 ) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_cast_vecf32_to_veci8_wrapper';
 
-CREATE FUNCTION vectors."_vectors_cast_vecf32_to_svecf32"(
+CREATE FUNCTION "_vectors_cast_vecf32_to_svecf32"(
     "vector" vector,
     "_typmod" INT,
     "_explicit" bool
 ) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_cast_vecf32_to_svecf32_wrapper';
 
-CREATE FUNCTION vectors."_vectors_cast_vecf32_to_bvecf32"(
+CREATE FUNCTION "_vectors_cast_vecf32_to_bvecf32"(
     "vector" vector,
     "_typmod" INT,
     "_explicit" bool
 ) RETURNS bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_cast_vecf32_to_bvecf32_wrapper';
 
-CREATE FUNCTION vectors."_vectors_cast_vecf16_to_vecf32"(
+CREATE FUNCTION "_vectors_cast_vecf16_to_vecf32"(
     "vector" vecf16,
     "_typmod" INT,
     "_explicit" bool
 ) RETURNS vector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_cast_vecf16_to_vecf32_wrapper';
 
-CREATE FUNCTION vectors."_vectors_cast_svecf32_to_vecf32"(
+CREATE FUNCTION "_vectors_cast_svecf32_to_vecf32"(
     "vector" svector,
     "_typmod" INT,
     "_explicit" bool
 ) RETURNS vector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_cast_svecf32_to_vecf32_wrapper';
 
-CREATE FUNCTION vectors."_vectors_cast_bvecf32_to_vecf32"(
+CREATE FUNCTION "_vectors_cast_bvecf32_to_vecf32"(
     "vector" bvector,
     "_typmod" INT,
     "_explicit" bool
@@ -435,124 +435,124 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_cast_b
 CREATE FUNCTION _vectors_bvecf32_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_subscript_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_send"(
+CREATE FUNCTION "_vectors_bvecf32_send"(
     "vector" bvector
 ) RETURNS bytea
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_send_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_recv"(
+CREATE FUNCTION "_vectors_bvecf32_recv"(
     "internal" internal,
     "oid" oid,
     "typmod" INT
 ) RETURNS bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_recv_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_out"(
+CREATE FUNCTION "_vectors_bvecf32_out"(
     "vector" bvector
 ) RETURNS cstring
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_out_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_xor"(
+CREATE FUNCTION "_vectors_bvecf32_operator_xor"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_xor_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_or"(
+CREATE FUNCTION "_vectors_bvecf32_operator_or"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_or_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_neq"(
+CREATE FUNCTION "_vectors_bvecf32_operator_neq"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_neq_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_lte"(
+CREATE FUNCTION "_vectors_bvecf32_operator_lte"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_lte_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_lt"(
+CREATE FUNCTION "_vectors_bvecf32_operator_lt"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_lt_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_l2"(
+CREATE FUNCTION "_vectors_bvecf32_operator_l2"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_l2_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_jaccard"(
+CREATE FUNCTION "_vectors_bvecf32_operator_jaccard"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_jaccard_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_gte"(
+CREATE FUNCTION "_vectors_bvecf32_operator_gte"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_gte_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_gt"(
+CREATE FUNCTION "_vectors_bvecf32_operator_gt"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_gt_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_eq"(
+CREATE FUNCTION "_vectors_bvecf32_operator_eq"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS bool
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_eq_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_dot"(
+CREATE FUNCTION "_vectors_bvecf32_operator_dot"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_dot_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_cosine"(
+CREATE FUNCTION "_vectors_bvecf32_operator_cosine"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_cosine_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_operator_and"(
+CREATE FUNCTION "_vectors_bvecf32_operator_and"(
     "lhs" bvector,
     "rhs" bvector
 ) RETURNS bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_operator_and_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_bvecf32_norm"(
+CREATE  FUNCTION "_vectors_bvecf32_norm"(
 	"vector" bvector
 ) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_norm_wrapper';
 
-CREATE FUNCTION vectors."_vectors_bvecf32_in"(
+CREATE FUNCTION "_vectors_bvecf32_in"(
     "input" cstring,
     "_oid" oid,
     "typmod" INT
 ) RETURNS bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_in_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_bvecf32_dims"(
+CREATE  FUNCTION "_vectors_bvecf32_dims"(
 	"vector" bvector
 ) RETURNS INT
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_dims_wrapper';
 
-CREATE FUNCTION vectors."_vectors_binarize"(
+CREATE FUNCTION "_vectors_binarize"(
     "vector" vector
 ) RETURNS bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binarize_wrapper';
 
-CREATE  FUNCTION vectors."_vectors_alter_vector_index"(
+CREATE  FUNCTION "_vectors_alter_vector_index"(
 	"oid" oid,
 	"key" TEXT,
 	"value" TEXT
