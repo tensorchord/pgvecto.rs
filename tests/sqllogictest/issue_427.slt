@@ -14,3 +14,6 @@ CREATE INDEX ON t USING vectors (val vector_l2_ops);
 
 statement ok
 SELECT val FROM t ORDER BY val <-> (SELECT val FROM t LIMIT 1) limit 10;
+
+statement ok
+DROP TABLE t;

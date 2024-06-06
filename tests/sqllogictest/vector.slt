@@ -107,3 +107,6 @@ query ?
 SELECT sum(v) FROM unnest(ARRAY['[3e38]'::vector, '[3e38]']) v;
 ----
 [inf]
+
+statement ok
+DROP TABLE t;

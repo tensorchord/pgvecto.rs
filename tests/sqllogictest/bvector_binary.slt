@@ -31,7 +31,4 @@ SELECT SUM(((t.val = t2.val) OR (t.val IS NULL and t2.val IS NULL))::int) FROM t
 4000
 
 statement ok
-DROP TABLE t;
-
-statement ok
-DROP TABLE t2;
+DROP TABLE t, t2;
