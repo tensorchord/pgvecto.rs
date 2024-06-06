@@ -21,4 +21,4 @@ jobs:
         run: |
           R=${{ github.event.release.tag_name }}
           V=${R:1}
-          gh workflow run release.yml -r $R -f version=$V -f tag=$R
+          gh workflow run release_enterprise.yml -r $R -f version=$V -f tag=$R
