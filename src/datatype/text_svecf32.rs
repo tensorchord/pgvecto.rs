@@ -9,20 +9,21 @@ use std::fmt::Write;
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
-    use crate::utils::parse::{parse_pgvector_svector, svector_filter_nonzero};
+    use crate::utils::parse::{parse_pgvector_svector, svector_filter_nonzero, svector_sorted};
     let v = parse_pgvector_svector(input.to_bytes(), |s| s.parse::<F32>().ok());
     match v {
         Err(e) => {
             bad_literal(&e.to_string());
         }
         Ok((indexes, values, dims)) => {
+            let (mut sorted_indexes, mut sorted_values) = svector_sorted(&indexes, &values);
             check_value_dims_1048575(dims);
-            check_index_in_bound(&indexes, dims);
-            let (non_zero_indexes, non_zero_values) = svector_filter_nonzero(&indexes, &values);
+            check_index_in_bound(&sorted_indexes, dims);
+            svector_filter_nonzero(&mut sorted_indexes, &mut sorted_values);
             SVecf32Output::new(SVecf32Borrowed::new(
                 dims as u32,
-                &non_zero_indexes,
-                &non_zero_values,
+                &sorted_indexes,
+                &sorted_values,
             ))
         }
     }
