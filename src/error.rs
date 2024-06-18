@@ -69,20 +69,6 @@ ADVICE: Check if dimensions of the vector are among 1 and 1_048_575."
     NonZeroU32::new(dims as u32).unwrap()
 }
 
-pub fn check_index_in_bound(indexes: &[u32], dims: usize) -> NonZeroU32 {
-    let mut last: Option<u32> = None;
-    for index in indexes {
-        if last == Some(*index) {
-            error!("Indexes need to be unique, but there are more than one same index {index}")
-        }
-        if *index >= dims as u32 {
-            error!("Index out of bounds: the dim is {dims} but the index is {index}");
-        }
-        last = Some(*index);
-    }
-    NonZeroU32::new(dims as u32).unwrap()
-}
-
 pub fn bad_literal(hint: &str) -> ! {
     error!(
         "\

@@ -1,3 +1,6 @@
+use num_traits::Zero;
+use pgrx::error;
+
 use super::memory_svecf32::SVecf32Output;
 use crate::datatype::memory_svecf32::SVecf32Input;
 use crate::error::*;
@@ -9,22 +12,66 @@ use std::fmt::Write;
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
-    use crate::utils::parse::{parse_pgvector_svector, svector_filter_nonzero, svector_sorted};
+    use crate::utils::parse::parse_pgvector_svector;
     let v = parse_pgvector_svector(input.to_bytes(), |s| s.parse::<F32>().ok());
     match v {
         Err(e) => {
             bad_literal(&e.to_string());
         }
-        Ok((indexes, values, dims)) => {
-            let (mut sorted_indexes, mut sorted_values) = svector_sorted(&indexes, &values);
+        Ok((mut indexes, mut values, dims)) => {
             check_value_dims_1048575(dims);
-            check_index_in_bound(&sorted_indexes, dims);
-            svector_filter_nonzero(&mut sorted_indexes, &mut sorted_values);
-            SVecf32Output::new(SVecf32Borrowed::new(
-                dims as u32,
-                &sorted_indexes,
-                &sorted_values,
-            ))
+            // is_sorted
+            if !indexes.windows(2).all(|i| i[0] <= i[1]) {
+                assert_eq!(indexes.len(), values.len());
+                let n = indexes.len();
+                let mut permutation = (0..n).collect::<Vec<_>>();
+                permutation.sort_unstable_by_key(|&i| &indexes[i]);
+                for i in 0..n {
+                    if i == permutation[i] || usize::MAX == permutation[i] {
+                        continue;
+                    }
+                    let index = indexes[i];
+                    let value = values[i];
+                    let mut j = i;
+                    while i != permutation[j] {
+                        let next = permutation[j];
+                        indexes[j] = indexes[permutation[j]];
+                        values[j] = values[permutation[j]];
+                        permutation[j] = usize::MAX;
+                        j = next;
+                    }
+                    indexes[j] = index;
+                    values[j] = value;
+                    permutation[j] = usize::MAX;
+                }
+            }
+            let mut last: Option<u32> = None;
+            for index in indexes.clone() {
+                if last == Some(index) {
+                    error!(
+                        "Indexes need to be unique, but there are more than one same index {index}"
+                    )
+                }
+                if last >= Some(dims as u32) {
+                    error!("Index out of bounds: the dim is {dims} but the index is {index}");
+                }
+                last = Some(index);
+                {
+                    let mut i = 0;
+                    let mut j = 0;
+                    while j < values.len() {
+                        if !values[j].is_zero() {
+                            indexes[i] = indexes[j];
+                            values[i] = values[j];
+                            i += 1;
+                        }
+                        j += 1;
+                    }
+                    indexes.truncate(i);
+                    values.truncate(i);
+                }
+            }
+            SVecf32Output::new(SVecf32Borrowed::new(dims as u32, &indexes, &values))
         }
     }
 }

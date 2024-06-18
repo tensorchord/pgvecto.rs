@@ -99,43 +99,6 @@ enum ParseState {
 }
 
 #[inline(always)]
-pub fn svector_sorted<T: Zero + Clone + PartialEq>(
-    indexes: &[u32],
-    values: &[T],
-) -> (Vec<u32>, Vec<T>) {
-    let mut indices = (0..indexes.len()).collect::<Vec<_>>();
-    indices.sort_by_key(|&i| &indexes[i]);
-
-    let mut sorted_indexes: Vec<u32> = Vec::with_capacity(indexes.len());
-    let mut sorted_values: Vec<T> = Vec::with_capacity(indexes.len());
-    for i in indices {
-        sorted_indexes.push(*indexes.get(i).unwrap());
-        sorted_values.push(values.get(i).unwrap().clone());
-    }
-    (sorted_indexes, sorted_values)
-}
-
-#[inline(always)]
-pub fn svector_filter_nonzero<T: Zero + Clone + PartialEq>(
-    indexes: &mut Vec<u32>,
-    values: &mut Vec<T>,
-) {
-    // Index must be sorted!
-    let mut i = 0;
-    let mut j = 0;
-    while j < values.len() {
-        if !values[j].is_zero() {
-            indexes[i] = indexes[j];
-            values[i] = values[j].clone();
-            i += 1;
-        }
-        j += 1;
-    }
-    indexes.truncate(i);
-    values.truncate(i);
-}
-
-#[inline(always)]
 pub fn parse_pgvector_svector<T: Zero + Clone, F>(
     input: &[u8],
     f: F,
@@ -310,58 +273,6 @@ mod tests {
             let ret = parse_pgvector_svector(e.as_bytes(), |s| s.parse::<F32>().ok());
             assert!(ret.is_err(), "at expr {:?}: {:?}", e, ret);
             assert_eq!(ret.unwrap_err(), err, "parsed at expr {:?}", e);
-        }
-    }
-
-    #[test]
-    fn test_svector_parse_filter() {
-        let exprs: Vec<(&str, (Vec<u32>, Vec<F32>, usize), (Vec<u32>, Vec<F32>))> = vec![
-            ("{}/0", (vec![], vec![], 0), (vec![], vec![])),
-            ("{}/1919810", (vec![], vec![], 1919810), (vec![], vec![])),
-            (
-                "{0:1, 0:2}/1",
-                (vec![0, 0], vec![F32(1.0), F32(2.0)], 1),
-                (vec![0, 0], vec![F32(1.0), F32(2.0)]),
-            ),
-            (
-                "{0:1, 1:1.5}/1",
-                (vec![0, 1], vec![F32(1.0), F32(1.5)], 1),
-                (vec![0, 1], vec![F32(1.0), F32(1.5)]),
-            ),
-            (
-                "{0:0, 1:0, 2:0}/2",
-                (vec![0, 1, 2], vec![F32(0.0), F32(0.0), F32(0.0)], 2),
-                (vec![], vec![]),
-            ),
-            (
-                "{2:0, 1:0}/2",
-                (vec![2, 1], vec![F32(0.0), F32(0.0)], 2),
-                (vec![], vec![]),
-            ),
-            (
-                "{2:0, 1:0, }/2",
-                (vec![2, 1], vec![F32(0.0), F32(0.0)], 2),
-                (vec![], vec![]),
-            ),
-            (
-                "{3:2, 2:1, 1:0, 0:-1}/4",
-                (
-                    vec![3, 2, 1, 0],
-                    vec![F32(2.0), F32(1.0), F32(0.0), F32(-1.0)],
-                    4,
-                ),
-                (vec![0, 2, 3], vec![F32(-1.0), F32(1.0), F32(2.0)]),
-            ),
-        ];
-        for (e, parsed, filtered) in exprs {
-            let ret = parse_pgvector_svector(e.as_bytes(), |s| s.parse::<F32>().ok());
-            assert!(ret.is_ok(), "at expr {:?}: {:?}", e, ret);
-            assert_eq!(ret.unwrap(), parsed, "parsed at expr {:?}", e);
-
-            let (indexes, values, _) = parsed;
-            let (mut indexes, mut values) = svector_sorted(&indexes, &values);
-            svector_filter_nonzero(&mut indexes, &mut values);
-            assert_eq!((indexes, values), filtered, "filtered at expr {:?}", e);
         }
     }
 }
