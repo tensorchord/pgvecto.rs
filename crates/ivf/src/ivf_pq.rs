@@ -58,18 +58,16 @@ impl<O: Op> IvfPq<O> {
         &self,
         vector: Borrowed<'_, O>,
         opts: &SearchOptions,
-        filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
-        basic(&self.mmap, vector, opts.ivf_nprobe, filter)
+        basic(&self.mmap, vector, opts.ivf_nprobe)
     }
 
     pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-        filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-        vbase(&self.mmap, vector, opts.ivf_nprobe, filter)
+        vbase(&self.mmap, vector, opts.ivf_nprobe)
     }
 }
 
@@ -254,7 +252,6 @@ pub fn basic<O: Op>(
     mmap: &IvfMmap<O>,
     vector: Borrowed<'_, O>,
     nprobe: u32,
-    mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
     let dense = vector.to_vec();
     let mut lists = Vec::with_capacity(mmap.nlist as usize);
@@ -274,17 +271,15 @@ pub fn basic<O: Op>(
         let end = mmap.ptr[key as usize + 1];
         for j in start..end {
             let payload = mmap.payloads[j];
-            if filter.check(payload) {
-                let distance = mmap.quantization.distance_with_codes(
-                    vector,
-                    j as u32,
-                    mmap.centroids(key),
-                    key as usize,
-                    coarse_dis,
-                    &runtime_table,
-                );
-                result.push(Reverse(Element { distance, payload }));
-            }
+            let distance = mmap.quantization.distance_with_codes(
+                vector,
+                j as u32,
+                mmap.centroids(key),
+                key as usize,
+                coarse_dis,
+                &runtime_table,
+            );
+            result.push(Reverse(Element { distance, payload }));
         }
     }
     result
@@ -294,7 +289,6 @@ pub fn vbase<'a, O: Op>(
     mmap: &'a IvfMmap<O>,
     vector: Borrowed<'a, O>,
     nprobe: u32,
-    mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
     let dense = vector.to_vec();
     let mut lists = Vec::with_capacity(mmap.nlist as usize);
@@ -314,17 +308,15 @@ pub fn vbase<'a, O: Op>(
         let end = mmap.ptr[key as usize + 1];
         for j in start..end {
             let payload = mmap.payloads[j];
-            if filter.check(payload) {
-                let distance = mmap.quantization.distance_with_codes(
-                    vector,
-                    j as u32,
-                    mmap.centroids(key),
-                    key as usize,
-                    coarse_dis,
-                    &runtime_table,
-                );
-                result.push(Element { distance, payload });
-            }
+            let distance = mmap.quantization.distance_with_codes(
+                vector,
+                j as u32,
+                mmap.centroids(key),
+                key as usize,
+                coarse_dis,
+                &runtime_table,
+            );
+            result.push(Element { distance, payload });
         }
     }
     (result, Box::new(std::iter::empty()))

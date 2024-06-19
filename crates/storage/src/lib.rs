@@ -32,11 +32,6 @@ pub struct StorageCollection<O: OperatorStorage> {
 }
 
 impl<O: OperatorStorage> StorageCollection<O> {
-    #[cfg(feature = "stand-alone-test")]
-    pub fn new(storage: O::Storage) -> Self {
-        Self { storage }
-    }
-
     pub fn create<C: Collection<O>>(path: &Path, source: &C) -> Self {
         std::fs::create_dir(path).unwrap();
         let storage = O::Storage::save(path, source);

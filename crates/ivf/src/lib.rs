@@ -72,11 +72,10 @@ impl<O: OperatorIvf> Ivf<O> {
         &self,
         vector: Borrowed<'_, O>,
         opts: &SearchOptions,
-        filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
         match self {
-            Ivf::Naive(x) => x.basic(vector, opts, filter),
-            Ivf::Pq(x) => x.basic(vector, opts, filter),
+            Ivf::Naive(x) => x.basic(vector, opts),
+            Ivf::Pq(x) => x.basic(vector, opts),
         }
     }
 
@@ -84,11 +83,10 @@ impl<O: OperatorIvf> Ivf<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-        filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
         match self {
-            Ivf::Naive(x) => x.vbase(vector, opts, filter),
-            Ivf::Pq(x) => x.vbase(vector, opts, filter),
+            Ivf::Naive(x) => x.vbase(vector, opts),
+            Ivf::Pq(x) => x.vbase(vector, opts),
         }
     }
 }

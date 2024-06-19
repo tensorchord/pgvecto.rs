@@ -495,7 +495,6 @@ impl Default for ProductQuantizationOptionsRatio {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct SearchOptions {
-    pub prefilter_enable: bool,
     #[validate(range(min = 1, max = 65535))]
     pub hnsw_ef_search: u32,
     #[validate(range(min = 1, max = 1_000_000))]

@@ -3,9 +3,6 @@ name = "storage"
 version.workspace = true
 edition.workspace = true
 
-[features]
-stand-alone-test = []
-
 [dependencies]
 base = { path = "../base" }
 common = { path = "../common" }

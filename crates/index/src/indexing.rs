@@ -38,12 +38,11 @@ impl<O: Op> Indexing<O> {
         &self,
         vector: Borrowed<'_, O>,
         opts: &SearchOptions,
-        filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
         match self {
-            Indexing::Flat(x) => x.basic(vector, opts, filter),
-            Indexing::Ivf(x) => x.basic(vector, opts, filter),
-            Indexing::Hnsw(x) => x.basic(vector, opts, filter),
+            Indexing::Flat(x) => x.basic(vector, opts),
+            Indexing::Ivf(x) => x.basic(vector, opts),
+            Indexing::Hnsw(x) => x.basic(vector, opts),
         }
     }
 
@@ -51,12 +50,11 @@ impl<O: Op> Indexing<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-        filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
         match self {
-            Indexing::Flat(x) => x.vbase(vector, opts, filter),
-            Indexing::Ivf(x) => x.vbase(vector, opts, filter),
-            Indexing::Hnsw(x) => x.vbase(vector, opts, filter),
+            Indexing::Flat(x) => x.vbase(vector, opts),
+            Indexing::Ivf(x) => x.vbase(vector, opts),
+            Indexing::Hnsw(x) => x.vbase(vector, opts),
         }
     }
 

@@ -54,18 +54,16 @@ impl<O: Op> IvfNaive<O> {
         &self,
         vector: Borrowed<'_, O>,
         opts: &SearchOptions,
-        filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
-        basic(&self.mmap, vector, opts.ivf_nprobe, filter)
+        basic(&self.mmap, vector, opts.ivf_nprobe)
     }
 
     pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-        filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-        vbase(&self.mmap, vector, opts.ivf_nprobe, filter)
+        vbase(&self.mmap, vector, opts.ivf_nprobe)
     }
 }
 
@@ -240,7 +238,6 @@ pub fn basic<O: Op>(
     mmap: &IvfMmap<O>,
     vector: Borrowed<'_, O>,
     nprobe: u32,
-    mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
     let mut target = vector.to_vec();
     O::elkan_k_means_normalize(&mut target);
@@ -260,10 +257,8 @@ pub fn basic<O: Op>(
         let end = mmap.ptr[i + 1];
         for j in start..end {
             let payload = mmap.payloads[j];
-            if filter.check(payload) {
-                let distance = mmap.quantization.distance(vector, j as u32);
-                result.push(Reverse(Element { distance, payload }));
-            }
+            let distance = mmap.quantization.distance(vector, j as u32);
+            result.push(Reverse(Element { distance, payload }));
         }
     }
     result
@@ -273,7 +268,6 @@ pub fn vbase<'a, O: Op>(
     mmap: &'a IvfMmap<O>,
     vector: Borrowed<'a, O>,
     nprobe: u32,
-    mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
     let mut target = vector.to_vec();
     O::elkan_k_means_normalize(&mut target);
@@ -293,10 +287,8 @@ pub fn vbase<'a, O: Op>(
         let end = mmap.ptr[i + 1];
         for j in start..end {
             let payload = mmap.payloads[j];
-            if filter.check(payload) {
-                let distance = mmap.quantization.distance(vector, j as u32);
-                result.push(Element { distance, payload });
-            }
+            let distance = mmap.quantization.distance(vector, j as u32);
+            result.push(Element { distance, payload });
         }
     }
     (result, Box::new(std::iter::empty()))

@@ -92,8 +92,8 @@ jobs:
           echo PGRX_TARGET_INFO_PATH_PG$VERSION=$HOME/.pgrx_binding >> "$GITHUB_ENV"
       - name: Build
         run: |
-          cargo build --lib --no-default-features --features pg$VERSION --release --target $ARCH-unknown-linux-gnu
-          ./tools/schema.sh --no-default-features --features pg$VERSION --release --target $ARCH-unknown-linux-gnu | expand -t 4 > ./target/vectors--$SEMVER.sql
+          cargo build --lib --features pg$VERSION --release --target $ARCH-unknown-linux-gnu
+          ./tools/schema.sh --features pg$VERSION --release --target $ARCH-unknown-linux-gnu | expand -t 4 > ./target/vectors--$SEMVER.sql
       - name: Package
         run: |
           export PLATFORM=$(echo $ARCH | sed 's/aarch64/arm64/; s/x86_64/amd64/')

@@ -75,18 +75,16 @@ impl<O: Op> SealedSegment<O> {
         &self,
         vector: Borrowed<'_, O>,
         opts: &SearchOptions,
-        filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
-        self.indexing.basic(vector, opts, filter)
+        self.indexing.basic(vector, opts)
     }
 
     pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-        filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
-        self.indexing.vbase(vector, opts, filter)
+        self.indexing.vbase(vector, opts)
     }
 
     pub fn len(&self) -> u32 {

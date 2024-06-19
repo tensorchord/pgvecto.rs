@@ -307,11 +307,10 @@ pub struct IndexView<O: Op> {
 }
 
 impl<O: Op> IndexView<O> {
-    pub fn basic<'a, F: Fn(Pointer) -> bool + Clone + 'a>(
+    pub fn basic<'a>(
         &'a self,
         vector: Borrowed<'_, O>,
         opts: &'a SearchOptions,
-        filter: F,
     ) -> Result<impl Iterator<Item = Pointer> + 'a, BasicError> {
         if self.options.vector.dims != vector.dims() {
             return Err(BasicError::InvalidVector);
@@ -332,63 +331,33 @@ impl<O: Op> IndexView<O> {
             }
         }
 
-        struct Filtering<'a, F: 'a> {
-            enable: bool,
-            delete: &'a Delete,
-            external: F,
-        }
-
-        impl<'a, F: Clone> Clone for Filtering<'a, F> {
-            fn clone(&self) -> Self {
-                Self {
-                    enable: self.enable,
-                    delete: self.delete,
-                    external: self.external.clone(),
-                }
-            }
-        }
-
-        impl<'a, F: FnMut(Pointer) -> bool + Clone> Filter for Filtering<'a, F> {
-            fn check(&mut self, payload: Payload) -> bool {
-                !self.enable
-                    || (self.delete.check(payload).is_some() && (self.external)(payload.pointer()))
-            }
-        }
-
-        let filter = Filtering {
-            enable: opts.prefilter_enable,
-            delete: &self.delete,
-            external: filter,
-        };
-
         let n = self.sealed.len() + self.growing.len() + 1;
         let mut heaps = Vec::with_capacity(1 + n);
         for (_, sealed) in self.sealed.iter() {
-            let p = sealed.basic(vector, opts, filter.clone());
+            let p = sealed.basic(vector, opts);
             heaps.push(Comparer(p));
         }
         for (_, growing) in self.growing.iter() {
-            let p = growing.basic(vector, opts, filter.clone());
+            let p = growing.basic(vector, opts);
             heaps.push(Comparer(p));
         }
         if let Some((_, write)) = &self.write {
-            let p = write.basic(vector, opts, filter.clone());
+            let p = write.basic(vector, opts);
             heaps.push(Comparer(p));
         }
         let loser = LoserTree::new(heaps);
         Ok(loser.filter_map(|x| {
-            if opts.prefilter_enable || self.delete.check(x.payload).is_some() {
+            if self.delete.check(x.payload).is_some() {
                 Some(x.payload.pointer())
             } else {
                 None
             }
         }))
     }
-    pub fn vbase<'a, F: FnMut(Pointer) -> bool + Clone + 'a>(
+    pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-        filter: F,
     ) -> Result<impl Iterator<Item = Pointer> + 'a, VbaseError> {
         if self.options.vector.dims != vector.dims() {
             return Err(VbaseError::InvalidVector);
@@ -399,50 +368,21 @@ impl<O: Op> IndexView<O> {
             });
         }
 
-        struct Filtering<'a, F: 'a> {
-            enable: bool,
-            delete: &'a Delete,
-            external: F,
-        }
-
-        impl<'a, F: Clone + 'a> Clone for Filtering<'a, F> {
-            fn clone(&self) -> Self {
-                Self {
-                    enable: self.enable,
-                    delete: self.delete,
-                    external: self.external.clone(),
-                }
-            }
-        }
-
-        impl<'a, F: FnMut(Pointer) -> bool + Clone + 'a> Filter for Filtering<'a, F> {
-            fn check(&mut self, payload: Payload) -> bool {
-                !self.enable
-                    || (self.delete.check(payload).is_some() && (self.external)(payload.pointer()))
-            }
-        }
-
-        let filter = Filtering {
-            enable: opts.prefilter_enable,
-            delete: &self.delete,
-            external: filter,
-        };
-
         let n = self.sealed.len() + self.growing.len() + 1;
         let mut alpha = Vec::new();
         let mut beta = Vec::with_capacity(1 + n);
         for (_, sealed) in self.sealed.iter() {
-            let (stage1, stage2) = sealed.vbase(vector, opts, filter.clone());
+            let (stage1, stage2) = sealed.vbase(vector, opts);
             alpha.extend(stage1);
             beta.push(stage2);
         }
         for (_, growing) in self.growing.iter() {
-            let (stage1, stage2) = growing.vbase(vector, opts, filter.clone());
+            let (stage1, stage2) = growing.vbase(vector, opts);
             alpha.extend(stage1);
             beta.push(stage2);
         }
         if let Some((_, write)) = &self.write {
-            let (stage1, stage2) = write.vbase(vector, opts, filter.clone());
+            let (stage1, stage2) = write.vbase(vector, opts);
             alpha.extend(stage1);
             beta.push(stage2);
         }
@@ -450,7 +390,7 @@ impl<O: Op> IndexView<O> {
         beta.push(Box::new(alpha.into_iter()));
         let loser = LoserTree::new(beta);
         Ok(loser.filter_map(|x| {
-            if opts.prefilter_enable || self.delete.check(x.payload).is_some() {
+            if self.delete.check(x.payload).is_some() {
                 Some(x.payload.pointer())
             } else {
                 None
