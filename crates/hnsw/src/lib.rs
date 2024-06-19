@@ -440,22 +440,14 @@ pub fn vbase<'a, O: OperatorHnsw>(
 pub fn entry<O: OperatorHnsw>(mmap: &HnswMmap<O>) -> Option<u32> {
     let m = mmap.m;
     let n = mmap.storage.len();
-    let mut shift = 1u64;
-    while shift * m as u64 <= n as u64 {
-        shift *= m as u64;
+    if n == 0 {
+        return None;
     }
-    while shift != 0 {
-        let mut i = 1u64;
-        while i * shift <= n as u64 {
-            let e = (i * shift - 1) as u32;
-            if i % m as u64 != 0 {
-                return Some(e);
-            }
-            i += 1;
-        }
-        shift /= m as u64;
+    let mut shift = 1u32;
+    while shift as u64 * m as u64 <= n as u64 {
+        shift *= m;
     }
-    None
+    Some(shift - 1)
 }
 
 pub fn fast_search<O: OperatorHnsw>(
