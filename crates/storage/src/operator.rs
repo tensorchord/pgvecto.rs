@@ -7,7 +7,7 @@ use base::operator::*;
 use base::scalar::*;
 
 pub trait OperatorStorage: Operator {
-    type Storage: Storage<VectorOwned = Self::VectorOwned>;
+    type Storage: Storage<VectorOwned = Self::VectorOwned> + Send + Sync;
 }
 
 impl OperatorStorage for SVecf32Cos {

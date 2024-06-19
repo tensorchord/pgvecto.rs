@@ -1,11 +1,11 @@
 [package]
-name = "rayon"
+name = "stoppable_rayon"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
 log.workspace = true
-rayoff = { package = "rayon", version = "1.8.1" }
+rayon = { package = "rayon", version = "1.8.1" }
 
 [lints]
 workspace = true

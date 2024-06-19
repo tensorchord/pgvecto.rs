@@ -1,4 +1,2 @@
 [advisories]
-ignore = [
-    "RUSTSEC-2021-0127", # serde_cbor is unmaintained / serde_cbor is not used
-]
+ignore = ["RUSTSEC-2021-0127", "RUSTSEC-2021-0145"]

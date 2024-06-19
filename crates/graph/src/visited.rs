@@ -12,7 +12,7 @@ impl VisitedPool {
             locked_buffers: Mutex::new(Vec::new()),
         }
     }
-    pub fn fetch(&self) -> VisitedGuard {
+    pub fn fetch_guard(&self) -> VisitedGuard {
         let buffer = self
             .locked_buffers
             .lock()
@@ -21,7 +21,7 @@ impl VisitedPool {
         VisitedGuard { buffer, pool: self }
     }
 
-    pub fn fetch2(&self) -> VisitedGuardChecker {
+    pub fn fetch_guard_checker(&self) -> VisitedGuardChecker {
         let mut buffer = self
             .locked_buffers
             .lock()
@@ -43,7 +43,7 @@ pub struct VisitedGuard<'a> {
 }
 
 impl<'a> VisitedGuard<'a> {
-    pub fn fetch(&mut self) -> VisitedChecker<'_> {
+    pub fn fetch_checker(&mut self) -> VisitedChecker<'_> {
         self.buffer.version = self.buffer.version.wrapping_add(1);
         if self.buffer.version == 0 {
             self.buffer.data.fill(0);
@@ -112,7 +112,7 @@ impl VisitedBuffer {
     pub fn new(capacity: usize) -> Self {
         Self {
             version: 0,
-            data: bytemuck::zeroed_vec(capacity),
+            data: base::pod::zeroed_vec(capacity),
         }
     }
 }

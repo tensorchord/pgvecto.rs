@@ -1,16 +1,17 @@
-#![feature(trait_alias)]
 #![allow(clippy::len_without_is_empty)]
-
-pub mod visited;
+#![allow(clippy::type_complexity)]
 
 use base::index::*;
 use base::operator::*;
 use base::scalar::F32;
 use base::search::*;
-use bytemuck::{Pod, Zeroable};
 use common::dir_ops::sync_dir;
+use common::json::Json;
 use common::mmap_array::MmapArray;
-use parking_lot::{RwLock, RwLockWriteGuard};
+use common::remap::RemappedCollection;
+use graph::visited::VisitedPool;
+use num_traits::Float;
+use parking_lot::RwLock;
 use quantization::operator::OperatorQuantization;
 use quantization::Quantization;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -19,29 +20,46 @@ use std::collections::BinaryHeap;
 use std::fs::create_dir;
 use std::ops::RangeInclusive;
 use std::path::Path;
-use std::sync::Arc;
-use storage::operator::OperatorStorage;
-use storage::StorageCollection;
-use visited::{VisitedGuard, VisitedPool};
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
+use stoppable_rayon as rayon;
+use storage::OperatorStorage;
+use storage::Storage;
 
-pub trait OperatorHnsw = Operator + OperatorQuantization + OperatorStorage;
+pub trait OperatorHnsw: Operator + OperatorQuantization + OperatorStorage {}
+
+impl<T: Operator + OperatorQuantization + OperatorStorage> OperatorHnsw for T {}
 
 pub struct Hnsw<O: OperatorHnsw> {
-    mmap: HnswMmap<O>,
+    storage: O::Storage,
+    quantization: Quantization<O>,
+    payloads: MmapArray<Payload>,
+    graph: MmapArray<(F32, u32)>,
+    m: Json<u32>,
+    s: Option<u32>,
+    visited: VisitedPool,
 }
 
 impl<O: OperatorHnsw> Hnsw<O> {
-    pub fn create<S: Source<O>>(path: &Path, options: IndexOptions, source: &S) -> Self {
-        create_dir(path).unwrap();
-        let ram = make(path, options, source);
-        let mmap = save(ram, path);
-        sync_dir(path);
-        Self { mmap }
+    pub fn create(
+        path: impl AsRef<Path>,
+        options: IndexOptions,
+        source: &(impl Source<O> + Sync),
+    ) -> Self {
+        let remapped = RemappedCollection::from_source(source);
+        if let Some(main) = source.get_main::<Self>() {
+            if remapped.barrier() != 0 {
+                from_main(path, options, &remapped, main)
+            } else {
+                from_nothing(path, options, &remapped)
+            }
+        } else {
+            from_nothing(path, options, &remapped)
+        }
     }
 
-    pub fn open(path: &Path, options: IndexOptions) -> Self {
-        let mmap = open(path, options);
-        Self { mmap }
+    pub fn open(path: impl AsRef<Path>) -> Self {
+        open(path)
     }
 
     pub fn basic(
@@ -49,7 +67,23 @@ impl<O: OperatorHnsw> Hnsw<O> {
         vector: Borrowed<'_, O>,
         opts: &SearchOptions,
     ) -> BinaryHeap<Reverse<Element>> {
-        basic(&self.mmap, vector, opts.hnsw_ef_search)
+        let Some(s) = self.s else {
+            return BinaryHeap::new();
+        };
+        let s = fast_search(
+            |x| self.quantization.distance(&self.storage, vector, x),
+            |x, i| outs(self, x, i),
+            1..=hierarchy_for_a_vertex(*self.m, s) - 1,
+            s,
+        );
+        graph::search::basic(
+            move |x| self.quantization.distance(&self.storage, vector, x),
+            |x| outs(self, x, 0),
+            |x| self.payloads[x as usize],
+            &self.visited,
+            s,
+            opts.hnsw_ef_search,
+        )
     }
 
     pub fn vbase<'a>(
@@ -57,417 +91,201 @@ impl<O: OperatorHnsw> Hnsw<O> {
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-        vbase(&self.mmap, vector, opts.hnsw_ef_search)
+        let Some(s) = self.s else {
+            return (Vec::new(), Box::new(std::iter::empty()));
+        };
+        let s = fast_search(
+            |x| self.quantization.distance(&self.storage, vector, x),
+            |x, i| outs(self, x, i),
+            1..=hierarchy_for_a_vertex(*self.m, s) - 1,
+            s,
+        );
+        graph::search::vbase_generic(
+            move |x| self.quantization.distance(&self.storage, vector, x),
+            |x| outs(self, x, 0),
+            |x| self.payloads[x as usize],
+            &self.visited,
+            s,
+            opts.hnsw_ef_search,
+        )
     }
 
     pub fn len(&self) -> u32 {
-        self.mmap.storage.len()
+        self.storage.len()
     }
 
     pub fn vector(&self, i: u32) -> Borrowed<'_, O> {
-        self.mmap.storage.vector(i)
+        self.storage.vector(i)
     }
 
     pub fn payload(&self, i: u32) -> Payload {
-        self.mmap.storage.payload(i)
+        self.payloads[i as usize]
     }
 }
 
-unsafe impl<O: OperatorHnsw> Send for Hnsw<O> {}
-unsafe impl<O: OperatorHnsw> Sync for Hnsw<O> {}
-
-pub struct HnswRam<O: OperatorHnsw> {
-    storage: Arc<StorageCollection<O>>,
-    quantization: Quantization<O, StorageCollection<O>>,
-    // ----------------------
-    m: u32,
-    // ----------------------
-    graph: HnswRamGraph,
-    // ----------------------
-    visited: VisitedPool,
-}
-
-pub struct HnswRamGraph {
-    pub vertexs: Vec<HnswRamVertex>,
-}
-
-pub struct HnswRamVertex {
-    pub layers: Vec<RwLock<HnswRamLayer>>,
-}
-
-impl HnswRamVertex {
-    pub fn levels(&self) -> u8 {
-        self.layers.len() as u8 - 1
-    }
-}
-
-pub struct HnswRamLayer {
-    pub edges: Vec<(F32, u32)>,
-}
-
-pub struct HnswMmap<O: OperatorHnsw> {
-    storage: Arc<StorageCollection<O>>,
-    quantization: Quantization<O, StorageCollection<O>>,
-    // ----------------------
-    m: u32,
-    // ----------------------
-    edges: MmapArray<HnswMmapEdge>,
-    by_layer_id: MmapArray<usize>,
-    by_vertex_id: MmapArray<usize>,
-    // ----------------------
-    visited: VisitedPool,
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct HnswMmapEdge(#[allow(dead_code)] F32, u32);
-// we may convert a memory-mapped graph to a memory graph
-// so that it speeds merging sealed segments
-
-unsafe impl<O: OperatorHnsw> Send for HnswMmap<O> {}
-unsafe impl<O: OperatorHnsw> Sync for HnswMmap<O> {}
-unsafe impl Pod for HnswMmapEdge {}
-unsafe impl Zeroable for HnswMmapEdge {}
-
-pub fn make<O: OperatorHnsw, S: Source<O>>(
-    path: &Path,
+fn from_nothing<O: OperatorHnsw>(
+    path: impl AsRef<Path>,
     options: IndexOptions,
-    source: &S,
-) -> HnswRam<O> {
+    collection: &(impl Collection<O> + Sync),
+) -> Hnsw<O> {
+    create_dir(path.as_ref()).unwrap();
     let HnswIndexingOptions {
         m,
         ef_construction,
-        quantization: quantization_opts,
+        quantization: quantization_options,
     } = options.indexing.clone().unwrap_hnsw();
-    let storage = Arc::new(StorageCollection::create(&path.join("raw"), source));
+    let mut g = fresh(collection.len(), m);
+    patch_insertions(
+        |u, v| O::distance(collection.vector(u), collection.vector(v)),
+        |_| false,
+        collection.len(),
+        ef_construction,
+        m,
+        &mut g,
+    );
+    rayon::check();
+    finish(&mut g, m);
+    let storage = O::Storage::create(path.as_ref().join("storage"), collection);
     rayon::check();
     let quantization = Quantization::create(
-        &path.join("quantization"),
+        path.as_ref().join("quantization"),
         options.clone(),
-        quantization_opts,
-        &storage,
-        (0..storage.len()).collect::<Vec<_>>(),
+        quantization_options,
+        collection,
     );
     rayon::check();
-    let n = storage.len();
-    let graph = HnswRamGraph {
-        vertexs: (0..n)
-            .into_par_iter()
-            .map(|i| HnswRamVertex {
-                layers: (0..count_layers_of_a_vertex(m, i))
-                    .map(|_| RwLock::new(HnswRamLayer { edges: Vec::new() }))
-                    .collect(),
-            })
-            .collect(),
-    };
-    let entry = RwLock::<Option<u32>>::new(None);
-    let visited = VisitedPool::new(storage.len());
-    (0..n).into_par_iter().for_each(|i| {
-        fn fast_search<O: OperatorHnsw>(
-            quantization: &Quantization<O, StorageCollection<O>>,
-            graph: &HnswRamGraph,
-            levels: RangeInclusive<u8>,
-            u: u32,
-            target: Borrowed<'_, O>,
-        ) -> u32 {
-            let mut u = u;
-            let mut u_dis = quantization.distance(target, u);
-            for i in levels.rev() {
-                let mut changed = true;
-                while changed {
-                    changed = false;
-                    let guard = graph.vertexs[u as usize].layers[i as usize].read();
-                    for &(_, v) in guard.edges.iter() {
-                        let v_dis = quantization.distance(target, v);
-                        if v_dis < u_dis {
-                            u = v;
-                            u_dis = v_dis;
-                            changed = true;
-                        }
-                    }
-                }
-            }
-            u
-        }
-        fn local_search<O: OperatorHnsw>(
-            quantization: &Quantization<O, StorageCollection<O>>,
-            graph: &HnswRamGraph,
-            visited: &mut VisitedGuard,
-            vector: Borrowed<'_, O>,
-            s: u32,
-            k: usize,
-            i: u8,
-        ) -> Vec<(F32, u32)> {
-            let mut visited = visited.fetch();
-            let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
-            let mut results = BinaryHeap::new();
-            let s_dis = quantization.distance(vector, s);
-            visited.mark(s);
-            candidates.push(Reverse((s_dis, s)));
-            results.push((s_dis, s));
-            while let Some(Reverse((u_dis, u))) = candidates.pop() {
-                if !(results.len() < k || u_dis < results.peek().unwrap().0) {
-                    break;
-                }
-                for &(_, v) in graph.vertexs[u as usize].layers[i as usize]
-                    .read()
-                    .edges
-                    .iter()
-                {
-                    if !visited.check(v) {
-                        continue;
-                    }
-                    visited.mark(v);
-                    let v_dis = quantization.distance(vector, v);
-                    if results.len() < k || v_dis < results.peek().unwrap().0 {
-                        candidates.push(Reverse((v_dis, v)));
-                        results.push((v_dis, v));
-                        if results.len() > k {
-                            results.pop();
-                        }
-                    }
-                }
-            }
-            results.into_sorted_vec()
-        }
-        fn select<O: OperatorHnsw>(
-            quantization: &Quantization<O, StorageCollection<O>>,
-            input: &mut Vec<(F32, u32)>,
-            size: u32,
-        ) {
-            if input.len() <= size as usize {
-                return;
-            }
-            let mut res = Vec::new();
-            for (u_dis, u) in input.iter().copied() {
-                if res.len() == size as usize {
-                    break;
-                }
-                let check = res
-                    .iter()
-                    .map(|&(_, v)| quantization.distance2(u, v))
-                    .all(|dist| dist > u_dis);
-                if check {
-                    res.push((u_dis, u));
-                }
-            }
-            *input = res;
-        }
-        rayon::check();
-        let mut visited = visited.fetch();
-        let target = storage.vector(i);
-        let levels = graph.vertexs[i as usize].levels();
-        let local_entry;
-        let update_entry;
-        {
-            let check = |global: Option<u32>| {
-                if let Some(u) = global {
-                    graph.vertexs[u as usize].levels() < levels
-                } else {
-                    true
-                }
-            };
-            let read = entry.read();
-            if check(*read) {
-                drop(read);
-                let write = entry.write();
-                if check(*write) {
-                    local_entry = *write;
-                    update_entry = Some(write);
-                } else {
-                    local_entry = *write;
-                    update_entry = None;
-                }
-            } else {
-                local_entry = *read;
-                update_entry = None;
-            }
-        };
-        let Some(mut u) = local_entry else {
-            if let Some(mut write) = update_entry {
-                *write = Some(i);
-            }
-            return;
-        };
-        let top = graph.vertexs[u as usize].levels();
-        if top > levels {
-            u = fast_search(&quantization, &graph, levels + 1..=top, u, target);
-        }
-        let mut result = Vec::with_capacity(1 + std::cmp::min(levels, top) as usize);
-        for j in (0..=std::cmp::min(levels, top)).rev() {
-            let mut edges = local_search(
-                &quantization,
-                &graph,
-                &mut visited,
-                target,
-                u,
-                ef_construction as usize,
-                j,
-            );
-            edges.sort();
-            select(&quantization, &mut edges, count_max_edges_of_a_layer(m, j));
-            u = edges.first().unwrap().1;
-            result.push(edges);
-        }
-        for j in 0..=std::cmp::min(levels, top) {
-            let mut write = graph.vertexs[i as usize].layers[j as usize].write();
-            write.edges = result.pop().unwrap();
-            let read = RwLockWriteGuard::downgrade(write);
-            for (n_dis, n) in read.edges.iter().copied() {
-                let mut write = graph.vertexs[n as usize].layers[j as usize].write();
-                let element = (n_dis, i);
-                let (Ok(index) | Err(index)) = write.edges.binary_search(&element);
-                write.edges.insert(index, element);
-                select(
-                    &quantization,
-                    &mut write.edges,
-                    count_max_edges_of_a_layer(m, j),
-                );
-            }
-        }
-        if let Some(mut write) = update_entry {
-            *write = Some(i);
-        }
-    });
-    HnswRam {
+    let payloads = MmapArray::create(
+        path.as_ref().join("payloads"),
+        (0..collection.len()).map(|i| collection.payload(i)),
+    );
+    rayon::check();
+    let graph = MmapArray::create(
+        path.as_ref().join("graph"),
+        g.iter_mut()
+            .flat_map(|x| x.iter_mut())
+            .flat_map(|x| x.get_mut())
+            .map(|&mut (_0, _1)| (_0, _1)),
+    );
+    rayon::check();
+    let m = Json::create(path.as_ref().join("m"), m);
+    sync_dir(path.as_ref());
+    Hnsw {
         storage,
         quantization,
-        m,
+        payloads,
         graph,
-        visited,
+        m,
+        s: start(collection.len(), *m),
+        visited: VisitedPool::new(collection.len()),
     }
 }
 
-pub fn save<O: OperatorHnsw>(mut ram: HnswRam<O>, path: &Path) -> HnswMmap<O> {
-    let edges = MmapArray::create(
-        &path.join("edges"),
-        ram.graph
-            .vertexs
-            .iter_mut()
-            .flat_map(|v| v.layers.iter_mut())
-            .flat_map(|v| &v.get_mut().edges)
-            .map(|&(_0, _1)| HnswMmapEdge(_0, _1)),
+fn from_main<O: OperatorHnsw>(
+    path: impl AsRef<Path>,
+    options: IndexOptions,
+    remapped: &RemappedCollection<O, impl Collection<O> + Sync>,
+    main: &Hnsw<O>,
+) -> Hnsw<O> {
+    create_dir(path.as_ref()).unwrap();
+    let HnswIndexingOptions {
+        m,
+        ef_construction,
+        quantization: quantization_options,
+    } = options.indexing.clone().unwrap_hnsw();
+    let mut g = fresh(remapped.len(), m);
+    patch_deletions(
+        |u, v| O::distance(remapped.vector(u), remapped.vector(v)),
+        |u| remapped.skip(u),
+        |u, level| edges(main, u, level),
+        remapped.len(),
+        m,
+        &mut g,
     );
     rayon::check();
-    let by_layer_id = MmapArray::create(&path.join("by_layer_id"), {
-        let iter = ram.graph.vertexs.iter_mut();
-        let iter = iter.flat_map(|v| v.layers.iter_mut());
-        let iter = iter.map(|v| v.get_mut().edges.len());
-        caluate_offsets(iter)
-    });
+    patch_insertions(
+        |u, v| O::distance(remapped.vector(u), remapped.vector(v)),
+        |u| remapped.skip(u),
+        remapped.len(),
+        ef_construction,
+        m,
+        &mut g,
+    );
     rayon::check();
-    let by_vertex_id = MmapArray::create(&path.join("by_vertex_id"), {
-        let iter = ram.graph.vertexs.iter_mut();
-        let iter = iter.map(|v| v.layers.len());
-        caluate_offsets(iter)
-    });
+    finish(&mut g, m);
+    let storage = O::Storage::create(path.as_ref().join("storage"), remapped);
     rayon::check();
-    HnswMmap {
-        storage: ram.storage,
-        quantization: ram.quantization,
-        m: ram.m,
-        edges,
-        by_layer_id,
-        by_vertex_id,
-        visited: ram.visited,
-    }
-}
-
-pub fn open<O: OperatorHnsw>(path: &Path, options: IndexOptions) -> HnswMmap<O> {
-    let idx_opts = options.indexing.clone().unwrap_hnsw();
-    let storage = Arc::new(StorageCollection::open(&path.join("raw"), options.clone()));
-    let quantization = Quantization::open(
-        &path.join("quantization"),
+    let quantization = Quantization::create(
+        path.as_ref().join("quantization"),
         options.clone(),
-        idx_opts.quantization,
-        &storage,
+        quantization_options,
+        remapped,
     );
-    let edges = MmapArray::open(&path.join("edges"));
-    let by_layer_id = MmapArray::open(&path.join("by_layer_id"));
-    let by_vertex_id = MmapArray::open(&path.join("by_vertex_id"));
-    let idx_opts = options.indexing.unwrap_hnsw();
-    let n = storage.len();
-    HnswMmap {
+    rayon::check();
+    let payloads = MmapArray::create(
+        path.as_ref().join("payloads"),
+        (0..remapped.len()).map(|i| remapped.payload(i)),
+    );
+    rayon::check();
+    let graph = MmapArray::create(
+        path.as_ref().join("graph"),
+        g.iter_mut()
+            .flat_map(|x| x.iter_mut())
+            .flat_map(|x| x.get_mut())
+            .map(|&mut (_0, _1)| (_0, _1)),
+    );
+    rayon::check();
+    let m = Json::create(path.as_ref().join("m"), m);
+    rayon::check();
+    sync_dir(path.as_ref());
+    Hnsw {
         storage,
         quantization,
-        m: idx_opts.m,
-        edges,
-        by_layer_id,
-        by_vertex_id,
+        payloads,
+        graph,
+        m,
+        s: start(remapped.len(), *m),
+        visited: VisitedPool::new(remapped.len()),
+    }
+}
+
+fn open<O: OperatorHnsw>(path: impl AsRef<Path>) -> Hnsw<O> {
+    let storage = O::Storage::open(path.as_ref().join("storage"));
+    let quantization = Quantization::open(path.as_ref().join("quantization"));
+    let payloads = MmapArray::open(path.as_ref().join("payloads"));
+    let graph = MmapArray::open(path.as_ref().join("graph"));
+    let m = Json::open(path.as_ref().join("m"));
+    let n = storage.len();
+    Hnsw {
+        storage,
+        quantization,
+        payloads,
+        graph,
+        m,
+        s: start(n, *m),
         visited: VisitedPool::new(n),
     }
 }
 
-pub fn basic<O: OperatorHnsw>(
-    mmap: &HnswMmap<O>,
-    vector: Borrowed<'_, O>,
-    ef_search: u32,
-) -> BinaryHeap<Reverse<Element>> {
-    let Some(s) = entry(mmap) else {
-        return BinaryHeap::new();
-    };
-    let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
-    let u = fast_search(mmap, 1..=levels, s, vector);
-    local_search_basic(mmap, ef_search as usize, u, vector).into_reversed_heap()
-}
-
-pub fn vbase<'a, O: OperatorHnsw>(
-    mmap: &'a HnswMmap<O>,
-    vector: Borrowed<'a, O>,
-    ef_search: u32,
-) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-    let Some(s) = entry(mmap) else {
-        return (Vec::new(), Box::new(std::iter::empty()));
-    };
-    let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
-    let u = fast_search(mmap, 1..=levels, s, vector);
-    let mut iter = local_search_vbase(mmap, u, vector);
-    let mut queue = BinaryHeap::<Element>::with_capacity(1 + ef_search as usize);
-    let mut stage1 = Vec::new();
-    for x in &mut iter {
-        if queue.len() == ef_search as usize && queue.peek().unwrap().distance < x.distance {
-            stage1.push(x);
-            break;
-        }
-        if queue.len() == ef_search as usize {
-            queue.pop();
-        }
-        queue.push(x);
-        stage1.push(x);
-    }
-    (stage1, Box::new(iter))
-}
-
-pub fn entry<O: OperatorHnsw>(mmap: &HnswMmap<O>) -> Option<u32> {
-    let m = mmap.m;
-    let n = mmap.storage.len();
-    if n == 0 {
-        return None;
-    }
-    let mut shift = 1u32;
-    while shift as u64 * m as u64 <= n as u64 {
-        shift *= m;
-    }
-    Some(shift - 1)
-}
-
-pub fn fast_search<O: OperatorHnsw>(
-    mmap: &HnswMmap<O>,
+fn fast_search<E>(
+    dist: impl Fn(u32) -> F32,
+    read_outs: impl Fn(u32, u8) -> E,
     levels: RangeInclusive<u8>,
     u: u32,
-    vector: Borrowed<'_, O>,
-) -> u32 {
+) -> u32
+where
+    E: Iterator<Item = u32>,
+{
     let mut u = u;
-    let mut u_dis = mmap.quantization.distance(vector, u);
+    let mut dis_u = dist(u);
     for i in levels.rev() {
         let mut changed = true;
         while changed {
             changed = false;
-            let edges = find_edges(mmap, u, i);
-            for &HnswMmapEdge(_, v) in edges.iter() {
-                let v_dis = mmap.quantization.distance(vector, v);
-                if v_dis < u_dis {
+            for v in read_outs(u, i) {
+                let dis_v = dist(v);
+                if dis_v < dis_u {
                     u = v;
-                    u_dis = v_dis;
+                    dis_u = dis_v;
                     changed = true;
                 }
             }
@@ -476,79 +294,240 @@ pub fn fast_search<O: OperatorHnsw>(
     u
 }
 
-pub fn local_search_basic<O: OperatorHnsw>(
-    mmap: &HnswMmap<O>,
-    k: usize,
-    s: u32,
-    vector: Borrowed<'_, O>,
-) -> ElementHeap {
-    let mut visited = mmap.visited.fetch();
-    let mut visited = visited.fetch();
-    let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
-    let mut results = ElementHeap::new(k);
-    visited.mark(s);
-    let s_dis = mmap.quantization.distance(vector, s);
-    candidates.push(Reverse((s_dis, s)));
-    results.push(Element {
-        distance: s_dis,
-        payload: mmap.storage.payload(s),
-    });
-    while let Some(Reverse((u_dis, u))) = candidates.pop() {
-        if !results.check(u_dis) {
-            break;
+fn fresh(n: u32, m: u32) -> Vec<Vec<RwLock<Vec<(F32, u32)>>>> {
+    let mut g = Vec::with_capacity(n as usize);
+    for u in 0..n {
+        let l = hierarchy_for_a_vertex(m, u);
+        let mut vertex = Vec::new();
+        vertex.resize_with(l as usize, || RwLock::new(Vec::new()));
+        g.push(vertex);
+    }
+    g
+}
+
+fn patch_deletions<E>(
+    dist: impl Fn(u32, u32) -> F32 + Copy + Sync,
+    skip: impl Fn(u32) -> bool + Sync,
+    read_edges: impl Fn(u32, u8) -> E + Sync,
+    n: u32,
+    m: u32,
+    g: &mut [Vec<RwLock<Vec<(F32, u32)>>>],
+) where
+    E: Iterator<Item = (F32, u32)>,
+{
+    (0..n).into_par_iter().for_each(|u| {
+        rayon::check();
+        if !skip(u) {
+            return;
         }
-        let edges = find_edges(mmap, u, 0);
-        for &HnswMmapEdge(_, v) in edges.iter() {
-            if !visited.check(v) {
-                continue;
+        for level in 0..hierarchy_for_a_vertex(m, u) {
+            let ori = read_edges(u, level).collect::<Vec<_>>();
+            let mut base = ori
+                .iter()
+                .copied()
+                .filter(|&(_, v)| skip(v))
+                .collect::<Vec<_>>();
+            let d = ori
+                .iter()
+                .copied()
+                .filter(|&(_, v)| !skip(v))
+                .collect::<Vec<_>>();
+            let mut add = vec![];
+            for (_, v) in d {
+                let v_ori = read_edges(v, level).map(|(_, w)| w);
+                add.extend(v_ori.filter(|&w| skip(w)).map(|w| (dist(u, w), w)));
             }
-            visited.mark(v);
-            let v_dis = mmap.quantization.distance(vector, v);
-            if !results.check(v_dis) {
-                continue;
+            graph::prune::prune(dist, u, &mut base, &add, m);
+            *g[u as usize][level as usize].write() = base;
+        }
+    });
+}
+
+fn patch_insertions(
+    dist: impl Fn(u32, u32) -> F32 + Copy + Sync,
+    skip: impl Fn(u32) -> bool + Sync,
+    n: u32,
+    ef_construction: u32,
+    m: u32,
+    g: &mut [Vec<RwLock<Vec<(F32, u32)>>>],
+) {
+    #[repr(C)]
+    #[derive(Debug, Clone, Copy)]
+    struct Start {
+        val: u32,
+        holding: bool,
+    }
+    impl Start {
+        fn into_u64(self) -> u64 {
+            (self.val as u64) | ((self.holding as u64) << 32)
+        }
+        fn from_u64(x: u64) -> Start {
+            Start {
+                val: x as u32,
+                holding: (x >> 32) != 0,
             }
-            candidates.push(Reverse((v_dis, v)));
-            results.push(Element {
-                distance: v_dis,
-                payload: mmap.storage.payload(v),
-            });
+        }
+        fn is_holding(self) -> bool {
+            self.val == 1
+        }
+        fn is_empty(self) -> bool {
+            self.val == u32::MAX
+        }
+        fn new(val: u32, holding: bool) -> Start {
+            Start { val, holding }
+        }
+        fn start(self) -> Option<u32> {
+            if self.val != u32::MAX {
+                Some(self.val)
+            } else {
+                None
+            }
         }
     }
-    results
-}
-
-pub fn local_search_vbase<'a, O: OperatorHnsw>(
-    mmap: &'a HnswMmap<O>,
-    s: u32,
-    vector: Borrowed<'a, O>,
-) -> impl Iterator<Item = Element> + 'a {
-    let mut visited = mmap.visited.fetch2();
-    let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
-    visited.mark(s);
-    let s_dis = mmap.quantization.distance(vector, s);
-    candidates.push(Reverse((s_dis, s)));
-    std::iter::from_fn(move || {
-        let Reverse((u_dis, u)) = candidates.pop()?;
-        {
-            let edges = find_edges(mmap, u, 0);
-            for &HnswMmapEdge(_, v) in edges.iter() {
-                if !visited.check(v) {
-                    continue;
+    let s = AtomicU64::new(
+        Start::new(
+            'a: {
+                let mut shift = 1u64;
+                while shift * m as u64 <= n as u64 {
+                    shift *= m as u64;
                 }
-                visited.mark(v);
-                let v_dis = mmap.quantization.distance(vector, v);
-                candidates.push(Reverse((v_dis, v)));
+                while shift != 0 {
+                    let mut i = 1u64;
+                    while i * shift <= n as u64 {
+                        let e = (i * shift - 1) as u32;
+                        if i % m as u64 != 0 && skip(e) {
+                            break 'a e;
+                        }
+                        i += 1;
+                    }
+                    shift /= m as u64;
+                }
+                break 'a u32::MAX;
+            },
+            false,
+        )
+        .into_u64(),
+    );
+    let visited = VisitedPool::new(n);
+    (0..n).into_par_iter().for_each(|u| {
+        rayon::check();
+        if skip(u) {
+            return;
+        }
+        let mut visited = visited.fetch_guard();
+        let l = hierarchy_for_a_vertex(m, u);
+        let mut start = Start::from_u64(s.load(Ordering::Acquire));
+        let update_start = loop {
+            if start.is_holding() {
+                rayon::check();
+                std::thread::yield_now();
+                continue;
+            }
+            if start.is_empty() || g[start.val as usize].len() < g[u as usize].len() {
+                match s.compare_exchange_weak(
+                    start.into_u64(),
+                    Start::new(u, true).into_u64(),
+                    Ordering::AcqRel,
+                    Ordering::Acquire,
+                ) {
+                    Ok(_) => break true,
+                    Err(val) => start = Start::from_u64(val),
+                }
+                continue;
+            }
+            break false;
+        };
+        let mut temp = vec![vec![]; l as usize];
+        if let Some(mut cursor) = start.start() {
+            let t = hierarchy_for_a_vertex(m, cursor);
+            if t > l {
+                cursor = fast_search(
+                    |x| dist(u, x),
+                    |x, level| {
+                        g[x as usize][level as usize]
+                            .read()
+                            .clone()
+                            .into_iter()
+                            .map(|(_, x)| x)
+                    },
+                    l - 1..=t - 1,
+                    cursor,
+                );
+            }
+            for j in (0..std::cmp::min(l, t)).rev() {
+                let scope = graph::search::search(
+                    |x| dist(u, x),
+                    |x| {
+                        g[x as usize][j as usize]
+                            .read()
+                            .clone()
+                            .into_iter()
+                            .map(|(_, x)| x)
+                    },
+                    &mut visited,
+                    cursor,
+                    ef_construction,
+                );
+                graph::prune::prune(
+                    dist,
+                    u,
+                    &mut temp[j as usize],
+                    &scope,
+                    capacity_for_a_hierarchy(m, j),
+                );
+                cursor = if let Some(x) = scope.first() {
+                    x.1
+                } else {
+                    break;
+                };
+                temp[j as usize] = scope;
             }
         }
-        Some(Element {
-            distance: u_dis,
-            payload: mmap.storage.payload(u),
-        })
-    })
+        for j in 0..l {
+            g[u as usize][j as usize]
+                .write()
+                .clone_from(&temp[j as usize]);
+        }
+        for j in 0..l {
+            for (dis_v, v) in temp[j as usize].iter().copied() {
+                let mut lock = g[v as usize][j as usize].write();
+                if lock.iter().any(|(_, k)| *k == u) {
+                    continue;
+                }
+                if lock.len() < m as usize {
+                    let (Ok(index) | Err(index)) = lock.binary_search(&(dis_v, u));
+                    lock.insert(index, (dis_v, u));
+                    continue;
+                }
+                graph::prune::prune(
+                    dist,
+                    v,
+                    &mut lock,
+                    &[(dis_v, u)],
+                    capacity_for_a_hierarchy(m, j),
+                );
+            }
+        }
+        if update_start {
+            s.store(Start::new(u, false).into_u64(), Ordering::Release);
+        }
+    });
 }
 
-pub fn count_layers_of_a_vertex(m: u32, i: u32) -> u8 {
-    let mut x = i + 1;
+fn finish(g: &mut [Vec<RwLock<Vec<(F32, u32)>>>], m: u32) {
+    for u in 0..g.len() as u32 {
+        let l = hierarchy_for_a_vertex(m, u);
+        for j in 0..l {
+            g[u as usize][j as usize].get_mut().resize(
+                capacity_for_a_hierarchy(m, j) as usize,
+                (F32::infinity(), u32::MAX),
+            );
+        }
+    }
+}
+
+fn hierarchy_for_a_vertex(m: u32, u: u32) -> u8 {
+    let mut x = u + 1;
     let mut ans = 1;
     while x % m == 0 {
         ans += 1;
@@ -557,57 +536,74 @@ pub fn count_layers_of_a_vertex(m: u32, i: u32) -> u8 {
     ans
 }
 
-pub fn count_max_edges_of_a_layer(m: u32, j: u8) -> u32 {
-    if j == 0 {
+fn capacity_for_a_hierarchy(m: u32, level: u8) -> u32 {
+    if level == 0 {
         m * 2
     } else {
         m
     }
 }
 
-fn caluate_offsets(iter: impl Iterator<Item = usize>) -> impl Iterator<Item = usize> {
-    let mut offset = 0usize;
-    let mut iter = std::iter::once(0).chain(iter);
-    std::iter::from_fn(move || {
-        let x = iter.next()?;
-        offset += x;
-        Some(offset)
-    })
-}
-
-fn find_edges<O: OperatorHnsw>(mmap: &HnswMmap<O>, u: u32, level: u8) -> &[HnswMmapEdge] {
-    let offset = u as usize;
-    let index = mmap.by_vertex_id[offset]..mmap.by_vertex_id[offset + 1];
-    let offset = index.start + level as usize;
-    let index = mmap.by_layer_id[offset]..mmap.by_layer_id[offset + 1];
-    &mmap.edges[index]
-}
-
-pub struct ElementHeap {
-    binary_heap: BinaryHeap<Element>,
-    k: usize,
-}
-
-impl ElementHeap {
-    pub fn new(k: usize) -> Self {
-        assert!(k != 0);
-        Self {
-            binary_heap: BinaryHeap::new(),
-            k,
+fn edges<O: OperatorHnsw>(
+    hnsw: &Hnsw<O>,
+    u: u32,
+    level: u8,
+) -> impl Iterator<Item = (F32, u32)> + '_ {
+    let m = *hnsw.m;
+    let offset = {
+        let mut offset = 0;
+        // extra m edges in level 0
+        offset += u as usize * m as usize;
+        let mut x = u as usize;
+        while x != 0 {
+            offset += x * m as usize;
+            x /= m as usize;
         }
-    }
-    pub fn check(&self, distance: F32) -> bool {
-        self.binary_heap.len() < self.k || distance < self.binary_heap.peek().unwrap().distance
-    }
-    pub fn push(&mut self, element: Element) -> Option<Element> {
-        self.binary_heap.push(element);
-        if self.binary_heap.len() == self.k + 1 {
-            self.binary_heap.pop()
-        } else {
-            None
+        offset + (level as usize + 1) * m as usize * (level != 0) as usize
+    };
+    let len = if level == 0 {
+        2 * m as usize
+    } else {
+        m as usize
+    };
+    hnsw.graph[offset..offset + len]
+        .iter()
+        .take_while(|(_, v)| *v != u32::MAX)
+        .cloned()
+}
+
+fn outs<O: OperatorHnsw>(hnsw: &Hnsw<O>, u: u32, level: u8) -> impl Iterator<Item = u32> + '_ {
+    let m = *hnsw.m;
+    let offset = {
+        let mut offset = 0;
+        // extra m edges in level 0
+        offset += u as usize * m as usize;
+        let mut x = u as usize;
+        while x != 0 {
+            offset += x * m as usize;
+            x /= m as usize;
         }
+        offset + (level as usize + 1) * m as usize * (level != 0) as usize
+    };
+    let len = if level == 0 {
+        2 * m as usize
+    } else {
+        m as usize
+    };
+    hnsw.graph[offset..offset + len]
+        .iter()
+        .take_while(|(_, v)| *v != u32::MAX)
+        .map(|(_, v)| v)
+        .cloned()
+}
+
+fn start(n: u32, m: u32) -> Option<u32> {
+    if n == 0 {
+        return None;
     }
-    pub fn into_reversed_heap(self) -> BinaryHeap<Reverse<Element>> {
-        self.binary_heap.into_iter().map(Reverse).collect()
+    let mut shift = 1u64;
+    while shift * m as u64 <= n as u64 {
+        shift *= m as u64;
     }
+    Some(shift as u32 - 1)
 }

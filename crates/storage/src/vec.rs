@@ -1,116 +1,88 @@
 use crate::Storage;
-pub use base::index::*;
 use base::operator::Operator;
-pub use base::scalar::*;
-pub use base::search::*;
-pub use base::vector::*;
+use base::scalar::*;
+use base::search::*;
+use base::vector::*;
+use common::json::Json;
 use common::mmap_array::MmapArray;
 use std::path::Path;
 
 pub struct VecStorage<T> {
-    vectors: MmapArray<T>,
-    payload: MmapArray<Payload>,
-    dims: u16,
+    dims: Json<u32>,
+    len: Json<u32>,
+    slice: MmapArray<T>,
 }
 
-impl Storage for VecStorage<F32> {
-    type VectorOwned = Vecf32Owned;
-
+impl<O: Operator<VectorOwned = Vecf32Owned>> Vectors<O> for VecStorage<F32> {
     fn dims(&self) -> u32 {
-        self.dims as u32
+        *self.dims
     }
 
     fn len(&self) -> u32 {
-        self.payload.len() as u32
+        *self.len
     }
 
     fn vector(&self, i: u32) -> Vecf32Borrowed<'_> {
-        let s = i as usize * self.dims as usize;
-        let e = (i + 1) as usize * self.dims as usize;
-        Vecf32Borrowed::new(&self.vectors[s..e])
-    }
-
-    fn payload(&self, i: u32) -> Payload {
-        self.payload[i as usize]
-    }
-
-    fn open(path: &Path, options: IndexOptions) -> Self
-    where
-        Self: Sized,
-    {
-        let vectors = MmapArray::open(&path.join("vectors"));
-        let payload = MmapArray::open(&path.join("payload"));
-        Self {
-            vectors,
-            payload,
-            dims: options.vector.dims.try_into().unwrap(),
-        }
-    }
-
-    fn save<O: Operator<VectorOwned = Self::VectorOwned>, C: Collection<O>>(
-        path: &Path,
-        collection: &C,
-    ) -> Self {
-        let n = collection.len();
-        let vectors_iter = (0..n).flat_map(|i| collection.vector(i).to_vec());
-        let payload_iter = (0..n).map(|i| collection.payload(i));
-        let vectors = MmapArray::create(&path.join("vectors"), vectors_iter);
-        let payload = MmapArray::create(&path.join("payload"), payload_iter);
-        Self {
-            vectors,
-            payload,
-            dims: collection.dims().try_into().unwrap(),
-        }
+        let s = i as usize * *self.dims as usize;
+        let e = (i + 1) as usize * *self.dims as usize;
+        Vecf32Borrowed::new(&self.slice[s..e])
     }
 }
 
-impl Storage for VecStorage<F16> {
-    type VectorOwned = Vecf16Owned;
+impl<O: Operator<VectorOwned = Vecf32Owned>> Storage<O> for VecStorage<F32> {
+    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<O>) -> Self {
+        std::fs::create_dir(path.as_ref()).unwrap();
+        let dims = Json::create(path.as_ref().join("dims"), vectors.dims());
+        let len = Json::create(path.as_ref().join("len"), vectors.len());
+        let slice = MmapArray::create(
+            path.as_ref().join("slice"),
+            (0..*len).flat_map(|i| vectors.vector(i).to_vec()),
+        );
+        common::dir_ops::sync_dir(path.as_ref());
+        Self { dims, len, slice }
+    }
 
+    fn open(path: impl AsRef<Path>) -> Self {
+        let dims = Json::open(path.as_ref().join("dims"));
+        let len = Json::open(path.as_ref().join("len"));
+        let slice = MmapArray::open(path.as_ref().join("slice"));
+        Self { dims, len, slice }
+    }
+}
+
+impl<O: Operator<VectorOwned = Vecf16Owned>> Vectors<O> for VecStorage<F16> {
     fn dims(&self) -> u32 {
-        self.dims as u32
+        *self.dims
     }
 
     fn len(&self) -> u32 {
-        self.payload.len() as u32
+        *self.len
     }
 
     fn vector(&self, i: u32) -> Vecf16Borrowed {
-        let s = i as usize * self.dims as usize;
-        let e = (i + 1) as usize * self.dims as usize;
-        Vecf16Borrowed::new(&self.vectors[s..e])
+        let s = i as usize * *self.dims as usize;
+        let e = (i + 1) as usize * *self.dims as usize;
+        Vecf16Borrowed::new(&self.slice[s..e])
+    }
+}
+
+impl<O: Operator<VectorOwned = Vecf16Owned>> Storage<O> for VecStorage<F16> {
+    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<O>) -> Self {
+        std::fs::create_dir(path.as_ref()).unwrap();
+        let dims = Json::create(path.as_ref().join("dims"), vectors.dims());
+        let len = Json::create(path.as_ref().join("len"), vectors.len());
+        let slice = MmapArray::create(
+            path.as_ref().join("slice"),
+            (0..*len).flat_map(|i| vectors.vector(i).to_vec()),
+        );
+        common::dir_ops::sync_dir(path);
+        Self { dims, len, slice }
     }
 
-    fn payload(&self, i: u32) -> Payload {
-        self.payload[i as usize]
-    }
-
-    fn open(path: &Path, options: IndexOptions) -> Self
-    where
-        Self: Sized,
-    {
-        let vectors = MmapArray::open(&path.join("vectors"));
-        let payload = MmapArray::open(&path.join("payload"));
-        Self {
-            vectors,
-            payload,
-            dims: options.vector.dims.try_into().unwrap(),
-        }
-    }
-
-    fn save<O: Operator<VectorOwned = Self::VectorOwned>, C: Collection<O>>(
-        path: &Path,
-        collection: &C,
-    ) -> Self {
-        let n = collection.len();
-        let vectors_iter = (0..n).flat_map(|i| collection.vector(i).to_vec());
-        let payload_iter = (0..n).map(|i| collection.payload(i));
-        let vectors = MmapArray::create(&path.join("vectors"), vectors_iter);
-        let payload = MmapArray::create(&path.join("payload"), payload_iter);
-        Self {
-            vectors,
-            payload,
-            dims: collection.dims().try_into().unwrap(),
-        }
+    fn open(path: impl AsRef<Path>) -> Self {
+        let dims = Json::open(path.as_ref().join("dims"));
+        let len = Json::open(path.as_ref().join("len"));
+        let slice = MmapArray::open(path.as_ref().join("slice"));
+        Self { dims, len, slice }
     }
 }

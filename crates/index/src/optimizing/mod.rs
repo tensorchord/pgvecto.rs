@@ -39,13 +39,13 @@ impl<O: Op> Optimizing<O> {
             Box::new(move || {
                 let view = index.view();
                 let stamp = view
-                    .write
+                    .write_segment
                     .as_ref()
-                    .map(|(uuid, segment)| (*uuid, segment.len()));
+                    .map(|(id, segment)| (*id, segment.len()));
                 if first || stamp == check {
-                    if let Some((uuid, len)) = stamp {
+                    if let Some((id, len)) = stamp {
                         if len >= view.alterable_options.optimizing.sealing_size {
-                            index.seal(uuid);
+                            index.seal(id);
                         }
                     }
                 } else {
@@ -59,8 +59,12 @@ impl<O: Op> Optimizing<O> {
             Instant::now(),
             Box::new(|| {
                 let view = index.view();
-                if let Some(source) = scan(index.clone()) {
-                    rayon::ThreadPoolBuilder::new()
+                if let Some(source) = scan(
+                    index.clone(),
+                    view.alterable_options.segment.max_sealed_segment_size,
+                    view.alterable_options.optimizing.delete_threshold,
+                ) {
+                    stoppable_rayon::ThreadPoolBuilder::new()
                         .num_threads(view.alterable_options.optimizing.optimizing_threads as usize)
                         .build_scoped(|pool| {
                             let (stop_tx, stop_rx) = bounded::<Infallible>(0);
@@ -93,7 +97,8 @@ impl<O: Op> Optimizing<O> {
                     Instant::now()
                 } else {
                     index.instant_indexed.store(Instant::now());
-                    Instant::now() + Duration::from_secs(60)
+                    Instant::now()
+                        + Duration::from_secs(view.alterable_options.optimizing.optimizing_secs)
                 }
             }),
         );

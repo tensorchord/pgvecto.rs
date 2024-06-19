@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 num-traits.workspace = true
 rand.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 
 base = { path = "../base" }

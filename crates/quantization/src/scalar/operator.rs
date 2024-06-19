@@ -11,13 +11,6 @@ pub trait OperatorScalarQuantization: Operator {
         lhs: Borrowed<'_, Self>,
         rhs: &[u8],
     ) -> F32;
-    fn scalar_quantization_distance2(
-        dims: u16,
-        max: &[Scalar<Self>],
-        min: &[Scalar<Self>],
-        lhs: &[u8],
-        rhs: &[u8],
-    ) -> F32;
 }
 
 impl OperatorScalarQuantization for BVecf32Cos {
@@ -26,16 +19,6 @@ impl OperatorScalarQuantization for BVecf32Cos {
         _max: &[F32],
         _min: &[F32],
         _lhs: Borrowed<'_, Self>,
-        _rhs: &[u8],
-    ) -> F32 {
-        unimplemented!()
-    }
-
-    fn scalar_quantization_distance2(
-        _dims: u16,
-        _max: &[Scalar<Self>],
-        _min: &[Scalar<Self>],
-        _lhs: &[u8],
         _rhs: &[u8],
     ) -> F32 {
         unimplemented!()
@@ -52,16 +35,6 @@ impl OperatorScalarQuantization for BVecf32Dot {
     ) -> F32 {
         unimplemented!()
     }
-
-    fn scalar_quantization_distance2(
-        _dims: u16,
-        _max: &[Scalar<Self>],
-        _min: &[Scalar<Self>],
-        _lhs: &[u8],
-        _rhs: &[u8],
-    ) -> F32 {
-        unimplemented!()
-    }
 }
 
 impl OperatorScalarQuantization for BVecf32Jaccard {
@@ -70,16 +43,6 @@ impl OperatorScalarQuantization for BVecf32Jaccard {
         _max: &[F32],
         _min: &[F32],
         _lhs: Borrowed<'_, Self>,
-        _rhs: &[u8],
-    ) -> F32 {
-        unimplemented!()
-    }
-
-    fn scalar_quantization_distance2(
-        _dims: u16,
-        _max: &[Scalar<Self>],
-        _min: &[Scalar<Self>],
-        _lhs: &[u8],
         _rhs: &[u8],
     ) -> F32 {
         unimplemented!()
@@ -96,16 +59,6 @@ impl OperatorScalarQuantization for BVecf32L2 {
     ) -> F32 {
         unimplemented!()
     }
-
-    fn scalar_quantization_distance2(
-        _dims: u16,
-        _max: &[Scalar<Self>],
-        _min: &[Scalar<Self>],
-        _lhs: &[u8],
-        _rhs: &[u8],
-    ) -> F32 {
-        unimplemented!()
-    }
 }
 
 impl OperatorScalarQuantization for SVecf32Cos {
@@ -114,16 +67,6 @@ impl OperatorScalarQuantization for SVecf32Cos {
         _max: &[F32],
         _min: &[F32],
         _lhs: Borrowed<'_, Self>,
-        _rhs: &[u8],
-    ) -> F32 {
-        unimplemented!()
-    }
-
-    fn scalar_quantization_distance2(
-        _dims: u16,
-        _max: &[Scalar<Self>],
-        _min: &[Scalar<Self>],
-        _lhs: &[u8],
         _rhs: &[u8],
     ) -> F32 {
         unimplemented!()
@@ -140,16 +83,6 @@ impl OperatorScalarQuantization for SVecf32Dot {
     ) -> F32 {
         unimplemented!()
     }
-
-    fn scalar_quantization_distance2(
-        _dims: u16,
-        _max: &[Scalar<Self>],
-        _min: &[Scalar<Self>],
-        _lhs: &[u8],
-        _rhs: &[u8],
-    ) -> F32 {
-        unimplemented!()
-    }
 }
 
 impl OperatorScalarQuantization for SVecf32L2 {
@@ -158,16 +91,6 @@ impl OperatorScalarQuantization for SVecf32L2 {
         _max: &[Scalar<Self>],
         _min: &[Scalar<Self>],
         _lhs: SVecf32Borrowed<'_>,
-        _rhs: &[u8],
-    ) -> F32 {
-        unimplemented!()
-    }
-
-    fn scalar_quantization_distance2(
-        _dims: u16,
-        _max: &[Scalar<Self>],
-        _min: &[Scalar<Self>],
-        _lhs: &[u8],
         _rhs: &[u8],
     ) -> F32 {
         unimplemented!()
@@ -196,27 +119,6 @@ impl OperatorScalarQuantization for Vecf16Cos {
         }
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn scalar_quantization_distance2(
-        dims: u16,
-        max: &[F16],
-        min: &[F16],
-        lhs: &[u8],
-        rhs: &[u8],
-    ) -> F32 {
-        let mut xy = F32::zero();
-        let mut x2 = F32::zero();
-        let mut y2 = F32::zero();
-        for i in 0..dims as usize {
-            let _x = F32(lhs[i] as f32 / 256.0) * (max[i].to_f() - min[i].to_f()) + min[i].to_f();
-            let _y = F32(rhs[i] as f32 / 256.0) * (max[i].to_f() - min[i].to_f()) + min[i].to_f();
-            xy += _x * _y;
-            x2 += _x * _x;
-            y2 += _y * _y;
-        }
-        F32(1.0) - xy / (x2 * y2).sqrt()
-    }
 }
 
 impl OperatorScalarQuantization for Vecf16Dot {
@@ -232,23 +134,6 @@ impl OperatorScalarQuantization for Vecf16Dot {
         let mut xy = F32::zero();
         for i in 0..dims as usize {
             let _x = lhs[i].to_f();
-            let _y = F32(rhs[i] as f32 / 256.0) * (max[i].to_f() - min[i].to_f()) + min[i].to_f();
-            xy += _x * _y;
-        }
-        xy * (-1.0)
-    }
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn scalar_quantization_distance2(
-        dims: u16,
-        max: &[F16],
-        min: &[F16],
-        lhs: &[u8],
-        rhs: &[u8],
-    ) -> F32 {
-        let mut xy = F32::zero();
-        for i in 0..dims as usize {
-            let _x = F32(lhs[i] as f32 / 256.0) * (max[i].to_f() - min[i].to_f()) + min[i].to_f();
             let _y = F32(rhs[i] as f32 / 256.0) * (max[i].to_f() - min[i].to_f()) + min[i].to_f();
             xy += _x * _y;
         }
@@ -270,23 +155,6 @@ impl OperatorScalarQuantization for Vecf16L2 {
         for i in 0..dims as usize {
             let _x = lhs[i].to_f();
             let _y = (F32(rhs[i] as f32) / 256.0) * (max[i].to_f() - min[i].to_f()) + min[i].to_f();
-            result += (_x - _y) * (_x - _y);
-        }
-        result
-    }
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn scalar_quantization_distance2(
-        dims: u16,
-        max: &[F16],
-        min: &[F16],
-        lhs: &[u8],
-        rhs: &[u8],
-    ) -> F32 {
-        let mut result = F32::zero();
-        for i in 0..dims as usize {
-            let _x = F32(lhs[i] as f32 / 256.0) * (max[i].to_f() - min[i].to_f()) + min[i].to_f();
-            let _y = F32(rhs[i] as f32 / 256.0) * (max[i].to_f() - min[i].to_f()) + min[i].to_f();
             result += (_x - _y) * (_x - _y);
         }
         result
@@ -315,27 +183,6 @@ impl OperatorScalarQuantization for Vecf32Cos {
         }
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn scalar_quantization_distance2(
-        dims: u16,
-        max: &[F32],
-        min: &[F32],
-        lhs: &[u8],
-        rhs: &[u8],
-    ) -> F32 {
-        let mut xy = F32::zero();
-        let mut x2 = F32::zero();
-        let mut y2 = F32::zero();
-        for i in 0..dims as usize {
-            let _x = F32(lhs[i] as f32 / 256.0) * (max[i] - min[i]) + min[i];
-            let _y = F32(rhs[i] as f32 / 256.0) * (max[i] - min[i]) + min[i];
-            xy += _x * _y;
-            x2 += _x * _x;
-            y2 += _y * _y;
-        }
-        F32(1.0) - xy / (x2 * y2).sqrt()
-    }
 }
 
 impl OperatorScalarQuantization for Vecf32Dot {
@@ -351,23 +198,6 @@ impl OperatorScalarQuantization for Vecf32Dot {
         let mut xy = F32::zero();
         for i in 0..dims as usize {
             let _x = lhs[i];
-            let _y = F32(rhs[i] as f32 / 256.0) * (max[i] - min[i]) + min[i];
-            xy += _x * _y;
-        }
-        xy * (-1.0)
-    }
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn scalar_quantization_distance2(
-        dims: u16,
-        max: &[F32],
-        min: &[F32],
-        lhs: &[u8],
-        rhs: &[u8],
-    ) -> F32 {
-        let mut xy = F32::zero();
-        for i in 0..dims as usize {
-            let _x = F32(lhs[i] as f32 / 256.0) * (max[i] - min[i]) + min[i];
             let _y = F32(rhs[i] as f32 / 256.0) * (max[i] - min[i]) + min[i];
             xy += _x * _y;
         }
@@ -393,23 +223,6 @@ impl OperatorScalarQuantization for Vecf32L2 {
         }
         result
     }
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn scalar_quantization_distance2(
-        dims: u16,
-        max: &[F32],
-        min: &[F32],
-        lhs: &[u8],
-        rhs: &[u8],
-    ) -> F32 {
-        let mut result = F32::zero();
-        for i in 0..dims as usize {
-            let _x = F32(lhs[i] as f32 / 256.0) * (max[i] - min[i]) + min[i];
-            let _y = F32(rhs[i] as f32 / 256.0) * (max[i] - min[i]) + min[i];
-            result += (_x - _y) * (_x - _y);
-        }
-        result
-    }
 }
 
 impl OperatorScalarQuantization for Veci8Cos {
@@ -418,15 +231,6 @@ impl OperatorScalarQuantization for Veci8Cos {
         _max: &[Scalar<Self>],
         _min: &[Scalar<Self>],
         _lhs: Borrowed<'_, Self>,
-        _rhs: &[u8],
-    ) -> F32 {
-        unimplemented!()
-    }
-    fn scalar_quantization_distance2(
-        _dims: u16,
-        _max: &[Scalar<Self>],
-        _min: &[Scalar<Self>],
-        _lhs: &[u8],
         _rhs: &[u8],
     ) -> F32 {
         unimplemented!()
@@ -443,15 +247,6 @@ impl OperatorScalarQuantization for Veci8Dot {
     ) -> F32 {
         unimplemented!()
     }
-    fn scalar_quantization_distance2(
-        _dims: u16,
-        _max: &[Scalar<Self>],
-        _min: &[Scalar<Self>],
-        _lhs: &[u8],
-        _rhs: &[u8],
-    ) -> F32 {
-        unimplemented!()
-    }
 }
 
 impl OperatorScalarQuantization for Veci8L2 {
@@ -460,15 +255,6 @@ impl OperatorScalarQuantization for Veci8L2 {
         _max: &[Scalar<Self>],
         _min: &[Scalar<Self>],
         _lhs: Borrowed<'_, Self>,
-        _rhs: &[u8],
-    ) -> F32 {
-        unimplemented!()
-    }
-    fn scalar_quantization_distance2(
-        _dims: u16,
-        _max: &[Scalar<Self>],
-        _min: &[Scalar<Self>],
-        _lhs: &[u8],
         _rhs: &[u8],
     ) -> F32 {
         unimplemented!()

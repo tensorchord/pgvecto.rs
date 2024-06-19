@@ -196,8 +196,7 @@ impl<'a> PartialOrd for BVecf32Borrowed<'a> {
 }
 
 #[inline]
-#[cfg(any(target_arch = "x86_64", doc))]
-#[doc(cfg(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
 unsafe fn cosine_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
@@ -278,8 +277,7 @@ pub fn cosine(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
 }
 
 #[inline]
-#[cfg(any(target_arch = "x86_64", doc))]
-#[doc(cfg(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
 unsafe fn dot_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
@@ -345,8 +343,7 @@ pub fn dot(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
 }
 
 #[inline]
-#[cfg(any(target_arch = "x86_64", doc))]
-#[doc(cfg(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
 unsafe fn sl2_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
@@ -412,8 +409,7 @@ pub fn sl2(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
 }
 
 #[inline]
-#[cfg(any(target_arch = "x86_64", doc))]
-#[doc(cfg(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
 unsafe fn jaccard_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
@@ -485,8 +481,7 @@ pub fn jaccard(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
 }
 
 #[inline]
-#[cfg(any(target_arch = "x86_64", doc))]
-#[doc(cfg(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
 unsafe fn length_v4_avx512vpopcntdq(vector: BVecf32Borrowed<'_>) -> F32 {
     use std::arch::x86_64::*;

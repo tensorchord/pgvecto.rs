@@ -8,7 +8,7 @@ statement ok
 CREATE TABLE t (val vector(3));
 
 statement ok
-INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM generate_series(1, 1000);
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM generate_series(1, 10000);
 
 # HNSW compatible Test
 statement ok
@@ -46,7 +46,7 @@ DROP INDEX hnsw_cosine_index;
 
 # IVF compatible Test
 statement ok
-CREATE INDEX ivf_l2_index ON t USING ivfflat (val vector_l2_ops) WITH (lists = 100);
+CREATE INDEX ivf_l2_index ON t USING ivfflat (val vector_l2_ops) WITH (lists = 20);
 
 query I
 SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <-> '[0.5,0.5,0.5]' limit 10) t2;
@@ -57,7 +57,7 @@ statement ok
 DROP INDEX ivf_l2_index;
 
 statement ok
-CREATE INDEX ivf_ip_index ON t USING ivfflat (val vector_ip_ops);
+CREATE INDEX ivf_ip_index ON t USING ivfflat (val vector_ip_ops) WITH (lists = 20);
 
 query I
 SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <#> '[0.5,0.5,0.5]' limit 10) t2;
@@ -68,7 +68,7 @@ statement ok
 DROP INDEX ivf_ip_index;
 
 statement ok
-CREATE INDEX ivf_cosine_index ON t USING ivfflat (val vector_cosine_ops);
+CREATE INDEX ivf_cosine_index ON t USING ivfflat (val vector_cosine_ops) WITH (lists = 20);
 
 query I
 SELECT COUNT(1) FROM (SELECT 1 FROM t ORDER BY val <=> '[0.5,0.5,0.5]' limit 10) t2;

@@ -187,8 +187,7 @@ pub fn multiversion(
             let target_arch = list.target_arch;
             let target_features = list.target_features;
             port = quote::quote! {
-                #[cfg(any(target_arch = #target_arch, doc))]
-                #[doc(cfg(target_arch = #target_arch))]
+                #[cfg(any(target_arch = #target_arch))]
                 #[target_feature(enable = #target_features)]
                 unsafe fn #name < #generics_params > (#inputs) #output #generics_where { #block }
             };

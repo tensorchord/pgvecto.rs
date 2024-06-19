@@ -96,13 +96,13 @@ unsafe fn rewrite_type_options(istmt: *mut pgrx::pg_sys::IndexStmt, method: &str
                 swap_destroy(&mut (*istmt).options, list_from_vec(vec![elem]));
             }
             "ivfflat" => {
-                let nlist = opts
+                let list = opts
                     .get("list")
                     .unwrap_or(&String::from("100"))
                     .parse::<u32>()
                     .unwrap();
                 let arg = pgrx::pg_sys::makeString(
-                    format!("[indexing.ivf]\nnlist = {}", nlist).as_pg_cstr(),
+                    format!("[indexing.ivf]\nnlist = {}", list).as_pg_cstr(),
                 );
                 let elem = pgrx::pg_sys::makeDefElem("options".as_pg_cstr(), arg as _, -1);
                 swap_destroy(&mut (*istmt).options, list_from_vec(vec![elem]));

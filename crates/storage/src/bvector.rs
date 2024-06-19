@@ -1,62 +1,51 @@
 use crate::Storage;
-pub use base::index::*;
 use base::operator::Operator;
-pub use base::search::*;
-pub use base::vector::*;
+use base::search::*;
+use base::vector::*;
+use common::json::Json;
 use common::mmap_array::MmapArray;
 use std::path::Path;
 
 pub struct BVectorStorage {
-    vectors: MmapArray<usize>,
-    payload: MmapArray<Payload>,
-    dims: u16,
+    dims: Json<u32>,
+    len: Json<u32>,
+    slice: MmapArray<usize>,
 }
 
-impl Storage for BVectorStorage {
-    type VectorOwned = BVecf32Owned;
-
+impl<O: Operator<VectorOwned = BVecf32Owned>> Vectors<O> for BVectorStorage {
     fn dims(&self) -> u32 {
-        self.dims as u32
+        *self.dims
     }
 
     fn len(&self) -> u32 {
-        self.payload.len() as u32
+        *self.len
     }
 
     fn vector(&self, i: u32) -> BVecf32Borrowed<'_> {
-        let size = (self.dims as usize).div_ceil(BVEC_WIDTH);
+        let size = (*self.dims as usize).div_ceil(BVEC_WIDTH);
         let s = i as usize * size;
         let e = (i + 1) as usize * size;
-        BVecf32Borrowed::new(self.dims, &self.vectors[s..e])
+        BVecf32Borrowed::new(*self.dims as _, &self.slice[s..e])
+    }
+}
+
+impl<O: Operator<VectorOwned = BVecf32Owned>> Storage<O> for BVectorStorage {
+    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<O>) -> Self {
+        std::fs::create_dir(path.as_ref()).unwrap();
+        let dims = Json::create(path.as_ref().join("dims"), vectors.dims());
+        let len = Json::create(path.as_ref().join("len"), vectors.len());
+        let slice = MmapArray::create(
+            path.as_ref().join("slice"),
+            (0..*len).flat_map(|i| vectors.vector(i).data().iter().copied()),
+        );
+        common::dir_ops::sync_dir(path);
+        Self { dims, len, slice }
     }
 
-    fn payload(&self, i: u32) -> Payload {
-        self.payload[i as usize]
-    }
-
-    fn open(path: &Path, options: IndexOptions) -> Self {
-        let vectors = MmapArray::open(&path.join("vectors"));
-        let payload = MmapArray::open(&path.join("payload"));
-        Self {
-            vectors,
-            payload,
-            dims: options.vector.dims.try_into().unwrap(),
-        }
-    }
-
-    fn save<O: Operator<VectorOwned = Self::VectorOwned>, C: Collection<O>>(
-        path: &Path,
-        collection: &C,
-    ) -> Self {
-        let n = collection.len();
-        let vectors_iter = (0..n).flat_map(|i| collection.vector(i).data().iter().copied());
-        let payload_iter = (0..n).map(|i| collection.payload(i));
-        let vectors = MmapArray::create(&path.join("vectors"), vectors_iter);
-        let payload = MmapArray::create(&path.join("payload"), payload_iter);
-        Self {
-            vectors,
-            payload,
-            dims: collection.dims().try_into().unwrap(),
-        }
+    fn open(path: impl AsRef<Path>) -> Self {
+        let dims = Json::open(path.as_ref().join("dims"));
+        let len = Json::open(path.as_ref().join("len"));
+        let slice = MmapArray::open(path.as_ref().join("slice"));
+        Self { dims, len, slice }
     }
 }

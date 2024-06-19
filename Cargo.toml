@@ -19,7 +19,6 @@ pg16 = ["pgrx/pg16"]
 [dependencies]
 arrayvec.workspace = true
 bincode.workspace = true
-bytemuck.workspace = true
 byteorder.workspace = true
 chrono = "0.4.38"
 csv = "1.3.0"
@@ -70,18 +69,12 @@ edition = "2021"
 arc-swap = "1.7.0"
 arrayvec = "0.7.4"
 bincode = "1.3.3"
-bytemuck = { version = "1.14.3", features = ["extern_crate_alloc"] }
 byteorder = "1.5.0"
-half = { version = "2.4.0", features = [
-    "bytemuck",
-    "num-traits",
-    "rand_distr",
-    "serde",
-] }
+half = { version = "2.4.0", features = ["num-traits", "rand_distr", "serde"] }
 libc = "0.2.153"
 log = "0.4.21"
 memmap2 = "0.9.4"
-num-traits = "0.2.18"
+num-traits = "0.2.19"
 parking_lot = "0.12.1"
 paste = "1.0.14"
 rand = "0.8.5"
@@ -94,7 +87,7 @@ uuid = { version = "1.7.0", features = ["serde", "v4"] }
 validator = { version = "0.18.0", features = ["derive"] }
 
 [workspace.lints]
-rust.unsafe_op_in_unsafe_fn = "forbid"
+rust.unsafe_op_in_unsafe_fn = "deny"
 rust.unused_lifetimes = "warn"
 rust.unused_qualifications = "warn"
 

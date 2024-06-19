@@ -1,10 +1,7 @@
 //! Postgres vector extension.
 //!
 //! Provides an easy-to-use extension for vector similarity search.
-#![feature(alloc_error_hook)]
-#![feature(slice_split_once)]
 #![allow(clippy::needless_range_loop)]
-#![allow(clippy::single_match)]
 #![allow(clippy::too_many_arguments)]
 
 mod bgworker;
@@ -39,6 +36,9 @@ unsafe extern "C" fn _PG_init() {
 
 #[cfg(not(all(target_endian = "little", target_pointer_width = "64")))]
 compile_error!("Target is not supported.");
+
+#[cfg(not(any(feature = "pg14", feature = "pg15", feature = "pg16")))]
+compiler_error!("PostgreSQL version must be selected.");
 
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;

@@ -1,104 +1,111 @@
-#![feature(doc_cfg)]
 #![feature(avx512_target_feature)]
 
 pub mod operator;
 pub mod product;
 pub mod scalar;
-pub mod trivial;
 
-use self::product::ProductQuantization;
-use self::scalar::ScalarQuantization;
-use self::trivial::TrivialQuantization;
+use self::product::ProductQuantizer;
+use self::scalar::ScalarQuantizer;
 use crate::operator::OperatorQuantization;
 use base::index::*;
 use base::operator::*;
 use base::scalar::*;
 use base::search::*;
+use base::vector::*;
+use common::dir_ops::sync_dir;
+use common::json::Json;
+use common::mmap_array::MmapArray;
+use serde::Deserialize;
+use serde::Serialize;
 use std::path::Path;
-use std::sync::Arc;
 
-pub enum Quantization<O: OperatorQuantization, C: Collection<O>> {
-    Trivial(TrivialQuantization<O, C>),
-    Scalar(ScalarQuantization<O, C>),
-    Product(ProductQuantization<O, C>),
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(bound = "")]
+pub enum Quantizer<O: OperatorQuantization> {
+    Trivial,
+    Scalar(ScalarQuantizer<O>),
+    Product(ProductQuantizer<O>),
 }
 
-impl<O: OperatorQuantization, C: Collection<O>> Quantization<O, C> {
-    pub fn create(
-        path: &Path,
+impl<O: OperatorQuantization> Quantizer<O> {
+    pub fn train(
         options: IndexOptions,
         quantization_options: QuantizationOptions,
-        collection: &Arc<C>,
-        permutation: Vec<u32>, // permutation is the mapping from placements to original ids
+        vectors: &impl Vectors<O>,
     ) -> Self {
+        use QuantizationOptions::*;
         match quantization_options {
-            QuantizationOptions::Trivial(_) => Self::Trivial(TrivialQuantization::create(
-                path,
-                options,
-                quantization_options,
-                collection,
-                permutation,
-            )),
-            QuantizationOptions::Scalar(_) => Self::Scalar(ScalarQuantization::create(
-                path,
-                options,
-                quantization_options,
-                collection,
-                permutation,
-            )),
-            QuantizationOptions::Product(_) => Self::Product(ProductQuantization::create(
-                path,
-                options,
-                quantization_options,
-                collection,
-                permutation,
-            )),
+            Trivial(_) => Self::Trivial,
+            Scalar(_) => Self::Scalar(ScalarQuantizer::train(options, vectors)),
+            Product(product) => Self::Product(ProductQuantizer::train(options, product, vectors)),
         }
     }
 
-    pub fn open(
-        path: &Path,
-        options: IndexOptions,
-        quantization_options: QuantizationOptions,
-        collection: &Arc<C>,
-    ) -> Self {
-        match quantization_options {
-            QuantizationOptions::Trivial(_) => Self::Trivial(TrivialQuantization::open(
-                path,
-                options,
-                quantization_options,
-                collection,
-            )),
-            QuantizationOptions::Scalar(_) => Self::Scalar(ScalarQuantization::open(
-                path,
-                options,
-                quantization_options,
-                collection,
-            )),
-            QuantizationOptions::Product(_) => Self::Product(ProductQuantization::open(
-                path,
-                options,
-                quantization_options,
-                collection,
-            )),
-        }
-    }
-
-    pub fn distance(&self, lhs: Borrowed<'_, O>, rhs: u32) -> F32 {
-        use Quantization::*;
+    pub fn width(&self) -> usize {
+        use Quantizer::*;
         match self {
-            Trivial(x) => x.distance(lhs, rhs),
+            Trivial => 0,
+            Scalar(x) => x.width(),
+            Product(x) => x.width(),
+        }
+    }
+
+    pub fn encode(&self, vector: &[Scalar<O>]) -> Vec<u8> {
+        use Quantizer::*;
+        match self {
+            Trivial => Vec::new(),
+            Scalar(x) => x.encode(vector),
+            Product(x) => x.encode(vector),
+        }
+    }
+
+    pub fn distance(&self, fallback: impl Fn() -> F32, lhs: Borrowed<'_, O>, rhs: &[u8]) -> F32 {
+        use Quantizer::*;
+        match self {
+            Trivial => fallback(),
             Scalar(x) => x.distance(lhs, rhs),
             Product(x) => x.distance(lhs, rhs),
         }
     }
+}
 
-    pub fn distance2(&self, lhs: u32, rhs: u32) -> F32 {
-        use Quantization::*;
-        match self {
-            Trivial(x) => x.distance2(lhs, rhs),
-            Scalar(x) => x.distance2(lhs, rhs),
-            Product(x) => x.distance2(lhs, rhs),
-        }
+pub struct Quantization<O: OperatorQuantization> {
+    train: Json<Quantizer<O>>,
+    codes: MmapArray<u8>,
+}
+
+impl<O: OperatorQuantization> Quantization<O> {
+    pub fn create(
+        path: impl AsRef<Path>,
+        options: IndexOptions,
+        quantization_options: QuantizationOptions,
+        vectors: &impl Vectors<O>,
+    ) -> Self {
+        std::fs::create_dir(path.as_ref()).unwrap();
+        let train = Quantizer::train(options, quantization_options, vectors);
+        let train = Json::create(path.as_ref().join("train"), train);
+        let codes = MmapArray::create(
+            path.as_ref().join("codes"),
+            (0..vectors.len()).flat_map(|i| train.encode(&vectors.vector(i).to_vec()).into_iter()),
+        );
+        sync_dir(path);
+        Self { train, codes }
+    }
+
+    pub fn open(path: impl AsRef<Path>) -> Self {
+        let train = Json::open(path.as_ref().join("train"));
+        let codes = MmapArray::open(path.as_ref().join("codes"));
+        Self { train, codes }
+    }
+
+    pub fn distance(&self, vectors: &impl Vectors<O>, lhs: Borrowed<'_, O>, rhs: u32) -> F32 {
+        let width = self.train.width();
+        let start = rhs as usize * width;
+        let end = start + width;
+        self.train.distance(
+            || O::distance(lhs, vectors.vector(rhs)),
+            lhs,
+            &self.codes[start..end],
+        )
     }
 }

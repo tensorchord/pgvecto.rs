@@ -87,16 +87,14 @@ fn convert_name_to_vd(name: &str) -> Option<(VectorKind, DistanceKind)> {
 
 unsafe fn convert_reloptions_to_options(
     reloptions: *const pgrx::pg_sys::varlena,
-) -> (SegmentsOptions, OptimizingOptions, IndexingOptions) {
+) -> (IndexingOptions, IndexAlterableOptions) {
     #[derive(Debug, Clone, Deserialize, Default)]
     #[serde(deny_unknown_fields)]
     struct Parsed {
         #[serde(default)]
-        segment: SegmentsOptions,
-        #[serde(default)]
-        optimizing: OptimizingOptions,
-        #[serde(default)]
         indexing: IndexingOptions,
+        #[serde(flatten)]
+        alterable: IndexAlterableOptions,
     }
     let reloption = reloptions as *const Reloption;
     if reloption.is_null() || unsafe { (*reloption).options == 0 } {
@@ -104,7 +102,7 @@ unsafe fn convert_reloptions_to_options(
     }
     let s = unsafe { (*reloption).options() }.to_string_lossy();
     match toml::from_str::<Parsed>(&s) {
-        Ok(p) => (p.segment, p.optimizing, p.indexing),
+        Ok(p) => (p.indexing, p.alterable),
         Err(e) => pgrx::error!("failed to parse options: {}", e),
     }
 }
@@ -124,15 +122,8 @@ pub unsafe fn options(index: pgrx::pg_sys::Relation) -> (IndexOptions, IndexAlte
     let dims = check_column_dims(typmod.dims()).get();
     // get v, d
     let (v, d) = convert_opfamily_to_vd(opfamily).unwrap();
-    // get segment, optimizing, indexing
-    let (segment, optimizing, indexing) =
-        unsafe { convert_reloptions_to_options((*index).rd_options) };
-    (
-        IndexOptions {
-            vector: VectorOptions { dims, v, d },
-            segment,
-            indexing,
-        },
-        IndexAlterableOptions { optimizing },
-    )
+    let vector = VectorOptions { dims, v, d };
+    // get indexing, segment, optimizing
+    let (indexing, alterable) = unsafe { convert_reloptions_to_options((*index).rd_options) };
+    (IndexOptions { vector, indexing }, alterable)
 }

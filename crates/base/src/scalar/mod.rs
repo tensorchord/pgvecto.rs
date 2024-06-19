@@ -15,12 +15,11 @@ pub trait ScalarLike:
     + serde::Serialize
     + for<'a> serde::Deserialize<'a>
     + Ord
-    + bytemuck::Zeroable
-    + bytemuck::Pod
     + num_traits::Float
     + num_traits::Zero
     + num_traits::NumOps
     + num_traits::NumAssignOps
+    + crate::pod::Pod
 {
     fn from_f32(x: f32) -> Self;
     fn to_f32(self) -> f32;

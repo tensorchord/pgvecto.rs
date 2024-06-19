@@ -43,10 +43,6 @@ impl Ord for I8 {
     }
 }
 
-unsafe impl bytemuck::Zeroable for I8 {}
-
-unsafe impl bytemuck::Pod for I8 {}
-
 impl From<i8> for I8 {
     fn from(value: i8) -> Self {
         Self(value)
