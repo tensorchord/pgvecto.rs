@@ -120,7 +120,7 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<Infallible,
                         continue;
                     }
                 };
-                match v.basic(&vector, &opts, |_| true) {
+                match v.basic(&vector, &opts) {
                     Ok(mut iter) => {
                         use crate::ipc::ServerBasicHandle;
                         let mut x = x.error_ok()?;
@@ -152,7 +152,7 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<Infallible,
                         continue;
                     }
                 };
-                match v.vbase(&vector, &opts, |_| true) {
+                match v.vbase(&vector, &opts) {
                     Ok(mut iter) => {
                         use crate::ipc::ServerVbaseHandle;
                         let mut x = x.error_ok()?;

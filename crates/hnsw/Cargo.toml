@@ -3,9 +3,6 @@ name = "hnsw"
 version.workspace = true
 edition.workspace = true
 
-[features]
-stand-alone-test = []
-
 [dependencies]
 bytemuck.workspace = true
 parking_lot.workspace = true

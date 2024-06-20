@@ -98,9 +98,9 @@ jobs:
           cp ./vendor/pgrx_binding/pg${VERSION}_$(uname --machine)-unknown-linux-gnu.rs ~/.pgrx_binding/pg${VERSION}_raw_bindings.rs
           echo PGRX_TARGET_INFO_PATH_PG$VERSION=$HOME/.pgrx_binding >> "$GITHUB_ENV"
       - name: Clippy
-        run: cargo clippy --no-default-features --features "pg$VERSION" --target $ARCH-unknown-linux-gnu
+        run: cargo clippy --features "pg$VERSION" --target $ARCH-unknown-linux-gnu
       - name: Build
-        run: cargo build --lib --no-default-features --features "pg$VERSION" --target $ARCH-unknown-linux-gnu
+        run: cargo build --lib --features "pg$VERSION" --target $ARCH-unknown-linux-gnu
       - name: Post Set up Cache
         uses: actions/cache/save@v4
         if: ${{ !steps.cache.outputs.cache-hit }}
@@ -163,14 +163,14 @@ jobs:
           cp ./vendor/pgrx_binding/pg${VERSION}_$(uname --machine)-unknown-linux-gnu.rs ~/.pgrx_binding/pg${VERSION}_raw_bindings.rs
           echo PGRX_TARGET_INFO_PATH_PG$VERSION=$HOME/.pgrx_binding >> "$GITHUB_ENV"
       - name: Test
-        run: cargo test --all --no-fail-fast --no-default-features --features "pg$VERSION" --target $ARCH-unknown-linux-gnu -- --nocapture
+        run: cargo test --all --no-fail-fast --features "pg$VERSION" --target $ARCH-unknown-linux-gnu -- --nocapture
       - name: Test (x86_64)
         if: matrix.arch == 'x86_64'
         run: |
             ASSETS=$(mktemp -d)
             wget https://downloadmirror.intel.com/813591/sde-external-9.33.0-2024-01-07-lin.tar.xz -O $ASSETS/sde-external.tar.xz
             tar -xf $ASSETS/sde-external.tar.xz -C $ASSETS
-            cargo --config "target.x86_64-unknown-linux-gnu.runner = [\"$ASSETS/sde-external-9.33.0-2024-01-07-lin/sde64\", \"-spr\", \"--\"]" test "_v4" --all --no-fail-fast --no-default-features --features "pg$VERSION" --target $ARCH-unknown-linux-gnu -- --nocapture
+            cargo --config "target.x86_64-unknown-linux-gnu.runner = [\"$ASSETS/sde-external-9.33.0-2024-01-07-lin/sde64\", \"-spr\", \"--\"]" test "_v4" --all --no-fail-fast --features "pg$VERSION" --target $ARCH-unknown-linux-gnu -- --nocapture
       - name: Post Set up Cache
         uses: actions/cache/save@v4
         if: ${{ !steps.cache.outputs.cache-hit }}

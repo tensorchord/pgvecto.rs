@@ -195,19 +195,16 @@ impl<O: Op> GrowingSegment<O> {
         &self,
         vector: Borrowed<'_, O>,
         _opts: &SearchOptions,
-        mut filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
         let n = self.len.load(Ordering::Acquire);
         let mut result = BinaryHeap::new();
         for i in 0..n {
             let log = unsafe { &*self.vec[i].assume_init_ref().get().cast_const() };
-            if filter.check(log.payload) {
-                let distance = O::distance(vector, log.vector.for_borrow());
-                result.push(Reverse(Element {
-                    distance,
-                    payload: log.payload,
-                }));
-            }
+            let distance = O::distance(vector, log.vector.for_borrow());
+            result.push(Reverse(Element {
+                distance,
+                payload: log.payload,
+            }));
         }
         result
     }
@@ -216,19 +213,16 @@ impl<O: Op> GrowingSegment<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         _opts: &SearchOptions,
-        mut filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
         let n = self.len.load(Ordering::Acquire);
         let mut result = Vec::new();
         for i in 0..n {
             let log = unsafe { &*self.vec[i].assume_init_ref().get().cast_const() };
-            if filter.check(log.payload) {
-                let distance = O::distance(vector, log.vector.for_borrow());
-                result.push(Element {
-                    distance,
-                    payload: log.payload,
-                });
-            }
+            let distance = O::distance(vector, log.vector.for_borrow());
+            result.push(Element {
+                distance,
+                payload: log.payload,
+            });
         }
         (result, Box::new(std::iter::empty()))
     }

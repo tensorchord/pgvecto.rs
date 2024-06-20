@@ -11,7 +11,7 @@ name = "pgrx_embed_vectors"
 path = "./src/bin/pgrx_embed.rs"
 
 [features]
-default = ["pg15"]
+default = []
 pg14 = ["pgrx/pg14"]
 pg15 = ["pgrx/pg15"]
 pg16 = ["pgrx/pg16"]

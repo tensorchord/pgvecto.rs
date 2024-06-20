@@ -28,20 +28,18 @@ pub trait WorkerOperations {
 }
 
 pub trait ViewBasicOperations {
-    fn basic<'a, F: Fn(Pointer) -> bool + Clone + 'a>(
+    fn basic<'a>(
         &'a self,
         vector: &'a OwnedVector,
         opts: &'a SearchOptions,
-        filter: F,
     ) -> Result<Box<dyn Iterator<Item = Pointer> + 'a>, BasicError>;
 }
 
 pub trait ViewVbaseOperations {
-    fn vbase<'a, F: FnMut(Pointer) -> bool + Clone + 'a>(
+    fn vbase<'a>(
         &'a self,
         vector: &'a OwnedVector,
         opts: &'a SearchOptions,
-        filter: F,
     ) -> Result<Box<dyn Iterator<Item = Pointer> + 'a>, VbaseError>;
 }
 

@@ -39,18 +39,16 @@ impl<O: OperatorFlat> Flat<O> {
         &self,
         vector: Borrowed<'_, O>,
         _opts: &SearchOptions,
-        filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
-        basic(&self.mmap, vector, filter)
+        basic(&self.mmap, vector)
     }
 
     pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
         _opts: &'a SearchOptions,
-        filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-        vbase(&self.mmap, vector, filter)
+        vbase(&self.mmap, vector)
     }
 
     pub fn len(&self) -> u32 {
@@ -129,15 +127,12 @@ pub fn open<O: OperatorFlat>(path: &Path, options: IndexOptions) -> FlatMmap<O> 
 pub fn basic<O: OperatorFlat>(
     mmap: &FlatMmap<O>,
     vector: Borrowed<'_, O>,
-    mut filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
     let mut result = BinaryHeap::new();
     for i in 0..mmap.storage.len() {
         let distance = mmap.quantization.distance(vector, i);
         let payload = mmap.storage.payload(i);
-        if filter.check(payload) {
-            result.push(Reverse(Element { distance, payload }));
-        }
+        result.push(Reverse(Element { distance, payload }));
     }
     result
 }
@@ -145,15 +140,12 @@ pub fn basic<O: OperatorFlat>(
 pub fn vbase<'a, O: OperatorFlat>(
     mmap: &'a FlatMmap<O>,
     vector: Borrowed<'a, O>,
-    mut filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
     let mut result = Vec::new();
     for i in 0..mmap.storage.len() {
         let distance = mmap.quantization.distance(vector, i);
         let payload = mmap.storage.payload(i);
-        if filter.check(payload) {
-            result.push(Element { distance, payload });
-        }
+        result.push(Element { distance, payload });
     }
     (result, Box::new(std::iter::empty()))
 }

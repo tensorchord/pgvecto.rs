@@ -31,11 +31,6 @@ pub struct Hnsw<O: OperatorHnsw> {
 }
 
 impl<O: OperatorHnsw> Hnsw<O> {
-    #[cfg(feature = "stand-alone-test")]
-    pub fn new(mmap: HnswMmap<O>) -> Self {
-        Self { mmap }
-    }
-
     pub fn create<S: Source<O>>(path: &Path, options: IndexOptions, source: &S) -> Self {
         create_dir(path).unwrap();
         let ram = make(path, options, source);
@@ -53,18 +48,16 @@ impl<O: OperatorHnsw> Hnsw<O> {
         &self,
         vector: Borrowed<'_, O>,
         opts: &SearchOptions,
-        filter: impl Filter,
     ) -> BinaryHeap<Reverse<Element>> {
-        basic(&self.mmap, vector, opts.hnsw_ef_search, filter)
+        basic(&self.mmap, vector, opts.hnsw_ef_search)
     }
 
     pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-        filter: impl Filter + 'a,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-        vbase(&self.mmap, vector, opts.hnsw_ef_search, filter)
+        vbase(&self.mmap, vector, opts.hnsw_ef_search)
     }
 
     pub fn len(&self) -> u32 {
@@ -92,25 +85,6 @@ pub struct HnswRam<O: OperatorHnsw> {
     graph: HnswRamGraph,
     // ----------------------
     visited: VisitedPool,
-}
-
-impl<O: OperatorHnsw> HnswRam<O> {
-    #[cfg(feature = "stand-alone-test")]
-    pub fn new(
-        storage: Arc<StorageCollection<O>>,
-        quantization: Quantization<O, StorageCollection<O>>,
-        m: u32,
-        graph: HnswRamGraph,
-        visited: VisitedPool,
-    ) -> Self {
-        Self {
-            storage,
-            quantization,
-            m,
-            graph,
-            visited,
-        }
-    }
 }
 
 pub struct HnswRamGraph {
@@ -142,29 +116,6 @@ pub struct HnswMmap<O: OperatorHnsw> {
     by_vertex_id: MmapArray<usize>,
     // ----------------------
     visited: VisitedPool,
-}
-
-impl<O: OperatorHnsw> HnswMmap<O> {
-    #[cfg(feature = "stand-alone-test")]
-    pub fn new(
-        storage: Arc<StorageCollection<O>>,
-        quantization: Quantization<O, StorageCollection<O>>,
-        m: u32,
-        edges: MmapArray<HnswMmapEdge>,
-        by_layer_id: MmapArray<usize>,
-        by_vertex_id: MmapArray<usize>,
-        visited: VisitedPool,
-    ) -> Self {
-        Self {
-            storage,
-            quantization,
-            m,
-            edges,
-            by_layer_id,
-            by_vertex_id,
-            visited,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -450,28 +401,26 @@ pub fn basic<O: OperatorHnsw>(
     mmap: &HnswMmap<O>,
     vector: Borrowed<'_, O>,
     ef_search: u32,
-    filter: impl Filter,
 ) -> BinaryHeap<Reverse<Element>> {
-    let Some(s) = entry(mmap, filter.clone()) else {
+    let Some(s) = entry(mmap) else {
         return BinaryHeap::new();
     };
     let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
-    let u = fast_search(mmap, 1..=levels, s, vector, filter.clone());
-    local_search_basic(mmap, ef_search as usize, u, vector, filter).into_reversed_heap()
+    let u = fast_search(mmap, 1..=levels, s, vector);
+    local_search_basic(mmap, ef_search as usize, u, vector).into_reversed_heap()
 }
 
 pub fn vbase<'a, O: OperatorHnsw>(
     mmap: &'a HnswMmap<O>,
     vector: Borrowed<'a, O>,
     ef_search: u32,
-    filter: impl Filter + 'a,
 ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-    let Some(s) = entry(mmap, filter.clone()) else {
+    let Some(s) = entry(mmap) else {
         return (Vec::new(), Box::new(std::iter::empty()));
     };
     let levels = count_layers_of_a_vertex(mmap.m, s) - 1;
-    let u = fast_search(mmap, 1..=levels, s, vector, filter.clone());
-    let mut iter = local_search_vbase(mmap, u, vector, filter.clone());
+    let u = fast_search(mmap, 1..=levels, s, vector);
+    let mut iter = local_search_vbase(mmap, u, vector);
     let mut queue = BinaryHeap::<Element>::with_capacity(1 + ef_search as usize);
     let mut stage1 = Vec::new();
     for x in &mut iter {
@@ -488,32 +437,17 @@ pub fn vbase<'a, O: OperatorHnsw>(
     (stage1, Box::new(iter))
 }
 
-pub fn entry<O: OperatorHnsw>(mmap: &HnswMmap<O>, mut filter: impl Filter) -> Option<u32> {
+pub fn entry<O: OperatorHnsw>(mmap: &HnswMmap<O>) -> Option<u32> {
     let m = mmap.m;
     let n = mmap.storage.len();
-    let mut shift = 1u64;
-    let mut count = 0u64;
-    while shift * m as u64 <= n as u64 {
-        shift *= m as u64;
+    if n == 0 {
+        return None;
     }
-    while shift != 0 {
-        let mut i = 1u64;
-        while i * shift <= n as u64 {
-            let e = (i * shift - 1) as u32;
-            if i % m as u64 != 0 {
-                if filter.check(mmap.storage.payload(e)) {
-                    return Some(e);
-                }
-                count += 1;
-                if count >= 10000 {
-                    return None;
-                }
-            }
-            i += 1;
-        }
-        shift /= m as u64;
+    let mut shift = 1u32;
+    while shift as u64 * m as u64 <= n as u64 {
+        shift *= m;
     }
-    None
+    Some(shift - 1)
 }
 
 pub fn fast_search<O: OperatorHnsw>(
@@ -521,7 +455,6 @@ pub fn fast_search<O: OperatorHnsw>(
     levels: RangeInclusive<u8>,
     u: u32,
     vector: Borrowed<'_, O>,
-    mut filter: impl Filter,
 ) -> u32 {
     let mut u = u;
     let mut u_dis = mmap.quantization.distance(vector, u);
@@ -531,9 +464,6 @@ pub fn fast_search<O: OperatorHnsw>(
             changed = false;
             let edges = find_edges(mmap, u, i);
             for &HnswMmapEdge(_, v) in edges.iter() {
-                if !filter.check(mmap.storage.payload(v)) {
-                    continue;
-                }
                 let v_dis = mmap.quantization.distance(vector, v);
                 if v_dis < u_dis {
                     u = v;
@@ -551,7 +481,6 @@ pub fn local_search_basic<O: OperatorHnsw>(
     k: usize,
     s: u32,
     vector: Borrowed<'_, O>,
-    mut filter: impl Filter,
 ) -> ElementHeap {
     let mut visited = mmap.visited.fetch();
     let mut visited = visited.fetch();
@@ -574,9 +503,6 @@ pub fn local_search_basic<O: OperatorHnsw>(
                 continue;
             }
             visited.mark(v);
-            if !filter.check(mmap.storage.payload(v)) {
-                continue;
-            }
             let v_dis = mmap.quantization.distance(vector, v);
             if !results.check(v_dis) {
                 continue;
@@ -595,7 +521,6 @@ pub fn local_search_vbase<'a, O: OperatorHnsw>(
     mmap: &'a HnswMmap<O>,
     s: u32,
     vector: Borrowed<'a, O>,
-    mut filter: impl Filter + 'a,
 ) -> impl Iterator<Item = Element> + 'a {
     let mut visited = mmap.visited.fetch2();
     let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
@@ -611,10 +536,8 @@ pub fn local_search_vbase<'a, O: OperatorHnsw>(
                     continue;
                 }
                 visited.mark(v);
-                if filter.check(mmap.storage.payload(v)) {
-                    let v_dis = mmap.quantization.distance(vector, v);
-                    candidates.push(Reverse((v_dis, v)));
-                }
+                let v_dis = mmap.quantization.distance(vector, v);
+                candidates.push(Reverse((v_dis, v)));
             }
         }
         Some(Element {

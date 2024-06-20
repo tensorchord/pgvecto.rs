@@ -74,10 +74,6 @@ pub struct Element {
     pub payload: Payload,
 }
 
-pub trait Filter: Clone {
-    fn check(&mut self, payload: Payload) -> bool;
-}
-
 pub trait Collection<O: Operator> {
     fn dims(&self) -> u32;
     fn len(&self) -> u32;
