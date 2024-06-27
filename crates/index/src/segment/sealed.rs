@@ -1,15 +1,16 @@
 use super::SegmentTracker;
-use crate::indexing::Indexing;
+use crate::indexing::sealed::SealedIndexing;
 use crate::utils::dir_ops::dir_size;
 use crate::IndexTracker;
 use crate::Op;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
-use common::dir_ops::sync_dir;
 use crossbeam::atomic::AtomicCell;
+use std::any::Any;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
+use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -17,25 +18,31 @@ use std::time::Instant;
 use uuid::Uuid;
 
 pub struct SealedSegment<O: Op> {
-    uuid: Uuid,
-    indexing: Indexing<O>,
+    id: Uuid,
+    indexing: SealedIndexing<O>,
     deletes: AtomicCell<(Instant, u32)>,
     _tracker: Arc<SegmentTracker>,
 }
 
+impl<O: Op> Debug for SealedSegment<O> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SealedSegment")
+            .field("id", &self.id)
+            .finish()
+    }
+}
+
 impl<O: Op> SealedSegment<O> {
-    pub fn create<S: Source<O>>(
+    pub fn create(
         _tracker: Arc<IndexTracker>,
         path: PathBuf,
-        uuid: Uuid,
+        id: Uuid,
         options: IndexOptions,
-        source: &S,
+        source: &(impl Source<O> + Sync),
     ) -> Arc<Self> {
-        std::fs::create_dir(&path).unwrap();
-        let indexing = Indexing::create(&path.join("indexing"), options, source);
-        sync_dir(&path);
+        let indexing = SealedIndexing::create(&path, options, source);
         Arc::new(Self {
-            uuid,
+            id,
             indexing,
             deletes: AtomicCell::new((Instant::now(), 0)),
             _tracker: Arc::new(SegmentTracker { path, _tracker }),
@@ -45,29 +52,28 @@ impl<O: Op> SealedSegment<O> {
     pub fn open(
         _tracker: Arc<IndexTracker>,
         path: PathBuf,
-        uuid: Uuid,
+        id: Uuid,
         options: IndexOptions,
     ) -> Arc<Self> {
-        let indexing = Indexing::open(&path.join("indexing"), options);
+        let indexing = SealedIndexing::open(&path, options);
         Arc::new(Self {
-            uuid,
+            id,
             indexing,
             deletes: AtomicCell::new((Instant::now(), 0)),
             _tracker: Arc::new(SegmentTracker { path, _tracker }),
         })
     }
 
-    pub fn uuid(&self) -> Uuid {
-        self.uuid
+    pub fn id(&self) -> Uuid {
+        self.id
     }
 
     pub fn stat_sealed(&self) -> SegmentStat {
-        let path = self._tracker.path.join("indexing");
         SegmentStat {
-            id: self.uuid,
+            id: self.id,
             r#type: "sealed".to_string(),
             length: self.len() as usize,
-            size: dir_size(&path).unwrap(),
+            size: dir_size(&self._tracker.path).unwrap(),
         }
     }
 
@@ -112,6 +118,14 @@ impl<O: Op> SealedSegment<O> {
             Ok(counter)
         } else {
             Err(c)
+        }
+    }
+
+    pub fn indexing(&self) -> &dyn Any {
+        match &self.indexing {
+            SealedIndexing::Flat(x) => x,
+            SealedIndexing::Ivf(x) => x,
+            SealedIndexing::Hnsw(x) => x,
         }
     }
 }

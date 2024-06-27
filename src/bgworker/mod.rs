@@ -30,26 +30,19 @@ pub fn is_started() -> bool {
 #[pgrx::pg_guard]
 #[no_mangle]
 extern "C" fn _vectors_main(_arg: pgrx::pg_sys::Datum) {
-    pub struct AllocErrorPanicPayload {
-        pub layout: std::alloc::Layout,
-    }
     {
         let mut builder = crate::logger::VectorLogger::build();
         #[cfg(not(debug_assertions))]
         {
             builder.filter_level(log::LevelFilter::Info);
         }
-        #[cfg(debug_assertions)]
+        // #[cfg(debug_assertions)]
         {
             builder.filter_level(log::LevelFilter::Trace);
         }
         builder.init();
     }
     std::panic::set_hook(Box::new(|info| {
-        if let Some(oom) = info.payload().downcast_ref::<AllocErrorPanicPayload>() {
-            log::error!("Out of memory. Layout: {:?}.", oom.layout);
-            return;
-        }
         let backtrace;
         #[cfg(not(debug_assertions))]
         {
@@ -61,9 +54,6 @@ extern "C" fn _vectors_main(_arg: pgrx::pg_sys::Datum) {
         }
         log::error!("Panickied. Info: {:?}. Backtrace: {}.", info, backtrace);
     }));
-    std::alloc::set_alloc_error_hook(|layout| {
-        std::panic::panic_any(AllocErrorPanicPayload { layout });
-    });
     use service::Version;
     use service::Worker;
     use std::path::Path;

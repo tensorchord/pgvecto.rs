@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::cell::UnsafeCell;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
+use std::fmt::Debug;
 use std::mem::MaybeUninit;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -20,11 +21,11 @@ use thiserror::Error;
 use uuid::Uuid;
 
 #[derive(Debug, Error)]
-#[error("`GrowingSegment` stopped growing.")]
+#[error("`GrowingSegment` is read-only.")]
 pub struct GrowingSegmentInsertError;
 
 pub struct GrowingSegment<O: Op> {
-    uuid: Uuid,
+    id: Uuid,
     vec: Vec<MaybeUninit<UnsafeCell<Log<O>>>>,
     wal: Mutex<FileWal>,
     len: AtomicUsize,
@@ -32,29 +33,36 @@ pub struct GrowingSegment<O: Op> {
     _tracker: Arc<SegmentTracker>,
 }
 
+impl<O: Op> Debug for GrowingSegment<O> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GrowingSegment")
+            .field("id", &self.id)
+            .finish()
+    }
+}
+
 impl<O: Op> GrowingSegment<O> {
     pub fn create(
         _tracker: Arc<IndexTracker>,
         path: PathBuf,
-        uuid: Uuid,
-        options: IndexOptions,
+        id: Uuid,
+        capacity: usize,
     ) -> Arc<Self> {
         std::fs::create_dir(&path).unwrap();
         let wal = FileWal::create(path.join("wal"));
-        let capacity = options.segment.max_growing_segment_size;
         sync_dir(&path);
         Arc::new(Self {
-            uuid,
+            id,
             vec: unsafe {
-                let mut vec = Vec::with_capacity(capacity as usize);
-                vec.set_len(capacity as usize);
+                let mut vec = Vec::with_capacity(capacity);
+                vec.set_len(capacity);
                 vec
             },
             wal: Mutex::new(wal),
             len: AtomicUsize::new(0),
             pro: Mutex::new(Protect {
                 inflight: 0,
-                capacity: capacity as usize,
+                capacity,
             }),
             _tracker: Arc::new(SegmentTracker { path, _tracker }),
         })
@@ -63,7 +71,7 @@ impl<O: Op> GrowingSegment<O> {
     pub fn open(
         _tracker: Arc<IndexTracker>,
         path: PathBuf,
-        uuid: Uuid,
+        id: Uuid,
         _: IndexOptions,
     ) -> Arc<Self> {
         let mut wal = FileWal::open(path.join("wal"));
@@ -75,7 +83,7 @@ impl<O: Op> GrowingSegment<O> {
         wal.truncate();
         let n = vec.len();
         Arc::new(Self {
-            uuid,
+            id,
             vec,
             wal: { Mutex::new(wal) },
             len: AtomicUsize::new(n),
@@ -87,8 +95,8 @@ impl<O: Op> GrowingSegment<O> {
         })
     }
 
-    pub fn uuid(&self) -> Uuid {
-        self.uuid
+    pub fn id(&self) -> Uuid {
+        self.id
     }
 
     pub fn is_full(&self) -> bool {
@@ -155,21 +163,23 @@ impl<O: Op> GrowingSegment<O> {
         self.len.load(Ordering::Acquire) as u32
     }
 
-    pub fn stat_growing(&self) -> SegmentStat {
+    pub fn stat_read(&self) -> SegmentStat {
+        let len = self.len();
         SegmentStat {
-            id: self.uuid,
+            id: self.id,
             r#type: "growing".to_string(),
-            length: self.len() as usize,
-            size: (self.len() as u64) * (std::mem::size_of::<Log<O>>() as u64),
+            length: len as usize,
+            size: (len as u64) * (std::mem::size_of::<Log<O>>() as u64),
         }
     }
 
     pub fn stat_write(&self) -> SegmentStat {
+        let len = self.len();
         SegmentStat {
-            id: self.uuid,
+            id: self.id,
             r#type: "write".to_string(),
-            length: self.len() as usize,
-            size: (self.len() as u64) * (std::mem::size_of::<Log<O>>() as u64),
+            length: len as usize,
+            size: (len as u64) * (std::mem::size_of::<Log<O>>() as u64),
         }
     }
 

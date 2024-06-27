@@ -1,13 +1,10 @@
 /// Function multiversioning attribute macros for `pgvecto.rs`.
 ///
 /// ```no_run
-/// #![feature(doc_cfg)]
-///
-/// #[cfg(any(target_arch = "x86_64", doc))]
-/// #[doc(cfg(target_arch = "x86_64"))]
+/// #[cfg(target_arch = "x86_64")]
 /// #[detect::target_cpu(enable = "v3")]
 /// unsafe fn g_v3(x: &[u32]) -> u32 {
-///     todo!()
+///     unimplemented!()
 /// }
 ///
 /// #[cfg(all(target_arch = "x86_64", test))]

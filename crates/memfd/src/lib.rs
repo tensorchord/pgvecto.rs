@@ -1,13 +1,11 @@
-#![feature(thread_local)]
-
 use std::os::fd::OwnedFd;
 
 #[cfg(target_os = "linux")]
 pub fn memfd_create() -> std::io::Result<OwnedFd> {
-    use std::cell::Cell;
-    #[thread_local]
-    static SUPPORT_MEMFD: Cell<bool> = Cell::new(true);
-    if SUPPORT_MEMFD.get() {
+    use std::sync::atomic::AtomicBool;
+    use std::sync::atomic::Ordering;
+    static SUPPORT_MEMFD: AtomicBool = AtomicBool::new(true);
+    if SUPPORT_MEMFD.load(Ordering::Relaxed) {
         use rustix::fs::MemfdFlags;
         let r = rustix::fs::memfd_create(
             format!(".memfd.MEMFD.{:x}", std::process::id()),
@@ -18,7 +16,7 @@ pub fn memfd_create() -> std::io::Result<OwnedFd> {
                 return Ok(fd);
             }
             Err(e) if e.kind() == std::io::ErrorKind::Unsupported => {
-                SUPPORT_MEMFD.set(false);
+                SUPPORT_MEMFD.store(false, Ordering::Relaxed);
             }
             Err(e) => {
                 return Err(e.into());

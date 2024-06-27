@@ -319,8 +319,7 @@ pub fn i8_precompute(data: &[I8], alpha: F32, offset: F32) -> (F32, F32) {
 }
 
 #[inline]
-#[cfg(any(target_arch = "x86_64", doc))]
-#[doc(cfg(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4_avx512vnni")]
 unsafe fn dot_internal_v4_avx512vnni(x: &[I8], y: &[I8]) -> F32 {
     use std::arch::x86_64::*;

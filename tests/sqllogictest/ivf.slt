@@ -13,7 +13,7 @@ statement ok
 CREATE INDEX ON t USING vectors (val vector_l2_ops)
 WITH (options = $$
 [indexing.ivf]
-nlist = 100
+nlist = 20
 $$);
 
 statement ok

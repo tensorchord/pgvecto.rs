@@ -127,8 +127,7 @@ impl<'a> VectorBorrowed for Vecf16Borrowed<'a> {
 }
 
 #[inline]
-#[cfg(any(target_arch = "x86_64", doc))]
-#[doc(cfg(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 unsafe fn cosine_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -159,7 +158,6 @@ fn cosine_v4_avx512fp16_test() {
 
 #[inline]
 #[cfg(target_arch = "x86_64")]
-#[doc(cfg(target_arch = "x86_64"))]
 unsafe fn cosine_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -190,7 +188,6 @@ fn cosine_v4_test() {
 
 #[inline]
 #[cfg(target_arch = "x86_64")]
-#[doc(cfg(target_arch = "x86_64"))]
 unsafe fn cosine_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -235,8 +232,7 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
 }
 
 #[inline]
-#[cfg(any(target_arch = "x86_64", doc))]
-#[doc(cfg(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 unsafe fn dot_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -267,7 +263,6 @@ fn dot_v4_avx512fp16_test() {
 
 #[inline]
 #[cfg(target_arch = "x86_64")]
-#[doc(cfg(target_arch = "x86_64"))]
 unsafe fn dot_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -298,7 +293,6 @@ fn dot_v4_test() {
 
 #[inline]
 #[cfg(target_arch = "x86_64")]
-#[doc(cfg(target_arch = "x86_64"))]
 unsafe fn dot_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -339,8 +333,7 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
 }
 
 #[inline]
-#[cfg(any(target_arch = "x86_64", doc))]
-#[doc(cfg(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 unsafe fn sl2_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -371,7 +364,6 @@ fn sl2_v4_avx512fp16_test() {
 
 #[inline]
 #[cfg(target_arch = "x86_64")]
-#[doc(cfg(target_arch = "x86_64"))]
 unsafe fn sl2_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -402,7 +394,6 @@ fn sl2_v4_test() {
 
 #[inline]
 #[cfg(target_arch = "x86_64")]
-#[doc(cfg(target_arch = "x86_64"))]
 unsafe fn sl2_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
@@ -475,42 +466,4 @@ pub fn xy_x2_y2(lhs: &[F16], rhs: &[F16]) -> (F32, F32, F32) {
         y2 += rhs[i].to_f() * rhs[i].to_f();
     }
     (xy, x2, y2)
-}
-
-#[detect::multiversion(v4, v3, v2, neon, fallback)]
-pub fn xy_x2_y2_delta(lhs: &[F16], rhs: &[F16], del: &[F16]) -> (F32, F32, F32) {
-    assert!(lhs.len() == rhs.len());
-    let n = lhs.len();
-    let mut xy = F32::zero();
-    let mut x2 = F32::zero();
-    let mut y2 = F32::zero();
-    for i in 0..n {
-        xy += lhs[i].to_f() * (rhs[i].to_f() + del[i].to_f());
-        x2 += lhs[i].to_f() * lhs[i].to_f();
-        y2 += (rhs[i].to_f() + del[i].to_f()) * (rhs[i].to_f() + del[i].to_f());
-    }
-    (xy, x2, y2)
-}
-
-#[detect::multiversion(v4, v3, v2, neon, fallback)]
-pub fn dot_delta(lhs: &[F16], rhs: &[F16], del: &[F16]) -> F32 {
-    assert!(lhs.len() == rhs.len());
-    let n: usize = lhs.len();
-    let mut xy = F32::zero();
-    for i in 0..n {
-        xy += lhs[i].to_f() * (rhs[i].to_f() + del[i].to_f());
-    }
-    xy
-}
-
-#[detect::multiversion(v4, v3, v2, neon, fallback)]
-pub fn distance_squared_l2_delta(lhs: &[F16], rhs: &[F16], del: &[F16]) -> F32 {
-    assert!(lhs.len() == rhs.len());
-    let n = lhs.len();
-    let mut d2 = F32::zero();
-    for i in 0..n {
-        let d = lhs[i].to_f() - (rhs[i].to_f() + del[i].to_f());
-        d2 += d * d;
-    }
-    d2
 }

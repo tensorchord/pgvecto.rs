@@ -211,6 +211,26 @@ impl Instance {
             Instance::Veci8Dot(x) => x.alter(key, value),
         }
     }
+    pub fn delete(&self, pointer: Pointer) -> Result<(), DeleteError> {
+        match self {
+            Instance::Vecf32Cos(x) => x.delete(pointer),
+            Instance::Vecf32Dot(x) => x.delete(pointer),
+            Instance::Vecf32L2(x) => x.delete(pointer),
+            Instance::Vecf16Cos(x) => x.delete(pointer),
+            Instance::Vecf16Dot(x) => x.delete(pointer),
+            Instance::Vecf16L2(x) => x.delete(pointer),
+            Instance::SVecf32Cos(x) => x.delete(pointer),
+            Instance::SVecf32Dot(x) => x.delete(pointer),
+            Instance::SVecf32L2(x) => x.delete(pointer),
+            Instance::BVecf32Cos(x) => x.delete(pointer),
+            Instance::BVecf32Dot(x) => x.delete(pointer),
+            Instance::BVecf32L2(x) => x.delete(pointer),
+            Instance::BVecf32Jaccard(x) => x.delete(pointer),
+            Instance::Veci8Cos(x) => x.delete(pointer),
+            Instance::Veci8Dot(x) => x.delete(pointer),
+            Instance::Veci8L2(x) => x.delete(pointer),
+        }
+    }
     pub fn start(&self) {
         match self {
             Instance::Vecf32Cos(x) => x.start(),
@@ -473,26 +493,6 @@ impl InstanceView {
             (InstanceView::Veci8Dot(x), OwnedVector::Veci8(vector)) => x.insert(vector, pointer),
             (InstanceView::Veci8L2(x), OwnedVector::Veci8(vector)) => x.insert(vector, pointer),
             _ => Err(InsertError::InvalidVector),
-        }
-    }
-    pub fn delete(&self, pointer: Pointer) -> Result<(), DeleteError> {
-        match self {
-            InstanceView::Vecf32Cos(x) => x.delete(pointer),
-            InstanceView::Vecf32Dot(x) => x.delete(pointer),
-            InstanceView::Vecf32L2(x) => x.delete(pointer),
-            InstanceView::Vecf16Cos(x) => x.delete(pointer),
-            InstanceView::Vecf16Dot(x) => x.delete(pointer),
-            InstanceView::Vecf16L2(x) => x.delete(pointer),
-            InstanceView::SVecf32Cos(x) => x.delete(pointer),
-            InstanceView::SVecf32Dot(x) => x.delete(pointer),
-            InstanceView::SVecf32L2(x) => x.delete(pointer),
-            InstanceView::BVecf32Cos(x) => x.delete(pointer),
-            InstanceView::BVecf32Dot(x) => x.delete(pointer),
-            InstanceView::BVecf32L2(x) => x.delete(pointer),
-            InstanceView::BVecf32Jaccard(x) => x.delete(pointer),
-            InstanceView::Veci8Cos(x) => x.delete(pointer),
-            InstanceView::Veci8Dot(x) => x.delete(pointer),
-            InstanceView::Veci8L2(x) => x.delete(pointer),
         }
     }
     pub fn flush(&self) -> Result<(), FlushError> {

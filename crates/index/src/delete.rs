@@ -1,8 +1,5 @@
 use crate::utils::file_wal::FileWal;
-pub use base::distance::*;
-pub use base::index::*;
-pub use base::search::*;
-pub use base::vector::*;
+use base::search::*;
 use dashmap::mapref::entry::Entry;
 use dashmap::DashMap;
 use parking_lot::Mutex;

@@ -207,8 +207,7 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
 }
 
 #[inline]
-#[cfg(any(target_arch = "x86_64", doc))]
-#[doc(cfg(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4")]
 unsafe fn cosine_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
@@ -375,8 +374,7 @@ pub fn cosine(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
 }
 
 #[inline]
-#[cfg(any(target_arch = "x86_64", doc))]
-#[doc(cfg(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4")]
 unsafe fn dot_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
@@ -509,8 +507,7 @@ pub fn dot_2(lhs: SVecf32Borrowed<'_>, rhs: &[F32]) -> F32 {
 }
 
 #[inline]
-#[cfg(any(target_arch = "x86_64", doc))]
-#[doc(cfg(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4")]
 unsafe fn sl2_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
     use std::arch::x86_64::*;

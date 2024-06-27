@@ -1,4 +1,4 @@
-use bytemuck::{Pod, Zeroable};
+use base::pod::Pod;
 use std::fs::File;
 use std::io::{BufWriter, Read, Seek, Write};
 use std::ops::Index;
@@ -11,11 +11,14 @@ pub struct MmapArray<T> {
     _mmap: memmap2::Mmap,
 }
 
+unsafe impl<T: Send + Sync> Send for MmapArray<T> {}
+unsafe impl<T: Send + Sync> Sync for MmapArray<T> {}
+
 impl<T> MmapArray<T>
 where
     T: Pod,
 {
-    pub fn create<I>(path: &Path, iter: I) -> Self
+    pub fn create<I>(path: impl AsRef<Path>, iter: I) -> Self
     where
         I: Iterator<Item = T>,
     {
@@ -28,11 +31,11 @@ where
         let mut info = Information { len: 0 };
         let mut buffered = BufWriter::new(&file);
         for data in iter {
-            buffered.write_all(bytemuck::bytes_of(&data)).unwrap();
+            buffered.write_all(base::pod::bytes_of(&data)).unwrap();
             info.len += 1;
         }
         buffered.write_all(&[0u8; 4096]).unwrap();
-        buffered.write_all(bytemuck::bytes_of(&info)).unwrap();
+        buffered.write_all(base::pod::bytes_of(&info)).unwrap();
         buffered.flush().unwrap();
         file.sync_all().unwrap();
         let mmap = unsafe { read_mmap(&file, info.len * std::mem::size_of::<T>()) };
@@ -43,7 +46,7 @@ where
             _mmap: mmap,
         }
     }
-    pub fn open(path: &Path) -> Self {
+    pub fn open(path: impl AsRef<Path>) -> Self {
         let file = std::fs::OpenOptions::new().read(true).open(path).unwrap();
         let info = read_information(&file);
         let mmap = unsafe { read_mmap(&file, info.len * std::mem::size_of::<T>()) };
@@ -100,7 +103,6 @@ struct Information {
     len: usize,
 }
 
-unsafe impl Zeroable for Information {}
 unsafe impl Pod for Information {}
 
 fn read_information(mut file: &File) -> Information {
@@ -108,7 +110,7 @@ fn read_information(mut file: &File) -> Information {
     file.seek(std::io::SeekFrom::End(-(size as i64))).unwrap();
     let mut buff = vec![0u8; size];
     file.read_exact(&mut buff).unwrap();
-    bytemuck::try_pod_read_unaligned::<Information>(&buff).unwrap()
+    base::pod::try_pod_read_unaligned::<Information>(&buff)
 }
 
 unsafe fn read_mmap(file: &File, len: usize) -> memmap2::Mmap {

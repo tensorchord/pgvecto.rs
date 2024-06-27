@@ -7,7 +7,7 @@ edition.workspace = true
 base = { path = "../base" }
 common = { path = "../common" }
 quantization = { path = "../quantization" }
-rayon = { path = "../rayon" }
+stoppable_rayon = { path = "../stoppable_rayon" }
 storage = { path = "../storage" }
 
 [lints]

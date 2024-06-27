@@ -1,6 +1,3 @@
-#![feature(thread_local)]
-
-use rayoff as rayon;
 use std::cell::RefCell;
 use std::panic::AssertUnwindSafe;
 use std::sync::atomic::AtomicBool;
@@ -110,17 +107,20 @@ impl<'a> ThreadPool<'a> {
     }
 }
 
-#[thread_local]
-static STOP: RefCell<Option<Arc<AtomicBool>>> = RefCell::new(None);
+std::thread_local! {
+    static STOP: RefCell<Option<Arc<AtomicBool>>> = const { RefCell::new(None) };
+}
 
 struct CheckPanic;
 
 pub fn check() {
-    if let Some(stop) = STOP.borrow().as_ref() {
-        if stop.load(Ordering::Relaxed) {
-            std::panic::panic_any(CheckPanic);
+    STOP.with(|stop| {
+        if let Some(stop) = stop.borrow().as_ref() {
+            if stop.load(Ordering::Relaxed) {
+                std::panic::panic_any(CheckPanic);
+            }
+        } else {
+            panic!("`check` is called outside rayon")
         }
-    } else {
-        panic!("`check` is called outside rayon")
-    }
+    });
 }

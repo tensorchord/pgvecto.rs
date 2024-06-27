@@ -2,9 +2,9 @@ use std::fs::read_dir;
 use std::io;
 use std::path::Path;
 
-pub fn dir_size(dir: &Path) -> io::Result<u64> {
+pub fn dir_size(dir: impl AsRef<Path>) -> io::Result<u64> {
     let mut size = 0;
-    if dir.is_dir() {
+    if dir.as_ref().is_dir() {
         for entry in read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();

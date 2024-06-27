@@ -1,4 +1,3 @@
-#![feature(trait_alias)]
 #![allow(clippy::len_without_is_empty)]
 #![allow(clippy::needless_range_loop)]
 
@@ -6,18 +5,25 @@ pub mod ivf_naive;
 pub mod ivf_pq;
 
 use self::ivf_naive::IvfNaive;
-use self::ivf_pq::IvfPq;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
+use common::dir_ops::sync_dir;
+use common::variants::variants;
 use elkan_k_means::operator::OperatorElkanKMeans;
+use ivf_pq::IvfPq;
 use quantization::operator::OperatorQuantization;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::path::Path;
-use storage::operator::OperatorStorage;
+use storage::OperatorStorage;
 
-pub trait OperatorIvf = Operator + OperatorElkanKMeans + OperatorQuantization + OperatorStorage;
+pub trait OperatorIvf:
+    Operator + OperatorElkanKMeans + OperatorQuantization + OperatorStorage
+{
+}
+
+impl<T: Operator + OperatorElkanKMeans + OperatorQuantization + OperatorStorage> OperatorIvf for T {}
 
 pub enum Ivf<O: OperatorIvf> {
     Naive(IvfNaive<O>),
@@ -25,25 +31,30 @@ pub enum Ivf<O: OperatorIvf> {
 }
 
 impl<O: OperatorIvf> Ivf<O> {
-    pub fn create<S: Source<O>>(path: &Path, options: IndexOptions, source: &S) -> Self {
-        if matches!(
-            options.indexing.clone().unwrap_ivf().quantization,
-            QuantizationOptions::Product(_)
-        ) {
-            Self::Pq(IvfPq::create(path, options, source))
+    pub fn create(path: impl AsRef<Path>, options: IndexOptions, source: &impl Source<O>) -> Self {
+        let IvfIndexingOptions {
+            quantization: quantization_options,
+            ..
+        } = options.indexing.clone().unwrap_ivf();
+        std::fs::create_dir(path.as_ref()).unwrap();
+        let this = if matches!(quantization_options, QuantizationOptions::Product(_)) {
+            Self::Pq(IvfPq::create(path.as_ref().join("ivf_pq"), options, source))
         } else {
-            Self::Naive(IvfNaive::create(path, options, source))
-        }
+            Self::Naive(IvfNaive::create(
+                path.as_ref().join("ivf_naive"),
+                options,
+                source,
+            ))
+        };
+        sync_dir(path);
+        this
     }
 
-    pub fn open(path: &Path, options: IndexOptions) -> Self {
-        if matches!(
-            options.indexing.clone().unwrap_ivf().quantization,
-            QuantizationOptions::Product(_)
-        ) {
-            Self::Pq(IvfPq::open(path, options))
-        } else {
-            Self::Naive(IvfNaive::open(path, options))
+    pub fn open(path: impl AsRef<Path>) -> Self {
+        match variants(path.as_ref(), ["ivf_naive", "ivf_pq"]) {
+            "ivf_naive" => Self::Naive(IvfNaive::open(path.as_ref().join("naive"))),
+            "ivf_pq" => todo!(),
+            _ => unreachable!(),
         }
     }
 

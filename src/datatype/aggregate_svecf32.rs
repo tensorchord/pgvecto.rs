@@ -324,7 +324,7 @@ mod tests {
         let indexes_20: Vec<u32> = vec![
             1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
-        let values_20: Vec<F32> = vec![
+        let values_20: Vec<F32> = [
             1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ]
         .iter()
@@ -343,7 +343,7 @@ mod tests {
             values: values_20.clone(),
         };
         let sindexes = vec![0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
-        let svalues: Vec<F32> = vec![1, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+        let svalues: Vec<F32> = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18]
             .iter()
             .map(|&x| F32(x as f32))
             .collect();
@@ -356,7 +356,7 @@ mod tests {
         );
         assert_eq!(
             state.values(),
-            vec![1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+            [1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
                 .iter()
                 .map(|&x| F32(x as f32))
                 .collect::<Vec<F32>>()
@@ -378,14 +378,14 @@ mod tests {
         assert_eq!(result_len, 16);
         assert_eq!(
             state.indexes(),
-            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18]
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18]
                 .iter()
                 .map(|&x| x as u32)
                 .collect::<Vec<u32>>()
         );
         assert_eq!(
             state.values(),
-            vec![1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18]
+            [1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18]
                 .iter()
                 .map(|&x| F32(x as f32))
                 .collect::<Vec<F32>>()
@@ -402,7 +402,7 @@ mod tests {
             values: values_20.clone(),
         };
         let sindexes = vec![0, 3, 6, 9, 12, 15, 18];
-        let svalues: Vec<F32> = vec![1, 1, 1, 1, 1, 1, 1]
+        let svalues: Vec<F32> = [1, 1, 1, 1, 1, 1, 1]
             .iter()
             .map(|&x| F32(x as f32))
             .collect();
@@ -412,14 +412,14 @@ mod tests {
         assert_eq!(result_len, 14);
         assert_eq!(
             state.indexes(),
-            vec![0, 1, 3, 5, 6, 7, 9, 11, 12, 13, 15, 17, 18, 19]
+            [0, 1, 3, 5, 6, 7, 9, 11, 12, 13, 15, 17, 18, 19]
                 .iter()
                 .map(|&x| x as u32)
                 .collect::<Vec<u32>>()
         );
         assert_eq!(
             state.values(),
-            vec![1, 1, 4, 5, 1, 7, 10, 11, 1, 13, 16, 17, 1, 19]
+            [1, 1, 4, 5, 1, 7, 10, 11, 1, 13, 16, 17, 1, 19]
                 .iter()
                 .map(|&x| F32(x as f32))
                 .collect::<Vec<F32>>()

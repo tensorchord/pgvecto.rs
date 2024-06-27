@@ -1,84 +1,82 @@
 use crate::Storage;
-pub use base::index::*;
 use base::operator::Operator;
-pub use base::scalar::*;
-pub use base::search::*;
-pub use base::vector::*;
+use base::scalar::*;
+use base::search::*;
+use base::vector::*;
+use common::json::Json;
 use common::mmap_array::MmapArray;
 use std::path::Path;
 
 pub struct SVecStorage {
+    dims: Json<u32>,
+    len: Json<u32>,
     indexes: MmapArray<u32>,
     values: MmapArray<F32>,
     offsets: MmapArray<usize>,
-    payload: MmapArray<Payload>,
-    dims: u32,
 }
 
-impl Storage for SVecStorage {
-    type VectorOwned = SVecf32Owned;
-
+impl<O: Operator<VectorOwned = SVecf32Owned>> Vectors<O> for SVecStorage {
     fn dims(&self) -> u32 {
-        self.dims
+        *self.dims
     }
 
     fn len(&self) -> u32 {
-        self.payload.len() as u32
+        *self.len
     }
 
     fn vector(&self, i: u32) -> SVecf32Borrowed<'_> {
         let s = self.offsets[i as usize];
         let e = self.offsets[i as usize + 1];
         unsafe {
-            SVecf32Borrowed::new_unchecked(self.dims, &self.indexes[s..e], &self.values[s..e])
+            SVecf32Borrowed::new_unchecked(*self.dims, &self.indexes[s..e], &self.values[s..e])
         }
     }
+}
 
-    fn payload(&self, i: u32) -> Payload {
-        self.payload[i as usize]
-    }
-
-    fn open(path: &Path, options: IndexOptions) -> Self
-    where
-        Self: Sized,
-    {
-        let indexes = MmapArray::open(&path.join("indexes"));
-        let values = MmapArray::open(&path.join("values"));
-        let offsets = MmapArray::open(&path.join("offsets"));
-        let payload = MmapArray::open(&path.join("payload"));
+impl<O: Operator<VectorOwned = SVecf32Owned>> Storage<O> for SVecStorage {
+    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<O>) -> Self {
+        std::fs::create_dir(path.as_ref()).unwrap();
+        let dims = Json::create(path.as_ref().join("dims"), vectors.dims());
+        let len = Json::create(path.as_ref().join("len"), vectors.len());
+        let indexes = MmapArray::create(
+            path.as_ref().join("indexes"),
+            (0..*len).flat_map(|i| vectors.vector(i).indexes().to_vec()),
+        );
+        let values = MmapArray::create(
+            path.as_ref().join("values"),
+            (0..*len).flat_map(|i| vectors.vector(i).values().to_vec()),
+        );
+        let offsets = MmapArray::create(
+            path.as_ref().join("offsets"),
+            std::iter::once(0)
+                .chain((0..*len).map(|i| vectors.vector(i).len() as usize))
+                .scan(0, |state, x| {
+                    *state += x;
+                    Some(*state)
+                }),
+        );
+        common::dir_ops::sync_dir(path);
         Self {
+            dims,
+            len,
             indexes,
             values,
             offsets,
-            payload,
-            dims: options.vector.dims,
         }
     }
 
-    fn save<O: Operator<VectorOwned = SVecf32Owned>, C: Collection<O>>(
-        path: &Path,
-        collection: &C,
-    ) -> Self {
-        let n = collection.len();
-        let indexes_iter = (0..n).flat_map(|i| collection.vector(i).indexes().to_vec());
-        let values_iter = (0..n).flat_map(|i| collection.vector(i).values().to_vec());
-        let offsets_iter = std::iter::once(0)
-            .chain((0..n).map(|i| collection.vector(i).len() as usize))
-            .scan(0, |state, x| {
-                *state += x;
-                Some(*state)
-            });
-        let payload_iter = (0..n).map(|i| collection.payload(i));
-        let indexes = MmapArray::create(&path.join("indexes"), indexes_iter);
-        let values = MmapArray::create(&path.join("values"), values_iter);
-        let offsets = MmapArray::create(&path.join("offsets"), offsets_iter);
-        let payload = MmapArray::create(&path.join("payload"), payload_iter);
+    fn open(path: impl AsRef<Path>) -> Self {
+        let dims = Json::open(path.as_ref().join("dims"));
+        let len = Json::open(path.as_ref().join("len"));
+        let indexes = MmapArray::open(path.as_ref().join("indexes"));
+        let values = MmapArray::open(path.as_ref().join("values"));
+        let offsets = MmapArray::open(path.as_ref().join("offsets"));
         Self {
+            dims,
+            len,
             indexes,
             values,
             offsets,
-            payload,
-            dims: collection.dims(),
         }
     }
 }

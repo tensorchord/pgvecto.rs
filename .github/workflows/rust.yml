@@ -167,10 +167,10 @@ jobs:
       - name: Test (x86_64)
         if: matrix.arch == 'x86_64'
         run: |
-            ASSETS=$(mktemp -d)
-            wget https://downloadmirror.intel.com/813591/sde-external-9.33.0-2024-01-07-lin.tar.xz -O $ASSETS/sde-external.tar.xz
-            tar -xf $ASSETS/sde-external.tar.xz -C $ASSETS
-            cargo --config "target.x86_64-unknown-linux-gnu.runner = [\"$ASSETS/sde-external-9.33.0-2024-01-07-lin/sde64\", \"-spr\", \"--\"]" test "_v4" --all --no-fail-fast --features "pg$VERSION" --target $ARCH-unknown-linux-gnu -- --nocapture
+          ASSETS=$(mktemp -d)
+          wget https://downloadmirror.intel.com/813591/sde-external-9.33.0-2024-01-07-lin.tar.xz -O $ASSETS/sde-external.tar.xz
+          tar -xf $ASSETS/sde-external.tar.xz -C $ASSETS
+          cargo --config "target.x86_64-unknown-linux-gnu.runner = [\"$ASSETS/sde-external-9.33.0-2024-01-07-lin/sde64\", \"-spr\", \"--\"]" test "_v4" --all --no-fail-fast --features "pg$VERSION" --target $ARCH-unknown-linux-gnu -- --nocapture
       - name: Post Set up Cache
         uses: actions/cache/save@v4
         if: ${{ !steps.cache.outputs.cache-hit }}

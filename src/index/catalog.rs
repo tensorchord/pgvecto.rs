@@ -76,37 +76,34 @@ pub unsafe fn on_object_access(
     if sub_id != 0 {
         return;
     }
-    match access {
-        pgrx::pg_sys::ObjectAccessType_OAT_DROP => {
-            let search = pgrx::pg_catalog::PgClass::search_reloid(object_id).unwrap();
-            if let Some(pg_class) = search.get() {
-                if let Some(()) = check_vector_index(pg_class) {
-                    let handle = from_oid_to_handle(object_id);
-                    let mut t = TRANSACTION.borrow_mut();
-                    match t.index.get(&handle) {
-                        Some(TransactionIndex::Create) => {
-                            // It's created in this transaction, so drop it immediately
-                            let handle = from_oid_to_handle(object_id);
-                            let mut rpc = check_client(client());
-                            if let Err(e) = rpc.drop(handle) {
-                                pgrx::warning!("Failed to drop {handle} for abortting: {e}.");
-                            }
-                            t.index.remove(&handle);
+    if access == pgrx::pg_sys::ObjectAccessType_OAT_DROP {
+        let search = pgrx::pg_catalog::PgClass::search_reloid(object_id).unwrap();
+        if let Some(pg_class) = search.get() {
+            if let Some(()) = check_vector_index(pg_class) {
+                let handle = from_oid_to_handle(object_id);
+                let mut t = TRANSACTION.borrow_mut();
+                match t.index.get(&handle) {
+                    Some(TransactionIndex::Create) => {
+                        // It's created in this transaction, so drop it immediately
+                        let handle = from_oid_to_handle(object_id);
+                        let mut rpc = check_client(client());
+                        if let Err(e) = rpc.drop(handle) {
+                            pgrx::warning!("Failed to drop {handle} for abortting: {e}.");
                         }
-                        Some(TransactionIndex::Drop) => unreachable!(),
-                        Some(TransactionIndex::Dirty) => {
-                            // It's not created in this transaction but modified in this transaction
-                            t.index.insert(handle, TransactionIndex::Drop);
-                        }
-                        None => {
-                            // It's not created in this transaction and never modified in this transaction
-                            t.index.insert(handle, TransactionIndex::Drop);
-                        }
+                        t.index.remove(&handle);
+                    }
+                    Some(TransactionIndex::Drop) => unreachable!(),
+                    Some(TransactionIndex::Dirty) => {
+                        // It's not created in this transaction but modified in this transaction
+                        t.index.insert(handle, TransactionIndex::Drop);
+                    }
+                    None => {
+                        // It's not created in this transaction and never modified in this transaction
+                        t.index.insert(handle, TransactionIndex::Drop);
                     }
                 }
             }
         }
-        _ => (),
     }
 }
 

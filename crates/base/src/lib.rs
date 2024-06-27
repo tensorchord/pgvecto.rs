@@ -1,5 +1,4 @@
 #![feature(core_intrinsics)]
-#![feature(doc_cfg)]
 #![feature(avx512_target_feature)]
 #![cfg_attr(target_arch = "x86_64", feature(stdarch_x86_avx512))]
 #![allow(internal_features)]
@@ -12,6 +11,7 @@
 pub mod distance;
 pub mod index;
 pub mod operator;
+pub mod pod;
 pub mod scalar;
 pub mod search;
 pub mod vector;

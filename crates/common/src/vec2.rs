@@ -1,17 +1,18 @@
-use bytemuck::Zeroable;
+use base::pod::Pod;
+use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Vec2<T> {
     dims: u32,
     v: Vec<T>,
 }
 
-impl<T: Zeroable + Ord> Vec2<T> {
+impl<T: Pod + Ord> Vec2<T> {
     pub fn new(dims: u32, n: usize) -> Self {
         Self {
             dims,
-            v: bytemuck::zeroed_vec(dims as usize * n),
+            v: base::pod::zeroed_vec(dims as usize * n),
         }
     }
     pub fn dims(&self) -> u32 {

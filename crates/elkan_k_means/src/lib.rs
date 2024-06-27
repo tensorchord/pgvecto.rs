@@ -5,18 +5,82 @@ pub mod operator;
 use crate::operator::OperatorElkanKMeans;
 use base::operator::*;
 use base::scalar::*;
+use base::vector::VectorBorrowed;
 use common::vec2::Vec2;
 use num_traits::{Float, Zero};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
-use rayon::slice::ParallelSliceMut;
 use std::ops::{Index, IndexMut};
+use stoppable_rayon as rayon;
 
-pub struct ElkanKMeans<O: Operator> {
+const ITERATIONS: usize = 100;
+
+pub fn elkan_k_means<O: OperatorElkanKMeans>(
+    c: usize,
+    mut samples: Vec2<Scalar<O>>,
+) -> Vec2<Scalar<O>> {
+    assert!(c > 0);
+    for i in 0..samples.len() {
+        O::elkan_k_means_normalize(&mut samples[i]);
+    }
+    let mut elkan_k_means = ElkanKMeans::<O>::new(c, samples);
+    for _ in 0..ITERATIONS {
+        rayon::check();
+        if elkan_k_means.iterate() {
+            break;
+        }
+    }
+    elkan_k_means.finish()
+}
+
+pub fn elkan_k_means_lookup<O: OperatorElkanKMeans>(
+    vector: Borrowed<O>,
+    centroids: &Vec2<Scalar<O>>,
+) -> usize {
+    assert!(!centroids.is_empty());
+    let mut vector = vector.to_vec();
+    O::elkan_k_means_normalize(&mut vector);
+    let mut result = (F32::infinity(), 0);
+    for i in 0..centroids.len() {
+        let dis = O::elkan_k_means_distance(&vector, &centroids[i]);
+        result = std::cmp::min(result, (dis, i));
+    }
+    result.1
+}
+
+pub fn elkan_k_means_lookup_dense<O: OperatorElkanKMeans>(
+    mut vector: Vec<Scalar<O>>,
+    centroids: &Vec2<Scalar<O>>,
+) -> usize {
+    assert!(!centroids.is_empty());
+    O::elkan_k_means_normalize(&mut vector);
+    let mut result = (F32::infinity(), 0);
+    for i in 0..centroids.len() {
+        let dis = O::elkan_k_means_distance(&vector, &centroids[i]);
+        result = std::cmp::min(result, (dis, i));
+    }
+    result.1
+}
+
+pub fn elkan_k_means_caluate<O: OperatorElkanKMeans>(
+    vector: Borrowed<O>,
+    centroids: &Vec2<Scalar<O>>,
+) -> Vec<(F32, usize)> {
+    assert!(!centroids.is_empty());
+    let mut vector = vector.to_vec();
+    O::elkan_k_means_normalize(&mut vector);
+    let mut seq = Vec::new();
+    for i in 0..centroids.len() {
+        let dis = O::elkan_k_means_distance(&vector, &centroids[i]);
+        seq.push((dis, i));
+    }
+    seq
+}
+
+struct ElkanKMeans<O: Operator> {
     dims: u32,
     c: usize,
-    pub centroids: Vec2<Scalar<O>>,
+    centroids: Vec2<Scalar<O>>,
     lowerbound: Square,
     upperbound: Vec<F32>,
     assign: Vec<usize>,
@@ -27,7 +91,7 @@ pub struct ElkanKMeans<O: Operator> {
 const DELTA: f32 = 1.0 / 1024.0;
 
 impl<O: OperatorElkanKMeans> ElkanKMeans<O> {
-    pub fn new(c: usize, samples: Vec2<Scalar<O>>) -> Self {
+    fn new(c: usize, samples: Vec2<Scalar<O>>) -> Self {
         let n = samples.len();
         let dims = samples.dims();
 
@@ -43,9 +107,9 @@ impl<O: OperatorElkanKMeans> ElkanKMeans<O> {
         let mut dis = vec![F32::zero(); n];
         for i in 0..c {
             let mut sum = F32::zero();
-            dis.par_iter_mut().enumerate().for_each(|(j, x)| {
-                *x = O::elkan_k_means_distance(&samples[j], &centroids[i]);
-            });
+            for j in 0..n {
+                dis[j] = O::elkan_k_means_distance(&samples[j], &centroids[i]);
+            }
             for j in 0..n {
                 lowerbound[(j, i)] = dis[j];
                 if dis[j] * dis[j] < weight[j] {
@@ -95,37 +159,7 @@ impl<O: OperatorElkanKMeans> ElkanKMeans<O> {
         }
     }
 
-    /// Quick approach if we have little data
-    fn quick_centroids(&mut self) -> bool {
-        let c = self.c;
-        let samples = &self.samples;
-        let rand = &mut self.rand;
-        let centroids = &mut self.centroids;
-        let n = samples.len();
-        let dims = samples.dims();
-        let sorted_index = samples.argsort();
-        for i in 0..n {
-            let index = sorted_index.get(i).unwrap();
-            let last = sorted_index.get(std::cmp::max(i, 1) - 1).unwrap();
-            if *index == 0 || samples[*last] != samples[*index] {
-                centroids[i].copy_from_slice(&samples[*index]);
-            } else {
-                let rand_centroids: Vec<_> = (0..dims)
-                    .map(|_| Scalar::<O>::from_f32(rand.gen_range(0.0..1.0f32)))
-                    .collect();
-                centroids[i].copy_from_slice(rand_centroids.as_slice());
-            }
-        }
-        for i in n..c {
-            let rand_centroids: Vec<_> = (0..dims)
-                .map(|_| Scalar::<O>::from_f32(rand.gen_range(0.0..1.0f32)))
-                .collect();
-            centroids[i].copy_from_slice(rand_centroids.as_slice());
-        }
-        true
-    }
-
-    pub fn iterate(&mut self) -> bool {
+    fn iterate(&mut self) -> bool {
         let c = self.c;
         let dims = self.dims;
         let samples = &self.samples;
@@ -137,22 +171,40 @@ impl<O: OperatorElkanKMeans> ElkanKMeans<O> {
         let mut change = 0;
         let n = samples.len();
         if n <= c {
-            return self.quick_centroids();
+            let c = self.c;
+            let samples = &self.samples;
+            let rand = &mut self.rand;
+            let centroids = &mut self.centroids;
+            let n = samples.len();
+            let dims = samples.dims();
+            let sorted_index = samples.argsort();
+            for i in 0..n {
+                let index = sorted_index.get(i).unwrap();
+                let last = sorted_index.get(std::cmp::max(i, 1) - 1).unwrap();
+                if *index == 0 || samples[*last] != samples[*index] {
+                    centroids[i].copy_from_slice(&samples[*index]);
+                } else {
+                    let rand_centroids: Vec<_> = (0..dims)
+                        .map(|_| Scalar::<O>::from_f32(rand.gen_range(0.0..1.0f32)))
+                        .collect();
+                    centroids[i].copy_from_slice(rand_centroids.as_slice());
+                }
+            }
+            for i in n..c {
+                let rand_centroids: Vec<_> = (0..dims)
+                    .map(|_| Scalar::<O>::from_f32(rand.gen_range(0.0..1.0f32)))
+                    .collect();
+                centroids[i].copy_from_slice(rand_centroids.as_slice());
+            }
+            return true;
         }
 
         // Step 1
         let mut dist0 = Square::new(c, c);
         let mut sp = vec![F32::zero(); c];
-        dist0.v.par_iter_mut().enumerate().for_each(|(ii, v)| {
-            let i = ii / c;
-            let j = ii % c;
-            if i <= j {
-                *v = O::elkan_k_means_distance(&centroids[i], &centroids[j]) * 0.5;
-            }
-        });
-        for i in 1..c {
-            for j in 0..i - 1 {
-                dist0[(i, j)] = dist0[(j, i)];
+        for i in 0..c {
+            for j in 0..c {
+                dist0[(i, j)] = O::elkan_k_means_distance(&centroids[i], &centroids[j]) * 0.5;
             }
         }
         for i in 0..c {
@@ -168,13 +220,12 @@ impl<O: OperatorElkanKMeans> ElkanKMeans<O> {
             }
             sp[i] = minimal;
         }
-
         let mut dis = vec![F32::zero(); n];
-        dis.par_iter_mut().enumerate().for_each(|(i, x)| {
+        for i in 0..n {
             if upperbound[i] > sp[assign[i]] {
-                *x = O::elkan_k_means_distance(&samples[i], &centroids[assign[i]]);
+                dis[i] = O::elkan_k_means_distance(&samples[i], &centroids[assign[i]]);
             }
-        });
+        }
         for i in 0..n {
             // Step 2
             if upperbound[i] <= sp[assign[i]] {
@@ -251,15 +302,15 @@ impl<O: OperatorElkanKMeans> ElkanKMeans<O> {
             count[i] = count[o] / 2.0;
             count[o] = count[o] - count[i];
         }
-        centroids.par_chunks_mut(dims as usize).for_each(|v| {
-            O::elkan_k_means_normalize(v);
-        });
+        for i in 0..c {
+            O::elkan_k_means_normalize(&mut centroids[i]);
+        }
 
         // Step 5, 6
         let mut dist1 = vec![F32::zero(); c];
-        dist1.par_iter_mut().enumerate().for_each(|(i, v)| {
-            *v = O::elkan_k_means_distance(&old[i], &centroids[i]);
-        });
+        for i in 0..c {
+            dist1[i] = O::elkan_k_means_distance(&old[i], &centroids[i]);
+        }
         for i in 0..n {
             for j in 0..c {
                 self.lowerbound[(i, j)] =
@@ -273,12 +324,12 @@ impl<O: OperatorElkanKMeans> ElkanKMeans<O> {
         change == 0
     }
 
-    pub fn finish(self) -> Vec2<Scalar<O>> {
+    fn finish(self) -> Vec2<Scalar<O>> {
         self.centroids
     }
 }
 
-pub struct Square {
+struct Square {
     x: usize,
     y: usize,
     v: Vec<F32>,
@@ -289,7 +340,7 @@ impl Square {
         Self {
             x,
             y,
-            v: bytemuck::zeroed_vec(x * y),
+            v: base::pod::zeroed_vec(x * y),
         }
     }
 }

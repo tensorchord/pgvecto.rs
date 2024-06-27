@@ -106,49 +106,53 @@ pub enum StartError {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
-#[validate(schema(function = "IndexOptions::validate_index_options"))]
+#[validate(schema(function = "IndexOptions::validate_self"))]
 pub struct IndexOptions {
     #[validate(nested)]
     pub vector: VectorOptions,
-    #[validate(nested)]
-    pub segment: SegmentsOptions,
     #[validate(nested)]
     pub indexing: IndexingOptions,
 }
 
 impl IndexOptions {
-    fn validate_index_options(options: &IndexOptions) -> Result<(), ValidationError> {
-        if options.vector.v != VectorKind::SVecf32
-            && options.vector.v != VectorKind::BVecf32
-            && options.vector.v != VectorKind::Veci8
-        {
-            return Ok(());
+    fn validate_self(&self) -> Result<(), ValidationError> {
+        match (self.vector.v, &self.indexing) {
+            (VectorKind::Vecf32, _) => Ok(()),
+            (VectorKind::Vecf16, _) => Ok(()),
+            (
+                _,
+                IndexingOptions::Flat(FlatIndexingOptions {
+                    quantization: QuantizationOptions::Trivial(_),
+                    ..
+                })
+                | IndexingOptions::Ivf(IvfIndexingOptions {
+                    quantization: QuantizationOptions::Trivial(_),
+                    ..
+                })
+                | IndexingOptions::Hnsw(HnswIndexingOptions {
+                    quantization: QuantizationOptions::Trivial(_),
+                    ..
+                }),
+            ) => Ok(()),
+            _ => Err(ValidationError::new("not valid index options")),
         }
-        let is_trivial = match &options.indexing {
-            IndexingOptions::Flat(x) => matches!(x.quantization, QuantizationOptions::Trivial(_)),
-            IndexingOptions::Ivf(x) => matches!(x.quantization, QuantizationOptions::Trivial(_)),
-            IndexingOptions::Hnsw(x) => matches!(x.quantization, QuantizationOptions::Trivial(_)),
-        };
-        if !is_trivial {
-            return Err(ValidationError::new(
-                "Quantization is not supported for svector, bvector, and veci8.",
-            ));
-        }
-        Ok(())
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, Alter)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Validate, Alter)]
 #[serde(deny_unknown_fields)]
 pub struct IndexAlterableOptions {
+    #[serde(default)]
+    #[validate(nested)]
+    pub segment: SegmentOptions,
+    #[serde(default)]
     #[validate(nested)]
     pub optimizing: OptimizingOptions,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
-#[validate(schema(function = "Self::validate_0"))]
-#[validate(schema(function = "Self::validate_dims"))]
+#[validate(schema(function = "Self::validate_self"))]
 pub struct VectorOptions {
     #[validate(range(min = 1, max = 1_048_575))]
     #[serde(rename = "dimensions")]
@@ -160,58 +164,50 @@ pub struct VectorOptions {
 }
 
 impl VectorOptions {
-    // Jaccard distance is only supported for bvector.
-    pub fn validate_0(&self) -> Result<(), ValidationError> {
-        if self.v != VectorKind::BVecf32 && self.d == DistanceKind::Jaccard {
-            return Err(ValidationError::new(
-                "Jaccard distance is only supported for bvector.",
-            ));
+    pub fn validate_self(&self) -> Result<(), ValidationError> {
+        match (self.v, self.d, self.dims) {
+            (VectorKind::Vecf32, DistanceKind::L2, 1..65536) => Ok(()),
+            (VectorKind::Vecf32, DistanceKind::Cos, 1..65536) => Ok(()),
+            (VectorKind::Vecf32, DistanceKind::Dot, 1..65536) => Ok(()),
+            (VectorKind::Vecf16, DistanceKind::L2, 1..65536) => Ok(()),
+            (VectorKind::Vecf16, DistanceKind::Cos, 1..65536) => Ok(()),
+            (VectorKind::Vecf16, DistanceKind::Dot, 1..65536) => Ok(()),
+            (VectorKind::SVecf32, DistanceKind::L2, 1..1048576) => Ok(()),
+            (VectorKind::SVecf32, DistanceKind::Cos, 1..1048576) => Ok(()),
+            (VectorKind::SVecf32, DistanceKind::Dot, 1..1048576) => Ok(()),
+            (VectorKind::BVecf32, DistanceKind::L2, 1..65536) => Ok(()),
+            (VectorKind::BVecf32, DistanceKind::Cos, 1..65536) => Ok(()),
+            (VectorKind::BVecf32, DistanceKind::Dot, 1..65536) => Ok(()),
+            (VectorKind::BVecf32, DistanceKind::Jaccard, 1..65536) => Ok(()),
+            (VectorKind::Veci8, DistanceKind::L2, 1..65536) => Ok(()),
+            (VectorKind::Veci8, DistanceKind::Cos, 1..65536) => Ok(()),
+            (VectorKind::Veci8, DistanceKind::Dot, 1..65536) => Ok(()),
+            _ => Err(ValidationError::new("not valid vector options")),
         }
-        Ok(())
-    }
-
-    pub fn validate_dims(&self) -> Result<(), ValidationError> {
-        if self.v != VectorKind::SVecf32 && self.dims > 65535 {
-            return Err(ValidationError::new(
-                "Except svector, the maximum number of dimensions is 65535.",
-            ));
-        }
-
-        Ok(())
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Alter)]
 #[serde(deny_unknown_fields)]
-#[validate(schema(function = "Self::validate_0"))]
-pub struct SegmentsOptions {
-    #[serde(default = "SegmentsOptions::default_max_growing_segment_size")]
+pub struct SegmentOptions {
+    #[serde(default = "SegmentOptions::default_max_growing_segment_size")]
     #[validate(range(min = 1, max = 4_000_000_000u32))]
     pub max_growing_segment_size: u32,
-    #[serde(default = "SegmentsOptions::default_max_sealed_segment_size")]
+    #[serde(default = "SegmentOptions::default_max_sealed_segment_size")]
     #[validate(range(min = 1, max = 4_000_000_000u32))]
     pub max_sealed_segment_size: u32,
 }
 
-impl SegmentsOptions {
+impl SegmentOptions {
     fn default_max_growing_segment_size() -> u32 {
         20_000
     }
     fn default_max_sealed_segment_size() -> u32 {
-        1_000_000
-    }
-    // max_growing_segment_size <= max_sealed_segment_size
-    fn validate_0(&self) -> Result<(), ValidationError> {
-        if self.max_growing_segment_size > self.max_sealed_segment_size {
-            return Err(ValidationError::new(
-                "`max_growing_segment_size` must be less than or equal to `max_sealed_segment_size`",
-            ));
-        }
-        Ok(())
+        4_000_000_000u32
     }
 }
 
-impl Default for SegmentsOptions {
+impl Default for SegmentOptions {
     fn default() -> Self {
         Self {
             max_growing_segment_size: Self::default_max_growing_segment_size(),
@@ -223,28 +219,34 @@ impl Default for SegmentsOptions {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, Alter)]
 #[serde(deny_unknown_fields)]
 pub struct OptimizingOptions {
-    #[serde(default = "OptimizingOptions::default_optimizing_threads")]
-    #[validate(range(min = 1, max = 65535))]
-    pub optimizing_threads: u16,
     #[serde(default = "OptimizingOptions::default_sealing_secs")]
-    #[validate(range(min = 1, max = 60))]
+    #[validate(range(min = 1, max = 86400))]
     pub sealing_secs: u64,
     #[serde(default = "OptimizingOptions::default_sealing_size")]
     #[validate(range(min = 1, max = 4_000_000_000u32))]
     pub sealing_size: u32,
+    #[serde(default = "OptimizingOptions::default_optimizing_secs")]
+    #[validate(range(min = 1, max = 86400))]
+    pub optimizing_secs: u64,
+    #[serde(default = "OptimizingOptions::default_optimizing_threads")]
+    #[validate(range(min = 1, max = 65535))]
+    pub optimizing_threads: u16,
     #[serde(default = "OptimizingOptions::default_delete_threshold")]
-    #[validate(range(min = 0.01, max = 1.00))]
+    #[validate(range(min = 0.0001, max = 1.0000))]
     pub delete_threshold: f64,
 }
 
 impl OptimizingOptions {
-    fn default_optimizing_threads() -> u16 {
-        1
-    }
     fn default_sealing_secs() -> u64 {
-        60
+        10
     }
     fn default_sealing_size() -> u32 {
+        1
+    }
+    fn default_optimizing_secs() -> u64 {
+        60
+    }
+    fn default_optimizing_threads() -> u16 {
         1
     }
     fn default_delete_threshold() -> f64 {
@@ -255,9 +257,10 @@ impl OptimizingOptions {
 impl Default for OptimizingOptions {
     fn default() -> Self {
         Self {
-            optimizing_threads: Self::default_optimizing_threads(),
             sealing_secs: Self::default_sealing_secs(),
             sealing_size: Self::default_sealing_size(),
+            optimizing_secs: Self::default_optimizing_secs(),
+            optimizing_threads: Self::default_optimizing_threads(),
             delete_threshold: Self::default_delete_threshold(),
         }
     }
@@ -328,45 +331,24 @@ impl Default for FlatIndexingOptions {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct IvfIndexingOptions {
-    #[serde(default = "IvfIndexingOptions::default_least_iterations")]
-    #[validate(range(min = 1, max = 1_000_000))]
-    pub least_iterations: u32,
-    #[serde(default = "IvfIndexingOptions::default_iterations")]
-    #[validate(range(min = 1, max = 1_000_000))]
-    pub iterations: u32,
     #[serde(default = "IvfIndexingOptions::default_nlist")]
     #[validate(range(min = 1, max = 1_000_000))]
     pub nlist: u32,
-    #[serde(default = "IvfIndexingOptions::default_nsample")]
-    #[validate(range(min = 1, max = 1_000_000))]
-    pub nsample: u32,
     #[serde(default)]
     #[validate(nested)]
     pub quantization: QuantizationOptions,
 }
 
 impl IvfIndexingOptions {
-    fn default_least_iterations() -> u32 {
-        16
-    }
-    fn default_iterations() -> u32 {
-        500
-    }
     fn default_nlist() -> u32 {
         1000
-    }
-    fn default_nsample() -> u32 {
-        65536
     }
 }
 
 impl Default for IvfIndexingOptions {
     fn default() -> Self {
         Self {
-            least_iterations: Self::default_least_iterations(),
-            iterations: Self::default_iterations(),
             nlist: Self::default_nlist(),
-            nsample: Self::default_nsample(),
             quantization: Default::default(),
         }
     }
@@ -430,6 +412,15 @@ impl Default for QuantizationOptions {
     }
 }
 
+impl QuantizationOptions {
+    pub fn unwrap_product(self) -> ProductQuantizationOptions {
+        let QuantizationOptions::Product(x) = self else {
+            unreachable!()
+        };
+        x
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct TrivialQuantizationOptions {}
@@ -453,23 +444,13 @@ impl Default for ScalarQuantizationOptions {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct ProductQuantizationOptions {
-    #[serde(default = "ProductQuantizationOptions::default_sample")]
-    #[validate(range(min = 1, max = 1_000_000))]
-    pub sample: u32,
     #[serde(default)]
     pub ratio: ProductQuantizationOptionsRatio,
-}
-
-impl ProductQuantizationOptions {
-    fn default_sample() -> u32 {
-        65535
-    }
 }
 
 impl Default for ProductQuantizationOptions {
     fn default() -> Self {
         Self {
-            sample: Self::default_sample(),
             ratio: Default::default(),
         }
     }
@@ -497,8 +478,10 @@ impl Default for ProductQuantizationOptionsRatio {
 pub struct SearchOptions {
     #[validate(range(min = 1, max = 65535))]
     pub hnsw_ef_search: u32,
-    #[validate(range(min = 1, max = 1_000_000))]
+    #[validate(range(min = 1, max = 65535))]
     pub ivf_nprobe: u32,
+    #[validate(range(min = 1, max = 65535))]
+    pub diskann_ef_search: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

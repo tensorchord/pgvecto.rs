@@ -1,6 +1,7 @@
 use crate::operator::{Borrowed, Operator};
 use crate::scalar::F32;
 use serde::{Deserialize, Serialize};
+use std::any::Any;
 use std::fmt::Display;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -65,22 +66,24 @@ impl Payload {
     }
 }
 
-unsafe impl bytemuck::Zeroable for Payload {}
-unsafe impl bytemuck::Pod for Payload {}
-
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Element {
     pub distance: F32,
     pub payload: Payload,
 }
 
-pub trait Collection<O: Operator> {
+pub trait Vectors<O: Operator>: Send + Sync {
     fn dims(&self) -> u32;
     fn len(&self) -> u32;
     fn vector(&self, i: u32) -> Borrowed<'_, O>;
+}
+
+pub trait Collection<O: Operator>: Vectors<O> {
     fn payload(&self, i: u32) -> Payload;
 }
 
 pub trait Source<O: Operator>: Collection<O> {
-    // ..
+    fn get_main<T: Any>(&self) -> Option<&T>;
+    fn get_main_len(&self) -> u32;
+    fn check_existing(&self, i: u32) -> bool;
 }

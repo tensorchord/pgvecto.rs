@@ -164,8 +164,7 @@ impl WorkerOperations for Worker {
     fn delete(&self, handle: Handle, pointer: Pointer) -> Result<(), DeleteError> {
         let view = self.view();
         let instance = view.get(handle).ok_or(DeleteError::NotExist)?;
-        let view = instance.view();
-        view.delete(pointer)?;
+        instance.delete(pointer)?;
         Ok(())
     }
     fn view_basic(&self, handle: Handle) -> Result<impl ViewBasicOperations, BasicError> {

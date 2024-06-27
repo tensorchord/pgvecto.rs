@@ -1,24 +1,22 @@
-#![feature(trait_alias)]
 #![allow(clippy::len_without_is_empty)]
 
 pub mod delete;
 pub mod indexing;
 pub mod optimizing;
-pub mod segments;
+pub mod segment;
 
 mod utils;
 
 use self::delete::Delete;
-use self::segments::growing::GrowingSegment;
-use self::segments::sealed::SealedSegment;
+use self::segment::growing::GrowingSegment;
+use self::segment::sealed::SealedSegment;
 use crate::optimizing::Optimizing;
 use crate::utils::tournament_tree::LoserTree;
 use arc_swap::ArcSwap;
-pub use base::distance::*;
-pub use base::index::*;
+use base::index::*;
 use base::operator::*;
-pub use base::search::*;
-pub use base::vector::*;
+use base::search::*;
+use base::vector::*;
 use common::clean::clean;
 use common::dir_ops::sync_dir;
 use common::file_atomic::FileAtomic;
@@ -36,12 +34,14 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::Instant;
-use storage::operator::OperatorStorage;
+use storage::OperatorStorage;
 use thiserror::Error;
 use uuid::Uuid;
 use validator::Validate;
 
-pub trait Op = Operator + OperatorElkanKMeans + OperatorQuantization + OperatorStorage;
+pub trait Op: Operator + OperatorElkanKMeans + OperatorQuantization + OperatorStorage {}
+
+impl<T: Operator + OperatorElkanKMeans + OperatorQuantization + OperatorStorage> Op for T {}
 
 #[derive(Debug, Error)]
 #[error("The index view is outdated.")]
@@ -55,6 +55,7 @@ pub struct Index<O: Op> {
     view: ArcSwap<IndexView<O>>,
     instant_indexed: AtomicCell<Instant>,
     instant_written: AtomicCell<Instant>,
+    check_deleted: AtomicCell<bool>,
     optimizing: Mutex<Option<(Sender<Infallible>, JoinHandle<()>)>>,
     _tracker: Arc<IndexTracker>,
 }
@@ -85,8 +86,8 @@ impl<O: Op> Index<O> {
         let startup = FileAtomic::create(
             path.join("startup"),
             IndexStartup {
-                sealeds: HashSet::new(),
-                growings: HashSet::new(),
+                sealed_segment_ids: HashSet::new(),
+                growing_segment_ids: HashSet::new(),
                 alterable_options: alterable_options.clone(),
             },
         );
@@ -98,21 +99,22 @@ impl<O: Op> Index<O> {
             delete: delete.clone(),
             protect: Mutex::new(IndexProtect {
                 startup,
-                sealed: HashMap::new(),
-                growing: HashMap::new(),
-                write: None,
+                sealed_segments: HashMap::new(),
+                read_segments: HashMap::new(),
+                write_segment: None,
                 alterable_options: alterable_options.clone(),
             }),
             view: ArcSwap::new(Arc::new(IndexView {
                 options: options.clone(),
                 alterable_options: alterable_options.clone(),
-                sealed: HashMap::new(),
-                growing: HashMap::new(),
+                sealed_segments: HashMap::new(),
+                read_segments: HashMap::new(),
                 delete: delete.clone(),
-                write: None,
+                write_segment: None,
             })),
             instant_indexed: AtomicCell::new(Instant::now()),
             instant_written: AtomicCell::new(Instant::now()),
+            check_deleted: AtomicCell::new(false),
             optimizing: Mutex::new(None),
             _tracker: Arc::new(IndexTracker { path }),
         });
@@ -130,38 +132,44 @@ impl<O: Op> Index<O> {
             path.join("segments"),
             startup
                 .get()
-                .sealeds
+                .sealed_segment_ids
                 .iter()
                 .map(|s| s.to_string())
-                .chain(startup.get().growings.iter().map(|s| s.to_string())),
+                .chain(
+                    startup
+                        .get()
+                        .growing_segment_ids
+                        .iter()
+                        .map(|s| s.to_string()),
+                ),
         );
-        let sealed = startup
+        let sealed_segments = startup
             .get()
-            .sealeds
+            .sealed_segment_ids
             .iter()
-            .map(|&uuid| {
+            .map(|&id| {
                 (
-                    uuid,
+                    id,
                     SealedSegment::<O>::open(
                         tracker.clone(),
-                        path.join("segments").join(uuid.to_string()),
-                        uuid,
+                        path.join("segments").join(id.to_string()),
+                        id,
                         options.clone(),
                     ),
                 )
             })
             .collect::<HashMap<_, _>>();
-        let growing = startup
+        let read_segments = startup
             .get()
-            .growings
+            .growing_segment_ids
             .iter()
-            .map(|&uuid| {
+            .map(|&id| {
                 (
-                    uuid,
+                    id,
                     GrowingSegment::open(
                         tracker.clone(),
-                        path.join("segments").join(uuid.to_string()),
-                        uuid,
+                        path.join("segments").join(id.to_string()),
+                        id,
                         options.clone(),
                     ),
                 )
@@ -174,21 +182,22 @@ impl<O: Op> Index<O> {
             delete: delete.clone(),
             protect: Mutex::new(IndexProtect {
                 startup,
-                sealed: sealed.clone(),
-                growing: growing.clone(),
-                write: None,
+                sealed_segments: sealed_segments.clone(),
+                read_segments: read_segments.clone(),
+                write_segment: None,
                 alterable_options: alterable_options.clone(),
             }),
             view: ArcSwap::new(Arc::new(IndexView {
                 options: options.clone(),
                 alterable_options: alterable_options.clone(),
                 delete: delete.clone(),
-                sealed,
-                growing,
-                write: None,
+                sealed_segments,
+                read_segments,
+                write_segment: None,
             })),
             instant_indexed: AtomicCell::new(Instant::now()),
             instant_written: AtomicCell::new(Instant::now()),
+            check_deleted: AtomicCell::new(false),
             optimizing: Mutex::new(None),
             _tracker: tracker,
         })
@@ -215,36 +224,36 @@ impl<O: Op> Index<O> {
     }
     pub fn refresh(&self) {
         let mut protect = self.protect.lock();
-        if let Some((uuid, write)) = protect.write.clone() {
+        if let Some((id, write)) = protect.write_segment.clone() {
             if !write.is_full() {
                 return;
             }
             write.seal();
-            protect.growing.insert(uuid, write);
+            protect.read_segments.insert(id, write);
         }
-        let write_segment_uuid = Uuid::new_v4();
+        let write_segment_id = Uuid::new_v4();
         let write_segment = GrowingSegment::create(
             self._tracker.clone(),
             self.path
                 .join("segments")
-                .join(write_segment_uuid.to_string()),
-            write_segment_uuid,
-            self.options.clone(),
+                .join(write_segment_id.to_string()),
+            write_segment_id,
+            protect.alterable_options.segment.max_growing_segment_size as usize,
         );
-        protect.write = Some((write_segment_uuid, write_segment));
+        protect.write_segment = Some((write_segment_id, write_segment));
         protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
         self.instant_written.store(Instant::now());
     }
     pub fn seal(&self, check: Uuid) {
         let mut protect = self.protect.lock();
-        if let Some((uuid, write)) = protect.write.clone() {
-            if check != uuid {
+        if let Some((id, write_segment)) = protect.write_segment.clone() {
+            if check != id {
                 return;
             }
-            write.seal();
-            protect.growing.insert(uuid, write);
+            write_segment.seal();
+            protect.read_segments.insert(id, write_segment);
         }
-        protect.write = None;
+        protect.write_segment = None;
         protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
         self.instant_written.store(Instant::now());
     }
@@ -255,18 +264,23 @@ impl<O: Op> Index<O> {
             options: self.options().clone(),
             segments: {
                 let mut segments = Vec::new();
-                for sealed in view.sealed.values() {
-                    segments.push(sealed.stat_sealed());
+                for sealed_segment in view.sealed_segments.values() {
+                    segments.push(sealed_segment.stat_sealed());
                 }
-                for growing in view.growing.values() {
-                    segments.push(growing.stat_growing());
+                for read_segment in view.read_segments.values() {
+                    segments.push(read_segment.stat_read());
                 }
-                if let Some(write) = view.write.as_ref().map(|(_, x)| x) {
-                    segments.push(write.stat_write());
+                if let Some(write_segment) = view.write_segment.as_ref().map(|(_, x)| x) {
+                    segments.push(write_segment.stat_write());
                 }
                 segments
             },
         }
+    }
+    pub fn delete(&self, p: Pointer) -> Result<(), DeleteError> {
+        self.delete.delete(p);
+        self.check_deleted.store(false);
+        Ok(())
     }
     pub fn start(self: &Arc<Self>) {
         let mut optimizing = self.optimizing.lock();
@@ -280,6 +294,15 @@ impl<O: Op> Index<O> {
             drop(sender);
             let _ = join_handle.join();
         }
+    }
+    pub fn get_check_deleted_flag(&self) -> bool {
+        self.check_deleted.load()
+    }
+    pub fn set_check_deleted_flag(&self) {
+        self.check_deleted.store(true)
+    }
+    pub fn check_existing(&self, payload: Payload) -> bool {
+        self.delete.check(payload).is_some()
     }
     pub fn wait(&self) -> Arc<IndexTracker> {
         Arc::clone(&self._tracker)
@@ -301,9 +324,9 @@ pub struct IndexView<O: Op> {
     pub options: IndexOptions,
     pub alterable_options: IndexAlterableOptions,
     pub delete: Arc<Delete>,
-    pub sealed: HashMap<Uuid, Arc<SealedSegment<O>>>,
-    pub growing: HashMap<Uuid, Arc<GrowingSegment<O>>>,
-    pub write: Option<(Uuid, Arc<GrowingSegment<O>>)>,
+    pub sealed_segments: HashMap<Uuid, Arc<SealedSegment<O>>>,
+    pub read_segments: HashMap<Uuid, Arc<GrowingSegment<O>>>,
+    pub write_segment: Option<(Uuid, Arc<GrowingSegment<O>>)>,
 }
 
 impl<O: Op> IndexView<O> {
@@ -331,17 +354,17 @@ impl<O: Op> IndexView<O> {
             }
         }
 
-        let n = self.sealed.len() + self.growing.len() + 1;
+        let n = self.sealed_segments.len() + self.read_segments.len() + 1;
         let mut heaps = Vec::with_capacity(1 + n);
-        for (_, sealed) in self.sealed.iter() {
+        for (_, sealed) in self.sealed_segments.iter() {
             let p = sealed.basic(vector, opts);
             heaps.push(Comparer(p));
         }
-        for (_, growing) in self.growing.iter() {
-            let p = growing.basic(vector, opts);
+        for (_, read) in self.read_segments.iter() {
+            let p = read.basic(vector, opts);
             heaps.push(Comparer(p));
         }
-        if let Some((_, write)) = &self.write {
+        if let Some((_, write)) = &self.write_segment {
             let p = write.basic(vector, opts);
             heaps.push(Comparer(p));
         }
@@ -368,20 +391,20 @@ impl<O: Op> IndexView<O> {
             });
         }
 
-        let n = self.sealed.len() + self.growing.len() + 1;
+        let n = self.sealed_segments.len() + self.read_segments.len() + 1;
         let mut alpha = Vec::new();
         let mut beta = Vec::with_capacity(1 + n);
-        for (_, sealed) in self.sealed.iter() {
+        for (_, sealed) in self.sealed_segments.iter() {
             let (stage1, stage2) = sealed.vbase(vector, opts);
             alpha.extend(stage1);
             beta.push(stage2);
         }
-        for (_, growing) in self.growing.iter() {
-            let (stage1, stage2) = growing.vbase(vector, opts);
+        for (_, read) in self.read_segments.iter() {
+            let (stage1, stage2) = read.vbase(vector, opts);
             alpha.extend(stage1);
             beta.push(stage2);
         }
-        if let Some((_, write)) = &self.write {
+        if let Some((_, write)) = &self.write_segment {
             let (stage1, stage2) = write.vbase(vector, opts);
             alpha.extend(stage1);
             beta.push(stage2);
@@ -398,22 +421,22 @@ impl<O: Op> IndexView<O> {
         }))
     }
     pub fn list(&self) -> Result<impl Iterator<Item = Pointer> + '_, ListError> {
-        let sealed = self
-            .sealed
+        let sealed_segments = self
+            .sealed_segments
             .values()
             .flat_map(|x| (0..x.len()).map(|i| x.payload(i)));
-        let growing = self
-            .growing
+        let read_segments = self
+            .read_segments
             .values()
             .flat_map(|x| (0..x.len()).map(|i| x.payload(i)));
-        let write = self
-            .write
+        let write_segments = self
+            .write_segment
             .iter()
             .map(|(_, x)| x)
             .flat_map(|x| (0..x.len()).map(|i| x.payload(i)));
-        let iter = sealed
-            .chain(growing)
-            .chain(write)
+        let iter = sealed_segments
+            .chain(read_segments)
+            .chain(write_segments)
             .filter_map(|p| self.delete.check(p));
         Ok(iter)
     }
@@ -427,9 +450,9 @@ impl<O: Op> IndexView<O> {
         }
 
         let payload = Payload::new(pointer, self.delete.version(pointer));
-        if let Some((_, growing)) = self.write.as_ref() {
-            use crate::segments::growing::GrowingSegmentInsertError;
-            if let Err(GrowingSegmentInsertError) = growing.insert(vector, payload) {
+        if let Some((_, segment)) = self.write_segment.as_ref() {
+            use crate::segment::growing::GrowingSegmentInsertError;
+            if let Err(GrowingSegmentInsertError) = segment.insert(vector, payload) {
                 return Ok(Err(OutdatedError));
             }
             Ok(Ok(()))
@@ -437,13 +460,9 @@ impl<O: Op> IndexView<O> {
             Ok(Err(OutdatedError))
         }
     }
-    pub fn delete(&self, p: Pointer) -> Result<(), DeleteError> {
-        self.delete.delete(p);
-        Ok(())
-    }
     pub fn flush(&self) -> Result<(), FlushError> {
         self.delete.flush();
-        if let Some((_, write)) = &self.write {
+        if let Some((_, write)) = &self.write_segment {
             write.flush();
         }
         Ok(())
@@ -452,16 +471,16 @@ impl<O: Op> IndexView<O> {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct IndexStartup {
-    sealeds: HashSet<Uuid>,
-    growings: HashSet<Uuid>,
+    sealed_segment_ids: HashSet<Uuid>,
+    growing_segment_ids: HashSet<Uuid>,
     alterable_options: IndexAlterableOptions,
 }
 
 struct IndexProtect<O: Op> {
     startup: FileAtomic<IndexStartup>,
-    sealed: HashMap<Uuid, Arc<SealedSegment<O>>>,
-    growing: HashMap<Uuid, Arc<GrowingSegment<O>>>,
-    write: Option<(Uuid, Arc<GrowingSegment<O>>)>,
+    sealed_segments: HashMap<Uuid, Arc<SealedSegment<O>>>,
+    read_segments: HashMap<Uuid, Arc<GrowingSegment<O>>>,
+    write_segment: Option<(Uuid, Arc<GrowingSegment<O>>)>,
     alterable_options: IndexAlterableOptions,
 }
 
@@ -476,16 +495,17 @@ impl<O: Op> IndexProtect<O> {
             options,
             alterable_options: self.alterable_options.clone(),
             delete,
-            sealed: self.sealed.clone(),
-            growing: self.growing.clone(),
-            write: self.write.clone(),
+            sealed_segments: self.sealed_segments.clone(),
+            read_segments: self.read_segments.clone(),
+            write_segment: self.write_segment.clone(),
         });
-        let startup_write = self.write.as_ref().map(|(uuid, _)| *uuid);
-        let startup_sealeds = self.sealed.keys().copied().collect();
-        let startup_growings = self.growing.keys().copied().chain(startup_write).collect();
+        let read_segment_ids = self.read_segments.keys().copied();
+        let write_segment_id = self.write_segment.as_ref().map(|(id, _)| *id);
+        let growing_segment_ids = read_segment_ids.chain(write_segment_id).collect();
+        let sealed_segment_ids = self.sealed_segments.keys().copied().collect();
         self.startup.set(IndexStartup {
-            sealeds: startup_sealeds,
-            growings: startup_growings,
+            sealed_segment_ids,
+            growing_segment_ids,
             alterable_options: self.alterable_options.clone(),
         });
         swap.swap(view);
