@@ -9,6 +9,7 @@ use pgrx::pgrx_sql_entity_graph::metadata::SqlMapping;
 use pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
 use pgrx::FromDatum;
 use pgrx::IntoDatum;
+use pgrx::UnboxDatum;
 use std::alloc::Layout;
 use std::ops::Deref;
 use std::ops::DerefMut;
@@ -189,6 +190,32 @@ impl<'a> FromDatum for Veci8Input<'a> {
             let ptr = NonNull::new(datum.cast_mut_ptr::<Veci8Header>()).unwrap();
             unsafe { Some(Veci8Input::new(ptr)) }
         }
+    }
+}
+
+impl<'a> IntoDatum for Veci8Input<'a> {
+    // This is a fake IntoDatum, used for try_from_datum -> is_binary_coercible
+    // Don't call it directly!
+    fn into_datum(self) -> Option<Datum> {
+        match self {
+            Veci8Input::Owned(o) => o.into_datum(),
+            Veci8Input::Borrowed(_) => None,
+        }
+    }
+
+    fn type_oid() -> Oid {
+        Veci8Output::type_oid()
+    }
+}
+
+unsafe impl<'a> UnboxDatum for Veci8Input<'a> {
+    type As<'src> = Veci8Input<'src>  where Self: 'src;
+
+    unsafe fn unbox<'src>(d: pgrx::Datum<'src>) -> Self::As<'src>
+    where
+        Self: 'src,
+    {
+        unsafe { Veci8Input::from_datum(d.sans_lifetime(), false).unwrap() }
     }
 }
 

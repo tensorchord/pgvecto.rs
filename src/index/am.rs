@@ -1,17 +1,24 @@
 use super::am_options;
 use super::am_scan;
+use super::utils::swap_destroy;
 use crate::error::*;
 use crate::gucs::planning::ENABLE_INDEX;
 use crate::index::am_scan::Scanner;
 use crate::index::catalog::{on_index_build, on_index_write};
 use crate::index::utils::{ctid_to_pointer, pointer_to_ctid};
-use crate::index::utils::{from_datum_to_vector, from_oid_to_handle};
+use crate::index::utils::{
+    filter_can_pushdown, from_datum_to_filter, from_datum_to_vector, from_oid_to_handle,
+};
 use crate::ipc::{client, ClientRpc};
 use crate::utils::cells::PgCell;
+use crate::utils::range::*;
 use am_options::Reloption;
 use base::index::*;
+use base::scalar::ScalarLike;
 use pgrx::datum::Internal;
+use pgrx::pg_sys::pfree;
 use pgrx::pg_sys::Datum;
+use pgrx::{FromDatum, IntoDatum};
 
 static RELOPT_KIND_VECTORS: PgCell<pgrx::pg_sys::relopt_kind> = unsafe { PgCell::new(0) };
 
@@ -57,6 +64,7 @@ const AM_HANDLER: pgrx::pg_sys::IndexAmRoutine = {
     // for vector index scans without `ORDER BY` clauses a large number
     // and throw errors if someone really wants such a path.
     am_routine.amoptionalkey = true;
+    am_routine.amstrategies = 3;
 
     am_routine.amvalidate = Some(amvalidate);
     am_routine.amoptions = Some(amoptions);
@@ -275,6 +283,7 @@ pub unsafe extern "C" fn ambeginscan(
     n_orderbys: std::os::raw::c_int,
 ) -> pgrx::pg_sys::IndexScanDesc {
     use pgrx::PgMemoryContexts::CurrentMemoryContext;
+
     let scan = unsafe { pgrx::pg_sys::RelationGetIndexScan(index, n_keys, n_orderbys) };
     unsafe {
         let scanner = am_scan::scan_make(None);
@@ -292,8 +301,8 @@ pub unsafe extern "C" fn amrescan(
     _n_orderbys: std::os::raw::c_int,
 ) {
     unsafe {
-        if (*scan).numberOfKeys != 0 {
-            pgrx::error!("vector search with attributes is not supported");
+        if (*scan).numberOfKeys > 1 {
+            pgrx::error!("vector search with more than one attributes is not supported");
         }
         if (*scan).numberOfOrderBys == 0 {
             pgrx::error!("vector search without a ORDER BY clause is not supported");
@@ -308,9 +317,36 @@ pub unsafe extern "C" fn amrescan(
             std::ptr::copy(orderbys, (*scan).orderByData, (*scan).numberOfOrderBys as _);
         }
         let main = (*scan).orderByData.add(0);
-        let value = (*main).sk_argument;
-        let is_null = ((*main).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
-        let vector = from_datum_to_vector(value, is_null);
+        let main_value = (*main).sk_argument;
+        let main_is_null = ((*main).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+        let vector = from_datum_to_vector(main_value, main_is_null);
+
+        if (*scan).numberOfKeys == 1 {
+            let data = (*scan).keyData.add(0);
+            let filter_value = (*data).sk_argument;
+            let filter_is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+
+            let (options, _) = am_options::options((*scan).indexRelation);
+            let (filter_vector, operator, distance) =
+                from_datum_to_filter(filter_value, &options.vector, filter_is_null);
+            let pushdown = filter_can_pushdown(
+                &vector,
+                &options.vector,
+                operator.as_deref(),
+                &filter_vector,
+            );
+            match (pushdown, distance) {
+                (true, Some(d)) => {
+                    pfree((*data).sk_argument.cast_mut_ptr());
+                    (*data).sk_argument = d.into_datum().unwrap();
+                }
+                _ => {
+                    (*scan).numberOfKeys = 0;
+                    swap_destroy(&mut (*scan).keyData, std::ptr::null_mut());
+                }
+            }
+        }
+
         let scanner = (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked();
         let scanner = std::mem::replace(scanner, am_scan::scan_make(vector));
         am_scan::scan_release(scanner);
@@ -332,17 +368,41 @@ pub unsafe extern "C" fn amgettuple(
     if unsafe { (*(*scan).xs_snapshot).snapshot_type } != pgrx::pg_sys::SnapshotType_SNAPSHOT_MVCC {
         pgrx::error!("scanning with a non-MVCC-compliant snapshot is not supported");
     }
+    let filter = unsafe {
+        match (*scan).numberOfKeys {
+            1 => {
+                let data = (*scan).keyData.add(0);
+                let threshold = f32::from_datum((*data).sk_argument, false).unwrap();
+                match (*data).sk_strategy {
+                    2 => Some(PushdownRange {
+                        operator: RangeOperator::MeasureLess,
+                        threshold,
+                    }),
+                    3 => Some(PushdownRange {
+                        operator: RangeOperator::MeasureLessEqual,
+                        threshold,
+                    }),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
+    };
     let scanner = unsafe { (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked() };
     let oid = unsafe { (*(*scan).indexRelation).rd_id };
     let handle = from_oid_to_handle(oid);
-    if let Some(pointer) = am_scan::scan_next(scanner, handle) {
+    if let Some((distance, pointer)) = am_scan::scan_next(scanner, handle) {
         let ctid = pointer_to_ctid(pointer);
         unsafe {
             (*scan).xs_heaptid = ctid;
             (*scan).xs_recheck = false;
             (*scan).xs_recheckorderby = false;
         }
-        true
+        if let Some(f) = filter {
+            f.filter(distance.to_f32())
+        } else {
+            true
+        }
     } else {
         false
     }

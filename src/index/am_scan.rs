@@ -4,6 +4,7 @@ use crate::gucs::planning::Mode;
 use crate::gucs::planning::SEARCH_MODE;
 use crate::ipc::{client, ClientBasic, ClientVbase};
 use base::index::*;
+use base::scalar::F32;
 use base::search::*;
 use base::vector::*;
 
@@ -18,7 +19,7 @@ pub fn scan_make(vector: Option<OwnedVector>) -> Scanner {
     Scanner::Initial { vector }
 }
 
-pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<Pointer> {
+pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<(F32, Pointer)> {
     if let Scanner::Initial { vector } = scanner {
         if let Some(vector) = vector.as_ref() {
             let rpc = check_client(client());
