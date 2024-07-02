@@ -1,5 +1,6 @@
 use crate::datatype::memory_vecf32::{Vecf32Input, Vecf32Output};
 use crate::error::*;
+use crate::utils::range::*;
 use base::operator::*;
 use base::scalar::*;
 use base::vector::*;
@@ -89,4 +90,44 @@ fn _vectors_vecf32_operator_dot(lhs: Vecf32Input<'_>, rhs: Vecf32Input<'_>) -> f
 fn _vectors_vecf32_operator_l2(lhs: Vecf32Input<'_>, rhs: Vecf32Input<'_>) -> f32 {
     check_matched_dims(lhs.dims(), rhs.dims());
     Vecf32L2::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
+}
+
+const RELDIS_NAME: &str = RELDIS_NAME_VECF32;
+
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_vecf32_rel_operator_lt(
+    lhs: Vecf32Input<'_>,
+    rhs: pgrx::composite_type!(RELDIS_NAME),
+) -> bool {
+    let source: Vecf32Input<'_> = composite_get(&rhs, RELDIS_SOURCE);
+    check_value_dims_65535(source.dims());
+    check_matched_dims(lhs.dims(), source.dims());
+    let operator: &str = composite_get(&rhs, RELDIS_OPERATOR);
+    let threshold: f32 = composite_get(&rhs, RELDIS_THRESHOLD);
+
+    match operator {
+        "<->" => Vecf32L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold,
+        "<=>" => Vecf32Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold,
+        "<#>" => Vecf32Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold,
+        op => pgrx::error!("Bad input: {RELDIS_OPERATOR} {op} at {RELDIS_NAME}"),
+    }
+}
+
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_vecf32_rel_operator_lte(
+    lhs: Vecf32Input<'_>,
+    rhs: pgrx::composite_type!(RELDIS_NAME),
+) -> bool {
+    let source: Vecf32Input<'_> = composite_get(&rhs, RELDIS_SOURCE);
+    check_value_dims_65535(source.dims());
+    check_matched_dims(lhs.dims(), source.dims());
+    let operator: &str = composite_get(&rhs, RELDIS_OPERATOR);
+    let threshold: f32 = composite_get(&rhs, RELDIS_THRESHOLD);
+
+    match operator {
+        "<->" => Vecf32L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() <= threshold,
+        "<=>" => Vecf32Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() <= threshold,
+        "<#>" => Vecf32Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() <= threshold,
+        op => pgrx::error!("Bad input: {RELDIS_OPERATOR} {op} at {RELDIS_NAME}"),
+    }
 }

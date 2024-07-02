@@ -3,7 +3,7 @@ use crate::scalar::{F32, I8};
 use num_traits::Float;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Veci8Owned {
     dims: u32,
     data: Vec<I8>,

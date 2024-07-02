@@ -15,6 +15,7 @@ use crate::utils::tournament_tree::LoserTree;
 use arc_swap::ArcSwap;
 use base::index::*;
 use base::operator::*;
+use base::scalar::F32;
 use base::search::*;
 use base::vector::*;
 use common::clean::clean;
@@ -334,7 +335,7 @@ impl<O: Op> IndexView<O> {
         &'a self,
         vector: Borrowed<'_, O>,
         opts: &'a SearchOptions,
-    ) -> Result<impl Iterator<Item = Pointer> + 'a, BasicError> {
+    ) -> Result<impl Iterator<Item = (F32, Pointer)> + 'a, BasicError> {
         if self.options.vector.dims != vector.dims() {
             return Err(BasicError::InvalidVector);
         }
@@ -371,7 +372,7 @@ impl<O: Op> IndexView<O> {
         let loser = LoserTree::new(heaps);
         Ok(loser.filter_map(|x| {
             if self.delete.check(x.payload).is_some() {
-                Some(x.payload.pointer())
+                Some((x.distance, x.payload.pointer()))
             } else {
                 None
             }
@@ -381,7 +382,7 @@ impl<O: Op> IndexView<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-    ) -> Result<impl Iterator<Item = Pointer> + 'a, VbaseError> {
+    ) -> Result<impl Iterator<Item = (F32, Pointer)> + 'a, VbaseError> {
         if self.options.vector.dims != vector.dims() {
             return Err(VbaseError::InvalidVector);
         }
@@ -414,7 +415,7 @@ impl<O: Op> IndexView<O> {
         let loser = LoserTree::new(beta);
         Ok(loser.filter_map(|x| {
             if self.delete.check(x.payload).is_some() {
-                Some(x.payload.pointer())
+                Some((x.distance, x.payload.pointer()))
             } else {
                 None
             }

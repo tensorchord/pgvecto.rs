@@ -1,4 +1,5 @@
 use crate::index::*;
+use crate::scalar::F32;
 use crate::search::*;
 use crate::vector::*;
 
@@ -32,7 +33,7 @@ pub trait ViewBasicOperations {
         &'a self,
         vector: &'a OwnedVector,
         opts: &'a SearchOptions,
-    ) -> Result<Box<dyn Iterator<Item = Pointer> + 'a>, BasicError>;
+    ) -> Result<Box<dyn Iterator<Item = (F32, Pointer)> + 'a>, BasicError>;
 }
 
 pub trait ViewVbaseOperations {
@@ -40,7 +41,7 @@ pub trait ViewVbaseOperations {
         &'a self,
         vector: &'a OwnedVector,
         opts: &'a SearchOptions,
-    ) -> Result<Box<dyn Iterator<Item = Pointer> + 'a>, VbaseError>;
+    ) -> Result<Box<dyn Iterator<Item = (F32, Pointer)> + 'a>, VbaseError>;
 }
 
 pub trait ViewListOperations {

@@ -3,7 +3,7 @@ use crate::scalar::F32;
 use num_traits::{Float, Zero};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[repr(transparent)]
 pub struct Vecf32Owned(Vec<F32>);
 
