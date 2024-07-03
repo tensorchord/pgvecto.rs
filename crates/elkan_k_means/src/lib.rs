@@ -86,6 +86,7 @@ struct ElkanKMeans<O: Operator> {
     assign: Vec<usize>,
     rand: StdRng,
     samples: Vec2<Scalar<O>>,
+    first: bool,
 }
 
 const DELTA: f32 = 1.0 / 1024.0;
@@ -156,6 +157,7 @@ impl<O: OperatorElkanKMeans> ElkanKMeans<O> {
             assign,
             rand,
             samples,
+            first: true,
         }
     }
 
@@ -320,8 +322,12 @@ impl<O: OperatorElkanKMeans> ElkanKMeans<O> {
         for i in 0..n {
             self.upperbound[i] += dist1[self.assign[i]];
         }
-
-        change == 0
+        if self.first {
+            self.first = false;
+            false
+        } else {
+            change == 0
+        }
     }
 
     fn finish(self) -> Vec2<Scalar<O>> {
