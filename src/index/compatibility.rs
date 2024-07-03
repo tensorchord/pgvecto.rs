@@ -75,16 +75,27 @@ unsafe fn rewrite_type_options(istmt: *mut pgrx::pg_sys::IndexStmt, method: &str
         let opts = options_from_vec(original);
         match method {
             "hnsw" => {
-                let m = opts
-                    .get("m")
-                    .unwrap_or(&String::from("16"))
-                    .parse::<u32>()
-                    .unwrap();
-                let ef_construction = opts
-                    .get("ef_construction")
-                    .unwrap_or(&String::from("64"))
-                    .parse::<usize>()
-                    .unwrap();
+                let mut m: Option<u32> = None;
+                let mut ef_construction: Option<u32> = None;
+                for (key, value) in opts {
+                    match key.as_str() {
+                        "m" => {
+                            if m.is_some() {
+                                pgrx::error!("option `m` is set twice");
+                            }
+                            m = Some(value.parse::<u32>().expect("bad option"));
+                        }
+                        "ef_construction" => {
+                            if ef_construction.is_some() {
+                                pgrx::error!("option `ef_construction` is set twice");
+                            }
+                            ef_construction = Some(value.parse::<u32>().expect("bad option"));
+                        }
+                        key => pgrx::error!("unknown option {key}"),
+                    }
+                }
+                let m = m.unwrap_or(16);
+                let ef_construction = ef_construction.unwrap_or(64);
                 let arg = pgrx::pg_sys::makeString(
                     format!(
                         "[indexing.hnsw]\nm = {}\nef_construction = {}",
@@ -96,13 +107,21 @@ unsafe fn rewrite_type_options(istmt: *mut pgrx::pg_sys::IndexStmt, method: &str
                 swap_destroy(&mut (*istmt).options, list_from_vec(vec![elem]));
             }
             "ivfflat" => {
-                let list = opts
-                    .get("list")
-                    .unwrap_or(&String::from("100"))
-                    .parse::<u32>()
-                    .unwrap();
+                let mut lists: Option<u32> = None;
+                for (key, value) in opts {
+                    match key.as_str() {
+                        "lists" => {
+                            if lists.is_some() {
+                                pgrx::error!("option `lists` is set twice");
+                            }
+                            lists = Some(value.parse::<u32>().expect("bad option"));
+                        }
+                        key => pgrx::error!("unknown option {key}"),
+                    }
+                }
+                let lists = lists.unwrap_or(100);
                 let arg = pgrx::pg_sys::makeString(
-                    format!("[indexing.ivf]\nnlist = {}", list).as_pg_cstr(),
+                    format!("[indexing.ivf]\nnlist = {}", lists).as_pg_cstr(),
                 );
                 let elem = pgrx::pg_sys::makeDefElem("options".as_pg_cstr(), arg as _, -1);
                 swap_destroy(&mut (*istmt).options, list_from_vec(vec![elem]));
