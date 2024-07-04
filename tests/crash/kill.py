@@ -9,7 +9,10 @@ logging.getLogger().setLevel(logging.INFO)
 
 
 def process_filter(p: psutil.Process) -> bool:
-    cmdline = "".join(p.cmdline())
+    try:
+        cmdline = "".join(p.cmdline())
+    except psutil.ZombieProcess:
+        return False
     for case in FILTERS:
         if case not in cmdline:
             return False
