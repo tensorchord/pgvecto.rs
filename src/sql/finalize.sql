@@ -78,33 +78,28 @@ CREATE TYPE vector_index_stat AS (
     idx_options TEXT
 );
 
-CREATE TYPE relative_distance_vecf32 AS (
+CREATE TYPE ball_vector AS (
     source vector,
-    operator TEXT,
     threshold REAL
 );
 
-CREATE TYPE relative_distance_vecf16 AS (
+CREATE TYPE ball_vecf16 AS (
     source vecf16,
-    operator TEXT,
     threshold REAL
 );
 
-CREATE TYPE relative_distance_svecf32 AS (
+CREATE TYPE ball_svector AS (
     source svector,
-    operator TEXT,
     threshold REAL
 );
 
-CREATE TYPE relative_distance_bvecf32 AS (
+CREATE TYPE ball_bvector AS (
     source bvector,
-    operator TEXT,
     threshold REAL
 );
 
-CREATE TYPE relative_distance_veci8 AS (
+CREATE TYPE ball_veci8 AS (
     source veci8,
-    operator TEXT,
     threshold REAL
 );
 
@@ -319,29 +314,9 @@ CREATE OPERATOR < (
 );
 
 CREATE OPERATOR < (
-    PROCEDURE = _vectors_vecf32_rel_operator_lt,
-    LEFTARG = vector,
-    RIGHTARG = relative_distance_vecf32,
-    COMMUTATOR = >,
-    NEGATOR = >=,
-    RESTRICT = scalarltsel,
-    JOIN = scalarltjoinsel
-);
-
-CREATE OPERATOR < (
     PROCEDURE = _vectors_vecf16_operator_lt,
     LEFTARG = vecf16,
     RIGHTARG = vecf16,
-    COMMUTATOR = >,
-    NEGATOR = >=,
-    RESTRICT = scalarltsel,
-    JOIN = scalarltjoinsel
-);
-
-CREATE OPERATOR < (
-    PROCEDURE = _vectors_vecf16_rel_operator_lt,
-    LEFTARG = vecf16,
-    RIGHTARG = relative_distance_vecf16,
     COMMUTATOR = >,
     NEGATOR = >=,
     RESTRICT = scalarltsel,
@@ -359,16 +334,6 @@ CREATE OPERATOR < (
 );
 
 CREATE OPERATOR < (
-    PROCEDURE = _vectors_svecf32_rel_operator_lt,
-    LEFTARG = svector,
-    RIGHTARG = relative_distance_svecf32,
-    COMMUTATOR = >,
-    NEGATOR = >=,
-    RESTRICT = scalarltsel,
-    JOIN = scalarltjoinsel
-);
-
-CREATE OPERATOR < (
     PROCEDURE = _vectors_bvecf32_operator_lt,
     LEFTARG = bvector,
     RIGHTARG = bvector,
@@ -379,29 +344,9 @@ CREATE OPERATOR < (
 );
 
 CREATE OPERATOR < (
-    PROCEDURE = _vectors_bvecf32_rel_operator_lt,
-    LEFTARG = bvector,
-    RIGHTARG = relative_distance_bvecf32,
-    COMMUTATOR = >,
-    NEGATOR = >=,
-    RESTRICT = scalarltsel,
-    JOIN = scalarltjoinsel
-);
-
-CREATE OPERATOR < (
     PROCEDURE = _vectors_veci8_operator_lt,
     LEFTARG = veci8,
     RIGHTARG = veci8,
-    COMMUTATOR = >,
-    NEGATOR = >=,
-    RESTRICT = scalarltsel,
-    JOIN = scalarltjoinsel
-);
-
-CREATE OPERATOR < (
-    PROCEDURE = _vectors_veci8_rel_operator_lt,
-    LEFTARG = veci8,
-    RIGHTARG = relative_distance_veci8,
     COMMUTATOR = >,
     NEGATOR = >=,
     RESTRICT = scalarltsel,
@@ -469,29 +414,9 @@ CREATE OPERATOR <= (
 );
 
 CREATE OPERATOR <= (
-    PROCEDURE = _vectors_vecf32_rel_operator_lte,
-    LEFTARG = vector,
-    RIGHTARG = relative_distance_vecf32,
-    COMMUTATOR = >=,
-    NEGATOR = >,
-    RESTRICT = scalarltsel,
-    JOIN = scalarltjoinsel
-);
-
-CREATE OPERATOR <= (
     PROCEDURE = _vectors_vecf16_operator_lte,
     LEFTARG = vecf16,
     RIGHTARG = vecf16,
-    COMMUTATOR = >=,
-    NEGATOR = >,
-    RESTRICT = scalarltsel,
-    JOIN = scalarltjoinsel
-);
-
-CREATE OPERATOR <= (
-    PROCEDURE = _vectors_vecf16_rel_operator_lte,
-    LEFTARG = vecf16,
-    RIGHTARG = relative_distance_vecf16,
     COMMUTATOR = >=,
     NEGATOR = >,
     RESTRICT = scalarltsel,
@@ -509,16 +434,6 @@ CREATE OPERATOR <= (
 );
 
 CREATE OPERATOR <= (
-    PROCEDURE = _vectors_svecf32_rel_operator_lte,
-    LEFTARG = svector,
-    RIGHTARG = relative_distance_svecf32,
-    COMMUTATOR = >=,
-    NEGATOR = >,
-    RESTRICT = scalarltsel,
-    JOIN = scalarltjoinsel
-);
-
-CREATE OPERATOR <= (
     PROCEDURE = _vectors_bvecf32_operator_lte,
     LEFTARG = bvector,
     RIGHTARG = bvector,
@@ -529,29 +444,9 @@ CREATE OPERATOR <= (
 );
 
 CREATE OPERATOR <= (
-    PROCEDURE = _vectors_bvecf32_rel_operator_lte,
-    LEFTARG = bvector,
-    RIGHTARG = relative_distance_bvecf32,
-    COMMUTATOR = >=,
-    NEGATOR = >,
-    RESTRICT = scalarltsel,
-    JOIN = scalarltjoinsel
-);
-
-CREATE OPERATOR <= (
     PROCEDURE = _vectors_veci8_operator_lte,
     LEFTARG = veci8,
     RIGHTARG = veci8,
-    COMMUTATOR = >=,
-    NEGATOR = >,
-    RESTRICT = scalarltsel,
-    JOIN = scalarltjoinsel
-);
-
-CREATE OPERATOR <= (
-    PROCEDURE = _vectors_veci8_rel_operator_lte,
-    LEFTARG = veci8,
-    RIGHTARG = relative_distance_veci8,
     COMMUTATOR = >=,
     NEGATOR = >,
     RESTRICT = scalarltsel,
@@ -720,6 +615,118 @@ CREATE OPERATOR <~> (
     COMMUTATOR = <~>
 );
 
+CREATE OPERATOR <<->> (
+    PROCEDURE = _vectors_vecf32_ball_l2_lt,
+    LEFTARG = vector,
+    RIGHTARG = ball_vector,
+    COMMUTATOR = <<->>
+);
+
+CREATE OPERATOR <<->> (
+    PROCEDURE = _vectors_vecf16_ball_l2_lt,
+    LEFTARG = vecf16,
+    RIGHTARG = ball_vecf16,
+    COMMUTATOR = <<->>
+);
+
+CREATE OPERATOR <<->> (
+    PROCEDURE = _vectors_svecf32_ball_l2_lt,
+    LEFTARG = svector,
+    RIGHTARG = ball_svector,
+    COMMUTATOR = <<->>
+);
+
+CREATE OPERATOR <<->> (
+    PROCEDURE = _vectors_bvecf32_ball_l2_lt,
+    LEFTARG = bvector,
+    RIGHTARG = ball_bvector,
+    COMMUTATOR = <<->>
+);
+
+CREATE OPERATOR <<->> (
+    PROCEDURE = _vectors_veci8_ball_l2_lt,
+    LEFTARG = veci8,
+    RIGHTARG = ball_veci8,
+    COMMUTATOR = <<->>
+);
+
+CREATE OPERATOR <<#>> (
+    PROCEDURE = _vectors_vecf32_ball_dot_lt,
+    LEFTARG = vector,
+    RIGHTARG = ball_vector,
+    COMMUTATOR = <<#>>
+);
+
+CREATE OPERATOR <<#>> (
+    PROCEDURE = _vectors_vecf16_ball_dot_lt,
+    LEFTARG = vecf16,
+    RIGHTARG = ball_vecf16,
+    COMMUTATOR = <<#>>
+);
+
+CREATE OPERATOR <<#>> (
+    PROCEDURE = _vectors_svecf32_ball_dot_lt,
+    LEFTARG = svector,
+    RIGHTARG = ball_svector,
+    COMMUTATOR = <<#>>
+);
+
+CREATE OPERATOR <<#>> (
+    PROCEDURE = _vectors_bvecf32_ball_dot_lt,
+    LEFTARG = bvector,
+    RIGHTARG = ball_bvector,
+    COMMUTATOR = <<#>>
+);
+
+CREATE OPERATOR <<#>> (
+    PROCEDURE = _vectors_veci8_ball_dot_lt,
+    LEFTARG = veci8,
+    RIGHTARG = ball_veci8,
+    COMMUTATOR = <<#>>
+);
+
+CREATE OPERATOR <<=>> (
+    PROCEDURE = _vectors_vecf32_ball_cos_lt,
+    LEFTARG = vector,
+    RIGHTARG = ball_vector,
+    COMMUTATOR = <<=>>
+);
+
+CREATE OPERATOR <<=>> (
+    PROCEDURE = _vectors_vecf16_ball_cos_lt,
+    LEFTARG = vecf16,
+    RIGHTARG = ball_vecf16,
+    COMMUTATOR = <<=>>
+);
+
+CREATE OPERATOR <<=>> (
+    PROCEDURE = _vectors_svecf32_ball_cos_lt,
+    LEFTARG = svector,
+    RIGHTARG = ball_svector,
+    COMMUTATOR = <<=>>
+);
+
+CREATE OPERATOR <<=>> (
+    PROCEDURE = _vectors_bvecf32_ball_cos_lt,
+    LEFTARG = bvector,
+    RIGHTARG = ball_bvector,
+    COMMUTATOR = <<=>>
+);
+
+CREATE OPERATOR <<=>> (
+    PROCEDURE = _vectors_veci8_ball_cos_lt,
+    LEFTARG = veci8,
+    RIGHTARG = ball_veci8,
+    COMMUTATOR = <<=>>
+);
+
+CREATE OPERATOR <<~>> (
+    PROCEDURE = _vectors_bvecf32_ball_jaccard_lt,
+    LEFTARG = bvector,
+    RIGHTARG = ball_bvector,
+    COMMUTATOR = <<~>>
+);
+
 -- List of functions
 
 CREATE FUNCTION pgvectors_upgrade() RETURNS void
@@ -783,6 +790,25 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binari
 
 CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
+
+CREATE OR REPLACE FUNCTION ball("source" anyelement, "radius" real) RETURNS text
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
+$$
+BEGIN
+IF pg_typeof(source) = 'vector'::regtype then
+        return ROW(source, radius);
+elsif pg_typeof(source) = 'vecf16'::regtype then
+        return ROW(source, radius);
+elsif pg_typeof(source) = 'svector'::regtype then
+        return ROW(source, radius);
+elsif pg_typeof(source) = 'bvector'::regtype then
+        return ROW(source, radius);
+elsif pg_typeof(source) = 'veci8'::regtype then
+       return ROW(source, radius);
+else RAISE EXCEPTION 'Unsupported type: %', pg_typeof(source);
+end if;
+END
+$$;
 
 -- List of aggregates
 
@@ -850,6 +876,12 @@ CREATE CAST (veci8 AS vector)
 CREATE CAST (vector AS veci8)
     WITH FUNCTION _vectors_cast_vecf32_to_veci8(vector, integer, boolean);
 
+CREATE CAST (text AS ball_vector) WITH INOUT AS IMPLICIT;
+CREATE CAST (text AS ball_vecf16) WITH INOUT AS IMPLICIT;
+CREATE CAST (text AS ball_svector) WITH INOUT AS IMPLICIT;
+CREATE CAST (text AS ball_bvector) WITH INOUT AS IMPLICIT;
+CREATE CAST (text AS ball_veci8) WITH INOUT AS IMPLICIT;
+
 -- List of access methods
 
 CREATE ACCESS METHOD vectors TYPE INDEX HANDLER _vectors_amhandler;
@@ -894,98 +926,82 @@ CREATE OPERATOR FAMILY veci8_cos_ops USING vectors;
 CREATE OPERATOR CLASS vector_l2_ops
     FOR TYPE vector USING vectors FAMILY vector_l2_ops AS
     OPERATOR 1 <-> (vector, vector) FOR ORDER BY float_ops,
-    OPERATOR 2 < (vector, relative_distance_vecf32) FOR SEARCH,
-    OPERATOR 3 <= (vector, relative_distance_vecf32) FOR SEARCH;
+    OPERATOR 2 <<->> (vector, ball_vector) FOR SEARCH;
 
 CREATE OPERATOR CLASS vector_dot_ops
     FOR TYPE vector USING vectors FAMILY vector_dot_ops AS
     OPERATOR 1 <#> (vector, vector) FOR ORDER BY float_ops,
-    OPERATOR 2 < (vector, relative_distance_vecf32) FOR SEARCH,
-    OPERATOR 3 <= (vector, relative_distance_vecf32) FOR SEARCH;
+    OPERATOR 2 <<#>> (vector, ball_vector) FOR SEARCH;
 
 CREATE OPERATOR CLASS vector_cos_ops
     FOR TYPE vector USING vectors FAMILY vector_cos_ops AS
     OPERATOR 1 <=> (vector, vector) FOR ORDER BY float_ops,
-    OPERATOR 2 < (vector, relative_distance_vecf32) FOR SEARCH,
-    OPERATOR 3 <= (vector, relative_distance_vecf32) FOR SEARCH;
+    OPERATOR 2 <<=>> (vector, ball_vector) FOR SEARCH;
 
 CREATE OPERATOR CLASS vecf16_l2_ops
     FOR TYPE vecf16 USING vectors FAMILY vecf16_l2_ops AS
     OPERATOR 1 <-> (vecf16, vecf16) FOR ORDER BY float_ops,
-    OPERATOR 2 < (vecf16, relative_distance_vecf16) FOR SEARCH,
-    OPERATOR 3 <= (vecf16, relative_distance_vecf16) FOR SEARCH;
+    OPERATOR 2 <<->> (vecf16, ball_vecf16) FOR SEARCH;
 
 CREATE OPERATOR CLASS vecf16_dot_ops
     FOR TYPE vecf16 USING vectors FAMILY vecf16_dot_ops AS
     OPERATOR 1 <#> (vecf16, vecf16) FOR ORDER BY float_ops,
-    OPERATOR 2 < (vecf16, relative_distance_vecf16) FOR SEARCH,
-    OPERATOR 3 <= (vecf16, relative_distance_vecf16) FOR SEARCH;
+    OPERATOR 2 <<#>> (vecf16, ball_vecf16) FOR SEARCH;
 
 CREATE OPERATOR CLASS vecf16_cos_ops
     FOR TYPE vecf16 USING vectors FAMILY vecf16_cos_ops AS
     OPERATOR 1 <=> (vecf16, vecf16) FOR ORDER BY float_ops,
-    OPERATOR 2 < (vecf16, relative_distance_vecf16) FOR SEARCH,
-    OPERATOR 3 <= (vecf16, relative_distance_vecf16) FOR SEARCH;
+    OPERATOR 2 <<=>> (vecf16, ball_vecf16) FOR SEARCH;
 
 CREATE OPERATOR CLASS svector_l2_ops
     FOR TYPE svector USING vectors FAMILY svector_l2_ops AS
     OPERATOR 1 <-> (svector, svector) FOR ORDER BY float_ops,
-    OPERATOR 2 < (svector, relative_distance_svecf32) FOR SEARCH,
-    OPERATOR 3 <= (svector, relative_distance_svecf32) FOR SEARCH;
+    OPERATOR 2 <<=>> (svector, ball_svector) FOR SEARCH;
 
 CREATE OPERATOR CLASS svector_dot_ops
     FOR TYPE svector USING vectors FAMILY svector_dot_ops AS
     OPERATOR 1 <#> (svector, svector) FOR ORDER BY float_ops,
-    OPERATOR 2 < (svector, relative_distance_svecf32) FOR SEARCH,
-    OPERATOR 3 <= (svector, relative_distance_svecf32) FOR SEARCH;
+    OPERATOR 2 <<#>> (svector, ball_svector) FOR SEARCH;
 
 CREATE OPERATOR CLASS svector_cos_ops
     FOR TYPE svector USING vectors FAMILY svector_cos_ops AS
     OPERATOR 1 <=> (svector, svector) FOR ORDER BY float_ops,
-    OPERATOR 2 < (svector, relative_distance_svecf32) FOR SEARCH,
-    OPERATOR 3 <= (svector, relative_distance_svecf32) FOR SEARCH;
+    OPERATOR 2 <<=>> (svector, ball_svector) FOR SEARCH;
 
 CREATE OPERATOR CLASS bvector_l2_ops
     FOR TYPE bvector USING vectors FAMILY bvector_l2_ops AS
     OPERATOR 1 <-> (bvector, bvector) FOR ORDER BY float_ops,
-    OPERATOR 2 < (bvector, relative_distance_bvecf32) FOR SEARCH,
-    OPERATOR 3 <= (bvector, relative_distance_bvecf32) FOR SEARCH;
+    OPERATOR 2 <<->> (bvector, ball_bvector) FOR SEARCH;
 
 CREATE OPERATOR CLASS bvector_dot_ops
     FOR TYPE bvector USING vectors FAMILY bvector_dot_ops AS
     OPERATOR 1 <#> (bvector, bvector) FOR ORDER BY float_ops,
-    OPERATOR 2 < (bvector, relative_distance_bvecf32) FOR SEARCH,
-    OPERATOR 3 <= (bvector, relative_distance_bvecf32) FOR SEARCH;
+    OPERATOR 2 <<#>> (bvector, ball_bvector) FOR SEARCH;
 
 CREATE OPERATOR CLASS bvector_cos_ops
     FOR TYPE bvector USING vectors FAMILY bvector_cos_ops AS
     OPERATOR 1 <=> (bvector, bvector) FOR ORDER BY float_ops,
-    OPERATOR 2 < (bvector, relative_distance_bvecf32) FOR SEARCH,
-    OPERATOR 3 <= (bvector, relative_distance_bvecf32) FOR SEARCH;
+    OPERATOR 2 <<->> (bvector, ball_bvector) FOR SEARCH;
 
 CREATE OPERATOR CLASS bvector_jaccard_ops
     FOR TYPE bvector USING vectors FAMILY bvector_jaccard_ops AS
     OPERATOR 1 <~> (bvector, bvector) FOR ORDER BY float_ops,
-    OPERATOR 2 < (bvector, relative_distance_bvecf32) FOR SEARCH,
-    OPERATOR 3 <= (bvector, relative_distance_bvecf32) FOR SEARCH;
+    OPERATOR 2 <<~>> (bvector, ball_bvector) FOR SEARCH;
 
 CREATE OPERATOR CLASS veci8_l2_ops
     FOR TYPE veci8 USING vectors FAMILY veci8_l2_ops AS
     OPERATOR 1 <-> (veci8, veci8) FOR ORDER BY float_ops,
-    OPERATOR 2 < (veci8, relative_distance_veci8) FOR SEARCH,
-    OPERATOR 3 <= (veci8, relative_distance_veci8) FOR SEARCH;
+    OPERATOR 2 <<->> (veci8, ball_veci8) FOR SEARCH;
 
 CREATE OPERATOR CLASS veci8_dot_ops
     FOR TYPE veci8 USING vectors FAMILY veci8_dot_ops AS
     OPERATOR 1 <#> (veci8, veci8) FOR ORDER BY float_ops,
-    OPERATOR 2 < (veci8, relative_distance_veci8) FOR SEARCH,
-    OPERATOR 3 <= (veci8, relative_distance_veci8) FOR SEARCH;
+    OPERATOR 2 <<#>> (veci8, ball_veci8) FOR SEARCH;
 
 CREATE OPERATOR CLASS veci8_cos_ops
     FOR TYPE veci8 USING vectors FAMILY veci8_cos_ops AS
     OPERATOR 1 <=> (veci8, veci8) FOR ORDER BY float_ops,
-    OPERATOR 2 < (veci8, relative_distance_veci8) FOR SEARCH,
-    OPERATOR 3 <= (veci8, relative_distance_veci8) FOR SEARCH;
+    OPERATOR 2 <<=>> (veci8, ball_veci8) FOR SEARCH;
 
 -- List of views
 

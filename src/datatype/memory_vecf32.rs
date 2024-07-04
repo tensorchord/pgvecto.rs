@@ -131,32 +131,6 @@ impl<'a> FromDatum for Vecf32Input<'a> {
     }
 }
 
-impl<'a> IntoDatum for Vecf32Input<'a> {
-    // This is a fake IntoDatum, used for try_from_datum -> is_binary_coercible
-    // Don't call it directly!
-    fn into_datum(self) -> Option<Datum> {
-        match self {
-            Vecf32Input::Owned(o) => o.into_datum(),
-            Vecf32Input::Borrowed(_) => None,
-        }
-    }
-
-    fn type_oid() -> Oid {
-        Vecf32Output::type_oid()
-    }
-}
-
-unsafe impl<'a> UnboxDatum for Vecf32Input<'a> {
-    type As<'src> = Vecf32Input<'src>  where Self: 'src;
-
-    unsafe fn unbox<'src>(d: pgrx::Datum<'src>) -> Self::As<'src>
-    where
-        Self: 'src,
-    {
-        unsafe { Vecf32Input::from_datum(d.sans_lifetime(), false).unwrap() }
-    }
-}
-
 impl IntoDatum for Vecf32Output {
     fn into_datum(self) -> Option<Datum> {
         Some(Datum::from(self.into_raw() as *mut ()))
@@ -169,6 +143,31 @@ impl IntoDatum for Vecf32Output {
         let t = pgrx::pg_catalog::PgType::search_typenamensp(c"vector", namespace.oid()).unwrap();
         let t = t.get().expect("pg_catalog is broken.");
         t.oid()
+    }
+}
+
+impl FromDatum for Vecf32Output {
+    unsafe fn from_polymorphic_datum(datum: Datum, is_null: bool, _typoid: Oid) -> Option<Self> {
+        if is_null {
+            None
+        } else {
+            let ptr = NonNull::new(datum.cast_mut_ptr::<Vecf32Header>()).unwrap();
+            let q = unsafe {
+                NonNull::new(pgrx::pg_sys::pg_detoast_datum(ptr.cast().as_ptr()).cast()).unwrap()
+            };
+            Some(Vecf32Output(q))
+        }
+    }
+}
+
+unsafe impl UnboxDatum for Vecf32Output {
+    type As<'src> = Vecf32Output;
+    #[inline]
+    unsafe fn unbox<'src>(d: pgrx::Datum<'src>) -> Self::As<'src>
+    where
+        Self: 'src,
+    {
+        unsafe { Vecf32Output::from_datum(d.sans_lifetime(), false).unwrap() }
     }
 }
 

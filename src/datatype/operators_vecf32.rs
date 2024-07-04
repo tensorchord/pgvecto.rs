@@ -92,42 +92,38 @@ fn _vectors_vecf32_operator_l2(lhs: Vecf32Input<'_>, rhs: Vecf32Input<'_>) -> f3
     Vecf32L2::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
 }
 
-const RELDIS_NAME: &str = RELDIS_NAME_VECF32;
-
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_vecf32_rel_operator_lt(
+fn _vectors_vecf32_ball_l2_lt(
     lhs: Vecf32Input<'_>,
-    rhs: pgrx::composite_type!(RELDIS_NAME),
+    rhs: pgrx::composite_type!(BALL_VECF32),
 ) -> bool {
-    let source: Vecf32Input<'_> = composite_get(&rhs, RELDIS_SOURCE);
+    let source: Vecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let operator: &str = composite_get(&rhs, RELDIS_OPERATOR);
-    let threshold: f32 = composite_get(&rhs, RELDIS_THRESHOLD);
-
-    match operator {
-        "<->" => Vecf32L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold,
-        "<=>" => Vecf32Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold,
-        "<#>" => Vecf32Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold,
-        op => pgrx::error!("Bad input: {RELDIS_OPERATOR} {op} at {RELDIS_NAME}"),
-    }
+    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    Vecf32L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_vecf32_rel_operator_lte(
+fn _vectors_vecf32_ball_dot_lt(
     lhs: Vecf32Input<'_>,
-    rhs: pgrx::composite_type!(RELDIS_NAME),
+    rhs: pgrx::composite_type!(BALL_VECF32),
 ) -> bool {
-    let source: Vecf32Input<'_> = composite_get(&rhs, RELDIS_SOURCE);
+    let source: Vecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let operator: &str = composite_get(&rhs, RELDIS_OPERATOR);
-    let threshold: f32 = composite_get(&rhs, RELDIS_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    Vecf32Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
+}
 
-    match operator {
-        "<->" => Vecf32L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() <= threshold,
-        "<=>" => Vecf32Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() <= threshold,
-        "<#>" => Vecf32Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() <= threshold,
-        op => pgrx::error!("Bad input: {RELDIS_OPERATOR} {op} at {RELDIS_NAME}"),
-    }
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_vecf32_ball_cos_lt(
+    lhs: Vecf32Input<'_>,
+    rhs: pgrx::composite_type!(BALL_VECF32),
+) -> bool {
+    let source: Vecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    check_value_dims_65535(source.dims());
+    check_matched_dims(lhs.dims(), source.dims());
+    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    Vecf32Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }

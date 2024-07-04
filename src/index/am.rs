@@ -6,17 +6,15 @@ use crate::gucs::planning::ENABLE_INDEX;
 use crate::index::am_scan::Scanner;
 use crate::index::catalog::{on_index_build, on_index_write};
 use crate::index::utils::{ctid_to_pointer, pointer_to_ctid};
-use crate::index::utils::{
-    filter_can_pushdown, from_datum_to_filter, from_datum_to_vector, from_oid_to_handle,
-};
+use crate::index::utils::{from_datum_to_range, from_datum_to_vector, from_oid_to_handle};
 use crate::ipc::{client, ClientRpc};
 use crate::utils::cells::PgCell;
 use crate::utils::range::*;
 use am_options::Reloption;
 use base::index::*;
 use base::scalar::ScalarLike;
+use base::vector::OwnedVector;
 use pgrx::datum::Internal;
-use pgrx::pg_sys::pfree;
 use pgrx::pg_sys::Datum;
 use pgrx::{FromDatum, IntoDatum};
 
@@ -64,7 +62,7 @@ const AM_HANDLER: pgrx::pg_sys::IndexAmRoutine = {
     // for vector index scans without `ORDER BY` clauses a large number
     // and throw errors if someone really wants such a path.
     am_routine.amoptionalkey = true;
-    am_routine.amstrategies = 3;
+    am_routine.amstrategies = 2;
 
     am_routine.amvalidate = Some(amvalidate);
     am_routine.amoptions = Some(amoptions);
@@ -121,7 +119,8 @@ pub unsafe extern "C" fn amcostestimate(
     index_pages: *mut f64,
 ) {
     unsafe {
-        if (*path).indexorderbys.is_null() || !ENABLE_INDEX.get() {
+        if (*path).indexorderbys.is_null() && (*path).indexclauses.is_null() || !ENABLE_INDEX.get()
+        {
             *index_startup_cost = f64::MAX;
             *index_total_cost = f64::MAX;
             *index_selectivity = 0.0;
@@ -301,13 +300,7 @@ pub unsafe extern "C" fn amrescan(
     _n_orderbys: std::os::raw::c_int,
 ) {
     unsafe {
-        if (*scan).numberOfKeys > 1 {
-            pgrx::error!("vector search with more than one attributes is not supported");
-        }
-        if (*scan).numberOfOrderBys == 0 {
-            pgrx::error!("vector search without a ORDER BY clause is not supported");
-        }
-        if (*scan).numberOfOrderBys != 1 {
+        if (*scan).numberOfOrderBys > 1 {
             pgrx::error!("vector search with too many ORDER BY clauses is not supported");
         }
         if !keys.is_null() && (*scan).numberOfKeys > 0 {
@@ -316,36 +309,80 @@ pub unsafe extern "C" fn amrescan(
         if !orderbys.is_null() && (*scan).numberOfOrderBys > 0 {
             std::ptr::copy(orderbys, (*scan).orderByData, (*scan).numberOfOrderBys as _);
         }
-        let main = (*scan).orderByData.add(0);
-        let main_value = (*main).sk_argument;
-        let main_is_null = ((*main).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
-        let vector = from_datum_to_vector(main_value, main_is_null);
-
-        if (*scan).numberOfKeys == 1 {
-            let data = (*scan).keyData.add(0);
-            let filter_value = (*data).sk_argument;
-            let filter_is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
-
-            let (options, _) = am_options::options((*scan).indexRelation);
-            let (filter_vector, operator, distance) =
-                from_datum_to_filter(filter_value, &options.vector, filter_is_null);
-            let pushdown = filter_can_pushdown(
-                &vector,
-                &options.vector,
-                operator.as_deref(),
-                &filter_vector,
-            );
-            match (pushdown, distance) {
-                (true, Some(d)) => {
-                    pfree((*data).sk_argument.cast_mut_ptr());
-                    (*data).sk_argument = d.into_datum().unwrap();
-                }
-                _ => {
-                    (*scan).numberOfKeys = 0;
+        (*scan).xs_recheck = false;
+        let orderby_vector = match (*scan).numberOfOrderBys {
+            1 => {
+                let data = (*scan).orderByData.add(0);
+                let value = (*data).sk_argument;
+                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                from_datum_to_vector(value, is_null)
+            }
+            _ => None,
+        };
+        let range_vector = match (*scan).numberOfKeys {
+            0 => None,
+            1 => {
+                let data = (*scan).keyData.add(0);
+                let value = (*data).sk_argument;
+                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                let (options, _) = am_options::options((*scan).indexRelation);
+                let (v, threshold) = from_datum_to_range(value, &options.vector, is_null);
+                if orderby_vector.is_none() || (orderby_vector.is_some() && v == orderby_vector) {
+                    pgrx::pg_sys::pfree((*data).sk_argument.cast_mut_ptr());
+                    (*data).sk_argument = threshold.into_datum().unwrap();
+                    v
+                } else {
                     swap_destroy(&mut (*scan).keyData, std::ptr::null_mut());
+                    (*scan).xs_recheck = true;
+                    None
                 }
             }
-        }
+            n if orderby_vector.is_some() => {
+                // Pick range vector by orderby vector
+                let mut vector: Option<OwnedVector> = None;
+                let mut range_index: Option<usize> = None;
+
+                let (options, _) = am_options::options((*scan).indexRelation);
+                for i in 0..n as usize {
+                    let data = (*scan).keyData.add(i);
+                    let value = (*data).sk_argument;
+                    let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                    let (v, threshold) = from_datum_to_range(value, &options.vector, is_null);
+                    if v == orderby_vector && vector.is_none() {
+                        pgrx::pg_sys::pfree((*data).sk_argument.cast_mut_ptr());
+                        (*data).sk_argument = threshold.into_datum().unwrap();
+                        range_index = Some(i);
+                        vector = v;
+                    } else if v == orderby_vector && vector.is_some() {
+                        pgrx::error!(
+                            "vector search with two WHERE clause of same key is not supported"
+                        );
+                    }
+                }
+                if let Some(i) = range_index {
+                    swap_destroy(&mut (*scan).keyData, (*scan).keyData.add(i));
+                    (*scan).numberOfKeys = 1;
+                } else {
+                    swap_destroy(&mut (*scan).keyData, std::ptr::null_mut());
+                    (*scan).numberOfKeys = 0;
+                }
+                (*scan).xs_recheck = true;
+                vector
+            }
+            _ => {
+                // more than 1 keys and no order-by key
+                swap_destroy(&mut (*scan).keyData, std::ptr::null_mut());
+                (*scan).numberOfKeys = 0;
+                (*scan).xs_recheck = true;
+                None
+            }
+        };
+
+        let vector = match (orderby_vector, range_vector) {
+            (Some(v), _) => Some(v),
+            (None, Some(v)) => Some(v),
+            (None, None) => None,
+        };
 
         let scanner = (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked();
         let scanner = std::mem::replace(scanner, am_scan::scan_make(vector));
@@ -374,14 +411,7 @@ pub unsafe extern "C" fn amgettuple(
                 let data = (*scan).keyData.add(0);
                 let threshold = f32::from_datum((*data).sk_argument, false).unwrap();
                 match (*data).sk_strategy {
-                    2 => Some(PushdownRange {
-                        operator: RangeOperator::MeasureLess,
-                        threshold,
-                    }),
-                    3 => Some(PushdownRange {
-                        operator: RangeOperator::MeasureLessEqual,
-                        threshold,
-                    }),
+                    2 => Some(PushdownRange { threshold }),
                     _ => None,
                 }
             }
@@ -395,7 +425,6 @@ pub unsafe extern "C" fn amgettuple(
         let ctid = pointer_to_ctid(pointer);
         unsafe {
             (*scan).xs_heaptid = ctid;
-            (*scan).xs_recheck = false;
             (*scan).xs_recheckorderby = false;
         }
         if let Some(f) = filter {

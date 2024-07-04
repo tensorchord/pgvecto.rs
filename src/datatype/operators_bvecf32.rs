@@ -96,48 +96,50 @@ fn _vectors_bvecf32_operator_jaccard(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_
     BVecf32Jaccard::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
 }
 
-const RELDIS_NAME: &str = RELDIS_NAME_BVECF32;
-
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_rel_operator_lt(
+fn _vectors_bvecf32_ball_l2_lt(
     lhs: BVecf32Input<'_>,
-    rhs: pgrx::composite_type!(RELDIS_NAME),
+    rhs: pgrx::composite_type!(BALL_BVECF32),
 ) -> bool {
-    let source: BVecf32Input<'_> = composite_get(&rhs, RELDIS_SOURCE);
+    let source: BVecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let operator: &str = composite_get(&rhs, RELDIS_OPERATOR);
-    let threshold: f32 = composite_get(&rhs, RELDIS_THRESHOLD);
-
-    match operator {
-        "<->" => BVecf32L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold,
-        "<=>" => BVecf32Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold,
-        "<#>" => BVecf32Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold,
-        "<~>" => {
-            BVecf32Jaccard::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
-        }
-        op => pgrx::error!("Bad input: {RELDIS_OPERATOR} {op} at {RELDIS_NAME}"),
-    }
+    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    BVecf32L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_rel_operator_lte(
+fn _vectors_bvecf32_ball_dot_lt(
     lhs: BVecf32Input<'_>,
-    rhs: pgrx::composite_type!(RELDIS_NAME),
+    rhs: pgrx::composite_type!(BALL_BVECF32),
 ) -> bool {
-    let source: BVecf32Input<'_> = composite_get(&rhs, RELDIS_SOURCE);
+    let source: BVecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let operator: &str = composite_get(&rhs, RELDIS_OPERATOR);
-    let threshold: f32 = composite_get(&rhs, RELDIS_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    BVecf32Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
+}
 
-    match operator {
-        "<->" => BVecf32L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() <= threshold,
-        "<=>" => BVecf32Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() <= threshold,
-        "<#>" => BVecf32Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() <= threshold,
-        "<~>" => {
-            BVecf32Jaccard::distance(lhs.for_borrow(), source.for_borrow()).to_f32() <= threshold
-        }
-        op => pgrx::error!("Bad input: {RELDIS_OPERATOR} {op} at {RELDIS_NAME}"),
-    }
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_bvecf32_ball_cos_lt(
+    lhs: BVecf32Input<'_>,
+    rhs: pgrx::composite_type!(BALL_BVECF32),
+) -> bool {
+    let source: BVecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    check_value_dims_65535(source.dims());
+    check_matched_dims(lhs.dims(), source.dims());
+    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    BVecf32Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
+}
+
+#[pgrx::pg_extern(immutable, strict, parallel_safe)]
+fn _vectors_bvecf32_ball_jaccard_lt(
+    lhs: BVecf32Input<'_>,
+    rhs: pgrx::composite_type!(BALL_BVECF32),
+) -> bool {
+    let source: BVecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    check_value_dims_65535(source.dims());
+    check_matched_dims(lhs.dims(), source.dims());
+    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    BVecf32Jaccard::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }

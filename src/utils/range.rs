@@ -1,33 +1,22 @@
 use pgrx::{heap_tuple::PgHeapTuple, AllocatedByRust, FromDatum, IntoDatum, UnboxDatum};
 
-pub const RELDIS_SOURCE: &str = "source";
-pub const RELDIS_OPERATOR: &str = "operator";
-pub const RELDIS_THRESHOLD: &str = "threshold";
+pub const BALL_ATTR_SOURCE: &str = "source";
+pub const BALL_ATTR_THRESHOLD: &str = "threshold";
 
-pub const RELDIS_NAME_VECF32: &str = "relative_distance_vecf32";
-pub const RELDIS_NAME_VECF16: &str = "relative_distance_vecf16";
-pub const RELDIS_NAME_SVECF32: &str = "relative_distance_svecf32";
-pub const RELDIS_NAME_BVECF32: &str = "relative_distance_bvecf32";
-pub const RELDIS_NAME_VECI8: &str = "relative_distance_veci8";
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum RangeOperator {
-    MeasureLess,
-    MeasureLessEqual,
-}
+pub const BALL_VECF32: &str = "ball_vector";
+pub const BALL_VECF16: &str = "ball_vecf16";
+pub const BALL_SVECF32: &str = "ball_svector";
+pub const BALL_BVECF32: &str = "ball_bvector";
+pub const BALL_VECI8: &str = "ball_veci8";
 
 #[derive(Debug, Clone)]
 pub struct PushdownRange {
-    pub operator: RangeOperator,
     pub threshold: f32,
 }
 
 impl PushdownRange {
     pub fn filter(&self, distance: f32) -> bool {
-        match self.operator {
-            RangeOperator::MeasureLess => distance < self.threshold,
-            RangeOperator::MeasureLessEqual => distance <= self.threshold,
-        }
+        distance < self.threshold
     }
 }
 
