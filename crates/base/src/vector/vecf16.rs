@@ -109,6 +109,11 @@ impl<'a> VectorBorrowed for Vecf16Borrowed<'a> {
     }
 
     #[inline(always)]
+    fn to_index_vec(&self) -> Vec<(u32, Self::Scalar)> {
+        self.0.iter().copied().enumerate().map(|(i, x)| (i as u32, x)).collect()
+    }
+
+    #[inline(always)]
     fn to_vec(&self) -> Vec<F16> {
         self.0.to_vec()
     }

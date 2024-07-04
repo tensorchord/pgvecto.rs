@@ -1455,6 +1455,7 @@ dependencies = [
  "elkan_k_means",
  "flat",
  "hnsw",
+ "inverted",
  "ivf",
  "log",
  "parking_lot",
@@ -1494,6 +1495,16 @@ version = "0.0.0"
 dependencies = [
  "libc",
  "ulock-sys",
+]
+
+[[package]]
+name = "inverted"
+version = "0.0.0"
+dependencies = [
+ "base",
+ "common",
+ "quantization",
+ "storage",
 ]
 
 [[package]]

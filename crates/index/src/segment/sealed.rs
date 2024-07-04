@@ -126,6 +126,7 @@ impl<O: Op> SealedSegment<O> {
             SealedIndexing::Flat(x) => x,
             SealedIndexing::Ivf(x) => x,
             SealedIndexing::Hnsw(x) => x,
+            SealedIndexing::Inverted(x) => x,
         }
     }
 }

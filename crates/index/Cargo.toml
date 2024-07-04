@@ -30,6 +30,7 @@ storage = { path = "../storage" }
 flat = { path = "../flat" }
 hnsw = { path = "../hnsw" }
 ivf = { path = "../ivf" }
+inverted = { path = "../inverted" }
 
 [lints]
 workspace = true

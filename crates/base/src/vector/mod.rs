@@ -50,6 +50,8 @@ pub trait VectorBorrowed: Copy {
     fn length(&self) -> F32;
 
     fn normalize(&self) -> Self::Owned;
+
+    fn to_index_vec(&self) -> Vec<(u32, Self::Scalar)>;
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
