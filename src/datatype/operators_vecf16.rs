@@ -92,40 +92,38 @@ fn _vectors_vecf16_operator_l2(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> f3
     Vecf16L2::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
 }
 
-const RELDIS_NAME: &str = BALL_VECF16;
-
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_ball_l2_lt(
     lhs: Vecf16Input<'_>,
-    rhs: pgrx::composite_type!(RELDIS_NAME),
+    rhs: pgrx::composite_type!("ball_vecf16"),
 ) -> bool {
-    let source: Vecf16Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    let source: Vecf16Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     Vecf16L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_ball_dot_lt(
     lhs: Vecf16Input<'_>,
-    rhs: pgrx::composite_type!(RELDIS_NAME),
+    rhs: pgrx::composite_type!("ball_vecf16"),
 ) -> bool {
-    let source: Vecf16Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    let source: Vecf16Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     Vecf16Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_ball_cos_lt(
     lhs: Vecf16Input<'_>,
-    rhs: pgrx::composite_type!(RELDIS_NAME),
+    rhs: pgrx::composite_type!("ball_vecf16"),
 ) -> bool {
-    let source: Vecf16Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    let source: Vecf16Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     Vecf16Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }

@@ -101,28 +101,37 @@ fn _vectors_veci8_operator_l2(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> f32 {
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_veci8_ball_l2_lt(lhs: Veci8Input<'_>, rhs: pgrx::composite_type!(BALL_VECI8)) -> bool {
-    let source: Veci8Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+fn _vectors_veci8_ball_l2_lt(
+    lhs: Veci8Input<'_>,
+    rhs: pgrx::composite_type!("ball_veci8"),
+) -> bool {
+    let source: Veci8Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.len());
     check_matched_dims(lhs.len(), source.len());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     Veci8L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_veci8_ball_dot_lt(lhs: Veci8Input<'_>, rhs: pgrx::composite_type!(BALL_VECI8)) -> bool {
-    let source: Veci8Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+fn _vectors_veci8_ball_dot_lt(
+    lhs: Veci8Input<'_>,
+    rhs: pgrx::composite_type!("ball_veci8"),
+) -> bool {
+    let source: Veci8Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.len());
     check_matched_dims(lhs.len(), source.len());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     Veci8Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_veci8_ball_cos_lt(lhs: Veci8Input<'_>, rhs: pgrx::composite_type!(BALL_VECI8)) -> bool {
-    let source: Veci8Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+fn _vectors_veci8_ball_cos_lt(
+    lhs: Veci8Input<'_>,
+    rhs: pgrx::composite_type!("ball_veci8"),
+) -> bool {
+    let source: Veci8Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.len());
     check_matched_dims(lhs.len(), source.len());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     Veci8Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }

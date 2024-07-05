@@ -216,40 +216,38 @@ fn compare(a: SVecf32Input<'_>, b: SVecf32Input<'_>) -> std::cmp::Ordering {
     }
 }
 
-const RELDIS_NAME: &str = BALL_SVECF32;
-
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_ball_l2_lt(
     lhs: SVecf32Input<'_>,
-    rhs: pgrx::composite_type!(RELDIS_NAME),
+    rhs: pgrx::composite_type!("ball_svector"),
 ) -> bool {
-    let source: SVecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
-    check_value_dims_65535(source.dims());
+    let source: SVecf32Output = composite_get(&rhs, 1);
+    check_value_dims_1048575(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     SVecf32L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_ball_dot_lt(
     lhs: SVecf32Input<'_>,
-    rhs: pgrx::composite_type!(RELDIS_NAME),
+    rhs: pgrx::composite_type!("ball_svector"),
 ) -> bool {
-    let source: SVecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
-    check_value_dims_65535(source.dims());
+    let source: SVecf32Output = composite_get(&rhs, 1);
+    check_value_dims_1048575(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     SVecf32Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_ball_cos_lt(
     lhs: SVecf32Input<'_>,
-    rhs: pgrx::composite_type!(RELDIS_NAME),
+    rhs: pgrx::composite_type!("ball_svector"),
 ) -> bool {
-    let source: SVecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
-    check_value_dims_65535(source.dims());
+    let source: SVecf32Output = composite_get(&rhs, 1);
+    check_value_dims_1048575(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     SVecf32Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }

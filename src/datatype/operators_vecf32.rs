@@ -95,35 +95,35 @@ fn _vectors_vecf32_operator_l2(lhs: Vecf32Input<'_>, rhs: Vecf32Input<'_>) -> f3
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf32_ball_l2_lt(
     lhs: Vecf32Input<'_>,
-    rhs: pgrx::composite_type!(BALL_VECF32),
+    rhs: pgrx::composite_type!("ball_vector"),
 ) -> bool {
-    let source: Vecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    let source: Vecf32Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     Vecf32L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf32_ball_dot_lt(
     lhs: Vecf32Input<'_>,
-    rhs: pgrx::composite_type!(BALL_VECF32),
+    rhs: pgrx::composite_type!("ball_vector"),
 ) -> bool {
-    let source: Vecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    let source: Vecf32Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     Vecf32Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf32_ball_cos_lt(
     lhs: Vecf32Input<'_>,
-    rhs: pgrx::composite_type!(BALL_VECF32),
+    rhs: pgrx::composite_type!("ball_vector"),
 ) -> bool {
-    let source: Vecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    let source: Vecf32Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     Vecf32Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }

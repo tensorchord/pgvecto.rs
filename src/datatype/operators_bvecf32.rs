@@ -99,47 +99,47 @@ fn _vectors_bvecf32_operator_jaccard(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_bvecf32_ball_l2_lt(
     lhs: BVecf32Input<'_>,
-    rhs: pgrx::composite_type!(BALL_BVECF32),
+    rhs: pgrx::composite_type!("ball_bvector"),
 ) -> bool {
-    let source: BVecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    let source: BVecf32Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     BVecf32L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_bvecf32_ball_dot_lt(
     lhs: BVecf32Input<'_>,
-    rhs: pgrx::composite_type!(BALL_BVECF32),
+    rhs: pgrx::composite_type!("ball_bvector"),
 ) -> bool {
-    let source: BVecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    let source: BVecf32Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     BVecf32Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_bvecf32_ball_cos_lt(
     lhs: BVecf32Input<'_>,
-    rhs: pgrx::composite_type!(BALL_BVECF32),
+    rhs: pgrx::composite_type!("ball_bvector"),
 ) -> bool {
-    let source: BVecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    let source: BVecf32Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     BVecf32Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_bvecf32_ball_jaccard_lt(
     lhs: BVecf32Input<'_>,
-    rhs: pgrx::composite_type!(BALL_BVECF32),
+    rhs: pgrx::composite_type!("ball_bvector"),
 ) -> bool {
-    let source: BVecf32Output = composite_get(&rhs, BALL_ATTR_SOURCE);
+    let source: BVecf32Output = composite_get(&rhs, 1);
     check_value_dims_65535(source.dims());
     check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, BALL_ATTR_THRESHOLD);
+    let threshold: f32 = composite_get(&rhs, 2);
     BVecf32Jaccard::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
 }

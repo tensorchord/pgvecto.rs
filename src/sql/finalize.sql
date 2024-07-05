@@ -791,22 +791,43 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binari
 CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
 
-CREATE OR REPLACE FUNCTION ball("source" anyelement, "radius" real) RETURNS text
+CREATE FUNCTION ball("source" vector, "radius" real) RETURNS ball_vector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
 $$
 BEGIN
-IF pg_typeof(source) = 'vector'::regtype then
-        return ROW(source, radius);
-elsif pg_typeof(source) = 'vecf16'::regtype then
-        return ROW(source, radius);
-elsif pg_typeof(source) = 'svector'::regtype then
-        return ROW(source, radius);
-elsif pg_typeof(source) = 'bvector'::regtype then
-        return ROW(source, radius);
-elsif pg_typeof(source) = 'veci8'::regtype then
-       return ROW(source, radius);
-else RAISE EXCEPTION 'Unsupported type: %', pg_typeof(source);
-end if;
+    return ROW(source, radius)::ball_vector;
+END
+$$;
+
+CREATE FUNCTION ball("source" vecf16, "radius" real) RETURNS ball_vecf16
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
+$$
+BEGIN
+    return ROW(source, radius)::ball_vecf16;
+END
+$$;
+
+CREATE FUNCTION ball("source" svector, "radius" real) RETURNS ball_svector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
+$$
+BEGIN
+    return ROW(source, radius)::ball_svector;
+END
+$$;
+
+CREATE FUNCTION ball("source" bvector, "radius" real) RETURNS ball_bvector
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
+$$
+BEGIN
+    return ROW(source, radius)::ball_bvector;
+END
+$$;
+
+CREATE FUNCTION ball("source" veci8, "radius" real) RETURNS ball_veci8
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
+$$
+BEGIN
+    return ROW(source, radius)::ball_veci8;
 END
 $$;
 
@@ -875,12 +896,6 @@ CREATE CAST (veci8 AS vector)
 
 CREATE CAST (vector AS veci8)
     WITH FUNCTION _vectors_cast_vecf32_to_veci8(vector, integer, boolean);
-
-CREATE CAST (text AS ball_vector) WITH INOUT AS IMPLICIT;
-CREATE CAST (text AS ball_vecf16) WITH INOUT AS IMPLICIT;
-CREATE CAST (text AS ball_svector) WITH INOUT AS IMPLICIT;
-CREATE CAST (text AS ball_bvector) WITH INOUT AS IMPLICIT;
-CREATE CAST (text AS ball_veci8) WITH INOUT AS IMPLICIT;
 
 -- List of access methods
 

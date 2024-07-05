@@ -1,10 +1,11 @@
+use std::num::NonZero;
+
 use crate::datatype::memory_bvecf32::{BVecf32Header, BVecf32Output};
 use crate::datatype::memory_svecf32::{SVecf32Header, SVecf32Output};
 use crate::datatype::memory_vecf16::{Vecf16Header, Vecf16Output};
 use crate::datatype::memory_vecf32::{Vecf32Header, Vecf32Output};
 use crate::datatype::memory_veci8::{Veci8Header, Veci8Output};
 use crate::utils::cells::PgCell;
-use crate::utils::range::*;
 use base::index::VectorOptions;
 use base::search::*;
 use base::vector::*;
@@ -66,14 +67,14 @@ pub unsafe fn from_datum_to_range(
         return (None, None);
     }
     let data = unsafe { PgHeapTuple::from_composite_datum(value) };
-    let threshold_raw = data.get_by_name::<f32>(BALL_ATTR_THRESHOLD).unwrap_or(None);
+    let threshold_raw = data
+        .get_by_index::<f32>(NonZero::new(2).unwrap())
+        .unwrap_or(None);
 
     let source_raw = match options.v {
         VectorKind::Vecf32 => {
-            let value = data
-                .get_by_name::<Vecf32Output>(BALL_ATTR_SOURCE)
-                .unwrap_or(None);
-            let value = value;
+            let value: Option<Vecf32Output> =
+                data.get_by_index(NonZero::new(1).unwrap()).unwrap_or(None);
             match value {
                 Some(out) => {
                     let ptr = unsafe { out.into_raw().as_ref().unwrap() };
@@ -83,8 +84,8 @@ pub unsafe fn from_datum_to_range(
             }
         }
         VectorKind::Vecf16 => {
-            let value = data.get_by_name::<Vecf16Output>(BALL_ATTR_SOURCE);
-            let value = value.unwrap_or(None);
+            let value: Option<Vecf16Output> =
+                data.get_by_index(NonZero::new(1).unwrap()).unwrap_or(None);
             match value {
                 Some(out) => {
                     let ptr = unsafe { out.into_raw().as_ref().unwrap() };
@@ -94,8 +95,8 @@ pub unsafe fn from_datum_to_range(
             }
         }
         VectorKind::SVecf32 => {
-            let value = data.get_by_name::<SVecf32Output>(BALL_ATTR_SOURCE);
-            let value = value.unwrap_or(None);
+            let value: Option<SVecf32Output> =
+                data.get_by_index(NonZero::new(1).unwrap()).unwrap_or(None);
             match value {
                 Some(out) => {
                     let ptr = unsafe { out.into_raw().as_ref().unwrap() };
@@ -105,8 +106,8 @@ pub unsafe fn from_datum_to_range(
             }
         }
         VectorKind::BVecf32 => {
-            let value = data.get_by_name::<BVecf32Output>(BALL_ATTR_SOURCE);
-            let value = value.unwrap_or(None);
+            let value: Option<BVecf32Output> =
+                data.get_by_index(NonZero::new(1).unwrap()).unwrap_or(None);
             match value {
                 Some(out) => {
                     let ptr = unsafe { out.into_raw().as_ref().unwrap() };
@@ -116,8 +117,8 @@ pub unsafe fn from_datum_to_range(
             }
         }
         VectorKind::Veci8 => {
-            let value = data.get_by_name::<Veci8Output>(BALL_ATTR_SOURCE);
-            let value = value.unwrap_or(None);
+            let value: Option<Veci8Output> =
+                data.get_by_index(NonZero::new(1).unwrap()).unwrap_or(None);
             match value {
                 Some(out) => {
                     let ptr = unsafe { out.into_raw().as_ref().unwrap() };
@@ -159,17 +160,4 @@ pub fn ctid_to_pointer(ctid: pgrx::pg_sys::ItemPointerData) -> Pointer {
     value |= (ctid.ip_blkid.bi_lo as u64) << 16;
     value |= ctid.ip_posid as u64;
     Pointer::new(value)
-}
-
-pub fn swap_destroy<T>(target: &mut *mut T, value: *mut T) {
-    if *target == value {
-        return;
-    }
-    let ptr = *target;
-    *target = value;
-    if !ptr.is_null() {
-        unsafe {
-            pgrx::pg_sys::pfree(ptr.cast());
-        }
-    }
 }

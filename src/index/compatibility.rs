@@ -4,8 +4,6 @@ use pgrx::pg_sys::AsPgCStr;
 use std::collections::HashMap;
 use std::ffi::CStr;
 
-use super::utils::swap_destroy;
-
 pub unsafe fn on_process_utility(pstmt: *mut pgrx::pg_sys::PlannedStmt) {
     let enabled = ENABLE_PGVECTOR_COMPATIBILITY.get();
     if !enabled {
@@ -199,4 +197,14 @@ pub unsafe fn list_from_vec<T>(vec: Vec<*mut T>) -> *mut pgrx::pg_sys::List {
         }
     }
     newlist
+}
+
+fn swap_destroy<T>(target: &mut *mut T, value: *mut T) {
+    let ptr = *target;
+    *target = value;
+    if !ptr.is_null() {
+        unsafe {
+            pgrx::pg_sys::pfree(ptr.cast());
+        }
+    }
 }

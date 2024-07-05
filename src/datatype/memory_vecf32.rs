@@ -151,11 +151,12 @@ impl FromDatum for Vecf32Output {
         if is_null {
             None
         } else {
-            let ptr = NonNull::new(datum.cast_mut_ptr::<Vecf32Header>()).unwrap();
-            let q = unsafe {
-                NonNull::new(pgrx::pg_sys::pg_detoast_datum(ptr.cast().as_ptr()).cast()).unwrap()
+            let ptr = unsafe {
+                NonNull::new(pgrx::pg_sys::pg_detoast_datum(
+                    datum.cast_mut_ptr::<Vecf32Header>().cast(),
+                ))
             };
-            Some(Vecf32Output(q))
+            ptr.map(|ptr| Vecf32Output(ptr.cast()))
         }
     }
 }
@@ -167,7 +168,13 @@ unsafe impl UnboxDatum for Vecf32Output {
     where
         Self: 'src,
     {
-        unsafe { Vecf32Output::from_datum(d.sans_lifetime(), false).unwrap() }
+        let datum = d.sans_lifetime();
+        let ptr = unsafe {
+            NonNull::new(pgrx::pg_sys::pg_detoast_datum(
+                datum.cast_mut_ptr::<Vecf32Header>().cast(),
+            ))
+        };
+        ptr.map(|p| Vecf32Output(p.cast())).unwrap()
     }
 }
 
