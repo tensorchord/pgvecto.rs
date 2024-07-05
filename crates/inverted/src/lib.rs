@@ -2,7 +2,7 @@ use base::index::{IndexOptions, SearchOptions};
 use base::operator::Borrowed;
 use base::operator::Operator;
 use base::search::{Collection, Element, Payload, Source, Vectors};
-use base::vector::{VectorKind, VectorBorrowed};
+use base::vector::{VectorBorrowed, VectorKind};
 use common::dir_ops::sync_dir;
 use common::json::Json;
 use common::mmap_array::MmapArray;
@@ -11,9 +11,9 @@ use quantization::{operator::OperatorQuantization, Quantization};
 use storage::{OperatorStorage, Storage};
 
 use std::cmp::Reverse;
-use std::collections::{BinaryHeap, BTreeMap, HashSet};
-use std::path::Path;
+use std::collections::{BTreeMap, BinaryHeap, HashSet};
 use std::fs::create_dir;
+use std::path::Path;
 
 pub trait OperatorInverted: Operator + OperatorQuantization + OperatorStorage {}
 
@@ -112,7 +112,10 @@ fn from_nothing<O: OperatorInverted>(
     let mut token_collection = BTreeMap::new();
     for i in 0..collection.len() {
         for (token, _) in collection.vector(i).to_index_vec() {
-            token_collection.entry(token).or_insert_with(Vec::new).push(i);
+            token_collection
+                .entry(token)
+                .or_insert_with(Vec::new)
+                .push(i);
         }
     }
     let (indexes, offsets) = build_compressed_matrix(token_collection);
@@ -137,7 +140,6 @@ fn from_nothing<O: OperatorInverted>(
         payloads,
         indexes: json_index,
         offsets: json_offset,
-    
     }
 }
 

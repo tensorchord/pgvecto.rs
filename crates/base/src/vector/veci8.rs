@@ -232,7 +232,11 @@ impl VectorBorrowed for Veci8Borrowed<'_> {
 
     #[inline(always)]
     fn to_index_vec(&self) -> Vec<(u32, Self::Scalar)> {
-        self.to_vec().iter().enumerate().map(|(i, x)| (i as u32, *x)).collect()
+        self.to_vec()
+            .iter()
+            .enumerate()
+            .map(|(i, x)| (i as u32, *x))
+            .collect()
     }
 
     #[inline(always)]
