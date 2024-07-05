@@ -101,37 +101,37 @@ fn _vectors_veci8_operator_l2(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> f32 {
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_veci8_ball_l2_lt(
+fn _vectors_veci8_sphere_l2_lt(
     lhs: Veci8Input<'_>,
-    rhs: pgrx::composite_type!("ball_veci8"),
+    rhs: pgrx::composite_type!("sphere_veci8"),
 ) -> bool {
-    let source: Veci8Output = composite_get(&rhs, 1);
-    check_value_dims_65535(source.len());
-    check_matched_dims(lhs.len(), source.len());
-    let threshold: f32 = composite_get(&rhs, 2);
-    Veci8L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
+    let center: Veci8Output = composite_get(&rhs, 1);
+    check_value_dims_65535(center.len());
+    check_matched_dims(lhs.len(), center.len());
+    let radius: f32 = composite_get(&rhs, 2);
+    Veci8L2::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_veci8_ball_dot_lt(
+fn _vectors_veci8_sphere_dot_lt(
     lhs: Veci8Input<'_>,
-    rhs: pgrx::composite_type!("ball_veci8"),
+    rhs: pgrx::composite_type!("sphere_veci8"),
 ) -> bool {
-    let source: Veci8Output = composite_get(&rhs, 1);
-    check_value_dims_65535(source.len());
-    check_matched_dims(lhs.len(), source.len());
-    let threshold: f32 = composite_get(&rhs, 2);
-    Veci8Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
+    let center: Veci8Output = composite_get(&rhs, 1);
+    check_value_dims_65535(center.len());
+    check_matched_dims(lhs.len(), center.len());
+    let radius: f32 = composite_get(&rhs, 2);
+    Veci8Dot::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_veci8_ball_cos_lt(
+fn _vectors_veci8_sphere_cos_lt(
     lhs: Veci8Input<'_>,
-    rhs: pgrx::composite_type!("ball_veci8"),
+    rhs: pgrx::composite_type!("sphere_veci8"),
 ) -> bool {
-    let source: Veci8Output = composite_get(&rhs, 1);
-    check_value_dims_65535(source.len());
-    check_matched_dims(lhs.len(), source.len());
-    let threshold: f32 = composite_get(&rhs, 2);
-    Veci8Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
+    let center: Veci8Output = composite_get(&rhs, 1);
+    check_value_dims_65535(center.len());
+    check_matched_dims(lhs.len(), center.len());
+    let radius: f32 = composite_get(&rhs, 2);
+    Veci8Cos::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
 }

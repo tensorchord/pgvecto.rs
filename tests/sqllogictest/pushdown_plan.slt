@@ -20,13 +20,13 @@ statement ok
 CREATE INDEX ind1 ON t USING vectors (val1 vecf16_dot_ops)
 WITH (options = "[indexing.hnsw]");
 
-# 1 vector key + 1 corresponding order_by key + ball style
+# 1 vector key + 1 corresponding order_by key + sphere style
 query I
 EXPLAIN (COSTS FALSE, TIMING FALSE) 
-SELECT val0 FROM t WHERE val0 <<->> ball('[0, 0, 0]'::vector, 1) ORDER BY val0 <-> '[0, 0, 0]';
+SELECT val0 FROM t WHERE val0 <<->> sphere('[0, 0, 0]'::vector, 1) ORDER BY val0 <-> '[0, 0, 0]';
 ----
  Index Scan using ind0 on t
-   Index Cond: (val0 <<->> '("[0, 0, 0]",1)'::ball_vector)
+   Index Cond: (val0 <<->> '("[0, 0, 0]",1)'::sphere_vector)
    Order By: (val0 <-> '[0, 0, 0]'::vector)
 
 # 1 vector key + 0 order_by key + original style
@@ -37,13 +37,13 @@ SELECT val0 FROM t WHERE val0 <-> '[0, 0, 0]' < 1;
  Seq Scan on t
    Filter: ((val0 <-> '[0, 0, 0]'::vector) < '1'::double precision)
 
-# 1 vector key + 0 order_by key + ball style
+# 1 vector key + 0 order_by key + sphere style
 query I
 EXPLAIN (COSTS FALSE, TIMING FALSE) 
-SELECT val0 FROM t WHERE val0 <<->> ball('[0, 0, 0]'::vector, 1);
+SELECT val0 FROM t WHERE val0 <<->> sphere('[0, 0, 0]'::vector, 1);
 ----
  Index Scan using ind0 on t
-   Index Cond: (val0 <<->> '("[0, 0, 0]",1)'::ball_vector)
+   Index Cond: (val0 <<->> '("[0, 0, 0]",1)'::sphere_vector)
 
 # 0 vector key + 1 order_by key
 query I
@@ -64,77 +64,77 @@ ORDER BY val0 <-> '[0, 0, 0]';
    Order By: (val0 <-> '[0, 0, 0]'::vector)
    Filter: (((val0 <-> '[0, 0, 0]'::vector) < '1'::double precision) AND ((val1 <#> '[0, 0, 0]'::vecf16) < '1'::double precision))
 
-# 2 vector key(1 of them is corresponding) + 1 order_by key + ball style
+# 2 vector key(1 of them is corresponding) + 1 order_by key + sphere style
 query I
 EXPLAIN (COSTS FALSE, TIMING FALSE) 
-SELECT val0 FROM t WHERE val0 <<->> ball('[0, 0, 0]'::vector, 1)
-AND val1 <<#>> ball('[0, 0, 0]'::vecf16, 1)
+SELECT val0 FROM t WHERE val0 <<->> sphere('[0, 0, 0]'::vector, 1)
+AND val1 <<#>> sphere('[0, 0, 0]'::vecf16, 1)
 ORDER BY val0 <-> '[0, 0, 0]';
 ----
  Index Scan using ind0 on t
-   Index Cond: (val0 <<->> '("[0, 0, 0]",1)'::ball_vector)
+   Index Cond: (val0 <<->> '("[0, 0, 0]",1)'::sphere_vector)
    Order By: (val0 <-> '[0, 0, 0]'::vector)
-   Filter: (val1 <<#>> '("[0, 0, 0]",1)'::ball_vecf16)
+   Filter: (val1 <<#>> '("[0, 0, 0]",1)'::sphere_vecf16)
 
-# 2 vector key(none of them is corresponding) + 1 order_by key + ball style
+# 2 vector key(none of them is corresponding) + 1 order_by key + sphere style
 query I
 EXPLAIN (COSTS FALSE, TIMING FALSE) 
-SELECT val0 FROM t WHERE val2 <<->> ball('{}/3'::svector, 1)
-AND val1 <<#>> ball('[0, 0, 0]'::vecf16, 1)
+SELECT val0 FROM t WHERE val2 <<->> sphere('{}/3'::svector, 1)
+AND val1 <<#>> sphere('[0, 0, 0]'::vecf16, 1)
 ORDER BY val0 <-> '[0, 0, 0]';
 ----
  Index Scan using ind0 on t
    Order By: (val0 <-> '[0, 0, 0]'::vector)
-   Filter: ((val2 <<->> '({}/3,1)'::ball_svector) AND (val1 <<#>> '("[0, 0, 0]",1)'::ball_vecf16))
+   Filter: ((val2 <<->> '({}/3,1)'::sphere_svector) AND (val1 <<#>> '("[0, 0, 0]",1)'::sphere_vecf16))
 
-# 2 vector keys(both indexed) + 0 order_by key + ball style
+# 2 vector keys(both indexed) + 0 order_by key + sphere style
 query I
 EXPLAIN (COSTS FALSE, TIMING FALSE) 
-SELECT val0 FROM t WHERE val0 <<->> ball('[0, 0, 0]'::vector, 1)
-AND val1 <<#>> ball('[0, 0, 0]'::vecf16, 1);
+SELECT val0 FROM t WHERE val0 <<->> sphere('[0, 0, 0]'::vector, 1)
+AND val1 <<#>> sphere('[0, 0, 0]'::vecf16, 1);
 ----
  Index Scan using ind1 on t
-   Index Cond: (val1 <<#>> '("[0, 0, 0]",1)'::ball_vecf16)
-   Filter: (val0 <<->> '("[0, 0, 0]",1)'::ball_vector)
+   Index Cond: (val1 <<#>> '("[0, 0, 0]",1)'::sphere_vecf16)
+   Filter: (val0 <<->> '("[0, 0, 0]",1)'::sphere_vector)
 
-# 2 vector keys(both not indexed) + 0 order_by key + ball style
+# 2 vector keys(both not indexed) + 0 order_by key + sphere style
 query I
 EXPLAIN (COSTS FALSE, TIMING FALSE) 
-SELECT val0 FROM t WHERE val0 <<#>> ball('[0, 0, 0]'::vector, 1)
-AND val1 <<->> ball('[0, 0, 0]'::vecf16, 1);
+SELECT val0 FROM t WHERE val0 <<#>> sphere('[0, 0, 0]'::vector, 1)
+AND val1 <<->> sphere('[0, 0, 0]'::vecf16, 1);
 ----
  Seq Scan on t
-   Filter: ((val0 <<#>> '("[0, 0, 0]",1)'::ball_vector) AND (val1 <<->> '("[0, 0, 0]",1)'::ball_vecf16))
+   Filter: ((val0 <<#>> '("[0, 0, 0]",1)'::sphere_vector) AND (val1 <<->> '("[0, 0, 0]",1)'::sphere_vecf16))
 
-# 2 vector key(1 indexed) + 0 order_by key + ball style
+# 2 vector key(1 indexed) + 0 order_by key + sphere style
 query I
 EXPLAIN (COSTS FALSE, TIMING FALSE) 
-SELECT val0 FROM t WHERE val0 <<->> ball('[0, 0, 0]'::vector, 1)
-AND val1 <<->> ball('[0, 0, 0]'::vecf16, 1);
+SELECT val0 FROM t WHERE val0 <<->> sphere('[0, 0, 0]'::vector, 1)
+AND val1 <<->> sphere('[0, 0, 0]'::vecf16, 1);
 ----
  Index Scan using ind0 on t
-   Index Cond: (val0 <<->> '("[0, 0, 0]",1)'::ball_vector)
-   Filter: (val1 <<->> '("[0, 0, 0]",1)'::ball_vecf16)
+   Index Cond: (val0 <<->> '("[0, 0, 0]",1)'::sphere_vector)
+   Filter: (val1 <<->> '("[0, 0, 0]",1)'::sphere_vecf16)
 
-# 1 vector key + 1 not corresponding order_by key(operator) + ball style
+# 1 vector key + 1 not corresponding order_by key(operator) + sphere style
 query I
 EXPLAIN (COSTS FALSE, TIMING FALSE) 
-SELECT val0 FROM t WHERE val0 <<#>> ball('[0, 0, 0]'::vector, 1) 
+SELECT val0 FROM t WHERE val0 <<#>> sphere('[0, 0, 0]'::vector, 1) 
 ORDER BY val0 <-> '[0, 0, 0]';
 ----
  Index Scan using ind0 on t
    Order By: (val0 <-> '[0, 0, 0]'::vector)
-   Filter: (val0 <<#>> '("[0, 0, 0]",1)'::ball_vector)
+   Filter: (val0 <<#>> '("[0, 0, 0]",1)'::sphere_vector)
 
-# 1 vector key + 1 not corresponding order_by key(variable) + ball style
+# 1 vector key + 1 not corresponding order_by key(variable) + sphere style
 query I
 EXPLAIN (COSTS FALSE, TIMING FALSE) 
-SELECT val0 FROM t WHERE val0 <<->> ball('[0, 0, 0]'::vector, 1) 
+SELECT val0 FROM t WHERE val0 <<->> sphere('[0, 0, 0]'::vector, 1) 
 ORDER BY val1 <#> '[1, 1, 1]';
 ----
  Index Scan using ind1 on t
    Order By: (val1 <#> '[1, 1, 1]'::vecf16)
-   Filter: (val0 <<->> '("[0, 0, 0]",1)'::ball_vector)
+   Filter: (val0 <<->> '("[0, 0, 0]",1)'::sphere_vector)
 
 # 0 vector key + 0 order_by key(variable)
 query I

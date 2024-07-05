@@ -168,13 +168,17 @@ unsafe impl UnboxDatum for Vecf16Output {
     where
         Self: 'src,
     {
-        let datum = d.sans_lifetime();
-        let ptr = unsafe {
-            NonNull::new(pgrx::pg_sys::pg_detoast_datum(
-                datum.cast_mut_ptr::<Vecf16Header>().cast(),
-            ))
+        let p = NonNull::new(d.sans_lifetime().cast_mut_ptr::<Vecf16Header>()).unwrap();
+        let q = unsafe {
+            NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.cast().as_ptr()).cast()).unwrap()
         };
-        ptr.map(|p| Vecf16Output(p.cast())).unwrap()
+        if p != q {
+            Vecf16Output(q)
+        } else {
+            let header = p.as_ptr();
+            let vector = unsafe { (*header).for_borrow() };
+            Vecf16Output::new(vector)
+        }
     }
 }
 

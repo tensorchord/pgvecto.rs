@@ -93,37 +93,37 @@ fn _vectors_vecf32_operator_l2(lhs: Vecf32Input<'_>, rhs: Vecf32Input<'_>) -> f3
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_vecf32_ball_l2_lt(
+fn _vectors_vecf32_sphere_l2_lt(
     lhs: Vecf32Input<'_>,
-    rhs: pgrx::composite_type!("ball_vector"),
+    rhs: pgrx::composite_type!("sphere_vector"),
 ) -> bool {
-    let source: Vecf32Output = composite_get(&rhs, 1);
-    check_value_dims_65535(source.dims());
-    check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, 2);
-    Vecf32L2::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
+    let center: Vecf32Output = composite_get(&rhs, 1);
+    check_value_dims_65535(center.dims());
+    check_matched_dims(lhs.dims(), center.dims());
+    let radius: f32 = composite_get(&rhs, 2);
+    Vecf32L2::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_vecf32_ball_dot_lt(
+fn _vectors_vecf32_sphere_dot_lt(
     lhs: Vecf32Input<'_>,
-    rhs: pgrx::composite_type!("ball_vector"),
+    rhs: pgrx::composite_type!("sphere_vector"),
 ) -> bool {
-    let source: Vecf32Output = composite_get(&rhs, 1);
-    check_value_dims_65535(source.dims());
-    check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, 2);
-    Vecf32Dot::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
+    let center: Vecf32Output = composite_get(&rhs, 1);
+    check_value_dims_65535(center.dims());
+    check_matched_dims(lhs.dims(), center.dims());
+    let radius: f32 = composite_get(&rhs, 2);
+    Vecf32Dot::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_vecf32_ball_cos_lt(
+fn _vectors_vecf32_sphere_cos_lt(
     lhs: Vecf32Input<'_>,
-    rhs: pgrx::composite_type!("ball_vector"),
+    rhs: pgrx::composite_type!("sphere_vector"),
 ) -> bool {
-    let source: Vecf32Output = composite_get(&rhs, 1);
-    check_value_dims_65535(source.dims());
-    check_matched_dims(lhs.dims(), source.dims());
-    let threshold: f32 = composite_get(&rhs, 2);
-    Vecf32Cos::distance(lhs.for_borrow(), source.for_borrow()).to_f32() < threshold
+    let center: Vecf32Output = composite_get(&rhs, 1);
+    check_value_dims_65535(center.dims());
+    check_matched_dims(lhs.dims(), center.dims());
+    let radius: f32 = composite_get(&rhs, 2);
+    Vecf32Cos::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
 }

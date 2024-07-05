@@ -78,29 +78,29 @@ CREATE TYPE vector_index_stat AS (
     idx_options TEXT
 );
 
-CREATE TYPE ball_vector AS (
-    source vector,
-    threshold REAL
+CREATE TYPE sphere_vector AS (
+    center vector,
+    radius REAL
 );
 
-CREATE TYPE ball_vecf16 AS (
-    source vecf16,
-    threshold REAL
+CREATE TYPE sphere_vecf16 AS (
+    center vecf16,
+    radius REAL
 );
 
-CREATE TYPE ball_svector AS (
-    source svector,
-    threshold REAL
+CREATE TYPE sphere_svector AS (
+    center svector,
+    radius REAL
 );
 
-CREATE TYPE ball_bvector AS (
-    source bvector,
-    threshold REAL
+CREATE TYPE sphere_bvector AS (
+    center bvector,
+    radius REAL
 );
 
-CREATE TYPE ball_veci8 AS (
-    source veci8,
-    threshold REAL
+CREATE TYPE sphere_veci8 AS (
+    center veci8,
+    radius REAL
 );
 
 -- List of operators
@@ -616,114 +616,114 @@ CREATE OPERATOR <~> (
 );
 
 CREATE OPERATOR <<->> (
-    PROCEDURE = _vectors_vecf32_ball_l2_lt,
+    PROCEDURE = _vectors_vecf32_sphere_l2_lt,
     LEFTARG = vector,
-    RIGHTARG = ball_vector,
+    RIGHTARG = sphere_vector,
     COMMUTATOR = <<->>
 );
 
 CREATE OPERATOR <<->> (
-    PROCEDURE = _vectors_vecf16_ball_l2_lt,
+    PROCEDURE = _vectors_vecf16_sphere_l2_lt,
     LEFTARG = vecf16,
-    RIGHTARG = ball_vecf16,
+    RIGHTARG = sphere_vecf16,
     COMMUTATOR = <<->>
 );
 
 CREATE OPERATOR <<->> (
-    PROCEDURE = _vectors_svecf32_ball_l2_lt,
+    PROCEDURE = _vectors_svecf32_sphere_l2_lt,
     LEFTARG = svector,
-    RIGHTARG = ball_svector,
+    RIGHTARG = sphere_svector,
     COMMUTATOR = <<->>
 );
 
 CREATE OPERATOR <<->> (
-    PROCEDURE = _vectors_bvecf32_ball_l2_lt,
+    PROCEDURE = _vectors_bvecf32_sphere_l2_lt,
     LEFTARG = bvector,
-    RIGHTARG = ball_bvector,
+    RIGHTARG = sphere_bvector,
     COMMUTATOR = <<->>
 );
 
 CREATE OPERATOR <<->> (
-    PROCEDURE = _vectors_veci8_ball_l2_lt,
+    PROCEDURE = _vectors_veci8_sphere_l2_lt,
     LEFTARG = veci8,
-    RIGHTARG = ball_veci8,
+    RIGHTARG = sphere_veci8,
     COMMUTATOR = <<->>
 );
 
 CREATE OPERATOR <<#>> (
-    PROCEDURE = _vectors_vecf32_ball_dot_lt,
+    PROCEDURE = _vectors_vecf32_sphere_dot_lt,
     LEFTARG = vector,
-    RIGHTARG = ball_vector,
+    RIGHTARG = sphere_vector,
     COMMUTATOR = <<#>>
 );
 
 CREATE OPERATOR <<#>> (
-    PROCEDURE = _vectors_vecf16_ball_dot_lt,
+    PROCEDURE = _vectors_vecf16_sphere_dot_lt,
     LEFTARG = vecf16,
-    RIGHTARG = ball_vecf16,
+    RIGHTARG = sphere_vecf16,
     COMMUTATOR = <<#>>
 );
 
 CREATE OPERATOR <<#>> (
-    PROCEDURE = _vectors_svecf32_ball_dot_lt,
+    PROCEDURE = _vectors_svecf32_sphere_dot_lt,
     LEFTARG = svector,
-    RIGHTARG = ball_svector,
+    RIGHTARG = sphere_svector,
     COMMUTATOR = <<#>>
 );
 
 CREATE OPERATOR <<#>> (
-    PROCEDURE = _vectors_bvecf32_ball_dot_lt,
+    PROCEDURE = _vectors_bvecf32_sphere_dot_lt,
     LEFTARG = bvector,
-    RIGHTARG = ball_bvector,
+    RIGHTARG = sphere_bvector,
     COMMUTATOR = <<#>>
 );
 
 CREATE OPERATOR <<#>> (
-    PROCEDURE = _vectors_veci8_ball_dot_lt,
+    PROCEDURE = _vectors_veci8_sphere_dot_lt,
     LEFTARG = veci8,
-    RIGHTARG = ball_veci8,
+    RIGHTARG = sphere_veci8,
     COMMUTATOR = <<#>>
 );
 
 CREATE OPERATOR <<=>> (
-    PROCEDURE = _vectors_vecf32_ball_cos_lt,
+    PROCEDURE = _vectors_vecf32_sphere_cos_lt,
     LEFTARG = vector,
-    RIGHTARG = ball_vector,
+    RIGHTARG = sphere_vector,
     COMMUTATOR = <<=>>
 );
 
 CREATE OPERATOR <<=>> (
-    PROCEDURE = _vectors_vecf16_ball_cos_lt,
+    PROCEDURE = _vectors_vecf16_sphere_cos_lt,
     LEFTARG = vecf16,
-    RIGHTARG = ball_vecf16,
+    RIGHTARG = sphere_vecf16,
     COMMUTATOR = <<=>>
 );
 
 CREATE OPERATOR <<=>> (
-    PROCEDURE = _vectors_svecf32_ball_cos_lt,
+    PROCEDURE = _vectors_svecf32_sphere_cos_lt,
     LEFTARG = svector,
-    RIGHTARG = ball_svector,
+    RIGHTARG = sphere_svector,
     COMMUTATOR = <<=>>
 );
 
 CREATE OPERATOR <<=>> (
-    PROCEDURE = _vectors_bvecf32_ball_cos_lt,
+    PROCEDURE = _vectors_bvecf32_sphere_cos_lt,
     LEFTARG = bvector,
-    RIGHTARG = ball_bvector,
+    RIGHTARG = sphere_bvector,
     COMMUTATOR = <<=>>
 );
 
 CREATE OPERATOR <<=>> (
-    PROCEDURE = _vectors_veci8_ball_cos_lt,
+    PROCEDURE = _vectors_veci8_sphere_cos_lt,
     LEFTARG = veci8,
-    RIGHTARG = ball_veci8,
+    RIGHTARG = sphere_veci8,
     COMMUTATOR = <<=>>
 );
 
 CREATE OPERATOR <<~>> (
-    PROCEDURE = _vectors_bvecf32_ball_jaccard_lt,
+    PROCEDURE = _vectors_bvecf32_sphere_jaccard_lt,
     LEFTARG = bvector,
-    RIGHTARG = ball_bvector,
+    RIGHTARG = sphere_bvector,
     COMMUTATOR = <<~>>
 );
 
@@ -791,43 +791,43 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binari
 CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
 
-CREATE FUNCTION ball("source" vector, "radius" real) RETURNS ball_vector
+CREATE FUNCTION sphere("center" vector, "radius" real) RETURNS sphere_vector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
 $$
 BEGIN
-    return ROW(source, radius)::ball_vector;
+    return ROW(center, radius)::sphere_vector;
 END
 $$;
 
-CREATE FUNCTION ball("source" vecf16, "radius" real) RETURNS ball_vecf16
+CREATE FUNCTION sphere("center" vecf16, "radius" real) RETURNS sphere_vecf16
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
 $$
 BEGIN
-    return ROW(source, radius)::ball_vecf16;
+    return ROW(center, radius)::sphere_vecf16;
 END
 $$;
 
-CREATE FUNCTION ball("source" svector, "radius" real) RETURNS ball_svector
+CREATE FUNCTION sphere("center" svector, "radius" real) RETURNS sphere_svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
 $$
 BEGIN
-    return ROW(source, radius)::ball_svector;
+    return ROW(center, radius)::sphere_svector;
 END
 $$;
 
-CREATE FUNCTION ball("source" bvector, "radius" real) RETURNS ball_bvector
+CREATE FUNCTION sphere("center" bvector, "radius" real) RETURNS sphere_bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
 $$
 BEGIN
-    return ROW(source, radius)::ball_bvector;
+    return ROW(center, radius)::sphere_bvector;
 END
 $$;
 
-CREATE FUNCTION ball("source" veci8, "radius" real) RETURNS ball_veci8
+CREATE FUNCTION sphere("center" veci8, "radius" real) RETURNS sphere_veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
 $$
 BEGIN
-    return ROW(source, radius)::ball_veci8;
+    return ROW(center, radius)::sphere_veci8;
 END
 $$;
 
@@ -941,82 +941,82 @@ CREATE OPERATOR FAMILY veci8_cos_ops USING vectors;
 CREATE OPERATOR CLASS vector_l2_ops
     FOR TYPE vector USING vectors FAMILY vector_l2_ops AS
     OPERATOR 1 <-> (vector, vector) FOR ORDER BY float_ops,
-    OPERATOR 2 <<->> (vector, ball_vector) FOR SEARCH;
+    OPERATOR 2 <<->> (vector, sphere_vector) FOR SEARCH;
 
 CREATE OPERATOR CLASS vector_dot_ops
     FOR TYPE vector USING vectors FAMILY vector_dot_ops AS
     OPERATOR 1 <#> (vector, vector) FOR ORDER BY float_ops,
-    OPERATOR 2 <<#>> (vector, ball_vector) FOR SEARCH;
+    OPERATOR 2 <<#>> (vector, sphere_vector) FOR SEARCH;
 
 CREATE OPERATOR CLASS vector_cos_ops
     FOR TYPE vector USING vectors FAMILY vector_cos_ops AS
     OPERATOR 1 <=> (vector, vector) FOR ORDER BY float_ops,
-    OPERATOR 2 <<=>> (vector, ball_vector) FOR SEARCH;
+    OPERATOR 2 <<=>> (vector, sphere_vector) FOR SEARCH;
 
 CREATE OPERATOR CLASS vecf16_l2_ops
     FOR TYPE vecf16 USING vectors FAMILY vecf16_l2_ops AS
     OPERATOR 1 <-> (vecf16, vecf16) FOR ORDER BY float_ops,
-    OPERATOR 2 <<->> (vecf16, ball_vecf16) FOR SEARCH;
+    OPERATOR 2 <<->> (vecf16, sphere_vecf16) FOR SEARCH;
 
 CREATE OPERATOR CLASS vecf16_dot_ops
     FOR TYPE vecf16 USING vectors FAMILY vecf16_dot_ops AS
     OPERATOR 1 <#> (vecf16, vecf16) FOR ORDER BY float_ops,
-    OPERATOR 2 <<#>> (vecf16, ball_vecf16) FOR SEARCH;
+    OPERATOR 2 <<#>> (vecf16, sphere_vecf16) FOR SEARCH;
 
 CREATE OPERATOR CLASS vecf16_cos_ops
     FOR TYPE vecf16 USING vectors FAMILY vecf16_cos_ops AS
     OPERATOR 1 <=> (vecf16, vecf16) FOR ORDER BY float_ops,
-    OPERATOR 2 <<=>> (vecf16, ball_vecf16) FOR SEARCH;
+    OPERATOR 2 <<=>> (vecf16, sphere_vecf16) FOR SEARCH;
 
 CREATE OPERATOR CLASS svector_l2_ops
     FOR TYPE svector USING vectors FAMILY svector_l2_ops AS
     OPERATOR 1 <-> (svector, svector) FOR ORDER BY float_ops,
-    OPERATOR 2 <<=>> (svector, ball_svector) FOR SEARCH;
+    OPERATOR 2 <<=>> (svector, sphere_svector) FOR SEARCH;
 
 CREATE OPERATOR CLASS svector_dot_ops
     FOR TYPE svector USING vectors FAMILY svector_dot_ops AS
     OPERATOR 1 <#> (svector, svector) FOR ORDER BY float_ops,
-    OPERATOR 2 <<#>> (svector, ball_svector) FOR SEARCH;
+    OPERATOR 2 <<#>> (svector, sphere_svector) FOR SEARCH;
 
 CREATE OPERATOR CLASS svector_cos_ops
     FOR TYPE svector USING vectors FAMILY svector_cos_ops AS
     OPERATOR 1 <=> (svector, svector) FOR ORDER BY float_ops,
-    OPERATOR 2 <<=>> (svector, ball_svector) FOR SEARCH;
+    OPERATOR 2 <<=>> (svector, sphere_svector) FOR SEARCH;
 
 CREATE OPERATOR CLASS bvector_l2_ops
     FOR TYPE bvector USING vectors FAMILY bvector_l2_ops AS
     OPERATOR 1 <-> (bvector, bvector) FOR ORDER BY float_ops,
-    OPERATOR 2 <<->> (bvector, ball_bvector) FOR SEARCH;
+    OPERATOR 2 <<->> (bvector, sphere_bvector) FOR SEARCH;
 
 CREATE OPERATOR CLASS bvector_dot_ops
     FOR TYPE bvector USING vectors FAMILY bvector_dot_ops AS
     OPERATOR 1 <#> (bvector, bvector) FOR ORDER BY float_ops,
-    OPERATOR 2 <<#>> (bvector, ball_bvector) FOR SEARCH;
+    OPERATOR 2 <<#>> (bvector, sphere_bvector) FOR SEARCH;
 
 CREATE OPERATOR CLASS bvector_cos_ops
     FOR TYPE bvector USING vectors FAMILY bvector_cos_ops AS
     OPERATOR 1 <=> (bvector, bvector) FOR ORDER BY float_ops,
-    OPERATOR 2 <<->> (bvector, ball_bvector) FOR SEARCH;
+    OPERATOR 2 <<->> (bvector, sphere_bvector) FOR SEARCH;
 
 CREATE OPERATOR CLASS bvector_jaccard_ops
     FOR TYPE bvector USING vectors FAMILY bvector_jaccard_ops AS
     OPERATOR 1 <~> (bvector, bvector) FOR ORDER BY float_ops,
-    OPERATOR 2 <<~>> (bvector, ball_bvector) FOR SEARCH;
+    OPERATOR 2 <<~>> (bvector, sphere_bvector) FOR SEARCH;
 
 CREATE OPERATOR CLASS veci8_l2_ops
     FOR TYPE veci8 USING vectors FAMILY veci8_l2_ops AS
     OPERATOR 1 <-> (veci8, veci8) FOR ORDER BY float_ops,
-    OPERATOR 2 <<->> (veci8, ball_veci8) FOR SEARCH;
+    OPERATOR 2 <<->> (veci8, sphere_veci8) FOR SEARCH;
 
 CREATE OPERATOR CLASS veci8_dot_ops
     FOR TYPE veci8 USING vectors FAMILY veci8_dot_ops AS
     OPERATOR 1 <#> (veci8, veci8) FOR ORDER BY float_ops,
-    OPERATOR 2 <<#>> (veci8, ball_veci8) FOR SEARCH;
+    OPERATOR 2 <<#>> (veci8, sphere_veci8) FOR SEARCH;
 
 CREATE OPERATOR CLASS veci8_cos_ops
     FOR TYPE veci8 USING vectors FAMILY veci8_cos_ops AS
     OPERATOR 1 <=> (veci8, veci8) FOR ORDER BY float_ops,
-    OPERATOR 2 <<=>> (veci8, ball_veci8) FOR SEARCH;
+    OPERATOR 2 <<=>> (veci8, sphere_veci8) FOR SEARCH;
 
 -- List of views
 

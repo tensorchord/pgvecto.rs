@@ -67,11 +67,11 @@ pub unsafe fn from_datum_to_range(
         return (None, None);
     }
     let data = unsafe { PgHeapTuple::from_composite_datum(value) };
-    let threshold_raw = data
+    let radius = data
         .get_by_index::<f32>(NonZero::new(2).unwrap())
         .unwrap_or(None);
 
-    let source_raw = match options.v {
+    let center = match options.v {
         VectorKind::Vecf32 => {
             let value: Option<Vecf32Output> =
                 data.get_by_index(NonZero::new(1).unwrap()).unwrap_or(None);
@@ -128,7 +128,7 @@ pub unsafe fn from_datum_to_range(
             }
         }
     };
-    (source_raw, threshold_raw)
+    (center, radius)
 }
 
 pub fn from_oid_to_handle(oid: pgrx::pg_sys::Oid) -> Handle {
