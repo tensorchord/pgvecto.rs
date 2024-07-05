@@ -1,3 +1,5 @@
+#![allow(clippy::len_without_is_empty)]
+
 use base::index::{IndexOptions, SearchOptions};
 use base::operator::Borrowed;
 use base::operator::Operator;
