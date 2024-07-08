@@ -610,37 +610,37 @@ END;
 $$;
 
 CREATE FUNCTION alter_vector_index("index" OID, "key" TEXT, "value" TEXT) RETURNS void
-STRICT LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_alter_vector_index_wrapper';
+STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_alter_vector_index_wrapper';
 
 CREATE FUNCTION vector_dims(vector) RETURNS INT
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_dims_wrapper';
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_dims_wrapper';
 
 CREATE FUNCTION vector_dims(vecf16) RETURNS INT
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_dims_wrapper';
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_dims_wrapper';
 
 CREATE FUNCTION vector_dims(svector) RETURNS INT
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_dims_wrapper';
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_dims_wrapper';
 
 CREATE FUNCTION vector_dims(bvector) RETURNS INT
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_dims_wrapper';
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_dims_wrapper';
 
 CREATE FUNCTION vector_dims(veci8) RETURNS INT
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_dims_wrapper';
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_dims_wrapper';
 
 CREATE FUNCTION vector_norm(vector) RETURNS real
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_norm_wrapper';
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_norm_wrapper';
 
 CREATE FUNCTION vector_norm(vecf16) RETURNS real
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_norm_wrapper';
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16_norm_wrapper';
 
 CREATE FUNCTION vector_norm(svector) RETURNS real
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_norm_wrapper';
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_norm_wrapper';
 
 CREATE FUNCTION vector_norm(bvector) RETURNS real
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_norm_wrapper';
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_norm_wrapper';
 
 CREATE FUNCTION vector_norm(veci8) RETURNS real
-STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_norm_wrapper';
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_norm_wrapper';
 
 CREATE FUNCTION to_svector("dims" INT, "indexes" INT[], "values" real[]) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_svector_wrapper';
