@@ -124,21 +124,21 @@ pub fn scan_release(scanner: Scanner) {
     }
 }
 
-pub unsafe fn fetch_scanner_arguments(
-    order_bys: Vec<OwnedVector>,
-    keys: Vec<(OwnedVector, f32)>,
+pub fn fetch_scanner_arguments(
+    order_bys: Vec<Option<OwnedVector>>,
+    keys: Vec<(Option<OwnedVector>, Option<f32>)>,
 ) -> (Option<OwnedVector>, Option<f32>, bool) {
-    let mut vector = order_bys.into_iter().next();
+    let mut vector = order_bys.into_iter().next().flatten();
     let mut threshold = None;
     let mut recheck = false;
 
     for (range_vector, range_threshold) in keys {
         if vector.is_none() {
-            (vector, threshold) = (Some(range_vector), Some(range_threshold));
-        } else if vector == Some(range_vector) {
+            (vector, threshold) = (range_vector, range_threshold);
+        } else if vector == range_vector {
             match (threshold, range_threshold) {
-                (None, _) => threshold = Some(range_threshold),
-                (Some(old), new) if new < old => threshold = Some(range_threshold),
+                (None, _) => threshold = range_threshold,
+                (Some(old), Some(new)) if new < old => threshold = range_threshold,
                 _ => {}
             }
         } else {

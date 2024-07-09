@@ -304,9 +304,8 @@ pub unsafe extern "C" fn amrescan(
         if !orderbys.is_null() && (*scan).numberOfOrderBys > 0 {
             std::ptr::copy(orderbys, (*scan).orderByData, (*scan).numberOfOrderBys as _);
         }
-        let (keys, order_bys, recheck_scan) = keys_from_scan(scan);
-        let (vector, threshold, recheck_fetch) = fetch_scanner_arguments(keys, order_bys);
-        let recheck = recheck_scan || recheck_fetch;
+        let (keys, order_bys) = keys_from_scan(scan);
+        let (vector, threshold, recheck) = fetch_scanner_arguments(keys, order_bys);
 
         let scanner = (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked();
         let scanner = std::mem::replace(scanner, am_scan::scan_make(vector, threshold, recheck));
@@ -401,12 +400,14 @@ pub unsafe extern "C" fn amvacuumcleanup(
 
 unsafe fn keys_from_scan(
     scan: pgrx::pg_sys::IndexScanDesc,
-) -> (Vec<OwnedVector>, Vec<(OwnedVector, f32)>, bool) {
+) -> (
+    Vec<Option<OwnedVector>>,
+    Vec<(Option<OwnedVector>, Option<f32>)>,
+) {
     let mut keys = Vec::new();
     let mut order_bys = Vec::new();
-    let mut recheck = false;
     if scan.is_null() {
-        return (order_bys, keys, recheck);
+        return (order_bys, keys);
     }
     unsafe {
         let number_of_order_bys = (*scan).numberOfOrderBys;
@@ -427,23 +428,16 @@ unsafe fn keys_from_scan(
             let value = (*data).sk_argument;
             let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
             if (*data).sk_strategy != 2 {
-                recheck = true;
                 continue;
             }
-            if let (Some(v), Some(t)) = from_datum_to_range(value, &options.vector, is_null) {
-                keys.push((v, t));
-            } else {
-                recheck = true;
-            }
+            keys.push(from_datum_to_range(value, &options.vector, is_null));
         }
         for i in 0..number_of_order_bys {
             let data = (*scan).orderByData.add(i as usize);
             let value = (*data).sk_argument;
             let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
-            if let Some(v) = from_datum_to_vector(value, is_null) {
-                order_bys.push(v);
-            }
+            order_bys.push(from_datum_to_vector(value, is_null));
         }
     }
-    (order_bys, keys, recheck)
+    (order_bys, keys)
 }
