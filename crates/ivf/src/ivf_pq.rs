@@ -3,7 +3,6 @@ use base::index::*;
 use base::operator::*;
 use base::search::*;
 use base::vector::*;
-use common::dir_ops::sync_dir;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
@@ -169,7 +168,6 @@ fn from_nothing<O: Op>(
             train.encode(&v).into_iter()
         }),
     );
-    sync_dir(path);
     IvfPq {
         storage,
         payloads,

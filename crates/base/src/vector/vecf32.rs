@@ -10,7 +10,7 @@ pub struct Vecf32Owned(Vec<F32>);
 impl Vecf32Owned {
     #[inline(always)]
     pub fn new(slice: Vec<F32>) -> Self {
-        Self::new_checked(slice).unwrap()
+        Self::new_checked(slice).expect("invalid data")
     }
 
     #[inline(always)]
@@ -69,7 +69,7 @@ pub struct Vecf32Borrowed<'a>(&'a [F32]);
 impl<'a> Vecf32Borrowed<'a> {
     #[inline(always)]
     pub fn new(slice: &'a [F32]) -> Self {
-        Self::new_checked(slice).unwrap()
+        Self::new_checked(slice).expect("invalid data")
     }
 
     #[inline(always)]

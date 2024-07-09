@@ -38,7 +38,6 @@ impl<O: Operator<VectorOwned = Vecf32Owned>> Storage<O> for VecStorage<F32> {
             path.as_ref().join("slice"),
             (0..*len).flat_map(|i| vectors.vector(i).to_vec()),
         );
-        common::dir_ops::sync_dir(path.as_ref());
         Self { dims, len, slice }
     }
 
@@ -75,7 +74,6 @@ impl<O: Operator<VectorOwned = Vecf16Owned>> Storage<O> for VecStorage<F16> {
             path.as_ref().join("slice"),
             (0..*len).flat_map(|i| vectors.vector(i).to_vec()),
         );
-        common::dir_ops::sync_dir(path);
         Self { dims, len, slice }
     }
 

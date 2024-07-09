@@ -18,7 +18,7 @@ pub struct Version {
 }
 
 impl Version {
-    const VERSION: u64 = 6;
+    const VERSION: u64 = 7;
     const SOFT_VERSION: u64 = 0;
 }
 

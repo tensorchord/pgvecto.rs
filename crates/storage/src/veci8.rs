@@ -67,7 +67,6 @@ impl<O: Operator<VectorOwned = Veci8Owned>> Storage<O> for Veci8Storage {
             path.as_ref().join("l2_norms"),
             (0..*len).map(|i| vectors.vector(i).l2_norm()),
         );
-        common::dir_ops::sync_dir(path);
         Self {
             dims,
             len,

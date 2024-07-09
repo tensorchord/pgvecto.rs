@@ -5,7 +5,6 @@ use base::index::*;
 use base::operator::*;
 use base::scalar::F32;
 use base::search::*;
-use common::dir_ops::sync_dir;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
@@ -168,7 +167,6 @@ fn from_nothing<O: OperatorHnsw>(
     );
     rayon::check();
     let m = Json::create(path.as_ref().join("m"), m);
-    sync_dir(path.as_ref());
     Hnsw {
         storage,
         quantization,
@@ -236,7 +234,6 @@ fn from_main<O: OperatorHnsw>(
     rayon::check();
     let m = Json::create(path.as_ref().join("m"), m);
     rayon::check();
-    sync_dir(path.as_ref());
     Hnsw {
         storage,
         quantization,

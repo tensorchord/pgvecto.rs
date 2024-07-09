@@ -12,7 +12,6 @@ use base::operator::*;
 use base::scalar::*;
 use base::search::*;
 use base::vector::*;
-use common::dir_ops::sync_dir;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use serde::Deserialize;
@@ -88,7 +87,6 @@ impl<O: OperatorQuantization> Quantization<O> {
             path.as_ref().join("codes"),
             (0..vectors.len()).flat_map(|i| train.encode(&vectors.vector(i).to_vec()).into_iter()),
         );
-        sync_dir(path);
         Self { train, codes }
     }
 
