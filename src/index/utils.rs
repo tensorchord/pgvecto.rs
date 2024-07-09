@@ -75,57 +75,27 @@ pub unsafe fn from_datum_to_range(
         VectorKind::Vecf32 => {
             let value: Option<Vecf32Output> =
                 data.get_by_index(NonZero::new(1).unwrap()).unwrap_or(None);
-            match value {
-                Some(out) => {
-                    let ptr = unsafe { out.into_raw().as_ref().unwrap() };
-                    Some(OwnedVector::Vecf32(ptr.for_borrow().for_own()))
-                }
-                None => None,
-            }
+            value.map(|out| OwnedVector::Vecf32(out.for_borrow().for_own()))
         }
         VectorKind::Vecf16 => {
             let value: Option<Vecf16Output> =
                 data.get_by_index(NonZero::new(1).unwrap()).unwrap_or(None);
-            match value {
-                Some(out) => {
-                    let ptr = unsafe { out.into_raw().as_ref().unwrap() };
-                    Some(OwnedVector::Vecf16(ptr.for_borrow().for_own()))
-                }
-                None => None,
-            }
+            value.map(|out| OwnedVector::Vecf16(out.for_borrow().for_own()))
         }
         VectorKind::SVecf32 => {
             let value: Option<SVecf32Output> =
                 data.get_by_index(NonZero::new(1).unwrap()).unwrap_or(None);
-            match value {
-                Some(out) => {
-                    let ptr = unsafe { out.into_raw().as_ref().unwrap() };
-                    Some(OwnedVector::SVecf32(ptr.for_borrow().for_own()))
-                }
-                None => None,
-            }
+            value.map(|out| OwnedVector::SVecf32(out.for_borrow().for_own()))
         }
         VectorKind::BVecf32 => {
             let value: Option<BVecf32Output> =
                 data.get_by_index(NonZero::new(1).unwrap()).unwrap_or(None);
-            match value {
-                Some(out) => {
-                    let ptr = unsafe { out.into_raw().as_ref().unwrap() };
-                    Some(OwnedVector::BVecf32(ptr.for_borrow().for_own()))
-                }
-                None => None,
-            }
+            value.map(|out| OwnedVector::BVecf32(out.for_borrow().for_own()))
         }
         VectorKind::Veci8 => {
             let value: Option<Veci8Output> =
                 data.get_by_index(NonZero::new(1).unwrap()).unwrap_or(None);
-            match value {
-                Some(out) => {
-                    let ptr = unsafe { out.into_raw().as_ref().unwrap() };
-                    Some(OwnedVector::Veci8(ptr.for_borrow().for_own()))
-                }
-                None => None,
-            }
+            value.map(|out| OwnedVector::Veci8(out.for_borrow().for_own()))
         }
     };
     (center, radius)
