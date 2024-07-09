@@ -1,11 +1,12 @@
 use super::am_options;
+use super::am_options::Opfamily;
 use super::am_scan;
 use crate::error::*;
 use crate::gucs::planning::ENABLE_INDEX;
 use crate::index::am_scan::Scanner;
 use crate::index::catalog::{on_index_build, on_index_write};
+use crate::index::utils::from_oid_to_handle;
 use crate::index::utils::{ctid_to_pointer, pointer_to_ctid};
-use crate::index::utils::{from_datum_to_vector, from_oid_to_handle};
 use crate::ipc::{client, ClientRpc};
 use crate::utils::cells::PgCell;
 use am_options::Reloption;
@@ -113,7 +114,9 @@ pub unsafe extern "C" fn amcostestimate(
     index_pages: *mut f64,
 ) {
     unsafe {
-        if (*path).indexorderbys.is_null() || !ENABLE_INDEX.get() {
+        if ((*path).indexorderbys.is_null() && (*path).indexclauses.is_null())
+            || !ENABLE_INDEX.get()
+        {
             *index_startup_cost = f64::MAX;
             *index_total_cost = f64::MAX;
             *index_selectivity = 0.0;
@@ -136,12 +139,14 @@ pub unsafe extern "C" fn ambuild(
     index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> *mut pgrx::pg_sys::IndexBuildResult {
     pub struct Builder {
+        pub opfamily: Opfamily,
         pub rpc: ClientRpc,
         pub result: *mut pgrx::pg_sys::IndexBuildResult,
     }
     let oid = unsafe { (*index).rd_id };
     let handle = from_oid_to_handle(oid);
     let (options, alterable_options) = unsafe { am_options::options(index) };
+    let opfamily = unsafe { am_options::opfamily(index) };
     let mut rpc = check_client(client());
     match rpc.create(handle, options, alterable_options) {
         Ok(()) => (),
@@ -156,6 +161,7 @@ pub unsafe extern "C" fn ambuild(
     }
     let result = unsafe { pgrx::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0() };
     let mut builder = Builder {
+        opfamily,
         rpc,
         result: result.as_ptr(),
     };
@@ -185,7 +191,11 @@ pub unsafe extern "C" fn ambuild(
         state: *mut std::os::raw::c_void,
     ) {
         let state = unsafe { &mut *state.cast::<Builder>() };
-        let vector = unsafe { from_datum_to_vector(*values.add(0), *is_null.add(0)) };
+        let vector = unsafe {
+            state
+                .opfamily
+                .datum_to_vector(*values.add(0), *is_null.add(0))
+        };
         if let Some(vector) = vector {
             let oid = unsafe { (*index).rd_id };
             let handle = from_oid_to_handle(oid);
@@ -249,9 +259,10 @@ pub unsafe extern "C" fn aminsert(
     _index_unchanged: bool,
     _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
+    let opfamily = unsafe { am_options::opfamily(index) };
     let oid = unsafe { (*index).rd_id };
     let handle = from_oid_to_handle(oid);
-    let vector = unsafe { from_datum_to_vector(*values.add(0), *is_null.add(0)) };
+    let vector = unsafe { opfamily.datum_to_vector(*values.add(0), *is_null.add(0)) };
     if let Some(vector) = vector {
         let pointer = ctid_to_pointer(unsafe { heap_tid.read() });
 
@@ -275,9 +286,10 @@ pub unsafe extern "C" fn ambeginscan(
     n_orderbys: std::os::raw::c_int,
 ) -> pgrx::pg_sys::IndexScanDesc {
     use pgrx::PgMemoryContexts::CurrentMemoryContext;
+
     let scan = unsafe { pgrx::pg_sys::RelationGetIndexScan(index, n_keys, n_orderbys) };
     unsafe {
-        let scanner = am_scan::scan_make(None);
+        let scanner = am_scan::scan_make(None, None, false);
         (*scan).opaque = CurrentMemoryContext.leak_and_drop_on_delete(scanner).cast();
     }
     scan
@@ -292,27 +304,44 @@ pub unsafe extern "C" fn amrescan(
     _n_orderbys: std::os::raw::c_int,
 ) {
     unsafe {
-        if (*scan).numberOfKeys != 0 {
-            pgrx::error!("vector search with attributes is not supported");
-        }
-        if (*scan).numberOfOrderBys == 0 {
-            pgrx::error!("vector search without a ORDER BY clause is not supported");
-        }
-        if (*scan).numberOfOrderBys != 1 {
-            pgrx::error!("vector search with too many ORDER BY clauses is not supported");
-        }
         if !keys.is_null() && (*scan).numberOfKeys > 0 {
             std::ptr::copy(keys, (*scan).keyData, (*scan).numberOfKeys as _);
         }
         if !orderbys.is_null() && (*scan).numberOfOrderBys > 0 {
             std::ptr::copy(orderbys, (*scan).orderByData, (*scan).numberOfOrderBys as _);
         }
-        let main = (*scan).orderByData.add(0);
-        let value = (*main).sk_argument;
-        let is_null = ((*main).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
-        let vector = from_datum_to_vector(value, is_null);
+        let opfamily = am_options::opfamily((*scan).indexRelation);
+        let (orderbys, spheres) = {
+            let mut orderbys = Vec::new();
+            let mut spheres = Vec::new();
+            if (*scan).numberOfOrderBys == 0 && (*scan).numberOfKeys == 0 {
+                pgrx::error!(
+                    "vector search with no WHERE clause and no ORDER BY clause is not supported"
+                );
+            }
+            for i in 0..(*scan).numberOfOrderBys {
+                let data = (*scan).orderByData.add(i as usize);
+                let value = (*data).sk_argument;
+                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                match (*data).sk_strategy {
+                    1 => orderbys.push(opfamily.datum_to_vector(value, is_null)),
+                    _ => unreachable!(),
+                }
+            }
+            for i in 0..(*scan).numberOfKeys {
+                let data = (*scan).keyData.add(i as usize);
+                let value = (*data).sk_argument;
+                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                match (*data).sk_strategy {
+                    2 => spheres.push(opfamily.datum_to_sphere(value, is_null)),
+                    _ => unreachable!(),
+                }
+            }
+            (orderbys, spheres)
+        };
+        let (vector, threshold, recheck) = am_scan::scan_build(orderbys, spheres);
         let scanner = (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked();
-        let scanner = std::mem::replace(scanner, am_scan::scan_make(vector));
+        let scanner = std::mem::replace(scanner, am_scan::scan_make(vector, threshold, recheck));
         am_scan::scan_release(scanner);
     }
 }
@@ -335,12 +364,12 @@ pub unsafe extern "C" fn amgettuple(
     let scanner = unsafe { (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked() };
     let oid = unsafe { (*(*scan).indexRelation).rd_id };
     let handle = from_oid_to_handle(oid);
-    if let Some(pointer) = am_scan::scan_next(scanner, handle) {
+    if let Some((pointer, recheck)) = am_scan::scan_next(scanner, handle) {
         let ctid = pointer_to_ctid(pointer);
         unsafe {
             (*scan).xs_heaptid = ctid;
-            (*scan).xs_recheck = false;
             (*scan).xs_recheckorderby = false;
+            (*scan).xs_recheck = recheck;
         }
         true
     } else {
@@ -352,7 +381,7 @@ pub unsafe extern "C" fn amgettuple(
 pub unsafe extern "C" fn amendscan(scan: pgrx::pg_sys::IndexScanDesc) {
     unsafe {
         let scanner = (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked();
-        let scanner = std::mem::replace(scanner, am_scan::scan_make(None));
+        let scanner = std::mem::replace(scanner, am_scan::scan_make(None, None, false));
         am_scan::scan_release(scanner);
     }
 }

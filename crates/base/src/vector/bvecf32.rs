@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub const BVEC_WIDTH: usize = usize::BITS as usize;
 
 // When using binary vector, please ensure that the padding bits are always zero.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct BVecf32Owned {
     dims: u16,
     data: Vec<usize>,

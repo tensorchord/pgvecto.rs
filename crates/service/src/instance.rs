@@ -1,6 +1,7 @@
 use base::distance::*;
 use base::index::*;
 use base::operator::*;
+use base::scalar::F32;
 use base::search::*;
 use base::vector::*;
 use base::worker::*;
@@ -317,11 +318,11 @@ impl ViewBasicOperations for InstanceView {
         &'a self,
         vector: &'a OwnedVector,
         opts: &'a SearchOptions,
-    ) -> Result<Box<dyn Iterator<Item = Pointer> + 'a>, BasicError> {
+    ) -> Result<Box<dyn Iterator<Item = (F32, Pointer)> + 'a>, BasicError> {
         match (self, vector) {
             (InstanceView::Vecf32Cos(x), OwnedVector::Vecf32(vector)) => {
                 Ok(Box::new(x.basic(vector.for_borrow(), opts)?)
-                    as Box<dyn Iterator<Item = Pointer>>)
+                    as Box<dyn Iterator<Item = (F32, Pointer)>>)
             }
             (InstanceView::Vecf32Dot(x), OwnedVector::Vecf32(vector)) => {
                 Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
@@ -378,11 +379,11 @@ impl ViewVbaseOperations for InstanceView {
         &'a self,
         vector: &'a OwnedVector,
         opts: &'a SearchOptions,
-    ) -> Result<Box<dyn Iterator<Item = Pointer> + 'a>, VbaseError> {
+    ) -> Result<Box<dyn Iterator<Item = (F32, Pointer)> + 'a>, VbaseError> {
         match (self, vector) {
             (InstanceView::Vecf32Cos(x), OwnedVector::Vecf32(vector)) => {
                 Ok(Box::new(x.vbase(vector.for_borrow(), opts)?)
-                    as Box<dyn Iterator<Item = Pointer>>)
+                    as Box<dyn Iterator<Item = (F32, Pointer)>>)
             }
             (InstanceView::Vecf32Dot(x), OwnedVector::Vecf32(vector)) => {
                 Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))

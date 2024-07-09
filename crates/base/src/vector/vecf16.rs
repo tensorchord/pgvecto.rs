@@ -3,7 +3,7 @@ use crate::scalar::{ScalarLike, F16, F32};
 use num_traits::{Float, Zero};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Vecf16Owned(Vec<F16>);
 

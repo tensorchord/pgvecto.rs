@@ -1,10 +1,23 @@
+use crate::datatype::memory_bvecf32::BVecf32Input;
+use crate::datatype::memory_bvecf32::BVecf32Output;
+use crate::datatype::memory_svecf32::SVecf32Input;
+use crate::datatype::memory_svecf32::SVecf32Output;
+use crate::datatype::memory_vecf16::Vecf16Input;
+use crate::datatype::memory_vecf16::Vecf16Output;
+use crate::datatype::memory_vecf32::Vecf32Input;
+use crate::datatype::memory_vecf32::Vecf32Output;
+use crate::datatype::memory_veci8::Veci8Input;
+use crate::datatype::memory_veci8::Veci8Output;
 use crate::datatype::typmod::Typmod;
 use crate::error::*;
 use base::distance::*;
 use base::index::*;
 use base::vector::*;
+use pgrx::heap_tuple::PgHeapTuple;
+use pgrx::FromDatum;
 use serde::Deserialize;
 use std::ffi::CStr;
+use std::num::NonZero;
 
 #[derive(Copy, Clone, Debug, Default)]
 #[repr(C)]
@@ -126,4 +139,86 @@ pub unsafe fn options(index: pgrx::pg_sys::Relation) -> (IndexOptions, IndexAlte
     // get indexing, segment, optimizing
     let (indexing, alterable) = unsafe { convert_reloptions_to_options((*index).rd_options) };
     (IndexOptions { vector, indexing }, alterable)
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Opfamily {
+    vector: VectorKind,
+    #[allow(unused)]
+    distance: DistanceKind,
+}
+
+impl Opfamily {
+    pub unsafe fn datum_to_vector(
+        self,
+        datum: pgrx::pg_sys::Datum,
+        is_null: bool,
+    ) -> Option<OwnedVector> {
+        if is_null || datum.is_null() {
+            return None;
+        }
+        let vector = match self.vector {
+            VectorKind::Vecf32 => {
+                let vector = unsafe { Vecf32Input::from_datum(datum, false).unwrap() };
+                OwnedVector::Vecf32(vector.for_borrow().for_own())
+            }
+            VectorKind::Vecf16 => {
+                let vector = unsafe { Vecf16Input::from_datum(datum, false).unwrap() };
+                OwnedVector::Vecf16(vector.for_borrow().for_own())
+            }
+            VectorKind::SVecf32 => {
+                let vector = unsafe { SVecf32Input::from_datum(datum, false).unwrap() };
+                OwnedVector::SVecf32(vector.for_borrow().for_own())
+            }
+            VectorKind::BVecf32 => {
+                let vector = unsafe { BVecf32Input::from_datum(datum, false).unwrap() };
+                OwnedVector::BVecf32(vector.for_borrow().for_own())
+            }
+            VectorKind::Veci8 => {
+                let vector = unsafe { Veci8Input::from_datum(datum, false).unwrap() };
+                OwnedVector::Veci8(vector.for_borrow().for_own())
+            }
+        };
+        Some(vector)
+    }
+    pub unsafe fn datum_to_sphere(
+        self,
+        datum: pgrx::pg_sys::Datum,
+        is_null: bool,
+    ) -> (Option<OwnedVector>, Option<f32>) {
+        if is_null || datum.is_null() {
+            return (None, None);
+        }
+        let tuple = unsafe { PgHeapTuple::from_composite_datum(datum) };
+        let center = match self.vector {
+            VectorKind::Vecf32 => tuple
+                .get_by_index::<Vecf32Output>(NonZero::new(1).unwrap())
+                .unwrap()
+                .map(|vector| OwnedVector::Vecf32(vector.for_borrow().for_own())),
+            VectorKind::Vecf16 => tuple
+                .get_by_index::<Vecf16Output>(NonZero::new(1).unwrap())
+                .unwrap()
+                .map(|vector| OwnedVector::Vecf16(vector.for_borrow().for_own())),
+            VectorKind::SVecf32 => tuple
+                .get_by_index::<SVecf32Output>(NonZero::new(1).unwrap())
+                .unwrap()
+                .map(|vector| OwnedVector::SVecf32(vector.for_borrow().for_own())),
+            VectorKind::BVecf32 => tuple
+                .get_by_index::<BVecf32Output>(NonZero::new(1).unwrap())
+                .unwrap()
+                .map(|vector| OwnedVector::BVecf32(vector.for_borrow().for_own())),
+            VectorKind::Veci8 => tuple
+                .get_by_index::<Veci8Output>(NonZero::new(1).unwrap())
+                .unwrap()
+                .map(|vector| OwnedVector::Veci8(vector.for_borrow().for_own())),
+        };
+        let radius = tuple.get_by_index::<f32>(NonZero::new(2).unwrap()).unwrap();
+        (center, radius)
+    }
+}
+
+pub unsafe fn opfamily(index: pgrx::pg_sys::Relation) -> Opfamily {
+    let opfamily = unsafe { (*index).rd_opfamily.read() };
+    let (vector, distance) = convert_opfamily_to_vd(opfamily).unwrap();
+    Opfamily { vector, distance }
 }
