@@ -1,5 +1,6 @@
 use super::am_options;
 use super::am_scan;
+use super::utils::from_datum_to_range;
 use crate::error::*;
 use crate::gucs::planning::ENABLE_INDEX;
 use crate::index::am_scan::fetch_scanner_arguments;
@@ -11,6 +12,7 @@ use crate::ipc::{client, ClientRpc};
 use crate::utils::cells::PgCell;
 use am_options::Reloption;
 use base::index::*;
+use base::vector::OwnedVector;
 use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
 
@@ -302,7 +304,9 @@ pub unsafe extern "C" fn amrescan(
         if !orderbys.is_null() && (*scan).numberOfOrderBys > 0 {
             std::ptr::copy(orderbys, (*scan).orderByData, (*scan).numberOfOrderBys as _);
         }
-        let (vector, threshold, recheck) = fetch_scanner_arguments(scan);
+        let (keys, order_bys, recheck_scan) = keys_from_scan(scan);
+        let (vector, threshold, recheck_fetch) = fetch_scanner_arguments(keys, order_bys);
+        let recheck = recheck_scan || recheck_fetch;
 
         let scanner = (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked();
         let scanner = std::mem::replace(scanner, am_scan::scan_make(vector, threshold, recheck));
@@ -393,4 +397,53 @@ pub unsafe extern "C" fn amvacuumcleanup(
     _stats: *mut pgrx::pg_sys::IndexBulkDeleteResult,
 ) -> *mut pgrx::pg_sys::IndexBulkDeleteResult {
     std::ptr::null_mut()
+}
+
+unsafe fn keys_from_scan(
+    scan: pgrx::pg_sys::IndexScanDesc,
+) -> (Vec<OwnedVector>, Vec<(OwnedVector, f32)>, bool) {
+    let mut keys = Vec::new();
+    let mut order_bys = Vec::new();
+    let mut recheck = false;
+    if scan.is_null() {
+        return (order_bys, keys, recheck);
+    }
+    unsafe {
+        let number_of_order_bys = (*scan).numberOfOrderBys;
+        let number_of_keys = (*scan).numberOfKeys;
+        let (options, _) = am_options::options((*scan).indexRelation);
+
+        if number_of_order_bys > 1 {
+            pgrx::error!("vector search with multiple ORDER BY clauses is not supported");
+        }
+        if number_of_order_bys == 0 && number_of_keys == 0 {
+            pgrx::error!(
+                "vector search with no WHERE clause and no ORDER BY clause is not supported"
+            );
+        }
+
+        for i in 0..number_of_keys {
+            let data = (*scan).keyData.add(i as usize);
+            let value = (*data).sk_argument;
+            let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+            if (*data).sk_strategy != 2 {
+                recheck = true;
+                continue;
+            }
+            if let (Some(v), Some(t)) = from_datum_to_range(value, &options.vector, is_null) {
+                keys.push((v, t));
+            } else {
+                recheck = true;
+            }
+        }
+        for i in 0..number_of_order_bys {
+            let data = (*scan).orderByData.add(i as usize);
+            let value = (*data).sk_argument;
+            let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+            if let Some(v) = from_datum_to_vector(value, is_null) {
+                order_bys.push(v);
+            }
+        }
+    }
+    (order_bys, keys, recheck)
 }

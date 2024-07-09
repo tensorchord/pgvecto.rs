@@ -230,7 +230,7 @@ fn _vectors_svecf32_sphere_l2_in(
     let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
         Ok(Some(s)) => s,
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
-        Err(e) => pgrx::error!("Parse radius failed at sphere:{e}"),
+        Err(_) => unreachable!(),
     };
     SVecf32L2::distance(lhs.for_borrow(), center.for_borrow()) < F32(radius)
 }
@@ -249,7 +249,7 @@ fn _vectors_svecf32_sphere_dot_in(
     let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
         Ok(Some(s)) => s,
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
-        Err(e) => pgrx::error!("Parse radius failed at sphere:{e}"),
+        Err(_) => unreachable!(),
     };
     SVecf32Dot::distance(lhs.for_borrow(), center.for_borrow()) < F32(radius)
 }
@@ -268,7 +268,7 @@ fn _vectors_svecf32_sphere_cos_in(
     let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
         Ok(Some(s)) => s,
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
-        Err(e) => pgrx::error!("Parse radius failed at sphere:{e}"),
+        Err(_) => unreachable!(),
     };
     SVecf32Cos::distance(lhs.for_borrow(), center.for_borrow()) < F32(radius)
 }
