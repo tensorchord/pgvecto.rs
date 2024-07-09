@@ -100,16 +100,15 @@ fn _vectors_vecf32_sphere_l2_in(
     let center: Vecf32Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
         Ok(Some(s)) => s,
         Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
-        Err(e) => pgrx::error!("Parse center failed at sphere:{e}"),
+        Err(_) => unreachable!(),
     };
-    check_value_dims_65535(center.dims());
     check_matched_dims(lhs.dims(), center.dims());
     let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
         Ok(Some(s)) => s,
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(e) => pgrx::error!("Parse radius failed at sphere:{e}"),
     };
-    Vecf32L2::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
+    Vecf32L2::distance(lhs.for_borrow(), center.for_borrow()) < F32(radius)
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -120,16 +119,15 @@ fn _vectors_vecf32_sphere_dot_in(
     let center: Vecf32Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
         Ok(Some(s)) => s,
         Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
-        Err(e) => pgrx::error!("Parse center failed at sphere:{e}"),
+        Err(_) => unreachable!(),
     };
-    check_value_dims_65535(center.dims());
     check_matched_dims(lhs.dims(), center.dims());
     let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
         Ok(Some(s)) => s,
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(e) => pgrx::error!("Parse radius failed at sphere:{e}"),
     };
-    Vecf32Dot::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
+    Vecf32Dot::distance(lhs.for_borrow(), center.for_borrow()) < F32(radius)
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -140,14 +138,13 @@ fn _vectors_vecf32_sphere_cos_in(
     let center: Vecf32Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
         Ok(Some(s)) => s,
         Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
-        Err(e) => pgrx::error!("Parse center failed at sphere:{e}"),
+        Err(_) => unreachable!(),
     };
-    check_value_dims_65535(center.dims());
     check_matched_dims(lhs.dims(), center.dims());
     let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
         Ok(Some(s)) => s,
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(e) => pgrx::error!("Parse radius failed at sphere:{e}"),
     };
-    Vecf32Cos::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
+    Vecf32Cos::distance(lhs.for_borrow(), center.for_borrow()) < F32(radius)
 }

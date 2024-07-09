@@ -4,7 +4,7 @@ use crate::gucs::planning::Mode;
 use crate::gucs::planning::SEARCH_MODE;
 use crate::ipc::{client, ClientBasic, ClientVbase};
 use base::index::*;
-use base::scalar::ScalarLike;
+use base::scalar::F32;
 use base::search::*;
 use base::vector::*;
 
@@ -39,7 +39,7 @@ pub fn scan_make(vector: Option<OwnedVector>, threshold: Option<f32>, recheck: b
     }
 }
 
-pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<(bool, bool, Pointer)> {
+pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<(Pointer, bool)> {
     if let Scanner::Initial {
         vector,
         threshold,
@@ -95,12 +95,16 @@ pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<(bool, bool, P
             threshold,
             recheck,
         } => (vbase.next(), *threshold, *recheck),
-        Scanner::Empty {} => (None, None, false),
+        Scanner::Empty {} => return None,
     };
     match (result, threshold) {
-        (Some((_, ptr)), None) => Some((true, recheck, ptr)),
-        (Some((distance, ptr)), Some(t)) => Some((distance.to_f32() < t, recheck, ptr)),
-        _ => None,
+        (Some((_, ptr)), None) => Some((ptr, recheck)),
+        (Some((distance, ptr)), Some(t)) if distance < F32(t) => Some((ptr, recheck)),
+        _ => {
+            let scanner = std::mem::replace(scanner, Scanner::Empty {});
+            scan_release(scanner);
+            None
+        }
     }
 }
 
@@ -124,13 +128,8 @@ pub fn fetch_scanner_arguments(
         let number_of_order_bys = (*scan).numberOfOrderBys;
         let number_of_keys = (*scan).numberOfKeys;
 
-        if !(0..=1).contains(&number_of_order_bys) {
+        if number_of_order_bys > 1 {
             pgrx::error!("vector search with multiple ORDER BY clauses is not supported");
-        }
-        if number_of_order_bys == 0 && number_of_keys > 1 {
-            pgrx::error!(
-                "vector search with multiple WHERE clauses and no ORDER BY clause is not supported"
-            );
         }
         if number_of_order_bys == 0 && number_of_keys == 0 {
             pgrx::error!(
@@ -146,6 +145,31 @@ pub fn fetch_scanner_arguments(
                 let (options, _) = am_options::options((*scan).indexRelation);
                 let (key_vector, threshold) = from_datum_to_range(value, &options.vector, is_null);
                 (key_vector, threshold, false)
+            }
+            (0, n) => {
+                // Pick the tightest threshold by first key vector
+                let mut vector: Option<OwnedVector> = None;
+                let mut threshold: Option<f32> = None;
+
+                let (options, _) = am_options::options((*scan).indexRelation);
+                for i in 0..n as usize {
+                    let data = (*scan).keyData.add(i);
+                    if (*data).sk_strategy != 2 {
+                        continue;
+                    }
+                    let value = (*data).sk_argument;
+                    let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                    let (v, t) = from_datum_to_range(value, &options.vector, is_null);
+                    if (vector.is_some() && vector != v) || v.is_none() || t.is_none() {
+                        continue;
+                    }
+                    match (threshold, t) {
+                        (None, _) => (vector, threshold) = (v, t),
+                        (Some(old), Some(new)) if new < old => (vector, threshold) = (v, t),
+                        _ => {}
+                    }
+                }
+                (vector, threshold, true)
             }
             (1, 0) => {
                 let data = (*scan).orderByData.add(0);
@@ -172,12 +196,12 @@ pub fn fetch_scanner_arguments(
                 }
             }
             (1, n) => {
+                // Pick the tightest threshold by orderby vector
                 let data = (*scan).orderByData.add(0);
                 let value = (*data).sk_argument;
                 let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
                 let orderby_vector = from_datum_to_vector(value, is_null);
 
-                // Pick threshold by orderby vector
                 let mut threshold: Option<f32> = None;
 
                 let (options, _) = am_options::options((*scan).indexRelation);

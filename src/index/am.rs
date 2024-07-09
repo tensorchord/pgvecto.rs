@@ -328,14 +328,14 @@ pub unsafe extern "C" fn amgettuple(
     let scanner = unsafe { (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked() };
     let oid = unsafe { (*(*scan).indexRelation).rd_id };
     let handle = from_oid_to_handle(oid);
-    if let Some((proceed, recheck, pointer)) = am_scan::scan_next(scanner, handle) {
+    if let Some((pointer, recheck)) = am_scan::scan_next(scanner, handle) {
         let ctid = pointer_to_ctid(pointer);
         unsafe {
             (*scan).xs_heaptid = ctid;
             (*scan).xs_recheckorderby = false;
             (*scan).xs_recheck = recheck;
         }
-        proceed
+        true
     } else {
         false
     }
