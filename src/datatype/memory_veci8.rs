@@ -213,10 +213,9 @@ impl FromDatum for Veci8Output {
         if is_null {
             None
         } else {
-            let p = NonNull::new(datum.cast_mut_ptr::<Veci8Header>()).unwrap();
-            let q = unsafe {
-                NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.cast().as_ptr()).cast()).unwrap()
-            };
+            let p = NonNull::new(datum.cast_mut_ptr::<Veci8Header>())?;
+            let q =
+                unsafe { NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.cast().as_ptr()).cast())? };
             if p != q {
                 Some(Veci8Output(q))
             } else {
@@ -235,7 +234,17 @@ unsafe impl UnboxDatum for Veci8Output {
     where
         Self: 'src,
     {
-        unsafe { Veci8Output::from_datum(d.sans_lifetime(), false).unwrap() }
+        let p = NonNull::new(d.sans_lifetime().cast_mut_ptr::<Veci8Header>()).unwrap();
+        let q = unsafe {
+            NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.cast().as_ptr()).cast()).unwrap()
+        };
+        if p != q {
+            Veci8Output(q)
+        } else {
+            let header = p.as_ptr();
+            let vector = unsafe { (*header).for_borrow() };
+            Veci8Output::new(vector)
+        }
     }
 }
 

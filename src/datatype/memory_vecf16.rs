@@ -151,10 +151,9 @@ impl FromDatum for Vecf16Output {
         if is_null {
             None
         } else {
-            let p = NonNull::new(datum.cast_mut_ptr::<Vecf16Header>()).unwrap();
-            let q = unsafe {
-                NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.cast().as_ptr()).cast()).unwrap()
-            };
+            let p = NonNull::new(datum.cast_mut_ptr::<Vecf16Header>())?;
+            let q =
+                unsafe { NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.cast().as_ptr()).cast())? };
             if p != q {
                 Some(Vecf16Output(q))
             } else {
@@ -173,7 +172,17 @@ unsafe impl UnboxDatum for Vecf16Output {
     where
         Self: 'src,
     {
-        unsafe { Vecf16Output::from_datum(d.sans_lifetime(), false).unwrap() }
+        let p = NonNull::new(d.sans_lifetime().cast_mut_ptr::<Vecf16Header>()).unwrap();
+        let q = unsafe {
+            NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.cast().as_ptr()).cast()).unwrap()
+        };
+        if p != q {
+            Vecf16Output(q)
+        } else {
+            let header = p.as_ptr();
+            let vector = unsafe { (*header).for_borrow() };
+            Vecf16Output::new(vector)
+        }
     }
 }
 

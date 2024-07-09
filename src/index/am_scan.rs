@@ -4,54 +4,48 @@ use crate::gucs::planning::Mode;
 use crate::gucs::planning::SEARCH_MODE;
 use crate::ipc::{client, ClientBasic, ClientVbase};
 use base::index::*;
-use base::scalar::F32;
+use base::scalar::ScalarLike;
 use base::search::*;
 use base::vector::*;
+
+use super::am_options;
+use super::utils::from_datum_to_range;
+use super::utils::from_datum_to_vector;
 
 pub enum Scanner {
     Initial {
         vector: Option<OwnedVector>,
         threshold: Option<f32>,
+        recheck: bool,
     },
     Basic {
         basic: ClientBasic,
         threshold: Option<f32>,
+        recheck: bool,
     },
     Vbase {
         vbase: ClientVbase,
         threshold: Option<f32>,
+        recheck: bool,
     },
-    Empty {
-        threshold: Option<f32>,
-    },
+    Empty {},
 }
 
-impl Scanner {
-    pub fn threshold(&self) -> Option<f32> {
-        match self {
-            Scanner::Initial {
-                vector: _,
-                threshold,
-            } => *threshold,
-            Scanner::Basic {
-                basic: _,
-                threshold,
-            } => *threshold,
-            Scanner::Vbase {
-                vbase: _,
-                threshold,
-            } => *threshold,
-            Scanner::Empty { threshold } => *threshold,
-        }
+pub fn scan_make(vector: Option<OwnedVector>, threshold: Option<f32>, recheck: bool) -> Scanner {
+    Scanner::Initial {
+        vector,
+        threshold,
+        recheck,
     }
 }
 
-pub fn scan_make(vector: Option<OwnedVector>, threshold: Option<f32>) -> Scanner {
-    Scanner::Initial { vector, threshold }
-}
-
-pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<(F32, Pointer)> {
-    if let Scanner::Initial { vector, threshold } = scanner {
+pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<(bool, bool, Pointer)> {
+    if let Scanner::Initial {
+        vector,
+        threshold,
+        recheck,
+    } = scanner
+    {
         if let Some(vector) = vector.as_ref() {
             let rpc = check_client(client());
 
@@ -67,6 +61,7 @@ pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<(F32, Pointer)
                     *scanner = Scanner::Basic {
                         basic,
                         threshold: *threshold,
+                        recheck: *recheck,
                     };
                 }
                 Mode::vbase => {
@@ -80,20 +75,32 @@ pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<(F32, Pointer)
                     *scanner = Scanner::Vbase {
                         vbase,
                         threshold: *threshold,
+                        recheck: *recheck,
                     };
                 }
             }
         } else {
-            *scanner = Scanner::Empty {
-                threshold: *threshold,
-            };
+            *scanner = Scanner::Empty {};
         }
     }
-    match scanner {
+    let (result, threshold, recheck) = match scanner {
         Scanner::Initial { .. } => unreachable!(),
-        Scanner::Basic { basic, .. } => basic.next(),
-        Scanner::Vbase { vbase, .. } => vbase.next(),
-        Scanner::Empty { threshold: _ } => None,
+        Scanner::Basic {
+            basic,
+            threshold,
+            recheck,
+        } => (basic.next(), *threshold, *recheck),
+        Scanner::Vbase {
+            vbase,
+            threshold,
+            recheck,
+        } => (vbase.next(), *threshold, *recheck),
+        Scanner::Empty {} => (None, None, false),
+    };
+    match (result, threshold) {
+        (Some((_, ptr)), None) => Some((true, recheck, ptr)),
+        (Some((distance, ptr)), Some(t)) => Some((distance.to_f32() < t, recheck, ptr)),
+        _ => None,
     }
 }
 
@@ -106,6 +113,94 @@ pub fn scan_release(scanner: Scanner) {
         Scanner::Vbase { vbase, .. } => {
             vbase.leave();
         }
-        Scanner::Empty { threshold: _ } => {}
+        Scanner::Empty {} => {}
+    }
+}
+
+pub fn fetch_scanner_arguments(
+    scan: pgrx::pg_sys::IndexScanDesc,
+) -> (Option<OwnedVector>, Option<f32>, bool) {
+    unsafe {
+        let number_of_order_bys = (*scan).numberOfOrderBys;
+        let number_of_keys = (*scan).numberOfKeys;
+
+        if !(0..=1).contains(&number_of_order_bys) {
+            pgrx::error!("vector search with multiple ORDER BY clauses is not supported");
+        }
+        if number_of_order_bys == 0 && number_of_keys > 1 {
+            pgrx::error!(
+                "vector search with multiple WHERE clauses and no ORDER BY clause is not supported"
+            );
+        }
+        if number_of_order_bys == 0 && number_of_keys == 0 {
+            pgrx::error!(
+                "vector search with no WHERE clause and no ORDER BY clause is not supported"
+            );
+        }
+
+        match (number_of_order_bys, number_of_keys) {
+            (0, 1) => {
+                let data = (*scan).keyData.add(0);
+                let value = (*data).sk_argument;
+                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                let (options, _) = am_options::options((*scan).indexRelation);
+                let (key_vector, threshold) = from_datum_to_range(value, &options.vector, is_null);
+                (key_vector, threshold, false)
+            }
+            (1, 0) => {
+                let data = (*scan).orderByData.add(0);
+                let value = (*data).sk_argument;
+                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                let orderby_vector = from_datum_to_vector(value, is_null);
+                (orderby_vector, None, false)
+            }
+            (1, 1) => {
+                let data = (*scan).keyData.add(0);
+                let value = (*data).sk_argument;
+                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                let (options, _) = am_options::options((*scan).indexRelation);
+                let (key_vector, threshold) = from_datum_to_range(value, &options.vector, is_null);
+
+                let data = (*scan).orderByData.add(0);
+                let value = (*data).sk_argument;
+                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                let orderby_vector = from_datum_to_vector(value, is_null);
+                if key_vector == orderby_vector {
+                    (key_vector, threshold, false)
+                } else {
+                    (None, None, true)
+                }
+            }
+            (1, n) => {
+                let data = (*scan).orderByData.add(0);
+                let value = (*data).sk_argument;
+                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                let orderby_vector = from_datum_to_vector(value, is_null);
+
+                // Pick threshold by orderby vector
+                let mut threshold: Option<f32> = None;
+
+                let (options, _) = am_options::options((*scan).indexRelation);
+                for i in 0..n as usize {
+                    let data = (*scan).keyData.add(i);
+                    if (*data).sk_strategy != 2 {
+                        continue;
+                    }
+                    let value = (*data).sk_argument;
+                    let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                    let (v, t) = from_datum_to_range(value, &options.vector, is_null);
+                    if v != orderby_vector || t.is_none() {
+                        continue;
+                    }
+                    match (threshold, t) {
+                        (None, _) => threshold = t,
+                        (Some(old), Some(new)) if new < old => threshold = t,
+                        _ => {}
+                    }
+                }
+                (orderby_vector, threshold, true)
+            }
+            _ => unreachable!(),
+        }
     }
 }

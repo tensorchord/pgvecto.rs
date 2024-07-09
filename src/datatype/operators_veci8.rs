@@ -1,9 +1,9 @@
 use crate::datatype::memory_veci8::{Veci8Input, Veci8Output};
 use crate::error::*;
-use crate::utils::range::*;
 use base::operator::*;
 use base::scalar::*;
 use base::vector::*;
+use std::num::NonZero;
 use std::ops::Deref;
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -101,37 +101,61 @@ fn _vectors_veci8_operator_l2(lhs: Veci8Input<'_>, rhs: Veci8Input<'_>) -> f32 {
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_veci8_sphere_l2_lt(
+fn _vectors_veci8_sphere_l2_in(
     lhs: Veci8Input<'_>,
     rhs: pgrx::composite_type!("sphere_veci8"),
 ) -> bool {
-    let center: Veci8Output = composite_get(&rhs, 1);
+    let center: Veci8Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
+        Ok(Some(s)) => s,
+        Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
+        Err(e) => pgrx::error!("Parse center failed at sphere:{e}"),
+    };
     check_value_dims_65535(center.len());
     check_matched_dims(lhs.len(), center.len());
-    let radius: f32 = composite_get(&rhs, 2);
+    let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
+        Ok(Some(s)) => s,
+        Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
+        Err(e) => pgrx::error!("Parse radius failed at sphere:{e}"),
+    };
     Veci8L2::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_veci8_sphere_dot_lt(
+fn _vectors_veci8_sphere_dot_in(
     lhs: Veci8Input<'_>,
     rhs: pgrx::composite_type!("sphere_veci8"),
 ) -> bool {
-    let center: Veci8Output = composite_get(&rhs, 1);
+    let center: Veci8Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
+        Ok(Some(s)) => s,
+        Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
+        Err(e) => pgrx::error!("Parse center failed at sphere:{e}"),
+    };
     check_value_dims_65535(center.len());
     check_matched_dims(lhs.len(), center.len());
-    let radius: f32 = composite_get(&rhs, 2);
+    let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
+        Ok(Some(s)) => s,
+        Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
+        Err(e) => pgrx::error!("Parse radius failed at sphere:{e}"),
+    };
     Veci8Dot::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_veci8_sphere_cos_lt(
+fn _vectors_veci8_sphere_cos_in(
     lhs: Veci8Input<'_>,
     rhs: pgrx::composite_type!("sphere_veci8"),
 ) -> bool {
-    let center: Veci8Output = composite_get(&rhs, 1);
+    let center: Veci8Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
+        Ok(Some(s)) => s,
+        Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
+        Err(e) => pgrx::error!("Parse center failed at sphere:{e}"),
+    };
     check_value_dims_65535(center.len());
     check_matched_dims(lhs.len(), center.len());
-    let radius: f32 = composite_get(&rhs, 2);
+    let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
+        Ok(Some(s)) => s,
+        Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
+        Err(e) => pgrx::error!("Parse radius failed at sphere:{e}"),
+    };
     Veci8Cos::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
 }

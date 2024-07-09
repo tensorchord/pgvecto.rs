@@ -2,16 +2,15 @@ use super::am_options;
 use super::am_scan;
 use crate::error::*;
 use crate::gucs::planning::ENABLE_INDEX;
+use crate::index::am_scan::fetch_scanner_arguments;
 use crate::index::am_scan::Scanner;
 use crate::index::catalog::{on_index_build, on_index_write};
 use crate::index::utils::{ctid_to_pointer, pointer_to_ctid};
-use crate::index::utils::{from_datum_to_range, from_datum_to_vector, from_oid_to_handle};
+use crate::index::utils::{from_datum_to_vector, from_oid_to_handle};
 use crate::ipc::{client, ClientRpc};
 use crate::utils::cells::PgCell;
 use am_options::Reloption;
 use base::index::*;
-use base::scalar::ScalarLike;
-use base::vector::OwnedVector;
 use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
 
@@ -282,7 +281,7 @@ pub unsafe extern "C" fn ambeginscan(
 
     let scan = unsafe { pgrx::pg_sys::RelationGetIndexScan(index, n_keys, n_orderbys) };
     unsafe {
-        let scanner = am_scan::scan_make(None, None);
+        let scanner = am_scan::scan_make(None, None, false);
         (*scan).opaque = CurrentMemoryContext.leak_and_drop_on_delete(scanner).cast();
     }
     scan
@@ -297,90 +296,16 @@ pub unsafe extern "C" fn amrescan(
     _n_orderbys: std::os::raw::c_int,
 ) {
     unsafe {
-        if (*scan).numberOfOrderBys < 0 || (*scan).numberOfOrderBys > 1 {
-            pgrx::error!(
-                "vector search with {} ORDER BY clauses is not supported",
-                (*scan).numberOfOrderBys
-            );
-        }
-        if (*scan).numberOfKeys < 0 {
-            pgrx::error!(
-                "vector search with {} WHERE clauses is not supported",
-                (*scan).numberOfKeys
-            );
-        }
         if !keys.is_null() && (*scan).numberOfKeys > 0 {
             std::ptr::copy(keys, (*scan).keyData, (*scan).numberOfKeys as _);
         }
         if !orderbys.is_null() && (*scan).numberOfOrderBys > 0 {
             std::ptr::copy(orderbys, (*scan).orderByData, (*scan).numberOfOrderBys as _);
         }
-        (*scan).xs_recheck = false;
-        let orderby_vector = match (*scan).numberOfOrderBys {
-            0 => None,
-            1 => {
-                let data = (*scan).orderByData.add(0);
-                let value = (*data).sk_argument;
-                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
-                from_datum_to_vector(value, is_null)
-            }
-            _ => unreachable!(),
-        };
-        let (range_vector, threshold) = match (*scan).numberOfKeys {
-            0 => (None, None),
-            1 => {
-                let data = (*scan).keyData.add(0);
-                let value = (*data).sk_argument;
-                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
-                let (options, _) = am_options::options((*scan).indexRelation);
-                let (v, threshold) = from_datum_to_range(value, &options.vector, is_null);
-                if orderby_vector.is_none() || (orderby_vector.is_some() && v == orderby_vector) {
-                    (v, threshold)
-                } else {
-                    (*scan).xs_recheck = true;
-                    (None, None)
-                }
-            }
-            n if orderby_vector.is_some() => {
-                // Pick range vector by orderby vector
-                let mut vector: Option<OwnedVector> = None;
-                let mut threshold: Option<f32> = None;
-
-                let (options, _) = am_options::options((*scan).indexRelation);
-                for i in 0..n as usize {
-                    let data = (*scan).keyData.add(i);
-                    if (*data).sk_strategy != 2 {
-                        continue;
-                    }
-                    let value = (*data).sk_argument;
-                    let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
-                    let (v, t) = from_datum_to_range(value, &options.vector, is_null);
-                    if v == orderby_vector && vector.is_none() {
-                        (vector, threshold) = (v, t);
-                    } else if v == orderby_vector && vector.is_some() {
-                        pgrx::error!(
-                            "vector search with two WHERE clause of same key is not supported"
-                        );
-                    }
-                }
-                (*scan).xs_recheck = true;
-                (vector, threshold)
-            }
-            _ if orderby_vector.is_none() => {
-                (*scan).xs_recheck = true;
-                (None, None)
-            }
-            _ => unreachable!(),
-        };
-
-        let vector = match (orderby_vector, range_vector) {
-            (Some(v), _) => Some(v),
-            (None, Some(v)) => Some(v),
-            (None, None) => None,
-        };
+        let (vector, threshold, recheck) = fetch_scanner_arguments(scan);
 
         let scanner = (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked();
-        let scanner = std::mem::replace(scanner, am_scan::scan_make(vector, threshold));
+        let scanner = std::mem::replace(scanner, am_scan::scan_make(vector, threshold, recheck));
         am_scan::scan_release(scanner);
     }
 }
@@ -403,17 +328,14 @@ pub unsafe extern "C" fn amgettuple(
     let scanner = unsafe { (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked() };
     let oid = unsafe { (*(*scan).indexRelation).rd_id };
     let handle = from_oid_to_handle(oid);
-    if let Some((distance, pointer)) = am_scan::scan_next(scanner, handle) {
+    if let Some((proceed, recheck, pointer)) = am_scan::scan_next(scanner, handle) {
         let ctid = pointer_to_ctid(pointer);
         unsafe {
             (*scan).xs_heaptid = ctid;
             (*scan).xs_recheckorderby = false;
+            (*scan).xs_recheck = recheck;
         }
-        if let Some(threshold) = scanner.threshold() {
-            distance.to_f32() < threshold
-        } else {
-            true
-        }
+        proceed
     } else {
         false
     }
@@ -423,7 +345,7 @@ pub unsafe extern "C" fn amgettuple(
 pub unsafe extern "C" fn amendscan(scan: pgrx::pg_sys::IndexScanDesc) {
     unsafe {
         let scanner = (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked();
-        let scanner = std::mem::replace(scanner, am_scan::scan_make(None, None));
+        let scanner = std::mem::replace(scanner, am_scan::scan_make(None, None, false));
         am_scan::scan_release(scanner);
     }
 }

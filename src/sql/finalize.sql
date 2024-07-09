@@ -616,112 +616,112 @@ CREATE OPERATOR <~> (
 );
 
 CREATE OPERATOR <<->> (
-    PROCEDURE = _vectors_vecf32_sphere_l2_lt,
+    PROCEDURE = _vectors_vecf32_sphere_l2_in,
     LEFTARG = vector,
     RIGHTARG = sphere_vector,
     COMMUTATOR = <<->>
 );
 
 CREATE OPERATOR <<->> (
-    PROCEDURE = _vectors_vecf16_sphere_l2_lt,
+    PROCEDURE = _vectors_vecf16_sphere_l2_in,
     LEFTARG = vecf16,
     RIGHTARG = sphere_vecf16,
     COMMUTATOR = <<->>
 );
 
 CREATE OPERATOR <<->> (
-    PROCEDURE = _vectors_svecf32_sphere_l2_lt,
+    PROCEDURE = _vectors_svecf32_sphere_l2_in,
     LEFTARG = svector,
     RIGHTARG = sphere_svector,
     COMMUTATOR = <<->>
 );
 
 CREATE OPERATOR <<->> (
-    PROCEDURE = _vectors_bvecf32_sphere_l2_lt,
+    PROCEDURE = _vectors_bvecf32_sphere_l2_in,
     LEFTARG = bvector,
     RIGHTARG = sphere_bvector,
     COMMUTATOR = <<->>
 );
 
 CREATE OPERATOR <<->> (
-    PROCEDURE = _vectors_veci8_sphere_l2_lt,
+    PROCEDURE = _vectors_veci8_sphere_l2_in,
     LEFTARG = veci8,
     RIGHTARG = sphere_veci8,
     COMMUTATOR = <<->>
 );
 
 CREATE OPERATOR <<#>> (
-    PROCEDURE = _vectors_vecf32_sphere_dot_lt,
+    PROCEDURE = _vectors_vecf32_sphere_dot_in,
     LEFTARG = vector,
     RIGHTARG = sphere_vector,
     COMMUTATOR = <<#>>
 );
 
 CREATE OPERATOR <<#>> (
-    PROCEDURE = _vectors_vecf16_sphere_dot_lt,
+    PROCEDURE = _vectors_vecf16_sphere_dot_in,
     LEFTARG = vecf16,
     RIGHTARG = sphere_vecf16,
     COMMUTATOR = <<#>>
 );
 
 CREATE OPERATOR <<#>> (
-    PROCEDURE = _vectors_svecf32_sphere_dot_lt,
+    PROCEDURE = _vectors_svecf32_sphere_dot_in,
     LEFTARG = svector,
     RIGHTARG = sphere_svector,
     COMMUTATOR = <<#>>
 );
 
 CREATE OPERATOR <<#>> (
-    PROCEDURE = _vectors_bvecf32_sphere_dot_lt,
+    PROCEDURE = _vectors_bvecf32_sphere_dot_in,
     LEFTARG = bvector,
     RIGHTARG = sphere_bvector,
     COMMUTATOR = <<#>>
 );
 
 CREATE OPERATOR <<#>> (
-    PROCEDURE = _vectors_veci8_sphere_dot_lt,
+    PROCEDURE = _vectors_veci8_sphere_dot_in,
     LEFTARG = veci8,
     RIGHTARG = sphere_veci8,
     COMMUTATOR = <<#>>
 );
 
 CREATE OPERATOR <<=>> (
-    PROCEDURE = _vectors_vecf32_sphere_cos_lt,
+    PROCEDURE = _vectors_vecf32_sphere_cos_in,
     LEFTARG = vector,
     RIGHTARG = sphere_vector,
     COMMUTATOR = <<=>>
 );
 
 CREATE OPERATOR <<=>> (
-    PROCEDURE = _vectors_vecf16_sphere_cos_lt,
+    PROCEDURE = _vectors_vecf16_sphere_cos_in,
     LEFTARG = vecf16,
     RIGHTARG = sphere_vecf16,
     COMMUTATOR = <<=>>
 );
 
 CREATE OPERATOR <<=>> (
-    PROCEDURE = _vectors_svecf32_sphere_cos_lt,
+    PROCEDURE = _vectors_svecf32_sphere_cos_in,
     LEFTARG = svector,
     RIGHTARG = sphere_svector,
     COMMUTATOR = <<=>>
 );
 
 CREATE OPERATOR <<=>> (
-    PROCEDURE = _vectors_bvecf32_sphere_cos_lt,
+    PROCEDURE = _vectors_bvecf32_sphere_cos_in,
     LEFTARG = bvector,
     RIGHTARG = sphere_bvector,
     COMMUTATOR = <<=>>
 );
 
 CREATE OPERATOR <<=>> (
-    PROCEDURE = _vectors_veci8_sphere_cos_lt,
+    PROCEDURE = _vectors_veci8_sphere_cos_in,
     LEFTARG = veci8,
     RIGHTARG = sphere_veci8,
     COMMUTATOR = <<=>>
 );
 
 CREATE OPERATOR <<~>> (
-    PROCEDURE = _vectors_bvecf32_sphere_jaccard_lt,
+    PROCEDURE = _vectors_bvecf32_sphere_jaccard_in,
     LEFTARG = bvector,
     RIGHTARG = sphere_bvector,
     COMMUTATOR = <<~>>
@@ -791,45 +791,20 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binari
 CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
 
-CREATE FUNCTION sphere("center" vector, "radius" real) RETURNS sphere_vector
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
-$$
-BEGIN
-    return ROW(center, radius)::sphere_vector;
-END
-$$;
+CREATE FUNCTION sphere(vector, real) RETURNS sphere_vector
+IMMUTABLE PARALLEL SAFE LANGUAGE sql AS 'SELECT ROW($1, $2)';
 
-CREATE FUNCTION sphere("center" vecf16, "radius" real) RETURNS sphere_vecf16
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
-$$
-BEGIN
-    return ROW(center, radius)::sphere_vecf16;
-END
-$$;
+CREATE FUNCTION sphere(vecf16, real) RETURNS sphere_vecf16
+IMMUTABLE PARALLEL SAFE LANGUAGE sql AS 'SELECT ROW($1, $2)';
 
-CREATE FUNCTION sphere("center" svector, "radius" real) RETURNS sphere_svector
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
-$$
-BEGIN
-    return ROW(center, radius)::sphere_svector;
-END
-$$;
+CREATE FUNCTION sphere(svector, real) RETURNS sphere_svector
+IMMUTABLE PARALLEL SAFE LANGUAGE sql AS 'SELECT ROW($1, $2)';
 
-CREATE FUNCTION sphere("center" bvector, "radius" real) RETURNS sphere_bvector
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
-$$
-BEGIN
-    return ROW(center, radius)::sphere_bvector;
-END
-$$;
+CREATE FUNCTION sphere(bvector, real) RETURNS sphere_bvector
+IMMUTABLE PARALLEL SAFE LANGUAGE sql AS 'SELECT ROW($1, $2)';
 
-CREATE FUNCTION sphere("center" veci8, "radius" real) RETURNS sphere_veci8
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE plpgsql AS 
-$$
-BEGIN
-    return ROW(center, radius)::sphere_veci8;
-END
-$$;
+CREATE FUNCTION sphere(veci8, real) RETURNS sphere_veci8
+IMMUTABLE PARALLEL SAFE LANGUAGE sql AS 'SELECT ROW($1, $2)';
 
 -- List of aggregates
 

@@ -199,7 +199,7 @@ pub unsafe fn list_from_vec<T>(vec: Vec<*mut T>) -> *mut pgrx::pg_sys::List {
     newlist
 }
 
-fn swap_destroy<T>(target: &mut *mut T, value: *mut T) {
+unsafe fn swap_destroy<T>(target: &mut *mut T, value: *mut T) {
     let ptr = *target;
     *target = value;
     if !ptr.is_null() {

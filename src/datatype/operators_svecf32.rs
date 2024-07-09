@@ -1,10 +1,10 @@
 use crate::datatype::memory_svecf32::{SVecf32Input, SVecf32Output};
 use crate::error::*;
-use crate::utils::range::*;
 use base::operator::*;
 use base::scalar::*;
 use base::vector::*;
 use num_traits::Zero;
+use std::num::NonZero;
 use std::ops::Deref;
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -217,37 +217,61 @@ fn compare(a: SVecf32Input<'_>, b: SVecf32Input<'_>) -> std::cmp::Ordering {
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_sphere_l2_lt(
+fn _vectors_svecf32_sphere_l2_in(
     lhs: SVecf32Input<'_>,
     rhs: pgrx::composite_type!("sphere_svector"),
 ) -> bool {
-    let center: SVecf32Output = composite_get(&rhs, 1);
+    let center: SVecf32Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
+        Ok(Some(s)) => s,
+        Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
+        Err(e) => pgrx::error!("Parse center failed at sphere:{e}"),
+    };
     check_value_dims_1048575(center.dims());
     check_matched_dims(lhs.dims(), center.dims());
-    let radius: f32 = composite_get(&rhs, 2);
+    let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
+        Ok(Some(s)) => s,
+        Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
+        Err(e) => pgrx::error!("Parse radius failed at sphere:{e}"),
+    };
     SVecf32L2::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_sphere_dot_lt(
+fn _vectors_svecf32_sphere_dot_in(
     lhs: SVecf32Input<'_>,
     rhs: pgrx::composite_type!("sphere_svector"),
 ) -> bool {
-    let center: SVecf32Output = composite_get(&rhs, 1);
+    let center: SVecf32Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
+        Ok(Some(s)) => s,
+        Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
+        Err(e) => pgrx::error!("Parse center failed at sphere:{e}"),
+    };
     check_value_dims_1048575(center.dims());
     check_matched_dims(lhs.dims(), center.dims());
-    let radius: f32 = composite_get(&rhs, 2);
+    let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
+        Ok(Some(s)) => s,
+        Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
+        Err(e) => pgrx::error!("Parse radius failed at sphere:{e}"),
+    };
     SVecf32Dot::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_svecf32_sphere_cos_lt(
+fn _vectors_svecf32_sphere_cos_in(
     lhs: SVecf32Input<'_>,
     rhs: pgrx::composite_type!("sphere_svector"),
 ) -> bool {
-    let center: SVecf32Output = composite_get(&rhs, 1);
+    let center: SVecf32Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
+        Ok(Some(s)) => s,
+        Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
+        Err(e) => pgrx::error!("Parse center failed at sphere:{e}"),
+    };
     check_value_dims_1048575(center.dims());
     check_matched_dims(lhs.dims(), center.dims());
-    let radius: f32 = composite_get(&rhs, 2);
+    let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
+        Ok(Some(s)) => s,
+        Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
+        Err(e) => pgrx::error!("Parse radius failed at sphere:{e}"),
+    };
     SVecf32Cos::distance(lhs.for_borrow(), center.for_borrow()).to_f32() < radius
 }
