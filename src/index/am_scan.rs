@@ -27,6 +27,36 @@ pub enum Scanner {
     Empty {},
 }
 
+pub fn scan_build(
+    orderbys: Vec<Option<OwnedVector>>,
+    spheres: Vec<(Option<OwnedVector>, Option<f32>)>,
+) -> (Option<OwnedVector>, Option<f32>, bool) {
+    let mut vector = None;
+    let mut threshold = None;
+    let mut recheck = false;
+    for orderby_vector in orderbys {
+        if vector.is_none() {
+            vector = orderby_vector;
+        } else if orderby_vector.is_some() && vector != orderby_vector {
+            pgrx::error!("vector search with multiple vectors is not supported");
+        }
+    }
+    for (sphere_vector, sphere_threshold) in spheres {
+        if vector.is_none() {
+            vector = sphere_vector;
+            threshold = sphere_threshold;
+        } else if vector == sphere_vector {
+            if threshold.is_none() || sphere_threshold < threshold {
+                threshold = sphere_threshold;
+            }
+        } else {
+            recheck = true;
+            break;
+        }
+    }
+    (vector, threshold, recheck)
+}
+
 pub fn scan_make(vector: Option<OwnedVector>, threshold: Option<f32>, recheck: bool) -> Scanner {
     Scanner::Initial {
         vector,
@@ -122,28 +152,4 @@ pub fn scan_release(scanner: Scanner) {
         }
         Scanner::Empty {} => {}
     }
-}
-
-pub fn fetch_scanner_arguments(
-    order_bys: Vec<Option<OwnedVector>>,
-    keys: Vec<(Option<OwnedVector>, Option<f32>)>,
-) -> (Option<OwnedVector>, Option<f32>, bool) {
-    let mut vector = order_bys.into_iter().next().flatten();
-    let mut threshold = None;
-    let mut recheck = false;
-
-    for (range_vector, range_threshold) in keys {
-        if vector.is_none() {
-            (vector, threshold) = (range_vector, range_threshold);
-        } else if vector == range_vector {
-            match (threshold, range_threshold) {
-                (None, _) => threshold = range_threshold,
-                (Some(old), Some(new)) if new < old => threshold = range_threshold,
-                _ => {}
-            }
-        } else {
-            recheck = true;
-        }
-    }
-    (vector, threshold, recheck)
 }

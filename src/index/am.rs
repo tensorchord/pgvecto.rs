@@ -1,18 +1,16 @@
 use super::am_options;
+use super::am_options::Opfamily;
 use super::am_scan;
-use super::utils::from_datum_to_range;
 use crate::error::*;
 use crate::gucs::planning::ENABLE_INDEX;
-use crate::index::am_scan::fetch_scanner_arguments;
 use crate::index::am_scan::Scanner;
 use crate::index::catalog::{on_index_build, on_index_write};
+use crate::index::utils::from_oid_to_handle;
 use crate::index::utils::{ctid_to_pointer, pointer_to_ctid};
-use crate::index::utils::{from_datum_to_vector, from_oid_to_handle};
 use crate::ipc::{client, ClientRpc};
 use crate::utils::cells::PgCell;
 use am_options::Reloption;
 use base::index::*;
-use base::vector::OwnedVector;
 use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
 
@@ -141,12 +139,14 @@ pub unsafe extern "C" fn ambuild(
     index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> *mut pgrx::pg_sys::IndexBuildResult {
     pub struct Builder {
+        pub opfamily: Opfamily,
         pub rpc: ClientRpc,
         pub result: *mut pgrx::pg_sys::IndexBuildResult,
     }
     let oid = unsafe { (*index).rd_id };
     let handle = from_oid_to_handle(oid);
     let (options, alterable_options) = unsafe { am_options::options(index) };
+    let opfamily = unsafe { am_options::opfamily(index) };
     let mut rpc = check_client(client());
     match rpc.create(handle, options, alterable_options) {
         Ok(()) => (),
@@ -161,6 +161,7 @@ pub unsafe extern "C" fn ambuild(
     }
     let result = unsafe { pgrx::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0() };
     let mut builder = Builder {
+        opfamily,
         rpc,
         result: result.as_ptr(),
     };
@@ -190,7 +191,11 @@ pub unsafe extern "C" fn ambuild(
         state: *mut std::os::raw::c_void,
     ) {
         let state = unsafe { &mut *state.cast::<Builder>() };
-        let vector = unsafe { from_datum_to_vector(*values.add(0), *is_null.add(0)) };
+        let vector = unsafe {
+            state
+                .opfamily
+                .datum_to_vector(*values.add(0), *is_null.add(0))
+        };
         if let Some(vector) = vector {
             let oid = unsafe { (*index).rd_id };
             let handle = from_oid_to_handle(oid);
@@ -254,9 +259,10 @@ pub unsafe extern "C" fn aminsert(
     _index_unchanged: bool,
     _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
+    let opfamily = unsafe { am_options::opfamily(index) };
     let oid = unsafe { (*index).rd_id };
     let handle = from_oid_to_handle(oid);
-    let vector = unsafe { from_datum_to_vector(*values.add(0), *is_null.add(0)) };
+    let vector = unsafe { opfamily.datum_to_vector(*values.add(0), *is_null.add(0)) };
     if let Some(vector) = vector {
         let pointer = ctid_to_pointer(unsafe { heap_tid.read() });
 
@@ -304,9 +310,36 @@ pub unsafe extern "C" fn amrescan(
         if !orderbys.is_null() && (*scan).numberOfOrderBys > 0 {
             std::ptr::copy(orderbys, (*scan).orderByData, (*scan).numberOfOrderBys as _);
         }
-        let (keys, order_bys) = keys_from_scan(scan);
-        let (vector, threshold, recheck) = fetch_scanner_arguments(keys, order_bys);
-
+        let opfamily = am_options::opfamily((*scan).indexRelation);
+        let (orderbys, spheres) = {
+            let mut orderbys = Vec::new();
+            let mut spheres = Vec::new();
+            if (*scan).numberOfOrderBys == 0 && (*scan).numberOfKeys == 0 {
+                pgrx::error!(
+                    "vector search with no WHERE clause and no ORDER BY clause is not supported"
+                );
+            }
+            for i in 0..(*scan).numberOfOrderBys {
+                let data = (*scan).orderByData.add(i as usize);
+                let value = (*data).sk_argument;
+                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                match (*data).sk_strategy {
+                    1 => orderbys.push(opfamily.datum_to_vector(value, is_null)),
+                    _ => unreachable!(),
+                }
+            }
+            for i in 0..(*scan).numberOfKeys {
+                let data = (*scan).keyData.add(i as usize);
+                let value = (*data).sk_argument;
+                let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
+                match (*data).sk_strategy {
+                    2 => spheres.push(opfamily.datum_to_sphere(value, is_null)),
+                    _ => unreachable!(),
+                }
+            }
+            (orderbys, spheres)
+        };
+        let (vector, threshold, recheck) = am_scan::scan_build(orderbys, spheres);
         let scanner = (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked();
         let scanner = std::mem::replace(scanner, am_scan::scan_make(vector, threshold, recheck));
         am_scan::scan_release(scanner);
@@ -396,48 +429,4 @@ pub unsafe extern "C" fn amvacuumcleanup(
     _stats: *mut pgrx::pg_sys::IndexBulkDeleteResult,
 ) -> *mut pgrx::pg_sys::IndexBulkDeleteResult {
     std::ptr::null_mut()
-}
-
-unsafe fn keys_from_scan(
-    scan: pgrx::pg_sys::IndexScanDesc,
-) -> (
-    Vec<Option<OwnedVector>>,
-    Vec<(Option<OwnedVector>, Option<f32>)>,
-) {
-    let mut keys = Vec::new();
-    let mut order_bys = Vec::new();
-    if scan.is_null() {
-        return (order_bys, keys);
-    }
-    unsafe {
-        let number_of_order_bys = (*scan).numberOfOrderBys;
-        let number_of_keys = (*scan).numberOfKeys;
-        let (options, _) = am_options::options((*scan).indexRelation);
-
-        if number_of_order_bys > 1 {
-            pgrx::error!("vector search with multiple ORDER BY clauses is not supported");
-        }
-        if number_of_order_bys == 0 && number_of_keys == 0 {
-            pgrx::error!(
-                "vector search with no WHERE clause and no ORDER BY clause is not supported"
-            );
-        }
-
-        for i in 0..number_of_keys {
-            let data = (*scan).keyData.add(i as usize);
-            let value = (*data).sk_argument;
-            let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
-            if (*data).sk_strategy != 2 {
-                continue;
-            }
-            keys.push(from_datum_to_range(value, &options.vector, is_null));
-        }
-        for i in 0..number_of_order_bys {
-            let data = (*scan).orderByData.add(i as usize);
-            let value = (*data).sk_argument;
-            let is_null = ((*data).sk_flags & pgrx::pg_sys::SK_ISNULL as i32) != 0;
-            order_bys.push(from_datum_to_vector(value, is_null));
-        }
-    }
-    (order_bys, keys)
 }

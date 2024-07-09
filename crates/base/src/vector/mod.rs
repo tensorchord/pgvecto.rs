@@ -52,7 +52,7 @@ pub trait VectorBorrowed: Copy {
     fn normalize(&self) -> Self::Owned;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum OwnedVector {
     Vecf32(Vecf32Owned),
     Vecf16(Vecf16Owned),
