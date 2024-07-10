@@ -1,8 +1,10 @@
 #![allow(clippy::len_without_is_empty)]
 
+use base::distance::DistanceKind;
 use base::index::{IndexOptions, SearchOptions};
 use base::operator::Borrowed;
 use base::operator::Operator;
+use base::scalar::{ScalarLike, F32};
 use base::search::{Collection, Element, Payload, Source, Vectors};
 use base::vector::{VectorBorrowed, VectorKind};
 use common::dir_ops::sync_dir;
@@ -13,7 +15,7 @@ use quantization::{operator::OperatorQuantization, Quantization};
 use storage::{OperatorStorage, Storage};
 
 use std::cmp::Reverse;
-use std::collections::{BTreeMap, BinaryHeap, HashSet};
+use std::collections::{BTreeMap, BinaryHeap, HashMap};
 use std::fs::create_dir;
 use std::path::Path;
 
@@ -21,18 +23,23 @@ pub trait OperatorInverted: Operator + OperatorQuantization + OperatorStorage {}
 
 impl<T: Operator + OperatorQuantization + OperatorStorage> OperatorInverted for T {}
 
+#[allow(dead_code)]
 pub struct Inverted<O: OperatorInverted> {
     storage: O::Storage,
     quantization: Quantization<O>,
     payloads: MmapArray<Payload>,
     indexes: Json<Vec<u32>>,
     offsets: Json<Vec<u32>>,
+    scores: Json<Vec<F32>>,
 }
 
 impl<O: OperatorInverted> Inverted<O> {
     pub fn create(path: impl AsRef<Path>, options: IndexOptions, source: &impl Source<O>) -> Self {
         if options.vector.v != VectorKind::SVecf32 {
-            panic!("inverted index only supports `SVecf32` vectors")
+            panic!("inverted index only supports `SVecf32` vectors");
+        }
+        if options.vector.d != DistanceKind::Dot {
+            panic!("inverted index only supports `Dot` distance");
         }
         let remapped = RemappedCollection::from_source(source);
         from_nothing(path, options, &remapped)
@@ -47,21 +54,23 @@ impl<O: OperatorInverted> Inverted<O> {
         vector: Borrowed<'_, O>,
         _: &SearchOptions,
     ) -> BinaryHeap<Reverse<Element>> {
-        let mut visited = HashSet::new();
+        let mut doc_score = HashMap::new();
         let mut result = BinaryHeap::new();
         for (token, _) in vector.to_index_vec() {
             let start = self.offsets[token as usize];
             let end = self.offsets[token as usize + 1];
-            for j in &self.indexes[(start as usize)..(end as usize)] {
-                if visited.contains(j) {
-                    continue;
-                }
-                visited.insert(j);
-                result.push(Reverse(Element {
-                    distance: self.quantization.distance(&self.storage, vector, *j),
-                    payload: self.payloads[*j as usize],
-                }))
+            for i in (start as usize)..(end as usize) {
+                doc_score
+                    .entry(self.indexes[i])
+                    .and_modify(|e| *e += self.scores[i])
+                    .or_insert(self.scores[i]);
             }
+        }
+        for (doc, score) in doc_score.iter() {
+            result.push(Reverse(Element {
+                distance: -*score, // use negative score to match the negative dot product distance
+                payload: self.payloads[*doc as usize],
+            }));
         }
         result
     }
@@ -71,21 +80,23 @@ impl<O: OperatorInverted> Inverted<O> {
         vector: Borrowed<'a, O>,
         _: &'a SearchOptions,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-        let mut visited = HashSet::new();
+        let mut doc_score = HashMap::new();
         let mut result = Vec::new();
         for (token, _) in vector.to_index_vec() {
             let start = self.offsets[token as usize];
             let end = self.offsets[token as usize + 1];
-            for j in &self.indexes[(start as usize)..(end as usize)] {
-                if visited.contains(j) {
-                    continue;
-                }
-                visited.insert(j);
-                result.push(Element {
-                    distance: self.quantization.distance(&self.storage, vector, *j),
-                    payload: self.payloads[*j as usize],
-                })
+            for i in (start as usize)..(end as usize) {
+                doc_score
+                    .entry(self.indexes[i])
+                    .and_modify(|e| *e += self.scores[i])
+                    .or_insert(self.scores[i]);
             }
+        }
+        for (doc, score) in doc_score.iter() {
+            result.push(Element {
+                distance: -*score, // use negative score to match the negative dot product distance
+                payload: self.payloads[*doc as usize],
+            });
         }
         (result, Box::new(std::iter::empty()))
     }
@@ -113,14 +124,14 @@ fn from_nothing<O: OperatorInverted>(
     let inverted_options = options.indexing.clone().unwrap_inverted();
     let mut token_collection = BTreeMap::new();
     for i in 0..collection.len() {
-        for (token, _) in collection.vector(i).to_index_vec() {
+        for (token, score) in collection.vector(i).to_index_vec() {
             token_collection
                 .entry(token)
                 .or_insert_with(Vec::new)
-                .push(i);
+                .push((i, score.to_f()));
         }
     }
-    let (indexes, offsets) = build_compressed_matrix(token_collection);
+    let (indexes, offsets, scores) = build_compressed_matrix(token_collection);
 
     let storage = O::Storage::create(path.as_ref().join("storage"), collection);
     let quantization = Quantization::create(
@@ -135,6 +146,7 @@ fn from_nothing<O: OperatorInverted>(
     );
     let json_index = Json::create(path.as_ref().join("indexes"), indexes);
     let json_offset = Json::create(path.as_ref().join("offsets"), offsets);
+    let json_score = Json::create(path.as_ref().join("scores"), scores);
     sync_dir(path);
     Inverted {
         storage,
@@ -142,6 +154,7 @@ fn from_nothing<O: OperatorInverted>(
         payloads,
         indexes: json_index,
         offsets: json_offset,
+        scores: json_score,
     }
 }
 
@@ -151,32 +164,40 @@ fn open<O: OperatorInverted>(path: impl AsRef<Path>) -> Inverted<O> {
     let payloads = MmapArray::open(path.as_ref().join("payloads"));
     let offsets = Json::open(path.as_ref().join("offsets"));
     let indexes = Json::open(path.as_ref().join("indexes"));
+    let scores = Json::open(path.as_ref().join("scores"));
     Inverted {
         storage,
         quantization,
         payloads,
         indexes,
         offsets,
+        scores,
     }
 }
 
-fn build_compressed_matrix(token_collection: BTreeMap<u32, Vec<u32>>) -> (Vec<u32>, Vec<u32>) {
+fn build_compressed_matrix(
+    token_collection: BTreeMap<u32, Vec<(u32, F32)>>,
+) -> (Vec<u32>, Vec<u32>, Vec<F32>) {
     let mut indexes = Vec::new();
     let mut offsets = Vec::new();
+    let mut scores = Vec::new();
 
     let mut i = 0;
     let mut last: u32 = 0;
     offsets.push(0);
-    for (token, ids) in token_collection.iter() {
+    for (token, id_scores) in token_collection.iter() {
         while *token != i {
             offsets.push(last);
             i += 1;
         }
-        indexes.extend_from_slice(ids);
-        last += ids.len() as u32;
+        for (id, score) in id_scores {
+            indexes.push(*id);
+            scores.push(*score);
+        }
+        last += id_scores.len() as u32;
         offsets.push(last);
         i += 1;
     }
 
-    (indexes, offsets)
+    (indexes, offsets, scores)
 }
