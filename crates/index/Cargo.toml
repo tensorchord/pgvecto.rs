@@ -29,8 +29,8 @@ storage = { path = "../storage" }
 # algorithms
 flat = { path = "../flat" }
 hnsw = { path = "../hnsw" }
-ivf = { path = "../ivf" }
 inverted = { path = "../inverted" }
+ivf = { path = "../ivf" }
 
 [lints]
 workspace = true
