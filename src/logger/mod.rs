@@ -1,41 +1,32 @@
-mod message;
-mod protocol;
+mod postgres;
 
-use log::{set_boxed_logger, set_max_level, LevelFilter, Metadata, Record};
-use protocol::pipe_log;
+use log::{LevelFilter, Metadata, Record};
 
-#[derive(Debug, Clone)]
-pub struct VectorLogger {
+#[derive(Debug)]
+pub struct Logger {
     level: LevelFilter,
 }
 
-impl log::Log for VectorLogger {
+impl log::Log for Logger {
     fn enabled(&self, metadata: &Metadata) -> bool {
         metadata.level() <= self.level
     }
 
     fn log(&self, record: &Record) {
-        if self.enabled(record.metadata()) {
-            pipe_log(&record.args().to_string());
-        }
+        postgres::send_message_to_server_log(record);
     }
 
     fn flush(&self) {}
 }
 
-impl VectorLogger {
-    pub fn init(&self) {
-        set_boxed_logger(Box::new(self.clone())).unwrap();
-        set_max_level(self.level);
+impl Logger {
+    pub fn new(level: LevelFilter) -> Self {
+        Logger { level }
     }
 
-    pub fn build() -> Self {
-        VectorLogger {
-            level: LevelFilter::Info,
-        }
-    }
-
-    pub fn filter_level(&mut self, level: LevelFilter) {
-        self.level = level;
+    pub fn init(self) -> Result<(), log::SetLoggerError> {
+        log::set_max_level(self.level);
+        log::set_boxed_logger(Box::new(self))?;
+        Ok(())
     }
 }
