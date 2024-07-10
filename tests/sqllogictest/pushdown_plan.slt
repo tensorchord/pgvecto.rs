@@ -1,0 +1,146 @@
+statement ok
+SET search_path TO pg_temp, vectors;
+
+statement ok
+CREATE TABLE t (val0 vector(3), val1 vecf16(3), val2 svector(3));
+
+statement ok
+INSERT INTO t (val0, val1, val2) 
+SELECT 
+    ARRAY[random(), random(), random()]::real[]::vector, 
+    ARRAY[random(), random(), random()]::real[]::vector::vecf16,
+    ARRAY[random(), random(), random()]::real[]::vector::svector
+FROM generate_series(1, 10000);
+
+statement ok
+CREATE INDEX ind0 ON t USING vectors (val0 vector_l2_ops)
+WITH (options = "[indexing.hnsw]");
+
+statement ok
+CREATE INDEX ind1 ON t USING vectors (val1 vecf16_dot_ops)
+WITH (options = "[indexing.hnsw]");
+
+# 1 vector key + 1 corresponding order_by key + sphere style
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) 
+SELECT val0 FROM t WHERE val0 <<->> sphere('[0, 0, 0]'::vector, 1) ORDER BY val0 <-> '[0, 0, 0]';
+----
+ Index Scan using ind0 on t
+   Index Cond: (val0 <<->> '("[0, 0, 0]",1)'::sphere_vector)
+   Order By: (val0 <-> '[0, 0, 0]'::vector)
+
+# 1 vector key + 0 order_by key + original style
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) 
+SELECT val0 FROM t WHERE val0 <-> '[0, 0, 0]' < 1;
+----
+ Seq Scan on t
+   Filter: ((val0 <-> '[0, 0, 0]'::vector) < '1'::double precision)
+
+# 1 vector key + 0 order_by key + sphere style
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) 
+SELECT val0 FROM t WHERE val0 <<->> sphere('[0, 0, 0]'::vector, 1);
+----
+ Index Scan using ind0 on t
+   Index Cond: (val0 <<->> '("[0, 0, 0]",1)'::sphere_vector)
+
+# 0 vector key + 1 order_by key
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) 
+SELECT val0 FROM t ORDER BY val0 <-> '[0, 0, 0]';
+----
+ Index Scan using ind0 on t
+   Order By: (val0 <-> '[0, 0, 0]'::vector)
+
+# 2 vector key(1 of them is corresponding) + 1 order_by key + original style
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) 
+SELECT val0 FROM t WHERE val0 <-> '[0, 0, 0]' < 1 
+AND val1 <#> '[0, 0, 0]' < 1
+ORDER BY val0 <-> '[0, 0, 0]';
+----
+ Index Scan using ind0 on t
+   Order By: (val0 <-> '[0, 0, 0]'::vector)
+   Filter: (((val0 <-> '[0, 0, 0]'::vector) < '1'::double precision) AND ((val1 <#> '[0, 0, 0]'::vecf16) < '1'::double precision))
+
+# 2 vector key(1 of them is corresponding) + 1 order_by key + sphere style
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) 
+SELECT val0 FROM t WHERE val0 <<->> sphere('[0, 0, 0]'::vector, 1)
+AND val1 <<#>> sphere('[0, 0, 0]'::vecf16, 1)
+ORDER BY val0 <-> '[0, 0, 0]';
+----
+ Index Scan using ind0 on t
+   Index Cond: (val0 <<->> '("[0, 0, 0]",1)'::sphere_vector)
+   Order By: (val0 <-> '[0, 0, 0]'::vector)
+   Filter: (val1 <<#>> '("[0, 0, 0]",1)'::sphere_vecf16)
+
+# 2 vector key(none of them is corresponding) + 1 order_by key + sphere style
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) 
+SELECT val0 FROM t WHERE val2 <<->> sphere('{}/3'::svector, 1)
+AND val1 <<#>> sphere('[0, 0, 0]'::vecf16, 1)
+ORDER BY val0 <-> '[0, 0, 0]';
+----
+ Index Scan using ind0 on t
+   Order By: (val0 <-> '[0, 0, 0]'::vector)
+   Filter: ((val2 <<->> '({}/3,1)'::sphere_svector) AND (val1 <<#>> '("[0, 0, 0]",1)'::sphere_vecf16))
+
+# 2 vector keys(both indexed) + 0 order_by key + sphere style
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) 
+SELECT val0 FROM t WHERE val0 <<->> sphere('[0, 0, 0]'::vector, 1)
+AND val1 <<#>> sphere('[0, 0, 0]'::vecf16, 1);
+----
+ Index Scan using ind1 on t
+   Index Cond: (val1 <<#>> '("[0, 0, 0]",1)'::sphere_vecf16)
+   Filter: (val0 <<->> '("[0, 0, 0]",1)'::sphere_vector)
+
+# 2 vector keys(both not indexed) + 0 order_by key + sphere style
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) 
+SELECT val0 FROM t WHERE val0 <<#>> sphere('[0, 0, 0]'::vector, 1)
+AND val1 <<->> sphere('[0, 0, 0]'::vecf16, 1);
+----
+ Seq Scan on t
+   Filter: ((val0 <<#>> '("[0, 0, 0]",1)'::sphere_vector) AND (val1 <<->> '("[0, 0, 0]",1)'::sphere_vecf16))
+
+# 2 vector key(1 indexed) + 0 order_by key + sphere style
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) 
+SELECT val0 FROM t WHERE val0 <<->> sphere('[0, 0, 0]'::vector, 1)
+AND val1 <<->> sphere('[0, 0, 0]'::vecf16, 1);
+----
+ Index Scan using ind0 on t
+   Index Cond: (val0 <<->> '("[0, 0, 0]",1)'::sphere_vector)
+   Filter: (val1 <<->> '("[0, 0, 0]",1)'::sphere_vecf16)
+
+# 1 vector key + 1 not corresponding order_by key(operator) + sphere style
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) 
+SELECT val0 FROM t WHERE val0 <<#>> sphere('[0, 0, 0]'::vector, 1) 
+ORDER BY val0 <-> '[0, 0, 0]';
+----
+ Index Scan using ind0 on t
+   Order By: (val0 <-> '[0, 0, 0]'::vector)
+   Filter: (val0 <<#>> '("[0, 0, 0]",1)'::sphere_vector)
+
+# 1 vector key + 1 not corresponding order_by key(variable) + sphere style
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) 
+SELECT val0 FROM t WHERE val0 <<->> sphere('[0, 0, 0]'::vector, 1) 
+ORDER BY val1 <#> '[1, 1, 1]';
+----
+ Index Scan using ind1 on t
+   Order By: (val1 <#> '[1, 1, 1]'::vecf16)
+   Filter: (val0 <<->> '("[0, 0, 0]",1)'::sphere_vector)
+
+# 0 vector key + 0 order_by key(variable)
+query I
+EXPLAIN (COSTS FALSE, TIMING FALSE) SELECT val0 FROM t;
+----
+ Seq Scan on t
+
+statement ok
+DROP TABLE t;

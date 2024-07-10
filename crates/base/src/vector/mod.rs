@@ -54,7 +54,7 @@ pub trait VectorBorrowed: Copy {
     fn to_index_vec(&self) -> Vec<(u32, Self::Scalar)>;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum OwnedVector {
     Vecf32(Vecf32Owned),
     Vecf16(Vecf16Owned),

@@ -10,4 +10,10 @@ CREATE TYPE veci8;
 
 CREATE TYPE vector_index_stat;
 
+CREATE TYPE sphere_vector;
+CREATE TYPE sphere_vecf16;
+CREATE TYPE sphere_svector;
+CREATE TYPE sphere_bvector;
+CREATE TYPE sphere_veci8;
+
 -- bootstrap end

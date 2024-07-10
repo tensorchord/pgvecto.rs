@@ -3,6 +3,7 @@
 //! Provides an easy-to-use extension for vector similarity search.
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::too_many_arguments)]
+#![allow(clippy::type_complexity)]
 
 mod bgworker;
 mod datatype;

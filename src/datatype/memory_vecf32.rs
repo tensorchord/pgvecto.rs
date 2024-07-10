@@ -9,6 +9,7 @@ use pgrx::pgrx_sql_entity_graph::metadata::SqlMapping;
 use pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
 use pgrx::FromDatum;
 use pgrx::IntoDatum;
+use pgrx::UnboxDatum;
 use std::alloc::Layout;
 use std::ops::Deref;
 use std::ptr::NonNull;
@@ -142,6 +143,46 @@ impl IntoDatum for Vecf32Output {
         let t = pgrx::pg_catalog::PgType::search_typenamensp(c"vector", namespace.oid()).unwrap();
         let t = t.get().expect("pg_catalog is broken.");
         t.oid()
+    }
+}
+
+impl FromDatum for Vecf32Output {
+    unsafe fn from_polymorphic_datum(datum: Datum, is_null: bool, _typoid: Oid) -> Option<Self> {
+        if is_null {
+            None
+        } else {
+            let p = NonNull::new(datum.cast_mut_ptr::<Vecf32Header>())?;
+            let q =
+                unsafe { NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.cast().as_ptr()).cast())? };
+            if p != q {
+                Some(Vecf32Output(q))
+            } else {
+                let header = p.as_ptr();
+                let vector = unsafe { (*header).for_borrow() };
+                Some(Vecf32Output::new(vector))
+            }
+        }
+    }
+}
+
+unsafe impl UnboxDatum for Vecf32Output {
+    type As<'src> = Vecf32Output;
+    #[inline]
+    unsafe fn unbox<'src>(d: pgrx::Datum<'src>) -> Self::As<'src>
+    where
+        Self: 'src,
+    {
+        let p = NonNull::new(d.sans_lifetime().cast_mut_ptr::<Vecf32Header>()).unwrap();
+        let q = unsafe {
+            NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.cast().as_ptr()).cast()).unwrap()
+        };
+        if p != q {
+            Vecf32Output(q)
+        } else {
+            let header = p.as_ptr();
+            let vector = unsafe { (*header).for_borrow() };
+            Vecf32Output::new(vector)
+        }
     }
 }
 
