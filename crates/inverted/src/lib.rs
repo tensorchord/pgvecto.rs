@@ -15,7 +15,7 @@ use quantization::{operator::OperatorQuantization, Quantization};
 use storage::{OperatorStorage, Storage};
 
 use std::cmp::Reverse;
-use std::collections::{BTreeMap, BinaryHeap, HashMap};
+use std::collections::{BTreeMap, BinaryHeap};
 use std::fs::create_dir;
 use std::path::Path;
 
@@ -54,23 +54,23 @@ impl<O: OperatorInverted> Inverted<O> {
         vector: Borrowed<'_, O>,
         _: &SearchOptions,
     ) -> BinaryHeap<Reverse<Element>> {
-        let mut doc_score = HashMap::new();
-        let mut result = BinaryHeap::new();
+        const ZERO: F32 = F32(0.0);
+        let mut doc_score = vec![ZERO; self.payloads.len()];
         for (token, _) in vector.to_index_vec() {
             let start = self.offsets[token as usize];
             let end = self.offsets[token as usize + 1];
             for i in (start as usize)..(end as usize) {
-                doc_score
-                    .entry(self.indexes[i])
-                    .and_modify(|e| *e += self.scores[i])
-                    .or_insert(self.scores[i]);
+                doc_score[self.indexes[i] as usize] += self.scores[i];
             }
         }
-        for (doc, score) in doc_score.iter() {
-            result.push(Reverse(Element {
-                distance: -*score, // use negative score to match the negative dot product distance
-                payload: self.payloads[*doc as usize],
-            }));
+        let mut result = BinaryHeap::new();
+        for (doc, score) in doc_score.iter().enumerate() {
+            if *score > ZERO {
+                result.push(Reverse(Element {
+                    distance: -*score, // use negative score to match the negative dot product distance
+                    payload: self.payloads[doc],
+                }));
+            }
         }
         result
     }
@@ -80,23 +80,23 @@ impl<O: OperatorInverted> Inverted<O> {
         vector: Borrowed<'a, O>,
         _: &'a SearchOptions,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-        let mut doc_score = HashMap::new();
-        let mut result = Vec::new();
+        const ZERO: F32 = F32(0.0);
+        let mut doc_score = vec![ZERO; self.payloads.len()];
         for (token, _) in vector.to_index_vec() {
             let start = self.offsets[token as usize];
             let end = self.offsets[token as usize + 1];
             for i in (start as usize)..(end as usize) {
-                doc_score
-                    .entry(self.indexes[i])
-                    .and_modify(|e| *e += self.scores[i])
-                    .or_insert(self.scores[i]);
+                doc_score[self.indexes[i] as usize] += self.scores[i];
             }
         }
-        for (doc, score) in doc_score.iter() {
-            result.push(Element {
-                distance: -*score, // use negative score to match the negative dot product distance
-                payload: self.payloads[*doc as usize],
-            });
+        let mut result = Vec::new();
+        for (doc, score) in doc_score.iter().enumerate() {
+            if *score > ZERO {
+                result.push(Element {
+                    distance: -*score, // use negative score to match the negative dot product distance
+                    payload: self.payloads[doc],
+                });
+            }
         }
         (result, Box::new(std::iter::empty()))
     }
