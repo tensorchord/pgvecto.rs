@@ -129,7 +129,7 @@ jobs:
       - name: Set up cargo-binstall
         uses: cargo-bins/cargo-binstall@main
       - name: Set up Sqllogictest
-        run: cargo binstall sqllogictest-bin -y --force
+        run: cargo binstall sqllogictest-bin --version 0.20.6 -y --force
       - name: Test
         run: ./tests/tests.sh
       - name: Post Set up Cache
