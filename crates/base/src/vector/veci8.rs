@@ -18,7 +18,7 @@ pub struct Veci8Owned {
 impl Veci8Owned {
     #[inline(always)]
     pub fn new(dims: u32, data: Vec<I8>, alpha: F32, offset: F32) -> Self {
-        Self::new_checked(dims, data, alpha, offset).unwrap()
+        Self::new_checked(dims, data, alpha, offset).expect("invalid data")
     }
 
     #[inline(always)]
@@ -129,7 +129,7 @@ impl<'a> Veci8Borrowed<'a> {
         sum: F32,
         l2_norm: F32,
     ) -> Veci8Borrowed<'a> {
-        Self::new_checked(dims, data, alpha, offset, sum, l2_norm).unwrap()
+        Self::new_checked(dims, data, alpha, offset, sum, l2_norm).expect("invalid data")
     }
 
     #[inline(always)]

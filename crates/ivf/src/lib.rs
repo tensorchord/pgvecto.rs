@@ -8,7 +8,6 @@ use self::ivf_naive::IvfNaive;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
-use common::dir_ops::sync_dir;
 use common::variants::variants;
 use elkan_k_means::operator::OperatorElkanKMeans;
 use ivf_pq::IvfPq;
@@ -46,7 +45,6 @@ impl<O: OperatorIvf> Ivf<O> {
                 source,
             ))
         };
-        sync_dir(path);
         this
     }
 

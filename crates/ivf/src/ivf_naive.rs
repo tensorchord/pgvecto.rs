@@ -2,7 +2,6 @@ use super::OperatorIvf as Op;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
-use common::dir_ops::sync_dir;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
@@ -132,7 +131,6 @@ fn from_nothing<O: Op>(
     );
     let offsets = Json::create(path.as_ref().join("offsets"), offsets);
     let centroids = Json::create(path.as_ref().join("centroids"), centroids);
-    sync_dir(path);
     IvfNaive {
         storage,
         quantization,

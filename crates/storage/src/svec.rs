@@ -55,7 +55,6 @@ impl<O: Operator<VectorOwned = SVecf32Owned>> Storage<O> for SVecStorage {
                     Some(*state)
                 }),
         );
-        common::dir_ops::sync_dir(path);
         Self {
             dims,
             len,

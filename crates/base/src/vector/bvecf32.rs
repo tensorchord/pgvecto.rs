@@ -15,7 +15,7 @@ pub struct BVecf32Owned {
 impl BVecf32Owned {
     #[inline(always)]
     pub fn new(dims: u16, data: Vec<usize>) -> Self {
-        Self::new_checked(dims, data).unwrap()
+        Self::new_checked(dims, data).expect("invalid data")
     }
 
     #[inline(always)]
@@ -88,7 +88,7 @@ pub struct BVecf32Borrowed<'a> {
 impl<'a> BVecf32Borrowed<'a> {
     #[inline(always)]
     pub fn new(dims: u16, data: &'a [usize]) -> Self {
-        Self::new_checked(dims, data).unwrap()
+        Self::new_checked(dims, data).expect("invalid data")
     }
 
     #[inline(always)]

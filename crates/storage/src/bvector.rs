@@ -38,7 +38,6 @@ impl<O: Operator<VectorOwned = BVecf32Owned>> Storage<O> for BVectorStorage {
             path.as_ref().join("slice"),
             (0..*len).flat_map(|i| vectors.vector(i).data().iter().copied()),
         );
-        common::dir_ops::sync_dir(path);
         Self { dims, len, slice }
     }
 

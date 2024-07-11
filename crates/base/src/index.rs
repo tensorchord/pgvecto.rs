@@ -2,8 +2,8 @@ use crate::distance::*;
 use crate::vector::*;
 use base_macros::Alter;
 use serde::{Deserialize, Serialize};
+use std::num::NonZeroU128;
 use thiserror::Error;
-use uuid::Uuid;
 use validator::{Validate, ValidationError};
 
 #[must_use]
@@ -493,7 +493,7 @@ pub struct IndexStat {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SegmentStat {
-    pub id: Uuid,
+    pub id: NonZeroU128,
     pub r#type: String,
     pub length: usize,
     pub size: u64,

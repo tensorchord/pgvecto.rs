@@ -3,7 +3,6 @@
 use base::index::*;
 use base::operator::*;
 use base::search::*;
-use common::dir_ops::sync_dir;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use quantization::operator::OperatorQuantization;
@@ -94,7 +93,6 @@ fn from_nothing<O: OperatorFlat>(
         path.as_ref().join("payloads"),
         (0..collection.len()).map(|i| collection.payload(i)),
     );
-    sync_dir(path.as_ref());
     Flat {
         storage,
         quantization,

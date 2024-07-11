@@ -13,7 +13,7 @@ pub struct SVecf32Owned {
 impl SVecf32Owned {
     #[inline(always)]
     pub fn new(dims: u32, indexes: Vec<u32>, values: Vec<F32>) -> Self {
-        Self::new_checked(dims, indexes, values).unwrap()
+        Self::new_checked(dims, indexes, values).expect("invalid data")
     }
 
     #[inline(always)]
@@ -107,7 +107,7 @@ pub struct SVecf32Borrowed<'a> {
 impl<'a> SVecf32Borrowed<'a> {
     #[inline(always)]
     pub fn new(dims: u32, indexes: &'a [u32], values: &'a [F32]) -> Self {
-        Self::new_checked(dims, indexes, values).unwrap()
+        Self::new_checked(dims, indexes, values).expect("invalid data")
     }
 
     #[inline(always)]
@@ -162,7 +162,7 @@ impl<'a> SVecf32Borrowed<'a> {
 
     #[inline(always)]
     pub fn len(&self) -> u32 {
-        self.indexes.len().try_into().unwrap()
+        self.indexes.len() as u32
     }
 }
 

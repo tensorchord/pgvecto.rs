@@ -5,7 +5,7 @@ use base::search::*;
 use base::vector::*;
 use base::worker::*;
 use common::clean::clean;
-use common::dir_ops::sync_dir;
+use common::dir_ops::sync_walk_from_dir;
 use common::file_atomic::FileAtomic;
 use index::OutdatedError;
 use parking_lot::Mutex;
@@ -30,7 +30,7 @@ impl Worker {
             indexes: indexes.clone(),
         });
         let protect = WorkerProtect { startup, indexes };
-        sync_dir(&path);
+        sync_walk_from_dir(&path);
         Arc::new(Worker {
             path,
             protect: Mutex::new(protect),

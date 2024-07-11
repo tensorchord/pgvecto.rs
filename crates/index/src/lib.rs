@@ -19,7 +19,9 @@ use base::scalar::F32;
 use base::search::*;
 use base::vector::*;
 use common::clean::clean;
+use common::clean::clean_files;
 use common::dir_ops::sync_dir;
+use common::dir_ops::sync_walk_from_dir;
 use common::file_atomic::FileAtomic;
 use crossbeam::atomic::AtomicCell;
 use crossbeam::channel::Sender;
@@ -31,13 +33,13 @@ use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::Infallible;
+use std::num::NonZeroU128;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::Instant;
 use storage::OperatorStorage;
 use thiserror::Error;
-use uuid::Uuid;
 use validator::Validate;
 
 pub trait Op: Operator + OperatorElkanKMeans + OperatorQuantization + OperatorStorage {}
@@ -83,17 +85,20 @@ impl<O: Op> Index<O> {
             serde_json::to_string::<IndexOptions>(&options).unwrap(),
         )
         .unwrap();
-        std::fs::create_dir(path.join("segments")).unwrap();
+        std::fs::create_dir(path.join("sealed_segments")).unwrap();
+        std::fs::create_dir(path.join("wal")).unwrap();
         let startup = FileAtomic::create(
             path.join("startup"),
             IndexStartup {
                 sealed_segment_ids: HashSet::new(),
                 growing_segment_ids: HashSet::new(),
                 alterable_options: alterable_options.clone(),
+                sealed_counter: NonZeroU128::new(1).unwrap(),
+                growing_counter: NonZeroU128::new(1).unwrap(),
             },
         );
         let delete = Delete::create(path.join("delete"));
-        sync_dir(&path);
+        sync_walk_from_dir(&path);
         let index = Arc::new(Index {
             path: path.clone(),
             options: options.clone(),
@@ -104,6 +109,8 @@ impl<O: Op> Index<O> {
                 read_segments: HashMap::new(),
                 write_segment: None,
                 alterable_options: alterable_options.clone(),
+                sealed_counter: NonZeroU128::new(1).unwrap(),
+                growing_counter: NonZeroU128::new(1).unwrap(),
             }),
             view: ArcSwap::new(Arc::new(IndexView {
                 options: options.clone(),
@@ -130,19 +137,20 @@ impl<O: Op> Index<O> {
         let startup = FileAtomic::<IndexStartup>::open(path.join("startup"));
         let alterable_options = startup.get().alterable_options.clone();
         clean(
-            path.join("segments"),
+            path.join("sealed_segments"),
             startup
                 .get()
                 .sealed_segment_ids
                 .iter()
-                .map(|s| s.to_string())
-                .chain(
-                    startup
-                        .get()
-                        .growing_segment_ids
-                        .iter()
-                        .map(|s| s.to_string()),
-                ),
+                .map(|s| s.to_string()),
+        );
+        clean_files(
+            path.join("wal"),
+            startup
+                .get()
+                .growing_segment_ids
+                .iter()
+                .map(|s| s.to_string()),
         );
         let sealed_segments = startup
             .get()
@@ -153,7 +161,7 @@ impl<O: Op> Index<O> {
                     id,
                     SealedSegment::<O>::open(
                         tracker.clone(),
-                        path.join("segments").join(id.to_string()),
+                        path.join("sealed_segments").join(id.to_string()),
                         id,
                         options.clone(),
                     ),
@@ -169,7 +177,7 @@ impl<O: Op> Index<O> {
                     id,
                     GrowingSegment::open(
                         tracker.clone(),
-                        path.join("segments").join(id.to_string()),
+                        path.join("wal").join(id.to_string()),
                         id,
                         options.clone(),
                     ),
@@ -187,6 +195,8 @@ impl<O: Op> Index<O> {
                 read_segments: read_segments.clone(),
                 write_segment: None,
                 alterable_options: alterable_options.clone(),
+                sealed_counter: NonZeroU128::new(1).unwrap(),
+                growing_counter: NonZeroU128::new(1).unwrap(),
             }),
             view: ArcSwap::new(Arc::new(IndexView {
                 options: options.clone(),
@@ -232,20 +242,20 @@ impl<O: Op> Index<O> {
             write.seal();
             protect.read_segments.insert(id, write);
         }
-        let write_segment_id = Uuid::new_v4();
+        let write_segment_id = protect.growing_counter;
+        protect.growing_counter = protect.growing_counter.checked_add(1).unwrap();
         let write_segment = GrowingSegment::create(
             self._tracker.clone(),
-            self.path
-                .join("segments")
-                .join(write_segment_id.to_string()),
+            self.path.join("wal").join(write_segment_id.to_string()),
             write_segment_id,
             protect.alterable_options.segment.max_growing_segment_size as usize,
         );
+        sync_dir(self.path.join("wal"));
         protect.write_segment = Some((write_segment_id, write_segment));
         protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
         self.instant_written.store(Instant::now());
     }
-    pub fn seal(&self, check: Uuid) {
+    pub fn seal(&self, check: NonZeroU128) {
         let mut protect = self.protect.lock();
         if let Some((id, write_segment)) = protect.write_segment.clone() {
             if check != id {
@@ -308,6 +318,53 @@ impl<O: Op> Index<O> {
     pub fn wait(&self) -> Arc<IndexTracker> {
         Arc::clone(&self._tracker)
     }
+    pub fn create_sealed_segment(
+        &self,
+        source: &(impl Source<O> + Sync),
+        sealed_segment_ids: &[NonZeroU128],
+        growing_segment_ids: &[NonZeroU128],
+    ) -> Option<Arc<SealedSegment<O>>> {
+        let id;
+        {
+            let mut protect = self.protect.lock();
+            id = protect.sealed_counter;
+            protect.sealed_counter = protect.sealed_counter.checked_add(1).unwrap();
+            protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
+        }
+        let next = SealedSegment::create(
+            self._tracker.clone(),
+            self.path.join("sealed_segments").join(id.to_string()),
+            id,
+            self.options.clone(),
+            source,
+        );
+        sync_walk_from_dir(self.path.join("sealed_segments").join(id.to_string()));
+        sync_dir(self.path.join("sealed_segments"));
+        {
+            let mut protect = self.protect.lock();
+            for sealed_segment_id in sealed_segment_ids {
+                if protect.sealed_segments.contains_key(sealed_segment_id) {
+                    continue;
+                }
+                return None;
+            }
+            for growing_segment_id in growing_segment_ids {
+                if protect.read_segments.contains_key(growing_segment_id) {
+                    continue;
+                }
+                return None;
+            }
+            for sealed_segment_id in sealed_segment_ids {
+                protect.sealed_segments.remove(sealed_segment_id);
+            }
+            for growing_segment_id in growing_segment_ids {
+                protect.read_segments.remove(growing_segment_id);
+            }
+            protect.sealed_segments.insert(next.id(), next.clone());
+            protect.maintain(self.options.clone(), self.delete.clone(), &self.view);
+        }
+        Some(next)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -325,9 +382,9 @@ pub struct IndexView<O: Op> {
     pub options: IndexOptions,
     pub alterable_options: IndexAlterableOptions,
     pub delete: Arc<Delete>,
-    pub sealed_segments: HashMap<Uuid, Arc<SealedSegment<O>>>,
-    pub read_segments: HashMap<Uuid, Arc<GrowingSegment<O>>>,
-    pub write_segment: Option<(Uuid, Arc<GrowingSegment<O>>)>,
+    pub sealed_segments: HashMap<NonZeroU128, Arc<SealedSegment<O>>>,
+    pub read_segments: HashMap<NonZeroU128, Arc<GrowingSegment<O>>>,
+    pub write_segment: Option<(NonZeroU128, Arc<GrowingSegment<O>>)>,
 }
 
 impl<O: Op> IndexView<O> {
@@ -472,17 +529,21 @@ impl<O: Op> IndexView<O> {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct IndexStartup {
-    sealed_segment_ids: HashSet<Uuid>,
-    growing_segment_ids: HashSet<Uuid>,
+    sealed_segment_ids: HashSet<NonZeroU128>,
+    growing_segment_ids: HashSet<NonZeroU128>,
     alterable_options: IndexAlterableOptions,
+    sealed_counter: NonZeroU128,
+    growing_counter: NonZeroU128,
 }
 
 struct IndexProtect<O: Op> {
     startup: FileAtomic<IndexStartup>,
-    sealed_segments: HashMap<Uuid, Arc<SealedSegment<O>>>,
-    read_segments: HashMap<Uuid, Arc<GrowingSegment<O>>>,
-    write_segment: Option<(Uuid, Arc<GrowingSegment<O>>)>,
+    sealed_segments: HashMap<NonZeroU128, Arc<SealedSegment<O>>>,
+    read_segments: HashMap<NonZeroU128, Arc<GrowingSegment<O>>>,
+    write_segment: Option<(NonZeroU128, Arc<GrowingSegment<O>>)>,
     alterable_options: IndexAlterableOptions,
+    sealed_counter: NonZeroU128,
+    growing_counter: NonZeroU128,
 }
 
 impl<O: Op> IndexProtect<O> {
@@ -508,6 +569,8 @@ impl<O: Op> IndexProtect<O> {
             sealed_segment_ids,
             growing_segment_ids,
             alterable_options: self.alterable_options.clone(),
+            sealed_counter: self.sealed_counter,
+            growing_counter: self.growing_counter,
         });
         swap.swap(view);
     }

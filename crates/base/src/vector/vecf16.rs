@@ -10,7 +10,7 @@ pub struct Vecf16Owned(Vec<F16>);
 impl Vecf16Owned {
     #[inline(always)]
     pub fn new(slice: Vec<F16>) -> Self {
-        Self::new_checked(slice).unwrap()
+        Self::new_checked(slice).expect("invalid data")
     }
 
     #[inline(always)]
@@ -69,7 +69,7 @@ pub struct Vecf16Borrowed<'a>(&'a [F16]);
 impl<'a> Vecf16Borrowed<'a> {
     #[inline(always)]
     pub fn new(slice: &'a [F16]) -> Self {
-        Self::new_checked(slice).unwrap()
+        Self::new_checked(slice).expect("invalid data")
     }
 
     #[inline(always)]
