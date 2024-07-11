@@ -30,28 +30,23 @@ pub fn is_started() -> bool {
 #[pgrx::pg_guard]
 #[no_mangle]
 extern "C" fn _vectors_main(_arg: pgrx::pg_sys::Datum) {
-    {
-        let mut builder = crate::logger::VectorLogger::build();
-        #[cfg(not(debug_assertions))]
-        {
-            builder.filter_level(log::LevelFilter::Info);
-        }
-        // #[cfg(debug_assertions)]
-        {
-            builder.filter_level(log::LevelFilter::Trace);
-        }
-        builder.init();
-    }
+    // for debugging, set `RUST_LOG=trace`
+    crate::logger::Logger::new(
+        match std::env::var("RUST_LOG").as_ref().map(|x| x.as_str()) {
+            Ok("off" | "Off" | "OFF") => log::LevelFilter::Off,
+            Ok("error" | "Error" | "ERROR") => log::LevelFilter::Error,
+            Ok("warn" | "Warn" | "WARN") => log::LevelFilter::Warn,
+            Ok("info" | "Info" | "INFO") => log::LevelFilter::Info,
+            Ok("debug" | "Debug" | "DEBUG") => log::LevelFilter::Debug,
+            Ok("trace" | "Trace" | "TRACE") => log::LevelFilter::Trace,
+            _ => log::LevelFilter::Info, // default level
+        },
+    )
+    .init()
+    .expect("failed to set logger");
     std::panic::set_hook(Box::new(|info| {
-        let backtrace;
-        #[cfg(not(debug_assertions))]
-        {
-            backtrace = std::backtrace::Backtrace::capture();
-        }
-        #[cfg(debug_assertions)]
-        {
-            backtrace = std::backtrace::Backtrace::force_capture();
-        }
+        // for debugging, set `RUST_BACKTRACE=1`
+        let backtrace = std::backtrace::Backtrace::capture();
         log::error!("Panickied. Info: {:?}. Backtrace: {}.", info, backtrace);
     }));
     use service::Version;

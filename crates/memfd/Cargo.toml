@@ -7,7 +7,5 @@ edition.workspace = true
 rand.workspace = true
 rustix.workspace = true
 
-detect = { path = "../detect" }
-
 [lints]
 workspace = true
