@@ -32,7 +32,10 @@ pub struct Hnsw<O: OperatorHnsw> {
     storage: O::Storage,
     quantization: Quantization<O>,
     payloads: MmapArray<Payload>,
-    graph: MmapArray<(F32, u32)>,
+    base_graph_outs: MmapArray<u32>,
+    base_graph_weights: MmapArray<F32>,
+    hyper_graph_outs: MmapArray<u32>,
+    hyper_graph_weights: MmapArray<F32>,
     m: Json<u32>,
     s: Option<u32>,
     visited: VisitedPool,
@@ -72,7 +75,7 @@ impl<O: OperatorHnsw> Hnsw<O> {
             let processed = self.quantization.preprocess(vector);
             fast_search(
                 |x| self.quantization.process(&self.storage, &processed, x),
-                |x, i| outs(self, x, i),
+                |x, i| hyper_outs(self, x, i),
                 1..=hierarchy_for_a_vertex(*self.m, s) - 1,
                 s,
             )
@@ -84,7 +87,7 @@ impl<O: OperatorHnsw> Hnsw<O> {
             self.quantization.graph_rerank(vector, opts, move |u| {
                 (
                     O::distance(self.storage.vector(u), vector),
-                    (self.payloads[u as usize], outs(self, u, 0)),
+                    (self.payloads[u as usize], base_outs(self, u)),
                 )
             }),
         )
@@ -140,12 +143,36 @@ fn from_nothing<O: OperatorHnsw>(
         (0..collection.len()).map(|i| collection.payload(i)),
     );
     rayon::check();
-    let graph = MmapArray::create(
-        path.as_ref().join("graph"),
+    let base_graph_outs = MmapArray::create(
+        path.as_ref().join("base_graph_outs"),
+        g.iter_mut()
+            .flat_map(|x| x[0].get_mut())
+            .map(|&mut (_0, _1)| _1),
+    );
+    rayon::check();
+    let base_graph_weights = MmapArray::create(
+        path.as_ref().join("base_graph_weights"),
+        g.iter_mut()
+            .flat_map(|x| x[0].get_mut())
+            .map(|&mut (_0, _1)| _0),
+    );
+    rayon::check();
+    let hyper_graph_outs = MmapArray::create(
+        path.as_ref().join("hyper_graph_outs"),
         g.iter_mut()
             .flat_map(|x| x.iter_mut())
+            .skip(1)
             .flat_map(|x| x.get_mut())
-            .map(|&mut (_0, _1)| (_0, _1)),
+            .map(|&mut (_0, _1)| _1),
+    );
+    rayon::check();
+    let hyper_graph_weights = MmapArray::create(
+        path.as_ref().join("hyper_graph_weights"),
+        g.iter_mut()
+            .flat_map(|x| x.iter_mut())
+            .skip(1)
+            .flat_map(|x| x.get_mut())
+            .map(|&mut (_0, _1)| _0),
     );
     rayon::check();
     let m = Json::create(path.as_ref().join("m"), m);
@@ -153,7 +180,10 @@ fn from_nothing<O: OperatorHnsw>(
         storage,
         quantization,
         payloads,
-        graph,
+        base_graph_outs,
+        base_graph_weights,
+        hyper_graph_outs,
+        hyper_graph_weights,
         m,
         s: start(collection.len(), *m),
         visited: VisitedPool::new(collection.len()),
@@ -176,7 +206,13 @@ fn from_main<O: OperatorHnsw>(
     patch_deletions(
         |u, v| O::distance(remapped.vector(u), remapped.vector(v)),
         |u| remapped.skip(u),
-        |u, level| edges(main, u, level),
+        |u, level| {
+            if level == 0 {
+                Box::new(base_edges(main, u)) as Box<dyn Iterator<Item = (F32, u32)>>
+            } else {
+                Box::new(hyper_edges(main, u, level)) as Box<dyn Iterator<Item = (F32, u32)>>
+            }
+        },
         remapped.len(),
         m,
         &mut g,
@@ -207,12 +243,36 @@ fn from_main<O: OperatorHnsw>(
         (0..remapped.len()).map(|i| remapped.payload(i)),
     );
     rayon::check();
-    let graph = MmapArray::create(
-        path.as_ref().join("graph"),
+    let base_graph_outs = MmapArray::create(
+        path.as_ref().join("base_graph_outs"),
+        g.iter_mut()
+            .flat_map(|x| x[0].get_mut())
+            .map(|&mut (_0, _1)| _1),
+    );
+    rayon::check();
+    let base_graph_weights = MmapArray::create(
+        path.as_ref().join("base_graph_weights"),
+        g.iter_mut()
+            .flat_map(|x| x[0].get_mut())
+            .map(|&mut (_0, _1)| _0),
+    );
+    rayon::check();
+    let hyper_graph_outs = MmapArray::create(
+        path.as_ref().join("hyper_graph_outs"),
         g.iter_mut()
             .flat_map(|x| x.iter_mut())
+            .skip(1)
             .flat_map(|x| x.get_mut())
-            .map(|&mut (_0, _1)| (_0, _1)),
+            .map(|&mut (_0, _1)| _1),
+    );
+    rayon::check();
+    let hyper_graph_weights = MmapArray::create(
+        path.as_ref().join("hyper_graph_weights"),
+        g.iter_mut()
+            .flat_map(|x| x.iter_mut())
+            .skip(1)
+            .flat_map(|x| x.get_mut())
+            .map(|&mut (_0, _1)| _0),
     );
     rayon::check();
     let m = Json::create(path.as_ref().join("m"), m);
@@ -221,7 +281,10 @@ fn from_main<O: OperatorHnsw>(
         storage,
         quantization,
         payloads,
-        graph,
+        base_graph_outs,
+        base_graph_weights,
+        hyper_graph_outs,
+        hyper_graph_weights,
         m,
         s: start(remapped.len(), *m),
         visited: VisitedPool::new(remapped.len()),
@@ -232,14 +295,20 @@ fn open<O: OperatorHnsw>(path: impl AsRef<Path>) -> Hnsw<O> {
     let storage = O::Storage::open(path.as_ref().join("storage"));
     let quantization = Quantization::open(path.as_ref().join("quantization"));
     let payloads = MmapArray::open(path.as_ref().join("payloads"));
-    let graph = MmapArray::open(path.as_ref().join("graph"));
+    let base_graph_outs = MmapArray::open(path.as_ref().join("base_graph_outs"));
+    let base_graph_weights = MmapArray::open(path.as_ref().join("base_graph_weights"));
+    let hyper_graph_outs = MmapArray::open(path.as_ref().join("hyper_graph_outs"));
+    let hyper_graph_weights = MmapArray::open(path.as_ref().join("hyper_graph_weights"));
     let m = Json::open(path.as_ref().join("m"));
     let n = storage.len();
     Hnsw {
         storage,
         quantization,
         payloads,
-        graph,
+        base_graph_outs,
+        base_graph_weights,
+        hyper_graph_outs,
+        hyper_graph_weights,
         m,
         s: start(n, *m),
         visited: VisitedPool::new(n),
@@ -524,7 +593,29 @@ fn capacity_for_a_hierarchy(m: u32, level: u8) -> u32 {
     }
 }
 
-fn edges<O: OperatorHnsw>(
+fn base_edges<O: OperatorHnsw>(hnsw: &Hnsw<O>, u: u32) -> impl Iterator<Item = (F32, u32)> + '_ {
+    let m = *hnsw.m;
+    let offset = 2 * m as usize * u as usize;
+    let edges_outs = hnsw.base_graph_outs[offset..offset + 2 * m as usize]
+        .iter()
+        .take_while(|v| **v != u32::MAX)
+        .copied();
+    let edges_weights = hnsw.base_graph_weights[offset..offset + 2 * m as usize]
+        .iter()
+        .copied();
+    edges_weights.zip(edges_outs)
+}
+
+fn base_outs<O: OperatorHnsw>(hnsw: &Hnsw<O>, u: u32) -> impl Iterator<Item = u32> + '_ {
+    let m = *hnsw.m;
+    let offset = 2 * m as usize * u as usize;
+    hnsw.base_graph_outs[offset..offset + 2 * m as usize]
+        .iter()
+        .take_while(|v| **v != u32::MAX)
+        .copied()
+}
+
+fn hyper_edges<O: OperatorHnsw>(
     hnsw: &Hnsw<O>,
     u: u32,
     level: u8,
@@ -532,49 +623,48 @@ fn edges<O: OperatorHnsw>(
     let m = *hnsw.m;
     let offset = {
         let mut offset = 0;
-        // extra m edges in level 0
-        offset += u as usize * m as usize;
         let mut x = u as usize;
-        while x != 0 {
-            offset += x * m as usize;
+        loop {
             x /= m as usize;
+            if x == 0 {
+                break;
+            }
+            offset += x * m as usize;
         }
-        offset + (level as usize + 1) * m as usize * (level != 0) as usize
+        offset + (level as usize - 1) * m as usize
     };
-    let len = if level == 0 {
-        2 * m as usize
-    } else {
-        m as usize
-    };
-    hnsw.graph[offset..offset + len]
+    let edges_outs = hnsw.hyper_graph_outs[offset..offset + m as usize]
         .iter()
-        .take_while(|(_, v)| *v != u32::MAX)
-        .cloned()
+        .take_while(|v| **v != u32::MAX)
+        .copied();
+    let edges_weights = hnsw.hyper_graph_weights[offset..offset + m as usize]
+        .iter()
+        .copied();
+    edges_weights.zip(edges_outs)
 }
 
-fn outs<O: OperatorHnsw>(hnsw: &Hnsw<O>, u: u32, level: u8) -> impl Iterator<Item = u32> + '_ {
+fn hyper_outs<O: OperatorHnsw>(
+    hnsw: &Hnsw<O>,
+    u: u32,
+    level: u8,
+) -> impl Iterator<Item = u32> + '_ {
     let m = *hnsw.m;
     let offset = {
         let mut offset = 0;
-        // extra m edges in level 0
-        offset += u as usize * m as usize;
         let mut x = u as usize;
-        while x != 0 {
-            offset += x * m as usize;
+        loop {
             x /= m as usize;
+            if x == 0 {
+                break;
+            }
+            offset += x * m as usize;
         }
-        offset + (level as usize + 1) * m as usize * (level != 0) as usize
+        offset + (level as usize - 1) * m as usize
     };
-    let len = if level == 0 {
-        2 * m as usize
-    } else {
-        m as usize
-    };
-    hnsw.graph[offset..offset + len]
+    hnsw.hyper_graph_outs[offset..offset + m as usize]
         .iter()
-        .take_while(|(_, v)| *v != u32::MAX)
-        .map(|(_, v)| v)
-        .cloned()
+        .take_while(|v| **v != u32::MAX)
+        .copied()
 }
 
 fn start(n: u32, m: u32) -> Option<u32> {
