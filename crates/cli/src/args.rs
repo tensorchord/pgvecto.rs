@@ -34,6 +34,10 @@ fn default_build_timeout_seconds() -> u64 {
     3600
 }
 
+fn default_query_top_k() -> usize {
+    10
+}
+
 #[derive(FromArgs, Debug, PartialEq)]
 #[argh(subcommand)]
 pub enum SubCommandEnum {
@@ -113,6 +117,10 @@ pub struct QueryArguments {
     /// groundtruth file path
     #[argh(option)]
     pub truth: String,
+
+    /// top-k
+    #[argh(option, default = "default_query_top_k()")]
+    pub top_k: usize,
 }
 
 #[derive(FromArgs, Debug, PartialEq)]

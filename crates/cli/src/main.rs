@@ -140,8 +140,8 @@ fn main() {
             for (i, vec) in queries.iter().enumerate() {
                 match view.basic(&convert_to_owned_vec(&vec), &search_opt) {
                     Ok(iter) => {
-                        let ans = iter.map(|x| x.as_u64() as i32).collect();
-                        res.push(calculate_precision(&truth[i], &ans, 10));
+                        let ans = iter.map(|(_, x)| x.as_u64() as i32).collect();
+                        res.push(calculate_precision(&truth[i], &ans, query.top_k));
                     }
                     Err(err) => {
                         info!("failed to search the vector: {err}");
@@ -149,7 +149,9 @@ fn main() {
                 }
             }
             info!(
-                "Top 10 precision is {}",
+                "Top {} precision of {} queries is {}",
+                query.top_k,
+                res.len(),
                 res.iter().sum::<f32>() / (res.len() as f32)
             );
         }
