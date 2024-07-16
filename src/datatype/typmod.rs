@@ -2,7 +2,7 @@ use crate::error::*;
 use pgrx::Array;
 use serde::{Deserialize, Serialize};
 use std::ffi::{CStr, CString};
-use std::num::{NonZeroU16, NonZeroU32};
+use std::num::NonZeroU32;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Typmod {
@@ -50,11 +50,15 @@ fn _vectors_typmod_in_65535(list: Array<&CStr>) -> i32 {
         -1
     } else if list.len() == 1 {
         let s = list.get(0).unwrap().unwrap().to_str().unwrap();
-        let typmod = Typmod::Dims(check_type_dims_u16(s.parse::<NonZeroU16>().ok()).into());
+        let d = s.parse::<u32>().ok();
+        let typmod = Typmod::Dims(check_type_dims_65535(d));
         typmod.into_i32()
     } else {
-        check_type_dims_u16(None);
-        unreachable!()
+        pgrx::error!(
+            "\
+pgvecto.rs: Modifier of the type is invalid.
+ADVICE: Check if modifier of the type is an integer among 1 and 65535."
+        )
     }
 }
 
@@ -64,11 +68,15 @@ fn _vectors_typmod_in_1048575(list: Array<&CStr>) -> i32 {
         -1
     } else if list.len() == 1 {
         let s = list.get(0).unwrap().unwrap().to_str().unwrap();
-        let typmod = Typmod::Dims(check_type_dims_max(s.parse::<NonZeroU32>().ok()));
+        let d = s.parse::<u32>().ok();
+        let typmod = Typmod::Dims(check_type_dims_1048575(d));
         typmod.into_i32()
     } else {
-        check_type_dims_max(None);
-        unreachable!()
+        pgrx::error!(
+            "\
+pgvecto.rs: Modifier of the type is invalid.
+ADVICE: Check if modifier of the type is an integer among 1 and 1_048_575."
+        )
     }
 }
 

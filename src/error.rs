@@ -1,6 +1,6 @@
 use crate::ipc::{ClientRpc, ConnectionError};
 use pgrx::error;
-use std::num::{NonZeroU16, NonZeroU32};
+use std::num::NonZeroU32;
 
 pub fn bad_init() -> ! {
     error!("\
@@ -19,21 +19,21 @@ INFORMATION: GUC = {key}, hint = {hint}"
     );
 }
 
-pub fn check_type_dims_u16(dims: Option<NonZeroU16>) -> NonZeroU16 {
-    match dims {
-        None => {
+pub fn check_type_dims_65535(dims: Option<u32>) -> NonZeroU32 {
+    match dims.and_then(NonZeroU32::new) {
+        Some(x) if x.get() <= 65535 => x,
+        _ => {
             error!(
                 "\
 pgvecto.rs: Modifier of the type is invalid.
 ADVICE: Check if modifier of the type is an integer among 1 and 65535."
             )
         }
-        Some(x) => x,
     }
 }
 
-pub fn check_type_dims_max(dims: Option<NonZeroU32>) -> NonZeroU32 {
-    match dims {
+pub fn check_type_dims_1048575(dims: Option<u32>) -> NonZeroU32 {
+    match dims.and_then(NonZeroU32::new) {
         Some(x) if x.get() <= 1_048_575 => x,
         _ => {
             error!(
@@ -45,20 +45,17 @@ ADVICE: Check if modifier of the type is an integer among 1 and 1_048_575."
     }
 }
 
-pub fn check_value_dims_65535(dims: usize) -> NonZeroU16 {
-    match u16::try_from(dims).and_then(NonZeroU16::try_from).ok() {
-        None => {
-            error!(
-                "\
+pub fn check_value_dims_65535(dims: u32) {
+    if !(1..=65535).contains(&dims) {
+        error!(
+            "\
 pgvecto.rs: Dimensions of the vector is invalid.
 ADVICE: Check if dimensions of the vector are among 1 and 65535."
-            )
-        }
-        Some(x) => x,
+        )
     }
 }
 
-pub fn check_value_dims_1048575(dims: usize) -> NonZeroU32 {
+pub fn check_value_dims_1048575(dims: u32) {
     if !(1..=1_048_575).contains(&dims) {
         error!(
             "\
@@ -66,7 +63,6 @@ pgvecto.rs: Dimensions of the vector is invalid.
 ADVICE: Check if dimensions of the vector are among 1 and 1_048_575."
         )
     }
-    NonZeroU32::new(dims as u32).unwrap()
 }
 
 pub fn bad_literal(hint: &str) -> ! {
@@ -78,7 +74,7 @@ INFORMATION: hint = {hint}"
 }
 
 #[inline(always)]
-pub fn check_matched_dims(left_dims: usize, right_dims: usize) -> usize {
+pub fn check_matched_dims(left_dims: u32, right_dims: u32) -> u32 {
     if left_dims != right_dims {
         error!(
             "\

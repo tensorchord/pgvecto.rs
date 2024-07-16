@@ -160,23 +160,23 @@ impl Opfamily {
         let vector = match self.vector {
             VectorKind::Vecf32 => {
                 let vector = unsafe { Vecf32Input::from_datum(datum, false).unwrap() };
-                OwnedVector::Vecf32(vector.for_borrow().for_own())
+                OwnedVector::Vecf32(vector.as_borrowed().own())
             }
             VectorKind::Vecf16 => {
                 let vector = unsafe { Vecf16Input::from_datum(datum, false).unwrap() };
-                OwnedVector::Vecf16(vector.for_borrow().for_own())
+                OwnedVector::Vecf16(vector.as_borrowed().own())
             }
             VectorKind::SVecf32 => {
                 let vector = unsafe { SVecf32Input::from_datum(datum, false).unwrap() };
-                OwnedVector::SVecf32(vector.for_borrow().for_own())
+                OwnedVector::SVecf32(vector.as_borrowed().own())
             }
             VectorKind::BVecf32 => {
                 let vector = unsafe { BVecf32Input::from_datum(datum, false).unwrap() };
-                OwnedVector::BVecf32(vector.for_borrow().for_own())
+                OwnedVector::BVecf32(vector.as_borrowed().own())
             }
             VectorKind::Veci8 => {
                 let vector = unsafe { Veci8Input::from_datum(datum, false).unwrap() };
-                OwnedVector::Veci8(vector.for_borrow().for_own())
+                OwnedVector::Veci8(vector.as_borrowed().own())
             }
         };
         Some(vector)
@@ -194,23 +194,23 @@ impl Opfamily {
             VectorKind::Vecf32 => tuple
                 .get_by_index::<Vecf32Output>(NonZero::new(1).unwrap())
                 .unwrap()
-                .map(|vector| OwnedVector::Vecf32(vector.for_borrow().for_own())),
+                .map(|vector| OwnedVector::Vecf32(vector.as_borrowed().own())),
             VectorKind::Vecf16 => tuple
                 .get_by_index::<Vecf16Output>(NonZero::new(1).unwrap())
                 .unwrap()
-                .map(|vector| OwnedVector::Vecf16(vector.for_borrow().for_own())),
+                .map(|vector| OwnedVector::Vecf16(vector.as_borrowed().own())),
             VectorKind::SVecf32 => tuple
                 .get_by_index::<SVecf32Output>(NonZero::new(1).unwrap())
                 .unwrap()
-                .map(|vector| OwnedVector::SVecf32(vector.for_borrow().for_own())),
+                .map(|vector| OwnedVector::SVecf32(vector.as_borrowed().own())),
             VectorKind::BVecf32 => tuple
                 .get_by_index::<BVecf32Output>(NonZero::new(1).unwrap())
                 .unwrap()
-                .map(|vector| OwnedVector::BVecf32(vector.for_borrow().for_own())),
+                .map(|vector| OwnedVector::BVecf32(vector.as_borrowed().own())),
             VectorKind::Veci8 => tuple
                 .get_by_index::<Veci8Output>(NonZero::new(1).unwrap())
                 .unwrap()
-                .map(|vector| OwnedVector::Veci8(vector.for_borrow().for_own())),
+                .map(|vector| OwnedVector::Veci8(vector.as_borrowed().own())),
         };
         let radius = tuple.get_by_index::<f32>(NonZero::new(2).unwrap()).unwrap();
         (center, radius)

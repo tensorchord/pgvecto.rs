@@ -14,11 +14,13 @@ use std::alloc::Layout;
 use std::ops::Deref;
 use std::ptr::NonNull;
 
+pub const HEADER_MAGIC: u16 = 2;
+
 #[repr(C, align(8))]
 pub struct SVecf32Header {
     varlena: u32,
     reserved: u16,
-    kind: u16,
+    magic: u16,
     dims: u32,
     len: u32,
     phantom: [u8; 0],
@@ -36,11 +38,11 @@ impl SVecf32Header {
         let layout = layout.extend(layout1).unwrap().0.pad_to_align();
         layout.extend(layout2).unwrap().0.pad_to_align()
     }
-    pub fn dims(&self) -> usize {
-        self.dims as usize
+    pub fn dims(&self) -> u32 {
+        self.dims
     }
-    pub fn len(&self) -> usize {
-        self.len as usize
+    pub fn len(&self) -> u32 {
+        self.len
     }
     fn indexes(&self) -> &[u32] {
         let ptr = self.phantom.as_ptr().cast();
@@ -55,7 +57,7 @@ impl SVecf32Header {
             std::slice::from_raw_parts(ptr, len)
         }
     }
-    pub fn for_borrow(&self) -> SVecf32Borrowed<'_> {
+    pub fn as_borrowed(&self) -> SVecf32Borrowed<'_> {
         unsafe { SVecf32Borrowed::new_unchecked(self.dims, self.indexes(), self.values()) }
     }
 }
@@ -99,9 +101,9 @@ impl SVecf32Output {
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
             std::ptr::addr_of_mut!((*ptr).varlena).write(SVecf32Header::varlena(layout.size()));
             std::ptr::addr_of_mut!((*ptr).dims).write(vector.dims());
-            std::ptr::addr_of_mut!((*ptr).kind).write(2);
+            std::ptr::addr_of_mut!((*ptr).magic).write(2);
             std::ptr::addr_of_mut!((*ptr).len).write(vector.len());
-            std::ptr::addr_of_mut!((*ptr).reserved).write(0);
+            std::ptr::addr_of_mut!((*ptr).reserved).write(HEADER_MAGIC);
             let mut data_ptr = (*ptr).phantom.as_mut_ptr().cast::<u32>();
             std::ptr::copy_nonoverlapping(
                 vector.indexes().as_ptr(),
@@ -181,7 +183,7 @@ impl FromDatum for SVecf32Output {
                 Some(SVecf32Output(q))
             } else {
                 let header = p.as_ptr();
-                let vector = unsafe { (*header).for_borrow() };
+                let vector = unsafe { (*header).as_borrowed() };
                 Some(SVecf32Output::new(vector))
             }
         }
@@ -203,7 +205,7 @@ unsafe impl UnboxDatum for SVecf32Output {
             SVecf32Output(q)
         } else {
             let header = p.as_ptr();
-            let vector = unsafe { (*header).for_borrow() };
+            let vector = unsafe { (*header).as_borrowed() };
             SVecf32Output::new(vector)
         }
     }

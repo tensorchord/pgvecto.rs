@@ -12,6 +12,6 @@ impl Operator for BVecf32Jaccard {
     const DISTANCE_KIND: DistanceKind = DistanceKind::Jaccard;
 
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> F32 {
-        F32(1.) - bvecf32::jaccard(lhs, rhs)
+        F32(1.0) - bvecf32::jaccard(lhs, rhs)
     }
 }

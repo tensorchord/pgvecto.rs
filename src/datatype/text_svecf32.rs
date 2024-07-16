@@ -19,6 +19,7 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
             bad_literal(&e.to_string());
         }
         Ok((mut indexes, mut values, dims)) => {
+            let dims = u32::try_from(dims).expect("input is too large");
             check_value_dims_1048575(dims);
             // is_sorted
             if !indexes.windows(2).all(|i| i[0] <= i[1]) {
@@ -52,7 +53,7 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
                         "Indexes need to be unique, but there are more than one same index {index}"
                     )
                 }
-                if last >= Some(dims as u32) {
+                if last >= Some(dims) {
                     error!("Index out of bounds: the dim is {dims} but the index is {index}");
                 }
                 last = Some(index);
@@ -71,17 +72,17 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
                     values.truncate(i);
                 }
             }
-            SVecf32Output::new(SVecf32Borrowed::new(dims as u32, &indexes, &values))
+            SVecf32Output::new(SVecf32Borrowed::new(dims, &indexes, &values))
         }
     }
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_out(vector: SVecf32Input<'_>) -> CString {
-    let dims = vector.for_borrow().dims();
+    let dims = vector.as_borrowed().dims();
     let mut buffer = String::new();
     buffer.push('{');
-    let svec = vector.for_borrow();
+    let svec = vector.as_borrowed();
     let mut need_splitter = false;
     for (&index, &value) in svec.indexes().iter().zip(svec.values().iter()) {
         match need_splitter {

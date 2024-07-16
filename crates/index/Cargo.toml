@@ -20,7 +20,7 @@ validator.workspace = true
 
 base = { path = "../base" }
 common = { path = "../common" }
-elkan_k_means = { path = "../elkan_k_means" }
+k_means = { path = "../k_means" }
 quantization = { path = "../quantization" }
 stoppable_rayon = { path = "../stoppable_rayon" }
 storage = { path = "../storage" }

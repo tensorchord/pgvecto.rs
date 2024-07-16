@@ -6,17 +6,17 @@ use num_traits::Zero;
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_dims(vector: SVecf32Input<'_>) -> i32 {
-    vector.for_borrow().dims() as i32
+    vector.as_borrowed().dims() as i32
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_norm(vector: SVecf32Input<'_>) -> f32 {
-    vector.for_borrow().length().to_f32()
+    vector.as_borrowed().length().to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_normalize(vector: SVecf32Input<'_>) -> SVecf32Output {
-    SVecf32Output::new(vector.for_borrow().normalize().for_borrow())
+    SVecf32Output::new(vector.as_borrowed().function_normalize().as_borrowed())
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -25,7 +25,8 @@ fn _vectors_to_svector(
     index: pgrx::Array<i32>,
     value: pgrx::Array<f32>,
 ) -> SVecf32Output {
-    let dims = check_value_dims_1048575(dims as usize);
+    let dims = dims as u32;
+    check_value_dims_1048575(dims);
     if index.len() != value.len() {
         bad_literal("Lengths of index and value are not matched.");
     }
@@ -36,7 +37,7 @@ fn _vectors_to_svector(
         .iter_deny_null()
         .zip(value.iter_deny_null())
         .map(|(index, value)| {
-            if index < 0 || index >= dims.get() as i32 {
+            if index < 0 || index as u32 >= dims {
                 bad_literal("Index out of bound.");
             }
             (index as u32, F32(value))
@@ -57,14 +58,14 @@ fn _vectors_to_svector(
         indexes.push(x.0);
         values.push(x.1);
     }
-    SVecf32Output::new(SVecf32Borrowed::new(dims.get(), &indexes, &values))
+    SVecf32Output::new(SVecf32Borrowed::new(dims, &indexes, &values))
 }
 
 /// divide a sparse vector by a scalar.
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_div(vector: SVecf32Input<'_>, scalar: f32) -> SVecf32Output {
     let scalar = F32(scalar);
-    let vector = vector.for_borrow();
+    let vector = vector.as_borrowed();
     let indexes = vector.indexes();
     let values = vector.values();
     let mut new_indexes = Vec::<u32>::with_capacity(indexes.len());

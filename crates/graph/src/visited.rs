@@ -104,8 +104,8 @@ impl<'a> Drop for VisitedGuardChecker<'a> {
 }
 
 pub struct VisitedBuffer {
-    version: usize,
-    data: Vec<usize>,
+    version: u8,
+    data: Vec<u8>,
 }
 
 impl VisitedBuffer {

@@ -14,12 +14,14 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::ptr::NonNull;
 
+pub const HEADER_MAGIC: u16 = 3;
+
 #[repr(C, align(8))]
 pub struct BVecf32Header {
     varlena: u32,
     dims: u16,
-    kind: u16,
-    phantom: [usize; 0],
+    magic: u16,
+    phantom: [u64; 0],
 }
 
 impl BVecf32Header {
@@ -29,23 +31,23 @@ impl BVecf32Header {
     fn layout(len: usize) -> Layout {
         u16::try_from(len).expect("Vector is too large.");
         let layout_alpha = Layout::new::<BVecf32Header>();
-        let layout_beta = Layout::array::<usize>(len.div_ceil(BVEC_WIDTH)).unwrap();
+        let layout_beta = Layout::array::<u64>((len as u32).div_ceil(BVECF32_WIDTH) as _).unwrap();
         let layout = layout_alpha.extend(layout_beta).unwrap().0;
         layout.pad_to_align()
     }
-    pub fn dims(&self) -> usize {
-        self.dims as usize
+    pub fn dims(&self) -> u32 {
+        self.dims as u32
     }
-    pub fn data(&self) -> &[usize] {
+    pub fn data(&self) -> &[u64] {
         unsafe {
             std::slice::from_raw_parts(
                 self.phantom.as_ptr(),
-                (self.dims as usize).div_ceil(BVEC_WIDTH),
+                (self.dims as u32).div_ceil(BVECF32_WIDTH) as usize,
             )
         }
     }
-    pub fn for_borrow(&self) -> BVecf32Borrowed<'_> {
-        unsafe { BVecf32Borrowed::new_unchecked(self.dims, self.data()) }
+    pub fn as_borrowed(&self) -> BVecf32Borrowed<'_> {
+        unsafe { BVecf32Borrowed::new_unchecked(self.dims(), self.data()) }
     }
 }
 
@@ -83,17 +85,18 @@ pub struct BVecf32Output(NonNull<BVecf32Header>);
 impl BVecf32Output {
     pub fn new(vector: BVecf32Borrowed<'_>) -> BVecf32Output {
         unsafe {
-            let dims = vector.dims() as usize;
-            let layout = BVecf32Header::layout(dims);
+            let dims = vector.dims();
+            let internal_dims = dims as u16;
+            let layout = BVecf32Header::layout(dims as usize);
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut BVecf32Header;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
             std::ptr::addr_of_mut!((*ptr).varlena).write(BVecf32Header::varlena(layout.size()));
-            std::ptr::addr_of_mut!((*ptr).kind).write(3);
-            std::ptr::addr_of_mut!((*ptr).dims).write(dims as u16);
+            std::ptr::addr_of_mut!((*ptr).magic).write(HEADER_MAGIC);
+            std::ptr::addr_of_mut!((*ptr).dims).write(internal_dims);
             std::ptr::copy_nonoverlapping(
                 vector.data().as_ptr(),
                 (*ptr).phantom.as_mut_ptr(),
-                dims.div_ceil(BVEC_WIDTH),
+                dims.div_ceil(BVECF32_WIDTH) as usize,
             );
             BVecf32Output(NonNull::new(ptr).unwrap())
         }
@@ -165,7 +168,7 @@ impl FromDatum for BVecf32Output {
                 Some(BVecf32Output(q))
             } else {
                 let header = p.as_ptr();
-                let vector = unsafe { (*header).for_borrow() };
+                let vector = unsafe { (*header).as_borrowed() };
                 Some(BVecf32Output::new(vector))
             }
         }
@@ -187,7 +190,7 @@ unsafe impl UnboxDatum for BVecf32Output {
             BVecf32Output(q)
         } else {
             let header = p.as_ptr();
-            let vector = unsafe { (*header).for_borrow() };
+            let vector = unsafe { (*header).as_borrowed() };
             BVecf32Output::new(vector)
         }
     }

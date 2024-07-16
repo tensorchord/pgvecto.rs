@@ -15,24 +15,16 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::ptr::NonNull;
 
-pub const VECI8_KIND: u16 = 4;
+pub const HEADER_MAGIC: u16 = 4;
 
-/// Veci8 utilizes int8 for data storage, originally derived from Vecf32.
-/// Given a vector of F32, [a_0, a_1, a_2, ..., a_n], we aim to find the maximum and minimum values. The maximum value, max, is the greatest among {a_0, a_1, a_2, ..., a_n}, and the minimum value, min, is the smallest.
-/// We can transform F32 to I8 using the formula (a - (max + min) / 2) / (max - min) * 254, resulting in a vector of I8, [b_0, b_1, b_2, ..., b_n]. Here 254 is the range size that the int8 type can cover, which is the difference between -127 and 127.
-/// Converting I8 back to F32 can be achieved by using the formula b * (max - min) / 254 + (max + min) / 2, which gives us a vector of F32, albeit with a slight loss of precision.
-/// We use alpha to represent (max - min) / 254, and offset to represent (max + min) / 2 here.
-/// We choose [-127, 127] rather than [-128, 127] to avoid overflow when we need to calculate (-a_i) in dot_i8_avx512vnni.
 #[repr(C, align(8))]
 pub struct Veci8Header {
     varlena: u32,
-    len: u16,
-    kind: u16,
+    dims: u16,
+    magic: u16,
     alpha: F32,
     offset: F32,
-    // sum of a_i * alpha, precomputed for dot
     sum: F32,
-    // l2 norm of original f_i, precomputed for l2
     l2_norm: F32,
     phantom: [I8; 0],
 }
@@ -53,8 +45,8 @@ impl Veci8Header {
         layout.pad_to_align()
     }
 
-    pub fn len(&self) -> usize {
-        self.len as usize
+    pub fn dims(&self) -> u32 {
+        self.dims as u32
     }
 
     pub fn alpha(&self) -> F32 {
@@ -83,23 +75,24 @@ impl Veci8Header {
     /// return value after dequantization by index
     /// since `index<usize>` return &Output, we can't create a new Output and return it as a reference, so we need to use this function to return a new Output directly
     #[inline(always)]
-    pub fn index(&self, index: usize) -> F32 {
-        self.data()[index].to_f32() * self.alpha() + self.offset()
+    pub fn get(&self, index: u32) -> F32 {
+        self.data()[index as usize].to_f32() * self.alpha + self.offset
     }
 
     pub fn data(&self) -> &[I8] {
-        unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.len as usize) }
+        unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.dims as usize) }
     }
 
-    pub fn for_borrow(&self) -> Veci8Borrowed<'_> {
-        Veci8Borrowed::new(
-            self.len as u32,
-            self.data(),
-            self.alpha,
-            self.offset,
-            self.sum,
-            self.l2_norm,
-        )
+    pub fn as_borrowed(&self) -> Veci8Borrowed<'_> {
+        unsafe {
+            Veci8Borrowed::new_unchecked(
+                self.data(),
+                self.alpha,
+                self.offset,
+                self.sum,
+                self.l2_norm,
+            )
+        }
     }
 }
 
@@ -139,11 +132,13 @@ impl Veci8Output {
         unsafe {
             let slice = vector.data();
             let layout = Veci8Header::layout(slice.len());
+            let dims = vector.dims();
+            let internal_dims = dims as u16;
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut Veci8Header;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
             std::ptr::addr_of_mut!((*ptr).varlena).write(Veci8Header::varlena(layout.size()));
-            std::ptr::addr_of_mut!((*ptr).len).write(slice.len() as u16);
-            std::ptr::addr_of_mut!((*ptr).kind).write(VECI8_KIND);
+            std::ptr::addr_of_mut!((*ptr).dims).write(internal_dims);
+            std::ptr::addr_of_mut!((*ptr).magic).write(HEADER_MAGIC);
             std::ptr::addr_of_mut!((*ptr).alpha).write(vector.alpha());
             std::ptr::addr_of_mut!((*ptr).offset).write(vector.offset());
             std::ptr::addr_of_mut!((*ptr).sum).write(vector.sum());
@@ -220,7 +215,7 @@ impl FromDatum for Veci8Output {
                 Some(Veci8Output(q))
             } else {
                 let header = p.as_ptr();
-                let vector = unsafe { (*header).for_borrow() };
+                let vector = unsafe { (*header).as_borrowed() };
                 Some(Veci8Output::new(vector))
             }
         }
@@ -242,7 +237,7 @@ unsafe impl UnboxDatum for Veci8Output {
             Veci8Output(q)
         } else {
             let header = p.as_ptr();
-            let vector = unsafe { (*header).for_borrow() };
+            let vector = unsafe { (*header).as_borrowed() };
             Veci8Output::new(vector)
         }
     }

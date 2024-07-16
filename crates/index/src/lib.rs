@@ -25,11 +25,10 @@ use common::dir_ops::sync_walk_from_dir;
 use common::file_atomic::FileAtomic;
 use crossbeam::atomic::AtomicCell;
 use crossbeam::channel::Sender;
-use elkan_k_means::operator::OperatorElkanKMeans;
+use ivf::operator::OperatorIvf;
 use parking_lot::Mutex;
 use quantization::operator::OperatorQuantization;
 use serde::{Deserialize, Serialize};
-use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::Infallible;
@@ -42,9 +41,9 @@ use storage::OperatorStorage;
 use thiserror::Error;
 use validator::Validate;
 
-pub trait Op: Operator + OperatorElkanKMeans + OperatorQuantization + OperatorStorage {}
+pub trait Op: Operator + OperatorQuantization + OperatorStorage + OperatorIvf {}
 
-impl<T: Operator + OperatorElkanKMeans + OperatorQuantization + OperatorStorage> Op for T {}
+impl<T: Operator + OperatorQuantization + OperatorStorage + OperatorIvf> Op for T {}
 
 #[derive(Debug, Error)]
 #[error("The index view is outdated.")]
@@ -313,7 +312,7 @@ impl<O: Op> Index<O> {
         self.check_deleted.store(true)
     }
     pub fn check_existing(&self, payload: Payload) -> bool {
-        self.delete.check(payload).is_some()
+        self.delete.check(payload)
     }
     pub fn wait(&self) -> Arc<IndexTracker> {
         Arc::clone(&self._tracker)
@@ -388,53 +387,6 @@ pub struct IndexView<O: Op> {
 }
 
 impl<O: Op> IndexView<O> {
-    pub fn basic<'a>(
-        &'a self,
-        vector: Borrowed<'_, O>,
-        opts: &'a SearchOptions,
-    ) -> Result<impl Iterator<Item = (F32, Pointer)> + 'a, BasicError> {
-        if self.options.vector.dims != vector.dims() {
-            return Err(BasicError::InvalidVector);
-        }
-        if let Err(err) = opts.validate() {
-            return Err(BasicError::InvalidSearchOptions {
-                reason: err.to_string(),
-            });
-        }
-
-        struct Comparer(std::collections::BinaryHeap<Reverse<Element>>);
-
-        impl Iterator for Comparer {
-            type Item = Element;
-
-            fn next(&mut self) -> Option<Self::Item> {
-                self.0.pop().map(|Reverse(x)| x)
-            }
-        }
-
-        let n = self.sealed_segments.len() + self.read_segments.len() + 1;
-        let mut heaps = Vec::with_capacity(1 + n);
-        for (_, sealed) in self.sealed_segments.iter() {
-            let p = sealed.basic(vector, opts);
-            heaps.push(Comparer(p));
-        }
-        for (_, read) in self.read_segments.iter() {
-            let p = read.basic(vector, opts);
-            heaps.push(Comparer(p));
-        }
-        if let Some((_, write)) = &self.write_segment {
-            let p = write.basic(vector, opts);
-            heaps.push(Comparer(p));
-        }
-        let loser = LoserTree::new(heaps);
-        Ok(loser.filter_map(|x| {
-            if self.delete.check(x.payload).is_some() {
-                Some((x.distance, x.payload.pointer()))
-            } else {
-                None
-            }
-        }))
-    }
     pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
@@ -449,29 +401,29 @@ impl<O: Op> IndexView<O> {
             });
         }
 
-        let n = self.sealed_segments.len() + self.read_segments.len() + 1;
-        let mut alpha = Vec::new();
-        let mut beta = Vec::with_capacity(1 + n);
+        let n = self.sealed_segments.len() + self.read_segments.len() + 2;
+        let mut elements = Vec::new();
+        let mut iterators = Vec::with_capacity(n);
         for (_, sealed) in self.sealed_segments.iter() {
             let (stage1, stage2) = sealed.vbase(vector, opts);
-            alpha.extend(stage1);
-            beta.push(stage2);
+            elements.extend(stage1);
+            iterators.push(stage2);
         }
         for (_, read) in self.read_segments.iter() {
             let (stage1, stage2) = read.vbase(vector, opts);
-            alpha.extend(stage1);
-            beta.push(stage2);
+            elements.extend(stage1);
+            iterators.push(stage2);
         }
         if let Some((_, write)) = &self.write_segment {
             let (stage1, stage2) = write.vbase(vector, opts);
-            alpha.extend(stage1);
-            beta.push(stage2);
+            elements.extend(stage1);
+            iterators.push(stage2);
         }
-        alpha.sort_unstable();
-        beta.push(Box::new(alpha.into_iter()));
-        let loser = LoserTree::new(beta);
+        elements.sort_unstable();
+        iterators.push(Box::new(elements.into_iter()));
+        let loser = LoserTree::new(iterators);
         Ok(loser.filter_map(|x| {
-            if self.delete.check(x.payload).is_some() {
+            if self.delete.check(x.payload) {
                 Some((x.distance, x.payload.pointer()))
             } else {
                 None
@@ -495,7 +447,8 @@ impl<O: Op> IndexView<O> {
         let iter = sealed_segments
             .chain(read_segments)
             .chain(write_segments)
-            .filter_map(|p| self.delete.check(p));
+            .filter(|p| self.delete.check(*p))
+            .map(|p| p.pointer());
         Ok(iter)
     }
     pub fn insert(
@@ -503,7 +456,7 @@ impl<O: Op> IndexView<O> {
         vector: Owned<O>,
         pointer: Pointer,
     ) -> Result<Result<(), OutdatedError>, InsertError> {
-        if self.options.vector.dims != vector.dims() {
+        if self.options.vector.dims != vector.as_borrowed().dims() {
             return Err(InsertError::InvalidVector);
         }
 

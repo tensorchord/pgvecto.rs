@@ -42,17 +42,11 @@ impl Delete {
             wal: wal.into(),
         })
     }
-    pub fn check(&self, payload: Payload) -> Option<Pointer> {
+    pub fn check(&self, payload: Payload) -> bool {
         let pointer = payload.pointer();
         match self.version.get(&pointer) {
-            Some(e) => {
-                if payload.time() == *e {
-                    Some(pointer)
-                } else {
-                    None
-                }
-            }
-            None => Some(pointer),
+            Some(e) => payload.time() == *e,
+            None => true,
         }
     }
     pub fn delete(&self, key: Pointer) {

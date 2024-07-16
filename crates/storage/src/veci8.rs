@@ -31,7 +31,6 @@ impl<O: Operator<VectorOwned = Veci8Owned>> Vectors<O> for Veci8Storage {
         let e = (i + 1) as usize * *self.dims as usize;
         unsafe {
             Veci8Borrowed::new_unchecked(
-                *self.dims,
                 &self.slice[s..e],
                 self.alphas[i as usize],
                 self.offsets[i as usize],

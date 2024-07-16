@@ -5,6 +5,7 @@ use base::index::*;
 use base::operator::*;
 use base::scalar::F32;
 use base::search::*;
+use base::vector::VectorBorrowed;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
@@ -14,8 +15,6 @@ use parking_lot::RwLock;
 use quantization::operator::OperatorQuantization;
 use quantization::Quantization;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use std::cmp::Reverse;
-use std::collections::BinaryHeap;
 use std::fs::create_dir;
 use std::ops::RangeInclusive;
 use std::path::Path;
@@ -25,9 +24,9 @@ use stoppable_rayon as rayon;
 use storage::OperatorStorage;
 use storage::Storage;
 
-pub trait OperatorHnsw: Operator + OperatorQuantization + OperatorStorage {}
+pub trait OperatorHnsw: OperatorQuantization + OperatorStorage {}
 
-impl<T: Operator + OperatorQuantization + OperatorStorage> OperatorHnsw for T {}
+impl<T: OperatorQuantization + OperatorStorage> OperatorHnsw for T {}
 
 pub struct Hnsw<O: OperatorHnsw> {
     storage: O::Storage,
@@ -61,51 +60,33 @@ impl<O: OperatorHnsw> Hnsw<O> {
         open(path)
     }
 
-    pub fn basic(
-        &self,
-        vector: Borrowed<'_, O>,
-        opts: &SearchOptions,
-    ) -> BinaryHeap<Reverse<Element>> {
-        let Some(s) = self.s else {
-            return BinaryHeap::new();
-        };
-        let s = fast_search(
-            |x| self.quantization.distance(&self.storage, vector, x),
-            |x, i| outs(self, x, i),
-            1..=hierarchy_for_a_vertex(*self.m, s) - 1,
-            s,
-        );
-        graph::search::basic(
-            move |x| self.quantization.distance(&self.storage, vector, x),
-            |x| outs(self, x, 0),
-            |x| self.payloads[x as usize],
-            &self.visited,
-            s,
-            opts.hnsw_ef_search,
-        )
-    }
-
     pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
+    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
         let Some(s) = self.s else {
             return (Vec::new(), Box::new(std::iter::empty()));
         };
-        let s = fast_search(
-            |x| self.quantization.distance(&self.storage, vector, x),
-            |x, i| outs(self, x, i),
-            1..=hierarchy_for_a_vertex(*self.m, s) - 1,
-            s,
-        );
+        let s = {
+            let processed = self.quantization.preprocess(vector);
+            fast_search(
+                |x| self.quantization.process(&self.storage, &processed, x),
+                |x, i| outs(self, x, i),
+                1..=hierarchy_for_a_vertex(*self.m, s) - 1,
+                s,
+            )
+        };
         graph::search::vbase_generic(
-            move |x| self.quantization.distance(&self.storage, vector, x),
-            |x| outs(self, x, 0),
-            |x| self.payloads[x as usize],
             &self.visited,
             s,
             opts.hnsw_ef_search,
+            self.quantization.graph_rerank(vector, opts, move |u| {
+                (
+                    O::distance(self.storage.vector(u), vector),
+                    (self.payloads[u as usize], outs(self, u, 0)),
+                )
+            }),
         )
     }
 
@@ -148,9 +129,10 @@ fn from_nothing<O: OperatorHnsw>(
     rayon::check();
     let quantization = Quantization::create(
         path.as_ref().join("quantization"),
-        options.clone(),
+        options.vector,
         quantization_options,
         collection,
+        |vector| vector.own(),
     );
     rayon::check();
     let payloads = MmapArray::create(
@@ -214,9 +196,10 @@ fn from_main<O: OperatorHnsw>(
     rayon::check();
     let quantization = Quantization::create(
         path.as_ref().join("quantization"),
-        options.clone(),
+        options.vector,
         quantization_options,
         remapped,
+        |vector| vector.own(),
     );
     rayon::check();
     let payloads = MmapArray::create(

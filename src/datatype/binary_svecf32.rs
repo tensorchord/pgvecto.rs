@@ -13,9 +13,9 @@ fn _vectors_svecf32_send(vector: SVecf32Input<'_>) -> Bytea {
     use pgrx::pg_sys::StringInfoData;
     unsafe {
         let mut buf = StringInfoData::default();
-        let dims = vector.dims() as u32;
-        let len = vector.len() as u32;
-        let x = vector.for_borrow();
+        let dims = vector.dims();
+        let len = vector.len();
+        let x = vector.as_borrowed();
         let b_indexes = std::mem::size_of::<u32>() * len as usize;
         let b_values = std::mem::size_of::<F32>() * len as usize;
         pgrx::pg_sys::pq_begintypsend(&mut buf);

@@ -313,67 +313,6 @@ pub enum InstanceView {
     Veci8L2(Arc<IndexView<Veci8L2>>),
 }
 
-impl ViewBasicOperations for InstanceView {
-    fn basic<'a>(
-        &'a self,
-        vector: &'a OwnedVector,
-        opts: &'a SearchOptions,
-    ) -> Result<Box<dyn Iterator<Item = (F32, Pointer)> + 'a>, BasicError> {
-        match (self, vector) {
-            (InstanceView::Vecf32Cos(x), OwnedVector::Vecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?)
-                    as Box<dyn Iterator<Item = (F32, Pointer)>>)
-            }
-            (InstanceView::Vecf32Dot(x), OwnedVector::Vecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
-            }
-            (InstanceView::Vecf32L2(x), OwnedVector::Vecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
-            }
-            (InstanceView::Vecf16Cos(x), OwnedVector::Vecf16(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
-            }
-            (InstanceView::Vecf16Dot(x), OwnedVector::Vecf16(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
-            }
-            (InstanceView::Vecf16L2(x), OwnedVector::Vecf16(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
-            }
-            (InstanceView::SVecf32Cos(x), OwnedVector::SVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
-            }
-            (InstanceView::SVecf32Dot(x), OwnedVector::SVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
-            }
-            (InstanceView::SVecf32L2(x), OwnedVector::SVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
-            }
-            (InstanceView::BVecf32Cos(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
-            }
-            (InstanceView::BVecf32Dot(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
-            }
-            (InstanceView::BVecf32L2(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
-            }
-            (InstanceView::BVecf32Jaccard(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.basic(vector.for_borrow(), opts)?))
-            }
-            (InstanceView::Veci8Cos(x), OwnedVector::Veci8(vector)) => {
-                Ok(Box::new(x.basic(vector.into(), opts)?))
-            }
-            (InstanceView::Veci8Dot(x), OwnedVector::Veci8(vector)) => {
-                Ok(Box::new(x.basic(vector.into(), opts)?))
-            }
-            (InstanceView::Veci8L2(x), OwnedVector::Veci8(vector)) => {
-                Ok(Box::new(x.basic(vector.into(), opts)?))
-            }
-            _ => Err(BasicError::InvalidVector),
-        }
-    }
-}
-
 impl ViewVbaseOperations for InstanceView {
     fn vbase<'a>(
         &'a self,
@@ -382,53 +321,53 @@ impl ViewVbaseOperations for InstanceView {
     ) -> Result<Box<dyn Iterator<Item = (F32, Pointer)> + 'a>, VbaseError> {
         match (self, vector) {
             (InstanceView::Vecf32Cos(x), OwnedVector::Vecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?)
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?)
                     as Box<dyn Iterator<Item = (F32, Pointer)>>)
             }
             (InstanceView::Vecf32Dot(x), OwnedVector::Vecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::Vecf32L2(x), OwnedVector::Vecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::Vecf16Cos(x), OwnedVector::Vecf16(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::Vecf16Dot(x), OwnedVector::Vecf16(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::Vecf16L2(x), OwnedVector::Vecf16(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::SVecf32Cos(x), OwnedVector::SVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::SVecf32Dot(x), OwnedVector::SVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::SVecf32L2(x), OwnedVector::SVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::BVecf32Cos(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::BVecf32Dot(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::BVecf32L2(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::BVecf32Jaccard(x), OwnedVector::BVecf32(vector)) => {
-                Ok(Box::new(x.vbase(vector.for_borrow(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::Veci8Cos(x), OwnedVector::Veci8(vector)) => {
-                Ok(Box::new(x.vbase(vector.into(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::Veci8Dot(x), OwnedVector::Veci8(vector)) => {
-                Ok(Box::new(x.vbase(vector.into(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             (InstanceView::Veci8L2(x), OwnedVector::Veci8(vector)) => {
-                Ok(Box::new(x.vbase(vector.into(), opts)?))
+                Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
             }
             _ => Err(VbaseError::InvalidVector),
         }
