@@ -52,9 +52,6 @@ where
         let c = input[position];
         match c {
             b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | b'.' | b'+' | b'-' => {
-                if token.is_empty() {
-                    token.push(b'$');
-                }
                 if token.try_push(c).is_err() {
                     return Err(ParseVectorError::TooLongNumber { position });
                 }
@@ -62,7 +59,7 @@ where
             b',' => {
                 if !token.is_empty() {
                     // Safety: all bytes in `token` are ascii characters
-                    let s = unsafe { std::str::from_utf8_unchecked(&token[1..]) };
+                    let s = unsafe { std::str::from_utf8_unchecked(&token) };
                     let num = f(s).ok_or(ParseVectorError::BadParsing { position })?;
                     vector.push(num);
                     token.clear();
@@ -77,7 +74,7 @@ where
     if !token.is_empty() {
         let position = right;
         // Safety: all bytes in `token` are ascii characters
-        let s = unsafe { std::str::from_utf8_unchecked(&token[1..]) };
+        let s = unsafe { std::str::from_utf8_unchecked(&token) };
         let num = f(s).ok_or(ParseVectorError::BadParsing { position })?;
         vector.push(num);
         token.clear();
