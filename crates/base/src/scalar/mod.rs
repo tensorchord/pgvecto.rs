@@ -25,4 +25,7 @@ pub trait ScalarLike:
     fn to_f32(self) -> f32;
     fn from_f(x: F32) -> Self;
     fn to_f(self) -> F32;
+
+    // it's not a good place, but there is no good place
+    fn euclid_distance(lhs: &[Self], rhs: &[Self]) -> F32;
 }

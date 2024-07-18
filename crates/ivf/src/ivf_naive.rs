@@ -2,16 +2,15 @@ use super::OperatorIvf as Op;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
+use base::vector::VectorBorrowed;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use common::vec2::Vec2;
-use elkan_k_means::elkan_k_means;
-use elkan_k_means::elkan_k_means_caluate;
-use elkan_k_means::elkan_k_means_lookup;
+use k_means::k_means;
+use k_means::k_means_lookup;
+use k_means::k_means_lookup_many;
 use quantization::Quantization;
-use std::cmp::Reverse;
-use std::collections::BinaryHeap;
 use std::fs::create_dir;
 use std::path::Path;
 use stoppable_rayon as rayon;
@@ -47,46 +46,41 @@ impl<O: Op> IvfNaive<O> {
         self.payloads[i as usize]
     }
 
-    pub fn basic(
-        &self,
-        vector: Borrowed<'_, O>,
-        opts: &SearchOptions,
-    ) -> BinaryHeap<Reverse<Element>> {
-        let mut lists = elkan_k_means_caluate::<O>(vector, &self.centroids);
-        lists.select_nth_unstable(opts.ivf_nprobe as usize);
-        lists.truncate(opts.ivf_nprobe as usize);
-        let mut result = BinaryHeap::new();
-        for i in lists.iter().map(|(_, i)| *i) {
-            let start = self.offsets[i];
-            let end = self.offsets[i + 1];
-            for j in start..end {
-                let payload = self.payloads[j as usize];
-                let distance = self.quantization.distance(&self.storage, vector, j);
-                result.push(Reverse(Element { distance, payload }));
-            }
-        }
-        result
-    }
-
     pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-        let mut lists = elkan_k_means_caluate::<O>(vector, &self.centroids);
-        lists.select_nth_unstable(opts.ivf_nprobe as usize);
-        lists.truncate(opts.ivf_nprobe as usize);
-        let mut result = Vec::new();
+    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
+        let lists = select(
+            {
+                let mut vector = vector.to_vec();
+                O::elkan_k_means_normalize(&mut vector);
+                k_means_lookup_many(&vector, &self.centroids)
+            },
+            opts.ivf_nprobe as usize,
+        );
+        let mut reranker = self.quantization.ivf_naive_rerank(vector, opts, move |u| {
+            (
+                O::distance(vector, self.storage.vector(u)),
+                self.payloads[u as usize],
+            )
+        });
         for i in lists.iter().map(|(_, i)| *i) {
             let start = self.offsets[i];
             let end = self.offsets[i + 1];
-            for j in start..end {
-                let payload = self.payloads[j as usize];
-                let distance = self.quantization.distance(&self.storage, vector, j);
-                result.push(Element { distance, payload });
+            for u in start..end {
+                reranker.push(u, ());
             }
         }
-        (result, Box::new(std::iter::empty()))
+        (
+            Vec::new(),
+            Box::new(std::iter::from_fn(move || {
+                reranker.pop().map(|(dis_u, _, payload_u)| Element {
+                    distance: dis_u,
+                    payload: payload_u,
+                })
+            })),
+        )
     }
 }
 
@@ -102,11 +96,22 @@ fn from_nothing<O: Op>(
     } = options.indexing.clone().unwrap_ivf();
     let samples = common::sample::sample(collection);
     rayon::check();
-    let centroids = elkan_k_means::<O>(nlist as usize, samples);
+    let centroids = {
+        let mut samples = samples;
+        for i in 0..samples.len() {
+            O::elkan_k_means_normalize(&mut samples[i]);
+        }
+        k_means(nlist as usize, samples)
+    };
     rayon::check();
     let mut ls = vec![Vec::new(); nlist as usize];
     for i in 0..collection.len() {
-        ls[elkan_k_means_lookup::<O>(collection.vector(i), &centroids)].push(i);
+        ls[{
+            let mut vector = collection.vector(i).to_vec();
+            O::elkan_k_means_normalize(&mut vector);
+            k_means_lookup(&vector, &centroids)
+        }]
+        .push(i);
     }
     let mut offsets = vec![0u32; nlist as usize + 1];
     for i in 0..nlist {
@@ -121,9 +126,10 @@ fn from_nothing<O: Op>(
     let storage = O::Storage::create(path.as_ref().join("storage"), &collection);
     let quantization = Quantization::create(
         path.as_ref().join("quantization"),
-        options.clone(),
+        options.vector,
         quantization_options,
         &collection,
+        |vector| vector.own(),
     );
     let payloads = MmapArray::create(
         path.as_ref().join("payloads"),
@@ -153,4 +159,14 @@ fn open<O: Op>(path: impl AsRef<Path>) -> IvfNaive<O> {
         offsets,
         centroids,
     }
+}
+
+fn select<T: Ord>(mut lists: Vec<T>, n: usize) -> Vec<T> {
+    if lists.is_empty() || n == 0 {
+        return Vec::new();
+    }
+    let n = n.min(lists.len());
+    lists.select_nth_unstable(n - 1);
+    lists.truncate(n);
+    lists
 }

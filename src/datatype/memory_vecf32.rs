@@ -14,11 +14,13 @@ use std::alloc::Layout;
 use std::ops::Deref;
 use std::ptr::NonNull;
 
+pub const HEADER_MAGIC: u16 = 0;
+
 #[repr(C, align(8))]
 pub struct Vecf32Header {
     varlena: u32,
     dims: u16,
-    kind: u16,
+    magic: u16,
     phantom: [F32; 0],
 }
 
@@ -33,13 +35,13 @@ impl Vecf32Header {
         let layout = layout_alpha.extend(layout_beta).unwrap().0;
         layout.pad_to_align()
     }
-    pub fn dims(&self) -> usize {
-        self.dims as usize
+    pub fn dims(&self) -> u32 {
+        self.dims as u32
     }
     pub fn slice(&self) -> &[F32] {
         unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.dims as usize) }
     }
-    pub fn for_borrow(&self) -> Vecf32Borrowed<'_> {
+    pub fn as_borrowed(&self) -> Vecf32Borrowed<'_> {
         unsafe { Vecf32Borrowed::new_unchecked(self.slice()) }
     }
 }
@@ -88,11 +90,13 @@ impl Vecf32Output {
         unsafe {
             let slice = vector.slice();
             let layout = Vecf32Header::layout(slice.len());
+            let dims = vector.dims();
+            let internal_dims = dims as u16;
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut Vecf32Header;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
             std::ptr::addr_of_mut!((*ptr).varlena).write(Vecf32Header::varlena(layout.size()));
-            std::ptr::addr_of_mut!((*ptr).kind).write(0);
-            std::ptr::addr_of_mut!((*ptr).dims).write(slice.len() as u16);
+            std::ptr::addr_of_mut!((*ptr).magic).write(HEADER_MAGIC);
+            std::ptr::addr_of_mut!((*ptr).dims).write(internal_dims);
             std::ptr::copy_nonoverlapping(slice.as_ptr(), (*ptr).phantom.as_mut_ptr(), slice.len());
             Vecf32Output(NonNull::new(ptr).unwrap())
         }
@@ -158,7 +162,7 @@ impl FromDatum for Vecf32Output {
                 Some(Vecf32Output(q))
             } else {
                 let header = p.as_ptr();
-                let vector = unsafe { (*header).for_borrow() };
+                let vector = unsafe { (*header).as_borrowed() };
                 Some(Vecf32Output::new(vector))
             }
         }
@@ -180,7 +184,7 @@ unsafe impl UnboxDatum for Vecf32Output {
             Vecf32Output(q)
         } else {
             let header = p.as_ptr();
-            let vector = unsafe { (*header).for_borrow() };
+            let vector = unsafe { (*header).as_borrowed() };
             Vecf32Output::new(vector)
         }
     }

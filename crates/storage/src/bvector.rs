@@ -9,7 +9,7 @@ use std::path::Path;
 pub struct BVectorStorage {
     dims: Json<u32>,
     len: Json<u32>,
-    slice: MmapArray<usize>,
+    slice: MmapArray<u64>,
 }
 
 impl<O: Operator<VectorOwned = BVecf32Owned>> Vectors<O> for BVectorStorage {
@@ -22,9 +22,9 @@ impl<O: Operator<VectorOwned = BVecf32Owned>> Vectors<O> for BVectorStorage {
     }
 
     fn vector(&self, i: u32) -> BVecf32Borrowed<'_> {
-        let size = (*self.dims as usize).div_ceil(BVEC_WIDTH);
-        let s = i as usize * size;
-        let e = (i + 1) as usize * size;
+        let w = self.dims.div_ceil(BVECF32_WIDTH);
+        let s = i as usize * w as usize;
+        let e = (i + 1) as usize * w as usize;
         BVecf32Borrowed::new(*self.dims as _, &self.slice[s..e])
     }
 }

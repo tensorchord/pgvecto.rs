@@ -167,11 +167,6 @@ impl WorkerOperations for Worker {
         instance.delete(pointer)?;
         Ok(())
     }
-    fn view_basic(&self, handle: Handle) -> Result<impl ViewBasicOperations, BasicError> {
-        let view = self.view();
-        let instance = view.get(handle).ok_or(BasicError::NotExist)?;
-        Ok(instance.view())
-    }
     fn view_vbase(&self, handle: Handle) -> Result<impl ViewVbaseOperations, VbaseError> {
         let view = self.view();
         let instance = view.get(handle).ok_or(VbaseError::NotExist)?;

@@ -15,25 +15,25 @@ pub struct SVecf32AggregateAvgSumStype {
 }
 
 impl SVecf32AggregateAvgSumStype {
-    pub fn dims(&self) -> usize {
-        self.dims as usize
+    pub fn dims(&self) -> u32 {
+        self.dims
     }
-    pub fn len(&self) -> usize {
-        self.len as usize
+    pub fn len(&self) -> u32 {
+        self.len
     }
-    pub fn capacity(&self) -> usize {
-        self.capacity as usize
+    pub fn capacity(&self) -> u32 {
+        self.capacity
     }
     pub fn count(&self) -> u64 {
         self.count
     }
     /// Get the indexes of the sparse state.
     fn indexes(&self) -> &[u32] {
-        &self.indexes.as_slice()[0..self.len()]
+        &self.indexes.as_slice()[0..self.len as _]
     }
     /// Get the values of the sparse state.
     fn values(&self) -> &[F32] {
-        &self.values.as_slice()[0..self.len()]
+        &self.values.as_slice()[0..self.len as _]
     }
     /// Get the mutable references of the indexes and values of the sparse state. The indexes and values may contain reserved elements.
     fn indexes_values_mut(&mut self) -> (&mut [u32], &mut [F32]) {
@@ -42,32 +42,30 @@ impl SVecf32AggregateAvgSumStype {
     /// Filter zero values from the sparse state.
     fn filter_zero(&mut self) {
         let len = self.len();
-        let mut i = 0;
-        let mut j = 0;
+        let mut i = 0_u32;
+        let mut j = 0_u32;
         let (indexes, values) = self.indexes_values_mut();
         while i < len {
-            if !values[i].is_zero() {
-                indexes[j] = indexes[i];
-                values[j] = values[i];
+            if !values[i as usize].is_zero() {
+                indexes[j as usize] = indexes[i as usize];
+                values[j as usize] = values[i as usize];
                 j += 1;
             }
             i += 1;
         }
-        self.len = j as u32;
+        self.len = j;
     }
 
     /// Create a new sparse accumulate state with a given capacity.
-    pub fn new_with_capacity(dims: u32, capacity: usize) -> Self {
-        // set capacity at least 16
-        let capacity = std::cmp::max(usize::next_power_of_two(capacity), 16);
+    pub fn new_with_capacity(dims: u32, capacity: u32) -> Self {
         // set capacity at most dims
-        let capacity = std::cmp::min(capacity, dims as usize);
-        let indexes = vec![0; capacity];
-        let values = vec![F32::zero(); capacity];
+        let capacity = u32::next_power_of_two(capacity).max(16).min(dims);
+        let indexes = vec![0; capacity as _];
+        let values = vec![F32::zero(); capacity as _];
         Self {
             dims,
             len: 0,
-            capacity: capacity as u32,
+            capacity,
             count: 0,
             indexes,
             values,
@@ -75,7 +73,7 @@ impl SVecf32AggregateAvgSumStype {
     }
 
     /// check whether the rest of the state is enough to append the sparse vector of the given length. Approximately predict the rest of the state is enough.
-    pub fn check_capacity(&self, length: usize) -> bool {
+    pub fn check_capacity(&self, length: u32) -> bool {
         // If the state is full, return true. So we can enlarger the state less than log2(n) times.
         if self.capacity() == self.dims() {
             return true;
@@ -160,11 +158,11 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
         // if the state is empty, copy the input vector
         None => {
             let internal = Internal::new(SVecf32AggregateAvgSumStype::new_with_capacity(
-                value.dims() as u32,
+                value.dims(),
                 value.len(),
             ));
             let state = unsafe { internal.get_mut::<SVecf32AggregateAvgSumStype>().unwrap() };
-            state.merge_in_place(value.for_borrow());
+            state.merge_in_place(value.as_borrowed());
             state.count = 1;
             internal
         }
@@ -175,23 +173,21 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
             let count = state.count() + 1;
             if state.check_capacity(value.len()) {
                 // merge the input vector into state
-                state.merge_in_place(value.for_borrow());
+                state.merge_in_place(value.as_borrowed());
                 state.count = count;
                 // return old state
                 current
             } else {
                 // allocate a new state and merge the old state
-                let mut new_state = SVecf32AggregateAvgSumStype::new_with_capacity(
-                    dims as u32,
-                    state.len() + value.len(),
-                );
+                let mut new_state =
+                    SVecf32AggregateAvgSumStype::new_with_capacity(dims, state.len() + value.len());
                 new_state.merge_in_place(SVecf32Borrowed::new(
-                    dims as u32,
+                    dims,
                     state.indexes(),
                     state.values(),
                 ));
                 // merge the input vector into state
-                new_state.merge_in_place(value.for_borrow());
+                new_state.merge_in_place(value.as_borrowed());
                 new_state.count = count;
                 Internal::new(new_state)
             }
@@ -236,11 +232,7 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(
             let total_count = s1.count() + s2.count();
             if s1.check_capacity(s2.len()) {
                 // merge state2 into state
-                s1.merge_in_place(SVecf32Borrowed::new(
-                    s2.dims() as u32,
-                    s2.indexes(),
-                    s2.values(),
-                ));
+                s1.merge_in_place(SVecf32Borrowed::new(s2.dims(), s2.indexes(), s2.values()));
                 s1.count = total_count;
                 if larger_internal == 0 {
                     state1
@@ -249,18 +241,12 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(
                 }
             } else {
                 // allocate a new state and merge the old state
-                let mut new_state = SVecf32AggregateAvgSumStype::new_with_capacity(
-                    dims1 as u32,
-                    s1.len() + s2.len(),
-                );
-                new_state.merge_in_place(SVecf32Borrowed::new(
-                    dims1 as u32,
-                    s1.indexes(),
-                    s1.values(),
-                ));
+                let mut new_state =
+                    SVecf32AggregateAvgSumStype::new_with_capacity(dims1, s1.len() + s2.len());
+                new_state.merge_in_place(SVecf32Borrowed::new(dims1, s1.indexes(), s1.values()));
                 // merge state2 into state
                 new_state.merge_in_place(SVecf32Borrowed::new(
-                    s2.dims() as u32,
+                    s2.dims(),
                     s2.indexes(),
                     s2.values(),
                 ));
@@ -280,14 +266,14 @@ fn _vectors_svecf32_aggregate_avg_finalfunc(state: Internal) -> Option<SVecf32Ou
         Some(state) => {
             let len = state.len();
             let count = state.count();
-            state.indexes_values_mut().1[..len]
+            state.indexes_values_mut().1[..len as _]
                 .iter_mut()
                 .for_each(|x| *x /= count as f32);
             state.filter_zero();
             let indexes = state.indexes();
             let values = state.values();
             Some(SVecf32Output::new(SVecf32Borrowed::new(
-                state.dims() as u32,
+                state.dims(),
                 indexes,
                 values,
             )))
@@ -305,7 +291,7 @@ fn _vectors_svecf32_aggregate_sum_finalfunc(state: Internal) -> Option<SVecf32Ou
             let indexes = state.indexes();
             let values = state.values();
             Some(SVecf32Output::new(SVecf32Borrowed::new(
-                state.dims() as u32,
+                state.dims(),
                 indexes,
                 values,
             )))

@@ -1,3 +1,4 @@
+pub mod always_equal;
 pub mod clean;
 pub mod dir_ops;
 pub mod file_atomic;

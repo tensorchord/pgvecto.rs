@@ -40,7 +40,7 @@ impl<O: Op> GrowingIndexing<O> {
         &'a self,
         _: Borrowed<'a, O>,
         _: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
+    ) -> Box<dyn Iterator<Item = Element> + 'a> {
         unimplemented!()
     }
 

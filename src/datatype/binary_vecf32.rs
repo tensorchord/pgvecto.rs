@@ -12,10 +12,11 @@ fn _vectors_vecf32_send(vector: Vecf32Input<'_>) -> Bytea {
     use pgrx::pg_sys::StringInfoData;
     unsafe {
         let mut buf = StringInfoData::default();
-        let dims = vector.dims() as u16;
+        let dims = vector.dims();
+        let internal_dims = dims as u16;
         let b_slice = std::mem::size_of::<F32>() * dims as usize;
         pgrx::pg_sys::pq_begintypsend(&mut buf);
-        pgrx::pg_sys::pq_sendbytes(&mut buf, (&dims) as *const u16 as _, 2);
+        pgrx::pg_sys::pq_sendbytes(&mut buf, (&internal_dims) as *const u16 as _, 2);
         pgrx::pg_sys::pq_sendbytes(&mut buf, vector.slice().as_ptr() as _, b_slice as _);
         Bytea::new(pgrx::pg_sys::pq_endtypsend(&mut buf))
     }
@@ -27,7 +28,8 @@ fn _vectors_vecf32_recv(internal: Internal, oid: Oid, typmod: i32) -> Vecf32Outp
     use pgrx::pg_sys::StringInfo;
     unsafe {
         let buf: StringInfo = internal.into_datum().unwrap().cast_mut_ptr();
-        let dims = (pgrx::pg_sys::pq_getmsgbytes(buf, 2) as *const u16).read_unaligned();
+        let internal_dims = (pgrx::pg_sys::pq_getmsgbytes(buf, 2) as *const u16).read_unaligned();
+        let dims = internal_dims as u32;
 
         let b_slice = std::mem::size_of::<F32>() * dims as usize;
         let p_slice = pgrx::pg_sys::pq_getmsgbytes(buf, b_slice as _);

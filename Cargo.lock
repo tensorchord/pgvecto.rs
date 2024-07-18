@@ -769,17 +769,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3dca9240753cf90908d7e4aac30f630662b02aebaa1b58a3cadabdb23385b58b"
 
 [[package]]
-name = "elkan_k_means"
-version = "0.0.0"
-dependencies = [
- "base",
- "common",
- "num-traits",
- "rand",
- "stoppable_rayon",
-]
-
-[[package]]
 name = "embedding"
 version = "0.0.0"
 dependencies = [
@@ -891,6 +880,12 @@ dependencies = [
  "indenter",
  "once_cell",
 ]
+
+[[package]]
+name = "fastdivide"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59668941c55e5c186b8b58c391629af56774ec768f73c08bbcd56f09348eb00b"
 
 [[package]]
 name = "fastrand"
@@ -1345,10 +1340,10 @@ dependencies = [
  "crc32fast",
  "crossbeam",
  "dashmap",
- "elkan_k_means",
  "flat",
  "hnsw",
  "ivf",
+ "k_means",
  "log",
  "parking_lot",
  "quantization",
@@ -1441,7 +1436,7 @@ version = "0.0.0"
 dependencies = [
  "base",
  "common",
- "elkan_k_means",
+ "k_means",
  "num-traits",
  "quantization",
  "rand",
@@ -1457,6 +1452,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29c15563dc2726973df627357ce0c9ddddbea194836909d655df6a75d2cf296d"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "k_means"
+version = "0.0.0"
+dependencies = [
+ "base",
+ "common",
+ "num-traits",
+ "rand",
+ "stoppable_rayon",
 ]
 
 [[package]]
@@ -1977,11 +1983,13 @@ dependencies = [
  "base",
  "common",
  "detect",
- "elkan_k_means",
+ "fastdivide",
+ "k_means",
  "num-traits",
  "rand",
  "serde",
  "serde_json",
+ "stoppable_rayon",
 ]
 
 [[package]]

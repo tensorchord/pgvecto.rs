@@ -1,5 +1,5 @@
 [package]
-name = "elkan_k_means"
+name = "k_means"
 version.workspace = true
 edition.workspace = true
 
