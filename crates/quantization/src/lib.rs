@@ -2,9 +2,11 @@
 
 pub mod operator;
 pub mod product;
+pub mod rabitq;
 pub mod scalar;
 
 use self::product::ProductQuantizer;
+use self::rabitq::RaBitQuantizer;
 use self::scalar::ScalarQuantizer;
 use crate::operator::OperatorQuantization;
 use base::index::*;
@@ -24,6 +26,7 @@ pub enum Quantizer<O: OperatorQuantization> {
     Trivial,
     Scalar(ScalarQuantizer<O>),
     Product(ProductQuantizer<O>),
+    RaBitQ(RaBitQuantizer<O>),
 }
 
 impl<O: OperatorQuantization> Quantizer<O> {
@@ -37,6 +40,9 @@ impl<O: OperatorQuantization> Quantizer<O> {
             Trivial(_) => Self::Trivial,
             Scalar(_) => Self::Scalar(ScalarQuantizer::train(options, vectors)),
             Product(product) => Self::Product(ProductQuantizer::train(options, product, vectors)),
+            RaBitQ(rabitq) => {
+                Self::RaBitQ(RaBitQuantizer::train(options, vectors, |vec| vec.for_own()))
+            }
         }
     }
 
@@ -46,6 +52,7 @@ impl<O: OperatorQuantization> Quantizer<O> {
             Trivial => 0,
             Scalar(x) => x.width(),
             Product(x) => x.width(),
+            RaBitQ(x) => x.width(),
         }
     }
 
@@ -55,6 +62,7 @@ impl<O: OperatorQuantization> Quantizer<O> {
             Trivial => Vec::new(),
             Scalar(x) => x.encode(vector),
             Product(x) => x.encode(vector),
+            RaBitQ(x) => x.encode(vector),
         }
     }
 
@@ -64,6 +72,7 @@ impl<O: OperatorQuantization> Quantizer<O> {
             Trivial => fallback(),
             Scalar(x) => x.distance(lhs, rhs),
             Product(x) => x.distance(lhs, rhs),
+            RaBitQ(x) => x.distance(lhs, rhs),
         }
     }
 }

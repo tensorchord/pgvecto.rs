@@ -13,6 +13,7 @@ base = { path = "../base" }
 common = { path = "../common" }
 detect = { path = "../detect" }
 elkan_k_means = { path = "../elkan_k_means" }
+nalgebra = {version = "0.33.0", features = ["debug"]}
 
 [lints]
 workspace = true

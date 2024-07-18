@@ -3,6 +3,7 @@
 
 pub mod ivf_naive;
 pub mod ivf_pq;
+pub mod ivf_rabitq;
 
 use self::ivf_naive::IvfNaive;
 use base::index::*;

@@ -394,6 +394,7 @@ pub enum QuantizationOptions {
     Trivial(TrivialQuantizationOptions),
     Scalar(ScalarQuantizationOptions),
     Product(ProductQuantizationOptions),
+    RaBitQ(RaBitQuantizationOptions),
 }
 
 impl Validate for QuantizationOptions {
@@ -402,6 +403,7 @@ impl Validate for QuantizationOptions {
             Self::Trivial(x) => x.validate(),
             Self::Scalar(x) => x.validate(),
             Self::Product(x) => x.validate(),
+            Self::RaBitQ(x) => x.validate(),
         }
     }
 }
@@ -426,6 +428,16 @@ impl QuantizationOptions {
 pub struct TrivialQuantizationOptions {}
 
 impl Default for TrivialQuantizationOptions {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct RaBitQuantizationOptions {}
+
+impl Default for RaBitQuantizationOptions {
     fn default() -> Self {
         Self {}
     }
