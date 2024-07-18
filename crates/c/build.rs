@@ -5,6 +5,10 @@ fn main() {
         .compiler("clang-16")
         .file("./src/f16.c")
         .opt_level(3)
+        .flag("-fassociative-math")
+        .flag("-ffp-contract=fast")
+        .flag("-freciprocal-math")
+        .flag("-fno-signed-zeros")
         .debug(true)
         .compile("vectorsc");
 }
