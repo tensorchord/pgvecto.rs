@@ -36,7 +36,7 @@ use crate::distance::*;
 use crate::scalar::*;
 use crate::vector::*;
 
-pub trait Operator: Copy + 'static {
+pub trait Operator: Copy + 'static + Send + Sync {
     type VectorOwned: VectorOwned;
 
     const DISTANCE_KIND: DistanceKind;

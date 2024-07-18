@@ -107,38 +107,6 @@ fn session(worker: Arc<Worker>, handler: ServerRpcHandler) -> Result<Infallible,
             } => {
                 handler = x.leave(worker.alter(handle, &key, &value))?;
             }
-            ServerRpcHandle::Basic {
-                handle,
-                vector,
-                opts,
-                x,
-            } => {
-                let v = match worker.view_basic(handle) {
-                    Ok(x) => x,
-                    Err(e) => {
-                        handler = x.error_err(e)?;
-                        continue;
-                    }
-                };
-                match v.basic(&vector, &opts) {
-                    Ok(mut iter) => {
-                        use crate::ipc::ServerBasicHandle;
-                        let mut x = x.error_ok()?;
-                        loop {
-                            match x.handle()? {
-                                ServerBasicHandle::Next { x: y } => {
-                                    x = y.leave(iter.next())?;
-                                }
-                                ServerBasicHandle::Leave { x } => {
-                                    handler = x;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    Err(e) => handler = x.error_err(e)?,
-                };
-            }
             ServerRpcHandle::Vbase {
                 handle,
                 vector,

@@ -6,14 +6,14 @@ use pgrx::Internal;
 
 #[repr(C, align(8))]
 pub struct Vecf32AggregateAvgSumStype {
-    dims: u16,
+    dims: u32,
     count: u64,
     values: Vec<F32>,
 }
 
 impl Vecf32AggregateAvgSumStype {
-    pub fn dims(&self) -> usize {
-        self.dims as usize
+    pub fn dims(&self) -> u32 {
+        self.dims
     }
     pub fn count(&self) -> u64 {
         self.count
@@ -28,11 +28,11 @@ impl Vecf32AggregateAvgSumStype {
 
 impl Vecf32AggregateAvgSumStype {
     pub fn new_with_slice(count: u64, slice: &[F32]) -> Self {
-        let dims = slice.len();
-        let mut values = Vec::with_capacity(dims);
+        let dims = slice.len() as u32;
+        let mut values = Vec::with_capacity(dims as _);
         values.extend_from_slice(slice);
         Self {
-            dims: dims as u16,
+            dims,
             count,
             values,
         }

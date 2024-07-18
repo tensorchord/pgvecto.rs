@@ -1,5 +1,8 @@
+use std::ops::Bound;
+
 use crate::datatype::memory_vecf32::{Vecf32Input, Vecf32Output};
-use base::vector::Vecf32Borrowed;
+use base::vector::VectorBorrowed;
+use base::vector::VectorOwned;
 use pgrx::datum::FromDatum;
 use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
@@ -85,7 +88,7 @@ fn _vectors_vecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Interna
     ) {
         #[derive(Default)]
         struct Workspace {
-            range: Option<(Option<usize>, Option<usize>)>,
+            range: Option<(Bound<u32>, Bound<u32>)>,
         }
         #[pgrx::pg_guard]
         unsafe extern "C" fn sbs_check_subscripts(
@@ -97,13 +100,13 @@ fn _vectors_vecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Interna
                 let state = &mut *(*op).d.sbsref.state;
                 let workspace = &mut *(state.workspace as *mut Workspace);
                 workspace.range = None;
-                let mut end = None;
-                let mut start = None;
+                let mut end = Bound::Unbounded;
+                let mut start = Bound::Unbounded;
                 if state.upperprovided.read() {
                     if !state.upperindexnull.read() {
                         let upper = state.upperindex.read().value() as i32;
                         if upper >= 0 {
-                            end = Some(upper as usize);
+                            end = Bound::Excluded(upper as u32);
                         } else {
                             (*op).resnull.write(true);
                             return false;
@@ -117,7 +120,7 @@ fn _vectors_vecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Interna
                     if !state.lowerindexnull.read() {
                         let lower = state.lowerindex.read().value() as i32;
                         if lower >= 0 {
-                            start = Some(lower as usize);
+                            start = Bound::Included(lower as u32);
                         } else {
                             (*op).resnull.write(true);
                             return false;
@@ -142,21 +145,13 @@ fn _vectors_vecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Interna
                 let workspace = &mut *(state.workspace as *mut Workspace);
                 let input =
                     Vecf32Input::from_datum((*op).resvalue.read(), (*op).resnull.read()).unwrap();
-                let slice = match workspace.range {
-                    Some((None, None)) => input.slice().get(..),
-                    Some((None, Some(y))) => input.slice().get(..y),
-                    Some((Some(x), None)) => input.slice().get(x..),
-                    Some((Some(x), Some(y))) => input.slice().get(x..y),
-                    None => None,
-                };
-                if let Some(slice) = slice {
-                    if !slice.is_empty() {
-                        let output = Vecf32Output::new(Vecf32Borrowed::new(slice));
-                        (*op).resnull.write(false);
-                        (*op).resvalue.write(Datum::from(output.into_raw()));
-                    } else {
-                        (*op).resnull.write(true);
-                    }
+                let v = workspace
+                    .range
+                    .and_then(|i| input.as_borrowed().subvector(i));
+                if let Some(v) = v {
+                    let output = Vecf32Output::new(v.as_borrowed());
+                    (*op).resnull.write(false);
+                    (*op).resvalue.write(Datum::from(output.into_raw()));
                 } else {
                     (*op).resnull.write(true);
                 }

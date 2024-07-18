@@ -326,7 +326,6 @@ defines! {
     unary flush(handle: Handle) -> ();
     unary insert(handle: Handle, vector: OwnedVector, pointer: Pointer) -> ();
     unary delete(handle: Handle, pointer: Pointer) -> ();
-    stream basic(handle: Handle, vector: OwnedVector, opts: SearchOptions) -> (F32, Pointer);
     stream vbase(handle: Handle, vector: OwnedVector, opts: SearchOptions) -> (F32, Pointer);
     stream list(handle: Handle) -> Pointer;
     unary stat(handle: Handle) -> IndexStat;

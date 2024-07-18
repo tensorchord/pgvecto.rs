@@ -87,3 +87,23 @@ pub trait Source<O: Operator>: Collection<O> {
     fn get_main_len(&self) -> u32;
     fn check_existing(&self, i: u32) -> bool;
 }
+
+pub trait Reranker<T, E: 'static = ()> {
+    fn push(&mut self, u: u32, extra: E);
+    fn pop(&mut self) -> Option<(F32, u32, T)>;
+}
+
+impl<'a, T, E: 'static> Reranker<T, E> for Box<dyn Reranker<T, E> + 'a> {
+    fn push(&mut self, u: u32, extra: E) {
+        self.as_mut().push(u, extra)
+    }
+
+    fn pop(&mut self) -> Option<(F32, u32, T)> {
+        self.as_mut().pop()
+    }
+}
+
+pub trait MakeReranker<T, E: 'static, R> {
+    fn push(&mut self, u: u32, extra: E);
+    fn finish(self) -> R;
+}

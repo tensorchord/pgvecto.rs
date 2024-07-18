@@ -19,20 +19,10 @@ fn _vectors_veci8_in(input: &CStr, _oid: Oid, typmod: i32) -> Veci8Output {
             bad_literal(&e.to_string());
         }
         Ok(vector) => {
-            check_value_dims_65535(vector.len());
-            let (vector, alpha, offset) = veci8::i8_quantization(&vector);
-            let (sum, l2_norm) = veci8::i8_precompute(&vector, alpha, offset);
-            Veci8Output::new(
-                Veci8Borrowed::new_checked(
-                    vector.len() as u32,
-                    &vector,
-                    alpha,
-                    offset,
-                    sum,
-                    l2_norm,
-                )
-                .unwrap(),
-            )
+            let dims = u32::try_from(vector.len()).expect("input is too large");
+            check_value_dims_65535(dims);
+            let (data, alpha, offset) = veci8::i8_quantization(&vector);
+            Veci8Output::new(Veci8Borrowed::new(&data, alpha, offset))
         }
     }
 }

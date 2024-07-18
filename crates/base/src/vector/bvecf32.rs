@@ -1,33 +1,34 @@
+use std::ops::{Bound, RangeBounds};
+
 use crate::scalar::F32;
 use crate::vector::{Vecf32Owned, VectorBorrowed, VectorKind, VectorOwned};
 use num_traits::Float;
 use serde::{Deserialize, Serialize};
 
-pub const BVEC_WIDTH: usize = usize::BITS as usize;
+pub const BVECF32_WIDTH: u32 = u64::BITS;
 
 // When using binary vector, please ensure that the padding bits are always zero.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BVecf32Owned {
-    dims: u16,
-    data: Vec<usize>,
+    dims: u32,
+    data: Vec<u64>,
 }
 
 impl BVecf32Owned {
     #[inline(always)]
-    pub fn new(dims: u16, data: Vec<usize>) -> Self {
+    pub fn new(dims: u32, data: Vec<u64>) -> Self {
         Self::new_checked(dims, data).expect("invalid data")
     }
 
     #[inline(always)]
-    pub fn new_checked(dims: u16, data: Vec<usize>) -> Option<Self> {
-        if dims == 0 {
+    pub fn new_checked(dims: u32, data: Vec<u64>) -> Option<Self> {
+        if !(1..=65535).contains(&dims) {
             return None;
         }
-        if data.len() != (dims as usize).div_ceil(BVEC_WIDTH) {
+        if data.len() != dims.div_ceil(BVECF32_WIDTH) as usize {
             return None;
         }
-        if dims % BVEC_WIDTH as u16 != 0 && data[data.len() - 1] >> (dims % BVEC_WIDTH as u16) != 0
-        {
+        if dims % BVECF32_WIDTH != 0 && data[data.len() - 1] >> (dims % BVECF32_WIDTH) != 0 {
             return None;
         }
         unsafe { Some(Self::new_unchecked(dims, data)) }
@@ -39,18 +40,8 @@ impl BVecf32Owned {
     /// * `data` must be of the correct length.
     /// * The padding bits must be zero.
     #[inline(always)]
-    pub unsafe fn new_unchecked(dims: u16, data: Vec<usize>) -> Self {
+    pub unsafe fn new_unchecked(dims: u32, data: Vec<u64>) -> Self {
         Self { dims, data }
-    }
-
-    #[inline(always)]
-    pub fn new_zeroed(dims: u16) -> Self {
-        assert!((1..=65535).contains(&dims));
-        let size = (dims as usize).div_ceil(BVEC_WIDTH);
-        Self {
-            dims,
-            data: vec![0; size],
-        }
     }
 }
 
@@ -61,46 +52,35 @@ impl VectorOwned for BVecf32Owned {
     const VECTOR_KIND: VectorKind = VectorKind::BVecf32;
 
     #[inline(always)]
-    fn dims(&self) -> u32 {
-        self.dims as u32
-    }
-
-    #[inline(always)]
-    fn for_borrow(&self) -> BVecf32Borrowed<'_> {
+    fn as_borrowed(&self) -> BVecf32Borrowed<'_> {
         BVecf32Borrowed {
             dims: self.dims,
             data: &self.data,
         }
     }
-
-    #[inline(always)]
-    fn to_vec(&self) -> Vec<F32> {
-        self.for_borrow().to_vec()
-    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy)]
 pub struct BVecf32Borrowed<'a> {
-    dims: u16,
-    data: &'a [usize],
+    dims: u32,
+    data: &'a [u64],
 }
 
 impl<'a> BVecf32Borrowed<'a> {
     #[inline(always)]
-    pub fn new(dims: u16, data: &'a [usize]) -> Self {
+    pub fn new(dims: u32, data: &'a [u64]) -> Self {
         Self::new_checked(dims, data).expect("invalid data")
     }
 
     #[inline(always)]
-    pub fn new_checked(dims: u16, data: &'a [usize]) -> Option<Self> {
-        if dims == 0 {
+    pub fn new_checked(dims: u32, data: &'a [u64]) -> Option<Self> {
+        if !(1..=65535).contains(&dims) {
             return None;
         }
-        if data.len() != (dims as usize).div_ceil(BVEC_WIDTH) {
+        if data.len() != dims.div_ceil(BVECF32_WIDTH) as usize {
             return None;
         }
-        if dims % BVEC_WIDTH as u16 != 0 && data[data.len() - 1] >> (dims % BVEC_WIDTH as u16) != 0
-        {
+        if dims % BVECF32_WIDTH != 0 && data[data.len() - 1] >> (dims % BVECF32_WIDTH) != 0 {
             return None;
         }
         unsafe { Some(Self::new_unchecked(dims, data)) }
@@ -112,27 +92,29 @@ impl<'a> BVecf32Borrowed<'a> {
     /// * `data` must be of the correct length.
     /// * The padding bits must be zero.
     #[inline(always)]
-    pub unsafe fn new_unchecked(dims: u16, data: &'a [usize]) -> Self {
+    pub unsafe fn new_unchecked(dims: u32, data: &'a [u64]) -> Self {
         Self { dims, data }
     }
 
     #[inline(always)]
-    pub fn data(&self) -> &'a [usize] {
+    pub fn data(&self) -> &'a [u64] {
         self.data
     }
 
     #[inline(always)]
-    pub fn get(&self, index: usize) -> bool {
-        assert!(index < self.dims as usize);
-        self.data[index / BVEC_WIDTH] & (1 << (index % BVEC_WIDTH)) != 0
+    pub fn get(&self, index: u32) -> bool {
+        assert!(index < self.dims);
+        self.data[(index / BVECF32_WIDTH) as usize] & (1 << (index % BVECF32_WIDTH)) != 0
     }
 
     #[inline(always)]
     pub fn iter(self) -> impl Iterator<Item = bool> + 'a {
-        let mut index = 0;
+        let mut index = 0_u32;
         std::iter::from_fn(move || {
-            if index < self.dims as usize {
-                let result = self.data[index / BVEC_WIDTH] & (1 << (index % BVEC_WIDTH)) != 0;
+            if index < self.dims {
+                let result = self.data[(index / BVECF32_WIDTH) as usize]
+                    & (1 << (index % BVECF32_WIDTH))
+                    != 0;
                 index += 1;
                 Some(result)
             } else {
@@ -148,10 +130,10 @@ impl<'a> VectorBorrowed for BVecf32Borrowed<'a> {
 
     #[inline(always)]
     fn dims(&self) -> u32 {
-        self.dims as u32
+        self.dims
     }
 
-    fn for_own(&self) -> BVecf32Owned {
+    fn own(&self) -> BVecf32Owned {
         BVecf32Owned {
             dims: self.dims,
             data: self.data.to_vec(),
@@ -169,29 +151,117 @@ impl<'a> VectorBorrowed for BVecf32Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn normalize(&self) -> BVecf32Owned {
+    fn function_normalize(&self) -> BVecf32Owned {
         unimplemented!()
+    }
+
+    fn operator_add(&self, _: Self) -> Self::Owned {
+        unimplemented!()
+    }
+
+    fn operator_minus(&self, _: Self) -> Self::Owned {
+        unimplemented!()
+    }
+
+    fn operator_mul(&self, _: Self) -> Self::Owned {
+        unimplemented!()
+    }
+
+    fn operator_and(&self, rhs: Self) -> Self::Owned {
+        assert_eq!(self.dims, rhs.dims);
+        assert_eq!(self.data.len(), rhs.data.len());
+        let mut data = vec![0_u64; self.data.len()];
+        for i in 0..data.len() {
+            data[i] = self.data[i] & rhs.data[i];
+        }
+        BVecf32Owned::new(self.dims, data)
+    }
+
+    fn operator_or(&self, rhs: Self) -> Self::Owned {
+        assert_eq!(self.dims, rhs.dims);
+        assert_eq!(self.data.len(), rhs.data.len());
+        let mut data = vec![0_u64; self.data.len()];
+        for i in 0..data.len() {
+            data[i] = self.data[i] | rhs.data[i];
+        }
+        BVecf32Owned::new(self.dims, data)
+    }
+
+    fn operator_xor(&self, rhs: Self) -> Self::Owned {
+        assert_eq!(self.dims, rhs.dims);
+        assert_eq!(self.data.len(), rhs.data.len());
+        let mut data = vec![0_u64; self.data.len()];
+        for i in 0..data.len() {
+            data[i] = self.data[i] ^ rhs.data[i];
+        }
+        BVecf32Owned::new(self.dims, data)
+    }
+
+    #[inline(always)]
+    fn subvector(&self, bounds: impl RangeBounds<u32>) -> Option<Self::Owned> {
+        let start = match bounds.start_bound().cloned() {
+            Bound::Included(x) => x,
+            Bound::Excluded(u32::MAX) => return None,
+            Bound::Excluded(x) => x + 1,
+            Bound::Unbounded => 0,
+        };
+        let end = match bounds.end_bound().cloned() {
+            Bound::Included(u32::MAX) => return None,
+            Bound::Included(x) => x + 1,
+            Bound::Excluded(x) => x,
+            Bound::Unbounded => self.dims,
+        };
+        if start >= end || end > self.dims {
+            return None;
+        }
+        let dims = end - start;
+        let mut data = vec![0_u64; dims.div_ceil(BVECF32_WIDTH) as _];
+        {
+            let mut i = 0;
+            let mut j = start;
+            while j < end {
+                if self.data[(j / BVECF32_WIDTH) as usize] & (1 << (j % BVECF32_WIDTH)) != 0 {
+                    data[(i / BVECF32_WIDTH) as usize] |= 1 << (i % BVECF32_WIDTH);
+                }
+                i += 1;
+                j += 1;
+            }
+        }
+        Self::Owned::new_checked(dims, data)
     }
 }
 
-impl<'a> Ord for BVecf32Borrowed<'a> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        assert_eq!(self.dims, other.dims);
+impl<'a> PartialEq for BVecf32Borrowed<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        if self.dims != other.dims {
+            return false;
+        }
         for (&l, &r) in self.data.iter().zip(other.data.iter()) {
             let l = l.reverse_bits();
             let r = r.reverse_bits();
-            match l.cmp(&r) {
-                std::cmp::Ordering::Equal => {}
-                x => return x,
+            if l != r {
+                return false;
             }
         }
-        std::cmp::Ordering::Equal
+        true
     }
 }
 
 impl<'a> PartialOrd for BVecf32Borrowed<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
+        use std::cmp::Ordering;
+        if self.dims != other.dims {
+            return None;
+        }
+        for (&l, &r) in self.data.iter().zip(other.data.iter()) {
+            let l = l.reverse_bits();
+            let r = r.reverse_bits();
+            match l.cmp(&r) {
+                Ordering::Equal => (),
+                x => return Some(x),
+            }
+        }
+        Some(Ordering::Equal)
     }
 }
 
@@ -248,8 +318,9 @@ fn cosine_v4_avx512vpopcntdq_test() {
     for _ in 0..300 {
         let lhs = random_bvector();
         let rhs = random_bvector();
-        let specialized = unsafe { cosine_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
-        let fallback = unsafe { cosine_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        let specialized =
+            unsafe { cosine_v4_avx512vpopcntdq(lhs.as_borrowed(), rhs.as_borrowed()) };
+        let fallback = unsafe { cosine_fallback(lhs.as_borrowed(), rhs.as_borrowed()) };
         assert!(
             (specialized - fallback).abs() < EPSILON,
             "specialized = {specialized}, fallback = {fallback}."
@@ -321,8 +392,8 @@ fn dot_v4_avx512vpopcntdq_test() {
     for _ in 0..300 {
         let lhs = random_bvector();
         let rhs = random_bvector();
-        let specialized = unsafe { dot_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
-        let fallback = unsafe { dot_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        let specialized = unsafe { dot_v4_avx512vpopcntdq(lhs.as_borrowed(), rhs.as_borrowed()) };
+        let fallback = unsafe { dot_fallback(lhs.as_borrowed(), rhs.as_borrowed()) };
         assert!(
             (specialized - fallback).abs() < EPSILON,
             "specialized = {specialized}, fallback = {fallback}."
@@ -387,8 +458,8 @@ fn sl2_v4_avx512vpopcntdq_test() {
     for _ in 0..300 {
         let lhs = random_bvector();
         let rhs = random_bvector();
-        let specialized = unsafe { sl2_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
-        let fallback = unsafe { sl2_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        let specialized = unsafe { sl2_v4_avx512vpopcntdq(lhs.as_borrowed(), rhs.as_borrowed()) };
+        let fallback = unsafe { sl2_fallback(lhs.as_borrowed(), rhs.as_borrowed()) };
         assert!(
             (specialized - fallback).abs() < EPSILON,
             "specialized = {specialized}, fallback = {fallback}."
@@ -457,8 +528,9 @@ fn jaccard_v4_avx512vpopcntdq_test() {
     for _ in 0..300 {
         let lhs = random_bvector();
         let rhs = random_bvector();
-        let specialized = unsafe { jaccard_v4_avx512vpopcntdq(lhs.for_borrow(), rhs.for_borrow()) };
-        let fallback = unsafe { jaccard_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        let specialized =
+            unsafe { jaccard_v4_avx512vpopcntdq(lhs.as_borrowed(), rhs.as_borrowed()) };
+        let fallback = unsafe { jaccard_fallback(lhs.as_borrowed(), rhs.as_borrowed()) };
         assert!(
             (specialized - fallback).abs() < EPSILON,
             "specialized = {specialized}, fallback = {fallback}."

@@ -7,8 +7,6 @@ use base::operator::*;
 use base::search::*;
 use crossbeam::atomic::AtomicCell;
 use std::any::Any;
-use std::cmp::Reverse;
-use std::collections::BinaryHeap;
 use std::fmt::Debug;
 use std::num::NonZeroU128;
 use std::path::PathBuf;
@@ -80,14 +78,6 @@ impl<O: Op> SealedSegment<O> {
             length: self.len() as usize,
             size: dir_size(&self.path).unwrap(),
         }
-    }
-
-    pub fn basic(
-        &self,
-        vector: Borrowed<'_, O>,
-        opts: &SearchOptions,
-    ) -> BinaryHeap<Reverse<Element>> {
-        self.indexing.basic(vector, opts)
     }
 
     pub fn vbase<'a>(

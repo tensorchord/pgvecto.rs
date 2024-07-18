@@ -26,14 +26,15 @@ fn _vectors_bvecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> BVecf32Output {
             bad_literal(&e.to_string());
         }
         Ok(vector) => {
-            let n = check_value_dims_65535(vector.len()).get() as usize;
-            let mut data = vec![0_usize; n.div_ceil(usize::BITS as _)];
-            for (i, &x) in vector.iter().enumerate() {
-                if x {
-                    data[i / BVEC_WIDTH] |= 1 << (i % BVEC_WIDTH);
+            let dims = u32::try_from(vector.len()).expect("input is too large");
+            check_value_dims_65535(dims);
+            let mut data = vec![0_u64; dims.div_ceil(BVECF32_WIDTH) as _];
+            for i in 0..dims {
+                if vector[i as usize] {
+                    data[(i / BVECF32_WIDTH) as usize] |= 1 << (i % BVECF32_WIDTH);
                 }
             }
-            BVecf32Output::new(BVecf32Borrowed::new(n as _, &data))
+            BVecf32Output::new(BVecf32Borrowed::new(dims, &data))
         }
     }
 }
@@ -42,7 +43,7 @@ fn _vectors_bvecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> BVecf32Output {
 fn _vectors_bvecf32_out(vector: BVecf32Input<'_>) -> CString {
     let mut buffer = String::new();
     buffer.push('[');
-    let mut iter = vector.for_borrow().iter();
+    let mut iter = vector.as_borrowed().iter();
     if let Some(x) = iter.next() {
         write!(buffer, "{}", x as u32).unwrap();
     }

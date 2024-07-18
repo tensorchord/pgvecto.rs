@@ -1,8 +1,8 @@
 use base::{
-    index::IndexOptions,
+    index::{RaBitQuantizationOptions, SearchOptions, VectorOptions},
     operator::{Borrowed, Owned, Scalar},
     scalar::{ScalarLike, F32},
-    search::Vectors,
+    search::{Reranker, Vectors},
 };
 use nalgebra::{debug::RandomOrthogonal, Dim, Dyn};
 use operator::OperatorRaBitQ;
@@ -24,15 +24,16 @@ pub struct RaBitQuantizer<O: OperatorRaBitQ> {
 
 impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
     pub fn train(
-        options: IndexOptions,
+        vector_options: VectorOptions,
+        options: RaBitQuantizationOptions,
         vectors: &impl Vectors<O>,
         transform: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy,
     ) -> Self {
-        let dim_pad = (options.vector.dims + 63) / 64 * 64;
+        let dim_pad = (vector_options.dims + 63) / 64 * 64;
         let projection = gen_random_orthogonal::<O>(dim_pad as usize);
 
         Self {
-            dim: options.vector.dims,
+            dim: vector_options.dims,
             dim_pad_64: dim_pad,
             projection,
         }
@@ -46,11 +47,51 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
         unimplemented!()
     }
 
-    pub fn distance(&self, lhs: Borrowed<'_, O>, rhs: &[u8]) -> F32 {
-        self.rough(lhs, rhs)
+    pub fn preprocess(&self, lhs: Borrowed<'_, O>) -> O::RabitQuantizationPreprocessed {
+        unimplemented!()
     }
 
-    pub fn rough(&self, lhs: Borrowed<'_, O>, rhs: &[u8]) -> F32 {
+    pub fn process(&self, preprocessed: &O::RabitQuantizationPreprocessed, rhs: &[u8]) -> F32 {
+        unimplemented!()
+    }
+
+    pub fn flat_rerank<'a, T: 'a>(
+        &'a self,
+        vector: Borrowed<'a, O>,
+        opts: &'a SearchOptions,
+        c: impl Fn(u32) -> &'a [u8] + 'a,
+        r: impl Fn(u32) -> (F32, T) + 'a,
+    ) -> Box<dyn Reranker<T> + 'a> {
+        unimplemented!()
+    }
+
+    pub fn ivf_naive_rerank<'a, T: 'a>(
+        &'a self,
+        vector: Borrowed<'a, O>,
+        opts: &'a SearchOptions,
+        c: impl Fn(u32) -> &'a [u8] + 'a,
+        r: impl Fn(u32) -> (F32, T) + 'a,
+    ) -> Box<dyn Reranker<T> + 'a> {
+        unimplemented!()
+    }
+
+    pub fn ivf_residual_rerank<'a, T: 'a>(
+        &'a self,
+        vectors: Vec<Owned<O>>,
+        opts: &'a SearchOptions,
+        c: impl Fn(u32) -> &'a [u8] + 'a,
+        r: impl Fn(u32) -> (F32, T) + 'a,
+    ) -> Box<dyn Reranker<T, usize> + 'a> {
+        unimplemented!()
+    }
+
+    pub fn graph_rerank<'a, T: 'a>(
+        &'a self,
+        vector: Borrowed<'a, O>,
+        opts: &'a SearchOptions,
+        c: impl Fn(u32) -> &'a [u8] + 'a,
+        r: impl Fn(u32) -> (F32, T) + 'a,
+    ) -> Box<dyn Reranker<T> + 'a> {
         unimplemented!()
     }
 }

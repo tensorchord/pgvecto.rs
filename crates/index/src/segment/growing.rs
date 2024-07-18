@@ -188,7 +188,7 @@ impl<O: Op> GrowingSegment<O> {
             panic!("Out of bound.");
         }
         let log = unsafe { &*self.vec[i].assume_init_ref().get().cast_const() };
-        log.vector.for_borrow()
+        log.vector.as_borrowed()
     }
 
     pub fn payload(&self, i: u32) -> Payload {
@@ -209,7 +209,7 @@ impl<O: Op> GrowingSegment<O> {
         let mut result = BinaryHeap::new();
         for i in 0..n {
             let log = unsafe { &*self.vec[i].assume_init_ref().get().cast_const() };
-            let distance = O::distance(vector, log.vector.for_borrow());
+            let distance = O::distance(vector, log.vector.as_borrowed());
             result.push(Reverse(Element {
                 distance,
                 payload: log.payload,
@@ -227,7 +227,7 @@ impl<O: Op> GrowingSegment<O> {
         let mut result = Vec::new();
         for i in 0..n {
             let log = unsafe { &*self.vec[i].assume_init_ref().get().cast_const() };
-            let distance = O::distance(vector, log.vector.for_borrow());
+            let distance = O::distance(vector, log.vector.as_borrowed());
             result.push(Element {
                 distance,
                 payload: log.payload,

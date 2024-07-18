@@ -3,20 +3,19 @@
 use base::index::*;
 use base::operator::*;
 use base::search::*;
+use base::vector::VectorBorrowed;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use quantization::operator::OperatorQuantization;
 use quantization::Quantization;
-use std::cmp::Reverse;
-use std::collections::BinaryHeap;
 use std::fs::create_dir;
 use std::path::Path;
 use storage::OperatorStorage;
 use storage::Storage;
 
-pub trait OperatorFlat: Operator + OperatorQuantization + OperatorStorage {}
+pub trait OperatorFlat: OperatorQuantization + OperatorStorage {}
 
-impl<T: Operator + OperatorQuantization + OperatorStorage> OperatorFlat for T {}
+impl<T: OperatorQuantization + OperatorStorage> OperatorFlat for T {}
 
 pub struct Flat<O: OperatorFlat> {
     storage: O::Storage,
@@ -34,32 +33,29 @@ impl<O: OperatorFlat> Flat<O> {
         open(path)
     }
 
-    pub fn basic(
-        &self,
-        vector: Borrowed<'_, O>,
-        _: &SearchOptions,
-    ) -> BinaryHeap<Reverse<Element>> {
-        let mut result = BinaryHeap::new();
-        for i in 0..self.storage.len() {
-            let distance = self.quantization.distance(&self.storage, vector, i);
-            let payload = self.payloads[i as usize];
-            result.push(Reverse(Element { distance, payload }));
-        }
-        result
-    }
-
     pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
-        _: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
-        let mut result = Vec::new();
+        opts: &'a SearchOptions,
+    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
+        let mut reranker = self.quantization.flat_rerank(vector, opts, move |u| {
+            (
+                O::distance(vector, self.storage.vector(u)),
+                self.payloads[u as usize],
+            )
+        });
         for i in 0..self.storage.len() {
-            let distance = self.quantization.distance(&self.storage, vector, i);
-            let payload = self.payloads[i as usize];
-            result.push(Element { distance, payload });
+            reranker.push(i, ());
         }
-        (result, Box::new(std::iter::empty()))
+        (
+            Vec::new(),
+            Box::new(std::iter::from_fn(move || {
+                reranker.pop().map(|(dis_u, _, payload_u)| Element {
+                    distance: dis_u,
+                    payload: payload_u,
+                })
+            })),
+        )
     }
 
     pub fn len(&self) -> u32 {
@@ -85,9 +81,10 @@ fn from_nothing<O: OperatorFlat>(
     let storage = O::Storage::create(path.as_ref().join("storage"), collection);
     let quantization = Quantization::create(
         path.as_ref().join("quantization"),
-        options.clone(),
+        options.vector,
         flat_indexing_options.quantization,
         collection,
+        |vector| vector.own(),
     );
     let payloads = MmapArray::create(
         path.as_ref().join("payloads"),

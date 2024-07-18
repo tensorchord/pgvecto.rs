@@ -5,10 +5,10 @@ use base::{
     index::{IndexOptions, IvfIndexingOptions, SearchOptions},
     operator::{Borrowed, Scalar},
     search::{Collection, Element, Payload, Source, Vectors},
-    vector::VectorKind,
+    vector::{VectorBorrowed, VectorKind},
 };
 use common::{json::Json, mmap_array::MmapArray, remap::RemappedCollection, vec2::Vec2};
-use elkan_k_means::{elkan_k_means, elkan_k_means_lookup};
+use k_means::{k_means, k_means_lookup};
 use quantization::Quantization;
 use stoppable_rayon as rayon;
 use storage::Storage;
@@ -72,11 +72,22 @@ fn from_nothing<O: Op>(
     } = options.indexing.clone().unwrap_ivf();
     let samples = common::sample::sample(collection);
     rayon::check();
-    let centroids = elkan_k_means::<O>(nlist as usize, samples);
+    let centroids = {
+        let mut samples = samples;
+        for i in 0..samples.len() {
+            O::elkan_k_means_normalize(&mut samples[i]);
+        }
+        k_means(nlist as usize, samples)
+    };
     rayon::check();
     let mut ls = vec![Vec::new(); nlist as usize];
     for i in 0..collection.len() {
-        ls[elkan_k_means_lookup::<O>(collection.vector(i), &centroids)].push(i);
+        ls[{
+            let mut vector = collection.vector(i).to_vec();
+            O::elkan_k_means_normalize(&mut vector);
+            k_means_lookup(&vector, &centroids)
+        }]
+        .push(i);
     }
     let mut offsets = vec![0u32; nlist as usize + 1];
     for i in 0..(nlist as usize) {
@@ -95,13 +106,21 @@ fn from_nothing<O: Op>(
         (0..collection.len()).map(|i| collection.payload(i)),
     );
     let offsets_json = Json::create(path.as_ref().join("offsets"), offsets);
-    let centroids_json = Json::create(path.as_ref().join("centroids"), centroids);
     let quantization = Quantization::create(
         path.as_ref().join("quantization"),
-        options.clone(),
+        options.vector,
         quantization_options,
         &collection,
+        |vector| {
+            let target = {
+                let mut vector = vector.to_vec();
+                O::elkan_k_means_normalize(&mut vector);
+                k_means_lookup(&vector, &centroids)
+            };
+            O::vector_sub(vector, &centroids[target])
+        },
     );
+    let centroids_json = Json::create(path.as_ref().join("centroids"), centroids);
 
     IvfRaBitQ {
         storage,
