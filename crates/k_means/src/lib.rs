@@ -22,20 +22,20 @@ pub fn k_means<S: ScalarLike>(c: usize, samples: Vec2<S>) -> Vec2<S> {
 }
 
 pub fn k_means_lookup<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> usize {
-    assert!(!centroids.is_empty());
+    assert_ne!(centroids.shape_0(), 0);
     let mut result = (F32::infinity(), 0);
-    for i in 0..centroids.len() {
-        let dis = S::euclid_distance(vector, &centroids[i]);
+    for i in 0..centroids.shape_0() {
+        let dis = S::euclid_distance(vector, &centroids[(i,)]);
         result = std::cmp::min(result, (dis, i));
     }
     result.1
 }
 
 pub fn k_means_lookup_many<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> Vec<(F32, usize)> {
-    assert!(!centroids.is_empty());
+    assert_ne!(centroids.shape_0(), 0);
     let mut seq = Vec::new();
-    for i in 0..centroids.len() {
-        let dis = S::euclid_distance(vector, &centroids[i]);
+    for i in 0..centroids.shape_0() {
+        let dis = S::euclid_distance(vector, &centroids[(i,)]);
         seq.push((dis, i));
     }
     seq

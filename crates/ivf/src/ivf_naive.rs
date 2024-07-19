@@ -98,8 +98,8 @@ fn from_nothing<O: Op>(
     rayon::check();
     let centroids = {
         let mut samples = samples;
-        for i in 0..samples.len() {
-            O::elkan_k_means_normalize(&mut samples[i]);
+        for i in 0..samples.shape_0() {
+            O::elkan_k_means_normalize(&mut samples[(i,)]);
         }
         k_means(nlist as usize, samples)
     };

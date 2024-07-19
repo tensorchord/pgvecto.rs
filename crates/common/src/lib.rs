@@ -9,4 +9,3 @@ pub mod remap;
 pub mod sample;
 pub mod variants;
 pub mod vec2;
-pub mod vec3;

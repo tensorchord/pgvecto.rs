@@ -19,6 +19,7 @@ pub trait ScalarLike:
     + num_traits::Zero
     + num_traits::NumOps
     + num_traits::NumAssignOps
+    + Default
     + crate::pod::Pod
 {
     fn from_f32(x: f32) -> Self;
