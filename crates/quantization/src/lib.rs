@@ -105,10 +105,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                     (0..vectors.len())
                         .flat_map(|i| x.encode(&vectors.vector(i).to_vec()).into_iter()),
                 ),
-                RaBitQ(x) => Box::new(
-                    (0..vectors.len())
-                        .flat_map(|i| x.encode(&vectors.vector(i).to_vec()).into_iter()),
-                ),
+                RaBitQ(x) => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
             },
         );
         Self { train, codes }
