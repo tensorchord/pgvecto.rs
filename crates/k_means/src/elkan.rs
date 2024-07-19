@@ -100,39 +100,6 @@ impl<S: ScalarLike> ElkanKMeans<S> {
         let upperbound = &mut self.upperbound;
         let mut change = 0;
         let n = samples.shape_0();
-        if n <= c {
-            let c = self.c;
-            let samples = &self.samples;
-            let rand = &mut self.rand;
-            let centroids = &mut self.centroids;
-            let n = samples.shape_0();
-            let dims = samples.shape_1();
-            let sorted_index = {
-                let mut indexes = (0..samples.shape_0()).collect::<Vec<_>>();
-                indexes.sort_by_key(|i| &samples[(*i,)]);
-                indexes
-            };
-            for i in 0..n {
-                let index = sorted_index.get(i).unwrap();
-                let last = sorted_index.get(std::cmp::max(i, 1) - 1).unwrap();
-                if *index == 0 || samples[(*last,)] != samples[(*index,)] {
-                    centroids[(i,)].copy_from_slice(&samples[(*index,)]);
-                } else {
-                    let rand_centroids: Vec<_> = (0..dims)
-                        .map(|_| S::from_f32(rand.gen_range(0.0..1.0f32)))
-                        .collect();
-                    centroids[(i,)].copy_from_slice(rand_centroids.as_slice());
-                }
-            }
-            for i in n..c {
-                let rand_centroids: Vec<_> = (0..dims)
-                    .map(|_| S::from_f32(rand.gen_range(0.0..1.0f32)))
-                    .collect();
-                centroids[(i,)].copy_from_slice(rand_centroids.as_slice());
-            }
-            return true;
-        }
-
         // Step 1
         let mut dist0 = Square::new(c, c);
         let mut sp = vec![F32::zero(); c];

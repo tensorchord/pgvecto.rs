@@ -1,9 +1,12 @@
 #![allow(clippy::needless_range_loop)]
 
 pub mod elkan;
+pub mod kmeans1d;
+pub mod quick_centers;
 
 use base::scalar::*;
 use common::vec2::Vec2;
+use kmeans1d::kmeans1d;
 use num_traits::Float;
 use stoppable_rayon as rayon;
 
@@ -11,6 +14,15 @@ const ITERATIONS: usize = 400;
 
 pub fn k_means<S: ScalarLike>(c: usize, samples: Vec2<S>) -> Vec2<S> {
     assert!(c > 0);
+    let n = samples.shape_0();
+    let dims = samples.shape_1();
+    assert!(dims > 0);
+    if n <= c {
+        return quick_centers::quick_centers(c, samples);
+    }
+    if dims == 1 {
+        return Vec2::from_vec((c, 1), kmeans1d(c, samples.as_slice()));
+    }
     let mut elkan_k_means = elkan::ElkanKMeans::<S>::new(c, samples);
     for _ in 0..ITERATIONS {
         rayon::check();

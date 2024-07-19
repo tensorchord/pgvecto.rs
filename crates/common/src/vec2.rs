@@ -14,6 +14,10 @@ impl<T: Default + Copy> Vec2<T> {
             base: vec![T::default(); shape.0 * shape.1],
         }
     }
+    pub fn from_vec(shape: (usize, usize), base: Vec<T>) -> Self {
+        assert_eq!(shape.0 * shape.1, base.len());
+        Self { shape, base }
+    }
 }
 
 impl<T: Copy> Vec2<T> {
@@ -36,6 +40,9 @@ impl<T> Vec2<T> {
     }
     pub fn as_slice(&self) -> &[T] {
         self.base.as_slice()
+    }
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        self.base.as_mut_slice()
     }
 }
 
