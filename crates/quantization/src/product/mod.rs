@@ -36,23 +36,23 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
         let dims = vector_options.dims;
         let ratio = product_quantization_options.ratio;
         let bits = product_quantization_options.bits;
-        let w = dims.div_ceil(ratio);
-        let originals = (0..w)
+        let width = dims.div_ceil(ratio);
+        let originals = (0..width)
             .into_par_iter()
-            .map(|i| {
-                let subdims = std::cmp::min(ratio, dims - ratio * i);
-                let start = (i * ratio) as usize;
+            .map(|p| {
+                let subdims = std::cmp::min(ratio, dims - ratio * p);
+                let start = (p * ratio) as usize;
                 let end = start + subdims as usize;
                 let subsamples = sample_subvector_transform(vectors, start, end, transform);
-                k_means(256, subsamples)
+                k_means(1 << bits, subsamples)
             })
             .collect::<Vec<_>>();
-        let mut centroids = Vec2::zeros((256, dims as usize));
-        for i in 0..w {
-            let subdims = std::cmp::min(ratio, dims - ratio * i);
-            for j in 0u8..=255 {
-                centroids[(j as usize,)][(i * ratio) as usize..][..subdims as usize]
-                    .copy_from_slice(&originals[i as usize][(j as usize,)]);
+        let mut centroids = Vec2::zeros((1 << bits, dims as usize));
+        for p in 0..width {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            for j in 0_usize..(1 << bits) {
+                centroids[(j,)][(p * ratio) as usize..][..subdims as usize]
+                    .copy_from_slice(&originals[p as usize][(j,)]);
             }
         }
         Self {
@@ -76,15 +76,44 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
     pub fn encode(&self, vector: &[Scalar<O>]) -> Vec<u8> {
         let dims = self.dims;
         let ratio = self.ratio;
-        let w = dims.div_ceil(ratio);
-        let mut result = Vec::with_capacity(w as usize);
-        for i in 0..w {
-            let subdims = std::cmp::min(ratio, dims - ratio * i);
-            let left = &vector[(i * ratio) as usize..][..subdims as usize];
-            let target = k_means::k_means_lookup(left, &self.originals[i as usize]);
-            result.push(target as u8);
+        let width = dims.div_ceil(ratio);
+        let mut codes = Vec::with_capacity(width.div_ceil(self.bits) as usize);
+        for p in 0..width {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            let left = &vector[(p * ratio) as usize..][..subdims as usize];
+            let target = k_means::k_means_lookup(left, &self.originals[p as usize]);
+            codes.push(target as u8);
         }
-        result
+        codes.extend(std::iter::repeat(0).take((8 / self.bits) as usize - 1));
+        let result = codes.chunks_exact((8 / self.bits) as usize);
+        match self.bits {
+            8 => result
+                .map(|x| <[u8; 1]>::try_from(x).unwrap())
+                .map(|x| x[0] << 0)
+                .collect(),
+            4 => result
+                .map(|x| <[u8; 2]>::try_from(x).unwrap())
+                .map(|x| x[1] << 4 | x[0] << 0)
+                .collect(),
+            2 => result
+                .map(|x| <[u8; 4]>::try_from(x).unwrap())
+                .map(|x| x[3] << 6 | x[2] << 4 | x[1] << 2 | x[0] << 0)
+                .collect(),
+            1 => result
+                .map(|x| <[u8; 8]>::try_from(x).unwrap())
+                .map(|x| {
+                    x[7] << 7
+                        | x[6] << 6
+                        | x[5] << 5
+                        | x[4] << 4
+                        | x[3] << 3
+                        | x[2] << 2
+                        | x[1] << 1
+                        | x[0] << 0
+                })
+                .collect(),
+            _ => unreachable!(),
+        }
     }
 
     pub fn preprocess(&self, lhs: Borrowed<'_, O>) -> O::ProductQuantizationPreprocessed {
@@ -98,7 +127,37 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
     }
 
     pub fn process(&self, preprocessed: &O::ProductQuantizationPreprocessed, rhs: &[u8]) -> F32 {
-        O::product_quantization_process(self.dims, self.ratio, self.bits, preprocessed, rhs)
+        match self.bits {
+            1 => O::product_quantization_process(
+                self.dims,
+                self.ratio,
+                self.bits,
+                preprocessed,
+                |i| find(1, rhs, i),
+            ),
+            2 => O::product_quantization_process(
+                self.dims,
+                self.ratio,
+                self.bits,
+                preprocessed,
+                |i| find(2, rhs, i),
+            ),
+            4 => O::product_quantization_process(
+                self.dims,
+                self.ratio,
+                self.bits,
+                preprocessed,
+                |i| find(4, rhs, i),
+            ),
+            8 => O::product_quantization_process(
+                self.dims,
+                self.ratio,
+                self.bits,
+                preprocessed,
+                |i| find(8, rhs, i),
+            ),
+            _ => unreachable!(),
+        }
     }
 
     pub fn flat_rerank<'a, T: 'a>(
@@ -116,18 +175,11 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
             vector,
         );
         if opts.flat_pq_rerank_size == 0 {
-            Box::new(Window0Reranker::new(
-                move |u, ()| {
-                    O::product_quantization_process(self.dims, self.ratio, self.bits, &p, c(u))
-                },
-                r,
-            ))
+            Box::new(Window0Reranker::new(move |u, ()| self.process(&p, c(u)), r))
         } else {
             Box::new(WindowReranker::new(
                 opts.flat_pq_rerank_size,
-                move |u, ()| {
-                    O::product_quantization_process(self.dims, self.ratio, self.bits, &p, c(u))
-                },
+                move |u, ()| self.process(&p, c(u)),
                 r,
             ))
         }
@@ -148,18 +200,11 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
             vector,
         );
         if opts.ivf_pq_rerank_size == 0 {
-            Box::new(Window0Reranker::new(
-                move |u, ()| {
-                    O::product_quantization_process(self.dims, self.ratio, self.bits, &p, c(u))
-                },
-                r,
-            ))
+            Box::new(Window0Reranker::new(move |u, ()| self.process(&p, c(u)), r))
         } else {
             Box::new(WindowReranker::new(
                 opts.ivf_pq_rerank_size,
-                move |u, ()| {
-                    O::product_quantization_process(self.dims, self.ratio, self.bits, &p, c(u))
-                },
+                move |u, ()| self.process(&p, c(u)),
                 r,
             ))
         }
@@ -186,17 +231,13 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
             .collect::<Vec<_>>();
         if opts.ivf_pq_rerank_size == 0 {
             Box::new(Window0Reranker::new(
-                move |u, i| {
-                    O::product_quantization_process(self.dims, self.ratio, self.bits, &p[i], c(u))
-                },
+                move |u, i| self.process(&p[i], c(u)),
                 r,
             ))
         } else {
             Box::new(WindowReranker::new(
                 opts.ivf_pq_rerank_size,
-                move |u, i| {
-                    O::product_quantization_process(self.dims, self.ratio, self.bits, &p[i], c(u))
-                },
+                move |u, i| self.process(&p[i], c(u)),
                 r,
             ))
         }
@@ -216,11 +257,17 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
             self.centroids.as_slice(),
             vector,
         );
-        Box::new(Window0Reranker::new(
-            move |u, ()| {
-                O::product_quantization_process(self.dims, self.ratio, self.bits, &p, c(u))
-            },
-            r,
-        ))
+        Box::new(Window0Reranker::new(move |u, ()| self.process(&p, c(u)), r))
     }
+}
+
+#[inline(always)]
+fn find(bits: u32, rhs: &[u8], i: usize) -> usize {
+    (match bits {
+        1 => (rhs[i >> 3] >> ((i & 7) << 1)) & 1,
+        2 => (rhs[i >> 2] >> ((i & 3) << 2)) & 3,
+        4 => (rhs[i >> 1] >> ((i & 1) << 4)) & 15,
+        8 => rhs[i],
+        _ => unreachable!(),
+    }) as usize
 }
