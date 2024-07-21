@@ -72,11 +72,11 @@ pub fn kmeans1d<S: ScalarLike>(c: usize, a: &[S]) -> Vec<S> {
         let k = f[(i, j)].1;
         let l = if k == usize::MAX { 0 } else { k + 1 };
         centroids[i] = a[l..=j].iter().copied().sum::<S>() / S::from_f32((j + 1 - l) as f32);
-        i -= 1;
-        j = k;
         if k == usize::MAX {
             break;
         }
+        i -= 1;
+        j = k;
     }
     centroids
 }
