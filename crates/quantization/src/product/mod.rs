@@ -85,38 +85,38 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
             codes.push(target as u8);
         }
         codes.extend(std::iter::repeat(0).take((8 / self.bits) as usize - 1));
-        let result = codes.chunks_exact((8 / self.bits) as usize);
+        let bytes = (self.dims.div_ceil(self.ratio) * self.bits).div_ceil(8);
+        let codes = codes.into_iter().chain(std::iter::repeat(0));
         match self.bits {
-            8 => result
-                .map(|x| <[u8; 1]>::try_from(x).unwrap())
-                .map(|x| x[0] << 0)
-                .collect(),
-            4 => result
-                .map(|x| <[u8; 2]>::try_from(x).unwrap())
-                .map(|x| x[1] << 4 | x[0] << 0)
-                .collect(),
-            2 => result
-                .map(|x| <[u8; 4]>::try_from(x).unwrap())
-                .map(|x| x[3] << 6 | x[2] << 4 | x[1] << 2 | x[0] << 0)
-                .collect(),
-            1 => result
-                .map(|x| <[u8; 8]>::try_from(x).unwrap())
-                .map(|x| {
-                    x[7] << 7
-                        | x[6] << 6
-                        | x[5] << 5
-                        | x[4] << 4
-                        | x[3] << 3
-                        | x[2] << 2
-                        | x[1] << 1
-                        | x[0] << 0
+            1 => codes
+                .array_chunks::<8>()
+                .map(|[b0, b1, b2, b3, b4, b5, b6, b7]| {
+                    (b0) | (b1 << 1)
+                        | (b2 << 2)
+                        | (b3 << 3)
+                        | (b4 << 4)
+                        | (b5 << 5)
+                        | (b6 << 6)
+                        | (b7 << 7)
                 })
+                .take(bytes as usize)
                 .collect(),
+            2 => codes
+                .array_chunks::<4>()
+                .map(|[b0, b1, b2, b3]| (b0) | (b1 << 2) | (b2 << 4) | (b3 << 6))
+                .take(bytes as usize)
+                .collect(),
+            4 => codes
+                .array_chunks::<2>()
+                .map(|[b0, b1]| (b0) | (b1 << 4))
+                .take(bytes as usize)
+                .collect(),
+            8 => codes.take(bytes as usize).collect(),
             _ => unreachable!(),
         }
     }
 
-    pub fn preprocess(&self, lhs: Borrowed<'_, O>) -> O::ProductQuantizationPreprocessed {
+    pub fn preprocess(&self, lhs: Borrowed<'_, O>) -> O::QuantizationPreprocessed {
         O::product_quantization_preprocess(
             self.dims,
             self.ratio,
@@ -126,36 +126,20 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
         )
     }
 
-    pub fn process(&self, preprocessed: &O::ProductQuantizationPreprocessed, rhs: &[u8]) -> F32 {
+    pub fn process(&self, preprocessed: &O::QuantizationPreprocessed, rhs: &[u8]) -> F32 {
         match self.bits {
-            1 => O::product_quantization_process(
-                self.dims,
-                self.ratio,
-                self.bits,
-                preprocessed,
-                |i| find(1, rhs, i),
-            ),
-            2 => O::product_quantization_process(
-                self.dims,
-                self.ratio,
-                self.bits,
-                preprocessed,
-                |i| find(2, rhs, i),
-            ),
-            4 => O::product_quantization_process(
-                self.dims,
-                self.ratio,
-                self.bits,
-                preprocessed,
-                |i| find(4, rhs, i),
-            ),
-            8 => O::product_quantization_process(
-                self.dims,
-                self.ratio,
-                self.bits,
-                preprocessed,
-                |i| find(8, rhs, i),
-            ),
+            1 => O::quantization_process(self.dims, self.ratio, self.bits, preprocessed, |i| {
+                find(1, rhs, i)
+            }),
+            2 => O::quantization_process(self.dims, self.ratio, self.bits, preprocessed, |i| {
+                find(2, rhs, i)
+            }),
+            4 => O::quantization_process(self.dims, self.ratio, self.bits, preprocessed, |i| {
+                find(4, rhs, i)
+            }),
+            8 => O::quantization_process(self.dims, self.ratio, self.bits, preprocessed, |i| {
+                find(8, rhs, i)
+            }),
             _ => unreachable!(),
         }
     }
