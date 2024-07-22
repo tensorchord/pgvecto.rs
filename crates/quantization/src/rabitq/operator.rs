@@ -124,8 +124,14 @@ impl<O: Operator> OperatorRaBitQ for O {
     }
 
     fn query_vector_binarize_u64(vec: &[u8]) -> Vec<u64> {
-        // TODO: implement with SIMD
-        Vec::with_capacity(vec.len() * (THETA_LOG_DIM as usize) / 64)
+        let length = vec.len();
+        let mut binary = vec![0u64; length * THETA_LOG_DIM as usize / 64];
+        for j in 0..THETA_LOG_DIM as usize {
+            for i in 0..length {
+                binary[(i + j * length) / 64] |= ((vec[i] & (1 << j)) as u64) << (i % 64);
+            }
+        }
+        binary
     }
 
     fn rabit_quantization_process(
