@@ -1,3 +1,5 @@
+#![feature(iter_array_chunks)]
+#![allow(clippy::identity_op)]
 #![allow(clippy::needless_range_loop)]
 
 pub mod operator;
@@ -62,8 +64,8 @@ impl<O: OperatorQuantization> Quantizer<O> {
 
 pub enum QuantizationPreprocessed<O: OperatorQuantization> {
     Trivial(O::TrivialQuantizationPreprocessed),
-    Scalar(O::ScalarQuantizationPreprocessed),
-    Product(O::ProductQuantizationPreprocessed),
+    Scalar(O::QuantizationPreprocessed),
+    Product(O::QuantizationPreprocessed),
 }
 
 pub struct Quantization<O: OperatorQuantization> {

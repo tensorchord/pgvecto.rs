@@ -1,45 +1,33 @@
+use crate::operator::OperatorQuantizationProcess;
 use base::operator::*;
 use base::scalar::*;
-use num_traits::{Float, Zero};
 
-pub trait OperatorProductQuantization: Operator {
-    type ProductQuantizationPreprocessed;
-
+pub trait OperatorProductQuantization: OperatorQuantizationProcess {
     fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
         bits: u32,
         centroids: &[Scalar<Self>],
         lhs: Borrowed<'_, Self>,
-    ) -> Self::ProductQuantizationPreprocessed;
-
-    fn product_quantization_process(
-        dims: u32,
-        ratio: u32,
-        bits: u32,
-        preprocessed: &Self::ProductQuantizationPreprocessed,
-        rhs: &[u8],
-    ) -> F32;
+    ) -> Self::QuantizationPreprocessed;
 }
 
 impl OperatorProductQuantization for Vecf32Cos {
-    type ProductQuantizationPreprocessed = (Vec<[F32; 256]>, F32, Vec<[F32; 256]>);
-
     fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
-        _bits: u32,
+        bits: u32,
         centroids: &[Scalar<Self>],
         lhs: Borrowed<'_, Self>,
-    ) -> Self::ProductQuantizationPreprocessed {
-        let mut xy = Vec::with_capacity(dims.div_ceil(ratio) as _);
+    ) -> Self::QuantizationPreprocessed {
+        let mut xy = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
         let mut x2 = F32(0.0);
-        let mut y2 = Vec::with_capacity(dims.div_ceil(ratio) as _);
+        let mut y2 = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
         for p in 0..dims.div_ceil(ratio) {
-            let w = (dims - ratio * p).min(ratio);
-            xy.push(std::array::from_fn(|k| {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            xy.extend((0_usize..1 << bits).map(|k| {
                 let mut xy = F32(0.0);
-                for i in ratio * p..ratio * p + w {
+                for i in ratio * p..ratio * p + subdims {
                     let x = lhs.slice()[i as usize];
                     let y = centroids[(k as u32 * dims + i) as usize];
                     xy += x * y;
@@ -48,15 +36,15 @@ impl OperatorProductQuantization for Vecf32Cos {
             }));
             x2 += {
                 let mut x2 = F32(0.0);
-                for i in ratio * p..ratio * p + w {
+                for i in ratio * p..ratio * p + subdims {
                     let x = lhs.slice()[i as usize];
                     x2 += x * x;
                 }
                 x2
             };
-            y2.push(std::array::from_fn(|k| {
+            y2.extend((0_usize..1 << bits).map(|k| {
                 let mut y2 = F32(0.0);
-                for i in ratio * p..ratio * p + w {
+                for i in ratio * p..ratio * p + subdims {
                     let y = centroids[(k as u32 * dims + i) as usize];
                     y2 += y * y;
                 }
@@ -65,52 +53,22 @@ impl OperatorProductQuantization for Vecf32Cos {
         }
         (xy, x2, y2)
     }
-
-    fn product_quantization_process(
-        _dims: u32,
-        _ratio: u32,
-        _bits: u32,
-        preprocessed: &Self::ProductQuantizationPreprocessed,
-        rhs: &[u8],
-    ) -> F32 {
-        assert_eq!(preprocessed.0.len(), rhs.len());
-        assert_eq!(preprocessed.2.len(), rhs.len());
-        let n = rhs.len();
-        let xy = {
-            let mut xy = F32::zero();
-            for i in 0..n {
-                xy += preprocessed.0[i][rhs[i] as usize];
-            }
-            xy
-        };
-        let x2 = preprocessed.1;
-        let y2 = {
-            let mut y2 = F32::zero();
-            for i in 0..n {
-                y2 += preprocessed.2[i][rhs[i] as usize];
-            }
-            y2
-        };
-        F32(1.0) - xy / (x2 * y2).sqrt()
-    }
 }
 
 impl OperatorProductQuantization for Vecf32Dot {
-    type ProductQuantizationPreprocessed = Vec<[F32; 256]>;
-
     fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
-        _bits: u32,
+        bits: u32,
         centroids: &[Scalar<Self>],
         lhs: Borrowed<'_, Self>,
-    ) -> Self::ProductQuantizationPreprocessed {
-        let mut xy = Vec::with_capacity(dims.div_ceil(ratio) as _);
+    ) -> Self::QuantizationPreprocessed {
+        let mut xy = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
         for p in 0..dims.div_ceil(ratio) {
-            let w = (dims - ratio * p).min(ratio);
-            xy.push(std::array::from_fn(|k| {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            xy.extend((0_usize..1 << bits).map(|k| {
                 let mut xy = F32(0.0);
-                for i in ratio * p..ratio * p + w {
+                for i in ratio * p..ratio * p + subdims {
                     let x = lhs.slice()[i as usize];
                     let y = centroids[(k as u32 * dims + i) as usize];
                     xy += x * y;
@@ -120,43 +78,22 @@ impl OperatorProductQuantization for Vecf32Dot {
         }
         xy
     }
-
-    fn product_quantization_process(
-        _dims: u32,
-        _ratio: u32,
-        _bits: u32,
-        preprocessed: &Self::ProductQuantizationPreprocessed,
-        rhs: &[u8],
-    ) -> F32 {
-        assert_eq!(preprocessed.len(), rhs.len());
-        let n = rhs.len();
-        let xy = {
-            let mut xy = F32::zero();
-            for i in 0..n {
-                xy += preprocessed[i][rhs[i] as usize];
-            }
-            xy
-        };
-        F32(0.0) - xy
-    }
 }
 
 impl OperatorProductQuantization for Vecf32L2 {
-    type ProductQuantizationPreprocessed = Vec<[F32; 256]>;
-
     fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
-        _bits: u32,
+        bits: u32,
         centroids: &[Scalar<Self>],
         lhs: Borrowed<'_, Self>,
-    ) -> Self::ProductQuantizationPreprocessed {
-        let mut d2 = Vec::with_capacity(dims.div_ceil(ratio) as _);
+    ) -> Self::QuantizationPreprocessed {
+        let mut d2 = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
         for p in 0..dims.div_ceil(ratio) {
-            let w = (dims - ratio * p).min(ratio);
-            d2.push(std::array::from_fn(|k| {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            d2.extend((0_usize..1 << bits).map(|k| {
                 let mut d2 = F32(0.0);
-                for i in ratio * p..ratio * p + w {
+                for i in ratio * p..ratio * p + subdims {
                     let x = lhs.slice()[i as usize];
                     let y = centroids[(k as u32 * dims + i) as usize];
                     let d = x - y;
@@ -164,45 +101,27 @@ impl OperatorProductQuantization for Vecf32L2 {
                 }
                 d2
             }));
-        }
-        d2
-    }
-
-    fn product_quantization_process(
-        _dims: u32,
-        _ratio: u32,
-        _bits: u32,
-        preprocessed: &Self::ProductQuantizationPreprocessed,
-        rhs: &[u8],
-    ) -> F32 {
-        assert_eq!(preprocessed.len(), rhs.len());
-        let n = rhs.len();
-        let mut d2 = F32::zero();
-        for i in 0..n {
-            d2 += preprocessed[i][rhs[i] as usize];
         }
         d2
     }
 }
 
 impl OperatorProductQuantization for Vecf16Cos {
-    type ProductQuantizationPreprocessed = (Vec<[F32; 256]>, F32, Vec<[F32; 256]>);
-
     fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
-        _bits: u32,
+        bits: u32,
         centroids: &[Scalar<Self>],
         lhs: Borrowed<'_, Self>,
-    ) -> Self::ProductQuantizationPreprocessed {
-        let mut xy = Vec::with_capacity(dims.div_ceil(ratio) as _);
+    ) -> Self::QuantizationPreprocessed {
+        let mut xy = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
         let mut x2 = F32(0.0);
-        let mut y2 = Vec::with_capacity(dims.div_ceil(ratio) as _);
+        let mut y2 = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
         for p in 0..dims.div_ceil(ratio) {
-            let w = (dims - ratio * p).min(ratio);
-            xy.push(std::array::from_fn(|k| {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            xy.extend((0_usize..1 << bits).map(|k| {
                 let mut xy = F32(0.0);
-                for i in ratio * p..ratio * p + w {
+                for i in ratio * p..ratio * p + subdims {
                     let x = lhs.slice()[i as usize].to_f();
                     let y = centroids[(k as u32 * dims + i) as usize].to_f();
                     xy += x * y;
@@ -211,15 +130,15 @@ impl OperatorProductQuantization for Vecf16Cos {
             }));
             x2 += {
                 let mut x2 = F32(0.0);
-                for i in ratio * p..ratio * p + w {
+                for i in ratio * p..ratio * p + subdims {
                     let x = lhs.slice()[i as usize].to_f();
                     x2 += x * x;
                 }
                 x2
             };
-            y2.push(std::array::from_fn(|k| {
+            y2.extend((0_usize..1 << bits).map(|k| {
                 let mut y2 = F32(0.0);
-                for i in ratio * p..ratio * p + w {
+                for i in ratio * p..ratio * p + subdims {
                     let y = centroids[(k as u32 * dims + i) as usize].to_f();
                     y2 += y * y;
                 }
@@ -228,52 +147,22 @@ impl OperatorProductQuantization for Vecf16Cos {
         }
         (xy, x2, y2)
     }
-
-    fn product_quantization_process(
-        _dims: u32,
-        _ratio: u32,
-        _bits: u32,
-        preprocessed: &Self::ProductQuantizationPreprocessed,
-        rhs: &[u8],
-    ) -> F32 {
-        assert_eq!(preprocessed.0.len(), rhs.len());
-        assert_eq!(preprocessed.2.len(), rhs.len());
-        let n = rhs.len();
-        let xy = {
-            let mut xy = F32::zero();
-            for i in 0..n {
-                xy += preprocessed.0[i][rhs[i] as usize];
-            }
-            xy
-        };
-        let x2 = preprocessed.1;
-        let y2 = {
-            let mut y2 = F32::zero();
-            for i in 0..n {
-                y2 += preprocessed.2[i][rhs[i] as usize];
-            }
-            y2
-        };
-        F32(1.0) - xy / (x2 * y2).sqrt()
-    }
 }
 
 impl OperatorProductQuantization for Vecf16Dot {
-    type ProductQuantizationPreprocessed = Vec<[F32; 256]>;
-
     fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
-        _bits: u32,
+        bits: u32,
         centroids: &[Scalar<Self>],
         lhs: Borrowed<'_, Self>,
-    ) -> Self::ProductQuantizationPreprocessed {
-        let mut xy = Vec::with_capacity(dims.div_ceil(ratio) as _);
+    ) -> Self::QuantizationPreprocessed {
+        let mut xy = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
         for p in 0..dims.div_ceil(ratio) {
-            let w = (dims - ratio * p).min(ratio);
-            xy.push(std::array::from_fn(|k| {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            xy.extend((0_usize..1 << bits).map(|k| {
                 let mut xy = F32(0.0);
-                for i in ratio * p..ratio * p + w {
+                for i in ratio * p..ratio * p + subdims {
                     let x = lhs.slice()[i as usize].to_f();
                     let y = centroids[(k as u32 * dims + i) as usize].to_f();
                     xy += x * y;
@@ -283,43 +172,22 @@ impl OperatorProductQuantization for Vecf16Dot {
         }
         xy
     }
-
-    fn product_quantization_process(
-        _dims: u32,
-        _ratio: u32,
-        _bits: u32,
-        preprocessed: &Self::ProductQuantizationPreprocessed,
-        rhs: &[u8],
-    ) -> F32 {
-        assert_eq!(preprocessed.len(), rhs.len());
-        let n = rhs.len();
-        let xy = {
-            let mut xy = F32::zero();
-            for i in 0..n {
-                xy += preprocessed[i][rhs[i] as usize];
-            }
-            xy
-        };
-        F32(0.0) - xy
-    }
 }
 
 impl OperatorProductQuantization for Vecf16L2 {
-    type ProductQuantizationPreprocessed = Vec<[F32; 256]>;
-
     fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
-        _bits: u32,
+        bits: u32,
         centroids: &[Scalar<Self>],
         lhs: Borrowed<'_, Self>,
-    ) -> Self::ProductQuantizationPreprocessed {
-        let mut d2 = Vec::with_capacity(dims.div_ceil(ratio) as _);
+    ) -> Self::QuantizationPreprocessed {
+        let mut d2 = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
         for p in 0..dims.div_ceil(ratio) {
-            let w = (dims - ratio * p).min(ratio);
-            d2.push(std::array::from_fn(|k| {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            d2.extend((0_usize..1 << bits).map(|k| {
                 let mut d2 = F32(0.0);
-                for i in ratio * p..ratio * p + w {
+                for i in ratio * p..ratio * p + subdims {
                     let x = lhs.slice()[i as usize].to_f();
                     let y = centroids[(k as u32 * dims + i) as usize].to_f();
                     let d = x - y;
@@ -327,22 +195,6 @@ impl OperatorProductQuantization for Vecf16L2 {
                 }
                 d2
             }));
-        }
-        d2
-    }
-
-    fn product_quantization_process(
-        _dims: u32,
-        _ratio: u32,
-        _bits: u32,
-        preprocessed: &Self::ProductQuantizationPreprocessed,
-        rhs: &[u8],
-    ) -> F32 {
-        assert_eq!(preprocessed.len(), rhs.len());
-        let n = rhs.len();
-        let mut d2 = F32::zero();
-        for i in 0..n {
-            d2 += preprocessed[i][rhs[i] as usize];
         }
         d2
     }
@@ -351,26 +203,14 @@ impl OperatorProductQuantization for Vecf16L2 {
 macro_rules! unimpl_operator_product_quantization {
     ($t:ty, $l:ty) => {
         impl OperatorProductQuantization for $t {
-            type ProductQuantizationPreprocessed = std::convert::Infallible;
-
             fn product_quantization_preprocess(
                 _: u32,
                 _: u32,
                 _: u32,
                 _: &[Scalar<Self>],
                 _: Borrowed<'_, Self>,
-            ) -> Self::ProductQuantizationPreprocessed {
+            ) -> Self::QuantizationPreprocessed {
                 unimplemented!()
-            }
-
-            fn product_quantization_process(
-                _: u32,
-                _: u32,
-                _: u32,
-                preprocessed: &Self::ProductQuantizationPreprocessed,
-                _: &[u8],
-            ) -> F32 {
-                match *preprocessed {}
             }
         }
     };
