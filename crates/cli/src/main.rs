@@ -25,6 +25,7 @@ fn default_search_opt() -> SearchOptions {
         flat_pq_rerank_size: 0,
         ivf_sq_rerank_size: 0,
         ivf_pq_rerank_size: 0,
+        ivf_rabit_rerank_size: 0,
         hnsw_ef_search: 100,
         ivf_nprobe: 10,
         diskann_ef_search: 100,
