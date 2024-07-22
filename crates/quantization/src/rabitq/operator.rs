@@ -55,7 +55,7 @@ impl<O: Operator> OperatorRaBitQ for O {
             lower_bound = Float::min(lower_bound, quantized_y[i]);
             upper_bound = Float::max(upper_bound, quantized_y[i]);
         }
-        let delta = (upper_bound - lower_bound) / Scalar::<O>::from_f32(THETA_LOG_DIM as f32 - 1.0);
+        let delta = (upper_bound - lower_bound) / Scalar::<O>::from_f32((1 << THETA_LOG_DIM) as f32 - 1.0);
 
         // scalar quantization
         let mut quantized_y_scalar = vec![0u8; dim];
@@ -103,7 +103,7 @@ impl<O: Operator> OperatorRaBitQ for O {
 
     // binarize vector to 0 or 1 in binary format stored in u64
     fn vector_binarize_u64(vec: &[Scalar<Self>]) -> Vec<u64> {
-        let mut binary = vec![0u64, (vec.len() as u64 + 63) / 64];
+        let mut binary = vec![0u64; (vec.len() + 63) / 64];
         for i in 0..vec.len() {
             if vec[i].is_sign_positive() {
                 binary[i / 64] |= 1 << (i % 64);
@@ -128,7 +128,7 @@ impl<O: Operator> OperatorRaBitQ for O {
         let mut binary = vec![0u64; length * THETA_LOG_DIM as usize / 64];
         for j in 0..THETA_LOG_DIM as usize {
             for i in 0..length {
-                binary[(i + j * length) / 64] |= ((vec[i] & (1 << j)) as u64) << (i % 64);
+                binary[(i + j * length) / 64] |= (((vec[i] >> j) & 1) as u64) << (i % 64);
             }
         }
         binary
@@ -142,7 +142,7 @@ impl<O: Operator> OperatorRaBitQ for O {
         binary_x: &[u64],
         p: &Self::RabitQuantizationPreprocessed,
     ) -> F32 {
-        let estimate = x_centroid_square * p.0
+        let estimate = x_centroid_square + p.0
             + p.1 * factor_ppc
             + (Scalar::<O>::from_f32(2.0 * asymmetric_binary_dot_product(binary_x, &p.4) as f32)
                 - p.3)

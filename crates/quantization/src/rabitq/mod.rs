@@ -25,7 +25,6 @@ pub struct RaBitQuantizer<O: OperatorRaBitQ> {
     dim_pad_64: u32,
     projection: Vec<Vec<Scalar<O>>>,
     binary_vec_x: Vec<Vec<u64>>,
-    distance_to_centroid: Vec<Scalar<O>>,
     distance_to_centroid_square: Vec<Scalar<O>>,
     dot_product_x: Vec<Scalar<O>>,
     rand_bias: Vec<Scalar<O>>,
@@ -83,7 +82,7 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
             let xc_over_dot_product = distance_to_centroid[i] / dot_product_x[i];
             error_bound.push(
                 error_base
-                    * (xc_over_dot_product * xc_over_dot_product - distance_to_centroid_square[i]),
+                    * (xc_over_dot_product * xc_over_dot_product - distance_to_centroid_square[i]).sqrt(),
             );
             let ip = Scalar::<O>::from_f32(-2.0) / dim_pad_sqrt * xc_over_dot_product;
             factor_ip.push(ip);
@@ -96,7 +95,6 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
             projection,
             binary_vec_x,
             distance_to_centroid_square,
-            distance_to_centroid,
             dot_product_x,
             rand_bias,
             error_bound,
