@@ -7,7 +7,6 @@ pub mod operator;
 
 use self::ivf_naive::IvfNaive;
 use crate::operator::OperatorIvf;
-use base::distance::DistanceKind;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
@@ -27,21 +26,20 @@ impl<O: OperatorIvf> Ivf<O> {
             ..
         } = options.indexing.clone().unwrap_ivf();
         std::fs::create_dir(path.as_ref()).unwrap();
-        let this = if matches!(quantization_options, QuantizationOptions::Trivial(_))
-            || O::DISTANCE_KIND != DistanceKind::L2
-        {
-            Self::Naive(IvfNaive::create(
-                path.as_ref().join("ivf_naive"),
-                options,
-                source,
-            ))
-        } else {
-            Self::Residual(IvfResidual::create(
-                path.as_ref().join("ivf_residual"),
-                options,
-                source,
-            ))
-        };
+        let this =
+            if matches!(quantization_options, QuantizationOptions::Trivial(_)) || !O::RESIDUAL {
+                Self::Naive(IvfNaive::create(
+                    path.as_ref().join("ivf_naive"),
+                    options,
+                    source,
+                ))
+            } else {
+                Self::Residual(IvfResidual::create(
+                    path.as_ref().join("ivf_residual"),
+                    options,
+                    source,
+                ))
+            };
         this
     }
 
