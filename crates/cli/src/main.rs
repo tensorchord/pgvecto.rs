@@ -1,9 +1,10 @@
+#![allow(clippy::needless_range_loop)]
+
 use base::index::SearchOptions;
 use base::search::Pointer;
-use base::worker::ViewBasicOperations;
-use service::Instance;
-
+use base::worker::ViewVbaseOperations;
 use log::{info, warn};
+use service::Instance;
 use std::cmp::min;
 use std::fs;
 use std::path::PathBuf;
@@ -20,13 +21,17 @@ const INTERVAL: Duration = Duration::from_secs(1);
 
 fn default_search_opt() -> SearchOptions {
     SearchOptions {
+        flat_sq_rerank_size: 0,
+        flat_pq_rerank_size: 0,
+        ivf_sq_rerank_size: 0,
+        ivf_pq_rerank_size: 0,
         hnsw_ef_search: 100,
         ivf_nprobe: 10,
         diskann_ef_search: 100,
     }
 }
 
-fn calculate_precision(truth: &Vec<i32>, res: &Vec<i32>, top: usize) -> f32 {
+fn calculate_precision(truth: &[i32], res: &[i32], top: usize) -> f32 {
     let mut count = 0;
     let length = min(top, truth.len());
     for i in 0..length {
@@ -118,7 +123,7 @@ fn main() {
             let (index_options, alterable_options) = create
                 .get_index_options()
                 .expect("failed to parse create arguments");
-            fs::create_dir_all(&path.parent().expect("failed to get the parent path"))
+            fs::create_dir_all(path.parent().expect("failed to get the parent path"))
                 .expect("failed to create the parent path");
             let instance = Instance::create(path, index_options, alterable_options)
                 .expect("failed to create instance");
@@ -138,9 +143,9 @@ fn main() {
             std::mem::forget(instance);
             let search_opt = default_search_opt();
             for (i, vec) in queries.iter().enumerate() {
-                match view.basic(&convert_to_owned_vec(&vec), &search_opt) {
+                match view.vbase(&convert_to_owned_vec(vec), &search_opt) {
                     Ok(iter) => {
-                        let ans = iter.map(|(_, x)| x.as_u64() as i32).collect();
+                        let ans = iter.map(|(_, x)| x.as_u64() as i32).collect::<Vec<_>>();
                         res.push(calculate_precision(&truth[i], &ans, query.top_k));
                     }
                     Err(err) => {

@@ -23,7 +23,7 @@ where
             break;
         }
         let dim = u32::from_le_bytes(buf) as usize;
-        let mut vec = Vec::with_capacity(dim as usize);
+        let mut vec = Vec::with_capacity(dim);
         for _ in 0..dim {
             reader.read_exact(&mut buf)?;
             vec.push(T::from_le_bytes(&buf));
@@ -33,7 +33,7 @@ where
     Ok(vecs)
 }
 
-pub fn convert_to_owned_vec(vec: &Vec<f32>) -> OwnedVector {
+pub fn convert_to_owned_vec(vec: &[f32]) -> OwnedVector {
     OwnedVector::Vecf32(Vecf32Owned::new(vec.iter().map(|v| F32(*v)).collect()))
 }
 

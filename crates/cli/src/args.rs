@@ -77,7 +77,7 @@ impl CreateArguments {
         &self,
     ) -> Result<(IndexOptions, IndexAlterableOptions), ArgumentParseError> {
         let indexing: IndexingOptions = match &self.indexing {
-            Some(toml_str) => match toml::from_str(&toml_str) {
+            Some(toml_str) => match toml::from_str(toml_str) {
                 Ok(config) => config,
                 Err(err) => {
                     warn!("failed to parse the TOML index options: {err}");
