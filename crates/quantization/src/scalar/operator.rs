@@ -24,18 +24,18 @@ impl OperatorScalarQuantization for Vecf32Cos {
         let mut x2 = F32(0.0);
         let mut y2 = Vec::with_capacity((dims as usize) * (1 << bits));
         for i in 0..dims {
+            let bas = min[i as usize];
+            let del = max[i as usize] - min[i as usize];
             let x = lhs.slice()[i as usize];
             xy.extend((0..1 << bits).map(|k| {
-                let del = max[k as usize] - min[k as usize];
                 let val = Scalar::<Self>::from_f(F32(k as f32 / ((1 << bits) - 1) as f32));
-                let y = min[k as usize] + val * del;
+                let y = bas + val * del;
                 x * y
             }));
             x2 += x * x;
             y2.extend((0..1 << bits).map(|k| {
-                let del = max[k as usize] - min[k as usize];
                 let val = Scalar::<Self>::from_f(F32(k as f32 / ((1 << bits) - 1) as f32));
-                let y = min[k as usize] + val * del;
+                let y = bas + val * del;
                 y * y
             }));
         }
@@ -53,11 +53,12 @@ impl OperatorScalarQuantization for Vecf32Dot {
     ) -> Self::QuantizationPreprocessed {
         let mut xy = Vec::with_capacity(dims as _);
         for i in 0..dims {
+            let bas = min[i as usize];
+            let del = max[i as usize] - min[i as usize];
             xy.extend((0..1 << bits).map(|k| {
                 let x = lhs.slice()[i as usize];
-                let del = max[k as usize] - min[k as usize];
                 let val = Scalar::<Self>::from_f(F32(k as f32 / ((1 << bits) - 1) as f32));
-                let y = min[k as usize] + val * del;
+                let y = bas + val * del;
                 x * y
             }));
         }
@@ -75,11 +76,12 @@ impl OperatorScalarQuantization for Vecf32L2 {
     ) -> Self::QuantizationPreprocessed {
         let mut d2 = Vec::with_capacity(dims as _);
         for i in 0..dims {
+            let bas = min[i as usize];
+            let del = max[i as usize] - min[i as usize];
             d2.extend((0..1 << bits).map(|k| {
                 let x = lhs.slice()[i as usize];
-                let del = max[k as usize] - min[k as usize];
                 let val = Scalar::<Self>::from_f(F32(k as f32 / ((1 << bits) - 1) as f32));
-                let y = min[k as usize] + val * del;
+                let y = bas + val * del;
                 let d = x - y;
                 d * d
             }));
@@ -100,18 +102,18 @@ impl OperatorScalarQuantization for Vecf16Cos {
         let mut x2 = F32(0.0);
         let mut y2 = Vec::with_capacity(dims as _);
         for i in 0..dims {
+            let bas = min[i as usize];
+            let del = max[i as usize] - min[i as usize];
             let x = lhs.slice()[i as usize].to_f();
             xy.extend((0..1 << bits).map(|k| {
-                let del = max[k as usize] - min[k as usize];
                 let val = Scalar::<Self>::from_f(F32(k as f32 / ((1 << bits) - 1) as f32));
-                let y = (min[k as usize] + val * del).to_f();
+                let y = (bas + val * del).to_f();
                 x * y
             }));
             x2 += x * x;
             y2.extend((0..1 << bits).map(|k| {
-                let del = max[k as usize] - min[k as usize];
                 let val = Scalar::<Self>::from_f(F32(k as f32 / ((1 << bits) - 1) as f32));
-                let y = (min[k as usize] + val * del).to_f();
+                let y = (bas + val * del).to_f();
                 y * y
             }));
         }
@@ -129,11 +131,12 @@ impl OperatorScalarQuantization for Vecf16Dot {
     ) -> Self::QuantizationPreprocessed {
         let mut xy = Vec::with_capacity(dims as _);
         for i in 0..dims {
+            let bas = min[i as usize];
+            let del = max[i as usize] - min[i as usize];
             xy.extend((0..1 << bits).map(|k| {
                 let x = lhs.slice()[i as usize].to_f();
-                let del = max[k as usize] - min[k as usize];
                 let val = Scalar::<Self>::from_f(F32(k as f32 / ((1 << bits) - 1) as f32));
-                let y = (min[k as usize] + val * del).to_f32();
+                let y = (bas + val * del).to_f32();
                 x * y
             }));
         }
@@ -151,11 +154,12 @@ impl OperatorScalarQuantization for Vecf16L2 {
     ) -> Self::QuantizationPreprocessed {
         let mut d2 = Vec::with_capacity(dims as _);
         for i in 0..dims {
+            let bas = min[i as usize];
+            let del = max[i as usize] - min[i as usize];
             d2.extend((0..1 << bits).map(|k| {
                 let x = lhs.slice()[i as usize].to_f();
-                let del = max[k as usize] - min[k as usize];
                 let val = Scalar::<Self>::from_f(F32(k as f32 / ((1 << bits) - 1) as f32));
-                let y = (min[k as usize] + val * del).to_f32();
+                let y = (bas + val * del).to_f32();
                 let d = x - y;
                 d * d
             }));

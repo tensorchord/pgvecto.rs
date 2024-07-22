@@ -1,4 +1,5 @@
 #![feature(iter_array_chunks)]
+#![allow(clippy::identity_op)]
 #![allow(clippy::needless_range_loop)]
 
 pub mod operator;

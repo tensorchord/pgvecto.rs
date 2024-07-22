@@ -87,28 +87,29 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
         codes.extend(std::iter::repeat(0).take((8 / self.bits) as usize - 1));
         let bytes = (self.dims.div_ceil(self.ratio) * self.bits).div_ceil(8);
         let codes = codes.into_iter().chain(std::iter::repeat(0));
+        fn merge_8([b0, b1, b2, b3, b4, b5, b6, b7]: [u8; 8]) -> u8 {
+            b0 | (b1 << 1) | (b2 << 2) | (b3 << 3) | (b4 << 4) | (b5 << 5) | (b6 << 6) | (b7 << 7)
+        }
+        fn merge_4([b0, b1, b2, b3]: [u8; 4]) -> u8 {
+            b0 | (b1 << 2) | (b2 << 4) | (b3 << 6)
+        }
+        fn merge_2([b0, b1]: [u8; 2]) -> u8 {
+            b0 | (b1 << 4)
+        }
         match self.bits {
             1 => codes
                 .array_chunks::<8>()
-                .map(|[b0, b1, b2, b3, b4, b5, b6, b7]| {
-                    (b0) | (b1 << 1)
-                        | (b2 << 2)
-                        | (b3 << 3)
-                        | (b4 << 4)
-                        | (b5 << 5)
-                        | (b6 << 6)
-                        | (b7 << 7)
-                })
+                .map(merge_8)
                 .take(bytes as usize)
                 .collect(),
             2 => codes
                 .array_chunks::<4>()
-                .map(|[b0, b1, b2, b3]| (b0) | (b1 << 2) | (b2 << 4) | (b3 << 6))
+                .map(merge_4)
                 .take(bytes as usize)
                 .collect(),
             4 => codes
                 .array_chunks::<2>()
-                .map(|[b0, b1]| (b0) | (b1 << 4))
+                .map(merge_2)
                 .take(bytes as usize)
                 .collect(),
             8 => codes.take(bytes as usize).collect(),
@@ -128,17 +129,17 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
 
     pub fn process(&self, preprocessed: &O::QuantizationPreprocessed, rhs: &[u8]) -> F32 {
         match self.bits {
-            1 => O::quantization_process(self.dims, self.ratio, self.bits, preprocessed, |i| {
-                find(1, rhs, i)
+            1 => O::quantization_process(self.dims, self.ratio, 1, preprocessed, |i| {
+                ((rhs[i >> 3] >> ((i & 7) << 1)) & 1) as usize
             }),
-            2 => O::quantization_process(self.dims, self.ratio, self.bits, preprocessed, |i| {
-                find(2, rhs, i)
+            2 => O::quantization_process(self.dims, self.ratio, 2, preprocessed, |i| {
+                ((rhs[i >> 2] >> ((i & 3) << 2)) & 3) as usize
             }),
-            4 => O::quantization_process(self.dims, self.ratio, self.bits, preprocessed, |i| {
-                find(4, rhs, i)
+            4 => O::quantization_process(self.dims, self.ratio, 4, preprocessed, |i| {
+                ((rhs[i >> 1] >> ((i & 1) << 4)) & 15) as usize
             }),
-            8 => O::quantization_process(self.dims, self.ratio, self.bits, preprocessed, |i| {
-                find(8, rhs, i)
+            8 => O::quantization_process(self.dims, self.ratio, 8, preprocessed, |i| {
+                ((rhs[i >> 0] >> (0 << 8)) & 255) as usize
             }),
             _ => unreachable!(),
         }
@@ -243,15 +244,4 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
         );
         Box::new(Window0Reranker::new(move |u, ()| self.process(&p, c(u)), r))
     }
-}
-
-#[inline(always)]
-fn find(bits: u32, rhs: &[u8], i: usize) -> usize {
-    (match bits {
-        1 => (rhs[i >> 3] >> ((i & 7) << 1)) & 1,
-        2 => (rhs[i >> 2] >> ((i & 3) << 2)) & 3,
-        4 => (rhs[i >> 1] >> ((i & 1) << 4)) & 15,
-        8 => rhs[i],
-        _ => unreachable!(),
-    }) as usize
 }

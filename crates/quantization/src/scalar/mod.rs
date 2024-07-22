@@ -45,10 +45,11 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
         }
         let mut centroids = Vec2::zeros((1 << bits, dims as usize));
         for p in 0..dims {
+            let bas = min[p as usize];
+            let del = max[p as usize] - min[p as usize];
             for j in 0_usize..(1 << bits) {
-                let del = max[j] - min[j];
                 let val = Scalar::<O>::from_f(F32(j as f32 / ((1 << bits) - 1) as f32));
-                centroids[(j, p as usize)] = min[j] + val * del;
+                centroids[(j, p as usize)] = bas + val * del;
             }
         }
         Self {
@@ -111,29 +112,19 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
     }
 
     pub fn process(&self, preprocessed: &O::QuantizationPreprocessed, rhs: &[u8]) -> F32 {
-        #[inline(always)]
-        fn find(bits: u32, rhs: &[u8], i: usize) -> usize {
-            (match bits {
-                1 => (rhs[i >> 3] >> ((i & 7) << 1)) & 1,
-                2 => (rhs[i >> 2] >> ((i & 3) << 2)) & 3,
-                4 => (rhs[i >> 1] >> ((i & 1) << 4)) & 15,
-                8 => rhs[i],
-                _ => unreachable!(),
-            }) as usize
-        }
         match self.bits {
-            1 => {
-                O::quantization_process(self.dims, 1, self.bits, preprocessed, |i| find(1, rhs, i))
-            }
-            2 => {
-                O::quantization_process(self.dims, 1, self.bits, preprocessed, |i| find(2, rhs, i))
-            }
-            4 => {
-                O::quantization_process(self.dims, 1, self.bits, preprocessed, |i| find(4, rhs, i))
-            }
-            8 => {
-                O::quantization_process(self.dims, 1, self.bits, preprocessed, |i| find(8, rhs, i))
-            }
+            1 => O::quantization_process(self.dims, 1, 1, preprocessed, |i| {
+                ((rhs[i >> 3] >> ((i & 7) << 1)) & 1) as usize
+            }),
+            2 => O::quantization_process(self.dims, 1, 2, preprocessed, |i| {
+                ((rhs[i >> 2] >> ((i & 3) << 2)) & 3) as usize
+            }),
+            4 => O::quantization_process(self.dims, 1, 4, preprocessed, |i| {
+                ((rhs[i >> 1] >> ((i & 1) << 4)) & 15) as usize
+            }),
+            8 => O::quantization_process(self.dims, 1, 8, preprocessed, |i| {
+                ((rhs[i >> 0] >> (0 << 8)) & 255) as usize
+            }),
             _ => unreachable!(),
         }
     }
