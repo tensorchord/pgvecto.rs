@@ -1,6 +1,11 @@
-use base::operator::{Operator, Owned, Scalar};
+use base::operator::{Borrowed, Operator, Scalar};
 use base::scalar::{ScalarLike, F32};
-use num_traits::{Float, One, Zero};
+use base::vector::VectorBorrowed;
+
+use nalgebra::debug::RandomOrthogonal;
+use nalgebra::{Dim, Dyn};
+use num_traits::{Float, One, ToPrimitive, Zero};
+use rand::{thread_rng, Rng};
 
 use super::THETA_LOG_DIM;
 
@@ -11,32 +16,81 @@ pub trait OperatorRaBitQ: Operator {
     fn vector_binarize_u64(vec: &[Scalar<Self>]) -> Vec<u64>;
     fn vector_binarize_one(vec: &[Scalar<Self>]) -> Vec<Scalar<Self>>;
     fn query_vector_binarize_u64(vec: &[u8]) -> Vec<u64>;
+    fn gen_random_orthogonal(dim: usize) -> Vec<Vec<Scalar<Self>>>;
     fn rabit_quantization_process(
         x_centroid_square: Scalar<Self>,
-        y_centroid_square: Scalar<Self>,
         factor_ppc: Scalar<Self>,
         factor_ip: Scalar<Self>,
         error_bound: Scalar<Self>,
-        value_lower_bound: Scalar<Self>,
-        value_delta: Scalar<Self>,
-        scalar_sum: Scalar<Self>,
         binary_x: &[u64],
-        binary_y: &[u64],
+        p: &Self::RabitQuantizationPreprocessed,
     ) -> F32;
     fn rabit_quantization_preprocess(
         dim: usize,
+        vec: Borrowed<'_, Self>,
+        projection: &[Vec<Scalar<Self>>],
+        rand_bias: &[Scalar<Self>],
     ) -> Self::RabitQuantizationPreprocessed;
 }
 
 impl<O: Operator> OperatorRaBitQ for O {
+    // (distance_square, lower_bound, delta, scalar_sum, binary_vec_y)
     type RabitQuantizationPreprocessed = (Scalar<O>, Scalar<O>, Scalar<O>, Scalar<O>, Vec<u64>);
 
-    fn rabit_quantization_preprocess(dim: usize) -> Self::RabitQuantizationPreprocessed {
-        // let mut quantized_y = Vec::with_capacity(dim);
-        // for i in 0..dim {
-        //     quantized_y.push(Self::vector_dot_product(lhs, rhs))
-        // }
-        unimplemented!()
+    fn rabit_quantization_preprocess(
+        dim: usize,
+        vec: Borrowed<'_, Self>,
+        projection: &[Vec<Scalar<Self>>],
+        rand_bias: &[Scalar<Self>],
+    ) -> Self::RabitQuantizationPreprocessed {
+        let mut quantized_y = Vec::with_capacity(dim);
+        let vector = vec.to_vec();
+        for i in 0..dim {
+            quantized_y.push(Self::vector_dot_product(&projection[i], &vector));
+        }
+        let distance_to_centroid_square = Self::vector_dot_product(&quantized_y, &quantized_y);
+        let mut lower_bound = Scalar::<O>::infinity();
+        let mut upper_bound = Scalar::<O>::neg_infinity();
+        for i in 0..dim {
+            lower_bound = Float::min(lower_bound, quantized_y[i]);
+            upper_bound = Float::max(upper_bound, quantized_y[i]);
+        }
+        let delta = (upper_bound - lower_bound) / Scalar::<O>::from_f32(THETA_LOG_DIM as f32 - 1.0);
+
+        // scalar quantization
+        let mut quantized_y_scalar = vec![0u8; dim];
+        let mut scalar_sum = 0u32;
+        for i in 0..dim {
+            quantized_y_scalar[i] = ((quantized_y[i] - lower_bound) * delta + rand_bias[i])
+                .to_u8()
+                .expect("failed to convert a Scalar value to u8");
+            scalar_sum += quantized_y_scalar[i] as u32;
+        }
+        let binary_vec_y = O::query_vector_binarize_u64(&quantized_y_scalar);
+        (
+            distance_to_centroid_square,
+            lower_bound,
+            delta,
+            Scalar::<O>::from_f32(scalar_sum as f32),
+            binary_vec_y,
+        )
+    }
+
+    fn gen_random_orthogonal(dim: usize) -> Vec<Vec<Scalar<Self>>> {
+        let mut rng = thread_rng();
+        let random_orth: RandomOrthogonal<f32, Dyn> =
+            RandomOrthogonal::new(Dim::from_usize(dim), || rng.gen());
+        let random_matrix = random_orth.unwrap();
+        let mut projection = vec![Vec::with_capacity(dim); dim];
+        // use the transpose of the random matrix as the inverse of the orthogonal matrix,
+        // but we need to transpose it again to make it efficient for the dot production
+        for (i, vec) in random_matrix.row_iter().enumerate() {
+            for val in vec.iter() {
+                projection[i].push(Scalar::<O>::from_f32(*val));
+            }
+        }
+
+        projection
     }
 
     fn vector_dot_product(lhs: &[Scalar<O>], rhs: &[Scalar<O>]) -> Scalar<O> {
@@ -70,31 +124,25 @@ impl<O: Operator> OperatorRaBitQ for O {
     }
 
     fn query_vector_binarize_u64(vec: &[u8]) -> Vec<u64> {
-        let mut binary = Vec::with_capacity(vec.len() * (THETA_LOG_DIM as usize) / 64);
         // TODO: implement with SIMD
-        binary
+        Vec::with_capacity(vec.len() * (THETA_LOG_DIM as usize) / 64)
     }
 
     fn rabit_quantization_process(
         x_centroid_square: Scalar<Self>,
-        y_centroid_square: Scalar<Self>,
         factor_ppc: Scalar<Self>,
         factor_ip: Scalar<Self>,
         error_bound: Scalar<Self>,
-        value_lower_bound: Scalar<Self>,
-        value_delta: Scalar<Self>,
-        scalar_sum: Scalar<Self>,
         binary_x: &[u64],
-        binary_y: &[u64],
+        p: &Self::RabitQuantizationPreprocessed,
     ) -> F32 {
-        let estimate = x_centroid_square * y_centroid_square
-            + value_lower_bound * factor_ppc
-            + (Scalar::<O>::from_f32(
-                2.0 * asymmetric_binary_dot_product(&binary_x, &binary_y) as f32,
-            ) - scalar_sum)
+        let estimate = x_centroid_square * p.0
+            + p.1 * factor_ppc
+            + (Scalar::<O>::from_f32(2.0 * asymmetric_binary_dot_product(binary_x, &p.4) as f32)
+                - p.3)
                 * factor_ip
-                * value_delta;
-        (estimate - (error_bound * y_centroid_square.sqrt())).to_f()
+                * p.2;
+        (estimate - (error_bound * p.0.sqrt())).to_f()
     }
 }
 

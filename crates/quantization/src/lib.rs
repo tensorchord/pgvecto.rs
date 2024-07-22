@@ -105,7 +105,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                     (0..vectors.len())
                         .flat_map(|i| x.encode(&vectors.vector(i).to_vec()).into_iter()),
                 ),
-                RaBitQ(x) => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
+                RaBitQ(_) => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
             },
         );
         Self { train, codes }
@@ -186,7 +186,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                 },
                 r,
             ),
-            RaBitQ(x) => todo!(),
+            RaBitQ(x) => x.flat_rerank(vector, opts, r),
         }
     }
 
@@ -221,7 +221,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                 },
                 r,
             ),
-            RaBitQ(x) => todo!(),
+            RaBitQ(x) => x.ivf_naive_rerank(vector, opts, r),
         }
     }
 
@@ -291,7 +291,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                 },
                 r,
             ),
-            RaBitQ(x) => todo!(),
+            RaBitQ(x) => x.graph_rerank(vector, opts, r),
         }
     }
 }

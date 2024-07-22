@@ -2,7 +2,6 @@
 #![allow(clippy::needless_range_loop)]
 
 pub mod ivf_naive;
-pub mod ivf_rabitq;
 pub mod ivf_residual;
 pub mod operator;
 
