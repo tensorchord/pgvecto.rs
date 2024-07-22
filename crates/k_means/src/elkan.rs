@@ -6,7 +6,7 @@ use rand::{Rng, SeedableRng};
 use std::ops::{Index, IndexMut};
 
 pub struct ElkanKMeans<S: ScalarLike> {
-    dims: u32,
+    dims: usize,
     c: usize,
     centroids: Vec2<S>,
     lowerbound: Square,
@@ -21,23 +21,23 @@ const DELTA: f32 = 1.0 / 1024.0;
 
 impl<S: ScalarLike> ElkanKMeans<S> {
     pub fn new(c: usize, samples: Vec2<S>) -> Self {
-        let n = samples.len();
-        let dims = samples.dims();
+        let n = samples.shape_0();
+        let dims = samples.shape_1();
 
         let mut rand = StdRng::from_entropy();
-        let mut centroids = Vec2::new(dims, c);
+        let mut centroids = Vec2::zeros((c, dims));
         let mut lowerbound = Square::new(n, c);
         let mut upperbound = vec![F32::zero(); n];
         let mut assign = vec![0usize; n];
 
-        centroids[0].copy_from_slice(&samples[rand.gen_range(0..n)]);
+        centroids[(0,)].copy_from_slice(&samples[(rand.gen_range(0..n),)]);
 
         let mut weight = vec![F32::infinity(); n];
         let mut dis = vec![F32::zero(); n];
         for i in 0..c {
             let mut sum = F32::zero();
             for j in 0..n {
-                dis[j] = S::euclid_distance(&samples[j], &centroids[i]);
+                dis[j] = S::euclid_distance(&samples[(j,)], &centroids[(i,)]);
             }
             for j in 0..n {
                 lowerbound[(j, i)] = dis[j];
@@ -59,7 +59,7 @@ impl<S: ScalarLike> ElkanKMeans<S> {
                 }
                 n - 1
             };
-            centroids[i + 1].copy_from_slice(&samples[index]);
+            centroids[(i + 1,)].copy_from_slice(&samples[(index,)]);
         }
 
         for i in 0..n {
@@ -99,42 +99,13 @@ impl<S: ScalarLike> ElkanKMeans<S> {
         let lowerbound = &mut self.lowerbound;
         let upperbound = &mut self.upperbound;
         let mut change = 0;
-        let n = samples.len();
-        if n <= c {
-            let c = self.c;
-            let samples = &self.samples;
-            let rand = &mut self.rand;
-            let centroids = &mut self.centroids;
-            let n = samples.len();
-            let dims = samples.dims();
-            let sorted_index = samples.argsort();
-            for i in 0..n {
-                let index = sorted_index.get(i).unwrap();
-                let last = sorted_index.get(std::cmp::max(i, 1) - 1).unwrap();
-                if *index == 0 || samples[*last] != samples[*index] {
-                    centroids[i].copy_from_slice(&samples[*index]);
-                } else {
-                    let rand_centroids: Vec<_> = (0..dims)
-                        .map(|_| S::from_f32(rand.gen_range(0.0..1.0f32)))
-                        .collect();
-                    centroids[i].copy_from_slice(rand_centroids.as_slice());
-                }
-            }
-            for i in n..c {
-                let rand_centroids: Vec<_> = (0..dims)
-                    .map(|_| S::from_f32(rand.gen_range(0.0..1.0f32)))
-                    .collect();
-                centroids[i].copy_from_slice(rand_centroids.as_slice());
-            }
-            return true;
-        }
-
+        let n = samples.shape_0();
         // Step 1
         let mut dist0 = Square::new(c, c);
         let mut sp = vec![F32::zero(); c];
         for i in 0..c {
             for j in 0..c {
-                dist0[(i, j)] = S::euclid_distance(&centroids[i], &centroids[j]) * 0.5;
+                dist0[(i, j)] = S::euclid_distance(&centroids[(i,)], &centroids[(j,)]) * 0.5;
             }
         }
         for i in 0..c {
@@ -153,7 +124,7 @@ impl<S: ScalarLike> ElkanKMeans<S> {
         let mut dis = vec![F32::zero(); n];
         for i in 0..n {
             if upperbound[i] > sp[assign[i]] {
-                dis[i] = S::euclid_distance(&samples[i], &centroids[assign[i]]);
+                dis[i] = S::euclid_distance(&samples[(i,)], &centroids[(assign[i],)]);
             }
         }
         for i in 0..n {
@@ -176,7 +147,7 @@ impl<S: ScalarLike> ElkanKMeans<S> {
                     continue;
                 }
                 if minimal > lowerbound[(i, j)] || minimal > dist0[(assign[i], j)] {
-                    let dis = S::euclid_distance(&samples[i], &centroids[j]);
+                    let dis = S::euclid_distance(&samples[(i,)], &centroids[(j,)]);
                     lowerbound[(i, j)] = dis;
                     if dis < minimal {
                         minimal = dis;
@@ -189,12 +160,11 @@ impl<S: ScalarLike> ElkanKMeans<S> {
         }
 
         // Step 4, 7
-        let old = std::mem::replace(centroids, Vec2::new(dims, c));
+        let old_centroids = std::mem::replace(centroids, Vec2::zeros((c, dims)));
         let mut count = vec![F32::zero(); c];
-        centroids.fill(S::zero());
         for i in 0..n {
-            for j in 0..dims as usize {
-                centroids[self.assign[i]][j] += samples[i][j];
+            for j in 0..dims {
+                centroids[(self.assign[i], j)] += samples[(i, j)];
             }
             count[self.assign[i]] += 1.0;
         }
@@ -202,8 +172,8 @@ impl<S: ScalarLike> ElkanKMeans<S> {
             if count[i] == F32::zero() {
                 continue;
             }
-            for dim in 0..dims as usize {
-                centroids[i][dim] /= S::from_f32(count[i].into());
+            for dim in 0..dims {
+                centroids[(i, dim)] /= S::from_f32(count[i].into());
             }
         }
         for i in 0..c {
@@ -219,27 +189,27 @@ impl<S: ScalarLike> ElkanKMeans<S> {
                 }
                 o = (o + 1) % c;
             }
-            centroids.copy_within(o, i);
-            for dim in 0..dims as usize {
+            centroids.copy_within((o,), (i,));
+            for dim in 0..dims {
                 if dim % 2 == 0 {
-                    centroids[i][dim] *= S::from_f32(1.0 + DELTA);
-                    centroids[o][dim] *= S::from_f32(1.0 - DELTA);
+                    centroids[(i, dim)] *= S::from_f32(1.0 + DELTA);
+                    centroids[(o, dim)] *= S::from_f32(1.0 - DELTA);
                 } else {
-                    centroids[i][dim] *= S::from_f32(1.0 - DELTA);
-                    centroids[o][dim] *= S::from_f32(1.0 + DELTA);
+                    centroids[(i, dim)] *= S::from_f32(1.0 - DELTA);
+                    centroids[(o, dim)] *= S::from_f32(1.0 + DELTA);
                 }
             }
             count[i] = count[o] / 2.0;
             count[o] = count[o] - count[i];
         }
         for i in 0..c {
-            spherical_normalize(&mut centroids[i]);
+            spherical_normalize(&mut centroids[(i,)]);
         }
 
         // Step 5, 6
         let mut dist1 = vec![F32::zero(); c];
         for i in 0..c {
-            dist1[i] = S::euclid_distance(&old[i], &centroids[i]);
+            dist1[i] = S::euclid_distance(&old_centroids[(i,)], &centroids[(i,)]);
         }
         for i in 0..n {
             for j in 0..c {

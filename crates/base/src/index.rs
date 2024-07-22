@@ -448,7 +448,7 @@ impl ScalarQuantizationOptions {
     }
     fn validate_self(&self) -> Result<(), ValidationError> {
         match self.bits {
-            8 => Ok(()),
+            1 | 2 | 4 | 8 => Ok(()),
             _ => Err(ValidationError::new("invalid quantization bits")),
         }
     }
@@ -482,7 +482,7 @@ impl ProductQuantizationOptions {
     }
     fn validate_self(&self) -> Result<(), ValidationError> {
         match self.bits {
-            8 => Ok(()),
+            1 | 2 | 4 | 8 => Ok(()),
             _ => Err(ValidationError::new("invalid quantization bits")),
         }
     }
