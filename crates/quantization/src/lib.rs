@@ -256,7 +256,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                 },
                 r,
             ),
-            RaBitQ(x) => todo!(),
+            RaBitQ(x) => x.ivf_residual_rerank(vectors, opts, r),
         }
     }
 

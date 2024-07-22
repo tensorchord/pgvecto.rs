@@ -507,6 +507,8 @@ pub struct SearchOptions {
     pub ivf_sq_rerank_size: u32,
     #[validate(range(min = 0, max = 65535))]
     pub ivf_pq_rerank_size: u32,
+    #[validate(range(min = 0, max = 65535))]
+    pub ivf_rabit_rerank_size: u32,
     #[validate(range(min = 1, max = 65535))]
     pub ivf_nprobe: u32,
     #[validate(range(min = 1, max = 65535))]

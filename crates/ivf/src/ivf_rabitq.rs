@@ -8,7 +8,7 @@ use base::{
     vector::{VectorBorrowed, VectorKind},
 };
 use common::{json::Json, mmap_array::MmapArray, remap::RemappedCollection, vec2::Vec2};
-use k_means::{k_means, k_means_lookup};
+use k_means::{k_means, k_means_lookup, k_means_lookup_many};
 use quantization::Quantization;
 use stoppable_rayon as rayon;
 use storage::Storage;
@@ -56,7 +56,19 @@ impl<O: Op> IvfRaBitQ<O> {
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
-        unimplemented!()
+        unimplemented!();
+        let probe_centroids = select(
+            {
+                let mut vector = vector.to_vec();
+                O::elkan_k_means_normalize(&mut vector);
+                k_means_lookup_many(&vector, &self.centroids)
+            },
+            opts.ivf_nprobe as usize,
+        );
+        let vectors = probe_centroids
+            .iter()
+            .map(|&(_, i)| O::vector_sub(vector, &self.centroids[i]))
+            .collect::<Vec<_>>();
     }
 }
 

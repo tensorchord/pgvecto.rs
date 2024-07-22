@@ -1,7 +1,9 @@
 use std::ops::Div;
 
+use crate::reranker::window::WindowReranker;
+use crate::reranker::window_0::Window0Reranker;
+
 use self::operator::OperatorRaBitQ;
-use base::distance;
 use base::index::{RaBitQuantizationOptions, SearchOptions, VectorOptions};
 use base::operator::{Borrowed, Owned, Scalar};
 use base::scalar::{ScalarLike, F32};
@@ -10,7 +12,7 @@ use base::vector::{VectorBorrowed, VectorOwned};
 
 use nalgebra::debug::RandomOrthogonal;
 use nalgebra::{Dim, Dyn};
-use num_traits::{Float, One, Zero};
+use num_traits::{Float, One, ToPrimitive, Zero};
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
@@ -25,7 +27,7 @@ pub struct RaBitQuantizer<O: OperatorRaBitQ> {
     dim: u32,
     dim_pad_64: u32,
     projection: Vec<Vec<Scalar<O>>>,
-    binary_x: Vec<u64>,
+    binary_vec_x: Vec<Vec<u64>>,
     distance_to_centroid: Vec<Scalar<O>>,
     distance_to_centroid_square: Vec<Scalar<O>>,
     dot_product_x: Vec<Scalar<O>>,
@@ -67,7 +69,6 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
             binary_vec_x.push(O::vector_binarize_u64(&quantized_x[i]));
             signed_x.push(O::vector_binarize_one(&quantized_x[i]));
         }
-        let binary_x: Vec<u64> = binary_vec_x.into_iter().flatten().collect();
         let mut dot_product_x = vec![Scalar::<O>::zero(); n];
         for i in 0..(n) {
             let norm = O::vector_dot_product(&quantized_x[i], &quantized_x[i]).sqrt()
@@ -96,7 +97,7 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
             dim: vector_options.dims,
             dim_pad_64: dim_pad,
             projection,
-            binary_x,
+            binary_vec_x,
             distance_to_centroid_square,
             distance_to_centroid,
             dot_product_x,
@@ -147,10 +148,91 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
         &'a self,
         vectors: Vec<Owned<O>>,
         opts: &'a SearchOptions,
-        c: impl Fn(u32) -> &'a [u8] + 'a,
         r: impl Fn(u32) -> (F32, T) + 'a,
     ) -> Box<dyn Reranker<T, usize> + 'a> {
-        unimplemented!()
+        let n = vectors.len(); // number of selected centroids
+        let mut quantized_y = vec![vec![Scalar::<O>::zero(); self.dim_pad_64 as usize]; n];
+        let mut distance_to_centroid_square_y = vec![Scalar::<O>::zero(); n];
+        for i in 0..n {
+            let vector = vectors[i].as_borrowed().to_vec();
+            for j in 0..self.dim_pad_64 as usize {
+                quantized_y[i][j] = O::vector_dot_product(&self.projection[j], &vector);
+            }
+            distance_to_centroid_square_y[i] =
+                O::vector_dot_product(&quantized_y[i], &quantized_y[i]);
+        }
+
+        // calculate the lower bound and delta for each centroid
+        let mut value_lower_bound = vec![Scalar::<O>::infinity(); n];
+        let mut value_upper_bound = vec![Scalar::<O>::neg_infinity(); n];
+        let mut value_delta = vec![Scalar::<O>::zero(); n];
+        for i in 0..n {
+            for j in 0..self.dim_pad_64 as usize {
+                value_lower_bound[i] = Float::min(value_lower_bound[i], quantized_y[i][j]);
+                value_upper_bound[i] = Float::max(value_upper_bound[i], quantized_y[i][j]);
+            }
+            value_delta[i] = (value_upper_bound[i] - value_lower_bound[i])
+                / Scalar::<O>::from_f32(THETA_LOG_DIM as f32 - 1.0);
+        }
+
+        // scalar quantization
+        let mut quantized_y_scalar = vec![vec![0u8; self.dim_pad_64 as usize]; n];
+        let mut scalar_sum = vec![0u32; n];
+        for i in 0..n {
+            for j in 0..self.dim_pad_64 as usize {
+                quantized_y_scalar[i][j] = ((quantized_y[i][j] - value_lower_bound[i])
+                    * value_delta[i]
+                    + self.rand_bias[j])
+                    .to_u8()
+                    .expect("failed to convert a Scalar value to u8");
+                scalar_sum[i] += quantized_y_scalar[i][j] as u32;
+            }
+        }
+        // product quantization
+        let mut binary_vec_y: Vec<Vec<u64>> = Vec::with_capacity(n);
+        for i in 0..n {
+            binary_vec_y.push(O::query_vector_binarize_u64(&quantized_y_scalar[i]));
+        }
+
+        // `xi` is the index of x, `ci` is the index of the selected centroid
+        if opts.ivf_rabit_rerank_size == 0 {
+            Box::new(Window0Reranker::new(
+                move |xi, ci| {
+                    O::rabit_quantization_process(
+                        self.distance_to_centroid_square[xi as usize],
+                        distance_to_centroid_square_y[ci],
+                        self.factor_ppc[xi as usize],
+                        self.factor_ip[xi as usize],
+                        self.error_bound[xi as usize],
+                        value_lower_bound[ci],
+                        value_delta[ci],
+                        Scalar::<O>::from_f32(scalar_sum[ci] as f32),
+                        &self.binary_vec_x[xi as usize],
+                        &binary_vec_y[ci],
+                    )
+                },
+                r,
+            ))
+        } else {
+            Box::new(WindowReranker::new(
+                opts.ivf_rabit_rerank_size,
+                move |xi, ci| {
+                    O::rabit_quantization_process(
+                        self.distance_to_centroid_square[xi as usize],
+                        distance_to_centroid_square_y[ci],
+                        self.factor_ppc[xi as usize],
+                        self.factor_ip[xi as usize],
+                        self.error_bound[xi as usize],
+                        value_lower_bound[ci],
+                        value_delta[ci],
+                        Scalar::<O>::from_f32(scalar_sum[ci] as f32),
+                        &self.binary_vec_x[xi as usize],
+                        binary_vec_y[ci].as_slice(),
+                    )
+                },
+                r,
+            ))
+        }
     }
 
     pub fn graph_rerank<'a, T: 'a>(
@@ -170,11 +252,11 @@ fn gen_random_orthogonal<O: OperatorRaBitQ>(dim: usize) -> Vec<Vec<Scalar<O>>> {
         RandomOrthogonal::new(Dim::from_usize(dim), || rng.gen());
     let random_matrix = random_orth.unwrap();
     let mut projection = vec![Vec::with_capacity(dim); dim];
-    // use the transpose of the random matrix as the inverse of the projection matrix
-    // TODO: inverse or not?
-    for (i, vec) in random_matrix.column_iter().enumerate() {
+    // use the transpose of the random matrix as the inverse of the orthogonal matrix,
+    // but we need to transpose it again to make it efficient for the dot production
+    for (i, vec) in random_matrix.row_iter().enumerate() {
         for val in vec.iter() {
-            projection[i].push(ScalarLike::from_f32(*val));
+            projection[i].push(Scalar::<O>::from_f32(*val));
         }
     }
 

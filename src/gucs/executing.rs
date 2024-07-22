@@ -9,6 +9,8 @@ static IVF_SQ_RERANK_SIZE: GucSetting<i32> = GucSetting::<i32>::new(0);
 
 static IVF_PQ_RERANK_SIZE: GucSetting<i32> = GucSetting::<i32>::new(0);
 
+static IVF_RABIT_RERANK_SIZE: GucSetting<i32> = GucSetting::<i32>::new(0);
+
 static IVF_NPROBE: GucSetting<i32> = GucSetting::<i32>::new(10);
 
 static HNSW_EF_SEARCH: GucSetting<i32> = GucSetting::<i32>::new(100);
@@ -94,6 +96,7 @@ pub fn search_options() -> SearchOptions {
         flat_pq_rerank_size: FLAT_PQ_RERANK_SIZE.get() as u32,
         ivf_sq_rerank_size: IVF_SQ_RERANK_SIZE.get() as u32,
         ivf_pq_rerank_size: IVF_PQ_RERANK_SIZE.get() as u32,
+        ivf_rabit_rerank_size: IVF_RABIT_RERANK_SIZE.get() as u32,
         ivf_nprobe: IVF_NPROBE.get() as u32,
         hnsw_ef_search: HNSW_EF_SEARCH.get() as u32,
         diskann_ef_search: DISKANN_EF_SEARCH.get() as u32,
