@@ -47,12 +47,12 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                 k_means(256, subsamples)
             })
             .collect::<Vec<_>>();
-        let mut centroids = Vec2::new(dims, 256);
+        let mut centroids = Vec2::zeros((256, dims as usize));
         for i in 0..w {
             let subdims = std::cmp::min(ratio, dims - ratio * i);
             for j in 0u8..=255 {
-                centroids[j as usize][(i * ratio) as usize..][..subdims as usize]
-                    .copy_from_slice(&originals[i as usize][j as usize]);
+                centroids[(j as usize,)][(i * ratio) as usize..][..subdims as usize]
+                    .copy_from_slice(&originals[i as usize][(j as usize,)]);
             }
         }
         Self {
@@ -88,7 +88,13 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
     }
 
     pub fn preprocess(&self, lhs: Borrowed<'_, O>) -> O::ProductQuantizationPreprocessed {
-        O::product_quantization_preprocess(self.dims, self.ratio, self.bits, &self.centroids, lhs)
+        O::product_quantization_preprocess(
+            self.dims,
+            self.ratio,
+            self.bits,
+            self.centroids.as_slice(),
+            lhs,
+        )
     }
 
     pub fn process(&self, preprocessed: &O::ProductQuantizationPreprocessed, rhs: &[u8]) -> F32 {
@@ -106,7 +112,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
             self.dims,
             self.ratio,
             self.bits,
-            &self.centroids,
+            self.centroids.as_slice(),
             vector,
         );
         if opts.flat_pq_rerank_size == 0 {
@@ -138,7 +144,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
             self.dims,
             self.ratio,
             self.bits,
-            &self.centroids,
+            self.centroids.as_slice(),
             vector,
         );
         if opts.ivf_pq_rerank_size == 0 {
@@ -173,7 +179,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                     self.dims,
                     self.ratio,
                     self.bits,
-                    &self.centroids,
+                    self.centroids.as_slice(),
                     vector.as_borrowed(),
                 )
             })
@@ -207,7 +213,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
             self.dims,
             self.ratio,
             self.bits,
-            &self.centroids,
+            self.centroids.as_slice(),
             vector,
         );
         Box::new(Window0Reranker::new(

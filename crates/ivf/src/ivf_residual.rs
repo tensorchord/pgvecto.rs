@@ -61,7 +61,7 @@ impl<O: Op> IvfResidual<O> {
         );
         let vectors = lists
             .iter()
-            .map(|&(_, i)| O::vector_sub(vector, &self.centroids[i]))
+            .map(|&(_, i)| O::vector_sub(vector, &self.centroids[(i,)]))
             .collect::<Vec<_>>();
         let mut reranker = self
             .quantization
@@ -104,8 +104,8 @@ fn from_nothing<O: Op>(
     rayon::check();
     let centroids = {
         let mut samples = samples;
-        for i in 0..samples.len() {
-            O::elkan_k_means_normalize(&mut samples[i]);
+        for i in 0..samples.shape_0() {
+            O::elkan_k_means_normalize(&mut samples[(i,)]);
         }
         k_means(nlist as usize, samples)
     };
@@ -141,7 +141,7 @@ fn from_nothing<O: Op>(
                 O::elkan_k_means_normalize(&mut vector);
                 k_means_lookup(&vector, &centroids)
             };
-            O::vector_sub(vector, &centroids[target])
+            O::vector_sub(vector, &centroids[(target,)])
         },
     );
     let payloads = MmapArray::create(
