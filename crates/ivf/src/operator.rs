@@ -153,32 +153,3 @@ impl OperatorIvf for Vecf16L2 {
         lhs.operator_minus(Vecf16Borrowed::new(rhs))
     }
 }
-
-impl OperatorIvf for Veci8Dot {
-    fn vector_sub(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
-        unimplemented!()
-    }
-}
-
-impl OperatorIvf for Veci8Cos {
-    fn elkan_k_means_normalize(vector: &mut [Scalar<Self>]) {
-        let n = vector.len();
-        let mut dot = F32::zero();
-        for i in 0..n {
-            dot += vector[i].to_f() * vector[i].to_f();
-        }
-        let l = dot.sqrt();
-        for i in 0..n {
-            vector[i] /= Scalar::<Self>::from_f(l);
-        }
-    }
-    fn vector_sub(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
-        unimplemented!()
-    }
-}
-
-impl OperatorIvf for Veci8L2 {
-    fn vector_sub(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
-        unimplemented!()
-    }
-}
