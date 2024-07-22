@@ -48,7 +48,7 @@ impl<O: OperatorIvf> Ivf<O> {
     pub fn open(path: impl AsRef<Path>) -> Self {
         match variants(path.as_ref(), ["ivf_naive", "ivf_residual"]) {
             "ivf_naive" => Self::Naive(IvfNaive::open(path.as_ref().join("ivf_naive"))),
-            "ivf_residual" => Self::Naive(IvfNaive::open(path.as_ref().join("ivf_residual"))),
+            "ivf_residual" => Self::Residual(IvfResidual::open(path.as_ref().join("ivf_residual"))),
             _ => unreachable!(),
         }
     }

@@ -61,7 +61,7 @@ impl<O: Operator> OperatorRaBitQ for O {
         let mut quantized_y_scalar = vec![0u8; dim];
         let mut scalar_sum = 0u32;
         for i in 0..dim {
-            quantized_y_scalar[i] = ((quantized_y[i] - lower_bound) * delta + rand_bias[i])
+            quantized_y_scalar[i] = ((quantized_y[i] - lower_bound) / delta + rand_bias[i])
                 .to_u8()
                 .expect("failed to convert a Scalar value to u8");
             scalar_sum += quantized_y_scalar[i] as u32;
