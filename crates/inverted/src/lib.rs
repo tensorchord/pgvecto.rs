@@ -13,12 +13,11 @@ use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use storage::Storage;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BinaryHeap};
 use std::fs::create_dir;
 use std::path::Path;
 
 const ZERO: F32 = F32(0.0);
-const NEGATIVE_ONE: F32 = F32(-1.0);
 
 #[allow(dead_code)]
 pub struct Inverted<O: OperatorInverted> {
@@ -52,18 +51,23 @@ impl<O: OperatorInverted> Inverted<O> {
                 doc_score[self.indexes[i] as usize] += self.scores[i];
             }
         }
-        let mut candidates: Vec<Element> = doc_score
+        let mut candidates: BinaryHeap<(F32, Payload)> = doc_score
             .iter()
             .enumerate()
             .filter(|&(_, score)| *score > ZERO)
-            .map(|(i, score)| Element {
-                distance: *score * NEGATIVE_ONE, // use negative score to match the negative dot product distance
-                payload: self.payloads[i],
-            })
-            .collect();
-        candidates.sort_by(|a, b| a.distance.cmp(&b.distance));
+            .map(|(i, score)| (*score, self.payload(i as u32)))
+            .collect::<Vec<_>>()
+            .into();
 
-        (Vec::new(), Box::new(candidates.into_iter()))
+        (
+            Vec::new(),
+            Box::new(std::iter::from_fn(move || {
+                candidates.pop().map(|(score, payload)| Element {
+                    distance: -score,
+                    payload,
+                })
+            })),
+        )
     }
 
     pub fn len(&self) -> u32 {
