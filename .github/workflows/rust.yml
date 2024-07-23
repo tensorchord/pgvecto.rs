@@ -84,6 +84,7 @@ jobs:
           wget --quiet -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
           sudo apt-get update
           sudo apt-get install -y clang-16
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-16 128
       - name: Set up Pgrx
         run: |
           # pg_config
@@ -149,6 +150,7 @@ jobs:
           wget --quiet -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
           sudo apt-get update
           sudo apt-get install -y clang-16
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-16 128
       - name: Set up Pgrx
         run: |
           # pg_config

@@ -1,3 +1,4 @@
+pub mod always_equal;
 pub mod clean;
 pub mod dir_ops;
 pub mod file_atomic;
@@ -8,4 +9,3 @@ pub mod remap;
 pub mod sample;
 pub mod variants;
 pub mod vec2;
-pub mod vec3;

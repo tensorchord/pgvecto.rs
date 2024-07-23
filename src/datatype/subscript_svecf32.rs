@@ -1,5 +1,8 @@
+use std::ops::Bound;
+
 use crate::datatype::memory_svecf32::{SVecf32Input, SVecf32Output};
-use base::vector::SVecf32Borrowed;
+use base::vector::VectorBorrowed;
+use base::vector::VectorOwned;
 use pgrx::datum::FromDatum;
 use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
@@ -85,7 +88,7 @@ fn _vectors_svecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Intern
     ) {
         #[derive(Default)]
         struct Workspace {
-            range: Option<(Option<usize>, Option<usize>)>,
+            range: Option<(Bound<u32>, Bound<u32>)>,
         }
         #[pgrx::pg_guard]
         unsafe extern "C" fn sbs_check_subscripts(
@@ -97,13 +100,13 @@ fn _vectors_svecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Intern
                 let state = &mut *(*op).d.sbsref.state;
                 let workspace = &mut *(state.workspace as *mut Workspace);
                 workspace.range = None;
-                let mut end = None;
-                let mut start = None;
+                let mut end = Bound::Unbounded;
+                let mut start = Bound::Unbounded;
                 if state.upperprovided.read() {
                     if !state.upperindexnull.read() {
                         let upper = state.upperindex.read().value() as i32;
                         if upper >= 0 {
-                            end = Some(upper as usize);
+                            end = Bound::Excluded(upper as u32);
                         } else {
                             (*op).resnull.write(true);
                             return false;
@@ -117,7 +120,7 @@ fn _vectors_svecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Intern
                     if !state.lowerindexnull.read() {
                         let lower = state.lowerindex.read().value() as i32;
                         if lower >= 0 {
-                            start = Some(lower as usize);
+                            start = Bound::Included(lower as u32);
                         } else {
                             (*op).resnull.write(true);
                             return false;
@@ -142,41 +145,16 @@ fn _vectors_svecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Intern
                 let workspace = &mut *(state.workspace as *mut Workspace);
                 let input =
                     SVecf32Input::from_datum((*op).resvalue.read(), (*op).resnull.read()).unwrap();
-                let dims = input.dims() as u32;
-                let Some((start, end)) = workspace.range else {
+                let v = workspace
+                    .range
+                    .and_then(|i| input.as_borrowed().subvector(i));
+                if let Some(v) = v {
+                    let output = SVecf32Output::new(v.as_borrowed());
+                    (*op).resnull.write(false);
+                    (*op).resvalue.write(Datum::from(output.into_raw()));
+                } else {
                     (*op).resnull.write(true);
-                    return;
-                };
-                let start: u32 = match start.unwrap_or(0).try_into() {
-                    Ok(x) => x,
-                    Err(_) => {
-                        (*op).resnull.write(true);
-                        return;
-                    }
-                };
-                let end: u32 = match end.unwrap_or(dims as usize).try_into() {
-                    Ok(x) => x,
-                    Err(_) => {
-                        (*op).resnull.write(true);
-                        return;
-                    }
-                };
-                if start >= end || end > dims {
-                    (*op).resnull.write(true);
-                    return;
                 }
-                let svecf32 = input.for_borrow();
-                let start_index = svecf32.indexes().partition_point(|&x| x < start);
-                let end_index = svecf32.indexes().partition_point(|&x| x < end);
-                let mut indexes = svecf32.indexes()[start_index..end_index].to_vec();
-                indexes.iter_mut().for_each(|x| *x -= start);
-                let output = SVecf32Output::new(SVecf32Borrowed::new(
-                    end - start,
-                    &indexes,
-                    &svecf32.values()[start_index..end_index],
-                ));
-                (*op).resnull.write(false);
-                (*op).resvalue.write(Datum::from(output.into_raw()));
             }
         }
         unsafe {

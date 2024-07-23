@@ -91,7 +91,7 @@ impl<O: Op> Source<O> for IndexSource<O> {
     }
 
     fn check_existing(&self, i: u32) -> bool {
-        self.delete.check(self.payload(i)).is_some()
+        self.delete.check(self.payload(i))
     }
 }
 

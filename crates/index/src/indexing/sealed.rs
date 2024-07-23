@@ -6,8 +6,6 @@ use flat::Flat;
 use hnsw::Hnsw;
 use inverted::Inverted;
 use ivf::Ivf;
-use std::cmp::Reverse;
-use std::collections::BinaryHeap;
 use std::path::Path;
 
 pub enum SealedIndexing<O: Op> {
@@ -40,24 +38,11 @@ impl<O: Op> SealedIndexing<O> {
         }
     }
 
-    pub fn basic(
-        &self,
-        vector: Borrowed<'_, O>,
-        opts: &SearchOptions,
-    ) -> BinaryHeap<Reverse<Element>> {
-        match self {
-            SealedIndexing::Flat(x) => x.basic(vector, opts),
-            SealedIndexing::Ivf(x) => x.basic(vector, opts),
-            SealedIndexing::Hnsw(x) => x.basic(vector, opts),
-            SealedIndexing::Inverted(x) => x.basic(vector, opts),
-        }
-    }
-
     pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
+    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
         match self {
             SealedIndexing::Flat(x) => x.vbase(vector, opts),
             SealedIndexing::Ivf(x) => x.vbase(vector, opts),

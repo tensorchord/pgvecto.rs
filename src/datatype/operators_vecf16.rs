@@ -3,93 +3,92 @@ use crate::error::*;
 use base::operator::*;
 use base::scalar::*;
 use base::vector::*;
-use num_traits::Zero;
 use std::num::NonZero;
 use std::ops::Deref;
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_add(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> Vecf16Output {
-    let n = check_matched_dims(lhs.dims(), rhs.dims());
-    let mut v = vec![F16::zero(); n];
-    for i in 0..n {
-        v[i] = lhs[i] + rhs[i];
-    }
-    Vecf16Output::new(Vecf16Borrowed::new(&v))
+    check_matched_dims(lhs.dims(), rhs.dims());
+    Vecf16Output::new(
+        lhs.as_borrowed()
+            .operator_add(rhs.as_borrowed())
+            .as_borrowed(),
+    )
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_minus(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> Vecf16Output {
-    let n = check_matched_dims(lhs.dims(), rhs.dims());
-    let mut v = vec![F16::zero(); n];
-    for i in 0..n {
-        v[i] = lhs[i] - rhs[i];
-    }
-    Vecf16Output::new(Vecf16Borrowed::new(&v))
+    check_matched_dims(lhs.dims(), rhs.dims());
+    Vecf16Output::new(
+        lhs.as_borrowed()
+            .operator_minus(rhs.as_borrowed())
+            .as_borrowed(),
+    )
 }
 
 /// Calculate the element-wise multiplication of two f16 vectors.
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_mul(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> Vecf16Output {
-    let n = check_matched_dims(lhs.dims(), rhs.dims());
-    let mut v = vec![F16::zero(); n];
-    for i in 0..n {
-        v[i] = lhs[i] * rhs[i];
-    }
-    Vecf16Output::new(Vecf16Borrowed::new(&v))
+    check_matched_dims(lhs.dims(), rhs.dims());
+    Vecf16Output::new(
+        lhs.as_borrowed()
+            .operator_mul(rhs.as_borrowed())
+            .as_borrowed(),
+    )
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_lt(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     check_matched_dims(lhs.dims(), rhs.dims());
-    lhs.deref().slice() < rhs.deref().slice()
+    lhs.deref().as_borrowed() < rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_lte(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     check_matched_dims(lhs.dims(), rhs.dims());
-    lhs.deref().slice() <= rhs.deref().slice()
+    lhs.deref().as_borrowed() <= rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_gt(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     check_matched_dims(lhs.dims(), rhs.dims());
-    lhs.deref().slice() > rhs.deref().slice()
+    lhs.deref().as_borrowed() > rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_gte(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     check_matched_dims(lhs.dims(), rhs.dims());
-    lhs.deref().slice() >= rhs.deref().slice()
+    lhs.deref().as_borrowed() >= rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_eq(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     check_matched_dims(lhs.dims(), rhs.dims());
-    lhs.deref().slice() == rhs.deref().slice()
+    lhs.deref().as_borrowed() == rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_neq(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> bool {
     check_matched_dims(lhs.dims(), rhs.dims());
-    lhs.deref().slice() != rhs.deref().slice()
+    lhs.deref().as_borrowed() != rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_cosine(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> f32 {
     check_matched_dims(lhs.dims(), rhs.dims());
-    Vecf16Cos::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
+    Vecf16Cos::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_dot(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> f32 {
     check_matched_dims(lhs.dims(), rhs.dims());
-    Vecf16Dot::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
+    Vecf16Dot::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_l2(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> f32 {
     check_matched_dims(lhs.dims(), rhs.dims());
-    Vecf16L2::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
+    Vecf16L2::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -108,7 +107,7 @@ fn _vectors_vecf16_sphere_l2_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    Vecf16L2::distance(lhs.for_borrow(), center.for_borrow()) < F32(radius)
+    Vecf16L2::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -127,7 +126,7 @@ fn _vectors_vecf16_sphere_dot_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    Vecf16Dot::distance(lhs.for_borrow(), center.for_borrow()) < F32(radius)
+    Vecf16Dot::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -146,5 +145,5 @@ fn _vectors_vecf16_sphere_cos_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    Vecf16Cos::distance(lhs.for_borrow(), center.for_borrow()) < F32(radius)
+    Vecf16Cos::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
 }

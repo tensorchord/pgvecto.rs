@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+fastdivide = "0.4.1"
+
 num-traits.workspace = true
 rand.workspace = true
 serde.workspace = true
@@ -12,7 +14,8 @@ serde_json.workspace = true
 base = { path = "../base" }
 common = { path = "../common" }
 detect = { path = "../detect" }
-elkan_k_means = { path = "../elkan_k_means" }
+k_means = { path = "../k_means" }
+stoppable_rayon = { path = "../stoppable_rayon" }
 
 [lints]
 workspace = true

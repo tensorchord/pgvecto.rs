@@ -1,426 +1,215 @@
+use crate::operator::OperatorQuantizationProcess;
 use base::operator::*;
 use base::scalar::*;
-use base::vector::*;
-use elkan_k_means::operator::OperatorElkanKMeans;
-use num_traits::{Float, Zero};
 
-pub trait OperatorProductQuantization: Operator {
-    type PQL2: Operator<VectorOwned = Self::VectorOwned>
-        + OperatorElkanKMeans
-        + OperatorProductQuantization;
-    fn product_quantization_distance(
+pub trait OperatorProductQuantization: OperatorQuantizationProcess {
+    fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
+        bits: u32,
         centroids: &[Scalar<Self>],
         lhs: Borrowed<'_, Self>,
-        rhs: &[u8],
-    ) -> F32;
-    fn product_quantization_distance_with_delta(
-        dims: u32,
-        ratio: u32,
-        centroids: &[Scalar<Self>],
-        lhs: Borrowed<'_, Self>,
-        rhs: &[u8],
-        delta: &[Scalar<Self>],
-    ) -> F32;
-    fn dense_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32;
+    ) -> Self::QuantizationPreprocessed;
 }
 
 impl OperatorProductQuantization for Vecf32Cos {
-    type PQL2 = Vecf32L2;
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn product_quantization_distance(
+    fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
-        centroids: &[F32],
-        lhs: Vecf32Borrowed<'_>,
-        rhs: &[u8],
-    ) -> F32 {
-        let lhs = lhs.slice();
-        let ratio = ratio as usize;
-        let width = (dims as usize).div_ceil(ratio);
-        let mut xy = F32::zero();
-        let mut x2 = F32::zero();
-        let mut y2 = F32::zero();
-        for i in 0..width {
-            let k = std::cmp::min(ratio, dims as usize - i * ratio);
-            let lhs = &lhs[i * ratio..][..k];
-            let off = rhs[i] as usize * dims as usize;
-            let rhs = &centroids[off + i * ratio..][..k];
-            for j in 0..k {
-                xy += lhs[j] * rhs[j];
-                x2 += lhs[j] * lhs[j];
-                y2 += rhs[j] * rhs[j];
-            }
+        bits: u32,
+        centroids: &[Scalar<Self>],
+        lhs: Borrowed<'_, Self>,
+    ) -> Self::QuantizationPreprocessed {
+        let mut xy = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
+        let mut x2 = F32(0.0);
+        let mut y2 = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
+        for p in 0..dims.div_ceil(ratio) {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            xy.extend((0_usize..1 << bits).map(|k| {
+                let mut xy = F32(0.0);
+                for i in ratio * p..ratio * p + subdims {
+                    let x = lhs.slice()[i as usize];
+                    let y = centroids[(k as u32 * dims + i) as usize];
+                    xy += x * y;
+                }
+                xy
+            }));
+            x2 += {
+                let mut x2 = F32(0.0);
+                for i in ratio * p..ratio * p + subdims {
+                    let x = lhs.slice()[i as usize];
+                    x2 += x * x;
+                }
+                x2
+            };
+            y2.extend((0_usize..1 << bits).map(|k| {
+                let mut y2 = F32(0.0);
+                for i in ratio * p..ratio * p + subdims {
+                    let y = centroids[(k as u32 * dims + i) as usize];
+                    y2 += y * y;
+                }
+                y2
+            }));
         }
-        F32(1.0) - xy / (x2 * y2).sqrt()
-    }
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn product_quantization_distance_with_delta(
-        dims: u32,
-        ratio: u32,
-        centroids: &[F32],
-        lhs: Vecf32Borrowed<'_>,
-        rhs: &[u8],
-        delta: &[F32],
-    ) -> F32 {
-        let lhs = lhs.slice();
-        let ratio = ratio as usize;
-        let width = (dims as usize).div_ceil(ratio);
-        let mut xy = F32::zero();
-        let mut x2 = F32::zero();
-        let mut y2 = F32::zero();
-        for i in 0..width {
-            let k = std::cmp::min(ratio, dims as usize - i * ratio);
-            let lhs = &lhs[i * ratio..][..k];
-            let off = rhs[i] as usize * dims as usize;
-            let rhs = &centroids[off + i * ratio..][..k];
-            let del = &delta[i * ratio..][..k];
-            for j in 0..k {
-                xy += lhs[j] * (rhs[j] + del[j]);
-                x2 += lhs[j] * lhs[j];
-                y2 += (rhs[j] + del[j]) * (rhs[j] + del[j]);
-            }
-        }
-        F32(1.0) - xy / (x2 * y2).sqrt()
-    }
-
-    fn dense_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        vecf32::sl2(lhs, rhs)
+        (xy, x2, y2)
     }
 }
 
 impl OperatorProductQuantization for Vecf32Dot {
-    type PQL2 = Vecf32L2;
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn product_quantization_distance(
+    fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
-        centroids: &[F32],
-        lhs: Vecf32Borrowed<'_>,
-        rhs: &[u8],
-    ) -> F32 {
-        let lhs = lhs.slice();
-        let ratio = ratio as usize;
-        let width = (dims as usize).div_ceil(ratio);
-        let mut xy = F32::zero();
-        for i in 0..width {
-            let k = std::cmp::min(ratio, dims as usize - i * ratio);
-            let lhs = &lhs[i * ratio..][..k];
-            let off = rhs[i] as usize * dims as usize;
-            let rhs = &centroids[off + i * ratio..][..k];
-            for j in 0..k {
-                xy += lhs[j] * rhs[j];
-            }
+        bits: u32,
+        centroids: &[Scalar<Self>],
+        lhs: Borrowed<'_, Self>,
+    ) -> Self::QuantizationPreprocessed {
+        let mut xy = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
+        for p in 0..dims.div_ceil(ratio) {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            xy.extend((0_usize..1 << bits).map(|k| {
+                let mut xy = F32(0.0);
+                for i in ratio * p..ratio * p + subdims {
+                    let x = lhs.slice()[i as usize];
+                    let y = centroids[(k as u32 * dims + i) as usize];
+                    xy += x * y;
+                }
+                xy
+            }));
         }
-        xy * (-1.0)
-    }
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn product_quantization_distance_with_delta(
-        dims: u32,
-        ratio: u32,
-        centroids: &[F32],
-        lhs: Vecf32Borrowed<'_>,
-        rhs: &[u8],
-        delta: &[F32],
-    ) -> F32 {
-        let lhs = lhs.slice();
-        let ratio = ratio as usize;
-        let width = (dims as usize).div_ceil(ratio);
-        let mut xy = F32::zero();
-        for i in 0..width {
-            let k = std::cmp::min(ratio, dims as usize - i * ratio);
-            let lhs = &lhs[i * ratio..][..k];
-            let off = rhs[i] as usize * dims as usize;
-            let rhs = &centroids[off + i * ratio..][..k];
-            let del = &delta[i * ratio..][..k];
-            for j in 0..k {
-                xy += lhs[j] * (rhs[j] + del[j]);
-            }
-        }
-        xy * (-1.0)
-    }
-
-    fn dense_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        vecf32::sl2(lhs, rhs)
+        xy
     }
 }
 
 impl OperatorProductQuantization for Vecf32L2 {
-    type PQL2 = Vecf32L2;
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn product_quantization_distance(
+    fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
-        centroids: &[F32],
-        lhs: Vecf32Borrowed<'_>,
-        rhs: &[u8],
-    ) -> F32 {
-        let lhs = lhs.slice();
-        let ratio = ratio as usize;
-        let width = (dims as usize).div_ceil(ratio);
-        let mut result = F32::zero();
-        for i in 0..width {
-            let k = std::cmp::min(ratio, dims as usize - i * ratio);
-            let lhs = &lhs[i * ratio..][..k];
-            let off = rhs[i] as usize * dims as usize;
-            let rhs = &centroids[off + i * ratio..][..k];
-            for j in 0..k {
-                let d = lhs[j] - rhs[j];
-                result += d * d;
-            }
+        bits: u32,
+        centroids: &[Scalar<Self>],
+        lhs: Borrowed<'_, Self>,
+    ) -> Self::QuantizationPreprocessed {
+        let mut d2 = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
+        for p in 0..dims.div_ceil(ratio) {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            d2.extend((0_usize..1 << bits).map(|k| {
+                let mut d2 = F32(0.0);
+                for i in ratio * p..ratio * p + subdims {
+                    let x = lhs.slice()[i as usize];
+                    let y = centroids[(k as u32 * dims + i) as usize];
+                    let d = x - y;
+                    d2 += d * d;
+                }
+                d2
+            }));
         }
-        result
-    }
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn product_quantization_distance_with_delta(
-        dims: u32,
-        ratio: u32,
-        centroids: &[F32],
-        lhs: Vecf32Borrowed<'_>,
-        rhs: &[u8],
-        delta: &[F32],
-    ) -> F32 {
-        let lhs = lhs.slice();
-        let ratio = ratio as usize;
-        let width = (dims as usize).div_ceil(ratio);
-        let mut result = F32::zero();
-        for i in 0..width {
-            let k = std::cmp::min(ratio, dims as usize - i * ratio);
-            let lhs = &lhs[i * ratio..][..k];
-            let off = rhs[i] as usize * dims as usize;
-            let rhs = &centroids[off + i * ratio..][..k];
-            let del = &delta[i * ratio..][..k];
-            for j in 0..k {
-                let d = lhs[j] - (rhs[j] + del[j]);
-                result += d * d;
-            }
-        }
-        result
-    }
-
-    fn dense_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        vecf32::sl2(lhs, rhs)
+        d2
     }
 }
 
 impl OperatorProductQuantization for Vecf16Cos {
-    type PQL2 = Vecf16L2;
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn product_quantization_distance(
+    fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
-        centroids: &[F16],
-        lhs: Vecf16Borrowed<'_>,
-        rhs: &[u8],
-    ) -> F32 {
-        let lhs = lhs.slice();
-        let ratio = ratio as usize;
-        let width = (dims as usize).div_ceil(ratio);
-        let mut xy = F32::zero();
-        let mut x2 = F32::zero();
-        let mut y2 = F32::zero();
-        for i in 0..width {
-            let k = std::cmp::min(ratio, dims as usize - i * ratio);
-            let lhs = &lhs[i * ratio..][..k];
-            let off = rhs[i] as usize * dims as usize;
-            let rhs = &centroids[off + i * ratio..][..k];
-            for j in 0..k {
-                xy += lhs[j].to_f() * rhs[j].to_f();
-                x2 += lhs[j].to_f() * lhs[j].to_f();
-                y2 += rhs[j].to_f() * rhs[j].to_f();
-            }
+        bits: u32,
+        centroids: &[Scalar<Self>],
+        lhs: Borrowed<'_, Self>,
+    ) -> Self::QuantizationPreprocessed {
+        let mut xy = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
+        let mut x2 = F32(0.0);
+        let mut y2 = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
+        for p in 0..dims.div_ceil(ratio) {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            xy.extend((0_usize..1 << bits).map(|k| {
+                let mut xy = F32(0.0);
+                for i in ratio * p..ratio * p + subdims {
+                    let x = lhs.slice()[i as usize].to_f();
+                    let y = centroids[(k as u32 * dims + i) as usize].to_f();
+                    xy += x * y;
+                }
+                xy
+            }));
+            x2 += {
+                let mut x2 = F32(0.0);
+                for i in ratio * p..ratio * p + subdims {
+                    let x = lhs.slice()[i as usize].to_f();
+                    x2 += x * x;
+                }
+                x2
+            };
+            y2.extend((0_usize..1 << bits).map(|k| {
+                let mut y2 = F32(0.0);
+                for i in ratio * p..ratio * p + subdims {
+                    let y = centroids[(k as u32 * dims + i) as usize].to_f();
+                    y2 += y * y;
+                }
+                y2
+            }));
         }
-        F32(1.0) - xy / (x2 * y2).sqrt()
-    }
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn product_quantization_distance_with_delta(
-        dims: u32,
-        ratio: u32,
-        centroids: &[F16],
-        lhs: Vecf16Borrowed<'_>,
-        rhs: &[u8],
-        delta: &[F16],
-    ) -> F32 {
-        let lhs = lhs.slice();
-        let ratio = ratio as usize;
-        let width = (dims as usize).div_ceil(ratio);
-        let mut xy = F32::zero();
-        let mut x2 = F32::zero();
-        let mut y2 = F32::zero();
-        for i in 0..width {
-            let k = std::cmp::min(ratio, dims as usize - i * ratio);
-            let lhs = &lhs[i * ratio..][..k];
-            let off = rhs[i] as usize * dims as usize;
-            let rhs = &centroids[off + i * ratio..][..k];
-            let del = &delta[i * ratio..][..k];
-            for j in 0..k {
-                xy += lhs[j].to_f() * (rhs[j].to_f() + del[j].to_f());
-                x2 += lhs[j].to_f() * lhs[j].to_f();
-                y2 += (rhs[j].to_f() + del[j].to_f()) * (rhs[j].to_f() + del[j].to_f());
-            }
-        }
-        F32(1.0) - xy / (x2 * y2).sqrt()
-    }
-
-    fn dense_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        vecf16::sl2(lhs, rhs)
+        (xy, x2, y2)
     }
 }
 
 impl OperatorProductQuantization for Vecf16Dot {
-    type PQL2 = Vecf16L2;
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn product_quantization_distance(
+    fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
-        centroids: &[F16],
-        lhs: Vecf16Borrowed<'_>,
-        rhs: &[u8],
-    ) -> F32 {
-        let lhs = lhs.slice();
-        let ratio = ratio as usize;
-        let width = (dims as usize).div_ceil(ratio);
-        let mut xy = F32::zero();
-        for i in 0..width {
-            let k = std::cmp::min(ratio, dims as usize - i * ratio);
-            let lhs = &lhs[i * ratio..][..k];
-            let off = rhs[i] as usize * dims as usize;
-            let rhs = &centroids[off + i * ratio..][..k];
-            for j in 0..k {
-                xy += lhs[j].to_f() * rhs[j].to_f();
-            }
+        bits: u32,
+        centroids: &[Scalar<Self>],
+        lhs: Borrowed<'_, Self>,
+    ) -> Self::QuantizationPreprocessed {
+        let mut xy = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
+        for p in 0..dims.div_ceil(ratio) {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            xy.extend((0_usize..1 << bits).map(|k| {
+                let mut xy = F32(0.0);
+                for i in ratio * p..ratio * p + subdims {
+                    let x = lhs.slice()[i as usize].to_f();
+                    let y = centroids[(k as u32 * dims + i) as usize].to_f();
+                    xy += x * y;
+                }
+                xy
+            }));
         }
-        xy * (-1.0)
-    }
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn product_quantization_distance_with_delta(
-        dims: u32,
-        ratio: u32,
-        centroids: &[F16],
-        lhs: Vecf16Borrowed<'_>,
-        rhs: &[u8],
-        delta: &[F16],
-    ) -> F32 {
-        let lhs = lhs.slice();
-        let ratio = ratio as usize;
-        let width = (dims as usize).div_ceil(ratio);
-        let mut xy = F32::zero();
-        for i in 0..width {
-            let k = std::cmp::min(ratio, dims as usize - i * ratio);
-            let lhs = &lhs[i * ratio..][..k];
-            let off = rhs[i] as usize * dims as usize;
-            let rhs = &centroids[off + i * ratio..][..k];
-            let del = &delta[i * ratio..][..k];
-            for j in 0..k {
-                xy += lhs[j].to_f() * (rhs[j].to_f() + del[j].to_f());
-            }
-        }
-        xy * (-1.0)
-    }
-
-    fn dense_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        vecf16::sl2(lhs, rhs)
+        xy
     }
 }
 
 impl OperatorProductQuantization for Vecf16L2 {
-    type PQL2 = Vecf16L2;
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn product_quantization_distance(
+    fn product_quantization_preprocess(
         dims: u32,
         ratio: u32,
-        centroids: &[F16],
-        lhs: Vecf16Borrowed<'_>,
-        rhs: &[u8],
-    ) -> F32 {
-        let lhs = lhs.slice();
-        let ratio = ratio as usize;
-        let width = (dims as usize).div_ceil(ratio);
-        let mut result = F32::zero();
-        for i in 0..width {
-            let k = std::cmp::min(ratio, dims as usize - i * ratio);
-            let lhs = &lhs[i * ratio..][..k];
-            let off = rhs[i] as usize * dims as usize;
-            let rhs = &centroids[off + i * ratio..][..k];
-            for j in 0..k {
-                let d = lhs[j].to_f() - rhs[j].to_f();
-                result += d * d;
-            }
+        bits: u32,
+        centroids: &[Scalar<Self>],
+        lhs: Borrowed<'_, Self>,
+    ) -> Self::QuantizationPreprocessed {
+        let mut d2 = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
+        for p in 0..dims.div_ceil(ratio) {
+            let subdims = std::cmp::min(ratio, dims - ratio * p);
+            d2.extend((0_usize..1 << bits).map(|k| {
+                let mut d2 = F32(0.0);
+                for i in ratio * p..ratio * p + subdims {
+                    let x = lhs.slice()[i as usize].to_f();
+                    let y = centroids[(k as u32 * dims + i) as usize].to_f();
+                    let d = x - y;
+                    d2 += d * d;
+                }
+                d2
+            }));
         }
-        result
-    }
-
-    #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn product_quantization_distance_with_delta(
-        dims: u32,
-        ratio: u32,
-        centroids: &[F16],
-        lhs: Vecf16Borrowed<'_>,
-        rhs: &[u8],
-        delta: &[F16],
-    ) -> F32 {
-        let lhs = lhs.slice();
-        let ratio = ratio as usize;
-        let width = (dims as usize).div_ceil(ratio);
-        let mut result = F32::zero();
-        for i in 0..width {
-            let k = std::cmp::min(ratio, dims as usize - i * ratio);
-            let lhs = &lhs[i * ratio..][..k];
-            let off = rhs[i] as usize * dims as usize;
-            let rhs = &centroids[off + i * ratio..][..k];
-            let del = &delta[i * ratio..][..k];
-            for j in 0..k {
-                let d = lhs[j].to_f() - (rhs[j].to_f() + del[j].to_f());
-                result += d * d;
-            }
-        }
-        result
-    }
-
-    fn dense_l2_distance(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> F32 {
-        vecf16::sl2(lhs, rhs)
+        d2
     }
 }
 
 macro_rules! unimpl_operator_product_quantization {
     ($t:ty, $l:ty) => {
         impl OperatorProductQuantization for $t {
-            fn product_quantization_distance(
+            fn product_quantization_preprocess(
                 _: u32,
-                _: u32,
-                _: &[Scalar<Self>],
-                _: Borrowed<'_, Self>,
-                _: &[u8],
-            ) -> F32 {
-                unimplemented!()
-            }
-
-            fn product_quantization_distance_with_delta(
                 _: u32,
                 _: u32,
                 _: &[Scalar<Self>],
                 _: Borrowed<'_, Self>,
-                _: &[u8],
-                _: &[Scalar<Self>],
-            ) -> F32 {
-                unimplemented!()
-            }
-
-            type PQL2 = $l;
-
-            fn dense_l2_distance(_: &[Scalar<Self>], _: &[Scalar<Self>]) -> F32 {
+            ) -> Self::QuantizationPreprocessed {
                 unimplemented!()
             }
         }

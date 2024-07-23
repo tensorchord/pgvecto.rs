@@ -1,9 +1,7 @@
 use crate::optimizing::index_source::IndexSource;
 use crate::Index;
 use crate::Op;
-use crate::SealedSegment;
 use std::sync::Arc;
-use uuid::Uuid;
 
 pub fn scan<O: Op>(
     index: Arc<Index<O>>,
@@ -89,35 +87,9 @@ pub fn scan<O: Op>(
 }
 
 pub fn make<O: Op>(index: Arc<Index<O>>, source: IndexSource<O>) {
-    let next = {
-        let id = Uuid::new_v4();
-        SealedSegment::create(
-            index._tracker.clone(),
-            index.path.join("segments").join(id.to_string()),
-            id,
-            index.options.clone(),
-            &source,
-        )
-    };
-    let mut protect = index.protect.lock();
-    for sealed_segment in source.sealed.iter() {
-        if protect.sealed_segments.contains_key(&sealed_segment.id()) {
-            continue;
-        }
-        return;
-    }
-    for growing_segment in source.growing.iter() {
-        if protect.read_segments.contains_key(&growing_segment.id()) {
-            continue;
-        }
-        return;
-    }
-    for sealed_segment in source.sealed.iter() {
-        protect.sealed_segments.remove(&sealed_segment.id());
-    }
-    for growing_segment in source.growing.iter() {
-        protect.read_segments.remove(&growing_segment.id());
-    }
-    protect.sealed_segments.insert(next.id(), next);
-    protect.maintain(index.options.clone(), index.delete.clone(), &index.view);
+    let _ = index.create_sealed_segment(
+        &source,
+        &source.sealed.iter().map(|x| x.id()).collect::<Vec<_>>(),
+        &source.growing.iter().map(|x| x.id()).collect::<Vec<_>>(),
+    );
 }

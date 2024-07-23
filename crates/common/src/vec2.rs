@@ -1,70 +1,75 @@
-use base::pod::Pod;
 use serde::{Deserialize, Serialize};
-use std::ops::{Deref, DerefMut, Index, IndexMut};
+use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Vec2<T> {
-    dims: u32,
-    v: Vec<T>,
+    shape: (usize, usize),
+    base: Vec<T>,
 }
 
-impl<T: Pod + Ord> Vec2<T> {
-    pub fn new(dims: u32, n: usize) -> Self {
+impl<T: Default + Copy> Vec2<T> {
+    pub fn zeros(shape: (usize, usize)) -> Self {
         Self {
-            dims,
-            v: base::pod::zeroed_vec(dims as usize * n),
+            shape,
+            base: vec![T::default(); shape.0 * shape.1],
         }
     }
-    pub fn dims(&self) -> u32 {
-        self.dims
-    }
-    pub fn len(&self) -> usize {
-        self.v.len() / self.dims as usize
-    }
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-    pub fn argsort(&self) -> Vec<usize> {
-        let mut index: Vec<usize> = (0..self.len()).collect();
-        index.sort_by_key(|i| &self[*i]);
-        index
-    }
-    pub fn copy_within(&mut self, i: usize, j: usize) {
-        assert!(i < self.len() && j < self.len());
-        unsafe {
-            if i != j {
-                let src = self.v.as_ptr().add(self.dims as usize * i);
-                let dst = self.v.as_mut_ptr().add(self.dims as usize * j);
-                std::ptr::copy_nonoverlapping(src, dst, self.dims as usize);
-            }
-        }
+    pub fn from_vec(shape: (usize, usize), base: Vec<T>) -> Self {
+        assert_eq!(shape.0 * shape.1, base.len());
+        Self { shape, base }
     }
 }
 
-impl<T> Index<usize> for Vec2<T> {
+impl<T: Copy> Vec2<T> {
+    pub fn copy_within(&mut self, (l_i,): (usize,), (r_i,): (usize,)) {
+        assert!(l_i < self.shape.0);
+        assert!(r_i < self.shape.0);
+        let src_from = l_i * self.shape.1;
+        let src_to = src_from + self.shape.1;
+        let dest = r_i * self.shape.1;
+        self.base.copy_within(src_from..src_to, dest);
+    }
+}
+
+impl<T> Vec2<T> {
+    pub fn shape_0(&self) -> usize {
+        self.shape.0
+    }
+    pub fn shape_1(&self) -> usize {
+        self.shape.1
+    }
+    pub fn as_slice(&self) -> &[T] {
+        self.base.as_slice()
+    }
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        self.base.as_mut_slice()
+    }
+}
+
+impl<T> Index<(usize,)> for Vec2<T> {
     type Output = [T];
 
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.v[self.dims as usize * index..][..self.dims as usize]
+    fn index(&self, (i,): (usize,)) -> &Self::Output {
+        &self.base[i * self.shape.1..][..self.shape.1]
     }
 }
 
-impl<T> IndexMut<usize> for Vec2<T> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.v[self.dims as usize * index..][..self.dims as usize]
+impl<T> IndexMut<(usize,)> for Vec2<T> {
+    fn index_mut(&mut self, (i,): (usize,)) -> &mut Self::Output {
+        &mut self.base[i * self.shape.1..][..self.shape.1]
     }
 }
 
-impl<T> Deref for Vec2<T> {
-    type Target = [T];
+impl<T> Index<(usize, usize)> for Vec2<T> {
+    type Output = T;
 
-    fn deref(&self) -> &Self::Target {
-        self.v.deref()
+    fn index(&self, (i, j): (usize, usize)) -> &Self::Output {
+        &self.base[i * self.shape.1..][j]
     }
 }
 
-impl<T> DerefMut for Vec2<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.v.deref_mut()
+impl<T> IndexMut<(usize, usize)> for Vec2<T> {
+    fn index_mut(&mut self, (i, j): (usize, usize)) -> &mut Self::Output {
+        &mut self.base[i * self.shape.1..][j]
     }
 }

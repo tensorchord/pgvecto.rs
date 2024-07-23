@@ -1,4 +1,3 @@
-use super::SegmentTracker;
 use crate::utils::file_wal::FileWal;
 use crate::IndexTracker;
 use crate::Op;
@@ -6,7 +5,6 @@ use base::index::*;
 use base::operator::*;
 use base::search::*;
 use base::vector::*;
-use common::dir_ops::sync_dir;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::cell::UnsafeCell;
@@ -14,23 +12,24 @@ use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fmt::Debug;
 use std::mem::MaybeUninit;
+use std::num::NonZeroU128;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use thiserror::Error;
-use uuid::Uuid;
 
 #[derive(Debug, Error)]
 #[error("`GrowingSegment` is read-only.")]
 pub struct GrowingSegmentInsertError;
 
 pub struct GrowingSegment<O: Op> {
-    id: Uuid,
+    id: NonZeroU128,
     vec: Vec<MaybeUninit<UnsafeCell<Log<O>>>>,
     wal: Mutex<FileWal>,
     len: AtomicUsize,
     pro: Mutex<Protect>,
-    _tracker: Arc<SegmentTracker>,
+    _growing_segment_tracker: GrowingSegmentTracker,
+    _index_tracker: Arc<IndexTracker>,
 }
 
 impl<O: Op> Debug for GrowingSegment<O> {
@@ -43,14 +42,12 @@ impl<O: Op> Debug for GrowingSegment<O> {
 
 impl<O: Op> GrowingSegment<O> {
     pub fn create(
-        _tracker: Arc<IndexTracker>,
+        index_tracker: Arc<IndexTracker>,
         path: PathBuf,
-        id: Uuid,
+        id: NonZeroU128,
         capacity: usize,
     ) -> Arc<Self> {
-        std::fs::create_dir(&path).unwrap();
-        let wal = FileWal::create(path.join("wal"));
-        sync_dir(&path);
+        let wal = FileWal::create(&path);
         Arc::new(Self {
             id,
             vec: unsafe {
@@ -64,17 +61,18 @@ impl<O: Op> GrowingSegment<O> {
                 inflight: 0,
                 capacity,
             }),
-            _tracker: Arc::new(SegmentTracker { path, _tracker }),
+            _growing_segment_tracker: GrowingSegmentTracker { path },
+            _index_tracker: index_tracker,
         })
     }
 
     pub fn open(
-        _tracker: Arc<IndexTracker>,
+        index_tracker: Arc<IndexTracker>,
         path: PathBuf,
-        id: Uuid,
+        id: NonZeroU128,
         _: IndexOptions,
     ) -> Arc<Self> {
-        let mut wal = FileWal::open(path.join("wal"));
+        let mut wal = FileWal::open(&path);
         let mut vec = Vec::new();
         while let Some(log) = wal.read() {
             let log = bincode::deserialize::<Log<O>>(&log).unwrap();
@@ -91,11 +89,12 @@ impl<O: Op> GrowingSegment<O> {
                 inflight: n,
                 capacity: n,
             }),
-            _tracker: Arc::new(SegmentTracker { path, _tracker }),
+            _growing_segment_tracker: GrowingSegmentTracker { path },
+            _index_tracker: index_tracker,
         })
     }
 
-    pub fn id(&self) -> Uuid {
+    pub fn id(&self) -> NonZeroU128 {
         self.id
     }
 
@@ -189,7 +188,7 @@ impl<O: Op> GrowingSegment<O> {
             panic!("Out of bound.");
         }
         let log = unsafe { &*self.vec[i].assume_init_ref().get().cast_const() };
-        log.vector.for_borrow()
+        log.vector.as_borrowed()
     }
 
     pub fn payload(&self, i: u32) -> Payload {
@@ -210,7 +209,7 @@ impl<O: Op> GrowingSegment<O> {
         let mut result = BinaryHeap::new();
         for i in 0..n {
             let log = unsafe { &*self.vec[i].assume_init_ref().get().cast_const() };
-            let distance = O::distance(vector, log.vector.for_borrow());
+            let distance = O::distance(vector, log.vector.as_borrowed());
             result.push(Reverse(Element {
                 distance,
                 payload: log.payload,
@@ -228,7 +227,7 @@ impl<O: Op> GrowingSegment<O> {
         let mut result = Vec::new();
         for i in 0..n {
             let log = unsafe { &*self.vec[i].assume_init_ref().get().cast_const() };
-            let distance = O::distance(vector, log.vector.for_borrow());
+            let distance = O::distance(vector, log.vector.as_borrowed());
             result.push(Element {
                 distance,
                 payload: log.payload,
@@ -262,4 +261,15 @@ struct Log<O: Op> {
 struct Protect {
     inflight: usize,
     capacity: usize,
+}
+
+#[derive(Debug, Clone)]
+struct GrowingSegmentTracker {
+    path: PathBuf,
+}
+
+impl Drop for GrowingSegmentTracker {
+    fn drop(&mut self) {
+        std::fs::remove_file(&self.path).unwrap();
+    }
 }

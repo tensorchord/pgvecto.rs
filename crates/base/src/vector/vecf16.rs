@@ -2,20 +2,21 @@ use super::{VectorBorrowed, VectorKind, VectorOwned};
 use crate::scalar::{ScalarLike, F16, F32};
 use num_traits::{Float, Zero};
 use serde::{Deserialize, Serialize};
+use std::ops::RangeBounds;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[repr(transparent)]
 pub struct Vecf16Owned(Vec<F16>);
 
 impl Vecf16Owned {
     #[inline(always)]
     pub fn new(slice: Vec<F16>) -> Self {
-        Self::new_checked(slice).unwrap()
+        Self::new_checked(slice).expect("invalid data")
     }
 
     #[inline(always)]
     pub fn new_checked(slice: Vec<F16>) -> Option<Self> {
-        if !(1 <= slice.len() && slice.len() <= 65535) {
+        if !(1..=65535).contains(&slice.len()) {
             return None;
         }
         Some(unsafe { Self::new_unchecked(slice) })
@@ -47,18 +48,8 @@ impl VectorOwned for Vecf16Owned {
     const VECTOR_KIND: VectorKind = VectorKind::Vecf16;
 
     #[inline(always)]
-    fn dims(&self) -> u32 {
-        self.0.len() as u32
-    }
-
-    #[inline(always)]
-    fn for_borrow(&self) -> Vecf16Borrowed<'_> {
+    fn as_borrowed(&self) -> Vecf16Borrowed<'_> {
         Vecf16Borrowed(self.0.as_slice())
-    }
-
-    #[inline(always)]
-    fn to_vec(&self) -> Vec<F16> {
-        self.0.clone()
     }
 }
 
@@ -69,12 +60,12 @@ pub struct Vecf16Borrowed<'a>(&'a [F16]);
 impl<'a> Vecf16Borrowed<'a> {
     #[inline(always)]
     pub fn new(slice: &'a [F16]) -> Self {
-        Self::new_checked(slice).unwrap()
+        Self::new_checked(slice).expect("invalid data")
     }
 
     #[inline(always)]
     pub fn new_checked(slice: &'a [F16]) -> Option<Self> {
-        if !(1 <= slice.len() && slice.len() <= 65535) {
+        if !(1..=65535).contains(&slice.len()) {
             return None;
         }
         Some(unsafe { Self::new_unchecked(slice) })
@@ -104,7 +95,7 @@ impl<'a> VectorBorrowed for Vecf16Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn for_own(&self) -> Vecf16Owned {
+    fn own(&self) -> Vecf16Owned {
         Vecf16Owned(self.0.to_vec())
     }
 
@@ -129,10 +120,81 @@ impl<'a> VectorBorrowed for Vecf16Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn normalize(&self) -> Vecf16Owned {
+    fn function_normalize(&self) -> Vecf16Owned {
         let mut data = self.0.to_vec();
         l2_normalize(&mut data);
         Vecf16Owned(data)
+    }
+
+    fn operator_add(&self, rhs: Self) -> Self::Owned {
+        assert_eq!(self.0.len(), rhs.0.len());
+        let n = self.dims();
+        let mut slice = vec![F16::zero(); n as usize];
+        for i in 0..n {
+            slice[i as usize] = self.0[i as usize] + rhs.0[i as usize];
+        }
+        Vecf16Owned::new(slice)
+    }
+
+    fn operator_minus(&self, rhs: Self) -> Self::Owned {
+        assert_eq!(self.0.len(), rhs.0.len());
+        let n = self.dims();
+        let mut slice = vec![F16::zero(); n as usize];
+        for i in 0..n {
+            slice[i as usize] = self.0[i as usize] - rhs.0[i as usize];
+        }
+        Vecf16Owned::new(slice)
+    }
+
+    fn operator_mul(&self, rhs: Self) -> Self::Owned {
+        assert_eq!(self.0.len(), rhs.0.len());
+        let n = self.dims();
+        let mut slice = vec![F16::zero(); n as usize];
+        for i in 0..n {
+            slice[i as usize] = self.0[i as usize] * rhs.0[i as usize];
+        }
+        Vecf16Owned::new(slice)
+    }
+
+    fn operator_and(&self, _: Self) -> Self::Owned {
+        unimplemented!()
+    }
+
+    fn operator_or(&self, _: Self) -> Self::Owned {
+        unimplemented!()
+    }
+
+    fn operator_xor(&self, _: Self) -> Self::Owned {
+        unimplemented!()
+    }
+
+    #[inline(always)]
+    fn subvector(&self, bounds: impl RangeBounds<u32>) -> Option<Self::Owned> {
+        let start_bound = bounds.start_bound().map(|x| *x as usize);
+        let end_bound = bounds.end_bound().map(|x| *x as usize);
+        let slice = self.0.get((start_bound, end_bound))?;
+        if slice.is_empty() {
+            return None;
+        }
+        Self::Owned::new_checked(slice.to_vec())
+    }
+}
+
+impl<'a> PartialEq for Vecf16Borrowed<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        if self.0.len() != other.0.len() {
+            return false;
+        }
+        self.0 == other.0
+    }
+}
+
+impl<'a> PartialOrd for Vecf16Borrowed<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.0.len() != other.0.len() {
+            return None;
+        }
+        Some(self.0.cmp(other.0))
     }
 }
 

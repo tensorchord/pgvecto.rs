@@ -5,7 +5,7 @@ use base::search::*;
 use base::vector::*;
 use base::worker::*;
 use common::clean::clean;
-use common::dir_ops::sync_dir;
+use common::dir_ops::sync_walk_from_dir;
 use common::file_atomic::FileAtomic;
 use index::OutdatedError;
 use parking_lot::Mutex;
@@ -30,7 +30,7 @@ impl Worker {
             indexes: indexes.clone(),
         });
         let protect = WorkerProtect { startup, indexes };
-        sync_dir(&path);
+        sync_walk_from_dir(&path);
         Arc::new(Worker {
             path,
             protect: Mutex::new(protect),
@@ -166,11 +166,6 @@ impl WorkerOperations for Worker {
         let instance = view.get(handle).ok_or(DeleteError::NotExist)?;
         instance.delete(pointer)?;
         Ok(())
-    }
-    fn view_basic(&self, handle: Handle) -> Result<impl ViewBasicOperations, BasicError> {
-        let view = self.view();
-        let instance = view.get(handle).ok_or(BasicError::NotExist)?;
-        Ok(instance.view())
     }
     fn view_vbase(&self, handle: Handle) -> Result<impl ViewVbaseOperations, VbaseError> {
         let view = self.view();

@@ -2,10 +2,16 @@ use super::{VectorBorrowed, VectorKind, VectorOwned};
 use crate::scalar::{F32, I8};
 use num_traits::Float;
 use serde::{Deserialize, Serialize};
+use std::ops::RangeBounds;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+/// Veci8 utilizes int8 for data storage, originally derived from Vecf32.
+/// Given a vector of F32, [a_0, a_1, a_2, ..., a_n], we aim to find the maximum and minimum values. The maximum value, max, is the greatest among {a_0, a_1, a_2, ..., a_n}, and the minimum value, min, is the smallest.
+/// We can transform F32 to I8 using the formula (a - (max + min) / 2) / (max - min) * 254, resulting in a vector of I8, [b_0, b_1, b_2, ..., b_n]. Here 254 is the range size that the int8 type can cover, which is the difference between -127 and 127.
+/// Converting I8 back to F32 can be achieved by using the formula b * (max - min) / 254 + (max + min) / 2, which gives us a vector of F32, albeit with a slight loss of precision.
+/// We use alpha to represent (max - min) / 254, and offset to represent (max + min) / 2 here.
+/// We choose [-127, 127] rather than [-128, 127] to avoid overflow when we need to calculate (-a_i) in dot_i8_avx512vnni.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Veci8Owned {
-    dims: u32,
     data: Vec<I8>,
     alpha: F32,
     offset: F32,
@@ -17,17 +23,17 @@ pub struct Veci8Owned {
 
 impl Veci8Owned {
     #[inline(always)]
-    pub fn new(dims: u32, data: Vec<I8>, alpha: F32, offset: F32) -> Self {
-        Self::new_checked(dims, data, alpha, offset).unwrap()
+    pub fn new(data: Vec<I8>, alpha: F32, offset: F32) -> Self {
+        Self::new_checked(data, alpha, offset).expect("invalid data")
     }
 
     #[inline(always)]
-    pub fn new_checked(dims: u32, data: Vec<I8>, alpha: F32, offset: F32) -> Option<Self> {
-        if dims == 0 || dims > 65535 {
+    pub fn new_checked(data: Vec<I8>, alpha: F32, offset: F32) -> Option<Self> {
+        if !(1..=65535).contains(&data.len()) {
             return None;
         }
         let (sum, l2_norm) = i8_precompute(&data, alpha, offset);
-        Some(unsafe { Self::new_unchecked(dims, data, alpha, offset, sum, l2_norm) })
+        Some(unsafe { Self::new_unchecked(data, alpha, offset, sum, l2_norm) })
     }
 
     /// # Safety
@@ -36,7 +42,6 @@ impl Veci8Owned {
     /// * `dims` must be equal to `values.len()`.
     #[inline(always)]
     pub unsafe fn new_unchecked(
-        dims: u32,
         data: Vec<I8>,
         alpha: F32,
         offset: F32,
@@ -44,7 +49,6 @@ impl Veci8Owned {
         l2_norm: F32,
     ) -> Self {
         Veci8Owned {
-            dims,
             data,
             alpha,
             offset,
@@ -86,14 +90,8 @@ impl VectorOwned for Veci8Owned {
 
     const VECTOR_KIND: VectorKind = VectorKind::Veci8;
 
-    #[inline(always)]
-    fn dims(&self) -> u32 {
-        self.dims
-    }
-
-    fn for_borrow(&self) -> Veci8Borrowed<'_> {
+    fn as_borrowed(&self) -> Veci8Borrowed<'_> {
         Veci8Borrowed {
-            dims: self.dims,
             data: &self.data,
             alpha: self.alpha,
             offset: self.offset,
@@ -101,15 +99,10 @@ impl VectorOwned for Veci8Owned {
             l2_norm: self.l2_norm,
         }
     }
-
-    fn to_vec(&self) -> Vec<F32> {
-        i8_dequantization(&self.data, self.alpha, self.offset)
-    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy)]
 pub struct Veci8Borrowed<'a> {
-    dims: u32,
     data: &'a [I8],
     alpha: F32,
     offset: F32,
@@ -121,35 +114,17 @@ pub struct Veci8Borrowed<'a> {
 
 impl<'a> Veci8Borrowed<'a> {
     #[inline(always)]
-    pub fn new(
-        dims: u32,
-        data: &'a [I8],
-        alpha: F32,
-        offset: F32,
-        sum: F32,
-        l2_norm: F32,
-    ) -> Veci8Borrowed<'a> {
-        Self::new_checked(dims, data, alpha, offset, sum, l2_norm).unwrap()
+    pub fn new(data: &'a [I8], alpha: F32, offset: F32) -> Veci8Borrowed<'a> {
+        Self::new_checked(data, alpha, offset).expect("invalid data")
     }
 
     #[inline(always)]
-    pub fn new_checked(
-        dims: u32,
-        data: &'a [I8],
-        alpha: F32,
-        offset: F32,
-        sum: F32,
-        l2_norm: F32,
-    ) -> Option<Self> {
-        if dims == 0 || dims > 65535 {
+    pub fn new_checked(data: &'a [I8], alpha: F32, offset: F32) -> Option<Self> {
+        if !(1..=65535).contains(&data.len()) {
             return None;
         }
-        // TODO: should we check the precomputed result?
-        // let (sum_calc, l2_norm_calc) = i8_precompute(data, alpha, offset);
-        // if sum != sum_calc || l2_norm != l2_norm_calc {
-        //     return None;
-        // }
-        Some(unsafe { Self::new_unchecked(dims, data, alpha, offset, sum, l2_norm) })
+        let (sum, l2_norm) = i8_precompute(data, alpha, offset);
+        Some(unsafe { Self::new_unchecked(data, alpha, offset, sum, l2_norm) })
     }
 
     /// # Safety
@@ -159,7 +134,6 @@ impl<'a> Veci8Borrowed<'a> {
     /// * precomputed result must be correct
     #[inline(always)]
     pub unsafe fn new_unchecked(
-        dims: u32,
         data: &'a [I8],
         alpha: F32,
         offset: F32,
@@ -167,7 +141,6 @@ impl<'a> Veci8Borrowed<'a> {
         l2_norm: F32,
     ) -> Self {
         Veci8Borrowed {
-            dims,
             data,
             alpha,
             offset,
@@ -178,7 +151,6 @@ impl<'a> Veci8Borrowed<'a> {
 
     pub fn to_owned(&self) -> Veci8Owned {
         Veci8Owned {
-            dims: self.dims,
             data: self.data.to_vec(),
             alpha: self.alpha,
             offset: self.offset,
@@ -206,6 +178,18 @@ impl<'a> Veci8Borrowed<'a> {
     pub fn l2_norm(&self) -> F32 {
         self.l2_norm
     }
+
+    pub fn index_checked(&self, i: u32) -> Option<F32> {
+        if i < self.dims() {
+            Some(self.data[i as usize].to_f32() * self.alpha + self.offset)
+        } else {
+            None
+        }
+    }
+
+    pub fn index(&self, i: u32) -> F32 {
+        self.index_checked(i).expect("out of bound")
+    }
 }
 
 impl VectorBorrowed for Veci8Borrowed<'_> {
@@ -215,13 +199,12 @@ impl VectorBorrowed for Veci8Borrowed<'_> {
 
     #[inline(always)]
     fn dims(&self) -> u32 {
-        self.dims
+        self.data.len() as u32
     }
 
     #[inline(always)]
-    fn for_own(&self) -> Veci8Owned {
+    fn own(&self) -> Veci8Owned {
         Veci8Owned {
-            dims: self.dims,
             data: self.data.to_vec(),
             alpha: self.alpha,
             offset: self.offset,
@@ -250,48 +233,98 @@ impl VectorBorrowed for Veci8Borrowed<'_> {
     }
 
     #[inline(always)]
-    fn normalize(&self) -> Veci8Owned {
+    fn function_normalize(&self) -> Veci8Owned {
         let l = self.l2_norm;
         let alpha = self.alpha / l;
         let offset = self.offset / l;
         let sum = self.sum / l;
         let l2_norm = F32(1.0);
-        unsafe {
-            Veci8Owned::new_unchecked(
-                self.dims(),
-                self.data().to_vec(),
-                alpha,
-                offset,
-                sum,
-                l2_norm,
-            )
+        unsafe { Veci8Owned::new_unchecked(self.data.to_vec(), alpha, offset, sum, l2_norm) }
+    }
+
+    fn operator_add(&self, rhs: Self) -> Self::Owned {
+        assert_eq!(self.data.len(), rhs.data.len());
+        let n = self.dims();
+        let data = (0..n)
+            .map(|i| self.index(i) + rhs.index(i))
+            .collect::<Vec<_>>();
+        let (data, alpha, offset) = i8_quantization(&data);
+        Veci8Owned::new(data, alpha, offset)
+    }
+
+    fn operator_minus(&self, rhs: Self) -> Self::Owned {
+        assert_eq!(self.data.len(), rhs.data.len());
+        let n = self.dims();
+        let data = (0..n)
+            .map(|i| self.index(i) - rhs.index(i))
+            .collect::<Vec<_>>();
+        let (data, alpha, offset) = i8_quantization(&data);
+        Veci8Owned::new(data, alpha, offset)
+    }
+
+    fn operator_mul(&self, rhs: Self) -> Self::Owned {
+        assert_eq!(self.data.len(), rhs.data.len());
+        let n = self.dims();
+        let data = (0..n)
+            .map(|i| self.index(i) * rhs.index(i))
+            .collect::<Vec<_>>();
+        let (data, alpha, offset) = i8_quantization(&data);
+        Veci8Owned::new(data, alpha, offset)
+    }
+
+    fn operator_and(&self, _: Self) -> Self::Owned {
+        unimplemented!()
+    }
+
+    fn operator_or(&self, _: Self) -> Self::Owned {
+        unimplemented!()
+    }
+
+    fn operator_xor(&self, _: Self) -> Self::Owned {
+        unimplemented!()
+    }
+
+    #[inline(always)]
+    fn subvector(&self, bounds: impl RangeBounds<u32>) -> Option<Self::Owned> {
+        let start_bound = bounds.start_bound().map(|x| *x as usize);
+        let end_bound = bounds.end_bound().map(|x| *x as usize);
+        let slice = self.data.get((start_bound, end_bound))?;
+        if slice.is_empty() {
+            return None;
         }
+        Self::Owned::new_checked(slice.to_vec(), self.alpha, self.offset)
     }
 }
 
-impl From<Veci8Borrowed<'_>> for Veci8Owned {
-    fn from(value: Veci8Borrowed<'_>) -> Self {
-        Self {
-            dims: value.dims,
-            data: value.data.to_vec(),
-            alpha: value.alpha,
-            offset: value.offset,
-            sum: value.sum,
-            l2_norm: value.l2_norm,
+impl<'a> PartialEq for Veci8Borrowed<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        if self.data.len() != other.data.len() {
+            return false;
         }
+        let dims = self.dims();
+        for i in 0..dims {
+            if self.index_checked(i) != other.index_checked(i) {
+                return false;
+            }
+        }
+        true
     }
 }
 
-impl<'a> From<&'a Veci8Owned> for Veci8Borrowed<'a> {
-    fn from(value: &'a Veci8Owned) -> Self {
-        Self {
-            dims: value.dims,
-            data: &value.data,
-            alpha: value.alpha,
-            offset: value.offset,
-            sum: value.sum,
-            l2_norm: value.l2_norm,
+impl<'a> PartialOrd for Veci8Borrowed<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        use std::cmp::Ordering;
+        if self.data.len() != other.data.len() {
+            return None;
         }
+        let dims = self.dims();
+        for i in 0..dims {
+            match self.index_checked(i).cmp(&other.index_checked(i)) {
+                Ordering::Equal => (),
+                x => return Some(x),
+            }
+        }
+        Some(Ordering::Equal)
     }
 }
 
@@ -477,8 +510,8 @@ mod tests {
     }
 
     fn vec_to_owned(vec: Vec<F32>) -> Veci8Owned {
-        let (v, alpha, offset) = i8_quantization(&vec);
-        Veci8Owned::new(v.len() as u32, v, alpha, offset)
+        let (data, alpha, offset) = i8_quantization(&vec);
+        Veci8Owned::new(data, alpha, offset)
     }
 
     #[test]
@@ -486,9 +519,9 @@ mod tests {
         let x = vec![F32(1.0), F32(2.0), F32(3.0)];
         let y = vec![F32(3.0), F32(2.0), F32(1.0)];
         let x_owned = vec_to_owned(x);
-        let ref_x = x_owned.for_borrow();
+        let ref_x = x_owned.as_borrowed();
         let y_owned = vec_to_owned(y);
-        let ref_y = y_owned.for_borrow();
+        let ref_y = y_owned.as_borrowed();
         let result = dot(&ref_x, &ref_y);
         assert!((result.0 - 10.0).abs() < 0.1);
     }
@@ -498,9 +531,9 @@ mod tests {
         let x = vec![F32(1.0), F32(2.0), F32(3.0)];
         let y = vec![F32(3.0), F32(2.0), F32(1.0)];
         let x_owned = vec_to_owned(x);
-        let ref_x = x_owned.for_borrow();
+        let ref_x = x_owned.as_borrowed();
         let y_owned = vec_to_owned(y);
-        let ref_y = y_owned.for_borrow();
+        let ref_y = y_owned.as_borrowed();
         let result = cosine(&ref_x, &ref_y);
         assert!((result.0 - (10.0 / 14.0)).abs() < 0.1);
         // test cos_i8 using random generated data, check the precision
@@ -511,9 +544,9 @@ mod tests {
         let l2_y = y.iter().map(|&y| y * y).sum::<F32>().0.sqrt();
         let result_expected = xy / (l2_x * l2_y);
         let x_owned = vec_to_owned(x);
-        let ref_x = x_owned.for_borrow();
+        let ref_x = x_owned.as_borrowed();
         let y_owned = vec_to_owned(y);
-        let ref_y = y_owned.for_borrow();
+        let ref_y = y_owned.as_borrowed();
         let result = cosine(&ref_x, &ref_y);
         assert!(
             result_expected < 0.01
@@ -527,9 +560,9 @@ mod tests {
         let x = vec![F32(1.0), F32(2.0), F32(3.0)];
         let y = vec![F32(3.0), F32(2.0), F32(1.0)];
         let x_owned = vec_to_owned(x);
-        let ref_x = x_owned.for_borrow();
+        let ref_x = x_owned.as_borrowed();
         let y_owned = vec_to_owned(y);
-        let ref_y = y_owned.for_borrow();
+        let ref_y = y_owned.as_borrowed();
         let result = sl2(&ref_x, &ref_y);
         assert!((result.0 - 8.0).abs() < 0.1);
         // test l2_i8 using random generated data, check the precision
@@ -542,9 +575,9 @@ mod tests {
             .sum::<F32>()
             .0;
         let x_owned = vec_to_owned(x);
-        let ref_x = x_owned.for_borrow();
+        let ref_x = x_owned.as_borrowed();
         let y_owned = vec_to_owned(y);
-        let ref_y = y_owned.for_borrow();
+        let ref_y = y_owned.as_borrowed();
         let result = sl2(&ref_x, &ref_y);
         assert!(
             result_expected < 1.0 || (result.0 - result_expected).abs() / result_expected < 0.05

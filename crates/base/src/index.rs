@@ -2,8 +2,8 @@ use crate::distance::*;
 use crate::vector::*;
 use base_macros::Alter;
 use serde::{Deserialize, Serialize};
+use std::num::NonZeroU128;
 use thiserror::Error;
-use uuid::Uuid;
 use validator::{Validate, ValidationError};
 
 #[must_use]
@@ -41,17 +41,6 @@ pub enum InsertError {
 pub enum DeleteError {
     #[error("Index not found.")]
     NotExist,
-}
-
-#[must_use]
-#[derive(Debug, Clone, Error, Serialize, Deserialize)]
-pub enum BasicError {
-    #[error("Index not found.")]
-    NotExist,
-    #[error("Invalid vector.")]
-    InvalidVector,
-    #[error("Invalid search options.")]
-    InvalidSearchOptions { reason: String },
 }
 
 #[must_use]
@@ -387,6 +376,8 @@ impl Default for InvertedIndexingOptions {
 pub struct HnswIndexingOptions {
     #[serde(default = "HnswIndexingOptions::default_m")]
     #[validate(range(min = 4, max = 128))]
+    // minimal value of `m` is 4 and maximum value of `max_sealed_segment_size` is 4_000_000_000
+    // so there are at most 15 hierarchical graphs expect the level-0 graph
     pub m: u32,
     #[serde(default = "HnswIndexingOptions::default_ef_construction")]
     #[validate(range(min = 10, max = 2000))]
@@ -461,53 +452,81 @@ impl Default for TrivialQuantizationOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
-pub struct ScalarQuantizationOptions {}
+#[validate(schema(function = "Self::validate_self"))]
+pub struct ScalarQuantizationOptions {
+    #[serde(default = "ScalarQuantizationOptions::default_bits")]
+    pub bits: u32,
+}
+
+impl ScalarQuantizationOptions {
+    fn default_bits() -> u32 {
+        8
+    }
+    fn validate_self(&self) -> Result<(), ValidationError> {
+        match self.bits {
+            1 | 2 | 4 | 8 => Ok(()),
+            _ => Err(ValidationError::new("invalid quantization bits")),
+        }
+    }
+}
 
 impl Default for ScalarQuantizationOptions {
     fn default() -> Self {
-        Self {}
+        Self {
+            bits: Self::default_bits(),
+        }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
+#[validate(schema(function = "Self::validate_self"))]
 pub struct ProductQuantizationOptions {
-    #[serde(default)]
-    pub ratio: ProductQuantizationOptionsRatio,
+    #[serde(default = "ProductQuantizationOptions::default_ratio")]
+    #[validate(range(min = 1, max = 1024))]
+    pub ratio: u32,
+    #[serde(default = "ProductQuantizationOptions::default_bits")]
+    pub bits: u32,
+}
+
+impl ProductQuantizationOptions {
+    fn default_ratio() -> u32 {
+        1
+    }
+    fn default_bits() -> u32 {
+        8
+    }
+    fn validate_self(&self) -> Result<(), ValidationError> {
+        match self.bits {
+            1 | 2 | 4 | 8 => Ok(()),
+            _ => Err(ValidationError::new("invalid quantization bits")),
+        }
+    }
 }
 
 impl Default for ProductQuantizationOptions {
     fn default() -> Self {
         Self {
-            ratio: Default::default(),
+            ratio: Self::default_ratio(),
+            bits: Self::default_bits(),
         }
-    }
-}
-
-#[repr(u16)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-#[serde(rename_all = "snake_case")]
-pub enum ProductQuantizationOptionsRatio {
-    X4 = 1,
-    X8 = 2,
-    X16 = 4,
-    X32 = 8,
-    X64 = 16,
-}
-
-impl Default for ProductQuantizationOptionsRatio {
-    fn default() -> Self {
-        Self::X4
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct SearchOptions {
-    #[validate(range(min = 1, max = 65535))]
-    pub hnsw_ef_search: u32,
+    #[validate(range(min = 0, max = 65535))]
+    pub flat_sq_rerank_size: u32,
+    #[validate(range(min = 0, max = 65535))]
+    pub flat_pq_rerank_size: u32,
+    #[validate(range(min = 0, max = 65535))]
+    pub ivf_sq_rerank_size: u32,
+    #[validate(range(min = 0, max = 65535))]
+    pub ivf_pq_rerank_size: u32,
     #[validate(range(min = 1, max = 65535))]
     pub ivf_nprobe: u32,
+    #[validate(range(min = 1, max = 65535))]
+    pub hnsw_ef_search: u32,
     #[validate(range(min = 1, max = 65535))]
     pub diskann_ef_search: u32,
 }
@@ -521,7 +540,7 @@ pub struct IndexStat {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SegmentStat {
-    pub id: Uuid,
+    pub id: NonZeroU128,
     pub r#type: String,
     pub length: usize,
     pub size: u64,

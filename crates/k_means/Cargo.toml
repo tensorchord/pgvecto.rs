@@ -1,5 +1,5 @@
 [package]
-name = "elkan_k_means"
+name = "k_means"
 version.workspace = true
 edition.workspace = true
 
@@ -9,6 +9,7 @@ rand.workspace = true
 
 base = { path = "../base" }
 common = { path = "../common" }
+smawk = "0.3.2"
 stoppable_rayon = { path = "../stoppable_rayon" }
 
 [lints]

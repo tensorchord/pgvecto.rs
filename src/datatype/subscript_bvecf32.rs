@@ -1,5 +1,8 @@
+use std::ops::Bound;
+
 use crate::datatype::memory_bvecf32::{BVecf32Input, BVecf32Output};
-use base::vector::BVecf32Borrowed;
+use base::vector::VectorBorrowed;
+use base::vector::VectorOwned;
 use pgrx::datum::FromDatum;
 use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
@@ -85,7 +88,7 @@ fn _vectors_bvecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Intern
     ) {
         #[derive(Default)]
         struct Workspace {
-            range: Option<(Option<usize>, Option<usize>)>,
+            range: Option<(Bound<u32>, Bound<u32>)>,
         }
         #[pgrx::pg_guard]
         unsafe extern "C" fn sbs_check_subscripts(
@@ -97,13 +100,13 @@ fn _vectors_bvecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Intern
                 let state = &mut *(*op).d.sbsref.state;
                 let workspace = &mut *(state.workspace as *mut Workspace);
                 workspace.range = None;
-                let mut end = None;
-                let mut start = None;
+                let mut end = Bound::Unbounded;
+                let mut start = Bound::Unbounded;
                 if state.upperprovided.read() {
                     if !state.upperindexnull.read() {
                         let upper = state.upperindex.read().value() as i32;
                         if upper >= 0 {
-                            end = Some(upper as usize);
+                            end = Bound::Excluded(upper as u32);
                         } else {
                             (*op).resnull.write(true);
                             return false;
@@ -117,7 +120,7 @@ fn _vectors_bvecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Intern
                     if !state.lowerindexnull.read() {
                         let lower = state.lowerindex.read().value() as i32;
                         if lower >= 0 {
-                            start = Some(lower as usize);
+                            start = Bound::Included(lower as u32);
                         } else {
                             (*op).resnull.write(true);
                             return false;
@@ -142,51 +145,16 @@ fn _vectors_bvecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Intern
                 let workspace = &mut *(state.workspace as *mut Workspace);
                 let input =
                     BVecf32Input::from_datum((*op).resvalue.read(), (*op).resnull.read()).unwrap();
-                let Some((start, end)) = workspace.range else {
-                    (*op).resnull.write(true);
-                    return;
-                };
-                let start: u16 = match start.unwrap_or(0).try_into() {
-                    Ok(x) => x,
-                    Err(_) => {
-                        (*op).resnull.write(true);
-                        return;
-                    }
-                };
-                let end: u16 = match end.unwrap_or(input.dims()).try_into() {
-                    Ok(x) => x,
-                    Err(_) => {
-                        (*op).resnull.write(true);
-                        return;
-                    }
-                };
-                if start >= end || end > (input.dims() as u16) {
-                    (*op).resnull.write(true);
-                    return;
-                }
-                let dims = end - start;
-                let mut data = vec![0usize; dims.div_ceil(usize::BITS as _) as _];
-                if start % usize::BITS as u16 == 0 {
-                    let start_idx = start as usize / usize::BITS as usize;
-                    let end_idx = (end as usize).div_ceil(usize::BITS as _);
-                    data.copy_from_slice(&input.for_borrow().data()[start_idx..end_idx]);
-                    if end % usize::BITS as u16 != 0 {
-                        data[end_idx - start_idx - 1] &= (1 << (end % usize::BITS as u16)) - 1;
-                    }
+                let v = workspace
+                    .range
+                    .and_then(|i| input.as_borrowed().subvector(i));
+                if let Some(v) = v {
+                    let output = BVecf32Output::new(v.as_borrowed());
+                    (*op).resnull.write(false);
+                    (*op).resvalue.write(Datum::from(output.into_raw()));
                 } else {
-                    let mut i = 0;
-                    let mut j = start as usize;
-                    while j < end as usize {
-                        if input.for_borrow().get(j) {
-                            data[i / usize::BITS as usize] |= 1 << (i % usize::BITS as usize);
-                        }
-                        i += 1;
-                        j += 1;
-                    }
+                    (*op).resnull.write(true);
                 }
-                let output = BVecf32Output::new(BVecf32Borrowed::new(dims, &data));
-                (*op).resnull.write(false);
-                (*op).resvalue.write(Datum::from(output.into_raw()));
             }
         }
         unsafe {

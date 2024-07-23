@@ -2,8 +2,9 @@ use crate::scalar::F32;
 use crate::vector::{VectorBorrowed, VectorKind, VectorOwned};
 use num_traits::{Float, Zero};
 use serde::{Deserialize, Serialize};
+use std::ops::{Bound, RangeBounds};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SVecf32Owned {
     dims: u32,
     indexes: Vec<u32>,
@@ -13,7 +14,7 @@ pub struct SVecf32Owned {
 impl SVecf32Owned {
     #[inline(always)]
     pub fn new(dims: u32, indexes: Vec<u32>, values: Vec<F32>) -> Self {
-        Self::new_checked(dims, indexes, values).unwrap()
+        Self::new_checked(dims, indexes, values).expect("invalid data")
     }
 
     #[inline(always)]
@@ -74,30 +75,16 @@ impl VectorOwned for SVecf32Owned {
     const VECTOR_KIND: VectorKind = VectorKind::SVecf32;
 
     #[inline(always)]
-    fn dims(&self) -> u32 {
-        self.dims
-    }
-
-    #[inline(always)]
-    fn for_borrow(&self) -> SVecf32Borrowed<'_> {
+    fn as_borrowed(&self) -> SVecf32Borrowed<'_> {
         SVecf32Borrowed {
             dims: self.dims,
             indexes: &self.indexes,
             values: &self.values,
         }
     }
-
-    #[inline(always)]
-    fn to_vec(&self) -> Vec<F32> {
-        let mut dense = vec![F32::zero(); self.dims as usize];
-        for (&index, &value) in self.indexes.iter().zip(self.values.iter()) {
-            dense[index as usize] = value;
-        }
-        dense
-    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy)]
 pub struct SVecf32Borrowed<'a> {
     dims: u32,
     indexes: &'a [u32],
@@ -107,7 +94,7 @@ pub struct SVecf32Borrowed<'a> {
 impl<'a> SVecf32Borrowed<'a> {
     #[inline(always)]
     pub fn new(dims: u32, indexes: &'a [u32], values: &'a [F32]) -> Self {
-        Self::new_checked(dims, indexes, values).unwrap()
+        Self::new_checked(dims, indexes, values).expect("invalid data")
     }
 
     #[inline(always)]
@@ -162,7 +149,7 @@ impl<'a> SVecf32Borrowed<'a> {
 
     #[inline(always)]
     pub fn len(&self) -> u32 {
-        self.indexes.len().try_into().unwrap()
+        self.indexes.len() as u32
     }
 }
 
@@ -176,7 +163,7 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn for_own(&self) -> SVecf32Owned {
+    fn own(&self) -> SVecf32Owned {
         SVecf32Owned {
             dims: self.dims,
             indexes: self.indexes.to_vec(),
@@ -204,10 +191,220 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn normalize(&self) -> SVecf32Owned {
-        let mut own = self.for_own();
+    fn function_normalize(&self) -> SVecf32Owned {
+        let mut own = self.own();
         l2_normalize(&mut own);
         own
+    }
+
+    fn operator_add(&self, rhs: Self) -> Self::Owned {
+        assert_eq!(self.dims, rhs.dims);
+        let size1 = self.len();
+        let size2 = rhs.len();
+        let mut pos1 = 0;
+        let mut pos2 = 0;
+        let mut pos = 0;
+        let mut indexes = vec![0; (size1 + size2) as _];
+        let mut values = vec![F32::zero(); (size1 + size2) as _];
+        while pos1 < size1 && pos2 < size2 {
+            let lhs_index = self.indexes[pos1 as usize];
+            let rhs_index = rhs.indexes[pos2 as usize];
+            let lhs_value = self.values[pos1 as usize];
+            let rhs_value = rhs.values[pos2 as usize];
+            indexes[pos] = lhs_index.min(rhs_index);
+            values[pos] = F32((lhs_index <= rhs_index) as u32 as f32) * lhs_value
+                + F32((lhs_index >= rhs_index) as u32 as f32) * rhs_value;
+            pos1 += (lhs_index <= rhs_index) as u32;
+            pos2 += (lhs_index >= rhs_index) as u32;
+            pos += (!values[pos].is_zero()) as usize;
+        }
+        for i in pos1..size1 {
+            indexes[pos] = self.indexes[i as usize];
+            values[pos] = self.values[i as usize];
+            pos += 1;
+        }
+        for i in pos2..size2 {
+            indexes[pos] = rhs.indexes[i as usize];
+            values[pos] = rhs.values[i as usize];
+            pos += 1;
+        }
+        indexes.truncate(pos);
+        values.truncate(pos);
+        SVecf32Owned::new(self.dims, indexes, values)
+    }
+
+    fn operator_minus(&self, rhs: Self) -> Self::Owned {
+        assert_eq!(self.dims, rhs.dims);
+        let size1 = self.len();
+        let size2 = rhs.len();
+        let mut pos1 = 0;
+        let mut pos2 = 0;
+        let mut pos = 0;
+        let mut indexes = vec![0; (size1 + size2) as _];
+        let mut values = vec![F32::zero(); (size1 + size2) as _];
+        while pos1 < size1 && pos2 < size2 {
+            let lhs_index = self.indexes[pos1 as usize];
+            let rhs_index = rhs.indexes[pos2 as usize];
+            let lhs_value = self.values[pos1 as usize];
+            let rhs_value = rhs.values[pos2 as usize];
+            indexes[pos] = lhs_index.min(rhs_index);
+            values[pos] = F32((lhs_index <= rhs_index) as u32 as f32) * lhs_value
+                - F32((lhs_index >= rhs_index) as u32 as f32) * rhs_value;
+            pos1 += (lhs_index <= rhs_index) as u32;
+            pos2 += (lhs_index >= rhs_index) as u32;
+            pos += (!values[pos].is_zero()) as usize;
+        }
+        for i in pos1..size1 {
+            indexes[pos] = self.indexes[i as usize];
+            values[pos] = self.values[i as usize];
+            pos += 1;
+        }
+        for i in pos2..size2 {
+            indexes[pos] = rhs.indexes[i as usize];
+            values[pos] = -rhs.values[i as usize];
+            pos += 1;
+        }
+        indexes.truncate(pos);
+        values.truncate(pos);
+        SVecf32Owned::new(self.dims, indexes, values)
+    }
+
+    fn operator_mul(&self, rhs: Self) -> Self::Owned {
+        assert_eq!(self.dims, rhs.dims);
+        let size1 = self.len();
+        let size2 = rhs.len();
+        let mut pos1 = 0;
+        let mut pos2 = 0;
+        let mut pos = 0;
+        let mut indexes = vec![0; std::cmp::min(size1, size2) as _];
+        let mut values = vec![F32::zero(); std::cmp::min(size1, size2) as _];
+        while pos1 < size1 && pos2 < size2 {
+            let lhs_index = self.indexes[pos1 as usize];
+            let rhs_index = rhs.indexes[pos2 as usize];
+            match lhs_index.cmp(&rhs_index) {
+                std::cmp::Ordering::Less => {
+                    pos1 += 1;
+                }
+                std::cmp::Ordering::Equal => {
+                    // only both indexes are not zero, values are multiplied
+                    let lhs_value = self.values[pos1 as usize];
+                    let rhs_value = rhs.values[pos2 as usize];
+                    indexes[pos] = lhs_index;
+                    values[pos] = lhs_value * rhs_value;
+                    pos1 += 1;
+                    pos2 += 1;
+                    // only increment pos if the value is not zero
+                    pos += (!values[pos].is_zero()) as usize;
+                }
+                std::cmp::Ordering::Greater => {
+                    pos2 += 1;
+                }
+            }
+        }
+        indexes.truncate(pos);
+        values.truncate(pos);
+        SVecf32Owned::new(self.dims, indexes, values)
+    }
+
+    fn operator_and(&self, _: Self) -> Self::Owned {
+        unimplemented!()
+    }
+
+    fn operator_or(&self, _: Self) -> Self::Owned {
+        unimplemented!()
+    }
+
+    fn operator_xor(&self, _: Self) -> Self::Owned {
+        unimplemented!()
+    }
+
+    #[inline(always)]
+    fn subvector(&self, bounds: impl RangeBounds<u32>) -> Option<Self::Owned> {
+        let start = match bounds.start_bound().cloned() {
+            Bound::Included(x) => x,
+            Bound::Excluded(u32::MAX) => return None,
+            Bound::Excluded(x) => x + 1,
+            Bound::Unbounded => 0,
+        };
+        let end = match bounds.end_bound().cloned() {
+            Bound::Included(u32::MAX) => return None,
+            Bound::Included(x) => x + 1,
+            Bound::Excluded(x) => x,
+            Bound::Unbounded => self.dims,
+        };
+        if start >= end || end > self.dims {
+            return None;
+        }
+        let dims = end - start;
+        let s = self.indexes.partition_point(|&x| x < start);
+        let e = self.indexes.partition_point(|&x| x < end);
+        let indexes = self.indexes[s..e].iter().map(|x| x - start);
+        let values = &self.values[s..e];
+        Self::Owned::new_checked(dims, indexes.collect::<Vec<_>>(), values.to_vec())
+    }
+}
+
+impl<'a> PartialEq for SVecf32Borrowed<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        if self.dims != other.dims {
+            return false;
+        }
+        if self.indexes.len() != other.indexes.len() {
+            return false;
+        }
+        for (&l, &r) in self.indexes.iter().zip(other.indexes.iter()) {
+            if l != r {
+                return false;
+            }
+        }
+        for (&l, &r) in self.values.iter().zip(other.values.iter()) {
+            if l != r {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+impl<'a> PartialOrd for SVecf32Borrowed<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        use std::cmp::Ordering;
+        if self.dims != other.dims {
+            return None;
+        }
+        let mut lhs = self
+            .indexes
+            .iter()
+            .copied()
+            .zip(self.values.iter().copied());
+        let mut rhs = other
+            .indexes
+            .iter()
+            .copied()
+            .zip(other.values.iter().copied());
+        loop {
+            return match (lhs.next(), rhs.next()) {
+                (Some(lh), Some(rh)) => match lh.0.cmp(&rh.0) {
+                    Ordering::Equal => match lh.1.cmp(&rh.1) {
+                        Ordering::Equal => continue,
+                        x => Some(x),
+                    },
+                    Ordering::Less => Some(if lh.1 < F32(0.0) {
+                        Ordering::Less
+                    } else {
+                        Ordering::Greater
+                    }),
+                    Ordering::Greater => Some(if F32(0.0) < rh.1 {
+                        Ordering::Less
+                    } else {
+                        Ordering::Greater
+                    }),
+                },
+                (Some((_, x)), None) => Some(x.cmp(&F32(0.0))),
+                (None, Some((_, y))) => Some(F32(0.0).cmp(&y)),
+                (None, None) => Some(Ordering::Equal),
+            };
+        }
     }
 }
 
@@ -329,8 +526,8 @@ fn cosine_v4_test() {
     for _ in 0..300 {
         let lhs = random_svector(300);
         let rhs = random_svector(350);
-        let specialized = unsafe { cosine_v4(lhs.for_borrow(), rhs.for_borrow()) };
-        let fallback = unsafe { cosine_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        let specialized = unsafe { cosine_v4(lhs.as_borrowed(), rhs.as_borrowed()) };
+        let fallback = unsafe { cosine_fallback(lhs.as_borrowed(), rhs.as_borrowed()) };
         assert!(
             (specialized - fallback).abs() < EPSILON,
             "specialized = {specialized}, fallback = {fallback}."
@@ -465,8 +662,8 @@ fn dot_v4_test() {
     for _ in 0..300 {
         let lhs = random_svector(300);
         let rhs = random_svector(350);
-        let specialized = unsafe { dot_v4(lhs.for_borrow(), rhs.for_borrow()) };
-        let fallback = unsafe { dot_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        let specialized = unsafe { dot_v4(lhs.as_borrowed(), rhs.as_borrowed()) };
+        let fallback = unsafe { dot_fallback(lhs.as_borrowed(), rhs.as_borrowed()) };
         assert!(
             (specialized - fallback).abs() < EPSILON,
             "specialized = {specialized}, fallback = {fallback}."
@@ -627,8 +824,8 @@ fn sl2_v4_test() {
     for _ in 0..300 {
         let lhs = random_svector(300);
         let rhs = random_svector(350);
-        let specialized = unsafe { sl2_v4(lhs.for_borrow(), rhs.for_borrow()) };
-        let fallback = unsafe { sl2_fallback(lhs.for_borrow(), rhs.for_borrow()) };
+        let specialized = unsafe { sl2_v4(lhs.as_borrowed(), rhs.as_borrowed()) };
+        let fallback = unsafe { sl2_fallback(lhs.as_borrowed(), rhs.as_borrowed()) };
         assert!(
             (specialized - fallback).abs() < EPSILON,
             "specialized = {specialized}, fallback = {fallback}."
@@ -703,8 +900,8 @@ pub fn length(vector: SVecf32Borrowed<'_>) -> F32 {
 
 #[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn l2_normalize(vector: &mut SVecf32Owned) {
-    let l = length(vector.for_borrow());
-    let dims = vector.dims();
+    let l = length(vector.as_borrowed());
+    let dims = vector.dims;
     let indexes = vector.indexes().to_vec();
     let mut values = vector.values().to_vec();
     for i in values.iter_mut() {

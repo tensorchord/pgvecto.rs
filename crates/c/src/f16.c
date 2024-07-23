@@ -1,3 +1,7 @@
+#if !(__clang_major__ >= 16)
+#error "clang version must be >= 16"
+#endif
+
 #include "f16.h"
 #include <math.h>
 

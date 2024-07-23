@@ -9,127 +9,33 @@ use std::ops::Deref;
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_operator_add(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> SVecf32Output {
-    check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-
-    let size1 = lhs.len();
-    let size2 = rhs.len();
-    let mut pos1 = 0;
-    let mut pos2 = 0;
-    let mut pos = 0;
-    let mut indexes = vec![0; size1 + size2];
-    let mut values = vec![F32::zero(); size1 + size2];
-    let lhs = lhs.for_borrow();
-    let rhs = rhs.for_borrow();
-    while pos1 < size1 && pos2 < size2 {
-        let lhs_index = lhs.indexes()[pos1];
-        let rhs_index = rhs.indexes()[pos2];
-        let lhs_value = lhs.values()[pos1];
-        let rhs_value = rhs.values()[pos2];
-        indexes[pos] = lhs_index.min(rhs_index);
-        values[pos] = F32((lhs_index <= rhs_index) as u32 as f32) * lhs_value
-            + F32((lhs_index >= rhs_index) as u32 as f32) * rhs_value;
-        pos1 += (lhs_index <= rhs_index) as usize;
-        pos2 += (lhs_index >= rhs_index) as usize;
-        pos += (!values[pos].is_zero()) as usize;
-    }
-    for i in pos1..size1 {
-        indexes[pos] = lhs.indexes()[i];
-        values[pos] = lhs.values()[i];
-        pos += 1;
-    }
-    for i in pos2..size2 {
-        indexes[pos] = rhs.indexes()[i];
-        values[pos] = rhs.values()[i];
-        pos += 1;
-    }
-    indexes.truncate(pos);
-    values.truncate(pos);
-
-    SVecf32Output::new(SVecf32Borrowed::new(lhs.dims(), &indexes, &values))
+    check_matched_dims(lhs.dims(), rhs.dims());
+    SVecf32Output::new(
+        lhs.as_borrowed()
+            .operator_add(rhs.as_borrowed())
+            .as_borrowed(),
+    )
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_operator_minus(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> SVecf32Output {
-    check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-
-    let size1 = lhs.len();
-    let size2 = rhs.len();
-    let mut pos1 = 0;
-    let mut pos2 = 0;
-    let mut pos = 0;
-    let mut indexes = vec![0; size1 + size2];
-    let mut values = vec![F32::zero(); size1 + size2];
-    let lhs = lhs.for_borrow();
-    let rhs = rhs.for_borrow();
-    while pos1 < size1 && pos2 < size2 {
-        let lhs_index = lhs.indexes()[pos1];
-        let rhs_index = rhs.indexes()[pos2];
-        let lhs_value = lhs.values()[pos1];
-        let rhs_value = rhs.values()[pos2];
-        indexes[pos] = lhs_index.min(rhs_index);
-        values[pos] = F32((lhs_index <= rhs_index) as u32 as f32) * lhs_value
-            - F32((lhs_index >= rhs_index) as u32 as f32) * rhs_value;
-        pos1 += (lhs_index <= rhs_index) as usize;
-        pos2 += (lhs_index >= rhs_index) as usize;
-        pos += (!values[pos].is_zero()) as usize;
-    }
-    for i in pos1..size1 {
-        indexes[pos] = lhs.indexes()[i];
-        values[pos] = lhs.values()[i];
-        pos += 1;
-    }
-    for i in pos2..size2 {
-        indexes[pos] = rhs.indexes()[i];
-        values[pos] = -rhs.values()[i];
-        pos += 1;
-    }
-    indexes.truncate(pos);
-    values.truncate(pos);
-
-    SVecf32Output::new(SVecf32Borrowed::new(lhs.dims(), &indexes, &values))
+    check_matched_dims(lhs.dims(), rhs.dims());
+    SVecf32Output::new(
+        lhs.as_borrowed()
+            .operator_minus(rhs.as_borrowed())
+            .as_borrowed(),
+    )
 }
 
 /// Calculate the element-wise multiplication of two sparse vectors.
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_operator_mul(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> SVecf32Output {
-    check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-
-    let size1 = lhs.len();
-    let size2 = rhs.len();
-    let mut pos1 = 0;
-    let mut pos2 = 0;
-    let mut pos = 0;
-    let mut indexes = vec![0; std::cmp::min(size1, size2)];
-    let mut values = vec![F32::zero(); std::cmp::min(size1, size2)];
-    let lhs = lhs.for_borrow();
-    let rhs = rhs.for_borrow();
-    while pos1 < size1 && pos2 < size2 {
-        let lhs_index = lhs.indexes()[pos1];
-        let rhs_index = rhs.indexes()[pos2];
-        match lhs_index.cmp(&rhs_index) {
-            std::cmp::Ordering::Less => {
-                pos1 += 1;
-            }
-            std::cmp::Ordering::Equal => {
-                // only both indexes are not zero, values are multiplied
-                let lhs_value = lhs.values()[pos1];
-                let rhs_value = rhs.values()[pos2];
-                indexes[pos] = lhs_index;
-                values[pos] = lhs_value * rhs_value;
-                pos1 += 1;
-                pos2 += 1;
-                // only increment pos if the value is not zero
-                pos += (!values[pos].is_zero()) as usize;
-            }
-            std::cmp::Ordering::Greater => {
-                pos2 += 1;
-            }
-        }
-    }
-    indexes.truncate(pos);
-    values.truncate(pos);
-
-    SVecf32Output::new(SVecf32Borrowed::new(lhs.dims(), &indexes, &values))
+    check_matched_dims(lhs.dims(), rhs.dims());
+    SVecf32Output::new(
+        lhs.as_borrowed()
+            .operator_mul(rhs.as_borrowed())
+            .as_borrowed(),
+    )
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -159,38 +65,38 @@ fn _vectors_svecf32_operator_gte(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_operator_eq(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> bool {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    lhs.deref().for_borrow() == rhs.deref().for_borrow()
+    lhs.deref().as_borrowed() == rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_operator_neq(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> bool {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    lhs.deref().for_borrow() != rhs.deref().for_borrow()
+    lhs.deref().as_borrowed() != rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_operator_cosine(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> f32 {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    SVecf32Cos::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
+    SVecf32Cos::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_operator_dot(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> f32 {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    SVecf32Dot::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
+    SVecf32Dot::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_operator_l2(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> f32 {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    SVecf32L2::distance(lhs.for_borrow(), rhs.for_borrow()).to_f32()
+    SVecf32L2::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 fn compare(a: SVecf32Input<'_>, b: SVecf32Input<'_>) -> std::cmp::Ordering {
     use std::cmp::Ordering;
     assert!(a.dims() == b.dims());
-    let lhs = a.for_borrow();
-    let rhs = b.for_borrow();
+    let lhs = a.as_borrowed();
+    let rhs = b.as_borrowed();
     let mut pos = 0;
     let size1 = lhs.len() as usize;
     let size2 = rhs.len() as usize;
@@ -232,7 +138,7 @@ fn _vectors_svecf32_sphere_l2_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    SVecf32L2::distance(lhs.for_borrow(), center.for_borrow()) < F32(radius)
+    SVecf32L2::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -251,7 +157,7 @@ fn _vectors_svecf32_sphere_dot_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    SVecf32Dot::distance(lhs.for_borrow(), center.for_borrow()) < F32(radius)
+    SVecf32Dot::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -270,5 +176,5 @@ fn _vectors_svecf32_sphere_cos_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    SVecf32Cos::distance(lhs.for_borrow(), center.for_borrow()) < F32(radius)
+    SVecf32Cos::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
 }

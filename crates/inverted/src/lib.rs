@@ -136,9 +136,10 @@ fn from_nothing<O: OperatorInverted>(
     let storage = O::Storage::create(path.as_ref().join("storage"), collection);
     let quantization = Quantization::create(
         path.as_ref().join("quantization"),
-        options.clone(),
+        options.vector,
         inverted_options.quantization,
         collection,
+        |vector| vector.own(),
     );
     let payloads = MmapArray::create(
         path.as_ref().join("payloads"),

@@ -4,8 +4,6 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-rustix.workspace = true
-
 detect_macros = { path = "../detect_macros" }
 
 [lints]
