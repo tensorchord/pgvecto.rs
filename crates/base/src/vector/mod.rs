@@ -41,8 +41,6 @@ pub trait VectorBorrowed: Copy + PartialEq + PartialOrd {
 
     fn to_vec(&self) -> Vec<Self::Scalar>;
 
-    fn to_index_vec(&self) -> Vec<(u32, Self::Scalar)>;
-
     fn length(&self) -> F32;
 
     fn function_normalize(&self) -> Self::Owned;

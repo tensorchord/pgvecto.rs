@@ -25,7 +25,7 @@ impl<O: Op> SealedIndexing<O> {
             IndexingOptions::Flat(_) => Self::Flat(Flat::create(path, options, source)),
             IndexingOptions::Ivf(_) => Self::Ivf(Ivf::create(path, options, source)),
             IndexingOptions::Hnsw(_) => Self::Hnsw(Hnsw::create(path, options, source)),
-            IndexingOptions::Inverted(_) => Self::Inverted(Inverted::create(path, options, source)),
+            IndexingOptions::Inverted() => Self::Inverted(Inverted::create(path, options, source)),
         }
     }
 
@@ -34,7 +34,7 @@ impl<O: Op> SealedIndexing<O> {
             IndexingOptions::Flat(_) => Self::Flat(Flat::open(path)),
             IndexingOptions::Ivf(_) => Self::Ivf(Ivf::open(path)),
             IndexingOptions::Hnsw(_) => Self::Hnsw(Hnsw::open(path)),
-            IndexingOptions::Inverted(_) => Self::Inverted(Inverted::open(path)),
+            IndexingOptions::Inverted() => Self::Inverted(Inverted::open(path)),
         }
     }
 

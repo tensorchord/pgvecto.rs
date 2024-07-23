@@ -141,13 +141,6 @@ impl<'a> VectorBorrowed for BVecf32Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn to_index_vec(&self) -> Vec<(u32, Self::Scalar)> {
-        (0..self.dims())
-            .map(|i| (i, F32(self.get(i) as u32 as f32)))
-            .collect()
-    }
-
-    #[inline(always)]
     fn to_vec(&self) -> Vec<F32> {
         self.iter().map(|i| F32(i as u32 as f32)).collect()
     }

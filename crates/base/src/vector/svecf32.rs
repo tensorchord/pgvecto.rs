@@ -172,11 +172,6 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn to_index_vec(&self) -> Vec<(u32, Self::Scalar)> {
-        std::iter::zip(self.indexes.to_vec(), self.values.to_vec()).collect()
-    }
-
-    #[inline(always)]
     fn to_vec(&self) -> Vec<F32> {
         let mut dense = vec![F32::zero(); self.dims as usize];
         for (&index, &value) in self.indexes.iter().zip(self.values.iter()) {

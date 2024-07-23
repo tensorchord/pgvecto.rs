@@ -179,19 +179,6 @@ impl<O: OperatorQuantization> Quantization<O> {
         }
     }
 
-    pub fn inverted_rerank<'a, T: 'a>(
-        &'a self,
-        vector: Borrowed<'a, O>,
-        opts: &'a SearchOptions,
-        r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T> + 'a> {
-        use Quantizer::*;
-        match &*self.train {
-            Trivial(x) => x.inverted_rerank(vector, opts, r),
-            _ => panic!("Inverted rerank does not supported non-trivial quantization"),
-        }
-    }
-
     pub fn ivf_naive_rerank<'a, T: 'a>(
         &'a self,
         vector: Borrowed<'a, O>,
