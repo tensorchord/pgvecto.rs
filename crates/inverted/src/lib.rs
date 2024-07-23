@@ -14,8 +14,7 @@ use common::remap::RemappedCollection;
 use quantization::{operator::OperatorQuantization, Quantization};
 use storage::{OperatorStorage, Storage};
 
-use std::cmp::Reverse;
-use std::collections::{BTreeMap, BinaryHeap};
+use std::collections::BTreeMap;
 use std::fs::create_dir;
 use std::path::Path;
 
@@ -49,36 +48,10 @@ impl<O: OperatorInverted> Inverted<O> {
         open(path)
     }
 
-    pub fn basic(
-        &self,
-        vector: Borrowed<'_, O>,
-        _: &SearchOptions,
-    ) -> BinaryHeap<Reverse<Element>> {
-        const ZERO: F32 = F32(0.0);
-        let mut doc_score = vec![ZERO; self.payloads.len()];
-        for (token, _) in vector.to_index_vec() {
-            let start = self.offsets[token as usize];
-            let end = self.offsets[token as usize + 1];
-            for i in (start as usize)..(end as usize) {
-                doc_score[self.indexes[i] as usize] += self.scores[i];
-            }
-        }
-        let mut result = BinaryHeap::new();
-        for (doc, score) in doc_score.iter().enumerate() {
-            if *score > ZERO {
-                result.push(Reverse(Element {
-                    distance: -*score, // use negative score to match the negative dot product distance
-                    payload: self.payloads[doc],
-                }));
-            }
-        }
-        result
-    }
-
     pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
-        _: &'a SearchOptions,
+        opts: &'a SearchOptions,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
         const ZERO: F32 = F32(0.0);
         let mut doc_score = vec![ZERO; self.payloads.len()];
@@ -89,16 +62,30 @@ impl<O: OperatorInverted> Inverted<O> {
                 doc_score[self.indexes[i] as usize] += self.scores[i];
             }
         }
-        let mut result = Vec::new();
-        for (doc, score) in doc_score.iter().enumerate() {
-            if *score > ZERO {
-                result.push(Element {
-                    distance: -*score, // use negative score to match the negative dot product distance
-                    payload: self.payloads[doc],
-                });
-            }
+        let candidates: Vec<usize> = doc_score
+            .iter()
+            .enumerate()
+            .filter(|&(_, score)| *score > ZERO)
+            .map(|(i, _)| i)
+            .collect();
+        let mut reranker = self.quantization.inverted_rerank(vector, opts, move |u| {
+            (
+                -doc_score[u as usize], // use negative score to match the negative dot product distance
+                self.payloads[u as usize],
+            )
+        });
+        for i in candidates {
+            reranker.push(i as u32, ());
         }
-        (result, Box::new(std::iter::empty()))
+        (
+            Vec::new(),
+            Box::new(std::iter::from_fn(move || {
+                reranker.pop().map(|(dis_u, _, payload_u)| Element {
+                    distance: dis_u,
+                    payload: payload_u,
+                })
+            })),
+        )
     }
 
     pub fn len(&self) -> u32 {

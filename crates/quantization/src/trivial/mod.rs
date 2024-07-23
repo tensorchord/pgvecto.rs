@@ -51,6 +51,15 @@ impl<O: OperatorTrivialQuantization> TrivialQuantizer<O> {
         Box::new(DisabledReranker::new(r))
     }
 
+    pub fn inverted_rerank<'a, T: 'a>(
+        &'a self,
+        _: Borrowed<'a, O>,
+        _: &'a SearchOptions,
+        r: impl Fn(u32) -> (F32, T) + 'a,
+    ) -> Box<dyn Reranker<T> + 'a> {
+        Box::new(DisabledReranker::new(r))
+    }
+
     pub fn ivf_naive_rerank<'a, T: 'a>(
         &'a self,
         _: Borrowed<'a, O>,
