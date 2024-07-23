@@ -54,19 +54,6 @@ CREATE TYPE bvector (
     ALIGNMENT = double
 );
 
-CREATE TYPE veci8 (
-    INPUT = _vectors_veci8_in,
-    OUTPUT = _vectors_veci8_out,
-    RECEIVE = _vectors_veci8_recv,
-    SEND = _vectors_veci8_send,
-    SUBSCRIPT = _vectors_veci8_subscript,
-    TYPMOD_IN = _vectors_typmod_in_65535,
-    TYPMOD_OUT = _vectors_typmod_out,
-    STORAGE = EXTERNAL,
-    INTERNALLENGTH = VARIABLE,
-    ALIGNMENT = double
-);
-
 CREATE TYPE vector_index_stat AS (
     idx_status TEXT,
     idx_indexing BOOL,
@@ -98,11 +85,6 @@ CREATE TYPE sphere_bvector AS (
     radius REAL
 );
 
-CREATE TYPE sphere_veci8 AS (
-    center veci8,
-    radius REAL
-);
-
 -- List of operators
 
 CREATE OPERATOR + (
@@ -126,13 +108,6 @@ CREATE OPERATOR + (
     COMMUTATOR = +
 );
 
-CREATE OPERATOR + (
-    PROCEDURE = _vectors_veci8_operator_add,
-    LEFTARG = veci8,
-    RIGHTARG = veci8,
-    COMMUTATOR = +
-);
-
 CREATE OPERATOR - (
     PROCEDURE = _vectors_vecf32_operator_minus,
     LEFTARG = vector,
@@ -149,12 +124,6 @@ CREATE OPERATOR - (
     PROCEDURE = _vectors_svecf32_operator_minus,
     LEFTARG = svector,
     RIGHTARG = svector
-);
-
-CREATE OPERATOR - (
-    PROCEDURE = _vectors_veci8_operator_minus,
-    LEFTARG = veci8,
-    RIGHTARG = veci8
 );
 
 CREATE OPERATOR * (
@@ -175,13 +144,6 @@ CREATE OPERATOR * (
     PROCEDURE = _vectors_svecf32_operator_mul,
     LEFTARG = svector,
     RIGHTARG = svector,
-    COMMUTATOR = *
-);
-
-CREATE OPERATOR * (
-    PROCEDURE = _vectors_veci8_operator_mul,
-    LEFTARG = veci8,
-    RIGHTARG = veci8,
     COMMUTATOR = *
 );
 
@@ -243,16 +205,6 @@ CREATE OPERATOR = (
     JOIN = eqjoinsel
 );
 
-CREATE OPERATOR = (
-    PROCEDURE = _vectors_veci8_operator_eq,
-    LEFTARG = veci8,
-    RIGHTARG = veci8,
-    COMMUTATOR = =,
-    NEGATOR = <>,
-    RESTRICT = eqsel,
-    JOIN = eqjoinsel
-);
-
 CREATE OPERATOR <> (
     PROCEDURE = _vectors_vecf32_operator_neq,
     LEFTARG = vector,
@@ -287,16 +239,6 @@ CREATE OPERATOR <> (
     PROCEDURE = _vectors_bvecf32_operator_neq,
     LEFTARG = bvector,
     RIGHTARG = bvector,
-    COMMUTATOR = <>,
-    NEGATOR = =,
-    RESTRICT = eqsel,
-    JOIN = eqjoinsel
-);
-
-CREATE OPERATOR <> (
-    PROCEDURE = _vectors_veci8_operator_neq,
-    LEFTARG = veci8,
-    RIGHTARG = veci8,
     COMMUTATOR = <>,
     NEGATOR = =,
     RESTRICT = eqsel,
@@ -343,16 +285,6 @@ CREATE OPERATOR < (
     JOIN = scalarltjoinsel
 );
 
-CREATE OPERATOR < (
-    PROCEDURE = _vectors_veci8_operator_lt,
-    LEFTARG = veci8,
-    RIGHTARG = veci8,
-    COMMUTATOR = >,
-    NEGATOR = >=,
-    RESTRICT = scalarltsel,
-    JOIN = scalarltjoinsel
-);
-
 CREATE OPERATOR > (
     PROCEDURE = _vectors_vecf32_operator_gt,
     LEFTARG = vector,
@@ -387,16 +319,6 @@ CREATE OPERATOR > (
     PROCEDURE = _vectors_bvecf32_operator_gt,
     LEFTARG = bvector,
     RIGHTARG = bvector,
-    COMMUTATOR = <,
-    NEGATOR = <=,
-    RESTRICT = scalargtsel,
-    JOIN = scalargtjoinsel
-);
-
-CREATE OPERATOR > (
-    PROCEDURE = _vectors_veci8_operator_gt,
-    LEFTARG = veci8,
-    RIGHTARG = veci8,
     COMMUTATOR = <,
     NEGATOR = <=,
     RESTRICT = scalargtsel,
@@ -443,16 +365,6 @@ CREATE OPERATOR <= (
     JOIN = scalarltjoinsel
 );
 
-CREATE OPERATOR <= (
-    PROCEDURE = _vectors_veci8_operator_lte,
-    LEFTARG = veci8,
-    RIGHTARG = veci8,
-    COMMUTATOR = >=,
-    NEGATOR = >,
-    RESTRICT = scalarltsel,
-    JOIN = scalarltjoinsel
-);
-
 CREATE OPERATOR >= (
     PROCEDURE = _vectors_vecf32_operator_gte,
     LEFTARG = vector,
@@ -493,16 +405,6 @@ CREATE OPERATOR >= (
     JOIN = scalargtjoinsel
 );
 
-CREATE OPERATOR >= (
-    PROCEDURE = _vectors_veci8_operator_gte,
-    LEFTARG = veci8,
-    RIGHTARG = veci8,
-    COMMUTATOR = <=,
-    NEGATOR = <,
-    RESTRICT = scalargtsel,
-    JOIN = scalargtjoinsel
-);
-
 CREATE OPERATOR <-> (
     PROCEDURE = _vectors_vecf32_operator_l2,
     LEFTARG = vector,
@@ -528,13 +430,6 @@ CREATE OPERATOR <-> (
     PROCEDURE = _vectors_bvecf32_operator_l2,
     LEFTARG = bvector,
     RIGHTARG = bvector,
-    COMMUTATOR = <->
-);
-
-CREATE OPERATOR <-> (
-    PROCEDURE = _vectors_veci8_operator_l2,
-    LEFTARG = veci8,
-    RIGHTARG = veci8,
     COMMUTATOR = <->
 );
 
@@ -566,13 +461,6 @@ CREATE OPERATOR <#> (
     COMMUTATOR = <#>
 );
 
-CREATE OPERATOR <#> (
-    PROCEDURE = _vectors_veci8_operator_dot,
-    LEFTARG = veci8,
-    RIGHTARG = veci8,
-    COMMUTATOR = <#>
-);
-
 CREATE OPERATOR <=> (
     PROCEDURE = _vectors_vecf32_operator_cosine,
     LEFTARG = vector,
@@ -598,13 +486,6 @@ CREATE OPERATOR <=> (
     PROCEDURE = _vectors_bvecf32_operator_cosine,
     LEFTARG = bvector,
     RIGHTARG = bvector,
-    COMMUTATOR = <=>
-);
-
-CREATE OPERATOR <=> (
-    PROCEDURE = _vectors_veci8_operator_cosine,
-    LEFTARG = veci8,
-    RIGHTARG = veci8,
     COMMUTATOR = <=>
 );
 
@@ -643,13 +524,6 @@ CREATE OPERATOR <<->> (
     COMMUTATOR = <<->>
 );
 
-CREATE OPERATOR <<->> (
-    PROCEDURE = _vectors_veci8_sphere_l2_in,
-    LEFTARG = veci8,
-    RIGHTARG = sphere_veci8,
-    COMMUTATOR = <<->>
-);
-
 CREATE OPERATOR <<#>> (
     PROCEDURE = _vectors_vecf32_sphere_dot_in,
     LEFTARG = vector,
@@ -678,13 +552,6 @@ CREATE OPERATOR <<#>> (
     COMMUTATOR = <<#>>
 );
 
-CREATE OPERATOR <<#>> (
-    PROCEDURE = _vectors_veci8_sphere_dot_in,
-    LEFTARG = veci8,
-    RIGHTARG = sphere_veci8,
-    COMMUTATOR = <<#>>
-);
-
 CREATE OPERATOR <<=>> (
     PROCEDURE = _vectors_vecf32_sphere_cos_in,
     LEFTARG = vector,
@@ -710,13 +577,6 @@ CREATE OPERATOR <<=>> (
     PROCEDURE = _vectors_bvecf32_sphere_cos_in,
     LEFTARG = bvector,
     RIGHTARG = sphere_bvector,
-    COMMUTATOR = <<=>>
-);
-
-CREATE OPERATOR <<=>> (
-    PROCEDURE = _vectors_veci8_sphere_cos_in,
-    LEFTARG = veci8,
-    RIGHTARG = sphere_veci8,
     COMMUTATOR = <<=>>
 );
 
@@ -764,9 +624,6 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf3
 CREATE FUNCTION vector_dims(bvector) RETURNS INT
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_dims_wrapper';
 
-CREATE FUNCTION vector_dims(veci8) RETURNS INT
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_dims_wrapper';
-
 CREATE FUNCTION vector_norm(vector) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_norm_wrapper';
 
@@ -779,9 +636,6 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf3
 CREATE FUNCTION vector_norm(bvector) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_norm_wrapper';
 
-CREATE FUNCTION vector_norm(veci8) RETURNS real
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_norm_wrapper';
-
 CREATE FUNCTION vector_normalize(vector) RETURNS vector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_normalize_wrapper';
 
@@ -791,17 +645,11 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16
 CREATE FUNCTION vector_normalize(svector) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_normalize_wrapper';
 
-CREATE FUNCTION vector_normalize(veci8) RETURNS veci8
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_veci8_normalize_wrapper';
-
 CREATE FUNCTION to_svector("dims" INT, "indexes" INT[], "values" real[]) RETURNS svector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_svector_wrapper';
 
 CREATE FUNCTION binarize("vector" vector) RETURNS bvector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_binarize_wrapper';
-
-CREATE FUNCTION to_veci8("len" INT, "alpha" real, "offset" real, "values" INT[]) RETURNS veci8
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_to_veci8_wrapper';
 
 CREATE FUNCTION sphere(vector, real) RETURNS sphere_vector
 IMMUTABLE PARALLEL SAFE LANGUAGE sql AS 'SELECT ROW($1, $2)';
@@ -813,9 +661,6 @@ CREATE FUNCTION sphere(svector, real) RETURNS sphere_svector
 IMMUTABLE PARALLEL SAFE LANGUAGE sql AS 'SELECT ROW($1, $2)';
 
 CREATE FUNCTION sphere(bvector, real) RETURNS sphere_bvector
-IMMUTABLE PARALLEL SAFE LANGUAGE sql AS 'SELECT ROW($1, $2)';
-
-CREATE FUNCTION sphere(veci8, real) RETURNS sphere_veci8
 IMMUTABLE PARALLEL SAFE LANGUAGE sql AS 'SELECT ROW($1, $2)';
 
 -- List of aggregates
@@ -878,12 +723,6 @@ CREATE CAST (vector AS bvector)
 CREATE CAST (bvector AS vector)
     WITH FUNCTION _vectors_cast_bvecf32_to_vecf32(bvector, integer, boolean);
 
-CREATE CAST (veci8 AS vector)
-    WITH FUNCTION _vectors_cast_veci8_to_vecf32(veci8, integer, boolean);
-
-CREATE CAST (vector AS veci8)
-    WITH FUNCTION _vectors_cast_vecf32_to_veci8(vector, integer, boolean);
-
 -- List of access methods
 
 CREATE ACCESS METHOD vectors TYPE INDEX HANDLER _vectors_amhandler;
@@ -916,12 +755,6 @@ CREATE OPERATOR FAMILY bvector_dot_ops USING vectors;
 CREATE OPERATOR FAMILY bvector_cos_ops USING vectors;
 
 CREATE OPERATOR FAMILY bvector_jaccard_ops USING vectors;
-
-CREATE OPERATOR FAMILY veci8_l2_ops USING vectors;
-
-CREATE OPERATOR FAMILY veci8_dot_ops USING vectors;
-
-CREATE OPERATOR FAMILY veci8_cos_ops USING vectors;
 
 -- List of operator classes
 
@@ -989,21 +822,6 @@ CREATE OPERATOR CLASS bvector_jaccard_ops
     FOR TYPE bvector USING vectors FAMILY bvector_jaccard_ops AS
     OPERATOR 1 <~> (bvector, bvector) FOR ORDER BY float_ops,
     OPERATOR 2 <<~>> (bvector, sphere_bvector) FOR SEARCH;
-
-CREATE OPERATOR CLASS veci8_l2_ops
-    FOR TYPE veci8 USING vectors FAMILY veci8_l2_ops AS
-    OPERATOR 1 <-> (veci8, veci8) FOR ORDER BY float_ops,
-    OPERATOR 2 <<->> (veci8, sphere_veci8) FOR SEARCH;
-
-CREATE OPERATOR CLASS veci8_dot_ops
-    FOR TYPE veci8 USING vectors FAMILY veci8_dot_ops AS
-    OPERATOR 1 <#> (veci8, veci8) FOR ORDER BY float_ops,
-    OPERATOR 2 <<#>> (veci8, sphere_veci8) FOR SEARCH;
-
-CREATE OPERATOR CLASS veci8_cos_ops
-    FOR TYPE veci8 USING vectors FAMILY veci8_cos_ops AS
-    OPERATOR 1 <=> (veci8, veci8) FOR ORDER BY float_ops,
-    OPERATOR 2 <<=>> (veci8, sphere_veci8) FOR SEARCH;
 
 -- List of views
 

@@ -15,7 +15,6 @@ fn vec_type_from_str(s: &str) -> Result<VectorKind, ArgumentParseError> {
         "Vecf16" => Ok(VectorKind::Vecf16),
         "SVecf32" => Ok(VectorKind::SVecf32),
         "BVecf32" => Ok(VectorKind::BVecf32),
-        "Veci8" => Ok(VectorKind::Veci8),
         _ => Err(ArgumentParseError),
     }
 }

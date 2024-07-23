@@ -6,8 +6,6 @@ use crate::datatype::memory_vecf16::Vecf16Input;
 use crate::datatype::memory_vecf16::Vecf16Output;
 use crate::datatype::memory_vecf32::Vecf32Input;
 use crate::datatype::memory_vecf32::Vecf32Output;
-use crate::datatype::memory_veci8::Veci8Input;
-use crate::datatype::memory_veci8::Veci8Output;
 use crate::datatype::typmod::Typmod;
 use crate::error::*;
 use base::distance::*;
@@ -91,9 +89,6 @@ fn convert_name_to_vd(name: &str) -> Option<(VectorKind, DistanceKind)> {
         Some("bvector_dot") => Some((VectorKind::BVecf32, DistanceKind::Dot)),
         Some("bvector_cos") => Some((VectorKind::BVecf32, DistanceKind::Cos)),
         Some("bvector_jaccard") => Some((VectorKind::BVecf32, DistanceKind::Jaccard)),
-        Some("veci8_l2") => Some((VectorKind::Veci8, DistanceKind::L2)),
-        Some("veci8_dot") => Some((VectorKind::Veci8, DistanceKind::Dot)),
-        Some("veci8_cos") => Some((VectorKind::Veci8, DistanceKind::Cos)),
         _ => None,
     }
 }
@@ -174,10 +169,6 @@ impl Opfamily {
                 let vector = unsafe { BVecf32Input::from_datum(datum, false).unwrap() };
                 OwnedVector::BVecf32(vector.as_borrowed().own())
             }
-            VectorKind::Veci8 => {
-                let vector = unsafe { Veci8Input::from_datum(datum, false).unwrap() };
-                OwnedVector::Veci8(vector.as_borrowed().own())
-            }
         };
         Some(vector)
     }
@@ -207,10 +198,6 @@ impl Opfamily {
                 .get_by_index::<BVecf32Output>(NonZero::new(1).unwrap())
                 .unwrap()
                 .map(|vector| OwnedVector::BVecf32(vector.as_borrowed().own())),
-            VectorKind::Veci8 => tuple
-                .get_by_index::<Veci8Output>(NonZero::new(1).unwrap())
-                .unwrap()
-                .map(|vector| OwnedVector::Veci8(vector.as_borrowed().own())),
         };
         let radius = tuple.get_by_index::<f32>(NonZero::new(2).unwrap()).unwrap();
         (center, radius)

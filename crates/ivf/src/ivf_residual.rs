@@ -52,16 +52,12 @@ impl<O: Op> IvfResidual<O> {
         opts: &'a SearchOptions,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
         let lists = select(
-            {
-                let mut vector = vector.to_vec();
-                O::elkan_k_means_normalize(&mut vector);
-                k_means_lookup_many(&vector, &self.centroids)
-            },
+            k_means_lookup_many(&vector.to_vec(), &self.centroids),
             opts.ivf_nprobe as usize,
         );
         let vectors = lists
             .iter()
-            .map(|&(_, i)| O::vector_sub(vector, &self.centroids[(i,)]))
+            .map(|&(_, i)| O::residual(vector, &self.centroids[(i,)]))
             .collect::<Vec<_>>();
         let mut reranker = self
             .quantization
@@ -102,22 +98,11 @@ fn from_nothing<O: Op>(
     } = options.indexing.clone().unwrap_ivf();
     let samples = common::sample::sample(collection);
     rayon::check();
-    let centroids = {
-        let mut samples = samples;
-        for i in 0..samples.shape_0() {
-            O::elkan_k_means_normalize(&mut samples[(i,)]);
-        }
-        k_means(nlist as usize, samples)
-    };
+    let centroids = k_means(nlist as usize, samples, |_| ());
     rayon::check();
     let mut ls = vec![Vec::new(); nlist as usize];
     for i in 0..collection.len() {
-        ls[{
-            let mut vector = collection.vector(i).to_vec();
-            O::elkan_k_means_normalize(&mut vector);
-            k_means_lookup(&vector, &centroids)
-        }]
-        .push(i);
+        ls[k_means_lookup(&collection.vector(i).to_vec(), &centroids)].push(i);
     }
     let mut offsets = vec![0u32; nlist as usize + 1];
     for i in 0..nlist {
@@ -136,12 +121,8 @@ fn from_nothing<O: Op>(
         quantization_options,
         &collection,
         |vector| {
-            let target = {
-                let mut vector = vector.to_vec();
-                O::elkan_k_means_normalize(&mut vector);
-                k_means_lookup(&vector, &centroids)
-            };
-            O::vector_sub(vector, &centroids[(target,)])
+            let target = k_means_lookup(&vector.to_vec(), &centroids);
+            O::residual(vector, &centroids[(target,)])
         },
     );
     let payloads = MmapArray::create(

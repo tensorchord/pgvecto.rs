@@ -31,3 +31,28 @@ macro_rules! symbol {
 // 0.2.1--0.3.0
 symbol!(_vectors_ai_embedding_vector);
 symbol!(_vectors_typmod_in);
+
+// 0.3.0--0.4.0
+symbol!(_vectors_veci8_subscript);
+symbol!(_vectors_veci8_send);
+symbol!(_vectors_veci8_recv);
+symbol!(_vectors_veci8_out);
+symbol!(_vectors_veci8_operator_neq);
+symbol!(_vectors_veci8_operator_mul);
+symbol!(_vectors_veci8_operator_minus);
+symbol!(_vectors_veci8_operator_lte);
+symbol!(_vectors_veci8_operator_lt);
+symbol!(_vectors_veci8_operator_l2);
+symbol!(_vectors_veci8_operator_gte);
+symbol!(_vectors_veci8_operator_gt);
+symbol!(_vectors_veci8_operator_eq);
+symbol!(_vectors_veci8_operator_dot);
+symbol!(_vectors_veci8_operator_cosine);
+symbol!(_vectors_veci8_operator_add);
+symbol!(_vectors_veci8_normalize);
+symbol!(_vectors_veci8_norm);
+symbol!(_vectors_veci8_in);
+symbol!(_vectors_veci8_dims);
+symbol!(_vectors_to_veci8);
+symbol!(_vectors_cast_veci8_to_vecf32);
+symbol!(_vectors_cast_vecf32_to_veci8);

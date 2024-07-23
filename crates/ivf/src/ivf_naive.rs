@@ -52,11 +52,7 @@ impl<O: Op> IvfNaive<O> {
         opts: &'a SearchOptions,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
         let lists = select(
-            {
-                let mut vector = vector.to_vec();
-                O::elkan_k_means_normalize(&mut vector);
-                k_means_lookup_many(&vector, &self.centroids)
-            },
+            k_means_lookup_many(&vector.to_vec(), &self.centroids),
             opts.ivf_nprobe as usize,
         );
         let mut reranker = self.quantization.ivf_naive_rerank(vector, opts, move |u| {
@@ -96,22 +92,11 @@ fn from_nothing<O: Op>(
     } = options.indexing.clone().unwrap_ivf();
     let samples = common::sample::sample(collection);
     rayon::check();
-    let centroids = {
-        let mut samples = samples;
-        for i in 0..samples.shape_0() {
-            O::elkan_k_means_normalize(&mut samples[(i,)]);
-        }
-        k_means(nlist as usize, samples)
-    };
+    let centroids = k_means(nlist as usize, samples, O::spherical);
     rayon::check();
     let mut ls = vec![Vec::new(); nlist as usize];
     for i in 0..collection.len() {
-        ls[{
-            let mut vector = collection.vector(i).to_vec();
-            O::elkan_k_means_normalize(&mut vector);
-            k_means_lookup(&vector, &centroids)
-        }]
-        .push(i);
+        ls[k_means_lookup(&collection.vector(i).to_vec(), &centroids)].push(i);
     }
     let mut offsets = vec![0u32; nlist as usize + 1];
     for i in 0..nlist {
