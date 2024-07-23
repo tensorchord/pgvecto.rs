@@ -82,7 +82,8 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
             let xc_over_dot_product = distance_to_centroid[i] / dot_product_x[i];
             error_bound.push(
                 error_base
-                    * (xc_over_dot_product * xc_over_dot_product - distance_to_centroid_square[i]).sqrt(),
+                    * (xc_over_dot_product * xc_over_dot_product - distance_to_centroid_square[i])
+                        .sqrt(),
             );
             let ip = Scalar::<O>::from_f32(-2.0) / dim_pad_sqrt * xc_over_dot_product;
             factor_ip.push(ip);
