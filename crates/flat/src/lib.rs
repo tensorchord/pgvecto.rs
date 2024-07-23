@@ -38,15 +38,26 @@ impl<O: OperatorFlat> Flat<O> {
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
     ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
-        let mut reranker = self.quantization.flat_rerank(vector, opts, move |u| {
-            (
-                O::distance(vector, self.storage.vector(u)),
-                self.payloads[u as usize],
-            )
-        });
-        for i in 0..self.storage.len() {
-            reranker.push(i, ());
-        }
+        let mut heap = Vec::new();
+        let preprocessed = self.quantization.preprocess(vector);
+        self.quantization.push_batch(
+            &preprocessed,
+            0..self.storage.len(),
+            &mut heap,
+            opts.flat_sq_fast_scan,
+            opts.flat_pq_fast_scan,
+        );
+        let mut reranker = self.quantization.flat_rerank(
+            heap,
+            move |u| {
+                (
+                    O::distance(vector, self.storage.vector(u)),
+                    self.payloads[u as usize],
+                )
+            },
+            opts.flat_sq_rerank_size,
+            opts.flat_pq_rerank_size,
+        );
         (
             Vec::new(),
             Box::new(std::iter::from_fn(move || {

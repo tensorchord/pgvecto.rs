@@ -84,7 +84,7 @@ impl<O: OperatorHnsw> Hnsw<O> {
             &self.visited,
             s,
             opts.hnsw_ef_search,
-            self.quantization.graph_rerank(vector, opts, move |u| {
+            self.quantization.graph_rerank(vector, move |u| {
                 (
                     O::distance(self.storage.vector(u), vector),
                     (self.payloads[u as usize], base_outs(self, u)),

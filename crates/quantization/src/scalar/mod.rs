@@ -1,19 +1,21 @@
 pub mod operator;
 
 use self::operator::OperatorScalarQuantization;
-use crate::reranker::window::WindowReranker;
-use crate::reranker::window_0::Window0Reranker;
-use crate::utils::InfiniteByteChunks;
+use crate::reranker::window::WindowFlatReranker;
+use crate::reranker::window_0::Window0GraphReranker;
 use base::index::*;
 use base::operator::*;
 use base::scalar::*;
-use base::search::Reranker;
+use base::search::RerankerPop;
+use base::search::RerankerPush;
 use base::search::Vectors;
 use base::vector::*;
 use common::vec2::Vec2;
 use num_traits::Float;
 use serde::Deserialize;
 use serde::Serialize;
+use std::cmp::Reverse;
+use std::ops::Range;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(bound = "")]
@@ -62,6 +64,18 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
         }
     }
 
+    pub fn bits(&self) -> u32 {
+        self.bits
+    }
+
+    pub fn bytes(&self) -> u32 {
+        (self.dims * self.bits).div_ceil(8)
+    }
+
+    pub fn width(&self) -> u32 {
+        self.dims
+    }
+
     pub fn encode(&self, vector: &[Scalar<O>]) -> Vec<u8> {
         let dims = self.dims;
         let bits = self.bits;
@@ -72,37 +86,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
                 (((vector[i] - self.min[i]) / del).to_f32() * (((1 << bits) - 1) as f32)) as u32;
             codes.push(w.clamp(0, 255) as u8);
         }
-        let bytes = (self.dims * self.bits).div_ceil(8);
-        let codes = codes.into_iter().chain(std::iter::repeat(0));
-        fn merge_8([b0, b1, b2, b3, b4, b5, b6, b7]: [u8; 8]) -> u8 {
-            b0 | (b1 << 1) | (b2 << 2) | (b3 << 3) | (b4 << 4) | (b5 << 5) | (b6 << 6) | (b7 << 7)
-        }
-        fn merge_4([b0, b1, b2, b3]: [u8; 4]) -> u8 {
-            b0 | (b1 << 2) | (b2 << 4) | (b3 << 6)
-        }
-        fn merge_2([b0, b1]: [u8; 2]) -> u8 {
-            b0 | (b1 << 4)
-        }
-        match self.bits {
-            1 => InfiniteByteChunks::new(codes)
-                .map(merge_8)
-                .take(bytes as usize)
-                .collect(),
-            2 => InfiniteByteChunks::new(codes)
-                .map(merge_4)
-                .take(bytes as usize)
-                .collect(),
-            4 => InfiniteByteChunks::new(codes)
-                .map(merge_2)
-                .take(bytes as usize)
-                .collect(),
-            8 => codes.take(bytes as usize).collect(),
-            _ => unreachable!(),
-        }
-    }
-
-    pub fn bytes(&self) -> u32 {
-        (self.dims * self.bits).div_ceil(8)
+        codes
     }
 
     pub fn preprocess(&self, lhs: Borrowed<'_, O>) -> O::QuantizationPreprocessed {
@@ -126,88 +110,185 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
         }
     }
 
-    pub fn flat_rerank<'a, T: 'a>(
-        &'a self,
-        vector: Borrowed<'a, O>,
-        opts: &'a SearchOptions,
-        c: impl Fn(u32) -> &'a [u8] + 'a,
-        r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T> + 'a> {
-        let p =
-            O::scalar_quantization_preprocess(self.dims, self.bits, &self.max, &self.min, vector);
-        if opts.flat_sq_rerank_size == 0 {
-            Box::new(Window0Reranker::new(move |u, ()| self.process(&p, c(u)), r))
-        } else {
-            Box::new(WindowReranker::new(
-                opts.flat_sq_rerank_size,
-                move |u, ()| self.process(&p, c(u)),
-                r,
-            ))
-        }
-    }
-
-    pub fn ivf_naive_rerank<'a, T: 'a>(
-        &'a self,
-        vector: Borrowed<'a, O>,
-        opts: &'a SearchOptions,
-        c: impl Fn(u32) -> &'a [u8] + 'a,
-        r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T> + 'a> {
-        let p =
-            O::scalar_quantization_preprocess(self.dims, self.bits, &self.max, &self.min, vector);
-        if opts.ivf_sq_rerank_size == 0 {
-            Box::new(Window0Reranker::new(move |u, ()| self.process(&p, c(u)), r))
-        } else {
-            Box::new(WindowReranker::new(
-                opts.ivf_sq_rerank_size,
-                move |u, ()| self.process(&p, c(u)),
-                r,
-            ))
-        }
-    }
-
-    pub fn ivf_residual_rerank<'a, T: 'a>(
-        &'a self,
-        vectors: Vec<Owned<O>>,
-        opts: &'a SearchOptions,
-        c: impl Fn(u32) -> &'a [u8] + 'a,
-        r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T, usize> + 'a> {
-        let p = vectors
-            .into_iter()
-            .map(|vector| {
-                O::scalar_quantization_preprocess(
-                    self.dims,
-                    self.bits,
-                    &self.max,
-                    &self.min,
-                    vector.as_borrowed(),
+    pub fn push_batch(
+        &self,
+        preprocessed: &O::QuantizationPreprocessed,
+        rhs: Range<u32>,
+        heap: &mut Vec<(Reverse<F32>, u32)>,
+        codes: &[u8],
+        packed_codes: &[u8],
+        fast_scan: bool,
+    ) {
+        let dims = self.dims;
+        let width = dims;
+        if fast_scan
+            && O::SUPPORT_FAST_SCAN
+            && self.bits == 1
+            && crate::fast_scan::b1::is_supported()
+        {
+            use crate::fast_scan::b1::{fast_scan, BLOCK_SIZE};
+            use crate::fast_scan::quantize::{dequantize, quantize};
+            let s = rhs.start.next_multiple_of(BLOCK_SIZE);
+            let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
+            heap.extend((rhs.start..s).map(|u| {
+                (
+                    Reverse(self.process(preprocessed, {
+                        let bytes = self.bytes() as usize;
+                        let start = u as usize * bytes;
+                        let end = start + bytes;
+                        &codes[start..end]
+                    })),
+                    u,
                 )
-            })
-            .collect::<Vec<_>>();
-        if opts.ivf_pq_rerank_size == 0 {
-            Box::new(Window0Reranker::new(
-                move |u, i| self.process(&p[i], c(u)),
-                r,
-            ))
-        } else {
-            Box::new(WindowReranker::new(
-                opts.ivf_pq_rerank_size,
-                move |u, i| self.process(&p[i], c(u)),
-                r,
-            ))
+            }));
+            let (k, b, lut) = quantize(&O::fast_scan(preprocessed));
+            for i in (s..e).step_by(BLOCK_SIZE as _) {
+                let bytes = width as usize * 16;
+                let start = (i / BLOCK_SIZE) as usize * bytes;
+                let end = start + bytes;
+                heap.extend({
+                    let res = fast_scan(width, &packed_codes[start..end], &lut);
+                    let r = res.map(|x| O::fast_scan_resolve(dequantize(width, k, b, x)));
+                    (i..i + BLOCK_SIZE)
+                        .map(|u| (Reverse(r[(u - i) as usize]), u))
+                        .collect::<Vec<_>>()
+                });
+            }
+            heap.extend((e..rhs.end).map(|u| {
+                (
+                    Reverse(self.process(preprocessed, {
+                        let bytes = self.bytes() as usize;
+                        let start = u as usize * bytes;
+                        let end = start + bytes;
+                        &codes[start..end]
+                    })),
+                    u,
+                )
+            }));
+            return;
         }
+        if fast_scan
+            && O::SUPPORT_FAST_SCAN
+            && self.bits == 2
+            && crate::fast_scan::b2::is_supported()
+        {
+            use crate::fast_scan::b2::{fast_scan, BLOCK_SIZE};
+            use crate::fast_scan::quantize::{dequantize, quantize};
+            let s = rhs.start.next_multiple_of(BLOCK_SIZE);
+            let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
+            heap.extend((rhs.start..s).map(|u| {
+                (
+                    Reverse(self.process(preprocessed, {
+                        let bytes = self.bytes() as usize;
+                        let start = u as usize * bytes;
+                        let end = start + bytes;
+                        &codes[start..end]
+                    })),
+                    u,
+                )
+            }));
+            let (k, b, lut) = quantize(&O::fast_scan(preprocessed));
+            for i in (s..e).step_by(BLOCK_SIZE as _) {
+                let bytes = width as usize * 16;
+                let start = (i / BLOCK_SIZE) as usize * bytes;
+                let end = start + bytes;
+                heap.extend({
+                    let res = fast_scan(width, &packed_codes[start..end], &lut);
+                    let r = res.map(|x| O::fast_scan_resolve(dequantize(width, k, b, x)));
+                    (i..i + BLOCK_SIZE)
+                        .map(|u| (Reverse(r[(u - i) as usize]), u))
+                        .collect::<Vec<_>>()
+                });
+            }
+            heap.extend((e..rhs.end).map(|u| {
+                (
+                    Reverse(self.process(preprocessed, {
+                        let bytes = self.bytes() as usize;
+                        let start = u as usize * bytes;
+                        let end = start + bytes;
+                        &codes[start..end]
+                    })),
+                    u,
+                )
+            }));
+            return;
+        }
+        if fast_scan
+            && O::SUPPORT_FAST_SCAN
+            && self.bits == 4
+            && crate::fast_scan::b4::is_supported()
+        {
+            use crate::fast_scan::b4::{fast_scan, BLOCK_SIZE};
+            use crate::fast_scan::quantize::{dequantize, quantize};
+            let s = rhs.start.next_multiple_of(BLOCK_SIZE);
+            let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
+            heap.extend((rhs.start..s).map(|u| {
+                (
+                    Reverse(self.process(preprocessed, {
+                        let bytes = self.bytes() as usize;
+                        let start = u as usize * bytes;
+                        let end = start + bytes;
+                        &codes[start..end]
+                    })),
+                    u,
+                )
+            }));
+            let (k, b, lut) = quantize(&O::fast_scan(preprocessed));
+            for i in (s..e).step_by(BLOCK_SIZE as _) {
+                let bytes = width as usize * 16;
+                let start = (i / BLOCK_SIZE) as usize * bytes;
+                let end = start + bytes;
+                heap.extend({
+                    let res = fast_scan(width, &packed_codes[start..end], &lut);
+                    let r = res.map(|x| O::fast_scan_resolve(dequantize(width, k, b, x)));
+                    (i..i + BLOCK_SIZE)
+                        .map(|u| (Reverse(r[(u - i) as usize]), u))
+                        .collect::<Vec<_>>()
+                });
+            }
+            heap.extend((e..rhs.end).map(|u| {
+                (
+                    Reverse(self.process(preprocessed, {
+                        let bytes = self.bytes() as usize;
+                        let start = u as usize * bytes;
+                        let end = start + bytes;
+                        &codes[start..end]
+                    })),
+                    u,
+                )
+            }));
+            return;
+        }
+        heap.extend(rhs.map(|u| {
+            (
+                Reverse(self.process(preprocessed, {
+                    let bytes = self.bytes() as usize;
+                    let start = u as usize * bytes;
+                    let end = start + bytes;
+                    &codes[start..end]
+                })),
+                u,
+            )
+        }));
     }
 
-    pub fn graph_rerank<'a, T: 'a>(
+    pub fn flat_rerank<'a, T: 'a, R: Fn(u32) -> (F32, T) + 'a>(
+        &'a self,
+        heap: Vec<(Reverse<F32>, u32)>,
+        r: R,
+        rerank_size: u32,
+    ) -> impl RerankerPop<T> + 'a {
+        WindowFlatReranker::new(heap, r, rerank_size)
+    }
+
+    pub fn graph_rerank<'a, T: 'a, C: Fn(u32) -> &'a [u8] + 'a, R: Fn(u32) -> (F32, T) + 'a>(
         &'a self,
         vector: Borrowed<'a, O>,
-        _: &'a SearchOptions,
-        c: impl Fn(u32) -> &'a [u8] + 'a,
-        r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T> + 'a> {
+        c: C,
+        r: R,
+    ) -> impl RerankerPush + RerankerPop<T> + 'a {
         let p =
             O::scalar_quantization_preprocess(self.dims, self.bits, &self.max, &self.min, vector);
-        Box::new(Window0Reranker::new(move |u, ()| self.process(&p, c(u)), r))
+        Window0GraphReranker::new(move |u| self.process(&p, c(u)), r)
     }
 }
