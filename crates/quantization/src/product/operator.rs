@@ -224,7 +224,3 @@ unimpl_operator_product_quantization!(BVecf32Jaccard, BVecf32L2);
 unimpl_operator_product_quantization!(SVecf32Cos, SVecf32L2);
 unimpl_operator_product_quantization!(SVecf32Dot, SVecf32L2);
 unimpl_operator_product_quantization!(SVecf32L2, SVecf32L2);
-
-unimpl_operator_product_quantization!(Veci8Cos, Veci8L2);
-unimpl_operator_product_quantization!(Veci8Dot, Veci8L2);
-unimpl_operator_product_quantization!(Veci8L2, Veci8L2);

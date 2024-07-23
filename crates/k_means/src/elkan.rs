@@ -5,9 +5,10 @@ use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use std::ops::{Index, IndexMut};
 
-pub struct ElkanKMeans<S: ScalarLike> {
+pub struct ElkanKMeans<S: ScalarLike, F: FnMut(&mut [S])> {
     dims: usize,
     c: usize,
+    spherical: F,
     centroids: Vec2<S>,
     lowerbound: Square,
     upperbound: Vec<F32>,
@@ -19,8 +20,8 @@ pub struct ElkanKMeans<S: ScalarLike> {
 
 const DELTA: f32 = 1.0 / 1024.0;
 
-impl<S: ScalarLike> ElkanKMeans<S> {
-    pub fn new(c: usize, samples: Vec2<S>) -> Self {
+impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
+    pub fn new(c: usize, samples: Vec2<S>, spherical: F) -> Self {
         let n = samples.shape_0();
         let dims = samples.shape_1();
 
@@ -79,6 +80,7 @@ impl<S: ScalarLike> ElkanKMeans<S> {
         Self {
             dims,
             c,
+            spherical,
             centroids,
             lowerbound,
             upperbound,
@@ -203,7 +205,7 @@ impl<S: ScalarLike> ElkanKMeans<S> {
             count[o] = count[o] - count[i];
         }
         for i in 0..c {
-            spherical_normalize(&mut centroids[(i,)]);
+            (self.spherical)(&mut centroids[(i,)]);
         }
 
         // Step 5, 6
@@ -264,17 +266,5 @@ impl IndexMut<(usize, usize)> for Square {
         debug_assert!(x < self.x);
         debug_assert!(y < self.y);
         &mut self.v[x * self.y + y]
-    }
-}
-
-fn spherical_normalize<S: ScalarLike>(vector: &mut [S]) {
-    let n = vector.len();
-    let mut dot = F32::zero();
-    for i in 0..n {
-        dot += vector[i].to_f() * vector[i].to_f();
-    }
-    let l = dot.sqrt();
-    for i in 0..n {
-        vector[i] /= S::from_f(l);
     }
 }
