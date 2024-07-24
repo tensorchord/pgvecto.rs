@@ -91,6 +91,11 @@ impl<O: Operator> OperatorRaBitQ for O {
             }
         }
 
+        // let mut projection = vec![vec![Scalar::<O>::zero(); dim]; dim];
+        // for i in 0..dim {
+        //     projection[i][i] = Scalar::<O>::one();
+        // }
+
         projection
     }
 

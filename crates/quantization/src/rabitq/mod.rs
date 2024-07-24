@@ -17,6 +17,7 @@ pub mod operator;
 
 const EPSILON: f32 = 1.9;
 const THETA_LOG_DIM: u32 = 4;
+const DEFAULT_X_DOT_PRODUCT: f32 = 0.8;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(bound = "")]
@@ -69,7 +70,11 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
         for i in 0..(n) {
             let norm = O::vector_dot_product(&quantized_x[i], &quantized_x[i]).sqrt()
                 * Scalar::<O>::from_f32(dim_pad as f32).sqrt();
-            dot_product_x[i] = O::vector_dot_product(&quantized_x[i], &signed_x[i]).div(norm);
+            dot_product_x[i] = if norm.is_normal() {
+                O::vector_dot_product(&quantized_x[i], &signed_x[i]).div(norm)
+            } else {
+                Scalar::<O>::from_f32(DEFAULT_X_DOT_PRODUCT)
+            }
         }
 
         let mut error_bound = Vec::with_capacity(n);
