@@ -2,13 +2,11 @@ pub mod bvecf32;
 pub mod svecf32;
 pub mod vecf16;
 pub mod vecf32;
-pub mod veci8;
 
 pub use bvecf32::{BVecf32Borrowed, BVecf32Owned, BVECF32_WIDTH};
 pub use svecf32::{SVecf32Borrowed, SVecf32Owned};
 pub use vecf16::{Vecf16Borrowed, Vecf16Owned};
 pub use vecf32::{Vecf32Borrowed, Vecf32Owned};
-pub use veci8::{Veci8Borrowed, Veci8Owned};
 
 use crate::scalar::ScalarLike;
 use crate::scalar::F32;
@@ -22,7 +20,6 @@ pub enum VectorKind {
     Vecf16,
     SVecf32,
     BVecf32,
-    Veci8,
 }
 
 pub trait VectorOwned: Clone + Serialize + for<'a> Deserialize<'a> + 'static {
@@ -69,7 +66,6 @@ pub enum OwnedVector {
     Vecf16(Vecf16Owned),
     SVecf32(SVecf32Owned),
     BVecf32(BVecf32Owned),
-    Veci8(Veci8Owned),
 }
 
 impl OwnedVector {
@@ -79,7 +75,6 @@ impl OwnedVector {
             OwnedVector::Vecf16(x) => BorrowedVector::Vecf16(x.as_borrowed()),
             OwnedVector::SVecf32(x) => BorrowedVector::SVecf32(x.as_borrowed()),
             OwnedVector::BVecf32(x) => BorrowedVector::BVecf32(x.as_borrowed()),
-            OwnedVector::Veci8(x) => BorrowedVector::Veci8(x.as_borrowed()),
         }
     }
 }
@@ -102,7 +97,6 @@ pub enum BorrowedVector<'a> {
     Vecf16(Vecf16Borrowed<'a>),
     SVecf32(SVecf32Borrowed<'a>),
     BVecf32(BVecf32Borrowed<'a>),
-    Veci8(Veci8Borrowed<'a>),
 }
 
 impl PartialEq for BorrowedVector<'_> {
@@ -113,7 +107,6 @@ impl PartialEq for BorrowedVector<'_> {
             (Vecf16(lhs), Vecf16(rhs)) => lhs == rhs,
             (SVecf32(lhs), SVecf32(rhs)) => lhs == rhs,
             (BVecf32(lhs), BVecf32(rhs)) => lhs == rhs,
-            (Veci8(lhs), Veci8(rhs)) => lhs == rhs,
             _ => false,
         }
     }
@@ -127,7 +120,6 @@ impl PartialOrd for BorrowedVector<'_> {
             (Vecf16(lhs), Vecf16(rhs)) => lhs.partial_cmp(rhs),
             (SVecf32(lhs), SVecf32(rhs)) => lhs.partial_cmp(rhs),
             (BVecf32(lhs), BVecf32(rhs)) => lhs.partial_cmp(rhs),
-            (Veci8(lhs), Veci8(rhs)) => lhs.partial_cmp(rhs),
             _ => None,
         }
     }

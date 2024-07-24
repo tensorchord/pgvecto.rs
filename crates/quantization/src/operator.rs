@@ -187,10 +187,6 @@ unimpl_operator_quantization_process!(SVecf32Cos, SVecf32L2);
 unimpl_operator_quantization_process!(SVecf32Dot, SVecf32L2);
 unimpl_operator_quantization_process!(SVecf32L2, SVecf32L2);
 
-unimpl_operator_quantization_process!(Veci8Cos, Veci8L2);
-unimpl_operator_quantization_process!(Veci8Dot, Veci8L2);
-unimpl_operator_quantization_process!(Veci8L2, Veci8L2);
-
 pub trait OperatorQuantization:
     OperatorQuantizationProcess
     + OperatorTrivialQuantization
@@ -213,6 +209,3 @@ impl OperatorQuantization for Vecf16L2 {}
 impl OperatorQuantization for Vecf32Cos {}
 impl OperatorQuantization for Vecf32Dot {}
 impl OperatorQuantization for Vecf32L2 {}
-impl OperatorQuantization for Veci8Cos {}
-impl OperatorQuantization for Veci8Dot {}
-impl OperatorQuantization for Veci8L2 {}

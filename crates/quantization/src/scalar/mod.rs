@@ -112,19 +112,18 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
     }
 
     pub fn process(&self, preprocessed: &O::QuantizationPreprocessed, rhs: &[u8]) -> F32 {
+        let dims = self.dims;
         match self.bits {
-            1 => O::quantization_process(self.dims, 1, 1, preprocessed, |i| {
-                ((rhs[i >> 3] >> ((i & 7) << 1)) & 1) as usize
+            1 => O::quantization_process(dims, 1, 1, preprocessed, |i| {
+                ((rhs[i >> 3] >> ((i & 7) << 0)) & 1) as usize
             }),
-            2 => O::quantization_process(self.dims, 1, 2, preprocessed, |i| {
-                ((rhs[i >> 2] >> ((i & 3) << 2)) & 3) as usize
+            2 => O::quantization_process(dims, 1, 2, preprocessed, |i| {
+                ((rhs[i >> 2] >> ((i & 3) << 1)) & 3) as usize
             }),
-            4 => O::quantization_process(self.dims, 1, 4, preprocessed, |i| {
-                ((rhs[i >> 1] >> ((i & 1) << 4)) & 15) as usize
+            4 => O::quantization_process(dims, 1, 4, preprocessed, |i| {
+                ((rhs[i >> 1] >> ((i & 1) << 2)) & 15) as usize
             }),
-            8 => O::quantization_process(self.dims, 1, 8, preprocessed, |i| {
-                ((rhs[i >> 0] >> (0 << 8)) & 255) as usize
-            }),
+            8 => O::quantization_process(dims, 1, 8, preprocessed, |i| rhs[i] as usize),
             _ => unreachable!(),
         }
     }

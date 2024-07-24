@@ -1,7 +1,6 @@
 mod bvector;
 mod svec;
 mod vec;
-mod veci8;
 
 use base::operator::*;
 use base::scalar::*;
@@ -67,16 +66,4 @@ impl OperatorStorage for BVecf32L2 {
 
 impl OperatorStorage for BVecf32Jaccard {
     type Storage = bvector::BVectorStorage;
-}
-
-impl OperatorStorage for Veci8Cos {
-    type Storage = veci8::Veci8Storage;
-}
-
-impl OperatorStorage for Veci8Dot {
-    type Storage = veci8::Veci8Storage;
-}
-
-impl OperatorStorage for Veci8L2 {
-    type Storage = veci8::Veci8Storage;
 }

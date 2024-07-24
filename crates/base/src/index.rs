@@ -168,9 +168,6 @@ impl VectorOptions {
             (VectorKind::BVecf32, DistanceKind::Cos, 1..65536) => Ok(()),
             (VectorKind::BVecf32, DistanceKind::Dot, 1..65536) => Ok(()),
             (VectorKind::BVecf32, DistanceKind::Jaccard, 1..65536) => Ok(()),
-            (VectorKind::Veci8, DistanceKind::L2, 1..65536) => Ok(()),
-            (VectorKind::Veci8, DistanceKind::Cos, 1..65536) => Ok(()),
-            (VectorKind::Veci8, DistanceKind::Dot, 1..65536) => Ok(()),
             _ => Err(ValidationError::new("not valid vector options")),
         }
     }
