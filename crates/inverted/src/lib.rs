@@ -44,11 +44,11 @@ impl<O: OperatorInverted> Inverted<O> {
         _: &'a SearchOptions,
     ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
         let mut doc_score = vec![ZERO; self.payloads.len()];
-        for (token, _) in O::to_index_vec(vector) {
+        for (token, val) in O::to_index_vec(vector) {
             let start = self.offsets[token as usize];
             let end = self.offsets[token as usize + 1];
             for i in (start as usize)..(end as usize) {
-                doc_score[self.indexes[i] as usize] += self.scores[i];
+                doc_score[self.indexes[i] as usize] += self.scores[i] * val;
             }
         }
         let mut candidates: BinaryHeap<(F32, Payload)> = doc_score
