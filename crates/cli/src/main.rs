@@ -1,9 +1,8 @@
 #![allow(clippy::needless_range_loop)]
 
-use base::index::SearchOptions;
 use base::search::Pointer;
 use base::worker::ViewVbaseOperations;
-use log::{info, warn};
+use log::{debug, info, warn};
 use service::Instance;
 use std::cmp::min;
 use std::fs;
@@ -18,19 +17,6 @@ mod args;
 mod read;
 
 const INTERVAL: Duration = Duration::from_secs(1);
-
-fn default_search_opt() -> SearchOptions {
-    SearchOptions {
-        flat_sq_rerank_size: 0,
-        flat_pq_rerank_size: 0,
-        ivf_sq_rerank_size: 0,
-        ivf_pq_rerank_size: 0,
-        ivf_rabit_rerank_size: 0,
-        hnsw_ef_search: 100,
-        ivf_nprobe: 10,
-        diskann_ef_search: 100,
-    }
-}
 
 fn calculate_precision(truth: &[i32], res: &[i32], top: usize) -> f32 {
     let mut count = 0;
@@ -52,6 +38,7 @@ fn main() {
     let mut log_builder = env_logger::builder();
     if args.verbose {
         log_builder.filter_level(log::LevelFilter::Debug);
+        debug!("arguments: {args:#?}");
     } else {
         log_builder.filter_level(log::LevelFilter::Info);
     }
@@ -142,7 +129,8 @@ fn main() {
             let mut res = Vec::with_capacity(queries.len());
             let view = instance.view();
             std::mem::forget(instance);
-            let search_opt = default_search_opt();
+            let search_opt = query.get_search_options();
+            let start_time = Instant::now();
             for (i, vec) in queries.iter().enumerate() {
                 match view.vbase(&convert_to_owned_vec(vec), &search_opt) {
                     Ok(iter) => {
@@ -155,10 +143,11 @@ fn main() {
                 }
             }
             info!(
-                "Top {} precision of {} queries is {}",
+                "Top {} precision of {} queries is {} (QPS: {})",
                 query.top_k,
                 res.len(),
-                res.iter().sum::<f32>() / (res.len() as f32)
+                res.iter().sum::<f32>() / (res.len() as f32),
+                res.len() as f32 / start_time.elapsed().as_secs_f32(),
             );
         }
     }

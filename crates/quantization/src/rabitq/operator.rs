@@ -24,7 +24,7 @@ pub trait OperatorRaBitQ: Operator {
         error_bound: Scalar<Self>,
         binary_x: &[u64],
         p: &Self::RabitQuantizationPreprocessed,
-    ) -> F32;
+    ) -> (F32, F32);
     fn rabit_quantization_preprocess(
         dim: usize,
         vec: Borrowed<'_, Self>,
@@ -61,8 +61,10 @@ impl<O: Operator> OperatorRaBitQ for O {
         // scalar quantization
         let mut quantized_y_scalar = vec![0u8; dim];
         let mut scalar_sum = 0u32;
+        let one_over_delta = Scalar::<O>::one() / delta;
         for i in 0..dim {
-            quantized_y_scalar[i] = ((quantized_y[i] - lower_bound) / delta + rand_bias[i])
+            quantized_y_scalar[i] = ((quantized_y[i] - lower_bound) * one_over_delta
+                + rand_bias[i])
                 .to_u8()
                 .expect("failed to convert a Scalar value to u8");
             scalar_sum += quantized_y_scalar[i] as u32;
@@ -90,12 +92,6 @@ impl<O: Operator> OperatorRaBitQ for O {
                 projection[i].push(Scalar::<O>::from_f32(*val));
             }
         }
-
-        // let mut projection = vec![vec![Scalar::<O>::zero(); dim]; dim];
-        // for i in 0..dim {
-        //     projection[i][i] = Scalar::<O>::one();
-        // }
-
         projection
     }
 
@@ -110,8 +106,9 @@ impl<O: Operator> OperatorRaBitQ for O {
     // binarize vector to 0 or 1 in binary format stored in u64
     fn vector_binarize_u64(vec: &[Scalar<Self>]) -> Vec<u64> {
         let mut binary = vec![0u64; (vec.len() + 63) / 64];
+        let zero = Scalar::<O>::zero();
         for i in 0..vec.len() {
-            if vec[i].is_sign_positive() {
+            if vec[i] > zero {
                 binary[i / 64] |= 1 << (i % 64);
             }
         }
@@ -121,8 +118,9 @@ impl<O: Operator> OperatorRaBitQ for O {
     // binarize vector to +1 or -1
     fn vector_binarize_one(vec: &[Scalar<Self>]) -> Vec<Scalar<Self>> {
         let mut binary = vec![Scalar::<O>::one(); vec.len()];
+        let zero = Scalar::<O>::zero();
         for i in 0..vec.len() {
-            if vec[i].is_sign_negative() {
+            if vec[i] <= zero {
                 binary[i] = -Scalar::<O>::one();
             }
         }
@@ -147,7 +145,7 @@ impl<O: Operator> OperatorRaBitQ for O {
         error_bound: Scalar<Self>,
         binary_x: &[u64],
         p: &Self::RabitQuantizationPreprocessed,
-    ) -> F32 {
+    ) -> (F32, F32) {
         let estimate = x_centroid_square
             + p.0
             + p.1 * factor_ppc
@@ -155,7 +153,7 @@ impl<O: Operator> OperatorRaBitQ for O {
                 - p.3)
                 * factor_ip
                 * p.2;
-        (estimate - (error_bound * p.0.sqrt())).to_f()
+        (estimate.to_f(), (error_bound * p.0.sqrt()).to_f())
     }
 }
 

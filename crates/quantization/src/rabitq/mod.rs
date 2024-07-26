@@ -1,8 +1,7 @@
 use std::ops::Div;
 
 use self::operator::OperatorRaBitQ;
-use crate::reranker::window::WindowReranker;
-use crate::reranker::window_0::Window0Reranker;
+use crate::reranker::error_based::ErrorBasedReranker;
 use base::index::{RaBitQuantizationOptions, SearchOptions, VectorOptions};
 use base::operator::{Borrowed, Owned, Scalar};
 use base::scalar::{ScalarLike, F32};
@@ -147,7 +146,7 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
     pub fn ivf_residual_rerank<'a, T: 'a>(
         &'a self,
         vectors: Vec<Owned<O>>,
-        opts: &'a SearchOptions,
+        _: &'a SearchOptions,
         r: impl Fn(u32) -> (F32, T) + 'a,
     ) -> Box<dyn Reranker<T, usize> + 'a> {
         let p = vectors
@@ -162,36 +161,19 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
             })
             .collect::<Vec<_>>();
 
-        if opts.ivf_rabit_rerank_size == 0 {
-            Box::new(Window0Reranker::new(
-                move |xi, ci| {
-                    O::rabit_quantization_process(
-                        self.distance_to_centroid_square[xi as usize],
-                        self.factor_ppc[xi as usize],
-                        self.factor_ip[xi as usize],
-                        self.error_bound[xi as usize],
-                        &self.binary_vec_x[xi as usize],
-                        &p[ci],
-                    )
-                },
-                r,
-            ))
-        } else {
-            Box::new(WindowReranker::new(
-                opts.ivf_rabit_rerank_size,
-                move |xi, ci| {
-                    O::rabit_quantization_process(
-                        self.distance_to_centroid_square[xi as usize],
-                        self.factor_ppc[xi as usize],
-                        self.factor_ip[xi as usize],
-                        self.error_bound[xi as usize],
-                        &self.binary_vec_x[xi as usize],
-                        &p[ci],
-                    )
-                },
-                r,
-            ))
-        }
+        Box::new(ErrorBasedReranker::new(
+            move |xi, ci| {
+                O::rabit_quantization_process(
+                    self.distance_to_centroid_square[xi as usize],
+                    self.factor_ppc[xi as usize],
+                    self.factor_ip[xi as usize],
+                    self.error_bound[xi as usize],
+                    &self.binary_vec_x[xi as usize],
+                    &p[ci],
+                )
+            },
+            r,
+        ))
     }
 
     pub fn graph_rerank<'a, T: 'a>(
