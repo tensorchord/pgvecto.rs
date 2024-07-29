@@ -47,8 +47,9 @@ pub trait Op:
 {
 }
 
-impl<T: Operator + OperatorQuantization + OperatorStorage + OperatorIvf + OperatorInvertedSparse> Op
-    for T
+impl<
+        T: Operator + OperatorQuantization + OperatorStorage + OperatorIvf + OperatorInvertedSparse,
+    > Op for T
 {
 }
 

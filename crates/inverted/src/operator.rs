@@ -3,7 +3,7 @@ use base::scalar::F32;
 use quantization::operator::OperatorQuantization;
 use storage::OperatorStorage;
 
-use std::iter::{Empty, zip};
+use std::iter::{zip, Empty};
 
 pub trait OperatorInvertedSparse: OperatorQuantization + OperatorStorage {
     fn to_index_vec(vec: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)>;
