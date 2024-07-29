@@ -4,7 +4,7 @@ use base::operator::*;
 use base::search::*;
 use flat::Flat;
 use hnsw::Hnsw;
-use inverted::Inverted;
+use inverted::InvertedSparse;
 use ivf::Ivf;
 use std::path::Path;
 
@@ -12,7 +12,7 @@ pub enum SealedIndexing<O: Op> {
     Flat(Flat<O>),
     Ivf(Ivf<O>),
     Hnsw(Hnsw<O>),
-    Inverted(Inverted<O>),
+    InvertedSparse(InvertedSparse<O>),
 }
 
 impl<O: Op> SealedIndexing<O> {
@@ -25,7 +25,7 @@ impl<O: Op> SealedIndexing<O> {
             IndexingOptions::Flat(_) => Self::Flat(Flat::create(path, options, source)),
             IndexingOptions::Ivf(_) => Self::Ivf(Ivf::create(path, options, source)),
             IndexingOptions::Hnsw(_) => Self::Hnsw(Hnsw::create(path, options, source)),
-            IndexingOptions::Inverted() => Self::Inverted(Inverted::create(path, options, source)),
+            IndexingOptions::InvertedSparse(_) => Self::InvertedSparse(InvertedSparse::create(path, options, source)),
         }
     }
 
@@ -34,7 +34,7 @@ impl<O: Op> SealedIndexing<O> {
             IndexingOptions::Flat(_) => Self::Flat(Flat::open(path)),
             IndexingOptions::Ivf(_) => Self::Ivf(Ivf::open(path)),
             IndexingOptions::Hnsw(_) => Self::Hnsw(Hnsw::open(path)),
-            IndexingOptions::Inverted() => Self::Inverted(Inverted::open(path)),
+            IndexingOptions::InvertedSparse(_) => Self::InvertedSparse(InvertedSparse::open(path)),
         }
     }
 
@@ -47,7 +47,7 @@ impl<O: Op> SealedIndexing<O> {
             SealedIndexing::Flat(x) => x.vbase(vector, opts),
             SealedIndexing::Ivf(x) => x.vbase(vector, opts),
             SealedIndexing::Hnsw(x) => x.vbase(vector, opts),
-            SealedIndexing::Inverted(x) => x.vbase(vector, opts),
+            SealedIndexing::InvertedSparse(x) => x.vbase(vector, opts),
         }
     }
 
@@ -56,7 +56,7 @@ impl<O: Op> SealedIndexing<O> {
             SealedIndexing::Flat(x) => x.len(),
             SealedIndexing::Ivf(x) => x.len(),
             SealedIndexing::Hnsw(x) => x.len(),
-            SealedIndexing::Inverted(x) => x.len(),
+            SealedIndexing::InvertedSparse(x) => x.len(),
         }
     }
 
@@ -65,7 +65,7 @@ impl<O: Op> SealedIndexing<O> {
             SealedIndexing::Flat(x) => x.vector(i),
             SealedIndexing::Ivf(x) => x.vector(i),
             SealedIndexing::Hnsw(x) => x.vector(i),
-            SealedIndexing::Inverted(x) => x.vector(i),
+            SealedIndexing::InvertedSparse(x) => x.vector(i),
         }
     }
 
@@ -74,7 +74,7 @@ impl<O: Op> SealedIndexing<O> {
             SealedIndexing::Flat(x) => x.payload(i),
             SealedIndexing::Ivf(x) => x.payload(i),
             SealedIndexing::Hnsw(x) => x.payload(i),
-            SealedIndexing::Inverted(x) => x.payload(i),
+            SealedIndexing::InvertedSparse(x) => x.payload(i),
         }
     }
 }

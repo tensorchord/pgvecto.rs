@@ -3,35 +3,38 @@ use base::scalar::F32;
 use quantization::operator::OperatorQuantization;
 use storage::OperatorStorage;
 
-pub trait OperatorInverted: OperatorQuantization + OperatorStorage {
-    fn to_index_vec(vec: Borrowed<'_, Self>) -> Vec<(u32, F32)>;
+use std::iter::{Empty, zip};
+
+pub trait OperatorInvertedSparse: OperatorQuantization + OperatorStorage {
+    fn to_index_vec(vec: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)>;
 }
 
-impl OperatorInverted for SVecf32Dot {
-    fn to_index_vec(vec: Borrowed<'_, Self>) -> Vec<(u32, F32)> {
-        std::iter::zip(vec.indexes().to_vec(), vec.values().to_vec()).collect()
+impl OperatorInvertedSparse for SVecf32Dot {
+    fn to_index_vec(vec: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)> {
+        zip(vec.indexes().to_vec(), vec.values().to_vec())
     }
 }
 
-macro_rules! unimpl_operator_inverted {
+macro_rules! unimpl_operator_inverted_sparse {
     ($t:ty) => {
-        impl OperatorInverted for $t {
-            fn to_index_vec(_: Borrowed<'_, Self>) -> Vec<(u32, F32)> {
-                unimplemented!()
+        impl OperatorInvertedSparse for $t {
+            fn to_index_vec(_: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)> {
+                #![allow(unreachable_code)]
+                unimplemented!() as Empty<(u32, F32)>
             }
         }
     };
 }
 
-unimpl_operator_inverted!(SVecf32Cos);
-unimpl_operator_inverted!(SVecf32L2);
-unimpl_operator_inverted!(BVecf32Cos);
-unimpl_operator_inverted!(BVecf32Dot);
-unimpl_operator_inverted!(BVecf32Jaccard);
-unimpl_operator_inverted!(BVecf32L2);
-unimpl_operator_inverted!(Vecf32Cos);
-unimpl_operator_inverted!(Vecf32Dot);
-unimpl_operator_inverted!(Vecf32L2);
-unimpl_operator_inverted!(Vecf16Cos);
-unimpl_operator_inverted!(Vecf16Dot);
-unimpl_operator_inverted!(Vecf16L2);
+unimpl_operator_inverted_sparse!(SVecf32Cos);
+unimpl_operator_inverted_sparse!(SVecf32L2);
+unimpl_operator_inverted_sparse!(BVecf32Cos);
+unimpl_operator_inverted_sparse!(BVecf32Dot);
+unimpl_operator_inverted_sparse!(BVecf32Jaccard);
+unimpl_operator_inverted_sparse!(BVecf32L2);
+unimpl_operator_inverted_sparse!(Vecf32Cos);
+unimpl_operator_inverted_sparse!(Vecf32Dot);
+unimpl_operator_inverted_sparse!(Vecf32L2);
+unimpl_operator_inverted_sparse!(Vecf16Cos);
+unimpl_operator_inverted_sparse!(Vecf16Dot);
+unimpl_operator_inverted_sparse!(Vecf16L2);
