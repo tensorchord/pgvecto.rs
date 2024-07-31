@@ -73,7 +73,7 @@ impl<O: OperatorQuantization> Quantizer<O> {
 
 pub enum QuantizationPreprocessed<O: OperatorQuantization> {
     Trivial(O::TrivialQuantizationPreprocessed),
-    Rabit(O::RabitQuantizationPreprocessed),
+    RaBit(O::RabitQuantizationPreprocessed),
     Scalar(O::QuantizationPreprocessed),
     Product(O::QuantizationPreprocessed),
 }
@@ -124,7 +124,7 @@ impl<O: OperatorQuantization> Quantization<O> {
             Quantizer::Trivial(x) => QuantizationPreprocessed::Trivial(x.preprocess(lhs)),
             Quantizer::Scalar(x) => QuantizationPreprocessed::Scalar(x.preprocess(lhs)),
             Quantizer::Product(x) => QuantizationPreprocessed::Product(x.preprocess(lhs)),
-            Quantizer::RaBitQ(x) => QuantizationPreprocessed::Rabit(x.preprocess(lhs)),
+            Quantizer::RaBitQ(x) => QuantizationPreprocessed::RaBit(x.preprocess(lhs)),
         }
     }
 

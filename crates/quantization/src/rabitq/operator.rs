@@ -24,7 +24,7 @@ pub trait OperatorRaBitQ: Operator {
         error_bound: Scalar<Self>,
         binary_x: &[u64],
         p: &Self::RabitQuantizationPreprocessed,
-    ) -> (F32, F32);
+    ) -> F32;
     fn rabit_quantization_preprocess(
         dim: usize,
         vec: Borrowed<'_, Self>,
@@ -145,7 +145,7 @@ impl<O: Operator> OperatorRaBitQ for O {
         error_bound: Scalar<Self>,
         binary_x: &[u64],
         p: &Self::RabitQuantizationPreprocessed,
-    ) -> (F32, F32) {
+    ) -> F32 {
         let estimate = x_centroid_square
             + p.0
             + p.1 * factor_ppc
@@ -153,19 +153,23 @@ impl<O: Operator> OperatorRaBitQ for O {
                 - p.3)
                 * factor_ip
                 * p.2;
-        (estimate.to_f(), (error_bound * p.0.sqrt()).to_f())
+        (estimate - error_bound * p.0.sqrt()).to_f()
     }
+}
+
+fn binary_dot_product(x: &[u64], y: &[u64]) -> u32 {
+    let mut res = 0;
+    for i in 0..x.len() {
+        res += (x[i] & y[i]).count_ones();
+    }
+    res
 }
 
 fn asymmetric_binary_dot_product(x: &[u64], y: &[u64]) -> u32 {
     let mut res = 0;
     let length = x.len();
     for i in 0..THETA_LOG_DIM as usize {
-        let mut layer = 0;
-        for j in 0..x.len() {
-            layer += (x[j] & y[j + i * length]).count_ones();
-        }
-        res += layer << i;
+        res += binary_dot_product(&x, &y[i * length..(i + 1) * length]) << i;
     }
     res
 }

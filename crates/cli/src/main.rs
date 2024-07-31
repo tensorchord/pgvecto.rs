@@ -134,7 +134,10 @@ fn main() {
             for (i, vec) in queries.iter().enumerate() {
                 match view.vbase(&convert_to_owned_vec(vec), &search_opt) {
                     Ok(iter) => {
-                        let ans = iter.take(query.top_k).map(|(_, x)| x.as_u64() as i32).collect::<Vec<_>>();
+                        let ans = iter
+                            .take(query.top_k)
+                            .map(|(_, x)| x.as_u64() as i32)
+                            .collect::<Vec<_>>();
                         res.push(calculate_precision(&truth[i], &ans, query.top_k));
                     }
                     Err(err) => {

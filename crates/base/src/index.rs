@@ -382,6 +382,7 @@ pub enum QuantizationOptions {
     Trivial(TrivialQuantizationOptions),
     Scalar(ScalarQuantizationOptions),
     Product(ProductQuantizationOptions),
+    #[serde(rename = "rabitq")]
     RaBitQ(RaBitQuantizationOptions),
 }
 
