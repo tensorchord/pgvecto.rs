@@ -2,12 +2,11 @@
 
 pub mod operator;
 
-use self::operator::OperatorInvertedSparse;
+use self::operator::OperatorInvertedIndex;
 use base::index::{IndexOptions, SearchOptions};
 use base::operator::Borrowed;
 use base::scalar::{ScalarLike, F32};
 use base::search::{Collection, Element, Payload, Source, Vectors};
-use common::dir_ops::sync_dir;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
@@ -20,7 +19,7 @@ use std::path::Path;
 const ZERO: F32 = F32(0.0);
 
 #[allow(dead_code)]
-pub struct InvertedSparse<O: OperatorInvertedSparse> {
+pub struct InvertedIndex<O: OperatorInvertedIndex> {
     storage: O::Storage,
     payloads: MmapArray<Payload>,
     indexes: Json<Vec<u32>>,
@@ -28,7 +27,7 @@ pub struct InvertedSparse<O: OperatorInvertedSparse> {
     scores: Json<Vec<F32>>,
 }
 
-impl<O: OperatorInvertedSparse> InvertedSparse<O> {
+impl<O: OperatorInvertedIndex> InvertedIndex<O> {
     pub fn create(path: impl AsRef<Path>, options: IndexOptions, source: &impl Source<O>) -> Self {
         let remapped = RemappedCollection::from_source(source);
         from_nothing(path, options, &remapped)
@@ -83,11 +82,11 @@ impl<O: OperatorInvertedSparse> InvertedSparse<O> {
     }
 }
 
-fn from_nothing<O: OperatorInvertedSparse>(
+fn from_nothing<O: OperatorInvertedIndex>(
     path: impl AsRef<Path>,
     _: IndexOptions,
     collection: &impl Collection<O>,
-) -> InvertedSparse<O> {
+) -> InvertedIndex<O> {
     create_dir(path.as_ref()).expect("failed to create path for inverted sparse index");
 
     let mut token_collection = BTreeMap::new();
@@ -109,8 +108,7 @@ fn from_nothing<O: OperatorInvertedSparse>(
     let json_index = Json::create(path.as_ref().join("indexes"), indexes);
     let json_offset = Json::create(path.as_ref().join("offsets"), offsets);
     let json_score = Json::create(path.as_ref().join("scores"), scores);
-    sync_dir(path);
-    InvertedSparse {
+    InvertedIndex {
         storage,
         payloads,
         indexes: json_index,
@@ -119,13 +117,13 @@ fn from_nothing<O: OperatorInvertedSparse>(
     }
 }
 
-fn open<O: OperatorInvertedSparse>(path: impl AsRef<Path>) -> InvertedSparse<O> {
+fn open<O: OperatorInvertedIndex>(path: impl AsRef<Path>) -> InvertedIndex<O> {
     let storage = O::Storage::open(path.as_ref().join("storage"));
     let payloads = MmapArray::open(path.as_ref().join("payloads"));
     let offsets = Json::open(path.as_ref().join("offsets"));
     let indexes = Json::open(path.as_ref().join("indexes"));
     let scores = Json::open(path.as_ref().join("scores"));
-    InvertedSparse {
+    InvertedIndex {
         storage,
         payloads,
         indexes,

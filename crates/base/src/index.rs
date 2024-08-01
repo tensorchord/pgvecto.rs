@@ -124,7 +124,7 @@ impl IndexOptions {
                     ..
                 }),
             ) => Ok(()),
-            (VectorKind::SVecf32, DistanceKind::Dot, IndexingOptions::InvertedSparse(_)) => Ok(()),
+            (VectorKind::SVecf32, DistanceKind::Dot, IndexingOptions::InvertedIndex(_)) => Ok(()),
             _ => Err(ValidationError::new("not valid index options")),
         }
     }
@@ -261,7 +261,7 @@ pub enum IndexingOptions {
     Flat(FlatIndexingOptions),
     Ivf(IvfIndexingOptions),
     Hnsw(HnswIndexingOptions),
-    InvertedSparse(InvertedSparseIndexingOptions),
+    InvertedIndex(InvertedIndexingOptions),
 }
 
 impl IndexingOptions {
@@ -297,16 +297,16 @@ impl Validate for IndexingOptions {
             Self::Flat(x) => x.validate(),
             Self::Ivf(x) => x.validate(),
             Self::Hnsw(x) => x.validate(),
-            Self::InvertedSparse(_) => Ok(()),
+            Self::InvertedIndex(_) => Ok(()),
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
-pub struct InvertedSparseIndexingOptions {}
+pub struct InvertedIndexingOptions {}
 
-impl Default for InvertedSparseIndexingOptions {
+impl Default for InvertedIndexingOptions {
     fn default() -> Self {
         Self {}
     }

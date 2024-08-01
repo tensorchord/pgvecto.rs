@@ -5,11 +5,11 @@ use storage::OperatorStorage;
 
 use std::iter::{zip, Empty};
 
-pub trait OperatorInvertedSparse: OperatorQuantization + OperatorStorage {
+pub trait OperatorInvertedIndex: OperatorQuantization + OperatorStorage {
     fn to_index_vec(vec: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)>;
 }
 
-impl OperatorInvertedSparse for SVecf32Dot {
+impl OperatorInvertedIndex for SVecf32Dot {
     fn to_index_vec(vec: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)> {
         zip(vec.indexes().to_vec(), vec.values().to_vec())
     }
@@ -17,7 +17,7 @@ impl OperatorInvertedSparse for SVecf32Dot {
 
 macro_rules! unimpl_operator_inverted_sparse {
     ($t:ty) => {
-        impl OperatorInvertedSparse for $t {
+        impl OperatorInvertedIndex for $t {
             fn to_index_vec(_: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)> {
                 #![allow(unreachable_code)]
                 unimplemented!() as Empty<(u32, F32)>
