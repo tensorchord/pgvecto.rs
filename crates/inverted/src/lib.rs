@@ -12,7 +12,7 @@ use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use storage::Storage;
 
-use std::collections::{BTreeMap, BinaryHeap};
+use std::collections::BinaryHeap;
 use std::fs::create_dir;
 use std::path::Path;
 
@@ -84,18 +84,15 @@ impl<O: OperatorInvertedIndex> InvertedIndex<O> {
 
 fn from_nothing<O: OperatorInvertedIndex>(
     path: impl AsRef<Path>,
-    _: IndexOptions,
+    opts: IndexOptions,
     collection: &impl Collection<O>,
 ) -> InvertedIndex<O> {
-    create_dir(path.as_ref()).expect("failed to create path for inverted sparse index");
+    create_dir(path.as_ref()).expect("failed to create path for inverted index");
 
-    let mut token_collection = BTreeMap::new();
+    let mut token_collection = vec![Vec::new(); opts.vector.dims as usize];
     for i in 0..collection.len() {
         for (token, score) in O::to_index_vec(collection.vector(i)) {
-            token_collection
-                .entry(token)
-                .or_insert_with(Vec::new)
-                .push((i, score.to_f()));
+            token_collection[token as usize].push((i, score.to_f()));
         }
     }
     let (indexes, offsets, scores) = build_compressed_matrix(token_collection);
@@ -133,27 +130,25 @@ fn open<O: OperatorInvertedIndex>(path: impl AsRef<Path>) -> InvertedIndex<O> {
 }
 
 fn build_compressed_matrix(
-    token_collection: BTreeMap<u32, Vec<(u32, F32)>>,
+    token_collection: Vec<Vec<(u32, F32)>>,
 ) -> (Vec<u32>, Vec<u32>, Vec<F32>) {
     let mut indexes = Vec::new();
     let mut offsets = Vec::new();
     let mut scores = Vec::new();
 
-    let mut i = 0;
     let mut last: u32 = 0;
     offsets.push(0);
-    for (token, id_scores) in token_collection.iter() {
-        while *token != i {
+    for doc_scores in token_collection.iter() {
+        if doc_scores.is_empty() {
             offsets.push(last);
-            i += 1;
+            continue;
         }
-        for (id, score) in id_scores {
+        for (id, score) in doc_scores {
             indexes.push(*id);
             scores.push(*score);
         }
-        last += id_scores.len() as u32;
+        last += doc_scores.len() as u32;
         offsets.push(last);
-        i += 1;
     }
 
     (indexes, offsets, scores)
