@@ -53,7 +53,6 @@ impl<O: OperatorInvertedIndex> InvertedIndex<O> {
         let mut candidates: BinaryHeap<(F32, Payload)> = doc_score
             .iter()
             .enumerate()
-            .filter(|&(_, score)| *score > ZERO)
             .map(|(i, score)| (*score, self.payload(i as u32)))
             .collect::<Vec<_>>()
             .into();

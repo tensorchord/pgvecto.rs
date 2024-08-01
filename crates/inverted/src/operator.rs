@@ -1,4 +1,4 @@
-use base::{operator::*, vector::VectorBorrowed};
+use base::operator::*;
 use base::scalar::F32;
 use quantization::operator::OperatorQuantization;
 use storage::OperatorStorage;
