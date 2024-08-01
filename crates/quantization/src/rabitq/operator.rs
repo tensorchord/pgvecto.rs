@@ -97,7 +97,8 @@ impl<O: Operator> OperatorRaBitQ for O {
 
     fn vector_dot_product(lhs: &[Scalar<O>], rhs: &[Scalar<O>]) -> Scalar<O> {
         let mut sum = Scalar::<O>::zero();
-        for i in 0..std::cmp::min(lhs.len(), rhs.len()) {
+        let length = std::cmp::min(lhs.len(), rhs.len());
+        for i in 0..length {
             sum += lhs[i] * rhs[i];
         }
         sum
@@ -169,7 +170,7 @@ fn asymmetric_binary_dot_product(x: &[u64], y: &[u64]) -> u32 {
     let mut res = 0;
     let length = x.len();
     for i in 0..THETA_LOG_DIM as usize {
-        res += binary_dot_product(&x, &y[i * length..(i + 1) * length]) << i;
+        res += binary_dot_product(x, &y[i * length..(i + 1) * length]) << i;
     }
     res
 }
