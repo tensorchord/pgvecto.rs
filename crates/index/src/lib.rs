@@ -25,6 +25,7 @@ use common::dir_ops::sync_walk_from_dir;
 use common::file_atomic::FileAtomic;
 use crossbeam::atomic::AtomicCell;
 use crossbeam::channel::Sender;
+use inverted::operator::OperatorInvertedIndex;
 use ivf::operator::OperatorIvf;
 use parking_lot::Mutex;
 use quantization::operator::OperatorQuantization;
@@ -41,9 +42,16 @@ use storage::OperatorStorage;
 use thiserror::Error;
 use validator::Validate;
 
-pub trait Op: Operator + OperatorQuantization + OperatorStorage + OperatorIvf {}
+pub trait Op:
+    Operator + OperatorQuantization + OperatorStorage + OperatorIvf + OperatorInvertedIndex
+{
+}
 
-impl<T: Operator + OperatorQuantization + OperatorStorage + OperatorIvf> Op for T {}
+impl<
+        T: Operator + OperatorQuantization + OperatorStorage + OperatorIvf + OperatorInvertedIndex,
+    > Op for T
+{
+}
 
 #[derive(Debug, Error)]
 #[error("The index view is outdated.")]

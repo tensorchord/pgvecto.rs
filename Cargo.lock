@@ -1472,6 +1472,7 @@ dependencies = [
  "dashmap",
  "flat",
  "hnsw",
+ "inverted",
  "ivf",
  "k_means",
  "log",
@@ -1511,6 +1512,16 @@ version = "0.0.0"
 dependencies = [
  "libc",
  "ulock-sys",
+]
+
+[[package]]
+name = "inverted"
+version = "0.0.0"
+dependencies = [
+ "base",
+ "common",
+ "quantization",
+ "storage",
 ]
 
 [[package]]
