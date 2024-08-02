@@ -6,19 +6,19 @@ use storage::OperatorStorage;
 use std::iter::{zip, Empty};
 
 pub trait OperatorInvertedIndex: OperatorQuantization + OperatorStorage {
-    fn to_index_vec(vec: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)>;
+    fn to_index_vec(vec: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)> + '_;
 }
 
 impl OperatorInvertedIndex for SVecf32Dot {
-    fn to_index_vec(vec: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)> {
-        zip(vec.indexes().to_vec(), vec.values().to_vec())
+    fn to_index_vec(vec: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)> + '_ {
+        zip(vec.indexes().iter().copied(), vec.values().iter().copied())
     }
 }
 
 macro_rules! unimpl_operator_inverted_index {
     ($t:ty) => {
         impl OperatorInvertedIndex for $t {
-            fn to_index_vec(_: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)> {
+            fn to_index_vec(_: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, F32)> + '_ {
                 #![allow(unreachable_code)]
                 unimplemented!() as Empty<(u32, F32)>
             }
