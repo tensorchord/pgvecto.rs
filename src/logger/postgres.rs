@@ -1,7 +1,7 @@
 use log::Record;
 use std::borrow::Cow;
 
-const PIPE_CHUNK_SIZE: usize = std::mem::size_of::<pgrx::pg_sys::PipeProtoChunk>();
+const PIPE_CHUNK_SIZE: usize = size_of::<pgrx::pg_sys::PipeProtoChunk>();
 const PIPE_HEADER_SIZE: usize = 9;
 
 pub fn send_message_to_server_log(record: &Record) {

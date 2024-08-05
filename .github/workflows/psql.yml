@@ -96,8 +96,8 @@ jobs:
           echo PGRX_TARGET_INFO_PATH_PG$VERSION=$HOME/.pgrx_binding >> "$GITHUB_ENV"
       - name: Build Release
         run: |
-          cargo build --lib --features "pg$VERSION" --release
-          ./tools/schema.sh --features "pg$VERSION" --release | expand -t 4 > ./target/vectors--$SEMVER.sql
+          cargo build --lib --features "pg$VERSION" --profile opt
+          ./tools/schema.sh --features "pg$VERSION" --profile opt | expand -t 4 > ./target/vectors--$SEMVER.sql
       - name: Set up PostgreSQL
         run: |
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
@@ -115,7 +115,7 @@ jobs:
       - name: Install Release
         run: |
           sudo cp ./target/vectors--$SEMVER.sql /usr/share/postgresql/$VERSION/extension/vectors--$SEMVER.sql
-          sudo cp ./target/release/libvectors.so "/usr/lib/postgresql/$VERSION/lib/vectors.so"
+          sudo cp ./target/opt/libvectors.so "/usr/lib/postgresql/$VERSION/lib/vectors.so"
           sed -e "s/@CARGO_VERSION@/$SEMVER/g" < ./vectors.control | sudo tee "/usr/share/postgresql/$VERSION/extension/vectors.control"
 
           psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'

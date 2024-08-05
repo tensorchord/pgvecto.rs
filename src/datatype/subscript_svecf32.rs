@@ -162,7 +162,7 @@ fn _vectors_svecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Intern
             let steps = &mut *steps;
             assert!(state.numlower == 1);
             assert!(state.numupper == 1);
-            state.workspace = pgrx::pg_sys::palloc(std::mem::size_of::<Workspace>());
+            state.workspace = pgrx::pg_sys::palloc(size_of::<Workspace>());
             std::ptr::write::<Workspace>(state.workspace.cast(), Workspace::default());
             steps.sbs_check_subscripts = Some(sbs_check_subscripts);
             steps.sbs_fetch = Some(sbs_fetch);

@@ -35,12 +35,7 @@ unsafe impl Pod for (F32, u32) {}
 unsafe impl Pod for crate::search::Payload {}
 
 pub fn bytes_of<T: Pod>(t: &T) -> &[u8] {
-    unsafe {
-        core::slice::from_raw_parts(
-            std::ptr::addr_of!(*t) as *const u8,
-            std::mem::size_of::<T>(),
-        )
-    }
+    unsafe { core::slice::from_raw_parts(std::ptr::addr_of!(*t) as *const u8, size_of::<T>()) }
 }
 
 pub fn zeroed_vec<T: Pod>(length: usize) -> Vec<T> {

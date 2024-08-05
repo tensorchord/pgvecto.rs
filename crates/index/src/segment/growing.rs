@@ -168,7 +168,7 @@ impl<O: Op> GrowingSegment<O> {
             id: self.id,
             r#type: "growing".to_string(),
             length: len as usize,
-            size: (len as u64) * (std::mem::size_of::<Log<O>>() as u64),
+            size: (len as u64) * (size_of::<Log<O>>() as u64),
         }
     }
 
@@ -178,7 +178,7 @@ impl<O: Op> GrowingSegment<O> {
             id: self.id,
             r#type: "write".to_string(),
             length: len as usize,
-            size: (len as u64) * (std::mem::size_of::<Log<O>>() as u64),
+            size: (len as u64) * (size_of::<Log<O>>() as u64),
         }
     }
 
