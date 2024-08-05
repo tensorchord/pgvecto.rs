@@ -116,7 +116,7 @@ struct Channel {
     futex: AtomicU32,
 }
 
-const _: () = assert!(std::mem::size_of::<Channel>() == BUFFER_SIZE);
+const _: () = assert!(size_of::<Channel>() == BUFFER_SIZE);
 
 impl Channel {
     unsafe fn client_recv(&self, test: impl Fn() -> bool) -> Result<Vec<u8>, ConnectionError> {

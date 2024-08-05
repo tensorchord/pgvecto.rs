@@ -36,7 +36,7 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@
 fn _vectors_amhandler(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Internal {
     type T = pgrx::pg_sys::IndexAmRoutine;
     unsafe {
-        let index_am_routine = pgrx::pg_sys::palloc0(std::mem::size_of::<T>()) as *mut T;
+        let index_am_routine = pgrx::pg_sys::palloc0(size_of::<T>()) as *mut T;
         index_am_routine.write(AM_HANDLER);
         Internal::from(Some(Datum::from(index_am_routine)))
     }
@@ -94,7 +94,7 @@ pub unsafe extern "C" fn amoptions(reloptions: Datum, validate: bool) -> *mut pg
             reloptions,
             validate,
             RELOPT_KIND_VECTORS.get(),
-            std::mem::size_of::<Reloption>(),
+            size_of::<Reloption>(),
             Reloption::TAB.as_ptr(),
             Reloption::TAB.len() as _,
         )
@@ -396,7 +396,7 @@ pub unsafe extern "C" fn ambulkdelete(
     let mut stats = stats;
     if stats.is_null() {
         stats = unsafe {
-            pgrx::pg_sys::palloc0(std::mem::size_of::<pgrx::pg_sys::IndexBulkDeleteResult>()).cast()
+            pgrx::pg_sys::palloc0(size_of::<pgrx::pg_sys::IndexBulkDeleteResult>()).cast()
         };
     }
     let oid = unsafe { (*(*info).index).rd_id };

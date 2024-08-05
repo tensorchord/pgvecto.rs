@@ -81,3 +81,6 @@ pub fn memfd_create() -> std::io::Result<OwnedFd> {
     rustix::fs::unlink(&name)?;
     Ok(fd)
 }
+
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "freebsd")))]
+compile_error!("Target os is not supported.");

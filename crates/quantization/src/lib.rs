@@ -1,4 +1,3 @@
-#![feature(iter_array_chunks)]
 #![allow(clippy::identity_op)]
 #![allow(clippy::needless_range_loop)]
 
@@ -7,6 +6,7 @@ pub mod product;
 pub mod reranker;
 pub mod scalar;
 pub mod trivial;
+mod utils;
 
 use self::product::ProductQuantizer;
 use self::scalar::ScalarQuantizer;

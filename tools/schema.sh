@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -e
-
 if [[ " $@ " =~ --target' '([^ ]+) ]]; then
   TARGET="${BASH_REMATCH[1]}"
   if [[ " $@ " =~ " --release " ]]; then
     DIR="./target/$TARGET/release"
+  elif [[ " $@ " =~ " --profile opt " ]]; then
+    DIR="./target/$TARGET/opt"
   else
     DIR="./target/$TARGET/debug"
   fi
@@ -12,6 +13,8 @@ else
   TARGET=""
   if [[ " $@ " =~ " --release " ]]; then
     DIR="./target/release"
+  elif [[ " $@ " =~ " --profile opt " ]]; then
+    DIR="./target/$TARGET/opt"
   else
     DIR="./target/debug"
   fi

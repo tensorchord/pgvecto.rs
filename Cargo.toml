@@ -32,9 +32,6 @@ rustix.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
-tikv-jemallocator = { version = "0.5.4", features = [
-    "disable_initial_exec_tls",
-] }
 toml.workspace = true
 validator.workspace = true
 
@@ -46,6 +43,11 @@ memfd = { path = "crates/memfd" }
 scopeguard = "1.2.0"
 send_fd = { path = "crates/send_fd" }
 service = { path = "crates/service" }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+tikv-jemallocator = { version = "0.6.0", features = [
+    "disable_initial_exec_tls",
+] }
 
 [patch.crates-io]
 pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.0-alpha.1-patch3" }
@@ -88,12 +90,12 @@ rust.unsafe_op_in_unsafe_fn = "deny"
 rust.unused_lifetimes = "warn"
 rust.unused_qualifications = "warn"
 
-[profile.dev]
-panic = "unwind"
+[profile.opt]
+inherits = "dev"
+opt-level = 3
+debug-assertions = false
+overflow-checks = false
 
 [profile.release]
-panic = "unwind"
-opt-level = 3
 lto = "fat"
 codegen-units = 1
-debug = true

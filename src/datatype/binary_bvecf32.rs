@@ -14,7 +14,7 @@ fn _vectors_bvecf32_send(vector: BVecf32Input<'_>) -> Bytea {
         let mut buf = StringInfoData::default();
         let dims = vector.dims();
         let internal_dims = dims as u16;
-        let bytes = dims.div_ceil(BVECF32_WIDTH) as usize * std::mem::size_of::<u64>();
+        let bytes = dims.div_ceil(BVECF32_WIDTH) as usize * size_of::<u64>();
         pgrx::pg_sys::pq_begintypsend(&mut buf);
         pgrx::pg_sys::pq_sendbytes(&mut buf, (&internal_dims) as *const u16 as _, 2);
         pgrx::pg_sys::pq_sendbytes(&mut buf, vector.data().as_ptr() as _, bytes as _);
@@ -32,7 +32,7 @@ fn _vectors_bvecf32_recv(internal: Internal, oid: Oid, typmod: i32) -> BVecf32Ou
         let dims = internal_dims as u32;
 
         let l_slice = dims.div_ceil(BVECF32_WIDTH) as usize;
-        let b_slice = l_slice * std::mem::size_of::<u64>();
+        let b_slice = l_slice * size_of::<u64>();
         let p_slice = pgrx::pg_sys::pq_getmsgbytes(buf, b_slice as _);
         let mut slice = Vec::<u64>::with_capacity(l_slice);
         std::ptr::copy(p_slice, slice.as_mut_ptr().cast(), b_slice);
