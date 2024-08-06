@@ -40,11 +40,11 @@ impl<O: Operator<VectorOwned = SVecf32Owned>> Storage<O> for SVecStorage {
         let len = Json::create(path.as_ref().join("len"), vectors.len());
         let indexes = MmapArray::create(
             path.as_ref().join("indexes"),
-            (0..*len).flat_map(|i| vectors.vector(i).indexes().to_vec()),
+            (0..*len).flat_map(|i| vectors.vector(i).indexes().iter().copied()),
         );
         let values = MmapArray::create(
             path.as_ref().join("values"),
-            (0..*len).flat_map(|i| vectors.vector(i).values().to_vec()),
+            (0..*len).flat_map(|i| vectors.vector(i).values().iter().copied()),
         );
         let offsets = MmapArray::create(
             path.as_ref().join("offsets"),

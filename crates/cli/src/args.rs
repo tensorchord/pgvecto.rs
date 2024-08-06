@@ -1,4 +1,5 @@
 use argh::FromArgs;
+use base::scalar::F32;
 use log::warn;
 
 use base::distance::DistanceKind;
@@ -131,12 +132,14 @@ impl QueryArguments {
             flat_sq_fast_scan: true,
             flat_pq_rerank_size: 0,
             flat_pq_fast_scan: true,
+            flat_rq_epsilon: F32(1.9),
             ivf_sq_rerank_size: 0,
             ivf_sq_fast_scan: true,
             ivf_pq_rerank_size: 0,
             ivf_pq_fast_scan: true,
-            hnsw_ef_search: self.ef,
+            ivf_rq_epsilon: F32(1.9),
             ivf_nprobe: self.probe,
+            hnsw_ef_search: self.ef,
             diskann_ef_search: 100,
         }
     }

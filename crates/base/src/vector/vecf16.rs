@@ -80,7 +80,7 @@ impl<'a> Vecf16Borrowed<'a> {
     }
 
     #[inline(always)]
-    pub fn slice(&self) -> &[F16] {
+    pub fn slice(&self) -> &'a [F16] {
         self.0
     }
 }

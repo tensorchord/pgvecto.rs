@@ -36,7 +36,7 @@ impl<O: Operator<VectorOwned = Vecf32Owned>> Storage<O> for VecStorage<F32> {
         let len = Json::create(path.as_ref().join("len"), vectors.len());
         let slice = MmapArray::create(
             path.as_ref().join("slice"),
-            (0..*len).flat_map(|i| vectors.vector(i).to_vec()),
+            (0..*len).flat_map(|i| vectors.vector(i).slice().iter().copied()),
         );
         Self { dims, len, slice }
     }
@@ -72,7 +72,7 @@ impl<O: Operator<VectorOwned = Vecf16Owned>> Storage<O> for VecStorage<F16> {
         let len = Json::create(path.as_ref().join("len"), vectors.len());
         let slice = MmapArray::create(
             path.as_ref().join("slice"),
-            (0..*len).flat_map(|i| vectors.vector(i).to_vec()),
+            (0..*len).flat_map(|i| vectors.vector(i).slice().iter().copied()),
         );
         Self { dims, len, slice }
     }

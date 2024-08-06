@@ -26,7 +26,7 @@ where
 {
     fn pop(&mut self) -> Option<(F32, u32, T)> {
         while !self.heap.is_empty()
-            && (self.cache.is_empty() || self.heap.peek().unwrap().0 < self.cache.peek().unwrap().0)
+            && (self.cache.is_empty() || self.heap.peek().unwrap().0 > self.cache.peek().unwrap().0)
         {
             let (_, u) = self.heap.pop().unwrap();
             let (accu_u, t) = (self.rerank)(u);

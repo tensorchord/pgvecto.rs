@@ -46,6 +46,7 @@ impl<O: OperatorFlat> Flat<O> {
             &mut heap,
             opts.flat_sq_fast_scan,
             opts.flat_pq_fast_scan,
+            opts.flat_rq_epsilon,
         );
         let mut reranker = self.quantization.flat_rerank(
             heap,

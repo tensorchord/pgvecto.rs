@@ -2293,6 +2293,7 @@ dependencies = [
  "detect",
  "fastdivide",
  "k_means",
+ "log",
  "nalgebra",
  "num-traits",
  "rand",

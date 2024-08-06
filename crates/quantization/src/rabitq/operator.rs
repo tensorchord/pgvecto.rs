@@ -1,178 +1,230 @@
-use base::operator::{Borrowed, Operator, Scalar};
-use base::scalar::{ScalarLike, F32};
+use base::operator::*;
+use base::scalar::ScalarLike;
+use base::scalar::F32;
 use base::vector::VectorBorrowed;
-
-use nalgebra::debug::RandomOrthogonal;
-use nalgebra::{Dim, Dyn};
-use num_traits::{Float, One, ToPrimitive, Zero};
-use rand::{thread_rng, Rng};
-
-use super::THETA_LOG_DIM;
+use num_traits::Float;
 
 pub trait OperatorRabitq: Operator {
+    const SUPPORTED: bool;
+
     type RabitqQuantizationPreprocessed;
 
-    fn vector_dot_product(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> Scalar<Self>;
-    fn vector_binarize_u64(vec: &[Scalar<Self>]) -> Vec<u64>;
-    fn vector_binarize_one(vec: &[Scalar<Self>]) -> Vec<Scalar<Self>>;
-    fn query_vector_binarize_u64(vec: &[u8]) -> Vec<u64>;
-    fn gen_random_orthogonal(dim: usize) -> Vec<Vec<Scalar<Self>>>;
+    fn rabit_quantization_preprocess(
+        vector: Borrowed<'_, Self>,
+        projection: &[Vec<F32>],
+    ) -> Self::RabitqQuantizationPreprocessed;
     fn rabit_quantization_process(
-        x_centroid_square: Scalar<Self>,
-        factor_ppc: Scalar<Self>,
-        factor_ip: Scalar<Self>,
-        error_bound: Scalar<Self>,
-        binary_x: &[u64],
+        dis_u_2: F32,
+        factor_ppc: F32,
+        factor_ip: F32,
+        factor_err: F32,
+        code: &[u8],
         p: &Self::RabitqQuantizationPreprocessed,
     ) -> (F32, F32);
-    fn rabit_quantization_preprocess(
-        dim: usize,
-        vec: Borrowed<'_, Self>,
-        projection: &[Vec<Scalar<Self>>],
-        rand_bias: &[Scalar<Self>],
-    ) -> Self::RabitqQuantizationPreprocessed;
+    fn proj(projection: &[Vec<F32>], vector: Borrowed<'_, Self>) -> Vec<F32>;
 }
 
-impl<O: Operator> OperatorRabitq for O {
-    // (distance_square, lower_bound, delta, scalar_sum, binary_vec_y)
-    type RabitqQuantizationPreprocessed = (Scalar<O>, Scalar<O>, Scalar<O>, Scalar<O>, Vec<u64>);
+impl OperatorRabitq for Vecf32L2 {
+    const SUPPORTED: bool = true;
+
+    type RabitqQuantizationPreprocessed =
+        ((F32, F32, F32, F32), (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>));
 
     fn rabit_quantization_preprocess(
-        dim: usize,
-        vec: Borrowed<'_, Self>,
-        projection: &[Vec<Scalar<Self>>],
-        rand_bias: &[Scalar<Self>],
+        vector: Borrowed<'_, Self>,
+        projection: &[Vec<F32>],
     ) -> Self::RabitqQuantizationPreprocessed {
-        let mut quantized_y = Vec::with_capacity(dim);
-        let vector = vec.to_vec();
-        for i in 0..dim {
-            quantized_y.push(Self::vector_dot_product(&projection[i], &vector));
-        }
-        let distance_to_centroid_square = Self::vector_dot_product(&quantized_y, &quantized_y);
-        let mut lower_bound = Scalar::<O>::infinity();
-        let mut upper_bound = Scalar::<O>::neg_infinity();
-        for i in 0..dim {
-            lower_bound = Float::min(lower_bound, quantized_y[i]);
-            upper_bound = Float::max(upper_bound, quantized_y[i]);
-        }
-        let delta =
-            (upper_bound - lower_bound) / Scalar::<O>::from_f32((1 << THETA_LOG_DIM) as f32 - 1.0);
-
-        // scalar quantization
-        let mut quantized_y_scalar = vec![0u8; dim];
-        let mut scalar_sum = 0u32;
-        let one_over_delta = Scalar::<O>::one() / delta;
-        for i in 0..dim {
-            quantized_y_scalar[i] = ((quantized_y[i] - lower_bound) * one_over_delta
-                + rand_bias[i])
-                .to_u8()
-                .expect("failed to convert a Scalar value to u8");
-            scalar_sum += quantized_y_scalar[i] as u32;
-        }
-        let binary_vec_y = O::query_vector_binarize_u64(&quantized_y_scalar);
-        (
-            distance_to_centroid_square,
-            lower_bound,
-            delta,
-            Scalar::<O>::from_f32(scalar_sum as f32),
-            binary_vec_y,
-        )
-    }
-
-    fn gen_random_orthogonal(dim: usize) -> Vec<Vec<Scalar<Self>>> {
-        let mut rng = thread_rng();
-        let random_orth: RandomOrthogonal<f32, Dyn> =
-            RandomOrthogonal::new(Dim::from_usize(dim), || rng.gen());
-        let random_matrix = random_orth.unwrap();
-        let mut projection = vec![Vec::with_capacity(dim); dim];
-        // use the transpose of the random matrix as the inverse of the orthogonal matrix,
-        // but we need to transpose it again to make it efficient for the dot production
-        for (i, vec) in random_matrix.row_iter().enumerate() {
-            for val in vec.iter() {
-                projection[i].push(Scalar::<O>::from_f32(*val));
-            }
-        }
-        projection
-    }
-
-    fn vector_dot_product(lhs: &[Scalar<O>], rhs: &[Scalar<O>]) -> Scalar<O> {
-        let mut sum = Scalar::<O>::zero();
-        let length = std::cmp::min(lhs.len(), rhs.len());
-        for i in 0..length {
-            sum += lhs[i] * rhs[i];
-        }
-        sum
-    }
-
-    // binarize vector to 0 or 1 in binary format stored in u64
-    fn vector_binarize_u64(vec: &[Scalar<Self>]) -> Vec<u64> {
-        let mut binary = vec![0u64; (vec.len() + 63) / 64];
-        let zero = Scalar::<O>::zero();
-        for i in 0..vec.len() {
-            if vec[i] > zero {
-                binary[i / 64] |= 1 << (i % 64);
-            }
-        }
-        binary
-    }
-
-    // binarize vector to +1 or -1
-    fn vector_binarize_one(vec: &[Scalar<Self>]) -> Vec<Scalar<Self>> {
-        let mut binary = vec![Scalar::<O>::one(); vec.len()];
-        let zero = Scalar::<O>::zero();
-        for i in 0..vec.len() {
-            if vec[i] <= zero {
-                binary[i] = -Scalar::<O>::one();
-            }
-        }
-        binary
-    }
-
-    fn query_vector_binarize_u64(vec: &[u8]) -> Vec<u64> {
-        let length = vec.len();
-        let mut binary = vec![0u64; length * THETA_LOG_DIM as usize / 64];
-        for j in 0..THETA_LOG_DIM as usize {
-            for i in 0..length {
-                binary[(i + j * length) / 64] |= (((vec[i] >> j) & 1) as u64) << (i % 64);
-            }
-        }
-        binary
+        let vector = Self::proj(projection, vector);
+        let dis_v_2 = vector.iter().map(|&x| x * x).sum();
+        let (k, b, qvector) = crate::quantize::quantize_15(&vector);
+        let qvector_sum = F32(qvector.iter().fold(0_u32, |x, &y| x + y as u32) as _);
+        let lut = binarize(&qvector);
+        ((dis_v_2, b, k, qvector_sum), lut)
     }
 
     fn rabit_quantization_process(
-        x_centroid_square: Scalar<Self>,
-        factor_ppc: Scalar<Self>,
-        factor_ip: Scalar<Self>,
-        error_bound: Scalar<Self>,
-        binary_x: &[u64],
-        p: &Self::RabitqQuantizationPreprocessed,
+        dis_u_2: F32,
+        factor_ppc: F32,
+        factor_ip: F32,
+        factor_err: F32,
+        code: &[u8],
+        (params, lut): &((F32, F32, F32, F32), (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>)),
     ) -> (F32, F32) {
-        let estimate = (x_centroid_square
-            + p.0
-            + p.1 * factor_ppc
-            + (Scalar::<O>::from_f32(2.0 * asymmetric_binary_dot_product(binary_x, &p.4) as f32)
-                - p.3)
-                * factor_ip
-                * p.2)
-            .to_f();
-        let err = (error_bound * p.0.sqrt()).to_f();
-        (estimate, estimate - err)
+        let &(dis_v_2, b, k, qvector_sum) = params;
+        let abdp = asymmetric_binary_dot_product(code, lut);
+        let rough = dis_u_2
+            + dis_v_2
+            + b * factor_ppc
+            + (F32(2.0 * abdp as f32) - qvector_sum) * factor_ip * k;
+        let err = factor_err * dis_v_2.sqrt();
+        (rough, err)
+    }
+
+    fn proj(projection: &[Vec<F32>], vector: Borrowed<'_, Self>) -> Vec<F32> {
+        let dims = vector.dims() as usize;
+        let vector = vector.slice();
+        assert_eq!(projection.len(), dims);
+        (0..dims)
+            .map(|i| {
+                assert_eq!(projection[i].len(), dims);
+                let mut xy = F32(0.0);
+                for j in 0..dims {
+                    xy += projection[i][j] * vector[j];
+                }
+                xy
+            })
+            .collect()
     }
 }
 
-fn binary_dot_product(x: &[u64], y: &[u64]) -> u32 {
+impl OperatorRabitq for Vecf16L2 {
+    const SUPPORTED: bool = true;
+
+    type RabitqQuantizationPreprocessed =
+        ((F32, F32, F32, F32), (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>));
+
+    fn rabit_quantization_preprocess(
+        vector: Borrowed<'_, Self>,
+        projection: &[Vec<F32>],
+    ) -> Self::RabitqQuantizationPreprocessed {
+        let vector = Self::proj(projection, vector);
+        let dis_v_2 = vector.iter().map(|&x| x * x).sum();
+        let (k, b, qvector) = crate::quantize::quantize_15(&vector);
+        let qvector_sum = F32(qvector.iter().fold(0_u32, |x, &y| x + y as u32) as _);
+        let lut = binarize(&qvector);
+        ((dis_v_2, b, k, qvector_sum), lut)
+    }
+
+    fn rabit_quantization_process(
+        dis_u_2: F32,
+        factor_ppc: F32,
+        factor_ip: F32,
+        factor_err: F32,
+        code: &[u8],
+        (params, lut): &((F32, F32, F32, F32), (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>)),
+    ) -> (F32, F32) {
+        let &(dis_v_2, b, k, qvector_sum) = params;
+        let abdp = asymmetric_binary_dot_product(code, lut);
+        let rough = dis_u_2
+            + dis_v_2
+            + b * factor_ppc
+            + (F32(2.0 * abdp as f32) - qvector_sum) * factor_ip * k;
+        let err = factor_err * dis_v_2.sqrt();
+        (rough, err)
+    }
+
+    fn proj(projection: &[Vec<F32>], vector: Borrowed<'_, Self>) -> Vec<F32> {
+        let dims = vector.dims() as usize;
+        let vector = vector.slice();
+        assert_eq!(projection.len(), dims);
+        (0..dims)
+            .map(|i| {
+                assert_eq!(projection[i].len(), dims);
+                let mut xy = F32(0.0);
+                for j in 0..dims {
+                    xy += projection[i][j] * vector[j].to_f();
+                }
+                xy
+            })
+            .collect()
+    }
+}
+
+macro_rules! unimpl_operator_rabitq {
+    ($t:ty) => {
+        impl OperatorRabitq for $t {
+            const SUPPORTED: bool = false;
+
+            type RabitqQuantizationPreprocessed = std::convert::Infallible;
+
+            fn rabit_quantization_preprocess(
+                _: Borrowed<'_, Self>,
+                _: &[Vec<F32>],
+            ) -> Self::RabitqQuantizationPreprocessed {
+                unimplemented!()
+            }
+
+            fn rabit_quantization_process(
+                _: F32,
+                _: F32,
+                _: F32,
+                _: F32,
+                _: &[u8],
+                _: &Self::RabitqQuantizationPreprocessed,
+            ) -> (F32, F32) {
+                unimplemented!()
+            }
+
+            fn proj(_: &[Vec<F32>], _: Borrowed<'_, Self>) -> Vec<F32> {
+                unimplemented!()
+            }
+        }
+    };
+}
+
+unimpl_operator_rabitq!(Vecf32Cos);
+unimpl_operator_rabitq!(Vecf32Dot);
+
+unimpl_operator_rabitq!(Vecf16Cos);
+unimpl_operator_rabitq!(Vecf16Dot);
+
+unimpl_operator_rabitq!(BVecf32Cos);
+unimpl_operator_rabitq!(BVecf32Dot);
+unimpl_operator_rabitq!(BVecf32L2);
+unimpl_operator_rabitq!(BVecf32Jaccard);
+
+unimpl_operator_rabitq!(SVecf32Cos);
+unimpl_operator_rabitq!(SVecf32Dot);
+unimpl_operator_rabitq!(SVecf32L2);
+
+fn binarize(vector: &[u8]) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
+    let n = vector.len();
+    let t0 = {
+        let mut t = vec![0u8; n.div_ceil(8)];
+        for i in 0..n {
+            t[i / 8] |= ((vector[i] >> 0) & 1) << (i % 8);
+        }
+        t
+    };
+    let t1 = {
+        let mut t = vec![0u8; n.div_ceil(8)];
+        for i in 0..n {
+            t[i / 8] |= ((vector[i] >> 1) & 1) << (i % 8);
+        }
+        t
+    };
+    let t2 = {
+        let mut t = vec![0u8; n.div_ceil(8)];
+        for i in 0..n {
+            t[i / 8] |= ((vector[i] >> 2) & 1) << (i % 8);
+        }
+        t
+    };
+    let t3 = {
+        let mut t = vec![0u8; n.div_ceil(8)];
+        for i in 0..n {
+            t[i / 8] |= ((vector[i] >> 3) & 1) << (i % 8);
+        }
+        t
+    };
+    (t0, t1, t2, t3)
+}
+
+fn binary_dot_product(x: &[u8], y: &[u8]) -> u32 {
+    assert_eq!(x.len(), y.len());
+    let n = x.len();
     let mut res = 0;
-    for i in 0..x.len() {
+    for i in 0..n {
         res += (x[i] & y[i]).count_ones();
     }
     res
 }
 
-fn asymmetric_binary_dot_product(x: &[u64], y: &[u64]) -> u32 {
+fn asymmetric_binary_dot_product(x: &[u8], y: &(Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>)) -> u32 {
     let mut res = 0;
-    let length = x.len();
-    for i in 0..THETA_LOG_DIM as usize {
-        res += binary_dot_product(x, &y[i * length..(i + 1) * length]) << i;
-    }
+    res += binary_dot_product(x, &y.0) << 0;
+    res += binary_dot_product(x, &y.1) << 1;
+    res += binary_dot_product(x, &y.2) << 2;
+    res += binary_dot_product(x, &y.3) << 3;
     res
 }
