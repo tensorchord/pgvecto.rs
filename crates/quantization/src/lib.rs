@@ -6,12 +6,14 @@
 pub mod fast_scan;
 pub mod operator;
 pub mod product;
+pub mod rabitq;
 pub mod reranker;
 pub mod scalar;
 pub mod trivial;
 mod utils;
 
 use self::product::ProductQuantizer;
+use self::rabitq::RabitqQuantizer;
 use self::scalar::ScalarQuantizer;
 use crate::operator::OperatorQuantization;
 use base::index::*;
@@ -35,6 +37,7 @@ pub enum Quantizer<O: OperatorQuantization> {
     Trivial(TrivialQuantizer<O>),
     Scalar(ScalarQuantizer<O>),
     Product(ProductQuantizer<O>),
+    Rabitq(RabitqQuantizer<O>),
 }
 
 impl<O: OperatorQuantization> Quantizer<O> {
@@ -64,6 +67,12 @@ impl<O: OperatorQuantization> Quantizer<O> {
                 vectors,
                 transform,
             )),
+            Rabitq(rabitq_quantization_options) => Self::Rabitq(RabitqQuantizer::train(
+                vector_options,
+                rabitq_quantization_options,
+                vectors,
+                transform,
+            )),
         }
     }
 }
@@ -72,6 +81,7 @@ pub enum QuantizationPreprocessed<O: OperatorQuantization> {
     Trivial(O::TrivialQuantizationPreprocessed),
     Scalar(O::QuantizationPreprocessed),
     Product(O::QuantizationPreprocessed),
+    Rabitq(O::RabitqQuantizationPreprocessed),
 }
 
 pub struct Quantization<O: OperatorQuantization> {
@@ -152,6 +162,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                         _ => unreachable!(),
                     }
                 })),
+                Rabitq(_) => Box::new(std::iter::empty()),
             }
         });
         let packed_codes = MmapArray::create(
@@ -190,6 +201,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                     }
                     _ => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
                 },
+                Rabitq(_) => Box::new(std::iter::empty()),
             },
         );
         Self {
@@ -215,6 +227,7 @@ impl<O: OperatorQuantization> Quantization<O> {
             Quantizer::Trivial(x) => QuantizationPreprocessed::Trivial(x.preprocess(lhs)),
             Quantizer::Scalar(x) => QuantizationPreprocessed::Scalar(x.preprocess(lhs)),
             Quantizer::Product(x) => QuantizationPreprocessed::Product(x.preprocess(lhs)),
+            Quantizer::Rabitq(x) => QuantizationPreprocessed::Rabitq(x.preprocess(lhs)),
         }
     }
 
@@ -243,6 +256,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                 let rhs = &self.codes[start..end];
                 x.process(lhs, rhs)
             }
+            (Quantizer::Rabitq(x), QuantizationPreprocessed::Rabitq(lhs)) => x.process(lhs, u),
             _ => unreachable!(),
         }
     }
@@ -275,6 +289,9 @@ impl<O: OperatorQuantization> Quantization<O> {
                 &self.packed_codes,
                 pq_fast_scan,
             ),
+            (Quantizer::Rabitq(x), QuantizationPreprocessed::Rabitq(lhs)) => {
+                x.push_batch(lhs, rhs, heap, &self.codes, &self.packed_codes)
+            }
             _ => unreachable!(),
         }
     }
@@ -291,6 +308,7 @@ impl<O: OperatorQuantization> Quantization<O> {
             Trivial(x) => Box::new(x.flat_rerank(heap, r)),
             Scalar(x) => Box::new(x.flat_rerank(heap, r, sq_rerank_size)),
             Product(x) => Box::new(x.flat_rerank(heap, r, pq_rerank_size)),
+            Rabitq(x) => Box::new(x.flat_rerank(heap, r)),
         }
     }
 
@@ -322,6 +340,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                 },
                 r,
             )),
+            Rabitq(x) => Box::new(x.graph_rerank(vector, r)),
         }
     }
 }
