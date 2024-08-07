@@ -55,19 +55,30 @@ impl<O: Op> IvfNaive<O> {
             k_means_lookup_many(&vector.to_vec(), &self.centroids),
             opts.ivf_nprobe as usize,
         );
-        let mut reranker = self.quantization.ivf_naive_rerank(vector, opts, move |u| {
-            (
-                O::distance(vector, self.storage.vector(u)),
-                self.payloads[u as usize],
-            )
-        });
+        let mut heap = Vec::new();
+        let preprocessed = self.quantization.preprocess(vector);
         for i in lists.iter().map(|(_, i)| *i) {
             let start = self.offsets[i];
             let end = self.offsets[i + 1];
-            for u in start..end {
-                reranker.push(u, ());
-            }
+            self.quantization.push_batch(
+                &preprocessed,
+                start..end,
+                &mut heap,
+                opts.ivf_sq_fast_scan,
+                opts.ivf_pq_fast_scan,
+            );
         }
+        let mut reranker = self.quantization.flat_rerank(
+            heap,
+            move |u| {
+                (
+                    O::distance(vector, self.storage.vector(u)),
+                    self.payloads[u as usize],
+                )
+            },
+            opts.ivf_sq_rerank_size,
+            opts.ivf_pq_rerank_size,
+        );
         (
             Vec::new(),
             Box::new(std::iter::from_fn(move || {

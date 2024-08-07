@@ -1,14 +1,18 @@
 pub mod operator;
 
 use self::operator::OperatorTrivialQuantization;
-use crate::reranker::disabled::DisabledReranker;
+use crate::reranker::disabled::DisabledFlatReranker;
+use crate::reranker::disabled::DisabledGraphReranker;
 use base::index::*;
 use base::operator::*;
 use base::scalar::*;
 use base::search::*;
+use num_traits::Zero;
 use serde::Deserialize;
 use serde::Serialize;
+use std::cmp::Reverse;
 use std::marker::PhantomData;
+use std::ops::Range;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(bound = "")]
@@ -42,39 +46,28 @@ impl<O: OperatorTrivialQuantization> TrivialQuantizer<O> {
         O::trivial_quantization_process(preprocessed, rhs)
     }
 
+    pub fn push_batch(
+        &self,
+        _preprocessed: &O::TrivialQuantizationPreprocessed,
+        rhs: Range<u32>,
+        heap: &mut Vec<(Reverse<F32>, u32)>,
+    ) {
+        heap.extend(rhs.map(|u| (Reverse(F32::zero()), u)));
+    }
+
     pub fn flat_rerank<'a, T: 'a>(
         &'a self,
-        _: Borrowed<'a, O>,
-        _: &'a SearchOptions,
+        heap: Vec<(Reverse<F32>, u32)>,
         r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T> + 'a> {
-        Box::new(DisabledReranker::new(r))
+    ) -> impl RerankerPop<T> + 'a {
+        DisabledFlatReranker::new(heap, r)
     }
 
-    pub fn ivf_naive_rerank<'a, T: 'a>(
+    pub fn graph_rerank<'a, T: 'a, R: Fn(u32) -> (F32, T) + 'a>(
         &'a self,
         _: Borrowed<'a, O>,
-        _: &'a SearchOptions,
-        r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T> + 'a> {
-        Box::new(DisabledReranker::new(r))
-    }
-
-    pub fn ivf_residual_rerank<'a, T: 'a>(
-        &'a self,
-        _: Vec<Owned<O>>,
-        _: &'a SearchOptions,
-        r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T, usize> + 'a> {
-        Box::new(DisabledReranker::new(r))
-    }
-
-    pub fn graph_rerank<'a, T: 'a>(
-        &'a self,
-        _: Borrowed<'a, O>,
-        _: &'a SearchOptions,
-        r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T> + 'a> {
-        Box::new(DisabledReranker::new(r))
+        r: R,
+    ) -> impl RerankerPop<T> + RerankerPush + 'a {
+        DisabledGraphReranker::new(r)
     }
 }

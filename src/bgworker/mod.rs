@@ -45,9 +45,16 @@ extern "C" fn _vectors_main(_arg: pgrx::pg_sys::Datum) {
     .init()
     .expect("failed to set logger");
     std::panic::set_hook(Box::new(|info| {
+        let message = if let Some(s) = info.payload().downcast_ref::<&str>() {
+            s.to_string()
+        } else if let Some(s) = info.payload().downcast_ref::<String>() {
+            s.clone()
+        } else {
+            "(none)".to_string()
+        };
         // for debugging, set `RUST_BACKTRACE=1`
         let backtrace = std::backtrace::Backtrace::capture();
-        log::error!("Panickied. Info: {:?}. Backtrace: {}.", info, backtrace);
+        log::error!("Panickied. Message: {message:?}. Backtrace: {backtrace}.");
     }));
     use service::Version;
     use service::Worker;

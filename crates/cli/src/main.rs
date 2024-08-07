@@ -28,6 +28,10 @@ fn default_search_opt() -> SearchOptions {
         hnsw_ef_search: 100,
         ivf_nprobe: 10,
         diskann_ef_search: 100,
+        flat_sq_fast_scan: false,
+        flat_pq_fast_scan: false,
+        ivf_sq_fast_scan: false,
+        ivf_pq_fast_scan: false,
     }
 }
 
