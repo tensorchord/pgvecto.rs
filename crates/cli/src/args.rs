@@ -111,6 +111,10 @@ pub struct QueryArguments {
     #[argh(option)]
     pub truth: String,
 
+    /// run the query for `epoch` times
+    #[argh(option, default = "1")]
+    pub epoch: u32,
+
     /// top-k
     #[argh(option, default = "10")]
     pub top_k: usize,

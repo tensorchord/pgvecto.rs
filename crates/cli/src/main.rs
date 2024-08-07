@@ -130,27 +130,32 @@ fn main() {
             let view = instance.view();
             std::mem::forget(instance);
             let search_opt = query.get_search_options();
-            let start_time = Instant::now();
-            for (i, vec) in queries.iter().enumerate() {
-                match view.vbase(&convert_to_owned_vec(vec), &search_opt) {
-                    Ok(iter) => {
-                        let ans = iter
-                            .take(query.top_k)
-                            .map(|(_, x)| x.as_u64() as i32)
-                            .collect::<Vec<_>>();
-                        res.push(calculate_precision(&truth[i], &ans, query.top_k));
-                    }
-                    Err(err) => {
-                        info!("failed to search the vector: {err}");
-                    }
+            let mut total_time = 0f64;
+            for _ in 0..query.epoch {
+                for (i, vec) in queries.iter().enumerate() {
+                    let owned_vec = convert_to_owned_vec(vec);
+                    let start_time = Instant::now();
+                    match view.vbase(&owned_vec, &search_opt) {
+                        Ok(iter) => {
+                            let ans = iter
+                                .take(query.top_k)
+                                .map(|(_, x)| x.as_u64() as i32)
+                                .collect::<Vec<_>>();
+                            total_time += start_time.elapsed().as_secs_f64();
+                            res.push(calculate_precision(&truth[i], &ans, query.top_k));
+                        }
+                        Err(err) => {
+                            info!("failed to search the vector: {err}");
+                        }
+                    };
                 }
             }
             info!(
                 "Top {} precision of {} queries is {} (QPS: {})",
                 query.top_k,
-                res.len(),
+                queries.len(),
                 res.iter().sum::<f32>() / (res.len() as f32),
-                res.len() as f32 / start_time.elapsed().as_secs_f32(),
+                res.len() as f64 / total_time,
             );
         }
     }
