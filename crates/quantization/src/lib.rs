@@ -159,32 +159,6 @@ impl<O: OperatorQuantization> Quantization<O> {
             match &*train {
                 Trivial(_) => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
                 Scalar(x) => match x.bits() {
-                    1 => {
-                        use fast_scan::b1::{pack, BLOCK_SIZE};
-                        let blocks = vectors.len().div_ceil(BLOCK_SIZE);
-                        Box::new((0..blocks).flat_map(|block| {
-                            let width = x.width();
-                            let n = vectors.len();
-                            let raw = std::array::from_fn::<_, { BLOCK_SIZE as _ }, _>(|i| {
-                                let id = BLOCK_SIZE * block + i as u32;
-                                x.encode(&vectors.vector(std::cmp::min(id, n - 1)).to_vec())
-                            });
-                            pack(width, raw)
-                        })) as Box<dyn Iterator<Item = u8>>
-                    }
-                    2 => {
-                        use fast_scan::b2::{pack, BLOCK_SIZE};
-                        let blocks = vectors.len().div_ceil(BLOCK_SIZE);
-                        Box::new((0..blocks).flat_map(|block| {
-                            let width = x.width();
-                            let n = vectors.len();
-                            let raw = std::array::from_fn::<_, { BLOCK_SIZE as _ }, _>(|i| {
-                                let id = BLOCK_SIZE * block + i as u32;
-                                x.encode(&vectors.vector(std::cmp::min(id, n - 1)).to_vec())
-                            });
-                            pack(width, raw)
-                        })) as Box<dyn Iterator<Item = u8>>
-                    }
                     4 => {
                         use fast_scan::b4::{pack, BLOCK_SIZE};
                         let blocks = vectors.len().div_ceil(BLOCK_SIZE);
@@ -201,32 +175,6 @@ impl<O: OperatorQuantization> Quantization<O> {
                     _ => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
                 },
                 Product(x) => match x.bits() {
-                    1 => {
-                        use fast_scan::b1::{pack, BLOCK_SIZE};
-                        let blocks = vectors.len().div_ceil(BLOCK_SIZE);
-                        Box::new((0..blocks).flat_map(|block| {
-                            let width = x.width();
-                            let n = vectors.len();
-                            let raw = std::array::from_fn::<_, { BLOCK_SIZE as _ }, _>(|i| {
-                                let id = BLOCK_SIZE * block + i as u32;
-                                x.encode(&vectors.vector(std::cmp::min(id, n - 1)).to_vec())
-                            });
-                            pack(width, raw)
-                        })) as Box<dyn Iterator<Item = u8>>
-                    }
-                    2 => {
-                        use fast_scan::b2::{pack, BLOCK_SIZE};
-                        let blocks = vectors.len().div_ceil(BLOCK_SIZE);
-                        Box::new((0..blocks).flat_map(|block| {
-                            let width = x.width();
-                            let n = vectors.len();
-                            let raw = std::array::from_fn::<_, { BLOCK_SIZE as _ }, _>(|i| {
-                                let id = BLOCK_SIZE * block + i as u32;
-                                x.encode(&vectors.vector(std::cmp::min(id, n - 1)).to_vec())
-                            });
-                            pack(width, raw)
-                        })) as Box<dyn Iterator<Item = u8>>
-                    }
                     4 => {
                         use fast_scan::b4::{pack, BLOCK_SIZE};
                         let blocks = vectors.len().div_ceil(BLOCK_SIZE);
