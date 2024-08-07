@@ -28,32 +28,27 @@ pub trait OperatorRaBitQ: Operator {
     fn rabit_quantization_preprocess(
         dim: usize,
         vec: Borrowed<'_, Self>,
-        projection: &[Vec<Scalar<Self>>],
+        distance: F32,
         rand_bias: &[Scalar<Self>],
     ) -> Self::RabitQuantizationPreprocessed;
 }
 
 impl<O: Operator> OperatorRaBitQ for O {
-    // (distance_square, lower_bound, delta, scalar_sum, binary_vec_y)
+    // (distance, lower_bound, delta, scalar_sum, binary_vec_y)
     type RabitQuantizationPreprocessed = (Scalar<O>, Scalar<O>, Scalar<O>, Scalar<O>, Vec<u64>);
 
     fn rabit_quantization_preprocess(
         dim: usize,
         vec: Borrowed<'_, Self>,
-        projection: &[Vec<Scalar<Self>>],
+        distance: F32,
         rand_bias: &[Scalar<Self>],
     ) -> Self::RabitQuantizationPreprocessed {
-        let mut quantized_y = Vec::with_capacity(dim);
-        let vector = vec.to_vec();
-        for i in 0..dim {
-            quantized_y.push(Self::vector_dot_product(&projection[i], &vector));
-        }
-        let distance_to_centroid_square = Self::vector_dot_product(&quantized_y, &quantized_y);
+        let vec = vec.to_vec();
         let mut lower_bound = Scalar::<O>::infinity();
         let mut upper_bound = Scalar::<O>::neg_infinity();
         for i in 0..dim {
-            lower_bound = Float::min(lower_bound, quantized_y[i]);
-            upper_bound = Float::max(upper_bound, quantized_y[i]);
+            lower_bound = Float::min(lower_bound, vec[i]);
+            upper_bound = Float::max(upper_bound, vec[i]);
         }
         let delta =
             (upper_bound - lower_bound) / Scalar::<O>::from_f32((1 << THETA_LOG_DIM) as f32 - 1.0);
@@ -63,15 +58,14 @@ impl<O: Operator> OperatorRaBitQ for O {
         let mut scalar_sum = 0u32;
         let one_over_delta = Scalar::<O>::one() / delta;
         for i in 0..dim {
-            quantized_y_scalar[i] = ((quantized_y[i] - lower_bound) * one_over_delta
-                + rand_bias[i])
+            quantized_y_scalar[i] = ((vec[i] - lower_bound) * one_over_delta + rand_bias[i])
                 .to_u8()
                 .expect("failed to convert a Scalar value to u8");
             scalar_sum += quantized_y_scalar[i] as u32;
         }
         let binary_vec_y = O::query_vector_binarize_u64(&quantized_y_scalar);
         (
-            distance_to_centroid_square,
+            Scalar::<O>::from_f(distance),
             lower_bound,
             delta,
             Scalar::<O>::from_f32(scalar_sum as f32),
@@ -148,13 +142,13 @@ impl<O: Operator> OperatorRaBitQ for O {
         p: &Self::RabitQuantizationPreprocessed,
     ) -> F32 {
         let estimate = x_centroid_square
-            + p.0
+            + p.0 * p.0
             + p.1 * factor_ppc
             + (Scalar::<O>::from_f32(2.0 * asymmetric_binary_dot_product(binary_x, &p.4) as f32)
                 - p.3)
                 * factor_ip
                 * p.2;
-        (estimate - error_bound * p.0.sqrt()).to_f()
+        (estimate - error_bound * p.0).to_f()
     }
 }
 

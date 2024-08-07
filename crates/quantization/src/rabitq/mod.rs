@@ -106,6 +106,15 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
         }
     }
 
+    pub fn project(&self, lhs: &[Scalar<O>]) -> Vec<Scalar<O>> {
+        let vec = lhs.to_vec();
+        let mut res = Vec::with_capacity(lhs.len());
+        for i in 0..lhs.len() {
+            res.push(O::vector_dot_product(&self.projection[i], &vec))
+        }
+        res
+    }
+
     pub fn width(&self) -> usize {
         (self.dim / 64) as usize
     }
@@ -132,28 +141,25 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
         unimplemented!()
     }
 
-    pub fn preprocess(&self, lhs: Borrowed<'_, O>) -> O::RabitQuantizationPreprocessed {
-        O::rabit_quantization_preprocess(
-            self.dim_pad_64 as usize,
-            lhs,
-            &self.projection,
-            &self.rand_bias,
-        )
+    pub fn preprocess(&self, _lhs: Borrowed<'_, O>) -> O::RabitQuantizationPreprocessed {
+        unimplemented!()
     }
 
     pub fn ivf_residual_rerank<'a, T: 'a>(
         &'a self,
         vectors: Vec<Owned<O>>,
+        distances: &[F32],
         _: &'a SearchOptions,
         r: impl Fn(u32) -> (F32, T) + 'a,
     ) -> Box<dyn Reranker<T, usize> + 'a> {
         let p = vectors
             .into_iter()
-            .map(|vector| {
+            .enumerate()
+            .map(|(i, vector)| {
                 O::rabit_quantization_preprocess(
                     self.dim_pad_64 as usize,
                     vector.as_borrowed(),
-                    &self.projection,
+                    distances[i],
                     &self.rand_bias,
                 )
             })

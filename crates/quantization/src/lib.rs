@@ -128,6 +128,13 @@ impl<O: OperatorQuantization> Quantization<O> {
         }
     }
 
+    pub fn project(&self, lhs: &[Scalar<O>]) -> Vec<Scalar<O>> {
+        match &*self.train {
+            Quantizer::RaBitQ(x) => x.project(lhs),
+            _ => unimplemented!(),
+        }
+    }
+
     pub fn process(
         &self,
         vectors: &impl Vectors<O>,
@@ -227,6 +234,20 @@ impl<O: OperatorQuantization> Quantization<O> {
         }
     }
 
+    pub fn ivf_projection_rerank<'a, T: 'a>(
+        &'a self,
+        vectors: Vec<Owned<O>>,
+        distances: &[F32],
+        opts: &'a SearchOptions,
+        r: impl Fn(u32) -> (F32, T) + 'a,
+    ) -> Box<dyn Reranker<T, usize> + 'a> {
+        use Quantizer::*;
+        match &*self.train {
+            RaBitQ(x) => x.ivf_residual_rerank(vectors, distances, opts, r),
+            _ => unimplemented!(),
+        }
+    }
+
     pub fn ivf_residual_rerank<'a, T: 'a>(
         &'a self,
         vectors: Vec<Owned<O>>,
@@ -258,7 +279,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                 },
                 r,
             ),
-            RaBitQ(x) => x.ivf_residual_rerank(vectors, opts, r),
+            RaBitQ(_x) => unimplemented!(),
         }
     }
 
