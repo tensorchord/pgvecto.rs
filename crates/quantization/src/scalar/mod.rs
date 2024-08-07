@@ -3,6 +3,7 @@ pub mod operator;
 use self::operator::OperatorScalarQuantization;
 use crate::reranker::window::WindowReranker;
 use crate::reranker::window_0::Window0Reranker;
+use crate::utils::InfiniteByteChunks;
 use base::index::*;
 use base::operator::*;
 use base::scalar::*;
@@ -83,18 +84,15 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
             b0 | (b1 << 4)
         }
         match self.bits {
-            1 => codes
-                .array_chunks::<8>()
+            1 => InfiniteByteChunks::new(codes)
                 .map(merge_8)
                 .take(bytes as usize)
                 .collect(),
-            2 => codes
-                .array_chunks::<4>()
+            2 => InfiniteByteChunks::new(codes)
                 .map(merge_4)
                 .take(bytes as usize)
                 .collect(),
-            4 => codes
-                .array_chunks::<2>()
+            4 => InfiniteByteChunks::new(codes)
                 .map(merge_2)
                 .take(bytes as usize)
                 .collect(),

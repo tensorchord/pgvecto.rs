@@ -14,7 +14,7 @@ toml.workspace = true
 validator.workspace = true
 
 base_macros = { path = "../base_macros" }
-c = { path = "../c" }
+ccc = { path = "../ccc" }
 detect = { path = "../detect" }
 
 [lints]

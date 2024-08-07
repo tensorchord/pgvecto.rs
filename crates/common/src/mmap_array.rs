@@ -38,7 +38,7 @@ where
         buffered.write_all(base::pod::bytes_of(&info)).unwrap();
         buffered.flush().unwrap();
         file.sync_all().unwrap();
-        let mmap = unsafe { read_mmap(&file, info.len * std::mem::size_of::<T>()) };
+        let mmap = unsafe { read_mmap(&file, info.len * size_of::<T>()) };
         let outp = unsafe { std::slice::from_raw_parts(mmap.as_ptr() as *const T, info.len) };
         Self {
             info,
@@ -49,7 +49,7 @@ where
     pub fn open(path: impl AsRef<Path>) -> Self {
         let file = std::fs::OpenOptions::new().read(true).open(path).unwrap();
         let info = read_information(&file);
-        let mmap = unsafe { read_mmap(&file, info.len * std::mem::size_of::<T>()) };
+        let mmap = unsafe { read_mmap(&file, info.len * size_of::<T>()) };
         let outp = unsafe { std::slice::from_raw_parts(mmap.as_ptr() as *const T, info.len) };
         Self {
             info,
@@ -106,7 +106,7 @@ struct Information {
 unsafe impl Pod for Information {}
 
 fn read_information(mut file: &File) -> Information {
-    let size = std::mem::size_of::<Information>();
+    let size = size_of::<Information>();
     file.seek(std::io::SeekFrom::End(-(size as i64))).unwrap();
     let mut buff = vec![0u8; size];
     file.read_exact(&mut buff).unwrap();

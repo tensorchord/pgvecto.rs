@@ -105,10 +105,11 @@ pub struct IndexOptions {
 
 impl IndexOptions {
     fn validate_self(&self) -> Result<(), ValidationError> {
-        match (self.vector.v, &self.indexing) {
-            (VectorKind::Vecf32, _) => Ok(()),
-            (VectorKind::Vecf16, _) => Ok(()),
+        match (self.vector.v, self.vector.d, &self.indexing) {
+            (VectorKind::Vecf32, _, _) => Ok(()),
+            (VectorKind::Vecf16, _, _) => Ok(()),
             (
+                _,
                 _,
                 IndexingOptions::Flat(FlatIndexingOptions {
                     quantization: QuantizationOptions::Trivial(_),
@@ -123,6 +124,7 @@ impl IndexOptions {
                     ..
                 }),
             ) => Ok(()),
+            (VectorKind::SVecf32, DistanceKind::Dot, IndexingOptions::InvertedIndex(_)) => Ok(()),
             _ => Err(ValidationError::new("not valid index options")),
         }
     }
@@ -259,6 +261,7 @@ pub enum IndexingOptions {
     Flat(FlatIndexingOptions),
     Ivf(IvfIndexingOptions),
     Hnsw(HnswIndexingOptions),
+    InvertedIndex(InvertedIndexingOptions),
 }
 
 impl IndexingOptions {
@@ -294,7 +297,18 @@ impl Validate for IndexingOptions {
             Self::Flat(x) => x.validate(),
             Self::Ivf(x) => x.validate(),
             Self::Hnsw(x) => x.validate(),
+            Self::InvertedIndex(_) => Ok(()),
         }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct InvertedIndexingOptions {}
+
+impl Default for InvertedIndexingOptions {
+    fn default() -> Self {
+        Self {}
     }
 }
 

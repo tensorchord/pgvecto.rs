@@ -36,7 +36,7 @@ fn send_fd(tx: BorrowedFd<'_>, fd: BorrowedFd<'_>) -> std::io::Result<()> {
     let mut control = SendAncillaryBuffer::new(&mut buffer.0);
     let pushed = control.push(SendAncillaryMessage::ScmRights(&fds));
     assert!(pushed);
-    let ios = IoSlice::new(&[b'$']);
+    let ios = IoSlice::new(b"$");
     rustix::net::sendmsg(tx, &[ios], &mut control, SendFlags::empty())?;
     Ok(())
 }

@@ -274,7 +274,7 @@ unsafe fn cosine_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrow
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
     unsafe {
-        const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
+        const WIDTH: usize = 512 / 8 / size_of::<usize>();
         let mut xy = _mm512_setzero_si512();
         let mut xx = _mm512_setzero_si512();
         let mut yy = _mm512_setzero_si512();
@@ -356,7 +356,7 @@ unsafe fn dot_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
     unsafe {
-        const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
+        const WIDTH: usize = 512 / 8 / size_of::<usize>();
         let mut xy = _mm512_setzero_si512();
         let mut a = lhs.as_ptr();
         let mut b = rhs.as_ptr();
@@ -422,7 +422,7 @@ unsafe fn sl2_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
     unsafe {
-        const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
+        const WIDTH: usize = 512 / 8 / size_of::<usize>();
         let mut dd = _mm512_setzero_si512();
         let mut a = lhs.as_ptr();
         let mut b = rhs.as_ptr();
@@ -488,7 +488,7 @@ unsafe fn jaccard_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borro
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
     unsafe {
-        const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
+        const WIDTH: usize = 512 / 8 / size_of::<usize>();
         let mut inter = _mm512_setzero_si512();
         let mut union = _mm512_setzero_si512();
         let mut a = lhs.as_ptr();
@@ -559,7 +559,7 @@ unsafe fn length_v4_avx512vpopcntdq(vector: BVecf32Borrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
     let lhs = vector.data();
     unsafe {
-        const WIDTH: usize = 512 / 8 / std::mem::size_of::<usize>();
+        const WIDTH: usize = 512 / 8 / size_of::<usize>();
         let mut cnt = _mm512_setzero_si512();
         let mut a = lhs.as_ptr();
         let mut n = lhs.len();

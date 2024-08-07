@@ -28,6 +28,7 @@ storage = { path = "../storage" }
 # algorithms
 flat = { path = "../flat" }
 hnsw = { path = "../hnsw" }
+inverted = { path = "../inverted" }
 ivf = { path = "../ivf" }
 
 [lints]

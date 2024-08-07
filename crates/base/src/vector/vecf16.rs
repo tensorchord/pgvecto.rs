@@ -193,7 +193,7 @@ impl<'a> PartialOrd for Vecf16Borrowed<'a> {
 unsafe fn cosine_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
-    unsafe { c::v_f16_cosine_avx512fp16(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+    unsafe { ccc::v_f16_cosine_avx512fp16(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
 #[cfg(all(target_arch = "x86_64", test))]
@@ -223,7 +223,7 @@ fn cosine_v4_avx512fp16_test() {
 unsafe fn cosine_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
-    unsafe { c::v_f16_cosine_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+    unsafe { ccc::v_f16_cosine_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
 #[cfg(all(target_arch = "x86_64", test))]
@@ -253,7 +253,7 @@ fn cosine_v4_test() {
 unsafe fn cosine_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
-    unsafe { c::v_f16_cosine_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+    unsafe { ccc::v_f16_cosine_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
 #[cfg(all(target_arch = "x86_64", test))]
@@ -298,7 +298,7 @@ pub fn cosine(lhs: &[F16], rhs: &[F16]) -> F32 {
 unsafe fn dot_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
-    unsafe { c::v_f16_dot_avx512fp16(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+    unsafe { ccc::v_f16_dot_avx512fp16(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
 #[cfg(all(target_arch = "x86_64", test))]
@@ -328,7 +328,7 @@ fn dot_v4_avx512fp16_test() {
 unsafe fn dot_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
-    unsafe { c::v_f16_dot_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+    unsafe { ccc::v_f16_dot_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
 #[cfg(all(target_arch = "x86_64", test))]
@@ -358,7 +358,7 @@ fn dot_v4_test() {
 unsafe fn dot_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
-    unsafe { c::v_f16_dot_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+    unsafe { ccc::v_f16_dot_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
 #[cfg(all(target_arch = "x86_64", test))]
@@ -399,7 +399,7 @@ pub fn dot(lhs: &[F16], rhs: &[F16]) -> F32 {
 unsafe fn sl2_v4_avx512fp16(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
-    unsafe { c::v_f16_sl2_avx512fp16(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+    unsafe { ccc::v_f16_sl2_avx512fp16(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
 #[cfg(all(target_arch = "x86_64", test))]
@@ -429,7 +429,7 @@ fn sl2_v4_avx512fp16_test() {
 unsafe fn sl2_v4(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
-    unsafe { c::v_f16_sl2_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+    unsafe { ccc::v_f16_sl2_v4(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
 #[cfg(all(target_arch = "x86_64", test))]
@@ -459,7 +459,7 @@ fn sl2_v4_test() {
 unsafe fn sl2_v3(lhs: &[F16], rhs: &[F16]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();
-    unsafe { c::v_f16_sl2_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
+    unsafe { ccc::v_f16_sl2_v3(lhs.as_ptr().cast(), rhs.as_ptr().cast(), n).into() }
 }
 
 #[cfg(all(target_arch = "x86_64", test))]

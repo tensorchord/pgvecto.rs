@@ -2,14 +2,14 @@
 #error "clang version must be >= 16"
 #endif
 
-#include "f16.h"
-#include <math.h>
-
-#if defined(__x86_64__)
-#include <immintrin.h>
+#if !defined(__x86_64__)
+#error "this file must be compiled for x86_64"
 #endif
 
-#if defined(__x86_64__)
+#include <immintrin.h>
+#include <math.h>
+#include <stddef.h>
+#include <stdint.h>
 
 __attribute__((target("arch=x86-64-v4,avx512fp16"))) extern float
 v_f16_cosine_avx512fp16(_Float16 *a, _Float16 *b, size_t n) {
@@ -192,5 +192,3 @@ v_f16_sl2_v3(_Float16 *a, _Float16 *b, size_t n) {
   }
   return dd;
 }
-
-#endif

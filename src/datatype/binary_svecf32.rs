@@ -16,8 +16,8 @@ fn _vectors_svecf32_send(vector: SVecf32Input<'_>) -> Bytea {
         let dims = vector.dims();
         let len = vector.len();
         let x = vector.as_borrowed();
-        let b_indexes = std::mem::size_of::<u32>() * len as usize;
-        let b_values = std::mem::size_of::<F32>() * len as usize;
+        let b_indexes = size_of::<u32>() * len as usize;
+        let b_values = size_of::<F32>() * len as usize;
         pgrx::pg_sys::pq_begintypsend(&mut buf);
         pgrx::pg_sys::pq_sendbytes(&mut buf, (&dims) as *const u32 as _, 4);
         pgrx::pg_sys::pq_sendbytes(&mut buf, (&len) as *const u32 as _, 4);
@@ -36,13 +36,13 @@ fn _vectors_svecf32_recv(internal: Internal, oid: Oid, typmod: i32) -> SVecf32Ou
         let dims = (pgrx::pg_sys::pq_getmsgbytes(buf, 4) as *const u32).read_unaligned();
         let len = (pgrx::pg_sys::pq_getmsgbytes(buf, 4) as *const u32).read_unaligned();
 
-        let b_indexes = std::mem::size_of::<u32>() * len as usize;
+        let b_indexes = size_of::<u32>() * len as usize;
         let p_indexes = pgrx::pg_sys::pq_getmsgbytes(buf, b_indexes as _);
         let mut indexes = Vec::<u32>::with_capacity(len as usize);
         std::ptr::copy(p_indexes, indexes.as_mut_ptr().cast::<c_char>(), b_indexes);
         indexes.set_len(len as usize);
 
-        let b_values = std::mem::size_of::<F32>() * len as usize;
+        let b_values = size_of::<F32>() * len as usize;
         let p_values = pgrx::pg_sys::pq_getmsgbytes(buf, b_values as _);
         let mut values = Vec::<F32>::with_capacity(len as usize);
         std::ptr::copy(p_values, values.as_mut_ptr().cast::<c_char>(), b_values);
