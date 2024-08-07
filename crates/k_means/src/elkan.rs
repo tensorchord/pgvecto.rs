@@ -5,7 +5,7 @@ use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use std::ops::{Index, IndexMut};
 
-pub struct ElkanKMeans<S: ScalarLike, F: FnMut(&mut [S])> {
+pub struct ElkanKMeans<S, F> {
     dims: usize,
     c: usize,
     spherical: F,
