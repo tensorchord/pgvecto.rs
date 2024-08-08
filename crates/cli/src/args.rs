@@ -3,7 +3,9 @@ use log::warn;
 
 use base::distance::DistanceKind;
 use base::index::{IndexAlterableOptions, IndexOptions};
-use base::index::{IndexingOptions, OptimizingOptions, SegmentOptions, VectorOptions};
+use base::index::{
+    IndexingOptions, OptimizingOptions, SearchOptions, SegmentOptions, VectorOptions,
+};
 use base::vector::VectorKind;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -27,14 +29,6 @@ fn distance_from_str(s: &str) -> Result<DistanceKind, ArgumentParseError> {
         "Jaccard" => Ok(DistanceKind::Jaccard),
         _ => Err(ArgumentParseError),
     }
-}
-
-fn default_build_timeout_seconds() -> u64 {
-    3600
-}
-
-fn default_query_top_k() -> usize {
-    10
 }
 
 #[derive(FromArgs, Debug, PartialEq)]
@@ -117,13 +111,43 @@ pub struct QueryArguments {
     #[argh(option)]
     pub truth: String,
 
+    /// run the query for `epoch` times
+    #[argh(option, default = "1")]
+    pub epoch: u32,
+
     /// top-k
-    #[argh(option, default = "default_query_top_k()")]
+    #[argh(option, default = "10")]
     pub top_k: usize,
+
+    /// ivf n-probe
+    #[argh(option, default = "10")]
+    pub probe: u32,
+
+    /// HNSW ef search
+    #[argh(option, default = "100")]
+    pub ef: u32,
+}
+
+impl QueryArguments {
+    pub fn get_search_options(&self) -> SearchOptions {
+        SearchOptions {
+            flat_sq_rerank_size: 0,
+            flat_pq_rerank_size: 0,
+            ivf_sq_rerank_size: 0,
+            ivf_pq_rerank_size: 0,
+            hnsw_ef_search: self.ef,
+            ivf_nprobe: self.probe,
+            diskann_ef_search: 100,
+            flat_sq_fast_scan: false,
+            flat_pq_fast_scan: false,
+            ivf_sq_fast_scan: false,
+            ivf_pq_fast_scan: false,
+        }
+    }
 }
 
 #[derive(FromArgs, Debug, PartialEq)]
-/// add vectors from file (HDF5, fvecs)
+/// add vectors from fvecs file
 #[argh(subcommand, name = "add")]
 pub struct AddArguments {
     /// vector file path
@@ -140,7 +164,7 @@ pub struct BuildArguments {
     pub threads: Option<u16>,
 
     /// timeout for the building process
-    #[argh(option, default = "default_build_timeout_seconds()")]
+    #[argh(option, default = "3600")]
     pub timeout_seconds: u64,
 }
 

@@ -6,12 +6,14 @@
 pub mod fast_scan;
 pub mod operator;
 pub mod product;
+pub mod rabitq;
 pub mod reranker;
 pub mod scalar;
 pub mod trivial;
 mod utils;
 
 use self::product::ProductQuantizer;
+use self::rabitq::RaBitQuantizer;
 use self::scalar::ScalarQuantizer;
 use crate::operator::OperatorQuantization;
 use base::index::*;
@@ -35,6 +37,7 @@ pub enum Quantizer<O: OperatorQuantization> {
     Trivial(TrivialQuantizer<O>),
     Scalar(ScalarQuantizer<O>),
     Product(ProductQuantizer<O>),
+    RaBitQ(RaBitQuantizer<O>),
 }
 
 impl<O: OperatorQuantization> Quantizer<O> {
@@ -64,12 +67,19 @@ impl<O: OperatorQuantization> Quantizer<O> {
                 vectors,
                 transform,
             )),
+            RaBitQ(rabitq_quantization_options) => Self::RaBitQ(RaBitQuantizer::train(
+                vector_options,
+                rabitq_quantization_options,
+                vectors,
+                transform,
+            )),
         }
     }
 }
 
 pub enum QuantizationPreprocessed<O: OperatorQuantization> {
     Trivial(O::TrivialQuantizationPreprocessed),
+    RaBit(O::RabitQuantizationPreprocessed),
     Scalar(O::QuantizationPreprocessed),
     Product(O::QuantizationPreprocessed),
 }
@@ -152,6 +162,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                         _ => unreachable!(),
                     }
                 })),
+                RaBitQ(_) => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
             }
         });
         let packed_codes = MmapArray::create(
@@ -190,6 +201,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                     }
                     _ => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
                 },
+                RaBitQ(_x) => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
             },
         );
         Self {
@@ -215,6 +227,25 @@ impl<O: OperatorQuantization> Quantization<O> {
             Quantizer::Trivial(x) => QuantizationPreprocessed::Trivial(x.preprocess(lhs)),
             Quantizer::Scalar(x) => QuantizationPreprocessed::Scalar(x.preprocess(lhs)),
             Quantizer::Product(x) => QuantizationPreprocessed::Product(x.preprocess(lhs)),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn project(&self, lhs: &[Scalar<O>]) -> Vec<Scalar<O>> {
+        match &*self.train {
+            Quantizer::RaBitQ(x) => x.project(lhs),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn projection_preprocess(
+        &self,
+        lhs: Borrowed<'_, O>,
+        distance: F32,
+    ) -> QuantizationPreprocessed<O> {
+        match &*self.train {
+            Quantizer::RaBitQ(x) => QuantizationPreprocessed::RaBit(x.preprocess(lhs, distance)),
+            _ => unreachable!(),
         }
     }
 
@@ -242,6 +273,9 @@ impl<O: OperatorQuantization> Quantization<O> {
                 let end = start + bytes;
                 let rhs = &self.codes[start..end];
                 x.process(lhs, rhs)
+            }
+            (Quantizer::RaBitQ(x), QuantizationPreprocessed::RaBit(lhs)) => {
+                x.process(lhs, u as usize)
             }
             _ => unreachable!(),
         }
@@ -291,6 +325,19 @@ impl<O: OperatorQuantization> Quantization<O> {
             Trivial(x) => Box::new(x.flat_rerank(heap, r)),
             Scalar(x) => Box::new(x.flat_rerank(heap, r, sq_rerank_size)),
             Product(x) => Box::new(x.flat_rerank(heap, r, pq_rerank_size)),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn ivf_projection_rerank<'a, T: 'a>(
+        &'a self,
+        rough_distances: Vec<(F32, u32)>,
+        r: impl Fn(u32) -> (F32, T) + 'a,
+    ) -> Box<dyn RerankerPop<T> + 'a> {
+        use Quantizer::*;
+        match &*self.train {
+            RaBitQ(x) => Box::new(x.ivf_projection_rerank(rough_distances, r)),
+            _ => unreachable!(),
         }
     }
 
@@ -322,6 +369,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                 },
                 r,
             )),
+            _ => unreachable!(),
         }
     }
 }

@@ -2,6 +2,7 @@
 #![allow(clippy::needless_range_loop)]
 
 pub mod ivf_naive;
+pub mod ivf_projection;
 pub mod ivf_residual;
 pub mod operator;
 
@@ -11,12 +12,14 @@ use base::index::*;
 use base::operator::*;
 use base::search::*;
 use common::variants::variants;
+use ivf_projection::IvfProjection;
 use ivf_residual::IvfResidual;
 use std::path::Path;
 
 pub enum Ivf<O: OperatorIvf> {
     Naive(IvfNaive<O>),
     Residual(IvfResidual<O>),
+    Projection(IvfProjection<O>),
 }
 
 impl<O: OperatorIvf> Ivf<O> {
@@ -26,27 +29,38 @@ impl<O: OperatorIvf> Ivf<O> {
             ..
         } = options.indexing.clone().unwrap_ivf();
         std::fs::create_dir(path.as_ref()).unwrap();
-        let this =
-            if matches!(quantization_options, QuantizationOptions::Trivial(_)) || !O::RESIDUAL {
-                Self::Naive(IvfNaive::create(
-                    path.as_ref().join("ivf_naive"),
-                    options,
-                    source,
-                ))
-            } else {
-                Self::Residual(IvfResidual::create(
-                    path.as_ref().join("ivf_residual"),
-                    options,
-                    source,
-                ))
-            };
+        let this = if matches!(quantization_options, QuantizationOptions::RaBitQ(_)) {
+            Self::Projection(IvfProjection::create(
+                path.as_ref().join("ivf_projection"),
+                options,
+                source,
+            ))
+        } else if matches!(quantization_options, QuantizationOptions::Trivial(_)) || !O::RESIDUAL {
+            Self::Naive(IvfNaive::create(
+                path.as_ref().join("ivf_naive"),
+                options,
+                source,
+            ))
+        } else {
+            Self::Residual(IvfResidual::create(
+                path.as_ref().join("ivf_residual"),
+                options,
+                source,
+            ))
+        };
         this
     }
 
     pub fn open(path: impl AsRef<Path>) -> Self {
-        match variants(path.as_ref(), ["ivf_naive", "ivf_residual"]) {
+        match variants(
+            path.as_ref(),
+            ["ivf_naive", "ivf_residual", "ivf_projection"],
+        ) {
             "ivf_naive" => Self::Naive(IvfNaive::open(path.as_ref().join("ivf_naive"))),
             "ivf_residual" => Self::Residual(IvfResidual::open(path.as_ref().join("ivf_residual"))),
+            "ivf_projection" => {
+                Self::Projection(IvfProjection::open(path.as_ref().join("ivf_projection")))
+            }
             _ => unreachable!(),
         }
     }
@@ -55,6 +69,7 @@ impl<O: OperatorIvf> Ivf<O> {
         match self {
             Ivf::Naive(x) => x.len(),
             Ivf::Residual(x) => x.len(),
+            Ivf::Projection(x) => x.len(),
         }
     }
 
@@ -62,6 +77,7 @@ impl<O: OperatorIvf> Ivf<O> {
         match self {
             Ivf::Naive(x) => x.vector(i),
             Ivf::Residual(x) => x.vector(i),
+            Ivf::Projection(x) => x.vector(i),
         }
     }
 
@@ -69,6 +85,7 @@ impl<O: OperatorIvf> Ivf<O> {
         match self {
             Ivf::Naive(x) => x.payload(i),
             Ivf::Residual(x) => x.payload(i),
+            Ivf::Projection(x) => x.payload(i),
         }
     }
 
@@ -80,6 +97,7 @@ impl<O: OperatorIvf> Ivf<O> {
         match self {
             Ivf::Naive(x) => x.vbase(vector, opts),
             Ivf::Residual(x) => x.vbase(vector, opts),
+            Ivf::Projection(x) => x.vbase(vector, opts),
         }
     }
 }

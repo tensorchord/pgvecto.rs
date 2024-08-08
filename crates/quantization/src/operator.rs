@@ -1,4 +1,5 @@
 use crate::product::operator::OperatorProductQuantization;
+use crate::rabitq::operator::OperatorRaBitQ;
 use crate::scalar::operator::OperatorScalarQuantization;
 use crate::trivial::operator::OperatorTrivialQuantization;
 use base::operator::*;
@@ -265,6 +266,7 @@ pub trait OperatorQuantization:
     + OperatorTrivialQuantization
     + OperatorScalarQuantization
     + OperatorProductQuantization
+    + OperatorRaBitQ
 {
 }
 

@@ -2,6 +2,7 @@
 ND = "ND"
 DUR = "DUR"
 ANS = "ANS"
+RABIT = "RABIT"
 
 [default]
 extend-ignore-re = [
