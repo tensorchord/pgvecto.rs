@@ -513,12 +513,16 @@ impl Default for ProductQuantizationOptions {
 pub struct SearchOptions {
     #[validate(range(min = 0, max = 65535))]
     pub flat_sq_rerank_size: u32,
+    pub flat_sq_fast_scan: bool,
     #[validate(range(min = 0, max = 65535))]
     pub flat_pq_rerank_size: u32,
+    pub flat_pq_fast_scan: bool,
     #[validate(range(min = 0, max = 65535))]
     pub ivf_sq_rerank_size: u32,
+    pub ivf_sq_fast_scan: bool,
     #[validate(range(min = 0, max = 65535))]
     pub ivf_pq_rerank_size: u32,
+    pub ivf_pq_fast_scan: bool,
     #[validate(range(min = 1, max = 65535))]
     pub ivf_nprobe: u32,
     #[validate(range(min = 1, max = 65535))]

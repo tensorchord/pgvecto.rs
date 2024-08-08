@@ -2,8 +2,8 @@ use crate::visited::VisitedGuard;
 use crate::visited::VisitedPool;
 use base::scalar::F32;
 use base::search::Element;
+use base::search::GraphReranker;
 use base::search::Payload;
-use base::search::Reranker;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
@@ -141,13 +141,13 @@ pub fn vbase_internal<'a, T, E>(
     mut reranker: T,
 ) -> impl Iterator<Item = Element> + 'a
 where
-    T: Reranker<(Payload, E)> + 'a,
+    T: GraphReranker<(Payload, E)> + 'a,
     E: Iterator<Item = u32>,
 {
     let mut visited = visited.fetch_guard_checker();
     {
         visited.mark(s);
-        reranker.push(s, ());
+        reranker.push(s);
     }
     std::iter::from_fn(move || {
         let (dis_u, _, (payload_u, outs_u)) = reranker.pop()?;
@@ -156,7 +156,7 @@ where
                 continue;
             }
             visited.mark(v);
-            reranker.push(v, ());
+            reranker.push(v);
         }
         Some(Element {
             distance: dis_u,
@@ -172,7 +172,7 @@ pub fn vbase_generic<'a, T, E>(
     reranker: T,
 ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>)
 where
-    T: Reranker<(Payload, E)> + 'a,
+    T: GraphReranker<(Payload, E)> + 'a,
     E: Iterator<Item = u32>,
 {
     let mut iter = vbase_internal(visited, s, reranker);

@@ -1,5 +1,5 @@
 use base::scalar::F32;
-use base::search::Reranker;
+use base::search::RerankerPop;
 use common::always_equal::AlwaysEqual;
 use num_traits::Float;
 use std::cmp::Reverse;
@@ -7,45 +7,36 @@ use std::collections::BinaryHeap;
 
 const WINDOW_SIZE: usize = 16;
 
-pub struct ErrorBasedReranker<T, C, R> {
-    compute: C,
+pub struct ErrorBasedReranker<T, R> {
     rerank: R,
     cache: BinaryHeap<(Reverse<F32>, u32, AlwaysEqual<T>)>,
     distance_threshold: F32,
-    array: Vec<(F32, u32)>,
+    rough_distances: Vec<(F32, u32)>,
     ranked: bool,
 }
 
-impl<T, C, R> ErrorBasedReranker<T, C, R> {
-    pub fn new(compute: C, rerank: R) -> Self {
+impl<T, R> ErrorBasedReranker<T, R> {
+    pub fn new(rough_distances: Vec<(F32, u32)>, rerank: R) -> Self {
         Self {
-            compute,
             rerank,
             cache: BinaryHeap::new(),
             distance_threshold: F32::infinity(),
-            array: Vec::new(),
+            rough_distances,
             ranked: false,
         }
     }
 }
 
-impl<T, C, R, E> Reranker<T, E> for ErrorBasedReranker<T, C, R>
+impl<T, R> RerankerPop<T> for ErrorBasedReranker<T, R>
 where
-    C: Fn(u32, E) -> F32, /* lower bound */
     R: Fn(u32) -> (F32, T),
-    E: 'static,
 {
-    fn push(&mut self, u: u32, extra: E) {
-        let lowerbound = (self.compute)(u, extra);
-        self.array.push((lowerbound, u));
-    }
-
     fn pop(&mut self) -> Option<(F32, u32, T)> {
         if !self.ranked {
             self.ranked = true;
             let mut recent_max_accurate = F32::neg_infinity();
             let mut count = 0;
-            for &(lowerbound, u) in self.array.iter() {
+            for &(lowerbound, u) in self.rough_distances.iter() {
                 if lowerbound < self.distance_threshold {
                     let (accurate, t) = (self.rerank)(u);
                     if accurate < self.distance_threshold {

@@ -16,6 +16,10 @@ pub trait OperatorQuantizationProcess: Operator {
         preprocessed: &Self::QuantizationPreprocessed,
         rhs: impl Fn(usize) -> usize,
     ) -> F32;
+
+    const SUPPORT_FAST_SCAN: bool;
+    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32>;
+    fn fast_scan_resolve(x: F32) -> F32;
 }
 
 macro_rules! unimpl_operator_quantization_process {
@@ -31,6 +35,16 @@ macro_rules! unimpl_operator_quantization_process {
                 _: impl Fn(usize) -> usize,
             ) -> F32 {
                 match *preprocessed {}
+            }
+
+            const SUPPORT_FAST_SCAN: bool = false;
+
+            fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32> {
+                match *preprocessed {}
+            }
+
+            fn fast_scan_resolve(_: F32) -> F32 {
+                unimplemented!()
             }
         }
     };
@@ -64,6 +78,16 @@ impl OperatorQuantizationProcess for Vecf32Cos {
         };
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
+
+    const SUPPORT_FAST_SCAN: bool = false;
+
+    fn fast_scan(_: &Self::QuantizationPreprocessed) -> Vec<F32> {
+        unimplemented!()
+    }
+
+    fn fast_scan_resolve(_: F32) -> F32 {
+        unimplemented!()
+    }
 }
 
 impl OperatorQuantizationProcess for Vecf32Dot {
@@ -86,6 +110,16 @@ impl OperatorQuantizationProcess for Vecf32Dot {
         };
         F32(0.0) - xy
     }
+
+    const SUPPORT_FAST_SCAN: bool = true;
+
+    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32> {
+        preprocessed.clone()
+    }
+
+    fn fast_scan_resolve(x: F32) -> F32 {
+        x * F32(-1.0)
+    }
 }
 
 impl OperatorQuantizationProcess for Vecf32L2 {
@@ -104,6 +138,16 @@ impl OperatorQuantizationProcess for Vecf32L2 {
             d2 += preprocessed[i * (1 << bits) + rhs(i)];
         }
         d2
+    }
+
+    const SUPPORT_FAST_SCAN: bool = true;
+
+    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32> {
+        preprocessed.clone()
+    }
+
+    fn fast_scan_resolve(x: F32) -> F32 {
+        x
     }
 }
 
@@ -135,6 +179,16 @@ impl OperatorQuantizationProcess for Vecf16Cos {
         };
         F32(1.0) - xy / (x2 * y2).sqrt()
     }
+
+    const SUPPORT_FAST_SCAN: bool = false;
+
+    fn fast_scan(_: &Self::QuantizationPreprocessed) -> Vec<F32> {
+        unimplemented!()
+    }
+
+    fn fast_scan_resolve(_: F32) -> F32 {
+        unimplemented!()
+    }
 }
 
 impl OperatorQuantizationProcess for Vecf16Dot {
@@ -157,6 +211,16 @@ impl OperatorQuantizationProcess for Vecf16Dot {
         };
         F32(0.0) - xy
     }
+
+    const SUPPORT_FAST_SCAN: bool = true;
+
+    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32> {
+        preprocessed.clone()
+    }
+
+    fn fast_scan_resolve(x: F32) -> F32 {
+        x * F32(-1.0)
+    }
 }
 
 impl OperatorQuantizationProcess for Vecf16L2 {
@@ -175,6 +239,16 @@ impl OperatorQuantizationProcess for Vecf16L2 {
             d2 += preprocessed[i * (1 << bits) + rhs(i)];
         }
         d2
+    }
+
+    const SUPPORT_FAST_SCAN: bool = true;
+
+    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32> {
+        preprocessed.clone()
+    }
+
+    fn fast_scan_resolve(x: F32) -> F32 {
+        x
     }
 }
 

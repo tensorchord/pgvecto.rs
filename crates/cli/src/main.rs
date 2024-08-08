@@ -1,5 +1,4 @@
 #![allow(clippy::needless_range_loop)]
-
 use base::search::Pointer;
 use base::worker::ViewVbaseOperations;
 use log::{debug, info, warn};

@@ -2,10 +2,10 @@ use std::ops::Div;
 
 use self::operator::OperatorRaBitQ;
 use crate::reranker::error_based::ErrorBasedReranker;
-use base::index::{RaBitQuantizationOptions, SearchOptions, VectorOptions};
+use base::index::{RaBitQuantizationOptions, VectorOptions};
 use base::operator::{Borrowed, Owned, Scalar};
 use base::scalar::{ScalarLike, F32};
-use base::search::{Reranker, Vectors};
+use base::search::{RerankerPop, Vectors};
 use base::vector::{VectorBorrowed, VectorOwned};
 
 use num_traits::{Float, One, Zero};
@@ -60,12 +60,12 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
         }
         let mut binary_vec_x = Vec::with_capacity(n);
         let mut signed_x = Vec::with_capacity(n);
-        for i in 0..(n) {
+        for i in 0..n {
             binary_vec_x.push(O::vector_binarize_u64(&quantized_x[i]));
             signed_x.push(O::vector_binarize_one(&quantized_x[i]));
         }
         let mut dot_product_x = vec![Scalar::<O>::zero(); n];
-        for i in 0..(n) {
+        for i in 0..n {
             let norm = O::vector_dot_product(&quantized_x[i], &quantized_x[i]).sqrt()
                 * Scalar::<O>::from_f32(dim_pad as f32).sqrt();
             dot_product_x[i] = if norm.is_normal() {
@@ -119,73 +119,35 @@ impl<O: OperatorRaBitQ> RaBitQuantizer<O> {
         (self.dim / 64) as usize
     }
 
-    pub fn encode(&self, _vector: &[Scalar<O>]) -> Vec<u8> {
-        unimplemented!()
+    pub fn preprocess(
+        &self,
+        lhs: Borrowed<'_, O>,
+        centroid_distance: F32,
+    ) -> O::RabitQuantizationPreprocessed {
+        O::rabit_quantization_preprocess(
+            self.dim_pad_64 as usize,
+            lhs,
+            centroid_distance,
+            &self.rand_bias,
+        )
     }
 
-    pub fn flat_rerank<'a, T: 'a>(
+    pub fn ivf_projection_rerank<'a, T: 'a>(
         &'a self,
-        _vector: Borrowed<'a, O>,
-        _opts: &'a SearchOptions,
-        _r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T> + 'a> {
-        unimplemented!()
-    }
-
-    pub fn ivf_naive_rerank<'a, T: 'a>(
-        &'a self,
-        _vector: Borrowed<'a, O>,
-        _opts: &'a SearchOptions,
-        _r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T> + 'a> {
-        unimplemented!()
-    }
-
-    pub fn preprocess(&self, _lhs: Borrowed<'_, O>) -> O::RabitQuantizationPreprocessed {
-        unimplemented!()
-    }
-
-    pub fn ivf_residual_rerank<'a, T: 'a>(
-        &'a self,
-        vectors: Vec<Owned<O>>,
-        distances: &[F32],
-        _: &'a SearchOptions,
+        rough_distances: Vec<(F32, u32)>,
         r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T, usize> + 'a> {
-        let p = vectors
-            .into_iter()
-            .enumerate()
-            .map(|(i, vector)| {
-                O::rabit_quantization_preprocess(
-                    self.dim_pad_64 as usize,
-                    vector.as_borrowed(),
-                    distances[i],
-                    &self.rand_bias,
-                )
-            })
-            .collect::<Vec<_>>();
-
-        Box::new(ErrorBasedReranker::new(
-            move |xi, ci| {
-                O::rabit_quantization_process(
-                    self.distance_to_centroid_square[xi as usize],
-                    self.factor_ppc[xi as usize],
-                    self.factor_ip[xi as usize],
-                    self.error_bound[xi as usize],
-                    &self.binary_vec_x[xi as usize],
-                    &p[ci],
-                )
-            },
-            r,
-        ))
+    ) -> impl RerankerPop<T> + 'a {
+        ErrorBasedReranker::new(rough_distances, r)
     }
 
-    pub fn graph_rerank<'a, T: 'a>(
-        &'a self,
-        _vector: Borrowed<'a, O>,
-        _opts: &'a SearchOptions,
-        _r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn Reranker<T> + 'a> {
-        unimplemented!()
+    pub fn process(&self, preprocessed: &O::RabitQuantizationPreprocessed, i: usize) -> F32 {
+        O::rabit_quantization_process(
+            self.distance_to_centroid_square[i],
+            self.factor_ppc[i],
+            self.factor_ip[i],
+            self.error_bound[i],
+            &self.binary_vec_x[i],
+            preprocessed,
+        )
     }
 }

@@ -138,6 +138,10 @@ impl QueryArguments {
             hnsw_ef_search: self.ef,
             ivf_nprobe: self.probe,
             diskann_ef_search: 100,
+            flat_sq_fast_scan: false,
+            flat_pq_fast_scan: false,
+            ivf_sq_fast_scan: false,
+            ivf_pq_fast_scan: false,
         }
     }
 }

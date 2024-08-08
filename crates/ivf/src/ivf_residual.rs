@@ -55,25 +55,32 @@ impl<O: Op> IvfResidual<O> {
             k_means_lookup_many(&vector.to_vec(), &self.centroids),
             opts.ivf_nprobe as usize,
         );
-        let vectors = lists
-            .iter()
-            .map(|&(_, i)| O::residual(vector, &self.centroids[(i,)]))
-            .collect::<Vec<_>>();
-        let mut reranker = self
-            .quantization
-            .ivf_residual_rerank(vectors, opts, move |u| {
+        let mut heap = Vec::new();
+        for i in lists.iter().map(|(_, i)| *i) {
+            let preprocessed = self
+                .quantization
+                .preprocess(O::residual(vector, &self.centroids[(i,)]).as_borrowed());
+            let start = self.offsets[i];
+            let end = self.offsets[i + 1];
+            self.quantization.push_batch(
+                &preprocessed,
+                start..end,
+                &mut heap,
+                opts.ivf_sq_fast_scan,
+                opts.ivf_pq_fast_scan,
+            );
+        }
+        let mut reranker = self.quantization.flat_rerank(
+            heap,
+            move |u| {
                 (
                     O::distance(vector, self.storage.vector(u)),
                     self.payloads[u as usize],
                 )
-            });
-        for (code, i) in lists.iter().map(|(_, i)| *i).enumerate() {
-            let start = self.offsets[i];
-            let end = self.offsets[i + 1];
-            for u in start..end {
-                reranker.push(u, code);
-            }
-        }
+            },
+            opts.ivf_sq_rerank_size,
+            opts.ivf_pq_rerank_size,
+        );
         (
             Vec::new(),
             Box::new(std::iter::from_fn(move || {

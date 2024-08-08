@@ -2,6 +2,7 @@
 
 pub mod elkan;
 pub mod kmeans1d;
+pub mod lloyd;
 pub mod quick_centers;
 
 use base::scalar::*;
@@ -10,12 +11,10 @@ use kmeans1d::kmeans1d;
 use num_traits::Float;
 use stoppable_rayon as rayon;
 
-const ITERATIONS: usize = 400;
-
-pub fn k_means<S: ScalarLike, F: FnMut(&mut [S])>(
+pub fn k_means<S: ScalarLike, F: Fn(&mut [S]) + Sync>(
     c: usize,
     mut samples: Vec2<S>,
-    mut spherical: F,
+    spherical: F,
 ) -> Vec2<S> {
     assert!(c > 0);
     let n = samples.shape_0();
@@ -32,14 +31,24 @@ pub fn k_means<S: ScalarLike, F: FnMut(&mut [S])>(
     if dims == 1 {
         return Vec2::from_vec((c, 1), kmeans1d(c, samples.as_slice()));
     }
-    let mut elkan_k_means = elkan::ElkanKMeans::<S, _>::new(c, samples, spherical);
-    for _ in 0..ITERATIONS {
+    if dims < 16 || samples.shape_0() < 1024 || rayon::current_num_threads() <= 1 {
+        let mut elkan_k_means = elkan::ElkanKMeans::<S, _>::new(c, samples, spherical);
+        for _ in 0..400 {
+            rayon::check();
+            if elkan_k_means.iterate() {
+                break;
+            }
+        }
+        return elkan_k_means.finish();
+    }
+    let mut lloyd_k_means = lloyd::LloydKMeans::<S, _>::new(c, samples, spherical);
+    for _ in 0..800 {
         rayon::check();
-        if elkan_k_means.iterate() {
+        if lloyd_k_means.iterate() {
             break;
         }
     }
-    elkan_k_means.finish()
+    lloyd_k_means.finish()
 }
 
 pub fn k_means_lookup<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> usize {

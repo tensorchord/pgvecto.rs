@@ -2,7 +2,7 @@ use super::OperatorIvf as Op;
 use base::index::{IndexOptions, IvfIndexingOptions, SearchOptions};
 use base::operator::{Borrowed, Scalar};
 use base::search::{Collection, Element, Payload, Source, Vectors};
-use base::vector::VectorBorrowed;
+use base::vector::{VectorBorrowed, VectorOwned};
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
@@ -55,29 +55,35 @@ impl<O: Op> IvfProjection<O> {
             k_means_lookup_many(&projected_query, &self.centroids),
             opts.ivf_nprobe as usize,
         );
-        let vectors = lists
+        let preprocessed_centroids = lists
             .iter()
-            .map(|&(_, i)| O::residual_dense(&projected_query, &self.centroids[(i,)]))
+            .map(|&(distance, i)| {
+                self.quantization.projection_preprocess(
+                    O::residual_dense(&projected_query, &self.centroids[(i,)]).as_borrowed(),
+                    distance,
+                )
+            })
             .collect::<Vec<_>>();
-        let distances = lists
-            .iter()
-            .map(|&(distance, _)| distance)
-            .collect::<Vec<_>>();
-        let mut reranker =
-            self.quantization
-                .ivf_projection_rerank(vectors, &distances, opts, move |u| {
-                    (
-                        O::distance(vector, self.storage.vector(u)),
-                        self.payloads[u as usize],
-                    )
-                });
+        let mut rough_distances = Vec::new();
         for (code, i) in lists.iter().map(|(_, i)| *i).enumerate() {
             let start = self.offsets[i];
             let end = self.offsets[i + 1];
             for u in start..end {
-                reranker.push(u, code);
+                rough_distances.push((
+                    self.quantization
+                        .process(&self.storage, &preprocessed_centroids[code], u),
+                    u,
+                ));
             }
         }
+        let mut reranker = self
+            .quantization
+            .ivf_projection_rerank(rough_distances, move |u| {
+                (
+                    O::distance(vector, self.storage.vector(u)),
+                    self.payloads[u as usize],
+                )
+            });
         (
             Vec::new(),
             Box::new(std::iter::from_fn(move || {
