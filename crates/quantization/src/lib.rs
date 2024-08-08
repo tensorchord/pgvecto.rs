@@ -25,6 +25,8 @@ use base::scalar::*;
 use base::search::*;
 use common::json::Json;
 use common::mmap_array::MmapArray;
+use operator::OperatorQuantizationProcess;
+use rabitq::operator::OperatorRabitq;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cmp::Reverse;
@@ -81,9 +83,14 @@ impl<O: OperatorQuantization> Quantizer<O> {
 
 pub enum QuantizationPreprocessed<O: OperatorQuantization> {
     Trivial(O::TrivialQuantizationPreprocessed),
-    Scalar(O::QuantizationPreprocessed),
-    Product(O::QuantizationPreprocessed),
-    Rabitq(O::RabitqQuantizationPreprocessed),
+    Scalar(<O as OperatorQuantizationProcess>::QuantizationPreprocessed),
+    Product(<O as OperatorQuantizationProcess>::QuantizationPreprocessed),
+    Rabitq(
+        (
+            <O as OperatorRabitq>::QuantizationPreprocessed0,
+            <O as OperatorRabitq>::QuantizationPreprocessed1,
+        ),
+    ),
 }
 
 pub struct Quantization<O: OperatorQuantization> {
@@ -102,24 +109,18 @@ impl<O: OperatorQuantization> Quantization<O> {
         transform: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy + Send + Sync,
     ) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
+        fn merge_8([b0, b1, b2, b3, b4, b5, b6, b7]: [u8; 8]) -> u8 {
+            b0 | (b1 << 1) | (b2 << 2) | (b3 << 3) | (b4 << 4) | (b5 << 5) | (b6 << 6) | (b7 << 7)
+        }
+        fn merge_4([b0, b1, b2, b3]: [u8; 4]) -> u8 {
+            b0 | (b1 << 2) | (b2 << 4) | (b3 << 6)
+        }
+        fn merge_2([b0, b1]: [u8; 2]) -> u8 {
+            b0 | (b1 << 4)
+        }
         let train = Quantizer::train(vector_options, quantization_options, vectors, transform);
         let train = Json::create(path.as_ref().join("train"), train);
         let codes = MmapArray::create(path.as_ref().join("codes"), {
-            fn merge_8([b0, b1, b2, b3, b4, b5, b6, b7]: [u8; 8]) -> u8 {
-                b0 | (b1 << 1)
-                    | (b2 << 2)
-                    | (b3 << 3)
-                    | (b4 << 4)
-                    | (b5 << 5)
-                    | (b6 << 6)
-                    | (b7 << 7)
-            }
-            fn merge_4([b0, b1, b2, b3]: [u8; 4]) -> u8 {
-                b0 | (b1 << 2) | (b2 << 4) | (b3 << 6)
-            }
-            fn merge_2([b0, b1]: [u8; 2]) -> u8 {
-                b0 | (b1 << 4)
-            }
             match &*train {
                 Quantizer::Trivial(_) => {
                     Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>
@@ -227,7 +228,24 @@ impl<O: OperatorQuantization> Quantization<O> {
                     }
                     _ => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
                 },
-                Quantizer::Rabitq(_) => Box::new(std::iter::empty()),
+                Quantizer::Rabitq(x) => {
+                    use fast_scan::b4::{pack, BLOCK_SIZE};
+                    let blocks = vectors.len().div_ceil(BLOCK_SIZE);
+                    Box::new((0..blocks).flat_map(|block| {
+                        let t = x.dims().div_ceil(4);
+                        let n = vectors.len();
+                        let raw = std::array::from_fn::<_, { BLOCK_SIZE as _ }, _>(|i| {
+                            let id = BLOCK_SIZE * block + i as u32;
+                            let (_, _, _, _, e) =
+                                x.encode(vectors.vector(std::cmp::min(id, n - 1)));
+                            InfiniteByteChunks::new(e.into_iter())
+                                .map(|[b0, b1, b2, b3]| b0 | b1 << 1 | b2 << 2 | b3 << 3)
+                                .take(t as usize)
+                                .collect()
+                        });
+                        pack(t, raw)
+                    })) as Box<dyn Iterator<Item = u8>>
+                }
             },
         );
         let meta = MmapArray::create(
@@ -312,7 +330,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                 let c = self.meta[4 * u as usize + 2];
                 let d = self.meta[4 * u as usize + 3];
                 let codes = &self.codes[start..end];
-                x.process(lhs, (a, b, c, d, codes))
+                x.process(&lhs.0, &lhs.1, (a, b, c, d, codes))
             }
             _ => unreachable!(),
         }
@@ -326,6 +344,7 @@ impl<O: OperatorQuantization> Quantization<O> {
         sq_fast_scan: bool,
         pq_fast_scan: bool,
         rq_epsilon: F32,
+        rq_fast_scan: bool,
     ) {
         match (&*self.train, preprocessed) {
             (Quantizer::Trivial(x), QuantizationPreprocessed::Trivial(lhs)) => {
@@ -355,6 +374,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                 &self.packed_codes,
                 &self.meta,
                 rq_epsilon,
+                rq_fast_scan,
             ),
             _ => unreachable!(),
         }

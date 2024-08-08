@@ -557,6 +557,7 @@ pub struct SearchOptions {
     pub flat_pq_rerank_size: u32,
     pub flat_pq_fast_scan: bool,
     pub flat_rq_epsilon: F32,
+    pub flat_rq_fast_scan: bool,
     #[validate(range(min = 0, max = 65535))]
     pub ivf_sq_rerank_size: u32,
     pub ivf_sq_fast_scan: bool,
@@ -564,6 +565,7 @@ pub struct SearchOptions {
     pub ivf_pq_rerank_size: u32,
     pub ivf_pq_fast_scan: bool,
     pub ivf_rq_epsilon: F32,
+    pub ivf_rq_fast_scan: bool,
     #[validate(range(min = 1, max = 65535))]
     pub ivf_nprobe: u32,
     #[validate(range(min = 1, max = 65535))]

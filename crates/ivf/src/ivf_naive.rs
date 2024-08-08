@@ -67,6 +67,7 @@ impl<O: Op> IvfNaive<O> {
                 opts.ivf_sq_fast_scan,
                 opts.ivf_pq_fast_scan,
                 opts.ivf_rq_epsilon,
+                opts.ivf_rq_fast_scan,
             );
         }
         let mut reranker = self.quantization.flat_rerank(

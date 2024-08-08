@@ -53,6 +53,10 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         self.dims.div_ceil(8)
     }
 
+    pub fn dims(&self) -> u32 {
+        self.dims
+    }
+
     pub fn width(&self) -> u32 {
         self.dims
     }
@@ -76,43 +80,123 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         (dis_u * dis_u, factor_ppc, factor_ip, factor_err, codes)
     }
 
-    pub fn preprocess(&self, lhs: Borrowed<'_, O>) -> O::RabitqQuantizationPreprocessed {
-        O::rabit_quantization_preprocess(lhs, &self.projection)
+    pub fn preprocess(
+        &self,
+        lhs: Borrowed<'_, O>,
+    ) -> (O::QuantizationPreprocessed0, O::QuantizationPreprocessed1) {
+        O::rabitq_quantization_preprocess(lhs, &self.projection)
     }
 
     pub fn process(
         &self,
-        preprocessed: &O::RabitqQuantizationPreprocessed,
+        p0: &O::QuantizationPreprocessed0,
+        p1: &O::QuantizationPreprocessed1,
         (a, b, c, d, e): (F32, F32, F32, F32, &[u8]),
     ) -> F32 {
-        let (est, _) = O::rabit_quantization_process(a, b, c, d, e, preprocessed);
+        let (est, _) = O::rabitq_quantization_process(a, b, c, d, e, p0, p1);
         est
     }
 
     pub fn process_lowerbound(
         &self,
-        preprocessed: &O::RabitqQuantizationPreprocessed,
+        p0: &O::QuantizationPreprocessed0,
+        p1: &O::QuantizationPreprocessed1,
         (a, b, c, d, e): (F32, F32, F32, F32, &[u8]),
         epsilon: F32,
     ) -> F32 {
-        let (est, err) = O::rabit_quantization_process(a, b, c, d, e, preprocessed);
+        let (est, err) = O::rabitq_quantization_process(a, b, c, d, e, p0, p1);
         est - err * epsilon
     }
 
     pub fn push_batch(
         &self,
-        preprocessed: &O::RabitqQuantizationPreprocessed,
+        (p0, p1): &(O::QuantizationPreprocessed0, O::QuantizationPreprocessed1),
         rhs: Range<u32>,
         heap: &mut Vec<(Reverse<F32>, u32)>,
         codes: &[u8],
-        _packed_codes: &[u8],
+        packed_codes: &[u8],
         meta: &[F32],
         epsilon: F32,
+        fast_scan: bool,
     ) {
+        if fast_scan && O::SUPPORT_FAST_SCAN && crate::fast_scan::b4::is_supported() {
+            use crate::fast_scan::b4::{fast_scan, BLOCK_SIZE};
+            let s = rhs.start.next_multiple_of(BLOCK_SIZE);
+            let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
+            heap.extend((rhs.start..s).map(|u| {
+                (
+                    Reverse(self.process_lowerbound(
+                        p0,
+                        p1,
+                        {
+                            let bytes = self.bytes() as usize;
+                            let start = u as usize * bytes;
+                            let end = start + bytes;
+                            let a = meta[4 * u as usize + 0];
+                            let b = meta[4 * u as usize + 1];
+                            let c = meta[4 * u as usize + 2];
+                            let d = meta[4 * u as usize + 3];
+                            (a, b, c, d, &codes[start..end])
+                        },
+                        epsilon,
+                    )),
+                    u,
+                )
+            }));
+            let lut = O::fast_scan(p1);
+            for i in (s..e).step_by(BLOCK_SIZE as _) {
+                let t = self.dims.div_ceil(4);
+                let bytes = (t * 16) as usize;
+                let start = (i / BLOCK_SIZE) as usize * bytes;
+                let end = start + bytes;
+                heap.extend({
+                    let res = fast_scan(t, &packed_codes[start..end], &lut);
+                    (i..i + BLOCK_SIZE)
+                        .map(|u| {
+                            (
+                                Reverse({
+                                    let a = meta[4 * u as usize + 0];
+                                    let b = meta[4 * u as usize + 1];
+                                    let c = meta[4 * u as usize + 2];
+                                    let d = meta[4 * u as usize + 3];
+                                    let param = res[(u - i) as usize];
+                                    let (est, err) =
+                                        O::rabitq_quantization_process_1(a, b, c, d, p0, param);
+                                    est - err * epsilon
+                                }),
+                                u,
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                });
+            }
+            heap.extend((e..rhs.end).map(|u| {
+                (
+                    Reverse(self.process_lowerbound(
+                        p0,
+                        p1,
+                        {
+                            let bytes = self.bytes() as usize;
+                            let start = u as usize * bytes;
+                            let end = start + bytes;
+                            let a = meta[4 * u as usize + 0];
+                            let b = meta[4 * u as usize + 1];
+                            let c = meta[4 * u as usize + 2];
+                            let d = meta[4 * u as usize + 3];
+                            (a, b, c, d, &codes[start..end])
+                        },
+                        epsilon,
+                    )),
+                    u,
+                )
+            }));
+            return;
+        }
         heap.extend(rhs.map(|u| {
             (
                 Reverse(self.process_lowerbound(
-                    preprocessed,
+                    p0,
+                    p1,
                     {
                         let bytes = self.bytes() as usize;
                         let start = u as usize * bytes;
@@ -144,7 +228,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         c: C,
         r: impl Fn(u32) -> (F32, T) + 'a,
     ) -> impl RerankerPop<T> + RerankerPush + 'a {
-        let p = O::rabit_quantization_preprocess(vector, &self.projection);
-        Window0GraphReranker::new(move |u| self.process(&p, c(u)), r)
+        let (p0, p1) = O::rabitq_quantization_preprocess(vector, &self.projection);
+        Window0GraphReranker::new(move |u| self.process(&p0, &p1, c(u)), r)
     }
 }
