@@ -80,7 +80,7 @@ impl<'a> Vecf32Borrowed<'a> {
     }
 
     #[inline(always)]
-    pub fn slice(&self) -> &[F32] {
+    pub fn slice(&self) -> &'a [F32] {
         self.0
     }
 }

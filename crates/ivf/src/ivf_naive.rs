@@ -99,11 +99,13 @@ fn from_nothing<O: Op>(
     create_dir(path.as_ref()).unwrap();
     let IvfIndexingOptions {
         nlist,
+        spherical_centroids,
+        residual_quantization: _,
         quantization: quantization_options,
     } = options.indexing.clone().unwrap_ivf();
     let samples = common::sample::sample(collection);
     rayon::check();
-    let centroids = k_means(nlist as usize, samples, O::spherical);
+    let centroids = k_means(nlist as usize, samples, spherical_centroids);
     rayon::check();
     let mut ls = vec![Vec::new(); nlist as usize];
     for i in 0..collection.len() {

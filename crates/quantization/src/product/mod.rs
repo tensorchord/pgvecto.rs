@@ -7,6 +7,7 @@ use base::index::*;
 use base::operator::*;
 use base::scalar::*;
 use base::search::*;
+use base::vector::VectorBorrowed;
 use common::sample::sample_subvector_transform;
 use common::vec2::Vec2;
 use k_means::k_means;
@@ -45,7 +46,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                 let start = (p * ratio) as usize;
                 let end = start + subdims as usize;
                 let subsamples = sample_subvector_transform(vectors, start, end, transform);
-                k_means(1 << bits, subsamples, |_| ())
+                k_means(1 << bits, subsamples, false)
             })
             .collect::<Vec<_>>();
         let mut centroids = Vec2::zeros((1 << bits, dims as usize));
@@ -77,7 +78,8 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
         self.dims.div_ceil(self.ratio)
     }
 
-    pub fn encode(&self, vector: &[Scalar<O>]) -> Vec<u8> {
+    pub fn encode(&self, vector: Borrowed<'_, O>) -> Vec<u8> {
+        let vector = vector.to_vec();
         let dims = self.dims;
         let ratio = self.ratio;
         let width = dims.div_ceil(ratio);
@@ -137,7 +139,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
             && crate::fast_scan::b4::is_supported()
         {
             use crate::fast_scan::b4::{fast_scan, BLOCK_SIZE};
-            use crate::fast_scan::quantize::{dequantize, quantize};
+            use crate::quantize::{dequantize, quantize_255};
             let s = rhs.start.next_multiple_of(BLOCK_SIZE);
             let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
             heap.extend((rhs.start..s).map(|u| {
@@ -151,7 +153,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                     u,
                 )
             }));
-            let (k, b, lut) = quantize(&O::fast_scan(preprocessed));
+            let (k, b, lut) = quantize_255(&O::fast_scan(preprocessed));
             for i in (s..e).step_by(BLOCK_SIZE as _) {
                 let bytes = width as usize * 16;
                 let start = (i / BLOCK_SIZE) as usize * bytes;

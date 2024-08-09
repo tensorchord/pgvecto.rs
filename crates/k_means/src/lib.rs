@@ -11,16 +11,13 @@ use kmeans1d::kmeans1d;
 use num_traits::Float;
 use stoppable_rayon as rayon;
 
-pub fn k_means<S: ScalarLike, F: Fn(&mut [S]) + Sync>(
-    c: usize,
-    mut samples: Vec2<S>,
-    spherical: F,
-) -> Vec2<S> {
+pub fn k_means<S: ScalarLike>(c: usize, mut samples: Vec2<S>, is_spherical: bool) -> Vec2<S> {
     assert!(c > 0);
     let n = samples.shape_0();
     let dims = samples.shape_1();
+    let spherical = if is_spherical { spherical } else { dummy };
     assert!(dims > 0);
-    if dims > 1 {
+    if dims > 1 && is_spherical {
         for i in 0..n {
             spherical(&mut samples[(i,)]);
         }
@@ -70,3 +67,17 @@ pub fn k_means_lookup_many<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> 
     }
     seq
 }
+
+fn spherical<S: ScalarLike>(vector: &mut [S]) {
+    let n = vector.len();
+    let mut dot = F32(0.0);
+    for i in 0..n {
+        dot += vector[i].to_f() * vector[i].to_f();
+    }
+    let l = dot.sqrt();
+    for i in 0..n {
+        vector[i] /= S::from_f(l);
+    }
+}
+
+fn dummy<S: ScalarLike>(_: &mut [S]) {}

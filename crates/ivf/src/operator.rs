@@ -1,31 +1,17 @@
 use base::operator::*;
-use base::scalar::{ScalarLike, F32};
 use base::vector::*;
-use num_traits::Float;
 use num_traits::Zero;
 use quantization::operator::OperatorQuantization;
 use storage::OperatorStorage;
 
 pub trait OperatorIvf: OperatorQuantization + OperatorStorage {
     const RESIDUAL: bool;
-    fn spherical(_: &mut [Scalar<Self>]);
     fn residual(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> Owned<Self>;
     fn residual_dense(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> Owned<Self>;
 }
 
 impl OperatorIvf for BVecf32Dot {
     const RESIDUAL: bool = false;
-    fn spherical(vector: &mut [Scalar<Self>]) {
-        let n = vector.len();
-        let mut dot = F32::zero();
-        for i in 0..n {
-            dot += vector[i].to_f() * vector[i].to_f();
-        }
-        let l = dot.sqrt();
-        for i in 0..n {
-            vector[i] /= Scalar::<Self>::from_f(l);
-        }
-    }
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
@@ -36,17 +22,6 @@ impl OperatorIvf for BVecf32Dot {
 
 impl OperatorIvf for BVecf32Cos {
     const RESIDUAL: bool = false;
-    fn spherical(vector: &mut [Scalar<Self>]) {
-        let n = vector.len();
-        let mut dot = F32::zero();
-        for i in 0..n {
-            dot += vector[i].to_f() * vector[i].to_f();
-        }
-        let l = dot.sqrt();
-        for i in 0..n {
-            vector[i] /= Scalar::<Self>::from_f(l);
-        }
-    }
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
@@ -57,7 +32,6 @@ impl OperatorIvf for BVecf32Cos {
 
 impl OperatorIvf for BVecf32Jaccard {
     const RESIDUAL: bool = false;
-    fn spherical(_: &mut [Scalar<Self>]) {}
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
@@ -67,8 +41,7 @@ impl OperatorIvf for BVecf32Jaccard {
 }
 
 impl OperatorIvf for BVecf32L2 {
-    const RESIDUAL: bool = true;
-    fn spherical(_: &mut [Scalar<Self>]) {}
+    const RESIDUAL: bool = false;
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
@@ -79,17 +52,6 @@ impl OperatorIvf for BVecf32L2 {
 
 impl OperatorIvf for SVecf32Dot {
     const RESIDUAL: bool = false;
-    fn spherical(vector: &mut [Scalar<Self>]) {
-        let n = vector.len();
-        let mut dot = F32::zero();
-        for i in 0..n {
-            dot += vector[i].to_f() * vector[i].to_f();
-        }
-        let l = dot.sqrt();
-        for i in 0..n {
-            vector[i] /= Scalar::<Self>::from_f(l);
-        }
-    }
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
@@ -100,17 +62,6 @@ impl OperatorIvf for SVecf32Dot {
 
 impl OperatorIvf for SVecf32Cos {
     const RESIDUAL: bool = false;
-    fn spherical(vector: &mut [Scalar<Self>]) {
-        let n = vector.len();
-        let mut dot = F32::zero();
-        for i in 0..n {
-            dot += vector[i].to_f() * vector[i].to_f();
-        }
-        let l = dot.sqrt();
-        for i in 0..n {
-            vector[i] /= Scalar::<Self>::from_f(l);
-        }
-    }
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
@@ -121,7 +72,6 @@ impl OperatorIvf for SVecf32Cos {
 
 impl OperatorIvf for SVecf32L2 {
     const RESIDUAL: bool = true;
-    fn spherical(_: &mut [Scalar<Self>]) {}
     fn residual(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> Owned<Self> {
         assert_eq!(lhs.dims() as usize, rhs.len());
         let n = lhs.dims();
@@ -153,17 +103,6 @@ impl OperatorIvf for SVecf32L2 {
 
 impl OperatorIvf for Vecf32Dot {
     const RESIDUAL: bool = false;
-    fn spherical(vector: &mut [Scalar<Self>]) {
-        let n = vector.len();
-        let mut dot = F32::zero();
-        for i in 0..n {
-            dot += vector[i].to_f() * vector[i].to_f();
-        }
-        let l = dot.sqrt();
-        for i in 0..n {
-            vector[i] /= Scalar::<Self>::from_f(l);
-        }
-    }
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
@@ -174,17 +113,6 @@ impl OperatorIvf for Vecf32Dot {
 
 impl OperatorIvf for Vecf32Cos {
     const RESIDUAL: bool = false;
-    fn spherical(vector: &mut [Scalar<Self>]) {
-        let n = vector.len();
-        let mut dot = F32::zero();
-        for i in 0..n {
-            dot += vector[i].to_f() * vector[i].to_f();
-        }
-        let l = dot.sqrt();
-        for i in 0..n {
-            vector[i] /= Scalar::<Self>::from_f(l);
-        }
-    }
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
@@ -195,7 +123,6 @@ impl OperatorIvf for Vecf32Cos {
 
 impl OperatorIvf for Vecf32L2 {
     const RESIDUAL: bool = true;
-    fn spherical(_: &mut [Scalar<Self>]) {}
     fn residual(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> Owned<Self> {
         lhs.operator_minus(Vecf32Borrowed::new(rhs))
     }
@@ -210,17 +137,6 @@ impl OperatorIvf for Vecf32L2 {
 
 impl OperatorIvf for Vecf16Dot {
     const RESIDUAL: bool = false;
-    fn spherical(vector: &mut [Scalar<Self>]) {
-        let n = vector.len();
-        let mut dot = F32::zero();
-        for i in 0..n {
-            dot += vector[i].to_f() * vector[i].to_f();
-        }
-        let l = dot.sqrt();
-        for i in 0..n {
-            vector[i] /= Scalar::<Self>::from_f(l);
-        }
-    }
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
@@ -231,17 +147,6 @@ impl OperatorIvf for Vecf16Dot {
 
 impl OperatorIvf for Vecf16Cos {
     const RESIDUAL: bool = false;
-    fn spherical(vector: &mut [Scalar<Self>]) {
-        let n = vector.len();
-        let mut dot = F32::zero();
-        for i in 0..n {
-            dot += vector[i].to_f() * vector[i].to_f();
-        }
-        let l = dot.sqrt();
-        for i in 0..n {
-            vector[i] /= Scalar::<Self>::from_f(l);
-        }
-    }
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
@@ -252,7 +157,6 @@ impl OperatorIvf for Vecf16Cos {
 
 impl OperatorIvf for Vecf16L2 {
     const RESIDUAL: bool = true;
-    fn spherical(_: &mut [Scalar<Self>]) {}
     fn residual(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> Owned<Self> {
         lhs.operator_minus(Vecf16Borrowed::new(rhs))
     }

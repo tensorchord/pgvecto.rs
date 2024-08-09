@@ -9,6 +9,8 @@ static FLAT_PQ_RERANK_SIZE: GucSetting<i32> = GucSetting::<i32>::new(0);
 
 static FLAT_PQ_FAST_SCAN: GucSetting<bool> = GucSetting::<bool>::new(false);
 
+static FLAT_RQ_FAST_SCAN: GucSetting<bool> = GucSetting::<bool>::new(true);
+
 static IVF_SQ_RERANK_SIZE: GucSetting<i32> = GucSetting::<i32>::new(0);
 
 static IVF_SQ_FAST_SCAN: GucSetting<bool> = GucSetting::<bool>::new(false);
@@ -16,6 +18,8 @@ static IVF_SQ_FAST_SCAN: GucSetting<bool> = GucSetting::<bool>::new(false);
 static IVF_PQ_RERANK_SIZE: GucSetting<i32> = GucSetting::<i32>::new(0);
 
 static IVF_PQ_FAST_SCAN: GucSetting<bool> = GucSetting::<bool>::new(false);
+
+static IVF_RQ_FAST_SCAN: GucSetting<bool> = GucSetting::<bool>::new(true);
 
 static IVF_NPROBE: GucSetting<i32> = GucSetting::<i32>::new(10);
 
@@ -60,6 +64,14 @@ pub unsafe fn init() {
         GucContext::Userset,
         GucFlags::default(),
     );
+    GucRegistry::define_bool_guc(
+        "vectors.flat_rq_fast_scan",
+        "Enables fast scan or not.",
+        "https://docs.pgvecto.rs/usage/search.html",
+        &FLAT_RQ_FAST_SCAN,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
     GucRegistry::define_int_guc(
         "vectors.ivf_sq_rerank_size",
         "Scalar quantization reranker size.",
@@ -93,6 +105,14 @@ pub unsafe fn init() {
         "Enables fast scan or not.",
         "https://docs.pgvecto.rs/usage/search.html",
         &IVF_PQ_FAST_SCAN,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
+    GucRegistry::define_bool_guc(
+        "vectors.ivf_rq_fast_scan",
+        "Enables fast scan or not.",
+        "https://docs.pgvecto.rs/usage/search.html",
+        &IVF_RQ_FAST_SCAN,
         GucContext::Userset,
         GucFlags::default(),
     );
