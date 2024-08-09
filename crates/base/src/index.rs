@@ -156,6 +156,18 @@ impl IndexOptions {
                     ));
                 }
             }
+            IndexingOptions::Seismic(_) => {
+                if !matches!(self.vector.d, DistanceKind::Dot) {
+                    return Err(ValidationError::new(
+                        "seismic is not support for distance that is not negative dot product",
+                    ));
+                }
+                if !matches!(self.vector.v, VectorKind::SVecf32) {
+                    return Err(ValidationError::new(
+                        "seismic is not support for vectors that are not sparse vectors",
+                    ));
+                }
+            }
         }
         Ok(())
     }
@@ -293,6 +305,7 @@ pub enum IndexingOptions {
     Ivf(IvfIndexingOptions),
     Hnsw(HnswIndexingOptions),
     InvertedIndex(InvertedIndexingOptions),
+    Seismic(SeismicIndexingOptions),
 }
 
 impl IndexingOptions {
@@ -314,6 +327,12 @@ impl IndexingOptions {
         };
         x
     }
+    pub fn unwrap_seismic(self) -> SeismicIndexingOptions {
+        let IndexingOptions::Seismic(x) = self else {
+            unreachable!()
+        };
+        x
+    }
 }
 
 impl Default for IndexingOptions {
@@ -329,6 +348,7 @@ impl Validate for IndexingOptions {
             Self::Ivf(x) => x.validate(),
             Self::Hnsw(x) => x.validate(),
             Self::InvertedIndex(_) => Ok(()),
+            Self::Seismic(x) => x.validate(),
         }
     }
 }
@@ -428,6 +448,51 @@ impl Default for HnswIndexingOptions {
             m: Self::default_m(),
             ef_construction: Self::default_ef_construction(),
             quantization: Default::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[validate(schema(function = "Self::validate_self"))]
+#[serde(deny_unknown_fields)]
+pub struct SeismicIndexingOptions {
+    #[serde(default = "SeismicIndexingOptions::default_n_postings")]
+    #[validate(range(min = 100, max = 100_000))]
+    pub n_postings: u32,
+    #[serde(default = "SeismicIndexingOptions::default_centroid_fraction")]
+    #[validate(range(min = 0.01, max = 1.))]
+    pub centroid_fraction: f32,
+    #[serde(default = "SeismicIndexingOptions::default_summary_energy")]
+    #[validate(range(min = 0., max = 1.))]
+    pub summary_energy: f32,
+}
+
+impl SeismicIndexingOptions {
+    fn default_n_postings() -> u32 {
+        4000
+    }
+    fn default_centroid_fraction() -> f32 {
+        0.1
+    }
+    fn default_summary_energy() -> f32 {
+        0.4
+    }
+    fn validate_self(&self) -> Result<(), ValidationError> {
+        if (self.n_postings as f32 * self.centroid_fraction) as u32 > 65535 {
+            return Err(ValidationError::new(
+                "centroids number cannot exceed 65535 in seismic indexing",
+            ));
+        }
+        Ok(())
+    }
+}
+
+impl Default for SeismicIndexingOptions {
+    fn default() -> Self {
+        Self {
+            n_postings: Self::default_n_postings(),
+            centroid_fraction: Self::default_centroid_fraction(),
+            summary_energy: Self::default_summary_energy(),
         }
     }
 }
@@ -563,6 +628,10 @@ pub struct SearchOptions {
     pub hnsw_ef_search: u32,
     #[validate(range(min = 1, max = 65535))]
     pub diskann_ef_search: u32,
+    #[validate(range(min = 1, max = 100_000))]
+    pub seismic_q_cut: u32,
+    #[validate(range(min = 0.01, max = 1.))]
+    pub seismic_heap_factor: f32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

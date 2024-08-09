@@ -8,6 +8,7 @@ base = { path = "../base" }
 
 log.workspace = true
 memmap2.workspace = true
+parking_lot.workspace = true
 rand.workspace = true
 rustix.workspace = true
 serde.workspace = true

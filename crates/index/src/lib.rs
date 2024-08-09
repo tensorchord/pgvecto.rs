@@ -29,6 +29,7 @@ use inverted::operator::OperatorInvertedIndex;
 use ivf::operator::OperatorIvf;
 use parking_lot::Mutex;
 use quantization::operator::OperatorQuantization;
+use seismic::operator::OperatorSeismic;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -43,12 +44,22 @@ use thiserror::Error;
 use validator::Validate;
 
 pub trait Op:
-    Operator + OperatorQuantization + OperatorStorage + OperatorIvf + OperatorInvertedIndex
+    Operator
+    + OperatorQuantization
+    + OperatorStorage
+    + OperatorIvf
+    + OperatorInvertedIndex
+    + OperatorSeismic
 {
 }
 
 impl<
-        T: Operator + OperatorQuantization + OperatorStorage + OperatorIvf + OperatorInvertedIndex,
+        T: Operator
+            + OperatorQuantization
+            + OperatorStorage
+            + OperatorIvf
+            + OperatorInvertedIndex
+            + OperatorSeismic,
     > Op for T
 {
 }

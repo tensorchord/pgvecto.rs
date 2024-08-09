@@ -142,6 +142,8 @@ impl QueryArguments {
             flat_pq_fast_scan: false,
             ivf_sq_fast_scan: false,
             ivf_pq_fast_scan: false,
+            seismic_q_cut: 10,
+            seismic_heap_factor: 1.0,
         }
     }
 }
