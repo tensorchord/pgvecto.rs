@@ -76,7 +76,8 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
         self.dims
     }
 
-    pub fn encode(&self, vector: &[Scalar<O>]) -> Vec<u8> {
+    pub fn encode(&self, vector: Borrowed<'_, O>) -> Vec<u8> {
+        let vector = vector.to_vec();
         let dims = self.dims;
         let bits = self.bits;
         let mut codes = Vec::with_capacity(dims as usize);
@@ -127,7 +128,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
             && crate::fast_scan::b4::is_supported()
         {
             use crate::fast_scan::b4::{fast_scan, BLOCK_SIZE};
-            use crate::fast_scan::quantize::{dequantize, quantize};
+            use crate::quantize::{dequantize, quantize_255};
             let s = rhs.start.next_multiple_of(BLOCK_SIZE);
             let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
             heap.extend((rhs.start..s).map(|u| {
@@ -141,7 +142,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
                     u,
                 )
             }));
-            let (k, b, lut) = quantize(&O::fast_scan(preprocessed));
+            let (k, b, lut) = quantize_255(&O::fast_scan(preprocessed));
             for i in (s..e).step_by(BLOCK_SIZE as _) {
                 let bytes = width as usize * 16;
                 let start = (i / BLOCK_SIZE) as usize * bytes;

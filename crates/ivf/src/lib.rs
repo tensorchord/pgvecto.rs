@@ -26,6 +26,7 @@ impl<O: OperatorIvf> Ivf<O> {
     pub fn create(path: impl AsRef<Path>, options: IndexOptions, source: &impl Source<O>) -> Self {
         let IvfIndexingOptions {
             quantization: quantization_options,
+            residual_quantization,
             ..
         } = options.indexing.clone().unwrap_ivf();
         std::fs::create_dir(path.as_ref()).unwrap();
@@ -35,7 +36,10 @@ impl<O: OperatorIvf> Ivf<O> {
                 options,
                 source,
             ))
-        } else if matches!(quantization_options, QuantizationOptions::Trivial(_)) || !O::RESIDUAL {
+        } else if !residual_quantization
+            || matches!(quantization_options, QuantizationOptions::Trivial(_))
+            || !O::RESIDUAL
+        {
             Self::Naive(IvfNaive::create(
                 path.as_ref().join("ivf_naive"),
                 options,

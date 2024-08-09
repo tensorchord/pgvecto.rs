@@ -104,29 +104,60 @@ pub struct IndexOptions {
 }
 
 impl IndexOptions {
-    fn validate_self(&self) -> Result<(), ValidationError> {
-        match (self.vector.v, self.vector.d, &self.indexing) {
-            (VectorKind::Vecf32, _, _) => Ok(()),
-            (VectorKind::Vecf16, _, _) => Ok(()),
-            (
-                _,
-                _,
-                IndexingOptions::Flat(FlatIndexingOptions {
-                    quantization: QuantizationOptions::Trivial(_),
-                    ..
-                })
-                | IndexingOptions::Ivf(IvfIndexingOptions {
-                    quantization: QuantizationOptions::Trivial(_),
-                    ..
-                })
-                | IndexingOptions::Hnsw(HnswIndexingOptions {
-                    quantization: QuantizationOptions::Trivial(_),
-                    ..
-                }),
-            ) => Ok(()),
-            (VectorKind::SVecf32, DistanceKind::Dot, IndexingOptions::InvertedIndex(_)) => Ok(()),
-            _ => Err(ValidationError::new("not valid index options")),
+    fn validate_self_quantization(
+        &self,
+        quantization: &QuantizationOptions,
+    ) -> Result<(), ValidationError> {
+        match quantization {
+            QuantizationOptions::Trivial(_) => Ok(()),
+            QuantizationOptions::Scalar(_) | QuantizationOptions::Product(_) => {
+                if !matches!(self.vector.v, VectorKind::Vecf32 | VectorKind::Vecf16) {
+                    return Err(ValidationError::new(
+                        "scalar quantization or product quantization is not support for vectors that are not dense vectors",
+                    ));
+                }
+                Ok(())
+            }
+            QuantizationOptions::RaBitQ(_) => {
+                if !matches!(self.vector.v, VectorKind::Vecf32) {
+                    return Err(ValidationError::new(
+                        "scalar quantization or product quantization is not support for `vector`",
+                    ));
+                }
+                Ok(())
+            }
         }
+    }
+    fn validate_self(&self) -> Result<(), ValidationError> {
+        match &self.indexing {
+            IndexingOptions::Flat(FlatIndexingOptions { quantization }) => {
+                self.validate_self_quantization(quantization)?;
+            }
+            IndexingOptions::Ivf(IvfIndexingOptions { quantization, .. }) => {
+                if !matches!(self.vector.v, VectorKind::Vecf32 | VectorKind::Vecf16) {
+                    return Err(ValidationError::new(
+                        "ivf is not support for vectors that are not dense vectors",
+                    ));
+                }
+                self.validate_self_quantization(quantization)?;
+            }
+            IndexingOptions::Hnsw(HnswIndexingOptions { quantization, .. }) => {
+                self.validate_self_quantization(quantization)?;
+            }
+            IndexingOptions::InvertedIndex(_) => {
+                if !matches!(self.vector.d, DistanceKind::Dot) {
+                    return Err(ValidationError::new(
+                        "inverted_index is not support for distance that is not negative dot product",
+                    ));
+                }
+                if !matches!(self.vector.v, VectorKind::SVecf32) {
+                    return Err(ValidationError::new(
+                        "inverted_index is not support for vectors that are not sparse vectors",
+                    ));
+                }
+            }
+        }
+        Ok(())
     }
 }
 
@@ -334,6 +365,10 @@ pub struct IvfIndexingOptions {
     #[serde(default = "IvfIndexingOptions::default_nlist")]
     #[validate(range(min = 1, max = 1_000_000))]
     pub nlist: u32,
+    #[serde(default = "IvfIndexingOptions::default_spherical_centroids")]
+    pub spherical_centroids: bool,
+    #[serde(default = "IvfIndexingOptions::default_residual_quantization")]
+    pub residual_quantization: bool,
     #[serde(default)]
     #[validate(nested)]
     pub quantization: QuantizationOptions,
@@ -343,12 +378,20 @@ impl IvfIndexingOptions {
     fn default_nlist() -> u32 {
         1000
     }
+    fn default_spherical_centroids() -> bool {
+        false
+    }
+    fn default_residual_quantization() -> bool {
+        false
+    }
 }
 
 impl Default for IvfIndexingOptions {
     fn default() -> Self {
         Self {
             nlist: Self::default_nlist(),
+            spherical_centroids: false,
+            residual_quantization: false,
             quantization: Default::default(),
         }
     }
@@ -414,15 +457,6 @@ impl Validate for QuantizationOptions {
 impl Default for QuantizationOptions {
     fn default() -> Self {
         Self::Trivial(Default::default())
-    }
-}
-
-impl QuantizationOptions {
-    pub fn unwrap_product(self) -> ProductQuantizationOptions {
-        let QuantizationOptions::Product(x) = self else {
-            unreachable!()
-        };
-        x
     }
 }
 

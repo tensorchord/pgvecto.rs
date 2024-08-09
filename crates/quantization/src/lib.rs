@@ -2,10 +2,13 @@
 #![cfg_attr(target_arch = "x86_64", feature(stdarch_x86_avx512))]
 #![allow(clippy::identity_op)]
 #![allow(clippy::needless_range_loop)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 
 pub mod fast_scan;
 pub mod operator;
 pub mod product;
+pub mod quantize;
 pub mod rabitq;
 pub mod reranker;
 pub mod scalar;
@@ -20,7 +23,6 @@ use base::index::*;
 use base::operator::*;
 use base::scalar::*;
 use base::search::*;
-use base::vector::*;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use serde::Deserialize;
@@ -88,6 +90,8 @@ pub struct Quantization<O: OperatorQuantization> {
     train: Json<Quantizer<O>>,
     codes: MmapArray<u8>,
     packed_codes: MmapArray<u8>,
+    #[allow(unused)]
+    meta: MmapArray<F32>,
 }
 
 impl<O: OperatorQuantization> Quantization<O> {
@@ -98,31 +102,26 @@ impl<O: OperatorQuantization> Quantization<O> {
         vectors: &impl Vectors<O>,
         transform: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy + Send + Sync,
     ) -> Self {
-        use Quantizer::*;
         std::fs::create_dir(path.as_ref()).unwrap();
+        fn merge_8([b0, b1, b2, b3, b4, b5, b6, b7]: [u8; 8]) -> u8 {
+            b0 | (b1 << 1) | (b2 << 2) | (b3 << 3) | (b4 << 4) | (b5 << 5) | (b6 << 6) | (b7 << 7)
+        }
+        fn merge_4([b0, b1, b2, b3]: [u8; 4]) -> u8 {
+            b0 | (b1 << 2) | (b2 << 4) | (b3 << 6)
+        }
+        fn merge_2([b0, b1]: [u8; 2]) -> u8 {
+            b0 | (b1 << 4)
+        }
         let train = Quantizer::train(vector_options, quantization_options, vectors, transform);
         let train = Json::create(path.as_ref().join("train"), train);
         let codes = MmapArray::create(path.as_ref().join("codes"), {
-            fn merge_8([b0, b1, b2, b3, b4, b5, b6, b7]: [u8; 8]) -> u8 {
-                b0 | (b1 << 1)
-                    | (b2 << 2)
-                    | (b3 << 3)
-                    | (b4 << 4)
-                    | (b5 << 5)
-                    | (b6 << 6)
-                    | (b7 << 7)
-            }
-            fn merge_4([b0, b1, b2, b3]: [u8; 4]) -> u8 {
-                b0 | (b1 << 2) | (b2 << 4) | (b3 << 6)
-            }
-            fn merge_2([b0, b1]: [u8; 2]) -> u8 {
-                b0 | (b1 << 4)
-            }
             match &*train {
-                Trivial(_) => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
-                Scalar(x) => Box::new((0..vectors.len()).flat_map(|i| {
-                    let vector = vectors.vector(i).to_vec();
-                    let codes = x.encode(&vector);
+                Quantizer::Trivial(_) => {
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>
+                }
+                Quantizer::Scalar(x) => Box::new((0..vectors.len()).flat_map(|i| {
+                    let vector = vectors.vector(i);
+                    let codes = x.encode(vector);
                     let bytes = x.bytes();
                     match x.bits() {
                         1 => InfiniteByteChunks::new(codes.into_iter())
@@ -141,9 +140,9 @@ impl<O: OperatorQuantization> Quantization<O> {
                         _ => unreachable!(),
                     }
                 })),
-                Product(x) => Box::new((0..vectors.len()).flat_map(|i| {
-                    let vector = vectors.vector(i).to_vec();
-                    let codes = x.encode(&vector);
+                Quantizer::Product(x) => Box::new((0..vectors.len()).flat_map(|i| {
+                    let vector = vectors.vector(i);
+                    let codes = x.encode(vector);
                     let bytes = x.bytes();
                     match x.bits() {
                         1 => InfiniteByteChunks::new(codes.into_iter())
@@ -162,14 +161,18 @@ impl<O: OperatorQuantization> Quantization<O> {
                         _ => unreachable!(),
                     }
                 })),
-                RaBitQ(_) => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
+                Quantizer::RaBitQ(_) => {
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>
+                }
             }
         });
         let packed_codes = MmapArray::create(
             path.as_ref().join("packed_codes"),
             match &*train {
-                Trivial(_) => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
-                Scalar(x) => match x.bits() {
+                Quantizer::Trivial(_) => {
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>
+                }
+                Quantizer::Scalar(x) => match x.bits() {
                     4 => {
                         use fast_scan::b4::{pack, BLOCK_SIZE};
                         let blocks = vectors.len().div_ceil(BLOCK_SIZE);
@@ -178,14 +181,14 @@ impl<O: OperatorQuantization> Quantization<O> {
                             let n = vectors.len();
                             let raw = std::array::from_fn::<_, { BLOCK_SIZE as _ }, _>(|i| {
                                 let id = BLOCK_SIZE * block + i as u32;
-                                x.encode(&vectors.vector(std::cmp::min(id, n - 1)).to_vec())
+                                x.encode(vectors.vector(std::cmp::min(id, n - 1)))
                             });
                             pack(width, raw)
                         })) as Box<dyn Iterator<Item = u8>>
                     }
                     _ => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
                 },
-                Product(x) => match x.bits() {
+                Quantizer::Product(x) => match x.bits() {
                     4 => {
                         use fast_scan::b4::{pack, BLOCK_SIZE};
                         let blocks = vectors.len().div_ceil(BLOCK_SIZE);
@@ -194,20 +197,40 @@ impl<O: OperatorQuantization> Quantization<O> {
                             let n = vectors.len();
                             let raw = std::array::from_fn::<_, { BLOCK_SIZE as _ }, _>(|i| {
                                 let id = BLOCK_SIZE * block + i as u32;
-                                x.encode(&vectors.vector(std::cmp::min(id, n - 1)).to_vec())
+                                x.encode(vectors.vector(std::cmp::min(id, n - 1)))
                             });
                             pack(width, raw)
                         })) as Box<dyn Iterator<Item = u8>>
                     }
                     _ => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
                 },
-                RaBitQ(_x) => Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>,
+                Quantizer::RaBitQ(_x) => {
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>
+                }
+            },
+        );
+        let meta = MmapArray::create(
+            path.as_ref().join("meta"),
+            match &*train {
+                Quantizer::Trivial(_) => {
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = F32>>
+                }
+                Quantizer::Scalar(_) => {
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = F32>>
+                }
+                Quantizer::Product(_) => {
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = F32>>
+                }
+                Quantizer::RaBitQ(_) => {
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = F32>>
+                }
             },
         );
         Self {
             train,
             codes,
             packed_codes,
+            meta,
         }
     }
 
@@ -215,10 +238,12 @@ impl<O: OperatorQuantization> Quantization<O> {
         let train = Json::open(path.as_ref().join("train"));
         let codes = MmapArray::open(path.as_ref().join("codes"));
         let packed_codes = MmapArray::open(path.as_ref().join("packed_codes"));
+        let meta = MmapArray::open(path.as_ref().join("meta"));
         Self {
             train,
             codes,
             packed_codes,
+            meta,
         }
     }
 

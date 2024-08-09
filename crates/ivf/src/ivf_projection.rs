@@ -105,10 +105,12 @@ fn from_nothing<O: Op>(
     let IvfIndexingOptions {
         nlist,
         quantization: quantization_options,
+        spherical_centroids: _,
+        residual_quantization: _,
     } = options.indexing.clone().unwrap_ivf();
     let samples = common::sample::sample(collection);
     rayon::check();
-    let centroids = k_means(nlist as usize, samples, |_| ());
+    let centroids = k_means(nlist as usize, samples, false);
     rayon::check();
     let mut ls = vec![Vec::new(); nlist as usize];
     for i in 0..collection.len() {
