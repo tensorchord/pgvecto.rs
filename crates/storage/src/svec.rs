@@ -79,3 +79,16 @@ impl<O: Operator<VectorOwned = SVecf32Owned>> Storage<O> for SVecStorage {
         }
     }
 }
+
+impl SVecStorage {
+    pub fn prefetch(&self, i: u32) {
+        let s = self.offsets[i as usize];
+        let e = self.offsets[i as usize + 1];
+        for i in (s..e).step_by(16) {
+            let index_ptr = self.indexes.as_ptr().wrapping_add(i);
+            let value_ptr = self.values.as_ptr().wrapping_add(i);
+            common::prefetch::prefetch_read_NTA(index_ptr as *const i8);
+            common::prefetch::prefetch_read_NTA(value_ptr as *const i8);
+        }
+    }
+}

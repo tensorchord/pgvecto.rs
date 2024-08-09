@@ -683,6 +683,7 @@ dependencies = [
  "base",
  "log",
  "memmap2",
+ "parking_lot",
  "rand",
  "rustix 0.38.34",
  "serde",
@@ -1198,7 +1199,6 @@ version = "0.0.0"
 dependencies = [
  "base",
  "common",
- "parking_lot",
  "rand",
  "stoppable_rayon",
 ]
@@ -1541,6 +1541,7 @@ dependencies = [
  "parking_lot",
  "quantization",
  "rand",
+ "seismic",
  "serde",
  "serde_json",
  "stoppable_rayon",
@@ -2668,6 +2669,20 @@ name = "seahash"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
+
+[[package]]
+name = "seismic"
+version = "0.0.0"
+dependencies = [
+ "base",
+ "bincode",
+ "common",
+ "quantization",
+ "rand",
+ "serde",
+ "stoppable_rayon",
+ "storage",
+]
 
 [[package]]
 name = "semver"

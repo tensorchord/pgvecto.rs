@@ -1,9 +1,9 @@
-use crate::visited::VisitedGuard;
-use crate::visited::VisitedPool;
 use base::scalar::F32;
 use base::search::Element;
 use base::search::GraphReranker;
 use base::search::Payload;
+use common::visited::VisitedGuard;
+use common::visited::VisitedPool;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 

@@ -27,6 +27,10 @@ static HNSW_EF_SEARCH: GucSetting<i32> = GucSetting::<i32>::new(100);
 
 static DISKANN_EF_SEARCH: GucSetting<i32> = GucSetting::<i32>::new(100);
 
+static SEISMIC_Q_CUT: GucSetting<i32> = GucSetting::<i32>::new(10);
+
+static SEISMIC_HEAP_FACTOR: GucSetting<f64> = GucSetting::<f64>::new(1.0);
+
 pub unsafe fn init() {
     GucRegistry::define_int_guc(
         "vectors.flat_sq_rerank_size",
@@ -146,6 +150,26 @@ pub unsafe fn init() {
         GucContext::Userset,
         GucFlags::default(),
     );
+    GucRegistry::define_int_guc(
+        "vectors.seismic_q_cut",
+        "The number of elements to keep in the heap.",
+        "https://docs.pgvecto.rs/usage/search.html",
+        &SEISMIC_Q_CUT,
+        1,
+        100_000,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
+    GucRegistry::define_float_guc(
+        "vectors.seismic_heap_factor",
+        "The factor to multiply the number of elements to keep in the heap.",
+        "https://docs.pgvecto.rs/usage/search.html",
+        &SEISMIC_HEAP_FACTOR,
+        0.01,
+        1.0,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
 }
 
 pub fn search_options() -> SearchOptions {
@@ -161,5 +185,7 @@ pub fn search_options() -> SearchOptions {
         ivf_nprobe: IVF_NPROBE.get() as u32,
         hnsw_ef_search: HNSW_EF_SEARCH.get() as u32,
         diskann_ef_search: DISKANN_EF_SEARCH.get() as u32,
+        seismic_q_cut: SEISMIC_Q_CUT.get() as u32,
+        seismic_heap_factor: SEISMIC_HEAP_FACTOR.get() as f32,
     }
 }
