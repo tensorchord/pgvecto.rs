@@ -2,6 +2,7 @@ use base::{
     scalar::F32,
     vector::{SVecf32Borrowed, SVecf32Owned, VectorBorrowed},
 };
+use qwt::{DArray, SelectBin};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -11,7 +12,7 @@ pub struct QuantizedSummary {
     quants: Box<[F32]>, // quantization step
     summary_ids: Box<[u16]>,
     codes: Box<[u8]>,
-    offsets: Box<[usize]>,
+    offsets: DArray<false>,
 }
 
 impl QuantizedSummary {
@@ -45,7 +46,7 @@ impl QuantizedSummary {
 
         let offsets = std::iter::once(0)
             .chain(summary_ids.iter().map(|ids| ids.len()).scan(0, |state, x| {
-                *state += x;
+                *state += x + 1;
                 Some(*state)
             }))
             .collect();
@@ -71,8 +72,8 @@ impl QuantizedSummary {
         let mut results = vec![F32(0.); self.len()];
 
         for (&qi, &qv) in query.indexes().iter().zip(query.values()) {
-            let start = self.offsets[qi as usize];
-            let end = self.offsets[qi as usize + 1];
+            let start = self.offsets.select1(qi as usize).unwrap() - qi as usize;
+            let end = self.offsets.select1(qi as usize + 1).unwrap() - qi as usize - 1;
             let current_summary_ids = &self.summary_ids[start..end];
             let current_codes = &self.codes[start..end];
 

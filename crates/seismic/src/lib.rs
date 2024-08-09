@@ -245,7 +245,7 @@ fn random_kmeans<O: OperatorSeismic>(
     let mut to_be_replaced = Vec::new(); // ids that belong to too small clusters
     for inverted_list in inverted_lists.iter_mut() {
         if !inverted_list.is_empty() && inverted_list.len() <= MIN_CLUSTER_SIZE {
-            to_be_replaced.extend(inverted_list.iter().copied());
+            to_be_replaced.extend(inverted_list.iter());
             inverted_list.clear();
         }
     }
@@ -254,7 +254,7 @@ fn random_kmeans<O: OperatorSeismic>(
         let vector = O::cast_svec(collection.vector(id));
         let argmax = (0..centroid_ids.len())
             .min_by_key(|&j| {
-                if inverted_lists[j].len() < MIN_CLUSTER_SIZE {
+                if inverted_lists[j].len() <= MIN_CLUSTER_SIZE {
                     return F32(0.);
                 }
                 let centroid = O::cast_svec(collection.vector(centroid_ids[j]));

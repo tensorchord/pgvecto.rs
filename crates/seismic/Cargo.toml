@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 bincode.workspace = true
+log.workspace = true
 rand.workspace = true
 serde.workspace = true
 
@@ -13,6 +14,8 @@ common = { path = "../common" }
 quantization = { path = "../quantization" }
 stoppable_rayon = { path = "../stoppable_rayon" }
 storage = { path = "../storage" }
+
+qwt = "0.2"
 
 [lints]
 workspace = true
