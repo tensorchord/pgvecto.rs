@@ -1,3 +1,5 @@
+#![cfg_attr(target_arch = "aarch64", feature(stdarch_aarch64_prefetch))]
+
 pub mod always_equal;
 pub mod clean;
 pub mod dir_ops;

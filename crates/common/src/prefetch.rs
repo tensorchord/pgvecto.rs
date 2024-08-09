@@ -20,7 +20,7 @@ pub fn prefetch_read_NTA(ptr: *const i8) {
         use core::arch::aarch64::{_prefetch, _PREFETCH_LOCALITY0, _PREFETCH_READ};
 
         unsafe {
-            _prefetch(_p, _PREFETCH_READ, _PREFETCH_LOCALITY0);
+            _prefetch(ptr, _PREFETCH_READ, _PREFETCH_LOCALITY0);
         }
     }
 }
