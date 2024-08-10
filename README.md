@@ -9,26 +9,21 @@
 <a href="https://github.com/tensorchord/pgvecto.rs#contributors-"><img alt="all-contributors" src="https://img.shields.io/github/all-contributors/tensorchord/pgvecto.rs/main"></a>
 </p>
 
-pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx). Read more at [📝our blog](https://blog.pgvecto.rs/pgvectors-02-unifying-relational-queries-and-vector-search-in-postgresql).
+pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx).
 
-## Why use pgvecto.rs
+## Comparison with pgvector
 
-| Feature Category           | Feature                   |                                                                                            |
-| -------------------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
-| **Search Capabilities**    | 🔍 Vector Search          | Ultra-low-latency, high-precision vector search.                                           |
-|                            | 🧩 Sparse Vector Search   | Keyword-based vector search using SPLADE or BM25 algorithms.                               |
-|                            | 📄 Full-Text Search       | Comprehensive text search across any language, powered by tsvector.                        |
-| **Data Handling**          | ✔ Complete SQL Support    | Full SQL support, enabling joins and filters without limitations or extra configuration.   |
-|                            | 🔗 Async indexing         | Non-blocking inserts with up-to-date query readiness.                                      |
-|                            | 🔄 Easy Data Management   | No need for syncing vectors and metadata with external vector DB, simplifying development. |
-| **Data Types**             | 🔢 FP16/INT8 Data type    | Supports FP16 and INT8 data types for improved storage and computational efficiency.       |
-|                            | 🌓 Binary vector support  | Vector indexing with binary vectors, and Jaccard distance support.                         |
-|                            | 🔪 Matryoshka embeddings  | Subvector indexing, like vector[0:256], for enhanced Matryoshka embeddings.                |
-|                            | ⬆️ Extended Vector Length | Vector lengths up to 65535 supported, ideal for the latest cutting-edge models.            |
-| **System Performance**     | 🚀 Production Ready       | Battle-tested database ecosystem integrated with PostgreSQL.                               |
-|                            | ⚙️ High Availability      | Logical replication support to ensure high availability.                                    |
-|                            | 💡 Resource Efficient     | Efficient attribute storage leveraging PostgreSQL.                                         |
-| **Security & Permissions** | 🔒 Permission Control     | Easy access control like read-only roles, powered by PostgreSQL.                           |
+Checkout [pgvecto.rs vs pgvector](https://docs.pgvecto.rs/faqs/comparison-pgvector.html) for more details.
+
+| Feature | pgvecto.rs | pgvector |
+| --- | --- | --- |
+| Filtering | Introduces VBASE method for vector search and relational query (e.g. Single-Vector TopK + Filter + Join). | When filters are applied, the results may be incomplete. For example, if you originally intended to limit the results to 10, you might end up with only 5 results with filters. |
+| Sparse Vector Search | Supports both dense and sparse vector search. | Supports dense vector search. |
+| Vector Dimensions | Supports up to 65535 dimensions. | Supports up to 2000 dimensions. |
+| SIMD | SIMD instructions are dynamically dispatched at runtime to maximize performance based on the capabilities of the specific machine. | Relies on compiler-generated SIMD code at compile time. |
+| Data Types | Introduces additional data types: binary vectors, FP16 (16-bit floating point), and INT8 (8-bit integer). | \- |
+| Indexing | Handles the storage and memory of indexes separately from PostgreSQL | Relies on the native storage engine of PostgreSQL |
+| WAL Support | Provides Write-Ahead Logging (WAL) support for data, index support is working in progress. | Provides Write-Ahead Logging (WAL) support for index and data. |                         |
 
 ## [Documentation](https://docs.pgvecto.rs/getting-started/overview.html)
 
@@ -122,6 +117,10 @@ You can search for a vector simply like this.
 -- query the similar embeddings
 SELECT * FROM items ORDER BY embedding <-> '[3,2,1]' LIMIT 5;
 ```
+
+### A simple Question-Answering application
+
+Please check out the [Question-Answering application](https://docs.pgvecto.rs/use-case/question-answering.html) tutorial.
 
 ### Half-precision floating-point
 
