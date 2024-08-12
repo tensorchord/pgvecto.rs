@@ -26,15 +26,11 @@ macro_rules! unimpl_operator_inverted_index {
     };
 }
 
-unimpl_operator_inverted_index!(SVecf32Cos);
 unimpl_operator_inverted_index!(SVecf32L2);
-unimpl_operator_inverted_index!(BVecf32Cos);
-unimpl_operator_inverted_index!(BVecf32Dot);
-unimpl_operator_inverted_index!(BVecf32Jaccard);
-unimpl_operator_inverted_index!(BVecf32L2);
-unimpl_operator_inverted_index!(Vecf32Cos);
+unimpl_operator_inverted_index!(BVectorDot);
+unimpl_operator_inverted_index!(BVectorJaccard);
+unimpl_operator_inverted_index!(BVectorHamming);
 unimpl_operator_inverted_index!(Vecf32Dot);
 unimpl_operator_inverted_index!(Vecf32L2);
-unimpl_operator_inverted_index!(Vecf16Cos);
 unimpl_operator_inverted_index!(Vecf16Dot);
 unimpl_operator_inverted_index!(Vecf16L2);

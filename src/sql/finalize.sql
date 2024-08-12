@@ -42,11 +42,11 @@ CREATE TYPE svector (
 );
 
 CREATE TYPE bvector (
-    INPUT = _vectors_bvecf32_in,
-    OUTPUT = _vectors_bvecf32_out,
-    RECEIVE = _vectors_bvecf32_recv,
-    SEND = _vectors_bvecf32_send,
-    SUBSCRIPT = _vectors_bvecf32_subscript,
+    INPUT = _vectors_bvector_in,
+    OUTPUT = _vectors_bvector_out,
+    RECEIVE = _vectors_bvector_recv,
+    SEND = _vectors_bvector_send,
+    SUBSCRIPT = _vectors_bvector_subscript,
     TYPMOD_IN = _vectors_typmod_in_65535,
     TYPMOD_OUT = _vectors_typmod_out,
     STORAGE = EXTERNAL,
@@ -148,19 +148,19 @@ CREATE OPERATOR * (
 );
 
 CREATE OPERATOR & (
-    PROCEDURE = _vectors_bvecf32_operator_and,
+    PROCEDURE = _vectors_bvector_operator_and,
     LEFTARG = bvector,
     RIGHTARG = bvector
 );
 
 CREATE OPERATOR | (
-    PROCEDURE = _vectors_bvecf32_operator_or,
+    PROCEDURE = _vectors_bvector_operator_or,
     LEFTARG = bvector,
     RIGHTARG = bvector
 );
 
 CREATE OPERATOR ^ (
-    PROCEDURE = _vectors_bvecf32_operator_xor,
+    PROCEDURE = _vectors_bvector_operator_xor,
     LEFTARG = bvector,
     RIGHTARG = bvector
 );
@@ -196,7 +196,7 @@ CREATE OPERATOR = (
 );
 
 CREATE OPERATOR = (
-    PROCEDURE = _vectors_bvecf32_operator_eq,
+    PROCEDURE = _vectors_bvector_operator_eq,
     LEFTARG = bvector,
     RIGHTARG = bvector,
     COMMUTATOR = =,
@@ -236,7 +236,7 @@ CREATE OPERATOR <> (
 );
 
 CREATE OPERATOR <> (
-    PROCEDURE = _vectors_bvecf32_operator_neq,
+    PROCEDURE = _vectors_bvector_operator_neq,
     LEFTARG = bvector,
     RIGHTARG = bvector,
     COMMUTATOR = <>,
@@ -276,7 +276,7 @@ CREATE OPERATOR < (
 );
 
 CREATE OPERATOR < (
-    PROCEDURE = _vectors_bvecf32_operator_lt,
+    PROCEDURE = _vectors_bvector_operator_lt,
     LEFTARG = bvector,
     RIGHTARG = bvector,
     COMMUTATOR = >,
@@ -316,7 +316,7 @@ CREATE OPERATOR > (
 );
 
 CREATE OPERATOR > (
-    PROCEDURE = _vectors_bvecf32_operator_gt,
+    PROCEDURE = _vectors_bvector_operator_gt,
     LEFTARG = bvector,
     RIGHTARG = bvector,
     COMMUTATOR = <,
@@ -356,7 +356,7 @@ CREATE OPERATOR <= (
 );
 
 CREATE OPERATOR <= (
-    PROCEDURE = _vectors_bvecf32_operator_lte,
+    PROCEDURE = _vectors_bvector_operator_lte,
     LEFTARG = bvector,
     RIGHTARG = bvector,
     COMMUTATOR = >=,
@@ -396,7 +396,7 @@ CREATE OPERATOR >= (
 );
 
 CREATE OPERATOR >= (
-    PROCEDURE = _vectors_bvecf32_operator_gte,
+    PROCEDURE = _vectors_bvector_operator_gte,
     LEFTARG = bvector,
     RIGHTARG = bvector,
     COMMUTATOR = <=,
@@ -427,7 +427,7 @@ CREATE OPERATOR <-> (
 );
 
 CREATE OPERATOR <-> (
-    PROCEDURE = _vectors_bvecf32_operator_l2,
+    PROCEDURE = _vectors_bvector_operator_hamming,
     LEFTARG = bvector,
     RIGHTARG = bvector,
     COMMUTATOR = <->
@@ -455,7 +455,7 @@ CREATE OPERATOR <#> (
 );
 
 CREATE OPERATOR <#> (
-    PROCEDURE = _vectors_bvecf32_operator_dot,
+    PROCEDURE = _vectors_bvector_operator_dot,
     LEFTARG = bvector,
     RIGHTARG = bvector,
     COMMUTATOR = <#>
@@ -482,15 +482,8 @@ CREATE OPERATOR <=> (
     COMMUTATOR = <=>
 );
 
-CREATE OPERATOR <=> (
-    PROCEDURE = _vectors_bvecf32_operator_cosine,
-    LEFTARG = bvector,
-    RIGHTARG = bvector,
-    COMMUTATOR = <=>
-);
-
 CREATE OPERATOR <~> (
-    PROCEDURE = _vectors_bvecf32_operator_jaccard,
+    PROCEDURE = _vectors_bvector_operator_jaccard,
     LEFTARG = bvector,
     RIGHTARG = bvector,
     COMMUTATOR = <~>
@@ -518,7 +511,7 @@ CREATE OPERATOR <<->> (
 );
 
 CREATE OPERATOR <<->> (
-    PROCEDURE = _vectors_bvecf32_sphere_l2_in,
+    PROCEDURE = _vectors_bvector_sphere_hamming_in,
     LEFTARG = bvector,
     RIGHTARG = sphere_bvector,
     COMMUTATOR = <<->>
@@ -546,7 +539,7 @@ CREATE OPERATOR <<#>> (
 );
 
 CREATE OPERATOR <<#>> (
-    PROCEDURE = _vectors_bvecf32_sphere_dot_in,
+    PROCEDURE = _vectors_bvector_sphere_dot_in,
     LEFTARG = bvector,
     RIGHTARG = sphere_bvector,
     COMMUTATOR = <<#>>
@@ -573,15 +566,8 @@ CREATE OPERATOR <<=>> (
     COMMUTATOR = <<=>>
 );
 
-CREATE OPERATOR <<=>> (
-    PROCEDURE = _vectors_bvecf32_sphere_cos_in,
-    LEFTARG = bvector,
-    RIGHTARG = sphere_bvector,
-    COMMUTATOR = <<=>>
-);
-
 CREATE OPERATOR <<~>> (
-    PROCEDURE = _vectors_bvecf32_sphere_jaccard_in,
+    PROCEDURE = _vectors_bvector_sphere_jaccard_in,
     LEFTARG = bvector,
     RIGHTARG = sphere_bvector,
     COMMUTATOR = <<~>>
@@ -622,7 +608,7 @@ CREATE FUNCTION vector_dims(svector) RETURNS INT
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_dims_wrapper';
 
 CREATE FUNCTION vector_dims(bvector) RETURNS INT
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_dims_wrapper';
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvector_dims_wrapper';
 
 CREATE FUNCTION vector_norm(vector) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_norm_wrapper';
@@ -634,7 +620,7 @@ CREATE FUNCTION vector_norm(svector) RETURNS real
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf32_norm_wrapper';
 
 CREATE FUNCTION vector_norm(bvector) RETURNS real
-IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecf32_norm_wrapper';
+IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvector_norm_wrapper';
 
 CREATE FUNCTION vector_normalize(vector) RETURNS vector
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32_normalize_wrapper';
@@ -718,10 +704,10 @@ CREATE CAST (svector AS vector)
     WITH FUNCTION _vectors_cast_svecf32_to_vecf32(svector, integer, boolean);
 
 CREATE CAST (vector AS bvector)
-    WITH FUNCTION _vectors_cast_vecf32_to_bvecf32(vector, integer, boolean);
+    WITH FUNCTION _vectors_cast_vecf32_to_bvector(vector, integer, boolean);
 
 CREATE CAST (bvector AS vector)
-    WITH FUNCTION _vectors_cast_bvecf32_to_vecf32(bvector, integer, boolean);
+    WITH FUNCTION _vectors_cast_bvector_to_vecf32(bvector, integer, boolean);
 
 -- List of access methods
 
@@ -748,11 +734,9 @@ CREATE OPERATOR FAMILY svector_dot_ops USING vectors;
 
 CREATE OPERATOR FAMILY svector_cos_ops USING vectors;
 
-CREATE OPERATOR FAMILY bvector_l2_ops USING vectors;
+CREATE OPERATOR FAMILY bvector_hamming_ops USING vectors;
 
 CREATE OPERATOR FAMILY bvector_dot_ops USING vectors;
-
-CREATE OPERATOR FAMILY bvector_cos_ops USING vectors;
 
 CREATE OPERATOR FAMILY bvector_jaccard_ops USING vectors;
 
@@ -803,8 +787,8 @@ CREATE OPERATOR CLASS svector_cos_ops
     OPERATOR 1 <=> (svector, svector) FOR ORDER BY float_ops,
     OPERATOR 2 <<=>> (svector, sphere_svector) FOR SEARCH;
 
-CREATE OPERATOR CLASS bvector_l2_ops
-    FOR TYPE bvector USING vectors FAMILY bvector_l2_ops AS
+CREATE OPERATOR CLASS bvector_hamming_ops
+    FOR TYPE bvector USING vectors FAMILY bvector_hamming_ops AS
     OPERATOR 1 <-> (bvector, bvector) FOR ORDER BY float_ops,
     OPERATOR 2 <<->> (bvector, sphere_bvector) FOR SEARCH;
 
@@ -812,11 +796,6 @@ CREATE OPERATOR CLASS bvector_dot_ops
     FOR TYPE bvector USING vectors FAMILY bvector_dot_ops AS
     OPERATOR 1 <#> (bvector, bvector) FOR ORDER BY float_ops,
     OPERATOR 2 <<#>> (bvector, sphere_bvector) FOR SEARCH;
-
-CREATE OPERATOR CLASS bvector_cos_ops
-    FOR TYPE bvector USING vectors FAMILY bvector_cos_ops AS
-    OPERATOR 1 <=> (bvector, bvector) FOR ORDER BY float_ops,
-    OPERATOR 2 <<->> (bvector, sphere_bvector) FOR SEARCH;
 
 CREATE OPERATOR CLASS bvector_jaccard_ops
     FOR TYPE bvector USING vectors FAMILY bvector_jaccard_ops AS

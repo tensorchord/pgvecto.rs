@@ -1,5 +1,5 @@
-use crate::datatype::memory_bvecf32::BVecf32Input;
-use crate::datatype::memory_bvecf32::BVecf32Output;
+use crate::datatype::memory_bvector::BVectorInput;
+use crate::datatype::memory_bvector::BVectorOutput;
 use crate::datatype::memory_svecf32::SVecf32Input;
 use crate::datatype::memory_svecf32::SVecf32Output;
 use crate::datatype::memory_vecf16::Vecf16Input;
@@ -40,7 +40,31 @@ impl Reloption {
     }
 }
 
-pub fn convert_opclass_to_vd(opclass_oid: pgrx::pg_sys::Oid) -> Option<(VectorKind, DistanceKind)> {
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PgDistanceKind {
+    L2,
+    Dot,
+    Cos,
+    Hamming,
+    Jaccard,
+}
+
+impl PgDistanceKind {
+    pub fn to_distance(self) -> DistanceKind {
+        match self {
+            PgDistanceKind::L2 => DistanceKind::L2,
+            PgDistanceKind::Dot => DistanceKind::Dot,
+            PgDistanceKind::Cos => DistanceKind::Dot,
+            PgDistanceKind::Hamming => DistanceKind::Hamming,
+            PgDistanceKind::Jaccard => DistanceKind::Jaccard,
+        }
+    }
+}
+
+pub fn convert_opclass_to_vd(
+    opclass_oid: pgrx::pg_sys::Oid,
+) -> Option<(VectorKind, PgDistanceKind)> {
     let namespace =
         pgrx::pg_catalog::PgNamespace::search_namespacename(crate::SCHEMA_C_STR).unwrap();
     let namespace = namespace.get().expect("pgvecto.rs is not installed.");
@@ -58,7 +82,7 @@ pub fn convert_opclass_to_vd(opclass_oid: pgrx::pg_sys::Oid) -> Option<(VectorKi
 
 pub fn convert_opfamily_to_vd(
     opfamily_oid: pgrx::pg_sys::Oid,
-) -> Option<(VectorKind, DistanceKind)> {
+) -> Option<(VectorKind, PgDistanceKind)> {
     let namespace =
         pgrx::pg_catalog::PgNamespace::search_namespacename(crate::SCHEMA_C_STR).unwrap();
     let namespace = namespace.get().expect("pgvecto.rs is not installed.");
@@ -74,21 +98,20 @@ pub fn convert_opfamily_to_vd(
     None
 }
 
-fn convert_name_to_vd(name: &str) -> Option<(VectorKind, DistanceKind)> {
+fn convert_name_to_vd(name: &str) -> Option<(VectorKind, PgDistanceKind)> {
     match name.strip_suffix("_ops") {
-        Some("vector_l2") => Some((VectorKind::Vecf32, DistanceKind::L2)),
-        Some("vector_dot") => Some((VectorKind::Vecf32, DistanceKind::Dot)),
-        Some("vector_cos") => Some((VectorKind::Vecf32, DistanceKind::Cos)),
-        Some("vecf16_l2") => Some((VectorKind::Vecf16, DistanceKind::L2)),
-        Some("vecf16_dot") => Some((VectorKind::Vecf16, DistanceKind::Dot)),
-        Some("vecf16_cos") => Some((VectorKind::Vecf16, DistanceKind::Cos)),
-        Some("svector_l2") => Some((VectorKind::SVecf32, DistanceKind::L2)),
-        Some("svector_dot") => Some((VectorKind::SVecf32, DistanceKind::Dot)),
-        Some("svector_cos") => Some((VectorKind::SVecf32, DistanceKind::Cos)),
-        Some("bvector_l2") => Some((VectorKind::BVecf32, DistanceKind::L2)),
-        Some("bvector_dot") => Some((VectorKind::BVecf32, DistanceKind::Dot)),
-        Some("bvector_cos") => Some((VectorKind::BVecf32, DistanceKind::Cos)),
-        Some("bvector_jaccard") => Some((VectorKind::BVecf32, DistanceKind::Jaccard)),
+        Some("vector_l2") => Some((VectorKind::Vecf32, PgDistanceKind::L2)),
+        Some("vector_dot") => Some((VectorKind::Vecf32, PgDistanceKind::Dot)),
+        Some("vector_cos") => Some((VectorKind::Vecf32, PgDistanceKind::Cos)),
+        Some("vecf16_l2") => Some((VectorKind::Vecf16, PgDistanceKind::L2)),
+        Some("vecf16_dot") => Some((VectorKind::Vecf16, PgDistanceKind::Dot)),
+        Some("vecf16_cos") => Some((VectorKind::Vecf16, PgDistanceKind::Cos)),
+        Some("svector_l2") => Some((VectorKind::SVecf32, PgDistanceKind::L2)),
+        Some("svector_dot") => Some((VectorKind::SVecf32, PgDistanceKind::Dot)),
+        Some("svector_cos") => Some((VectorKind::SVecf32, PgDistanceKind::Cos)),
+        Some("bvector_hamming") => Some((VectorKind::BVector, PgDistanceKind::Hamming)),
+        Some("bvector_dot") => Some((VectorKind::BVector, PgDistanceKind::Dot)),
+        Some("bvector_jaccard") => Some((VectorKind::BVector, PgDistanceKind::Jaccard)),
         _ => None,
     }
 }
@@ -129,8 +152,12 @@ pub unsafe fn options(index: pgrx::pg_sys::Relation) -> (IndexOptions, IndexAlte
     let typmod = Typmod::parse_from_i32(atts[0].type_mod()).unwrap();
     let dims = check_column_dims(typmod.dims()).get();
     // get v, d
-    let (v, d) = convert_opfamily_to_vd(opfamily).unwrap();
-    let vector = VectorOptions { dims, v, d };
+    let (v, pg_d) = convert_opfamily_to_vd(opfamily).unwrap();
+    let vector = VectorOptions {
+        dims,
+        v,
+        d: pg_d.to_distance(),
+    };
     // get indexing, segment, optimizing
     let (indexing, alterable) = unsafe { convert_reloptions_to_options((*index).rd_options) };
     (IndexOptions { vector, indexing }, alterable)
@@ -139,8 +166,7 @@ pub unsafe fn options(index: pgrx::pg_sys::Relation) -> (IndexOptions, IndexAlte
 #[derive(Debug, Clone, Copy)]
 pub struct Opfamily {
     vector: VectorKind,
-    #[allow(unused)]
-    distance: DistanceKind,
+    pg_distance: PgDistanceKind,
 }
 
 impl Opfamily {
@@ -155,19 +181,19 @@ impl Opfamily {
         let vector = match self.vector {
             VectorKind::Vecf32 => {
                 let vector = unsafe { Vecf32Input::from_datum(datum, false).unwrap() };
-                OwnedVector::Vecf32(vector.as_borrowed().own())
+                self.preprocess(BorrowedVector::Vecf32(vector.as_borrowed()))
             }
             VectorKind::Vecf16 => {
                 let vector = unsafe { Vecf16Input::from_datum(datum, false).unwrap() };
-                OwnedVector::Vecf16(vector.as_borrowed().own())
+                self.preprocess(BorrowedVector::Vecf16(vector.as_borrowed()))
             }
             VectorKind::SVecf32 => {
                 let vector = unsafe { SVecf32Input::from_datum(datum, false).unwrap() };
-                OwnedVector::SVecf32(vector.as_borrowed().own())
+                self.preprocess(BorrowedVector::SVecf32(vector.as_borrowed()))
             }
-            VectorKind::BVecf32 => {
-                let vector = unsafe { BVecf32Input::from_datum(datum, false).unwrap() };
-                OwnedVector::BVecf32(vector.as_borrowed().own())
+            VectorKind::BVector => {
+                let vector = unsafe { BVectorInput::from_datum(datum, false).unwrap() };
+                self.preprocess(BorrowedVector::BVector(vector.as_borrowed()))
             }
         };
         Some(vector)
@@ -185,27 +211,43 @@ impl Opfamily {
             VectorKind::Vecf32 => tuple
                 .get_by_index::<Vecf32Output>(NonZero::new(1).unwrap())
                 .unwrap()
-                .map(|vector| OwnedVector::Vecf32(vector.as_borrowed().own())),
+                .map(|vector| self.preprocess(BorrowedVector::Vecf32(vector.as_borrowed()))),
             VectorKind::Vecf16 => tuple
                 .get_by_index::<Vecf16Output>(NonZero::new(1).unwrap())
                 .unwrap()
-                .map(|vector| OwnedVector::Vecf16(vector.as_borrowed().own())),
+                .map(|vector| self.preprocess(BorrowedVector::Vecf16(vector.as_borrowed()))),
             VectorKind::SVecf32 => tuple
                 .get_by_index::<SVecf32Output>(NonZero::new(1).unwrap())
                 .unwrap()
-                .map(|vector| OwnedVector::SVecf32(vector.as_borrowed().own())),
-            VectorKind::BVecf32 => tuple
-                .get_by_index::<BVecf32Output>(NonZero::new(1).unwrap())
+                .map(|vector| self.preprocess(BorrowedVector::SVecf32(vector.as_borrowed()))),
+            VectorKind::BVector => tuple
+                .get_by_index::<BVectorOutput>(NonZero::new(1).unwrap())
                 .unwrap()
-                .map(|vector| OwnedVector::BVecf32(vector.as_borrowed().own())),
+                .map(|vector| self.preprocess(BorrowedVector::BVector(vector.as_borrowed()))),
         };
         let radius = tuple.get_by_index::<f32>(NonZero::new(2).unwrap()).unwrap();
         (center, radius)
+    }
+    pub fn preprocess(self, vector: BorrowedVector<'_>) -> OwnedVector {
+        use BorrowedVector as B;
+        use OwnedVector as O;
+        match (vector, self.pg_distance) {
+            (B::Vecf32(x), PgDistanceKind::Cos) => O::Vecf32(x.function_normalize()),
+            (B::Vecf32(x), _) => O::Vecf32(x.own()),
+            (B::Vecf16(x), PgDistanceKind::Cos) => O::Vecf16(x.function_normalize()),
+            (B::Vecf16(x), _) => O::Vecf16(x.own()),
+            (B::SVecf32(x), PgDistanceKind::Cos) => O::SVecf32(x.function_normalize()),
+            (B::SVecf32(x), _) => O::SVecf32(x.own()),
+            (B::BVector(x), _) => O::BVector(x.own()),
+        }
     }
 }
 
 pub unsafe fn opfamily(index: pgrx::pg_sys::Relation) -> Opfamily {
     let opfamily = unsafe { (*index).rd_opfamily.read() };
-    let (vector, distance) = convert_opfamily_to_vd(opfamily).unwrap();
-    Opfamily { vector, distance }
+    let (vector, pg_distance) = convert_opfamily_to_vd(opfamily).unwrap();
+    Opfamily {
+        vector,
+        pg_distance,
+    }
 }

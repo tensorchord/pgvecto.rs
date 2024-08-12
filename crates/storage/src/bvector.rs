@@ -12,7 +12,7 @@ pub struct BVectorStorage {
     slice: MmapArray<u64>,
 }
 
-impl<O: Operator<VectorOwned = BVecf32Owned>> Vectors<O> for BVectorStorage {
+impl<O: Operator<VectorOwned = BVectorOwned>> Vectors<O> for BVectorStorage {
     fn dims(&self) -> u32 {
         *self.dims
     }
@@ -21,15 +21,15 @@ impl<O: Operator<VectorOwned = BVecf32Owned>> Vectors<O> for BVectorStorage {
         *self.len
     }
 
-    fn vector(&self, i: u32) -> BVecf32Borrowed<'_> {
-        let w = self.dims.div_ceil(BVECF32_WIDTH);
+    fn vector(&self, i: u32) -> BVectorBorrowed<'_> {
+        let w = self.dims.div_ceil(BVECTOR_WIDTH);
         let s = i as usize * w as usize;
         let e = (i + 1) as usize * w as usize;
-        BVecf32Borrowed::new(*self.dims as _, &self.slice[s..e])
+        BVectorBorrowed::new(*self.dims as _, &self.slice[s..e])
     }
 }
 
-impl<O: Operator<VectorOwned = BVecf32Owned>> Storage<O> for BVectorStorage {
+impl<O: Operator<VectorOwned = BVectorOwned>> Storage<O> for BVectorStorage {
     fn create(path: impl AsRef<Path>, vectors: &impl Vectors<O>) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
         let dims = Json::create(path.as_ref().join("dims"), vectors.dims());

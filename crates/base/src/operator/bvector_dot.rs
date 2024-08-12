@@ -4,14 +4,14 @@ use crate::scalar::*;
 use crate::vector::*;
 
 #[derive(Debug, Clone, Copy)]
-pub enum SVecf32Cos {}
+pub enum BVectorDot {}
 
-impl Operator for SVecf32Cos {
-    type VectorOwned = SVecf32Owned;
+impl Operator for BVectorDot {
+    type VectorOwned = BVectorOwned;
 
-    const DISTANCE_KIND: DistanceKind = DistanceKind::Cos;
+    const DISTANCE_KIND: DistanceKind = DistanceKind::Dot;
 
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> F32 {
-        F32(1.0) - svecf32::cosine(lhs, rhs)
+        bvector::dot(lhs, rhs) * (-1.0)
     }
 }

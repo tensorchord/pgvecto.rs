@@ -1,9 +1,9 @@
-pub mod bvecf32;
+pub mod bvector;
 pub mod svecf32;
 pub mod vecf16;
 pub mod vecf32;
 
-pub use bvecf32::{BVecf32Borrowed, BVecf32Owned, BVECF32_WIDTH};
+pub use bvector::{BVectorBorrowed, BVectorOwned, BVECTOR_WIDTH};
 pub use svecf32::{SVecf32Borrowed, SVecf32Owned};
 pub use vecf16::{Vecf16Borrowed, Vecf16Owned};
 pub use vecf32::{Vecf32Borrowed, Vecf32Owned};
@@ -19,7 +19,7 @@ pub enum VectorKind {
     Vecf32,
     Vecf16,
     SVecf32,
-    BVecf32,
+    BVector,
 }
 
 pub trait VectorOwned: Clone + Serialize + for<'a> Deserialize<'a> + 'static {
@@ -43,6 +43,16 @@ pub trait VectorBorrowed: Copy + PartialEq + PartialOrd {
 
     fn length(&self) -> F32;
 
+    fn operator_dot(self, rhs: Self) -> F32;
+
+    fn operator_l2(self, rhs: Self) -> F32;
+
+    fn operator_cos(self, rhs: Self) -> F32;
+
+    fn operator_hamming(self, rhs: Self) -> F32;
+
+    fn operator_jaccard(self, rhs: Self) -> F32;
+
     fn function_normalize(&self) -> Self::Owned;
 
     fn operator_add(&self, rhs: Self) -> Self::Owned;
@@ -65,7 +75,7 @@ pub enum OwnedVector {
     Vecf32(Vecf32Owned),
     Vecf16(Vecf16Owned),
     SVecf32(SVecf32Owned),
-    BVecf32(BVecf32Owned),
+    BVector(BVectorOwned),
 }
 
 impl OwnedVector {
@@ -74,7 +84,7 @@ impl OwnedVector {
             OwnedVector::Vecf32(x) => BorrowedVector::Vecf32(x.as_borrowed()),
             OwnedVector::Vecf16(x) => BorrowedVector::Vecf16(x.as_borrowed()),
             OwnedVector::SVecf32(x) => BorrowedVector::SVecf32(x.as_borrowed()),
-            OwnedVector::BVecf32(x) => BorrowedVector::BVecf32(x.as_borrowed()),
+            OwnedVector::BVector(x) => BorrowedVector::BVector(x.as_borrowed()),
         }
     }
 }
@@ -96,7 +106,7 @@ pub enum BorrowedVector<'a> {
     Vecf32(Vecf32Borrowed<'a>),
     Vecf16(Vecf16Borrowed<'a>),
     SVecf32(SVecf32Borrowed<'a>),
-    BVecf32(BVecf32Borrowed<'a>),
+    BVector(BVectorBorrowed<'a>),
 }
 
 impl PartialEq for BorrowedVector<'_> {
@@ -106,7 +116,7 @@ impl PartialEq for BorrowedVector<'_> {
             (Vecf32(lhs), Vecf32(rhs)) => lhs == rhs,
             (Vecf16(lhs), Vecf16(rhs)) => lhs == rhs,
             (SVecf32(lhs), SVecf32(rhs)) => lhs == rhs,
-            (BVecf32(lhs), BVecf32(rhs)) => lhs == rhs,
+            (BVector(lhs), BVector(rhs)) => lhs == rhs,
             _ => false,
         }
     }
@@ -119,7 +129,7 @@ impl PartialOrd for BorrowedVector<'_> {
             (Vecf32(lhs), Vecf32(rhs)) => lhs.partial_cmp(rhs),
             (Vecf16(lhs), Vecf16(rhs)) => lhs.partial_cmp(rhs),
             (SVecf32(lhs), SVecf32(rhs)) => lhs.partial_cmp(rhs),
-            (BVecf32(lhs), BVecf32(rhs)) => lhs.partial_cmp(rhs),
+            (BVector(lhs), BVector(rhs)) => lhs.partial_cmp(rhs),
             _ => None,
         }
     }

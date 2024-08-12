@@ -1,4 +1,4 @@
-use super::memory_bvecf32::{BVecf32Input, BVecf32Output};
+use super::memory_bvector::{BVectorInput, BVectorOutput};
 use crate::datatype::typmod::Typmod;
 use crate::error::*;
 use base::vector::*;
@@ -7,7 +7,7 @@ use std::ffi::{CStr, CString};
 use std::fmt::Write;
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> BVecf32Output {
+fn _vectors_bvector_in(input: &CStr, _oid: Oid, typmod: i32) -> BVectorOutput {
     use crate::utils::parse::parse_vector;
     let reserve = Typmod::parse_from_i32(typmod)
         .unwrap()
@@ -28,19 +28,19 @@ fn _vectors_bvecf32_in(input: &CStr, _oid: Oid, typmod: i32) -> BVecf32Output {
         Ok(vector) => {
             let dims = u32::try_from(vector.len()).expect("input is too large");
             check_value_dims_65535(dims);
-            let mut data = vec![0_u64; dims.div_ceil(BVECF32_WIDTH) as _];
+            let mut data = vec![0_u64; dims.div_ceil(BVECTOR_WIDTH) as _];
             for i in 0..dims {
                 if vector[i as usize] {
-                    data[(i / BVECF32_WIDTH) as usize] |= 1 << (i % BVECF32_WIDTH);
+                    data[(i / BVECTOR_WIDTH) as usize] |= 1 << (i % BVECTOR_WIDTH);
                 }
             }
-            BVecf32Output::new(BVecf32Borrowed::new(dims, &data))
+            BVectorOutput::new(BVectorBorrowed::new(dims, &data))
         }
     }
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_out(vector: BVecf32Input<'_>) -> CString {
+fn _vectors_bvector_out(vector: BVectorInput<'_>) -> CString {
     let mut buffer = String::new();
     buffer.push('[');
     let mut iter = vector.as_borrowed().iter();

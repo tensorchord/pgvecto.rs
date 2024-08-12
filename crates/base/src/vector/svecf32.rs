@@ -186,6 +186,31 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
     }
 
     #[inline(always)]
+    fn operator_dot(self, rhs: Self) -> F32 {
+        dot(self, rhs) * (-1.0)
+    }
+
+    #[inline(always)]
+    fn operator_l2(self, rhs: Self) -> F32 {
+        sl2(self, rhs)
+    }
+
+    #[inline(always)]
+    fn operator_cos(self, rhs: Self) -> F32 {
+        F32(1.0) - dot(self, rhs) / (self.length() * rhs.length())
+    }
+
+    #[inline(always)]
+    fn operator_hamming(self, _: Self) -> F32 {
+        unimplemented!()
+    }
+
+    #[inline(always)]
+    fn operator_jaccard(self, _: Self) -> F32 {
+        unimplemented!()
+    }
+
+    #[inline(always)]
     fn function_normalize(&self) -> SVecf32Owned {
         let mut own = self.own();
         l2_normalize(&mut own);

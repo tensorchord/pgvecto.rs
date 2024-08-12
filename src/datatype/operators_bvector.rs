@@ -1,4 +1,4 @@
-use crate::datatype::memory_bvecf32::{BVecf32Input, BVecf32Output};
+use crate::datatype::memory_bvector::{BVectorInput, BVectorOutput};
 use crate::error::*;
 use base::operator::*;
 use base::scalar::*;
@@ -7,9 +7,9 @@ use std::num::NonZero;
 use std::ops::Deref;
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_and(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> BVecf32Output {
+fn _vectors_bvector_operator_and(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> BVectorOutput {
     check_matched_dims(lhs.dims(), rhs.dims());
-    BVecf32Output::new(
+    BVectorOutput::new(
         lhs.as_borrowed()
             .operator_and(rhs.as_borrowed())
             .as_borrowed(),
@@ -17,9 +17,9 @@ fn _vectors_bvecf32_operator_and(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_or(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> BVecf32Output {
+fn _vectors_bvector_operator_or(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> BVectorOutput {
     check_matched_dims(lhs.dims(), rhs.dims());
-    BVecf32Output::new(
+    BVectorOutput::new(
         lhs.as_borrowed()
             .operator_or(rhs.as_borrowed())
             .as_borrowed(),
@@ -27,9 +27,9 @@ fn _vectors_bvecf32_operator_or(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) ->
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_xor(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> BVecf32Output {
+fn _vectors_bvector_operator_xor(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> BVectorOutput {
     check_matched_dims(lhs.dims(), rhs.dims());
-    BVecf32Output::new(
+    BVectorOutput::new(
         lhs.as_borrowed()
             .operator_xor(rhs.as_borrowed())
             .as_borrowed(),
@@ -37,71 +37,65 @@ fn _vectors_bvecf32_operator_xor(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_lt(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> bool {
+fn _vectors_bvector_operator_lt(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> bool {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
     lhs.deref().as_borrowed() < rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_lte(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> bool {
+fn _vectors_bvector_operator_lte(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> bool {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
     lhs.deref().as_borrowed() <= rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_gt(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> bool {
+fn _vectors_bvector_operator_gt(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> bool {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
     lhs.deref().as_borrowed() > rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_gte(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> bool {
+fn _vectors_bvector_operator_gte(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> bool {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
     lhs.deref().as_borrowed() >= rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_eq(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> bool {
+fn _vectors_bvector_operator_eq(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> bool {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
     lhs.deref().as_borrowed() == rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_neq(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> bool {
+fn _vectors_bvector_operator_neq(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> bool {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
     lhs.deref().as_borrowed() != rhs.deref().as_borrowed()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_cosine(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> f32 {
+fn _vectors_bvector_operator_dot(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> f32 {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    BVecf32Cos::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
+    BVectorDot::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_dot(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> f32 {
+fn _vectors_bvector_operator_hamming(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> f32 {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    BVecf32Dot::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
+    BVectorHamming::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_l2(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> f32 {
+fn _vectors_bvector_operator_jaccard(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> f32 {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    BVecf32L2::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
+    BVectorJaccard::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_operator_jaccard(lhs: BVecf32Input<'_>, rhs: BVecf32Input<'_>) -> f32 {
-    check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    BVecf32Jaccard::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
-}
-
-#[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_sphere_l2_in(
-    lhs: BVecf32Input<'_>,
+fn _vectors_bvector_sphere_hamming_in(
+    lhs: BVectorInput<'_>,
     rhs: pgrx::composite_type!("sphere_bvector"),
 ) -> bool {
-    let center: BVecf32Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
+    let center: BVectorOutput = match rhs.get_by_index(NonZero::new(1).unwrap()) {
         Ok(Some(s)) => s,
         Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
         Err(_) => unreachable!(),
@@ -112,15 +106,15 @@ fn _vectors_bvecf32_sphere_l2_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    BVecf32L2::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
+    BVectorHamming::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_sphere_dot_in(
-    lhs: BVecf32Input<'_>,
+fn _vectors_bvector_sphere_dot_in(
+    lhs: BVectorInput<'_>,
     rhs: pgrx::composite_type!("sphere_bvector"),
 ) -> bool {
-    let center: BVecf32Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
+    let center: BVectorOutput = match rhs.get_by_index(NonZero::new(1).unwrap()) {
         Ok(Some(s)) => s,
         Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
         Err(_) => unreachable!(),
@@ -131,34 +125,15 @@ fn _vectors_bvecf32_sphere_dot_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    BVecf32Dot::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
+    BVectorDot::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_sphere_cos_in(
-    lhs: BVecf32Input<'_>,
+fn _vectors_bvector_sphere_jaccard_in(
+    lhs: BVectorInput<'_>,
     rhs: pgrx::composite_type!("sphere_bvector"),
 ) -> bool {
-    let center: BVecf32Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
-        Ok(Some(s)) => s,
-        Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
-        Err(_) => unreachable!(),
-    };
-    check_matched_dims(lhs.dims(), center.dims());
-    let radius: f32 = match rhs.get_by_index(NonZero::new(2).unwrap()) {
-        Ok(Some(s)) => s,
-        Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
-        Err(_) => unreachable!(),
-    };
-    BVecf32Cos::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
-}
-
-#[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_bvecf32_sphere_jaccard_in(
-    lhs: BVecf32Input<'_>,
-    rhs: pgrx::composite_type!("sphere_bvector"),
-) -> bool {
-    let center: BVecf32Output = match rhs.get_by_index(NonZero::new(1).unwrap()) {
+    let center: BVectorOutput = match rhs.get_by_index(NonZero::new(1).unwrap()) {
         Ok(Some(s)) => s,
         Ok(None) => pgrx::error!("Bad input: empty center at sphere"),
         Err(_) => unreachable!(),
@@ -170,5 +145,5 @@ fn _vectors_bvecf32_sphere_jaccard_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    BVecf32Jaccard::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
+    BVectorJaccard::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
 }

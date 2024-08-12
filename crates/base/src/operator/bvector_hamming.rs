@@ -4,14 +4,14 @@ use crate::scalar::*;
 use crate::vector::*;
 
 #[derive(Debug, Clone, Copy)]
-pub enum BVecf32L2 {}
+pub enum BVectorHamming {}
 
-impl Operator for BVecf32L2 {
-    type VectorOwned = BVecf32Owned;
+impl Operator for BVectorHamming {
+    type VectorOwned = BVectorOwned;
 
-    const DISTANCE_KIND: DistanceKind = DistanceKind::L2;
+    const DISTANCE_KIND: DistanceKind = DistanceKind::Hamming;
 
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> F32 {
-        bvecf32::sl2(lhs, rhs)
+        bvector::hamming(lhs, rhs)
     }
 }

@@ -1,6 +1,5 @@
 use crate::datatype::memory_svecf32::{SVecf32Input, SVecf32Output};
 use crate::error::*;
-use base::operator::*;
 use base::scalar::*;
 use base::vector::*;
 use num_traits::Zero;
@@ -77,19 +76,19 @@ fn _vectors_svecf32_operator_neq(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_operator_cosine(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> f32 {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    SVecf32Cos::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
+    SVecf32Borrowed::operator_cos(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_operator_dot(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> f32 {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    SVecf32Dot::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
+    SVecf32Borrowed::operator_dot(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_operator_l2(lhs: SVecf32Input<'_>, rhs: SVecf32Input<'_>) -> f32 {
     check_matched_dims(lhs.dims() as _, rhs.dims() as _);
-    SVecf32L2::distance(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
+    SVecf32Borrowed::operator_l2(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 fn compare(a: SVecf32Input<'_>, b: SVecf32Input<'_>) -> std::cmp::Ordering {
@@ -138,7 +137,7 @@ fn _vectors_svecf32_sphere_l2_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    SVecf32L2::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
+    SVecf32Borrowed::operator_l2(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -157,7 +156,7 @@ fn _vectors_svecf32_sphere_dot_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    SVecf32Dot::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
+    SVecf32Borrowed::operator_dot(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -176,5 +175,5 @@ fn _vectors_svecf32_sphere_cos_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    SVecf32Cos::distance(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
+    SVecf32Borrowed::operator_cos(lhs.as_borrowed(), center.as_borrowed()) < F32(radius)
 }
