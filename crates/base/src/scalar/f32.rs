@@ -782,7 +782,7 @@ impl ScalarLike for F32 {
     }
 
     #[multiversion(v4, v3, v2, neon, fallback)]
-    fn euclid_distance(lhs: &[F32], rhs: &[F32]) -> F32 {
+    fn impl_l2(lhs: &[F32], rhs: &[F32]) -> F32 {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
         let mut d2 = F32::zero();
@@ -790,6 +790,6 @@ impl ScalarLike for F32 {
             let d = lhs[i].to_f() - rhs[i].to_f();
             d2 += d * d;
         }
-        d2.sqrt()
+        d2
     }
 }

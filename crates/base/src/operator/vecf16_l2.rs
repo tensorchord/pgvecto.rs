@@ -12,6 +12,6 @@ impl Operator for Vecf16L2 {
     const DISTANCE_KIND: DistanceKind = DistanceKind::L2;
 
     fn distance(lhs: Vecf16Borrowed<'_>, rhs: Vecf16Borrowed<'_>) -> F32 {
-        vecf16::sl2(lhs.slice(), rhs.slice())
+        lhs.operator_l2(rhs)
     }
 }

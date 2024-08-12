@@ -105,8 +105,33 @@ impl<'a> VectorBorrowed for Vecf32Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn length(&self) -> F32 {
+    fn norm(&self) -> F32 {
         length(self.0)
+    }
+
+    #[inline(always)]
+    fn operator_dot(self, rhs: Self) -> F32 {
+        dot(self.slice(), rhs.slice()) * (-1.0)
+    }
+
+    #[inline(always)]
+    fn operator_l2(self, rhs: Self) -> F32 {
+        sl2(self.slice(), rhs.slice())
+    }
+
+    #[inline(always)]
+    fn operator_cos(self, rhs: Self) -> F32 {
+        F32(1.0) - dot(self.slice(), rhs.slice()) / (self.norm() * rhs.norm())
+    }
+
+    #[inline(always)]
+    fn operator_hamming(self, _: Self) -> F32 {
+        unimplemented!()
+    }
+
+    #[inline(always)]
+    fn operator_jaccard(self, _: Self) -> F32 {
+        unimplemented!()
     }
 
     #[inline(always)]
@@ -186,21 +211,6 @@ impl<'a> PartialOrd for Vecf32Borrowed<'a> {
         }
         Some(self.0.cmp(other.0))
     }
-}
-
-#[detect::multiversion(v4, v3, v2, neon, fallback)]
-pub fn cosine(lhs: &[F32], rhs: &[F32]) -> F32 {
-    assert!(lhs.len() == rhs.len());
-    let n = lhs.len();
-    let mut xy = F32::zero();
-    let mut x2 = F32::zero();
-    let mut y2 = F32::zero();
-    for i in 0..n {
-        xy += lhs[i] * rhs[i];
-        x2 += lhs[i] * lhs[i];
-        y2 += rhs[i] * rhs[i];
-    }
-    xy / (x2 * y2).sqrt()
 }
 
 #[detect::multiversion(v4, v3, v2, neon, fallback)]

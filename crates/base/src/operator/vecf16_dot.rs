@@ -12,6 +12,6 @@ impl Operator for Vecf16Dot {
     const DISTANCE_KIND: DistanceKind = DistanceKind::Dot;
 
     fn distance(lhs: Vecf16Borrowed<'_>, rhs: Vecf16Borrowed<'_>) -> F32 {
-        vecf16::dot(lhs.slice(), rhs.slice()) * (-1.0)
+        lhs.operator_dot(rhs)
     }
 }

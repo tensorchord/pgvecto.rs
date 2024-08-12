@@ -16,7 +16,7 @@ fn vec_type_from_str(s: &str) -> Result<VectorKind, ArgumentParseError> {
         "Vecf32" => Ok(VectorKind::Vecf32),
         "Vecf16" => Ok(VectorKind::Vecf16),
         "SVecf32" => Ok(VectorKind::SVecf32),
-        "BVecf32" => Ok(VectorKind::BVecf32),
+        "BVector" => Ok(VectorKind::BVector),
         _ => Err(ArgumentParseError),
     }
 }
@@ -24,9 +24,9 @@ fn vec_type_from_str(s: &str) -> Result<VectorKind, ArgumentParseError> {
 fn distance_from_str(s: &str) -> Result<DistanceKind, ArgumentParseError> {
     match s.trim() {
         "L2" => Ok(DistanceKind::L2),
-        "Cos" => Ok(DistanceKind::Cos),
         "Dot" => Ok(DistanceKind::Dot),
         "Jaccard" => Ok(DistanceKind::Jaccard),
+        "Hamming" => Ok(DistanceKind::Hamming),
         _ => Err(ArgumentParseError),
     }
 }
@@ -48,7 +48,7 @@ pub struct CreateArguments {
     #[argh(option)]
     dim: u32,
 
-    /// vector type: [`Vecf32`, `Vecf16`, `SVecf32`, `BVecf32`, `Veci8`]
+    /// vector type: [`Vecf32`, `Vecf16`, `SVecf32`, `BVector`, `Veci8`]
     #[argh(option, default = "String::from(\"Vecf32\")")]
     vim_type: String,
 

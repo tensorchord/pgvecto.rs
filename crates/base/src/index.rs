@@ -189,18 +189,14 @@ impl VectorOptions {
     pub fn validate_self(&self) -> Result<(), ValidationError> {
         match (self.v, self.d, self.dims) {
             (VectorKind::Vecf32, DistanceKind::L2, 1..65536) => Ok(()),
-            (VectorKind::Vecf32, DistanceKind::Cos, 1..65536) => Ok(()),
             (VectorKind::Vecf32, DistanceKind::Dot, 1..65536) => Ok(()),
             (VectorKind::Vecf16, DistanceKind::L2, 1..65536) => Ok(()),
-            (VectorKind::Vecf16, DistanceKind::Cos, 1..65536) => Ok(()),
             (VectorKind::Vecf16, DistanceKind::Dot, 1..65536) => Ok(()),
             (VectorKind::SVecf32, DistanceKind::L2, 1..1048576) => Ok(()),
-            (VectorKind::SVecf32, DistanceKind::Cos, 1..1048576) => Ok(()),
             (VectorKind::SVecf32, DistanceKind::Dot, 1..1048576) => Ok(()),
-            (VectorKind::BVecf32, DistanceKind::L2, 1..65536) => Ok(()),
-            (VectorKind::BVecf32, DistanceKind::Cos, 1..65536) => Ok(()),
-            (VectorKind::BVecf32, DistanceKind::Dot, 1..65536) => Ok(()),
-            (VectorKind::BVecf32, DistanceKind::Jaccard, 1..65536) => Ok(()),
+            (VectorKind::BVector, DistanceKind::Dot, 1..65536) => Ok(()),
+            (VectorKind::BVector, DistanceKind::Hamming, 1..65536) => Ok(()),
+            (VectorKind::BVector, DistanceKind::Jaccard, 1..65536) => Ok(()),
             _ => Err(ValidationError::new("not valid vector options")),
         }
     }

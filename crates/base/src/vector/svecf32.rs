@@ -181,8 +181,33 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn length(&self) -> F32 {
+    fn norm(&self) -> F32 {
         length(*self)
+    }
+
+    #[inline(always)]
+    fn operator_dot(self, rhs: Self) -> F32 {
+        dot(self, rhs) * (-1.0)
+    }
+
+    #[inline(always)]
+    fn operator_l2(self, rhs: Self) -> F32 {
+        sl2(self, rhs)
+    }
+
+    #[inline(always)]
+    fn operator_cos(self, rhs: Self) -> F32 {
+        F32(1.0) - dot(self, rhs) / (self.norm() * rhs.norm())
+    }
+
+    #[inline(always)]
+    fn operator_hamming(self, _: Self) -> F32 {
+        unimplemented!()
+    }
+
+    #[inline(always)]
+    fn operator_jaccard(self, _: Self) -> F32 {
+        unimplemented!()
     }
 
     #[inline(always)]
@@ -401,173 +426,6 @@ impl<'a> PartialOrd for SVecf32Borrowed<'a> {
             };
         }
     }
-}
-
-#[inline]
-#[cfg(target_arch = "x86_64")]
-#[detect::target_cpu(enable = "v4")]
-unsafe fn cosine_v4(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
-    use std::arch::x86_64::*;
-    use std::cmp::min;
-    assert_eq!(lhs.dims(), rhs.dims());
-    unsafe {
-        const W: usize = 16;
-        let mut lhs_pos = 0;
-        let mut rhs_pos = 0;
-        let size1 = lhs.len() as usize;
-        let size2 = rhs.len() as usize;
-        let lhs_size = size1 / W * W;
-        let rhs_size = size2 / W * W;
-        let lhs_idx = lhs.indexes().as_ptr() as *const i32;
-        let rhs_idx = rhs.indexes().as_ptr() as *const i32;
-        let lhs_val = lhs.values().as_ptr() as *const f32;
-        let rhs_val = rhs.values().as_ptr() as *const f32;
-        let mut xy = _mm512_setzero_ps();
-        while lhs_pos < lhs_size && rhs_pos < rhs_size {
-            let i_l = _mm512_loadu_epi32(lhs_idx.add(lhs_pos));
-            let i_r = _mm512_loadu_epi32(rhs_idx.add(rhs_pos));
-            let (m_l, m_r) = emulate_mm512_2intersect_epi32(i_l, i_r);
-            let v_l = _mm512_loadu_ps(lhs_val.add(lhs_pos));
-            let v_r = _mm512_loadu_ps(rhs_val.add(rhs_pos));
-            let v_l = _mm512_maskz_compress_ps(m_l, v_l);
-            let v_r = _mm512_maskz_compress_ps(m_r, v_r);
-            xy = _mm512_fmadd_ps(v_l, v_r, xy);
-            let l_max = lhs.indexes().get_unchecked(lhs_pos + W - 1);
-            let r_max = rhs.indexes().get_unchecked(rhs_pos + W - 1);
-            match l_max.cmp(r_max) {
-                std::cmp::Ordering::Less => {
-                    lhs_pos += W;
-                }
-                std::cmp::Ordering::Greater => {
-                    rhs_pos += W;
-                }
-                std::cmp::Ordering::Equal => {
-                    lhs_pos += W;
-                    rhs_pos += W;
-                }
-            }
-        }
-        while lhs_pos < size1 && rhs_pos < size2 {
-            let len_l = min(W, size1 - lhs_pos);
-            let len_r = min(W, size2 - rhs_pos);
-            let mask_l = _bzhi_u32(0xFFFF, len_l as u32) as u16;
-            let mask_r = _bzhi_u32(0xFFFF, len_r as u32) as u16;
-            let i_l = _mm512_maskz_loadu_epi32(mask_l, lhs_idx.add(lhs_pos));
-            let i_r = _mm512_maskz_loadu_epi32(mask_r, rhs_idx.add(rhs_pos));
-            let (m_l, m_r) = emulate_mm512_2intersect_epi32(i_l, i_r);
-            let v_l = _mm512_maskz_loadu_ps(mask_l, lhs_val.add(lhs_pos));
-            let v_r = _mm512_maskz_loadu_ps(mask_r, rhs_val.add(rhs_pos));
-            let v_l = _mm512_maskz_compress_ps(m_l, v_l);
-            let v_r = _mm512_maskz_compress_ps(m_r, v_r);
-            xy = _mm512_fmadd_ps(v_l, v_r, xy);
-            let l_max = lhs.indexes().get_unchecked(lhs_pos + len_l - 1);
-            let r_max = rhs.indexes().get_unchecked(rhs_pos + len_r - 1);
-            match l_max.cmp(r_max) {
-                std::cmp::Ordering::Less => {
-                    lhs_pos += W;
-                }
-                std::cmp::Ordering::Greater => {
-                    rhs_pos += W;
-                }
-                std::cmp::Ordering::Equal => {
-                    lhs_pos += W;
-                    rhs_pos += W;
-                }
-            }
-        }
-        let rxy = _mm512_reduce_add_ps(xy);
-
-        let mut xx = _mm512_setzero_ps();
-        let mut lhs_pos = 0;
-        while lhs_pos < lhs_size {
-            let v = _mm512_loadu_ps(lhs_val.add(lhs_pos));
-            xx = _mm512_fmadd_ps(v, v, xx);
-            lhs_pos += W;
-        }
-        let v = _mm512_maskz_loadu_ps(
-            _bzhi_u32(0xFFFF, (size1 - lhs_pos) as u32) as u16,
-            lhs_val.add(lhs_pos),
-        );
-        xx = _mm512_fmadd_ps(v, v, xx);
-        let rxx = _mm512_reduce_add_ps(xx);
-
-        let mut yy = _mm512_setzero_ps();
-        let mut rhs_pos = 0;
-        while rhs_pos < rhs_size {
-            let v = _mm512_loadu_ps(rhs_val.add(rhs_pos));
-            yy = _mm512_fmadd_ps(v, v, yy);
-            rhs_pos += W;
-        }
-        let v = _mm512_maskz_loadu_ps(
-            _bzhi_u32(0xFFFF, (size2 - rhs_pos) as u32) as u16,
-            rhs_val.add(rhs_pos),
-        );
-        yy = _mm512_fmadd_ps(v, v, yy);
-        let ryy = _mm512_reduce_add_ps(yy);
-
-        F32(rxy / (rxx * ryy).sqrt())
-    }
-}
-
-#[cfg(all(target_arch = "x86_64", test))]
-#[test]
-fn cosine_v4_test() {
-    const EPSILON: F32 = F32(5e-7);
-    detect::init();
-    if !detect::v4::detect() {
-        println!("test {} ... skipped (v4)", module_path!());
-        return;
-    }
-    for _ in 0..300 {
-        let lhs = random_svector(300);
-        let rhs = random_svector(350);
-        let specialized = unsafe { cosine_v4(lhs.as_borrowed(), rhs.as_borrowed()) };
-        let fallback = unsafe { cosine_fallback(lhs.as_borrowed(), rhs.as_borrowed()) };
-        assert!(
-            (specialized - fallback).abs() < EPSILON,
-            "specialized = {specialized}, fallback = {fallback}."
-        );
-    }
-}
-
-#[detect::multiversion(v4 = import, v3, v2, neon, fallback = export)]
-pub fn cosine(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
-    assert_eq!(lhs.dims(), rhs.dims());
-    let mut lhs_pos = 0;
-    let mut rhs_pos = 0;
-    let size1 = lhs.len() as usize;
-    let size2 = rhs.len() as usize;
-    let mut xy = F32::zero();
-    let mut x2 = F32::zero();
-    let mut y2 = F32::zero();
-    while lhs_pos < size1 && rhs_pos < size2 {
-        let lhs_index = lhs.indexes()[lhs_pos];
-        let rhs_index = rhs.indexes()[rhs_pos];
-        match lhs_index.cmp(&rhs_index) {
-            std::cmp::Ordering::Less => {
-                x2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
-                lhs_pos += 1;
-            }
-            std::cmp::Ordering::Greater => {
-                y2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
-                rhs_pos += 1;
-            }
-            std::cmp::Ordering::Equal => {
-                xy += lhs.values()[lhs_pos] * rhs.values()[rhs_pos];
-                x2 += lhs.values()[lhs_pos] * lhs.values()[lhs_pos];
-                y2 += rhs.values()[rhs_pos] * rhs.values()[rhs_pos];
-                lhs_pos += 1;
-                rhs_pos += 1;
-            }
-        }
-    }
-    for i in lhs_pos..size1 {
-        x2 += lhs.values()[i] * lhs.values()[i];
-    }
-    for i in rhs_pos..size2 {
-        y2 += rhs.values()[i] * rhs.values()[i];
-    }
-    xy / (x2 * y2).sqrt()
 }
 
 #[inline]

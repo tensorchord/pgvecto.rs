@@ -339,7 +339,7 @@ pub unsafe extern "C" fn amrescan(
             }
             (orderbys, spheres)
         };
-        let (vector, threshold, recheck) = am_scan::scan_build(orderbys, spheres);
+        let (vector, threshold, recheck) = am_scan::scan_build(orderbys, spheres, opfamily);
         let scanner = (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked();
         let scanner = std::mem::replace(scanner, am_scan::scan_make(vector, threshold, recheck));
         am_scan::scan_release(scanner);

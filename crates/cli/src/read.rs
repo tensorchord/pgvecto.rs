@@ -44,7 +44,6 @@ where
     match path.extension().and_then(OsStr::to_str) {
         Some("fvecs") => read_vecs::<T>(path),
         Some("ivecs") => read_vecs::<T>(path),
-        Some(_) => todo!(),
-        None => Err(std::io::ErrorKind::Unsupported.into()),
+        _ => Err(std::io::ErrorKind::Unsupported.into()),
     }
 }

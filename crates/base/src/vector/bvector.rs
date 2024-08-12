@@ -5,16 +5,16 @@ use crate::vector::{Vecf32Owned, VectorBorrowed, VectorKind, VectorOwned};
 use num_traits::Float;
 use serde::{Deserialize, Serialize};
 
-pub const BVECF32_WIDTH: u32 = u64::BITS;
+pub const BVECTOR_WIDTH: u32 = u64::BITS;
 
 // When using binary vector, please ensure that the padding bits are always zero.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BVecf32Owned {
+pub struct BVectorOwned {
     dims: u32,
     data: Vec<u64>,
 }
 
-impl BVecf32Owned {
+impl BVectorOwned {
     #[inline(always)]
     pub fn new(dims: u32, data: Vec<u64>) -> Self {
         Self::new_checked(dims, data).expect("invalid data")
@@ -25,10 +25,10 @@ impl BVecf32Owned {
         if !(1..=65535).contains(&dims) {
             return None;
         }
-        if data.len() != dims.div_ceil(BVECF32_WIDTH) as usize {
+        if data.len() != dims.div_ceil(BVECTOR_WIDTH) as usize {
             return None;
         }
-        if dims % BVECF32_WIDTH != 0 && data[data.len() - 1] >> (dims % BVECF32_WIDTH) != 0 {
+        if dims % BVECTOR_WIDTH != 0 && data[data.len() - 1] >> (dims % BVECTOR_WIDTH) != 0 {
             return None;
         }
         unsafe { Some(Self::new_unchecked(dims, data)) }
@@ -45,15 +45,15 @@ impl BVecf32Owned {
     }
 }
 
-impl VectorOwned for BVecf32Owned {
+impl VectorOwned for BVectorOwned {
     type Scalar = F32;
-    type Borrowed<'a> = BVecf32Borrowed<'a>;
+    type Borrowed<'a> = BVectorBorrowed<'a>;
 
-    const VECTOR_KIND: VectorKind = VectorKind::BVecf32;
+    const VECTOR_KIND: VectorKind = VectorKind::BVector;
 
     #[inline(always)]
-    fn as_borrowed(&self) -> BVecf32Borrowed<'_> {
-        BVecf32Borrowed {
+    fn as_borrowed(&self) -> BVectorBorrowed<'_> {
+        BVectorBorrowed {
             dims: self.dims,
             data: &self.data,
         }
@@ -61,12 +61,12 @@ impl VectorOwned for BVecf32Owned {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct BVecf32Borrowed<'a> {
+pub struct BVectorBorrowed<'a> {
     dims: u32,
     data: &'a [u64],
 }
 
-impl<'a> BVecf32Borrowed<'a> {
+impl<'a> BVectorBorrowed<'a> {
     #[inline(always)]
     pub fn new(dims: u32, data: &'a [u64]) -> Self {
         Self::new_checked(dims, data).expect("invalid data")
@@ -77,10 +77,10 @@ impl<'a> BVecf32Borrowed<'a> {
         if !(1..=65535).contains(&dims) {
             return None;
         }
-        if data.len() != dims.div_ceil(BVECF32_WIDTH) as usize {
+        if data.len() != dims.div_ceil(BVECTOR_WIDTH) as usize {
             return None;
         }
-        if dims % BVECF32_WIDTH != 0 && data[data.len() - 1] >> (dims % BVECF32_WIDTH) != 0 {
+        if dims % BVECTOR_WIDTH != 0 && data[data.len() - 1] >> (dims % BVECTOR_WIDTH) != 0 {
             return None;
         }
         unsafe { Some(Self::new_unchecked(dims, data)) }
@@ -104,7 +104,7 @@ impl<'a> BVecf32Borrowed<'a> {
     #[inline(always)]
     pub fn get(&self, index: u32) -> bool {
         assert!(index < self.dims);
-        self.data[(index / BVECF32_WIDTH) as usize] & (1 << (index % BVECF32_WIDTH)) != 0
+        self.data[(index / BVECTOR_WIDTH) as usize] & (1 << (index % BVECTOR_WIDTH)) != 0
     }
 
     #[inline(always)]
@@ -112,8 +112,8 @@ impl<'a> BVecf32Borrowed<'a> {
         let mut index = 0_u32;
         std::iter::from_fn(move || {
             if index < self.dims {
-                let result = self.data[(index / BVECF32_WIDTH) as usize]
-                    & (1 << (index % BVECF32_WIDTH))
+                let result = self.data[(index / BVECTOR_WIDTH) as usize]
+                    & (1 << (index % BVECTOR_WIDTH))
                     != 0;
                 index += 1;
                 Some(result)
@@ -124,17 +124,17 @@ impl<'a> BVecf32Borrowed<'a> {
     }
 }
 
-impl<'a> VectorBorrowed for BVecf32Borrowed<'a> {
+impl<'a> VectorBorrowed for BVectorBorrowed<'a> {
     type Scalar = F32;
-    type Owned = BVecf32Owned;
+    type Owned = BVectorOwned;
 
     #[inline(always)]
     fn dims(&self) -> u32 {
         self.dims
     }
 
-    fn own(&self) -> BVecf32Owned {
-        BVecf32Owned {
+    fn own(&self) -> BVectorOwned {
+        BVectorOwned {
             dims: self.dims,
             data: self.data.to_vec(),
         }
@@ -146,12 +146,37 @@ impl<'a> VectorBorrowed for BVecf32Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn length(&self) -> F32 {
+    fn norm(&self) -> F32 {
         length(*self)
     }
 
     #[inline(always)]
-    fn function_normalize(&self) -> BVecf32Owned {
+    fn operator_dot(self, rhs: Self) -> F32 {
+        dot(self, rhs) * (-1.0)
+    }
+
+    #[inline(always)]
+    fn operator_l2(self, _: Self) -> F32 {
+        unimplemented!()
+    }
+
+    #[inline(always)]
+    fn operator_cos(self, _: Self) -> F32 {
+        unimplemented!()
+    }
+
+    #[inline(always)]
+    fn operator_hamming(self, rhs: Self) -> F32 {
+        hamming(self, rhs)
+    }
+
+    #[inline(always)]
+    fn operator_jaccard(self, rhs: Self) -> F32 {
+        F32(1.0) - jaccard(self, rhs)
+    }
+
+    #[inline(always)]
+    fn function_normalize(&self) -> BVectorOwned {
         unimplemented!()
     }
 
@@ -174,7 +199,7 @@ impl<'a> VectorBorrowed for BVecf32Borrowed<'a> {
         for i in 0..data.len() {
             data[i] = self.data[i] & rhs.data[i];
         }
-        BVecf32Owned::new(self.dims, data)
+        BVectorOwned::new(self.dims, data)
     }
 
     fn operator_or(&self, rhs: Self) -> Self::Owned {
@@ -184,7 +209,7 @@ impl<'a> VectorBorrowed for BVecf32Borrowed<'a> {
         for i in 0..data.len() {
             data[i] = self.data[i] | rhs.data[i];
         }
-        BVecf32Owned::new(self.dims, data)
+        BVectorOwned::new(self.dims, data)
     }
 
     fn operator_xor(&self, rhs: Self) -> Self::Owned {
@@ -194,7 +219,7 @@ impl<'a> VectorBorrowed for BVecf32Borrowed<'a> {
         for i in 0..data.len() {
             data[i] = self.data[i] ^ rhs.data[i];
         }
-        BVecf32Owned::new(self.dims, data)
+        BVectorOwned::new(self.dims, data)
     }
 
     #[inline(always)]
@@ -215,13 +240,13 @@ impl<'a> VectorBorrowed for BVecf32Borrowed<'a> {
             return None;
         }
         let dims = end - start;
-        let mut data = vec![0_u64; dims.div_ceil(BVECF32_WIDTH) as _];
+        let mut data = vec![0_u64; dims.div_ceil(BVECTOR_WIDTH) as _];
         {
             let mut i = 0;
             let mut j = start;
             while j < end {
-                if self.data[(j / BVECF32_WIDTH) as usize] & (1 << (j % BVECF32_WIDTH)) != 0 {
-                    data[(i / BVECF32_WIDTH) as usize] |= 1 << (i % BVECF32_WIDTH);
+                if self.data[(j / BVECTOR_WIDTH) as usize] & (1 << (j % BVECTOR_WIDTH)) != 0 {
+                    data[(i / BVECTOR_WIDTH) as usize] |= 1 << (i % BVECTOR_WIDTH);
                 }
                 i += 1;
                 j += 1;
@@ -231,7 +256,7 @@ impl<'a> VectorBorrowed for BVecf32Borrowed<'a> {
     }
 }
 
-impl<'a> PartialEq for BVecf32Borrowed<'a> {
+impl<'a> PartialEq for BVectorBorrowed<'a> {
     fn eq(&self, other: &Self) -> bool {
         if self.dims != other.dims {
             return false;
@@ -247,7 +272,7 @@ impl<'a> PartialEq for BVecf32Borrowed<'a> {
     }
 }
 
-impl<'a> PartialOrd for BVecf32Borrowed<'a> {
+impl<'a> PartialOrd for BVectorBorrowed<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         use std::cmp::Ordering;
         if self.dims != other.dims {
@@ -268,89 +293,7 @@ impl<'a> PartialOrd for BVecf32Borrowed<'a> {
 #[inline]
 #[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-unsafe fn cosine_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
-    use std::arch::x86_64::*;
-    let lhs = lhs.data();
-    let rhs = rhs.data();
-    assert!(lhs.len() == rhs.len());
-    unsafe {
-        const WIDTH: usize = 512 / 8 / size_of::<usize>();
-        let mut xy = _mm512_setzero_si512();
-        let mut xx = _mm512_setzero_si512();
-        let mut yy = _mm512_setzero_si512();
-        let mut a = lhs.as_ptr();
-        let mut b = rhs.as_ptr();
-        let mut n = lhs.len();
-        while n >= WIDTH {
-            let x = _mm512_loadu_si512(a.cast());
-            let y = _mm512_loadu_si512(b.cast());
-            a = a.add(WIDTH);
-            b = b.add(WIDTH);
-            n -= WIDTH;
-            xy = _mm512_add_epi64(xy, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
-            xx = _mm512_add_epi64(xx, _mm512_popcnt_epi64(x));
-            yy = _mm512_add_epi64(yy, _mm512_popcnt_epi64(y));
-        }
-        if n > 0 {
-            let mask = _bzhi_u32(0xFFFF, n as u32) as u8;
-            let x = _mm512_maskz_loadu_epi64(mask, a.cast());
-            let y = _mm512_maskz_loadu_epi64(mask, b.cast());
-            xy = _mm512_add_epi64(xy, _mm512_popcnt_epi64(_mm512_and_si512(x, y)));
-            xx = _mm512_add_epi64(xx, _mm512_popcnt_epi64(x));
-            yy = _mm512_add_epi64(yy, _mm512_popcnt_epi64(y));
-        }
-        let rxy = _mm512_reduce_add_epi64(xy) as f32;
-        let rxx = _mm512_reduce_add_epi64(xx) as f32;
-        let ryy = _mm512_reduce_add_epi64(yy) as f32;
-        F32(rxy / (rxx * ryy).sqrt())
-    }
-}
-
-#[cfg(all(target_arch = "x86_64", test))]
-#[test]
-fn cosine_v4_avx512vpopcntdq_test() {
-    const EPSILON: F32 = F32(1e-5);
-    detect::init();
-    if !detect::v4_avx512vpopcntdq::detect() {
-        println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
-        return;
-    }
-    for _ in 0..300 {
-        let lhs = random_bvector();
-        let rhs = random_bvector();
-        let specialized =
-            unsafe { cosine_v4_avx512vpopcntdq(lhs.as_borrowed(), rhs.as_borrowed()) };
-        let fallback = unsafe { cosine_fallback(lhs.as_borrowed(), rhs.as_borrowed()) };
-        assert!(
-            (specialized - fallback).abs() < EPSILON,
-            "specialized = {specialized}, fallback = {fallback}."
-        );
-    }
-}
-
-#[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
-pub fn cosine(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
-    let lhs = lhs.data();
-    let rhs = rhs.data();
-    assert!(lhs.len() == rhs.len());
-    let mut xy = 0;
-    let mut xx = 0;
-    let mut yy = 0;
-    for i in 0..lhs.len() {
-        xy += (lhs[i] & rhs[i]).count_ones();
-        xx += lhs[i].count_ones();
-        yy += rhs[i].count_ones();
-    }
-    let rxy = xy as f32;
-    let rxx = xx as f32;
-    let ryy = yy as f32;
-    F32(rxy / (rxx * ryy).sqrt())
-}
-
-#[inline]
-#[cfg(target_arch = "x86_64")]
-#[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-unsafe fn dot_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
+unsafe fn dot_v4_avx512vpopcntdq(lhs: BVectorBorrowed<'_>, rhs: BVectorBorrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
     let lhs = lhs.data();
     let rhs = rhs.data();
@@ -402,7 +345,7 @@ fn dot_v4_avx512vpopcntdq_test() {
 }
 
 #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
-pub fn dot(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
+pub fn dot(lhs: BVectorBorrowed<'_>, rhs: BVectorBorrowed<'_>) -> F32 {
     let lhs = lhs.data();
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
@@ -416,7 +359,7 @@ pub fn dot(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
 #[inline]
 #[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-unsafe fn sl2_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
+unsafe fn hamming_v4_avx512vpopcntdq(lhs: BVectorBorrowed<'_>, rhs: BVectorBorrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
     let lhs = lhs.data();
     let rhs = rhs.data();
@@ -448,7 +391,7 @@ unsafe fn sl2_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<
 
 #[cfg(all(target_arch = "x86_64", test))]
 #[test]
-fn sl2_v4_avx512vpopcntdq_test() {
+fn hamming_v4_avx512vpopcntdq_test() {
     const EPSILON: F32 = F32(1e-5);
     detect::init();
     if !detect::v4_avx512vpopcntdq::detect() {
@@ -458,8 +401,9 @@ fn sl2_v4_avx512vpopcntdq_test() {
     for _ in 0..300 {
         let lhs = random_bvector();
         let rhs = random_bvector();
-        let specialized = unsafe { sl2_v4_avx512vpopcntdq(lhs.as_borrowed(), rhs.as_borrowed()) };
-        let fallback = unsafe { sl2_fallback(lhs.as_borrowed(), rhs.as_borrowed()) };
+        let specialized =
+            unsafe { hamming_v4_avx512vpopcntdq(lhs.as_borrowed(), rhs.as_borrowed()) };
+        let fallback = unsafe { hamming_fallback(lhs.as_borrowed(), rhs.as_borrowed()) };
         assert!(
             (specialized - fallback).abs() < EPSILON,
             "specialized = {specialized}, fallback = {fallback}."
@@ -468,7 +412,7 @@ fn sl2_v4_avx512vpopcntdq_test() {
 }
 
 #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
-pub fn sl2(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
+pub fn hamming(lhs: BVectorBorrowed<'_>, rhs: BVectorBorrowed<'_>) -> F32 {
     let lhs = lhs.data();
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
@@ -482,7 +426,7 @@ pub fn sl2(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
 #[inline]
 #[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-unsafe fn jaccard_v4_avx512vpopcntdq(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
+unsafe fn jaccard_v4_avx512vpopcntdq(lhs: BVectorBorrowed<'_>, rhs: BVectorBorrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
     let lhs = lhs.data();
     let rhs = rhs.data();
@@ -539,7 +483,7 @@ fn jaccard_v4_avx512vpopcntdq_test() {
 }
 
 #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
-pub fn jaccard(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
+pub fn jaccard(lhs: BVectorBorrowed<'_>, rhs: BVectorBorrowed<'_>) -> F32 {
     let lhs = lhs.data();
     let rhs = rhs.data();
     assert!(lhs.len() == rhs.len());
@@ -555,7 +499,7 @@ pub fn jaccard(lhs: BVecf32Borrowed<'_>, rhs: BVecf32Borrowed<'_>) -> F32 {
 #[inline]
 #[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-unsafe fn length_v4_avx512vpopcntdq(vector: BVecf32Borrowed<'_>) -> F32 {
+unsafe fn length_v4_avx512vpopcntdq(vector: BVectorBorrowed<'_>) -> F32 {
     use std::arch::x86_64::*;
     let lhs = vector.data();
     unsafe {
@@ -580,7 +524,7 @@ unsafe fn length_v4_avx512vpopcntdq(vector: BVecf32Borrowed<'_>) -> F32 {
 }
 
 #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
-pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
+pub fn length(vector: BVectorBorrowed<'_>) -> F32 {
     let vector = vector.data();
     let mut l = 0;
     for i in 0..vector.len() {
@@ -590,15 +534,15 @@ pub fn length(vector: BVecf32Borrowed<'_>) -> F32 {
 }
 
 #[detect::multiversion(v4, v3, v2, neon, fallback)]
-pub fn l2_normalize<'a>(vector: BVecf32Borrowed<'a>) -> Vecf32Owned {
+pub fn l2_normalize<'a>(vector: BVectorBorrowed<'a>) -> Vecf32Owned {
     let l = length(vector);
     Vecf32Owned::new(vector.iter().map(|i| F32(i as u32 as f32) / l).collect())
 }
 
 #[cfg(all(target_arch = "x86_64", test))]
-fn random_bvector() -> BVecf32Owned {
+fn random_bvector() -> BVectorOwned {
     let mut x = vec![0; 126];
     x.fill_with(rand::random);
     x[125] &= 1;
-    BVecf32Owned::new(8001, x)
+    BVectorOwned::new(8001, x)
 }

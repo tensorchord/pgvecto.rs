@@ -12,6 +12,6 @@ impl Operator for Vecf32Dot {
     const DISTANCE_KIND: DistanceKind = DistanceKind::Dot;
 
     fn distance(lhs: Vecf32Borrowed<'_>, rhs: Vecf32Borrowed<'_>) -> F32 {
-        vecf32::dot(lhs.slice(), rhs.slice()) * (-1.0)
+        lhs.operator_dot(rhs)
     }
 }

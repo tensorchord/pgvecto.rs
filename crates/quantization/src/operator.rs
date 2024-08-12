@@ -4,7 +4,7 @@ use crate::scalar::operator::OperatorScalarQuantization;
 use crate::trivial::operator::OperatorTrivialQuantization;
 use base::operator::*;
 use base::scalar::F32;
-use num_traits::{Float, Zero};
+use num_traits::Zero;
 
 pub trait OperatorQuantizationProcess: Operator {
     type QuantizationPreprocessed;
@@ -23,7 +23,7 @@ pub trait OperatorQuantizationProcess: Operator {
 }
 
 macro_rules! unimpl_operator_quantization_process {
-    ($t:ty, $l:ty) => {
+    ($t:ty) => {
         impl OperatorQuantizationProcess for $t {
             type QuantizationPreprocessed = std::convert::Infallible;
 
@@ -48,46 +48,6 @@ macro_rules! unimpl_operator_quantization_process {
             }
         }
     };
-}
-
-impl OperatorQuantizationProcess for Vecf32Cos {
-    type QuantizationPreprocessed = (Vec<F32>, F32, Vec<F32>);
-
-    fn quantization_process(
-        dims: u32,
-        ratio: u32,
-        bits: u32,
-        preprocessed: &Self::QuantizationPreprocessed,
-        rhs: impl Fn(usize) -> usize,
-    ) -> F32 {
-        let width = dims.div_ceil(ratio);
-        let xy = {
-            let mut xy = F32::zero();
-            for i in 0..width as _ {
-                xy += preprocessed.0[i * (1 << bits) + rhs(i)];
-            }
-            xy
-        };
-        let x2 = preprocessed.1;
-        let y2 = {
-            let mut y2 = F32::zero();
-            for i in 0..width as _ {
-                y2 += preprocessed.2[i * (1 << bits) + rhs(i)];
-            }
-            y2
-        };
-        F32(1.0) - xy / (x2 * y2).sqrt()
-    }
-
-    const SUPPORT_FAST_SCAN: bool = false;
-
-    fn fast_scan(_: &Self::QuantizationPreprocessed) -> Vec<F32> {
-        unimplemented!()
-    }
-
-    fn fast_scan_resolve(_: F32) -> F32 {
-        unimplemented!()
-    }
 }
 
 impl OperatorQuantizationProcess for Vecf32Dot {
@@ -148,46 +108,6 @@ impl OperatorQuantizationProcess for Vecf32L2 {
 
     fn fast_scan_resolve(x: F32) -> F32 {
         x
-    }
-}
-
-impl OperatorQuantizationProcess for Vecf16Cos {
-    type QuantizationPreprocessed = (Vec<F32>, F32, Vec<F32>);
-
-    fn quantization_process(
-        dims: u32,
-        ratio: u32,
-        bits: u32,
-        preprocessed: &Self::QuantizationPreprocessed,
-        rhs: impl Fn(usize) -> usize,
-    ) -> F32 {
-        let width = dims.div_ceil(ratio);
-        let xy = {
-            let mut xy = F32::zero();
-            for i in 0..width as usize {
-                xy += preprocessed.0[i * (1 << bits) + rhs(i)];
-            }
-            xy
-        };
-        let x2 = preprocessed.1;
-        let y2 = {
-            let mut y2 = F32::zero();
-            for i in 0..width as usize {
-                y2 += preprocessed.2[i * (1 << bits) + rhs(i)];
-            }
-            y2
-        };
-        F32(1.0) - xy / (x2 * y2).sqrt()
-    }
-
-    const SUPPORT_FAST_SCAN: bool = false;
-
-    fn fast_scan(_: &Self::QuantizationPreprocessed) -> Vec<F32> {
-        unimplemented!()
-    }
-
-    fn fast_scan_resolve(_: F32) -> F32 {
-        unimplemented!()
     }
 }
 
@@ -252,14 +172,12 @@ impl OperatorQuantizationProcess for Vecf16L2 {
     }
 }
 
-unimpl_operator_quantization_process!(BVecf32Cos, BVecf32L2);
-unimpl_operator_quantization_process!(BVecf32Dot, BVecf32L2);
-unimpl_operator_quantization_process!(BVecf32L2, BVecf32L2);
-unimpl_operator_quantization_process!(BVecf32Jaccard, BVecf32L2);
+unimpl_operator_quantization_process!(BVectorDot);
+unimpl_operator_quantization_process!(BVectorHamming);
+unimpl_operator_quantization_process!(BVectorJaccard);
 
-unimpl_operator_quantization_process!(SVecf32Cos, SVecf32L2);
-unimpl_operator_quantization_process!(SVecf32Dot, SVecf32L2);
-unimpl_operator_quantization_process!(SVecf32L2, SVecf32L2);
+unimpl_operator_quantization_process!(SVecf32Dot);
+unimpl_operator_quantization_process!(SVecf32L2);
 
 pub trait OperatorQuantization:
     OperatorQuantizationProcess
@@ -270,16 +188,12 @@ pub trait OperatorQuantization:
 {
 }
 
-impl OperatorQuantization for BVecf32Cos {}
-impl OperatorQuantization for BVecf32Dot {}
-impl OperatorQuantization for BVecf32Jaccard {}
-impl OperatorQuantization for BVecf32L2 {}
-impl OperatorQuantization for SVecf32Cos {}
+impl OperatorQuantization for BVectorDot {}
+impl OperatorQuantization for BVectorJaccard {}
+impl OperatorQuantization for BVectorHamming {}
 impl OperatorQuantization for SVecf32Dot {}
 impl OperatorQuantization for SVecf32L2 {}
-impl OperatorQuantization for Vecf16Cos {}
 impl OperatorQuantization for Vecf16Dot {}
 impl OperatorQuantization for Vecf16L2 {}
-impl OperatorQuantization for Vecf32Cos {}
 impl OperatorQuantization for Vecf32Dot {}
 impl OperatorQuantization for Vecf32L2 {}

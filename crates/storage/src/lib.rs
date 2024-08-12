@@ -16,20 +16,12 @@ pub trait OperatorStorage: Operator {
     type Storage: Storage<Self> + Send + Sync;
 }
 
-impl OperatorStorage for SVecf32Cos {
-    type Storage = svec::SVecStorage;
-}
-
 impl OperatorStorage for SVecf32Dot {
     type Storage = svec::SVecStorage;
 }
 
 impl OperatorStorage for SVecf32L2 {
     type Storage = svec::SVecStorage;
-}
-
-impl OperatorStorage for Vecf16Cos {
-    type Storage = vec::VecStorage<F16>;
 }
 
 impl OperatorStorage for Vecf16Dot {
@@ -40,10 +32,6 @@ impl OperatorStorage for Vecf16L2 {
     type Storage = vec::VecStorage<F16>;
 }
 
-impl OperatorStorage for Vecf32Cos {
-    type Storage = vec::VecStorage<F32>;
-}
-
 impl OperatorStorage for Vecf32Dot {
     type Storage = vec::VecStorage<F32>;
 }
@@ -52,18 +40,14 @@ impl OperatorStorage for Vecf32L2 {
     type Storage = vec::VecStorage<F32>;
 }
 
-impl OperatorStorage for BVecf32Cos {
+impl OperatorStorage for BVectorDot {
     type Storage = bvector::BVectorStorage;
 }
 
-impl OperatorStorage for BVecf32Dot {
+impl OperatorStorage for BVectorHamming {
     type Storage = bvector::BVectorStorage;
 }
 
-impl OperatorStorage for BVecf32L2 {
-    type Storage = bvector::BVectorStorage;
-}
-
-impl OperatorStorage for BVecf32Jaccard {
+impl OperatorStorage for BVectorJaccard {
     type Storage = bvector::BVectorStorage;
 }
