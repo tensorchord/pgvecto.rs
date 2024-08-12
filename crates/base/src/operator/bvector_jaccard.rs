@@ -12,6 +12,6 @@ impl Operator for BVectorJaccard {
     const DISTANCE_KIND: DistanceKind = DistanceKind::Jaccard;
 
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> F32 {
-        F32(1.0) - bvector::jaccard(lhs, rhs)
+        lhs.operator_jaccard(rhs)
     }
 }

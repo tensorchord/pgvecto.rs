@@ -105,7 +105,7 @@ impl<'a> VectorBorrowed for Vecf32Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn length(&self) -> F32 {
+    fn norm(&self) -> F32 {
         length(self.0)
     }
 
@@ -121,7 +121,7 @@ impl<'a> VectorBorrowed for Vecf32Borrowed<'a> {
 
     #[inline(always)]
     fn operator_cos(self, rhs: Self) -> F32 {
-        F32(1.0) - dot(self.slice(), rhs.slice()) / (self.length() * rhs.length())
+        F32(1.0) - dot(self.slice(), rhs.slice()) / (self.norm() * rhs.norm())
     }
 
     #[inline(always)]

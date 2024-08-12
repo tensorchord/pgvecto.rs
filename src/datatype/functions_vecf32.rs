@@ -9,7 +9,7 @@ fn _vectors_vecf32_dims(vector: Vecf32Input<'_>) -> i32 {
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf32_norm(vector: Vecf32Input<'_>) -> f32 {
-    vector.as_borrowed().length().to_f32()
+    vector.as_borrowed().norm().to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]

@@ -462,21 +462,21 @@ CREATE OPERATOR <#> (
 );
 
 CREATE OPERATOR <=> (
-    PROCEDURE = _vectors_vecf32_operator_cosine,
+    PROCEDURE = _vectors_vecf32_operator_cos,
     LEFTARG = vector,
     RIGHTARG = vector,
     COMMUTATOR = <=>
 );
 
 CREATE OPERATOR <=> (
-    PROCEDURE = _vectors_vecf16_operator_cosine,
+    PROCEDURE = _vectors_vecf16_operator_cos,
     LEFTARG = vecf16,
     RIGHTARG = vecf16,
     COMMUTATOR = <=>
 );
 
 CREATE OPERATOR <=> (
-    PROCEDURE = _vectors_svecf32_operator_cosine,
+    PROCEDURE = _vectors_svecf32_operator_cos,
     LEFTARG = svector,
     RIGHTARG = svector,
     COMMUTATOR = <=>

@@ -12,6 +12,6 @@ impl Operator for BVectorDot {
     const DISTANCE_KIND: DistanceKind = DistanceKind::Dot;
 
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> F32 {
-        bvector::dot(lhs, rhs) * (-1.0)
+        lhs.operator_dot(rhs)
     }
 }

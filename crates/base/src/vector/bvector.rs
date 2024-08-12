@@ -146,7 +146,7 @@ impl<'a> VectorBorrowed for BVectorBorrowed<'a> {
     }
 
     #[inline(always)]
-    fn length(&self) -> F32 {
+    fn norm(&self) -> F32 {
         length(*self)
     }
 
@@ -172,7 +172,7 @@ impl<'a> VectorBorrowed for BVectorBorrowed<'a> {
 
     #[inline(always)]
     fn operator_jaccard(self, rhs: Self) -> F32 {
-        jaccard(self, rhs)
+        F32(1.0) - jaccard(self, rhs)
     }
 
     #[inline(always)]

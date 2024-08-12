@@ -41,7 +41,7 @@ pub trait VectorBorrowed: Copy + PartialEq + PartialOrd {
 
     fn to_vec(&self) -> Vec<Self::Scalar>;
 
-    fn length(&self) -> F32;
+    fn norm(&self) -> F32;
 
     fn operator_dot(self, rhs: Self) -> F32;
 

@@ -38,7 +38,7 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
         for i in 0..c {
             let mut sum = F32::zero();
             for j in 0..n {
-                dis[j] = S::euclid_distance(&samples[(j,)], &centroids[(i,)]);
+                dis[j] = S::impl_l2(&samples[(j,)], &centroids[(i,)]).sqrt();
             }
             for j in 0..n {
                 lowerbound[(j, i)] = dis[j];
@@ -107,7 +107,7 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
         let mut sp = vec![F32::zero(); c];
         for i in 0..c {
             for j in 0..c {
-                dist0[(i, j)] = S::euclid_distance(&centroids[(i,)], &centroids[(j,)]) * 0.5;
+                dist0[(i, j)] = S::impl_l2(&centroids[(i,)], &centroids[(j,)]).sqrt() * 0.5;
             }
         }
         for i in 0..c {
@@ -126,7 +126,7 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
         let mut dis = vec![F32::zero(); n];
         for i in 0..n {
             if upperbound[i] > sp[assign[i]] {
-                dis[i] = S::euclid_distance(&samples[(i,)], &centroids[(assign[i],)]);
+                dis[i] = S::impl_l2(&samples[(i,)], &centroids[(assign[i],)]).sqrt();
             }
         }
         for i in 0..n {
@@ -149,7 +149,7 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
                     continue;
                 }
                 if minimal > lowerbound[(i, j)] || minimal > dist0[(assign[i], j)] {
-                    let dis = S::euclid_distance(&samples[(i,)], &centroids[(j,)]);
+                    let dis = S::impl_l2(&samples[(i,)], &centroids[(j,)]).sqrt();
                     lowerbound[(i, j)] = dis;
                     if dis < minimal {
                         minimal = dis;
@@ -211,7 +211,7 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
         // Step 5, 6
         let mut dist1 = vec![F32::zero(); c];
         for i in 0..c {
-            dist1[i] = S::euclid_distance(&old_centroids[(i,)], &centroids[(i,)]);
+            dist1[i] = S::impl_l2(&old_centroids[(i,)], &centroids[(i,)]).sqrt();
         }
         for i in 0..n {
             for j in 0..c {
