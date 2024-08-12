@@ -1,3 +1,4 @@
+use super::am_options::Opfamily;
 use crate::error::*;
 use crate::gucs::executing::search_options;
 use crate::gucs::planning::Mode;
@@ -10,7 +11,7 @@ use base::vector::*;
 
 pub enum Scanner {
     Initial {
-        vector: Option<OwnedVector>,
+        vector: Option<(OwnedVector, Opfamily)>,
         threshold: Option<f32>,
         recheck: bool,
     },
@@ -18,6 +19,7 @@ pub enum Scanner {
         vbase: ClientVbase,
         threshold: Option<f32>,
         recheck: bool,
+        opfamily: Opfamily,
     },
     Empty {},
 }
@@ -25,22 +27,23 @@ pub enum Scanner {
 pub fn scan_build(
     orderbys: Vec<Option<OwnedVector>>,
     spheres: Vec<(Option<OwnedVector>, Option<f32>)>,
-) -> (Option<OwnedVector>, Option<f32>, bool) {
-    let mut vector = None;
+    opfamily: Opfamily,
+) -> (Option<(OwnedVector, Opfamily)>, Option<f32>, bool) {
+    let mut pair = None;
     let mut threshold = None;
     let mut recheck = false;
     for orderby_vector in orderbys {
-        if vector.is_none() {
-            vector = orderby_vector;
-        } else if orderby_vector.is_some() && vector != orderby_vector {
+        if pair.is_none() {
+            pair = orderby_vector;
+        } else if orderby_vector.is_some() && pair != orderby_vector {
             pgrx::error!("vector search with multiple vectors is not supported");
         }
     }
     for (sphere_vector, sphere_threshold) in spheres {
-        if vector.is_none() {
-            vector = sphere_vector;
+        if pair.is_none() {
+            pair = sphere_vector;
             threshold = sphere_threshold;
-        } else if vector == sphere_vector {
+        } else if pair == sphere_vector {
             if threshold.is_none() || sphere_threshold < threshold {
                 threshold = sphere_threshold;
             }
@@ -49,10 +52,14 @@ pub fn scan_build(
             break;
         }
     }
-    (vector, threshold, recheck)
+    (pair.map(|x| (x, opfamily)), threshold, recheck)
 }
 
-pub fn scan_make(vector: Option<OwnedVector>, threshold: Option<f32>, recheck: bool) -> Scanner {
+pub fn scan_make(
+    vector: Option<(OwnedVector, Opfamily)>,
+    threshold: Option<f32>,
+    recheck: bool,
+) -> Scanner {
     Scanner::Initial {
         vector,
         threshold,
@@ -67,7 +74,7 @@ pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<(Pointer, bool
         recheck,
     } = scanner
     {
-        if let Some(vector) = vector.as_ref() {
+        if let Some((vector, opfamily)) = vector.as_ref() {
             let rpc = check_client(client());
 
             match SEARCH_MODE.get() {
@@ -83,6 +90,7 @@ pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<(Pointer, bool
                         vbase,
                         threshold: *threshold,
                         recheck: *recheck,
+                        opfamily: *opfamily,
                     };
                 }
             }
@@ -96,7 +104,11 @@ pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<(Pointer, bool
             vbase,
             threshold,
             recheck,
-        } => match (vbase.next(), threshold) {
+            opfamily,
+        } => match (
+            vbase.next().map(|(d, p)| (opfamily.process(d), p)),
+            threshold,
+        ) {
             (Some((_, ptr)), None) => Some((ptr, *recheck)),
             (Some((distance, ptr)), Some(t)) if distance < F32(*t) => Some((ptr, *recheck)),
             _ => {

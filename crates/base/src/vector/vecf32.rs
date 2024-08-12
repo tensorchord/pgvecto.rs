@@ -214,21 +214,6 @@ impl<'a> PartialOrd for Vecf32Borrowed<'a> {
 }
 
 #[detect::multiversion(v4, v3, v2, neon, fallback)]
-pub fn cosine(lhs: &[F32], rhs: &[F32]) -> F32 {
-    assert!(lhs.len() == rhs.len());
-    let n = lhs.len();
-    let mut xy = F32::zero();
-    let mut x2 = F32::zero();
-    let mut y2 = F32::zero();
-    for i in 0..n {
-        xy += lhs[i] * rhs[i];
-        x2 += lhs[i] * lhs[i];
-        y2 += rhs[i] * rhs[i];
-    }
-    xy / (x2 * y2).sqrt()
-}
-
-#[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn dot(lhs: &[F32], rhs: &[F32]) -> F32 {
     assert!(lhs.len() == rhs.len());
     let n = lhs.len();

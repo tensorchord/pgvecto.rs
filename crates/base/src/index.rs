@@ -194,8 +194,8 @@ impl VectorOptions {
             (VectorKind::Vecf16, DistanceKind::Dot, 1..65536) => Ok(()),
             (VectorKind::SVecf32, DistanceKind::L2, 1..1048576) => Ok(()),
             (VectorKind::SVecf32, DistanceKind::Dot, 1..1048576) => Ok(()),
-            (VectorKind::BVector, DistanceKind::L2, 1..65536) => Ok(()),
             (VectorKind::BVector, DistanceKind::Dot, 1..65536) => Ok(()),
+            (VectorKind::BVector, DistanceKind::Hamming, 1..65536) => Ok(()),
             (VectorKind::BVector, DistanceKind::Jaccard, 1..65536) => Ok(()),
             _ => Err(ValidationError::new("not valid vector options")),
         }
