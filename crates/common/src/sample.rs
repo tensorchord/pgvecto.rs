@@ -1,5 +1,7 @@
 use crate::vec2::Vec2;
 use base::operator::{Borrowed, Operator, Owned, Scalar};
+use base::scalar::ScalarLike;
+use base::scalar::F32;
 use base::search::Vectors;
 use base::vector::VectorBorrowed;
 use base::vector::VectorOwned;
@@ -13,6 +15,23 @@ pub fn sample<O: Operator>(vectors: &impl Vectors<O>) -> Vec2<Scalar<O>> {
     let mut samples = Vec2::zeros((m as usize, vectors.dims() as usize));
     for i in 0..m {
         let v = vectors.vector(f[i as usize] as u32).to_vec();
+        samples[(i as usize,)].copy_from_slice(&v);
+    }
+    samples
+}
+
+pub fn sample_cast<O: Operator>(vectors: &impl Vectors<O>) -> Vec2<F32> {
+    let n = vectors.len();
+    let m = std::cmp::min(SAMPLES as u32, n);
+    let f = super::rand::sample_u32(&mut rand::thread_rng(), n, m);
+    let mut samples = Vec2::zeros((m as usize, vectors.dims() as usize));
+    for i in 0..m {
+        let v = vectors
+            .vector(f[i as usize] as u32)
+            .to_vec()
+            .into_iter()
+            .map(|x| x.to_f())
+            .collect::<Vec<_>>();
         samples[(i as usize,)].copy_from_slice(&v);
     }
     samples

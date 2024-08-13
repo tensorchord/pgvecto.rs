@@ -32,14 +32,17 @@ pub trait VectorOwned: Clone + Serialize + for<'a> Deserialize<'a> + 'static {
 }
 
 pub trait VectorBorrowed: Copy + PartialEq + PartialOrd {
+    // it will be depcrated
     type Scalar: ScalarLike;
+
+    // it will be depcrated
+    fn to_vec(&self) -> Vec<Self::Scalar>;
+
     type Owned: VectorOwned<Scalar = Self::Scalar>;
 
     fn own(&self) -> Self::Owned;
 
     fn dims(&self) -> u32;
-
-    fn to_vec(&self) -> Vec<Self::Scalar>;
 
     fn norm(&self) -> F32;
 

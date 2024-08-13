@@ -118,14 +118,6 @@ impl IndexOptions {
                 }
                 Ok(())
             }
-            QuantizationOptions::RaBitQ(_) => {
-                if !matches!(self.vector.v, VectorKind::Vecf32) {
-                    return Err(ValidationError::new(
-                        "scalar quantization or product quantization is not support for `vector`",
-                    ));
-                }
-                Ok(())
-            }
         }
     }
     fn validate_self(&self) -> Result<(), ValidationError> {
@@ -153,6 +145,18 @@ impl IndexOptions {
                 if !matches!(self.vector.v, VectorKind::SVecf32) {
                     return Err(ValidationError::new(
                         "inverted_index is not support for vectors that are not sparse vectors",
+                    ));
+                }
+            }
+            IndexingOptions::Rabitq(_) => {
+                if !matches!(self.vector.d, DistanceKind::L2) {
+                    return Err(ValidationError::new(
+                        "inverted_index is not support for distance that is not l2",
+                    ));
+                }
+                if !matches!(self.vector.v, VectorKind::Vecf32) {
+                    return Err(ValidationError::new(
+                        "inverted_index is not support for vectors that are not vector",
                     ));
                 }
             }
@@ -289,6 +293,7 @@ pub enum IndexingOptions {
     Ivf(IvfIndexingOptions),
     Hnsw(HnswIndexingOptions),
     InvertedIndex(InvertedIndexingOptions),
+    Rabitq(RabitqIndexingOptions),
 }
 
 impl IndexingOptions {
@@ -310,6 +315,12 @@ impl IndexingOptions {
         };
         x
     }
+    pub fn unwrap_rabitq(self) -> RabitqIndexingOptions {
+        let IndexingOptions::Rabitq(x) = self else {
+            unreachable!()
+        };
+        x
+    }
 }
 
 impl Default for IndexingOptions {
@@ -324,7 +335,8 @@ impl Validate for IndexingOptions {
             Self::Flat(x) => x.validate(),
             Self::Ivf(x) => x.validate(),
             Self::Hnsw(x) => x.validate(),
-            Self::InvertedIndex(_) => Ok(()),
+            Self::InvertedIndex(x) => x.validate(),
+            Self::Rabitq(x) => x.validate(),
         }
     }
 }
@@ -428,6 +440,28 @@ impl Default for HnswIndexingOptions {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct RabitqIndexingOptions {
+    #[serde(default = "RabitqIndexingOptions::default_nlist")]
+    #[validate(range(min = 1, max = 1_000_000))]
+    pub nlist: u32,
+}
+
+impl RabitqIndexingOptions {
+    fn default_nlist() -> u32 {
+        1000
+    }
+}
+
+impl Default for RabitqIndexingOptions {
+    fn default() -> Self {
+        Self {
+            nlist: Self::default_nlist(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "snake_case")]
@@ -435,8 +469,6 @@ pub enum QuantizationOptions {
     Trivial(TrivialQuantizationOptions),
     Scalar(ScalarQuantizationOptions),
     Product(ProductQuantizationOptions),
-    #[serde(rename = "rabitq")]
-    RaBitQ(RaBitQuantizationOptions),
 }
 
 impl Validate for QuantizationOptions {
@@ -445,7 +477,6 @@ impl Validate for QuantizationOptions {
             Self::Trivial(x) => x.validate(),
             Self::Scalar(x) => x.validate(),
             Self::Product(x) => x.validate(),
-            Self::RaBitQ(x) => x.validate(),
         }
     }
 }
@@ -461,16 +492,6 @@ impl Default for QuantizationOptions {
 pub struct TrivialQuantizationOptions {}
 
 impl Default for TrivialQuantizationOptions {
-    fn default() -> Self {
-        Self {}
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-#[serde(deny_unknown_fields)]
-pub struct RaBitQuantizationOptions {}
-
-impl Default for RaBitQuantizationOptions {
     fn default() -> Self {
         Self {}
     }
@@ -557,6 +578,9 @@ pub struct SearchOptions {
     pub ivf_nprobe: u32,
     #[validate(range(min = 1, max = 65535))]
     pub hnsw_ef_search: u32,
+    #[validate(range(min = 1, max = 65535))]
+    pub rabitq_nprobe: u32,
+    pub rabitq_fast_scan: bool,
     #[validate(range(min = 1, max = 65535))]
     pub diskann_ef_search: u32,
 }

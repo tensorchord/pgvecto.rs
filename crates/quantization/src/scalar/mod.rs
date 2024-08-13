@@ -15,6 +15,7 @@ use num_traits::Float;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cmp::Reverse;
+use std::marker::PhantomData;
 use std::ops::Range;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,9 +23,10 @@ use std::ops::Range;
 pub struct ScalarQuantizer<O: OperatorScalarQuantization> {
     dims: u32,
     bits: u32,
-    max: Vec<Scalar<O>>,
-    min: Vec<Scalar<O>>,
-    centroids: Vec2<Scalar<O>>,
+    max: Vec<F32>,
+    min: Vec<F32>,
+    centroids: Vec2<F32>,
+    _phantom: PhantomData<fn(O) -> O>,
 }
 
 impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
@@ -36,14 +38,14 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
     ) -> Self {
         let dims = vector_options.dims;
         let bits = scalar_quantization_options.bits;
-        let mut max = vec![Scalar::<O>::neg_infinity(); dims as usize];
-        let mut min = vec![Scalar::<O>::infinity(); dims as usize];
+        let mut max = vec![F32::neg_infinity(); dims as usize];
+        let mut min = vec![F32::infinity(); dims as usize];
         let n = vectors.len();
         for i in 0..n {
             let vector = transform(vectors.vector(i)).as_borrowed().to_vec();
             for j in 0..dims as usize {
-                max[j] = std::cmp::max(max[j], vector[j]);
-                min[j] = std::cmp::min(min[j], vector[j]);
+                max[j] = std::cmp::max(max[j], vector[j].to_f());
+                min[j] = std::cmp::min(min[j], vector[j].to_f());
             }
         }
         let mut centroids = Vec2::zeros((1 << bits, dims as usize));
@@ -51,7 +53,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
             let bas = min[p as usize];
             let del = max[p as usize] - min[p as usize];
             for j in 0_usize..(1 << bits) {
-                let val = Scalar::<O>::from_f(F32(j as f32 / ((1 << bits) - 1) as f32));
+                let val = F32(j as f32 / ((1 << bits) - 1) as f32);
                 centroids[(j, p as usize)] = bas + val * del;
             }
         }
@@ -61,6 +63,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
             max,
             min,
             centroids,
+            _phantom: PhantomData,
         }
     }
 
@@ -83,8 +86,8 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
         let mut codes = Vec::with_capacity(dims as usize);
         for i in 0..dims as usize {
             let del = self.max[i] - self.min[i];
-            let w =
-                (((vector[i] - self.min[i]) / del).to_f32() * (((1 << bits) - 1) as f32)) as u32;
+            let w = (((vector[i].to_f() - self.min[i]) / del).to_f32() * (((1 << bits) - 1) as f32))
+                as u32;
             codes.push(w.clamp(0, 255) as u8);
         }
         codes
