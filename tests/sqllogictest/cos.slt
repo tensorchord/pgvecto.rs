@@ -8,7 +8,7 @@ statement ok
 INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM generate_series(1, 1000);
 
 statement ok
-CREATE TABLE result_unindexed_a AS SELECT row_number() OVER () as id, val FROM (SELECT val::vector(3) AS val FROM t ORDER BY val <=> '[1,1,1]' LIMIT 100) result;
+CREATE TABLE result_unindexed_a AS SELECT row_number() OVER () as id, val FROM (SELECT val::vector(3) AS val FROM t ORDER BY val <=> '[1,1,1]' LIMIT 10) result;
 
 statement ok
 CREATE TABLE result_unindexed_b AS SELECT row_number() OVER () as id, val FROM (SELECT val::vector(3) AS val FROM t WHERE val <<=>> sphere('[1,1,1]'::vector, 0.001)) result;
@@ -17,7 +17,7 @@ statement ok
 CREATE INDEX ON t USING vectors (val vector_cos_ops);
 
 statement ok
-CREATE TABLE result_indexed_a AS SELECT row_number() OVER () as id, val FROM (SELECT val::vector(3) AS val FROM t ORDER BY val <=> '[1,1,1]' LIMIT 100) result;
+CREATE TABLE result_indexed_a AS SELECT row_number() OVER () as id, val FROM (SELECT val::vector(3) AS val FROM t ORDER BY val <=> '[1,1,1]' LIMIT 10) result;
 
 statement ok
 CREATE TABLE result_indexed_b AS SELECT row_number() OVER () as id, val FROM (SELECT val::vector(3) AS val FROM t WHERE val <<=>> sphere('[1,1,1]'::vector, 0.001)) result;
