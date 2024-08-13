@@ -6,8 +6,8 @@ pub trait OperatorScalarQuantization: Operator + OperatorQuantizationProcess {
     fn scalar_quantization_preprocess(
         dims: u32,
         bits: u32,
-        max: &[Scalar<Self>],
-        min: &[Scalar<Self>],
+        max: &[F32],
+        min: &[F32],
         lhs: Borrowed<'_, Self>,
     ) -> Self::QuantizationPreprocessed;
 }
@@ -16,8 +16,8 @@ impl OperatorScalarQuantization for Vecf32Dot {
     fn scalar_quantization_preprocess(
         dims: u32,
         bits: u32,
-        max: &[Scalar<Self>],
-        min: &[Scalar<Self>],
+        max: &[F32],
+        min: &[F32],
         lhs: Borrowed<'_, Self>,
     ) -> Self::QuantizationPreprocessed {
         let mut xy = Vec::with_capacity(dims as _);
@@ -26,7 +26,7 @@ impl OperatorScalarQuantization for Vecf32Dot {
             let del = max[i as usize] - min[i as usize];
             xy.extend((0..1 << bits).map(|k| {
                 let x = lhs.slice()[i as usize];
-                let val = Scalar::<Self>::from_f(F32(k as f32 / ((1 << bits) - 1) as f32));
+                let val = F32(k as f32 / ((1 << bits) - 1) as f32);
                 let y = bas + val * del;
                 x * y
             }));
@@ -39,8 +39,8 @@ impl OperatorScalarQuantization for Vecf32L2 {
     fn scalar_quantization_preprocess(
         dims: u32,
         bits: u32,
-        max: &[Scalar<Self>],
-        min: &[Scalar<Self>],
+        max: &[F32],
+        min: &[F32],
         lhs: Borrowed<'_, Self>,
     ) -> Self::QuantizationPreprocessed {
         let mut d2 = Vec::with_capacity(dims as _);
@@ -49,7 +49,7 @@ impl OperatorScalarQuantization for Vecf32L2 {
             let del = max[i as usize] - min[i as usize];
             d2.extend((0..1 << bits).map(|k| {
                 let x = lhs.slice()[i as usize];
-                let val = Scalar::<Self>::from_f(F32(k as f32 / ((1 << bits) - 1) as f32));
+                let val = F32(k as f32 / ((1 << bits) - 1) as f32);
                 let y = bas + val * del;
                 let d = x - y;
                 d * d
@@ -63,8 +63,8 @@ impl OperatorScalarQuantization for Vecf16Dot {
     fn scalar_quantization_preprocess(
         dims: u32,
         bits: u32,
-        max: &[Scalar<Self>],
-        min: &[Scalar<Self>],
+        max: &[F32],
+        min: &[F32],
         lhs: Borrowed<'_, Self>,
     ) -> Self::QuantizationPreprocessed {
         let mut xy = Vec::with_capacity(dims as _);
@@ -73,8 +73,8 @@ impl OperatorScalarQuantization for Vecf16Dot {
             let del = max[i as usize] - min[i as usize];
             xy.extend((0..1 << bits).map(|k| {
                 let x = lhs.slice()[i as usize].to_f();
-                let val = Scalar::<Self>::from_f(F32(k as f32 / ((1 << bits) - 1) as f32));
-                let y = (bas + val * del).to_f32();
+                let val = F32(k as f32 / ((1 << bits) - 1) as f32);
+                let y = bas + val * del;
                 x * y
             }));
         }
@@ -86,8 +86,8 @@ impl OperatorScalarQuantization for Vecf16L2 {
     fn scalar_quantization_preprocess(
         dims: u32,
         bits: u32,
-        max: &[Scalar<Self>],
-        min: &[Scalar<Self>],
+        max: &[F32],
+        min: &[F32],
         lhs: Borrowed<'_, Self>,
     ) -> Self::QuantizationPreprocessed {
         let mut d2 = Vec::with_capacity(dims as _);
@@ -96,8 +96,8 @@ impl OperatorScalarQuantization for Vecf16L2 {
             let del = max[i as usize] - min[i as usize];
             d2.extend((0..1 << bits).map(|k| {
                 let x = lhs.slice()[i as usize].to_f();
-                let val = Scalar::<Self>::from_f(F32(k as f32 / ((1 << bits) - 1) as f32));
-                let y = (bas + val * del).to_f32();
+                let val = F32(k as f32 / ((1 << bits) - 1) as f32);
+                let y = bas + val * del;
                 let d = x - y;
                 d * d
             }));
@@ -112,8 +112,8 @@ macro_rules! unimpl_operator_scalar_quantization {
             fn scalar_quantization_preprocess(
                 _: u32,
                 _: u32,
-                _: &[Scalar<Self>],
-                _: &[Scalar<Self>],
+                _: &[F32],
+                _: &[F32],
                 _: Borrowed<'_, Self>,
             ) -> Self::QuantizationPreprocessed {
                 unimplemented!()

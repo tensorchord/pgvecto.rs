@@ -358,9 +358,12 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
         let dims = end - start;
         let s = self.indexes.partition_point(|&x| x < start);
         let e = self.indexes.partition_point(|&x| x < end);
-        let indexes = self.indexes[s..e].iter().map(|x| x - start);
-        let values = &self.values[s..e];
-        Self::Owned::new_checked(dims, indexes.collect::<Vec<_>>(), values.to_vec())
+        let indexes = self.indexes[s..e]
+            .iter()
+            .map(|x| x - start)
+            .collect::<Vec<_>>();
+        let values = self.values[s..e].to_vec();
+        Self::Owned::new_checked(dims, indexes, values)
     }
 }
 

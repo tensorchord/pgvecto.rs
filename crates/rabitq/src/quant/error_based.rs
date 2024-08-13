@@ -11,17 +11,17 @@ pub struct ErrorBasedReranker<T, R> {
     rerank: R,
     cache: BinaryHeap<(Reverse<F32>, u32, AlwaysEqual<T>)>,
     distance_threshold: F32,
-    rough_distances: Vec<(F32, u32)>,
+    heap: Vec<(Reverse<F32>, u32)>,
     ranked: bool,
 }
 
 impl<T, R> ErrorBasedReranker<T, R> {
-    pub fn new(rough_distances: Vec<(F32, u32)>, rerank: R) -> Self {
+    pub fn new(heap: Vec<(Reverse<F32>, u32)>, rerank: R) -> Self {
         Self {
             rerank,
             cache: BinaryHeap::new(),
             distance_threshold: F32::infinity(),
-            rough_distances,
+            heap,
             ranked: false,
         }
     }
@@ -36,7 +36,7 @@ where
             self.ranked = true;
             let mut recent_max_accurate = F32::neg_infinity();
             let mut count = 0;
-            for &(lowerbound, u) in self.rough_distances.iter() {
+            for &(Reverse(lowerbound), u) in self.heap.iter() {
                 if lowerbound < self.distance_threshold {
                     let (accurate, t) = (self.rerank)(u);
                     if accurate < self.distance_threshold {

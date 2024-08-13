@@ -7,15 +7,11 @@ use storage::OperatorStorage;
 pub trait OperatorIvf: OperatorQuantization + OperatorStorage {
     const RESIDUAL: bool;
     fn residual(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> Owned<Self>;
-    fn residual_dense(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> Owned<Self>;
 }
 
 impl OperatorIvf for BVectorDot {
     const RESIDUAL: bool = false;
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
-        unimplemented!()
-    }
-    fn residual_dense(_lhs: &[Scalar<Self>], _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
 }
@@ -25,9 +21,6 @@ impl OperatorIvf for BVectorJaccard {
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
-    fn residual_dense(_lhs: &[Scalar<Self>], _rhs: &[Scalar<Self>]) -> Owned<Self> {
-        unimplemented!()
-    }
 }
 
 impl OperatorIvf for BVectorHamming {
@@ -35,17 +28,11 @@ impl OperatorIvf for BVectorHamming {
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
-    fn residual_dense(_lhs: &[Scalar<Self>], _rhs: &[Scalar<Self>]) -> Owned<Self> {
-        unimplemented!()
-    }
 }
 
 impl OperatorIvf for SVecf32Dot {
     const RESIDUAL: bool = false;
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
-        unimplemented!()
-    }
-    fn residual_dense(_lhs: &[Scalar<Self>], _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
 }
@@ -76,17 +63,11 @@ impl OperatorIvf for SVecf32L2 {
         }
         SVecf32Owned::new(lhs.dims(), indexes, values)
     }
-    fn residual_dense(_lhs: &[Scalar<Self>], _rhs: &[Scalar<Self>]) -> Owned<Self> {
-        unimplemented!()
-    }
 }
 
 impl OperatorIvf for Vecf32Dot {
     const RESIDUAL: bool = false;
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
-        unimplemented!()
-    }
-    fn residual_dense(_lhs: &[Scalar<Self>], _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
 }
@@ -96,21 +77,11 @@ impl OperatorIvf for Vecf32L2 {
     fn residual(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> Owned<Self> {
         lhs.operator_minus(Vecf32Borrowed::new(rhs))
     }
-    fn residual_dense(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> Owned<Self> {
-        let mut res = vec![Scalar::<Self>::zero(); lhs.len()];
-        for i in 0..lhs.len() {
-            res[i] = lhs[i] - rhs[i];
-        }
-        Vecf32Owned::new(res)
-    }
 }
 
 impl OperatorIvf for Vecf16Dot {
     const RESIDUAL: bool = false;
     fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
-        unimplemented!()
-    }
-    fn residual_dense(_lhs: &[Scalar<Self>], _rhs: &[Scalar<Self>]) -> Owned<Self> {
         unimplemented!()
     }
 }
@@ -119,12 +90,5 @@ impl OperatorIvf for Vecf16L2 {
     const RESIDUAL: bool = true;
     fn residual(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> Owned<Self> {
         lhs.operator_minus(Vecf16Borrowed::new(rhs))
-    }
-    fn residual_dense(lhs: &[Scalar<Self>], rhs: &[Scalar<Self>]) -> Owned<Self> {
-        let mut res = vec![Scalar::<Self>::zero(); lhs.len()];
-        for i in 0..lhs.len() {
-            res[i] = lhs[i] - rhs[i];
-        }
-        Vecf16Owned::new(res)
     }
 }
