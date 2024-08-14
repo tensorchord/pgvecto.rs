@@ -29,6 +29,7 @@ use inverted::operator::OperatorInvertedIndex;
 use ivf::operator::OperatorIvf;
 use parking_lot::Mutex;
 use quantization::operator::OperatorQuantization;
+use rabitq::operator::OperatorRabitq;
 use seismic::operator::OperatorSeismic;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -49,6 +50,7 @@ pub trait Op:
     + OperatorStorage
     + OperatorIvf
     + OperatorInvertedIndex
+    + OperatorRabitq
     + OperatorSeismic
 {
 }
@@ -59,6 +61,7 @@ impl<
             + OperatorStorage
             + OperatorIvf
             + OperatorInvertedIndex
+            + OperatorRabitq
             + OperatorSeismic,
     > Op for T
 {
@@ -208,13 +211,13 @@ impl<O: Op> Index<O> {
             options: options.clone(),
             delete: delete.clone(),
             protect: Mutex::new(IndexProtect {
-                startup,
                 sealed_segments: sealed_segments.clone(),
                 read_segments: read_segments.clone(),
                 write_segment: None,
                 alterable_options: alterable_options.clone(),
-                sealed_counter: NonZeroU128::new(1).unwrap(),
-                growing_counter: NonZeroU128::new(1).unwrap(),
+                sealed_counter: startup.get().sealed_counter,
+                growing_counter: startup.get().growing_counter,
+                startup,
             }),
             view: ArcSwap::new(Arc::new(IndexView {
                 options: options.clone(),

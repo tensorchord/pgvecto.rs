@@ -12,6 +12,6 @@ impl Operator for SVecf32L2 {
     const DISTANCE_KIND: DistanceKind = DistanceKind::L2;
 
     fn distance(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
-        svecf32::sl2(lhs, rhs)
+        lhs.operator_l2(rhs)
     }
 }

@@ -4,14 +4,14 @@ use crate::scalar::*;
 use crate::vector::*;
 
 #[derive(Debug, Clone, Copy)]
-pub enum BVecf32Cos {}
+pub enum BVectorJaccard {}
 
-impl Operator for BVecf32Cos {
-    type VectorOwned = BVecf32Owned;
+impl Operator for BVectorJaccard {
+    type VectorOwned = BVectorOwned;
 
-    const DISTANCE_KIND: DistanceKind = DistanceKind::Cos;
+    const DISTANCE_KIND: DistanceKind = DistanceKind::Jaccard;
 
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> F32 {
-        F32(1.0) - bvecf32::cosine(lhs, rhs)
+        lhs.operator_jaccard(rhs)
     }
 }

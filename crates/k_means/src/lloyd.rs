@@ -33,7 +33,7 @@ impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
         for i in 0..c {
             let mut sum = F32::zero();
             for j in 0..n {
-                dis[j] = S::euclid_distance(&samples[(j,)], &centroids[i]);
+                dis[j] = S::impl_l2(&samples[(j,)], &centroids[i]);
             }
             for j in 0..n {
                 if dis[j] * dis[j] < weight[j] {
@@ -61,7 +61,7 @@ impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
             let mut minimal = F32::infinity();
             let mut target = 0;
             for i in 0..c {
-                let dis = S::euclid_distance(&samples[(j,)], &centroids[i]);
+                let dis = S::impl_l2(&samples[(j,)], &centroids[i]);
                 if dis < minimal {
                     minimal = dis;
                     target = i;
@@ -157,7 +157,7 @@ impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
             .map(|i| {
                 let mut result = (F32::infinity(), 0);
                 for j in 0..c {
-                    let dis = S::euclid_distance(&samples[(i,)], &centroids[j]);
+                    let dis = S::impl_l2(&samples[(i,)], &centroids[j]);
                     result = std::cmp::min(result, (dis, j));
                 }
                 result.1

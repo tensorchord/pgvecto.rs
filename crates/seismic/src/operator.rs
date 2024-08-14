@@ -33,15 +33,11 @@ macro_rules! unimpl_operator_seismic {
     };
 }
 
-unimpl_operator_seismic!(SVecf32Cos);
 unimpl_operator_seismic!(SVecf32L2);
-unimpl_operator_seismic!(BVecf32Cos);
-unimpl_operator_seismic!(BVecf32Dot);
-unimpl_operator_seismic!(BVecf32Jaccard);
-unimpl_operator_seismic!(BVecf32L2);
-unimpl_operator_seismic!(Vecf32Cos);
+unimpl_operator_seismic!(BVectorDot);
+unimpl_operator_seismic!(BVectorJaccard);
+unimpl_operator_seismic!(BVectorHamming);
 unimpl_operator_seismic!(Vecf32Dot);
 unimpl_operator_seismic!(Vecf32L2);
-unimpl_operator_seismic!(Vecf16Cos);
 unimpl_operator_seismic!(Vecf16Dot);
 unimpl_operator_seismic!(Vecf16L2);

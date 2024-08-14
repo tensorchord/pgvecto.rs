@@ -1,20 +1,23 @@
 [package]
-name = "hnsw"
+name = "rabitq"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
+log.workspace = true
 num-traits.workspace = true
-parking_lot.workspace = true
+rand.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 
 base = { path = "../base" }
 common = { path = "../common" }
-graph = { path = "../graph" }
-log.workspace = true
+detect = { path = "../detect" }
+k_means = { version = "0.0.0", path = "../k_means" }
+nalgebra = { version = "0.33.0", features = ["debug"] }
 quantization = { path = "../quantization" }
 stoppable_rayon = { path = "../stoppable_rayon" }
-storage = { path = "../storage" }
+storage = { version = "0.0.0", path = "../storage" }
 
 [lints]
 workspace = true

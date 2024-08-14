@@ -1,0 +1,33 @@
+statement ok
+SET search_path TO pg_temp, vectors;
+
+statement ok
+CREATE TABLE t (val vector(3));
+
+statement ok
+INSERT INTO t (val) SELECT ARRAY[random(), random(), random()]::real[] FROM generate_series(1, 1000);
+
+statement ok
+CREATE TABLE result_unindexed_a AS SELECT row_number() OVER () as id, val FROM (SELECT val::vector(3) AS val FROM t ORDER BY val <=> '[1,1,1]' LIMIT 10) result;
+
+statement ok
+CREATE TABLE result_unindexed_b AS SELECT row_number() OVER () as id, val FROM (SELECT val::vector(3) AS val FROM t WHERE val <<=>> sphere('[1,1,1]'::vector, 0.001)) result;
+
+statement ok
+CREATE INDEX ON t USING vectors (val vector_cos_ops);
+
+statement ok
+CREATE TABLE result_indexed_a AS SELECT row_number() OVER () as id, val FROM (SELECT val::vector(3) AS val FROM t ORDER BY val <=> '[1,1,1]' LIMIT 10) result;
+
+statement ok
+CREATE TABLE result_indexed_b AS SELECT row_number() OVER () as id, val FROM (SELECT val::vector(3) AS val FROM t WHERE val <<=>> sphere('[1,1,1]'::vector, 0.001)) result;
+
+query I
+SELECT sum((l.val <> r.val OR l.val IS NULL OR r.val IS NULL)::int) FROM result_unindexed_a l FULL OUTER JOIN result_indexed_a r USING (id);
+----
+0
+
+query I
+SELECT sum((l.val <> r.val OR l.val IS NULL OR r.val IS NULL)::int) FROM result_unindexed_b l FULL OUTER JOIN result_indexed_b r USING (id);
+----
+0

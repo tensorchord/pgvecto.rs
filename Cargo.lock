@@ -1050,12 +1050,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fastdivide"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59668941c55e5c186b8b58c391629af56774ec768f73c08bbcd56f09348eb00b"
-
-[[package]]
 name = "fastrand"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1333,6 +1327,7 @@ dependencies = [
  "base",
  "common",
  "graph",
+ "log",
  "num-traits",
  "parking_lot",
  "quantization",
@@ -1597,6 +1592,7 @@ dependencies = [
  "log",
  "parking_lot",
  "quantization",
+ "rabitq",
  "rand",
  "seismic",
  "serde",
@@ -2343,10 +2339,8 @@ dependencies = [
  "base",
  "common",
  "detect",
- "fastdivide",
  "k_means",
  "log",
- "nalgebra",
  "num-traits",
  "rand",
  "serde",
@@ -2425,6 +2419,25 @@ dependencies = [
  "rand",
  "serde",
  "serde-big-array",
+]
+
+[[package]]
+name = "rabitq"
+version = "0.0.0"
+dependencies = [
+ "base",
+ "common",
+ "detect",
+ "k_means",
+ "log",
+ "nalgebra",
+ "num-traits",
+ "quantization",
+ "rand",
+ "serde",
+ "serde_json",
+ "stoppable_rayon",
+ "storage",
 ]
 
 [[package]]

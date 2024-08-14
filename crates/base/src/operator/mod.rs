@@ -1,28 +1,20 @@
-mod bvecf32_cos;
-mod bvecf32_dot;
-mod bvecf32_jaccard;
-mod bvecf32_l2;
-mod svecf32_cos;
+mod bvector_dot;
+mod bvector_hamming;
+mod bvector_jaccard;
 mod svecf32_dot;
 mod svecf32_l2;
-mod vecf16_cos;
 mod vecf16_dot;
 mod vecf16_l2;
-mod vecf32_cos;
 mod vecf32_dot;
 mod vecf32_l2;
 
-pub use bvecf32_cos::BVecf32Cos;
-pub use bvecf32_dot::BVecf32Dot;
-pub use bvecf32_jaccard::BVecf32Jaccard;
-pub use bvecf32_l2::BVecf32L2;
-pub use svecf32_cos::SVecf32Cos;
+pub use bvector_dot::BVectorDot;
+pub use bvector_hamming::BVectorHamming;
+pub use bvector_jaccard::BVectorJaccard;
 pub use svecf32_dot::SVecf32Dot;
 pub use svecf32_l2::SVecf32L2;
-pub use vecf16_cos::Vecf16Cos;
 pub use vecf16_dot::Vecf16Dot;
 pub use vecf16_l2::Vecf16L2;
-pub use vecf32_cos::Vecf32Cos;
 pub use vecf32_dot::Vecf32Dot;
 pub use vecf32_l2::Vecf32L2;
 

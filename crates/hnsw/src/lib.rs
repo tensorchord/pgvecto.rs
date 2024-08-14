@@ -160,8 +160,7 @@ fn from_nothing<O: OperatorHnsw>(
     let hyper_graph_outs = MmapArray::create(
         path.as_ref().join("hyper_graph_outs"),
         g.iter_mut()
-            .flat_map(|x| x.iter_mut())
-            .skip(1)
+            .flat_map(|x| x.iter_mut().skip(1))
             .flat_map(|x| x.get_mut())
             .map(|&mut (_0, _1)| _1),
     );
@@ -169,8 +168,7 @@ fn from_nothing<O: OperatorHnsw>(
     let hyper_graph_weights = MmapArray::create(
         path.as_ref().join("hyper_graph_weights"),
         g.iter_mut()
-            .flat_map(|x| x.iter_mut())
-            .skip(1)
+            .flat_map(|x| x.iter_mut().skip(1))
             .flat_map(|x| x.get_mut())
             .map(|&mut (_0, _1)| _0),
     );
@@ -260,8 +258,7 @@ fn from_main<O: OperatorHnsw>(
     let hyper_graph_outs = MmapArray::create(
         path.as_ref().join("hyper_graph_outs"),
         g.iter_mut()
-            .flat_map(|x| x.iter_mut())
-            .skip(1)
+            .flat_map(|x| x.iter_mut().skip(1))
             .flat_map(|x| x.get_mut())
             .map(|&mut (_0, _1)| _1),
     );
@@ -269,8 +266,7 @@ fn from_main<O: OperatorHnsw>(
     let hyper_graph_weights = MmapArray::create(
         path.as_ref().join("hyper_graph_weights"),
         g.iter_mut()
-            .flat_map(|x| x.iter_mut())
-            .skip(1)
+            .flat_map(|x| x.iter_mut().skip(1))
             .flat_map(|x| x.get_mut())
             .map(|&mut (_0, _1)| _0),
     );
@@ -326,15 +322,14 @@ where
 {
     let mut u = u;
     let mut dis_u = dist(u);
-    for i in levels.rev() {
+    for level in levels.rev() {
         let mut changed = true;
         while changed {
             changed = false;
-            for v in read_outs(u, i) {
+            for v in read_outs(u, level) {
                 let dis_v = dist(v);
-                if dis_v < dis_u {
-                    u = v;
-                    dis_u = dis_v;
+                if v != u && dis_v < dis_u {
+                    (u, dis_u) = (v, dis_v);
                     changed = true;
                 }
             }
@@ -376,13 +371,8 @@ fn patch_deletions<E>(
                 .copied()
                 .filter(|&(_, v)| skip(v))
                 .collect::<Vec<_>>();
-            let d = ori
-                .iter()
-                .copied()
-                .filter(|&(_, v)| !skip(v))
-                .collect::<Vec<_>>();
             let mut add = vec![];
-            for (_, v) in d {
+            for &(_, v) in ori.iter() {
                 let v_ori = read_edges(v, level).map(|(_, w)| w);
                 add.extend(v_ori.filter(|&w| skip(w)).map(|w| (dist(u, w), w)));
             }

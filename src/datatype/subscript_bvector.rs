@@ -1,6 +1,6 @@
 use std::ops::Bound;
 
-use crate::datatype::memory_bvecf32::{BVecf32Input, BVecf32Output};
+use crate::datatype::memory_bvector::{BVectorInput, BVectorOutput};
 use base::vector::VectorBorrowed;
 use base::vector::VectorOwned;
 use pgrx::datum::FromDatum;
@@ -8,9 +8,9 @@ use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
 
 #[pgrx::pg_extern(sql = "\
-CREATE FUNCTION _vectors_bvecf32_subscript(internal) RETURNS internal
+CREATE FUNCTION _vectors_bvector_subscript(internal) RETURNS internal
 IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '@FUNCTION_NAME@';")]
-fn _vectors_bvecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Internal {
+fn _vectors_bvector_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Internal {
     #[pgrx::pg_guard]
     unsafe extern "C" fn transform(
         subscript: *mut pgrx::pg_sys::SubscriptingRef,
@@ -144,12 +144,12 @@ fn _vectors_bvecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Intern
                 let state = &mut *(*op).d.sbsref.state;
                 let workspace = &mut *(state.workspace as *mut Workspace);
                 let input =
-                    BVecf32Input::from_datum((*op).resvalue.read(), (*op).resnull.read()).unwrap();
+                    BVectorInput::from_datum((*op).resvalue.read(), (*op).resnull.read()).unwrap();
                 let v = workspace
                     .range
                     .and_then(|i| input.as_borrowed().subvector(i));
                 if let Some(v) = v {
-                    let output = BVecf32Output::new(v.as_borrowed());
+                    let output = BVectorOutput::new(v.as_borrowed());
                     (*op).resnull.write(false);
                     (*op).resvalue.write(Datum::from(output.into_raw()));
                 } else {
