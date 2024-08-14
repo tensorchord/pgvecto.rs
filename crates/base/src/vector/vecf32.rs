@@ -105,6 +105,14 @@ impl<'a> VectorBorrowed for Vecf32Borrowed<'a> {
     }
 
     #[inline(always)]
+    fn prefetch(&self) {
+        unsafe {
+            std::intrinsics::prefetch_read_data(self.0.as_ptr(), 3);
+            std::intrinsics::prefetch_read_data(self.0.as_ptr().add(16), 3);
+        }
+    }
+
+    #[inline(always)]
     fn norm(&self) -> F32 {
         length(self.0)
     }

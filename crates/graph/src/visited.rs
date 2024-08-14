@@ -76,6 +76,9 @@ impl<'a> VisitedChecker<'a> {
     pub fn mark(&mut self, i: u32) {
         self.buffer.data[i as usize] = self.buffer.version;
     }
+    pub fn as_slice(&self) -> &[u8] {
+        &self.buffer.data
+    }
 }
 
 pub struct VisitedGuardChecker<'a> {
@@ -89,6 +92,9 @@ impl<'a> VisitedGuardChecker<'a> {
     }
     pub fn mark(&mut self, i: u32) {
         self.buffer.data[i as usize] = self.buffer.version;
+    }
+    pub fn as_slice(&self) -> &[u8] {
+        &self.buffer.data
     }
 }
 

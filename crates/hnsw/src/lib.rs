@@ -88,12 +88,13 @@ impl<O: OperatorHnsw> Hnsw<O> {
             )
         });
         Box::new(
-            graph::search::vbase_generic(&self.visited, s, reranker, opts.hnsw_ef_search).map(
-                |(dis_u, u, ())| Element {
-                    distance: dis_u,
-                    payload: AlwaysEqual(self.payload(u)),
-                },
-            ),
+            graph::search::vbase_generic(&self.visited, s, reranker, opts.hnsw_ef_search, |u| {
+                self.storage.vector(u).prefetch()
+            })
+            .map(|(dis_u, u, ())| Element {
+                distance: dis_u,
+                payload: AlwaysEqual(self.payload(u)),
+            }),
         )
     }
 
@@ -587,7 +588,10 @@ fn capacity_for_a_hierarchy(m: u32, level: u8) -> u32 {
     }
 }
 
-fn base_edges<O: OperatorHnsw>(hnsw: &Hnsw<O>, u: u32) -> impl Iterator<Item = (F32, u32)> + '_ {
+fn base_edges<O: OperatorHnsw>(
+    hnsw: &Hnsw<O>,
+    u: u32,
+) -> impl Iterator<Item = (F32, u32)> + Clone + '_ {
     let m = *hnsw.m;
     let offset = 2 * m as usize * u as usize;
     let edges_outs = hnsw.base_graph_outs[offset..offset + 2 * m as usize]
@@ -600,7 +604,7 @@ fn base_edges<O: OperatorHnsw>(hnsw: &Hnsw<O>, u: u32) -> impl Iterator<Item = (
     edges_weights.zip(edges_outs)
 }
 
-fn base_outs<O: OperatorHnsw>(hnsw: &Hnsw<O>, u: u32) -> impl Iterator<Item = u32> + '_ {
+fn base_outs<O: OperatorHnsw>(hnsw: &Hnsw<O>, u: u32) -> impl Iterator<Item = u32> + Clone + '_ {
     let m = *hnsw.m;
     let offset = 2 * m as usize * u as usize;
     hnsw.base_graph_outs[offset..offset + 2 * m as usize]
@@ -613,7 +617,7 @@ fn hyper_edges<O: OperatorHnsw>(
     hnsw: &Hnsw<O>,
     u: u32,
     level: u8,
-) -> impl Iterator<Item = (F32, u32)> + '_ {
+) -> impl Iterator<Item = (F32, u32)> + Clone + '_ {
     let m = *hnsw.m;
     let offset = {
         let mut offset = 0;
@@ -641,7 +645,7 @@ fn hyper_outs<O: OperatorHnsw>(
     hnsw: &Hnsw<O>,
     u: u32,
     level: u8,
-) -> impl Iterator<Item = u32> + '_ {
+) -> impl Iterator<Item = u32> + Clone + '_ {
     let m = *hnsw.m;
     let offset = {
         let mut offset = 0;

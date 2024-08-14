@@ -131,10 +131,11 @@ pub fn vbase_internal<'a, G, E, T>(
     visited: &'a VisitedPool,
     s: u32,
     mut reranker: G,
+    prefetch: impl Fn(u32) + 'a,
 ) -> impl Iterator<Item = (F32, u32, T)> + 'a
 where
     G: RerankerPush + RerankerPop<(E, T)> + 'a,
-    E: Iterator<Item = u32>,
+    E: Iterator<Item = u32> + Clone,
     T: 'a,
 {
     let mut visited = visited.fetch_guard_checker();
@@ -144,7 +145,24 @@ where
     }
     std::iter::from_fn(move || {
         let (dis_u, u, (outs_u, pay_u)) = reranker.pop()?;
+        let mut prefetchs = outs_u.clone();
+        if let Some(v) = prefetchs.next() {
+            common::prefetch::prefetch(unsafe { visited.as_slice().as_ptr().add(v as _) });
+            prefetch(v);
+        }
+        if let Some(v) = prefetchs.next() {
+            common::prefetch::prefetch(unsafe { visited.as_slice().as_ptr().add(v as _) });
+            prefetch(v);
+        }
+        if let Some(v) = prefetchs.next() {
+            common::prefetch::prefetch(unsafe { visited.as_slice().as_ptr().add(v as _) });
+            prefetch(v);
+        }
         for v in outs_u {
+            if let Some(v) = prefetchs.next() {
+                common::prefetch::prefetch(unsafe { visited.as_slice().as_ptr().add(v as _) });
+                prefetch(v);
+            }
             if !visited.check(v) {
                 continue;
             }
@@ -160,13 +178,14 @@ pub fn vbase_generic<'a, G, E, T>(
     s: u32,
     reranker: G,
     ef_search: u32,
+    prefetch: impl Fn(u32) + 'a,
 ) -> impl Iterator<Item = (F32, u32, T)> + 'a
 where
     G: RerankerPush + RerankerPop<(E, T)> + 'a,
-    E: Iterator<Item = u32>,
+    E: Iterator<Item = u32> + Clone,
     T: 'a,
 {
-    let mut iter = vbase_internal(visited, s, reranker);
+    let mut iter = vbase_internal(visited, s, reranker, prefetch);
     let mut results = Results::new(ef_search as _);
     let mut stage1 = Vec::new();
     for (dis_u, u, pay_u) in &mut iter {

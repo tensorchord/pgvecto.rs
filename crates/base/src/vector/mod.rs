@@ -38,6 +38,8 @@ pub trait VectorBorrowed: Copy + PartialEq + PartialOrd {
     // it will be depcrated
     fn to_vec(&self) -> Vec<Self::Scalar>;
 
+    fn prefetch(&self) {}
+
     type Owned: VectorOwned<Scalar = Self::Scalar>;
 
     fn own(&self) -> Self::Owned;

@@ -3,6 +3,7 @@ pub mod dir_ops;
 pub mod file_atomic;
 pub mod json;
 pub mod mmap_array;
+pub mod prefetch;
 pub mod rand;
 pub mod remap;
 pub mod sample;
