@@ -31,6 +31,7 @@ hnsw = { path = "../hnsw" }
 inverted = { path = "../inverted" }
 ivf = { path = "../ivf" }
 rabitq = { path = "../rabitq" }
+seismic = { path = "../seismic" }
 
 [lints]
 workspace = true

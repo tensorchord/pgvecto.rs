@@ -123,6 +123,7 @@ impl<O: Op> SealedSegment<O> {
             SealedIndexing::Hnsw(x) => x,
             SealedIndexing::InvertedIndex(x) => x,
             SealedIndexing::Rabitq(x) => x,
+            SealedIndexing::Seismic(x) => x,
         }
     }
 }

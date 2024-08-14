@@ -7,6 +7,7 @@ use hnsw::Hnsw;
 use inverted::InvertedIndex;
 use ivf::Ivf;
 use rabitq::Rabitq;
+use seismic::Seismic;
 use std::path::Path;
 
 pub enum SealedIndexing<O: Op> {
@@ -15,6 +16,7 @@ pub enum SealedIndexing<O: Op> {
     Hnsw(Hnsw<O>),
     InvertedIndex(InvertedIndex<O>),
     Rabitq(Rabitq<O>),
+    Seismic(Seismic<O>),
 }
 
 impl<O: Op> SealedIndexing<O> {
@@ -31,6 +33,7 @@ impl<O: Op> SealedIndexing<O> {
                 Self::InvertedIndex(InvertedIndex::create(path, options, source))
             }
             IndexingOptions::Rabitq(_) => Self::Rabitq(Rabitq::create(path, options, source)),
+            IndexingOptions::Seismic(_) => Self::Seismic(Seismic::create(path, options, source)),
         }
     }
 
@@ -41,6 +44,7 @@ impl<O: Op> SealedIndexing<O> {
             IndexingOptions::Hnsw(_) => Self::Hnsw(Hnsw::open(path)),
             IndexingOptions::InvertedIndex(_) => Self::InvertedIndex(InvertedIndex::open(path)),
             IndexingOptions::Rabitq(_) => Self::Rabitq(Rabitq::open(path)),
+            IndexingOptions::Seismic(_) => Self::Seismic(Seismic::open(path)),
         }
     }
 
@@ -55,6 +59,7 @@ impl<O: Op> SealedIndexing<O> {
             SealedIndexing::Hnsw(x) => x.vbase(vector, opts),
             SealedIndexing::InvertedIndex(x) => x.vbase(vector, opts),
             SealedIndexing::Rabitq(x) => x.vbase(vector, opts),
+            SealedIndexing::Seismic(x) => x.vbase(vector, opts),
         }
     }
 
@@ -65,6 +70,7 @@ impl<O: Op> SealedIndexing<O> {
             SealedIndexing::Hnsw(x) => x.len(),
             SealedIndexing::InvertedIndex(x) => x.len(),
             SealedIndexing::Rabitq(x) => x.len(),
+            SealedIndexing::Seismic(x) => x.len(),
         }
     }
 
@@ -75,6 +81,7 @@ impl<O: Op> SealedIndexing<O> {
             SealedIndexing::Hnsw(x) => x.vector(i),
             SealedIndexing::InvertedIndex(x) => x.vector(i),
             SealedIndexing::Rabitq(x) => x.vector(i),
+            SealedIndexing::Seismic(x) => x.vector(i),
         }
     }
 
@@ -85,6 +92,7 @@ impl<O: Op> SealedIndexing<O> {
             SealedIndexing::Hnsw(x) => x.payload(i),
             SealedIndexing::InvertedIndex(x) => x.payload(i),
             SealedIndexing::Rabitq(x) => x.payload(i),
+            SealedIndexing::Seismic(x) => x.payload(i),
         }
     }
 }

@@ -30,6 +30,7 @@ use ivf::operator::OperatorIvf;
 use parking_lot::Mutex;
 use quantization::operator::OperatorQuantization;
 use rabitq::operator::OperatorRabitq;
+use seismic::operator::OperatorSeismic;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -50,6 +51,7 @@ pub trait Op:
     + OperatorIvf
     + OperatorInvertedIndex
     + OperatorRabitq
+    + OperatorSeismic
 {
 }
 
@@ -59,7 +61,8 @@ impl<
             + OperatorStorage
             + OperatorIvf
             + OperatorInvertedIndex
-            + OperatorRabitq,
+            + OperatorRabitq
+            + OperatorSeismic,
     > Op for T
 {
 }

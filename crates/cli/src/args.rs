@@ -144,6 +144,9 @@ impl QueryArguments {
             ivf_pq_fast_scan: false,
             rabitq_fast_scan: true,
             rabitq_nprobe: self.probe,
+            seismic_heap_size: 100,
+            seismic_q_cut: 3,
+            seismic_heap_factor: 1.0,
         }
     }
 }

@@ -9,7 +9,7 @@ use base::vector::VectorBorrowed;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
-use graph::visited::VisitedPool;
+use common::visited::VisitedPool;
 use num_traits::Float;
 use parking_lot::RwLock;
 use quantization::operator::OperatorQuantization;

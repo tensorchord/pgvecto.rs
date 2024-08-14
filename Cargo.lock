@@ -656,6 +656,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap"
+version = "4.5.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c937d4061031a6d0c8da4b9a4f98a172fc2976dfb1c19213a9cf7d0d3c837e36"
+dependencies = [
+ "clap_builder",
+ "clap_derive",
+]
+
+[[package]]
+name = "clap_builder"
+version = "4.5.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85379ba512b21a328adf887e85f7742d12e96eb31f3ef077df4ffc26b506ffed"
+dependencies = [
+ "anstream",
+ "anstyle",
+ "clap_lex",
+ "strsim",
+]
+
+[[package]]
+name = "clap_derive"
+version = "4.5.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "501d359d5f3dcaf6ecdeee48833ae73ec6e42723a1e52419c79abf9507eec0a0"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.72",
+]
+
+[[package]]
+name = "clap_lex"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1462739cb27611015575c0c11df5df7601141071f07518d56fcc1be504cbec97"
+
+[[package]]
 name = "cli"
 version = "0.0.0"
 dependencies = [
@@ -683,6 +723,7 @@ dependencies = [
  "base",
  "log",
  "memmap2",
+ "parking_lot",
  "rand",
  "rustix 0.38.34",
  "serde",
@@ -1152,6 +1193,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "generic-tests"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eeb39ec0dacc89541b6eced815ab9e97f6b7d44078628abb090c6437763fd050"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1192,7 +1244,6 @@ version = "0.0.0"
 dependencies = [
  "base",
  "common",
- "parking_lot",
  "rand",
  "stoppable_rayon",
 ]
@@ -1241,6 +1292,12 @@ dependencies = [
  "hash32",
  "stable_deref_trait",
 ]
+
+[[package]]
+name = "heck"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "hermit-abi"
@@ -1537,6 +1594,7 @@ dependencies = [
  "quantization",
  "rabitq",
  "rand",
+ "seismic",
  "serde",
  "serde_json",
  "stoppable_rayon",
@@ -2348,6 +2406,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "qwt"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7038d350ddeead336e47f04e5149329ce6b7af1d1b5e7ad0fddc3dcd1bed64fe"
+dependencies = [
+ "bincode",
+ "clap",
+ "generic-tests",
+ "num-traits",
+ "paste",
+ "rand",
+ "serde",
+ "serde-big-array",
+]
+
+[[package]]
 name = "rabitq"
 version = "0.0.0"
 dependencies = [
@@ -2683,6 +2757,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
 
 [[package]]
+name = "seismic"
+version = "0.0.0"
+dependencies = [
+ "base",
+ "bincode",
+ "common",
+ "log",
+ "quantization",
+ "qwt",
+ "rand",
+ "serde",
+ "stoppable_rayon",
+ "storage",
+]
+
+[[package]]
 name = "semver"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2716,6 +2806,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e33aedb1a7135da52b7c21791455563facbbcc43d0f0f66165b42c21b3dfb150"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-big-array"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11fc7cc2c76d73e0f27ee52abbd64eec84d46f370c88371120433196934e4b7f"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
