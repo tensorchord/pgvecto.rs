@@ -1270,6 +1270,7 @@ dependencies = [
  "base",
  "common",
  "graph",
+ "log",
  "num-traits",
  "parking_lot",
  "quantization",
