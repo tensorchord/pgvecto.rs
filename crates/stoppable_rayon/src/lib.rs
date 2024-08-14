@@ -41,12 +41,12 @@ impl ThreadPoolBuilder {
             builder: self.builder.num_threads(num_threads),
         }
     }
-    pub fn build_scoped(
+    pub fn build_scoped<R>(
         self,
-        f: impl FnOnce(&ThreadPool),
-    ) -> Result<(), rayon::ThreadPoolBuildError> {
+        f: impl FnOnce(&ThreadPool) -> R,
+    ) -> Result<Option<R>, rayon::ThreadPoolBuildError> {
         let stop = Arc::new(AtomicBool::new(false));
-        match std::panic::catch_unwind(AssertUnwindSafe(|| {
+        let x = match std::panic::catch_unwind(AssertUnwindSafe(|| {
             self.builder
                 .start_handler({
                     let stop = stop.clone();
@@ -71,15 +71,15 @@ impl ThreadPoolBuilder {
                     },
                 )
         })) {
-            Ok(Ok(())) => (),
+            Ok(Ok(r)) => Some(r),
             Ok(Err(e)) => return Err(e),
-            Err(e) if e.downcast_ref::<CheckPanic>().is_some() => (),
+            Err(e) if e.downcast_ref::<CheckPanic>().is_some() => None,
             Err(e) => std::panic::resume_unwind(e),
-        }
+        };
         if Arc::strong_count(&stop) > 1 {
             panic!("Thread leak detected.");
         }
-        Ok(())
+        Ok(x)
     }
 }
 
