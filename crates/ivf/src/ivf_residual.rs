@@ -1,4 +1,5 @@
 use super::OperatorIvf as Op;
+use base::always_equal::AlwaysEqual;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
@@ -50,7 +51,7 @@ impl<O: Op> IvfResidual<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
+    ) -> Box<dyn Iterator<Item = Element> + 'a> {
         let lists = select(
             k_means_lookup_many(&vector.to_vec(), &self.centroids),
             opts.ivf_nprobe as usize,
@@ -72,24 +73,16 @@ impl<O: Op> IvfResidual<O> {
         }
         let mut reranker = self.quantization.flat_rerank(
             heap,
-            move |u| {
-                (
-                    O::distance(vector, self.storage.vector(u)),
-                    self.payloads[u as usize],
-                )
-            },
+            move |u| (O::distance(vector, self.storage.vector(u)), ()),
             opts.ivf_sq_rerank_size,
             opts.ivf_pq_rerank_size,
         );
-        (
-            Vec::new(),
-            Box::new(std::iter::from_fn(move || {
-                reranker.pop().map(|(dis_u, _, payload_u)| Element {
-                    distance: dis_u,
-                    payload: payload_u,
-                })
-            })),
-        )
+        Box::new(std::iter::from_fn(move || {
+            reranker.pop().map(|(dis_u, u, ())| Element {
+                distance: dis_u,
+                payload: AlwaysEqual(self.payload(u)),
+            })
+        }))
     }
 }
 

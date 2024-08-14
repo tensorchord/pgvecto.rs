@@ -1,3 +1,4 @@
+use crate::always_equal::AlwaysEqual;
 use crate::operator::{Borrowed, Operator};
 use crate::scalar::F32;
 use serde::{Deserialize, Serialize};
@@ -47,7 +48,7 @@ impl Pointer {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(C)]
 pub struct Payload {
     pointer: Pointer,
@@ -69,7 +70,7 @@ impl Payload {
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Element {
     pub distance: F32,
-    pub payload: Payload,
+    pub payload: AlwaysEqual<Payload>,
 }
 
 pub trait Vectors<O: Operator>: Send + Sync {

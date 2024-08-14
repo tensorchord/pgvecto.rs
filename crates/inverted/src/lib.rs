@@ -3,6 +3,7 @@
 pub mod operator;
 
 use self::operator::OperatorInvertedIndex;
+use base::always_equal::AlwaysEqual;
 use base::index::{IndexOptions, SearchOptions};
 use base::operator::Borrowed;
 use base::scalar::{ScalarLike, F32};
@@ -41,7 +42,7 @@ impl<O: OperatorInvertedIndex> InvertedIndex<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         _: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<(dyn Iterator<Item = Element> + 'a)>) {
+    ) -> Box<dyn Iterator<Item = Element> + 'a> {
         let mut doc_score = vec![ZERO; self.payloads.len()];
         for (token, val) in O::to_index_vec(vector) {
             let start = self.offsets[token as usize];
@@ -50,22 +51,18 @@ impl<O: OperatorInvertedIndex> InvertedIndex<O> {
                 doc_score[self.indexes[i] as usize] += self.scores[i] * val;
             }
         }
-        let mut candidates: BinaryHeap<(F32, Payload)> = doc_score
+        let mut candidates: BinaryHeap<(F32, AlwaysEqual<u32>)> = doc_score
             .iter()
             .enumerate()
-            .map(|(i, score)| (*score, self.payload(i as u32)))
+            .map(|(i, score)| (*score, AlwaysEqual(i as u32)))
             .collect::<Vec<_>>()
             .into();
-
-        (
-            Vec::new(),
-            Box::new(std::iter::from_fn(move || {
-                candidates.pop().map(|(score, payload)| Element {
-                    distance: -score,
-                    payload,
-                })
-            })),
-        )
+        Box::new(std::iter::from_fn(move || {
+            candidates.pop().map(|(score, AlwaysEqual(u))| Element {
+                distance: -score,
+                payload: AlwaysEqual(self.payload(u)),
+            })
+        }))
     }
 
     pub fn len(&self) -> u32 {

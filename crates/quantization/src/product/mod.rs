@@ -3,6 +3,7 @@ pub mod operator;
 use self::operator::OperatorProductQuantization;
 use crate::reranker::window::WindowFlatReranker;
 use crate::reranker::window_0::Window0GraphReranker;
+use base::always_equal::AlwaysEqual;
 use base::index::*;
 use base::operator::*;
 use base::scalar::*;
@@ -125,7 +126,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
         &self,
         preprocessed: &O::QuantizationPreprocessed,
         rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, u32)>,
+        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         codes: &[u8],
         packed_codes: &[u8],
         fast_scan: bool,
@@ -150,7 +151,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                         let end = start + bytes;
                         &codes[start..end]
                     })),
-                    u,
+                    AlwaysEqual(u),
                 )
             }));
             let (k, b, lut) = quantize_255(&O::fast_scan(preprocessed));
@@ -162,7 +163,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                     let res = fast_scan(width, &packed_codes[start..end], &lut);
                     let r = res.map(|x| O::fast_scan_resolve(dequantize(width, k, b, x)));
                     (i..i + BLOCK_SIZE)
-                        .map(|u| (Reverse(r[(u - i) as usize]), u))
+                        .map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
                         .collect::<Vec<_>>()
                 });
             }
@@ -174,7 +175,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                         let end = start + bytes;
                         &codes[start..end]
                     })),
-                    u,
+                    AlwaysEqual(u),
                 )
             }));
             return;
@@ -187,14 +188,14 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                     let end = start + bytes;
                     &codes[start..end]
                 })),
-                u,
+                AlwaysEqual(u),
             )
         }));
     }
 
     pub fn flat_rerank<'a, T: 'a, R: Fn(u32) -> (F32, T) + 'a>(
         &'a self,
-        heap: Vec<(Reverse<F32>, u32)>,
+        heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         r: R,
         rerank_size: u32,
     ) -> impl RerankerPop<T> + 'a {

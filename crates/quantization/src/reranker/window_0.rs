@@ -1,3 +1,4 @@
+use base::always_equal::AlwaysEqual;
 use base::scalar::F32;
 use base::search::{RerankerPop, RerankerPush};
 use std::cmp::Reverse;
@@ -6,7 +7,7 @@ use std::collections::BinaryHeap;
 pub struct Window0GraphReranker<C, R> {
     compute: C,
     rerank: R,
-    heap: BinaryHeap<(Reverse<F32>, u32)>,
+    heap: BinaryHeap<(Reverse<F32>, AlwaysEqual<u32>)>,
 }
 
 impl<C, R> Window0GraphReranker<C, R> {
@@ -24,7 +25,7 @@ where
     R: Fn(u32) -> (F32, T),
 {
     fn pop(&mut self) -> Option<(F32, u32, T)> {
-        let (_, u) = self.heap.pop()?;
+        let (_, AlwaysEqual(u)) = self.heap.pop()?;
         let (accu_u, t) = (self.rerank)(u);
         Some((accu_u, u, t))
     }
@@ -37,6 +38,6 @@ where
 {
     fn push(&mut self, u: u32) {
         let rough_u = (self.compute)(u);
-        self.heap.push((Reverse(rough_u), u));
+        self.heap.push((Reverse(rough_u), AlwaysEqual(u)));
     }
 }

@@ -1,6 +1,7 @@
 #![allow(clippy::len_without_is_empty)]
 #![allow(clippy::type_complexity)]
 
+use base::always_equal::AlwaysEqual;
 use base::index::*;
 use base::operator::*;
 use base::scalar::F32;
@@ -67,29 +68,32 @@ impl<O: OperatorHnsw> Hnsw<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
+    ) -> Box<dyn Iterator<Item = Element> + 'a> {
         let Some(s) = self.s else {
-            return (Vec::new(), Box::new(std::iter::empty()));
+            return Box::new(std::iter::empty());
         };
         let s = {
             let processed = self.quantization.preprocess(vector);
             fast_search(
-                |x| self.quantization.process(&self.storage, &processed, x),
+                |u| self.quantization.process(&self.storage, &processed, u),
                 |x, i| hyper_outs(self, x, i),
                 1..=hierarchy_for_a_vertex(*self.m, s) - 1,
                 s,
             )
         };
-        graph::search::vbase_generic(
-            &self.visited,
-            s,
-            opts.hnsw_ef_search,
-            self.quantization.graph_rerank(vector, move |u| {
-                (
-                    O::distance(self.storage.vector(u), vector),
-                    (self.payloads[u as usize], base_outs(self, u)),
-                )
-            }),
+        let reranker = self.quantization.graph_rerank(vector, move |u| {
+            (
+                O::distance(self.storage.vector(u), vector),
+                (base_outs(self, u), ()),
+            )
+        });
+        Box::new(
+            graph::search::vbase_generic(&self.visited, s, reranker, opts.hnsw_ef_search).map(
+                |(dis_u, u, ())| Element {
+                    distance: dis_u,
+                    payload: AlwaysEqual(self.payload(u)),
+                },
+            ),
         )
     }
 
@@ -146,30 +150,30 @@ fn from_nothing<O: OperatorHnsw>(
     let base_graph_outs = MmapArray::create(
         path.as_ref().join("base_graph_outs"),
         g.iter_mut()
-            .flat_map(|x| x[0].get_mut())
+            .flat_map(|u| u[0].get_mut())
             .map(|&mut (_0, _1)| _1),
     );
     rayon::check();
     let base_graph_weights = MmapArray::create(
         path.as_ref().join("base_graph_weights"),
         g.iter_mut()
-            .flat_map(|x| x[0].get_mut())
+            .flat_map(|u| u[0].get_mut())
             .map(|&mut (_0, _1)| _0),
     );
     rayon::check();
     let hyper_graph_outs = MmapArray::create(
         path.as_ref().join("hyper_graph_outs"),
         g.iter_mut()
-            .flat_map(|x| x.iter_mut().skip(1))
-            .flat_map(|x| x.get_mut())
+            .flat_map(|u| u.iter_mut().skip(1))
+            .flat_map(|l| l.get_mut())
             .map(|&mut (_0, _1)| _1),
     );
     rayon::check();
     let hyper_graph_weights = MmapArray::create(
         path.as_ref().join("hyper_graph_weights"),
         g.iter_mut()
-            .flat_map(|x| x.iter_mut().skip(1))
-            .flat_map(|x| x.get_mut())
+            .flat_map(|u| u.iter_mut().skip(1))
+            .flat_map(|l| l.get_mut())
             .map(|&mut (_0, _1)| _0),
     );
     rayon::check();
@@ -244,30 +248,30 @@ fn from_main<O: OperatorHnsw>(
     let base_graph_outs = MmapArray::create(
         path.as_ref().join("base_graph_outs"),
         g.iter_mut()
-            .flat_map(|x| x[0].get_mut())
+            .flat_map(|u| u[0].get_mut())
             .map(|&mut (_0, _1)| _1),
     );
     rayon::check();
     let base_graph_weights = MmapArray::create(
         path.as_ref().join("base_graph_weights"),
         g.iter_mut()
-            .flat_map(|x| x[0].get_mut())
+            .flat_map(|u| u[0].get_mut())
             .map(|&mut (_0, _1)| _0),
     );
     rayon::check();
     let hyper_graph_outs = MmapArray::create(
         path.as_ref().join("hyper_graph_outs"),
         g.iter_mut()
-            .flat_map(|x| x.iter_mut().skip(1))
-            .flat_map(|x| x.get_mut())
+            .flat_map(|u| u.iter_mut().skip(1))
+            .flat_map(|l| l.get_mut())
             .map(|&mut (_0, _1)| _1),
     );
     rayon::check();
     let hyper_graph_weights = MmapArray::create(
         path.as_ref().join("hyper_graph_weights"),
         g.iter_mut()
-            .flat_map(|x| x.iter_mut().skip(1))
-            .flat_map(|x| x.get_mut())
+            .flat_map(|u| u.iter_mut().skip(1))
+            .flat_map(|l| l.get_mut())
             .map(|&mut (_0, _1)| _0),
     );
     rayon::check();
@@ -481,7 +485,7 @@ fn patch_insertions(
             let t = hierarchy_for_a_vertex(m, cursor);
             if t > l {
                 cursor = fast_search(
-                    |x| dist(u, x),
+                    |v| dist(u, v),
                     |x, level| {
                         g[x as usize][level as usize]
                             .read()
@@ -495,9 +499,9 @@ fn patch_insertions(
             }
             for j in (0..std::cmp::min(l, t)).rev() {
                 let scope = graph::search::search(
-                    |x| dist(u, x),
-                    |x| {
-                        g[x as usize][j as usize]
+                    |v| dist(u, v),
+                    |v| {
+                        g[v as usize][j as usize]
                             .read()
                             .clone()
                             .into_iter()

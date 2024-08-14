@@ -17,6 +17,7 @@ pub mod utils;
 use self::product::ProductQuantizer;
 use self::scalar::ScalarQuantizer;
 use crate::operator::OperatorQuantization;
+use base::always_equal::AlwaysEqual;
 use base::index::*;
 use base::operator::*;
 use base::scalar::*;
@@ -269,7 +270,7 @@ impl<O: OperatorQuantization> Quantization<O> {
         &self,
         preprocessed: &QuantizationPreprocessed<O>,
         rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, u32)>,
+        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         sq_fast_scan: bool,
         pq_fast_scan: bool,
     ) {
@@ -299,7 +300,7 @@ impl<O: OperatorQuantization> Quantization<O> {
 
     pub fn flat_rerank<'a, T: 'a>(
         &'a self,
-        heap: Vec<(Reverse<F32>, u32)>,
+        heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         r: impl Fn(u32) -> (F32, T) + 'a,
         sq_rerank_size: u32,
         pq_rerank_size: u32,

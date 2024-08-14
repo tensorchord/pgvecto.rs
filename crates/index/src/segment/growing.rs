@@ -1,6 +1,7 @@
 use crate::utils::file_wal::FileWal;
 use crate::IndexTracker;
 use crate::Op;
+use base::always_equal::AlwaysEqual;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
@@ -8,8 +9,6 @@ use base::vector::*;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::cell::UnsafeCell;
-use std::cmp::Reverse;
-use std::collections::BinaryHeap;
 use std::fmt::Debug;
 use std::mem::MaybeUninit;
 use std::num::NonZeroU128;
@@ -200,29 +199,11 @@ impl<O: Op> GrowingSegment<O> {
         log.payload
     }
 
-    pub fn basic(
-        &self,
-        vector: Borrowed<'_, O>,
-        _opts: &SearchOptions,
-    ) -> BinaryHeap<Reverse<Element>> {
-        let n = self.len.load(Ordering::Acquire);
-        let mut result = BinaryHeap::new();
-        for i in 0..n {
-            let log = unsafe { &*self.vec[i].assume_init_ref().get().cast_const() };
-            let distance = O::distance(vector, log.vector.as_borrowed());
-            result.push(Reverse(Element {
-                distance,
-                payload: log.payload,
-            }));
-        }
-        result
-    }
-
     pub fn vbase<'a>(
         &'a self,
         vector: Borrowed<'a, O>,
         _opts: &SearchOptions,
-    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
+    ) -> Box<dyn Iterator<Item = Element> + 'a> {
         let n = self.len.load(Ordering::Acquire);
         let mut result = Vec::new();
         for i in 0..n {
@@ -230,10 +211,11 @@ impl<O: Op> GrowingSegment<O> {
             let distance = O::distance(vector, log.vector.as_borrowed());
             result.push(Element {
                 distance,
-                payload: log.payload,
+                payload: AlwaysEqual(log.payload),
             });
         }
-        (result, Box::new(std::iter::empty()))
+        result.sort_unstable();
+        Box::new(result.into_iter())
     }
 }
 

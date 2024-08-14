@@ -84,7 +84,7 @@ impl<O: Op> SealedSegment<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
+    ) -> Box<dyn Iterator<Item = Element> + 'a> {
         self.indexing.vbase(vector, opts)
     }
 

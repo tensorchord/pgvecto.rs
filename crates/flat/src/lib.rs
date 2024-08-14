@@ -1,5 +1,6 @@
 #![allow(clippy::len_without_is_empty)]
 
+use base::always_equal::AlwaysEqual;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
@@ -37,7 +38,7 @@ impl<O: OperatorFlat> Flat<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
+    ) -> Box<dyn Iterator<Item = Element> + 'a> {
         let mut heap = Vec::new();
         let preprocessed = self.quantization.preprocess(vector);
         self.quantization.push_batch(
@@ -49,24 +50,16 @@ impl<O: OperatorFlat> Flat<O> {
         );
         let mut reranker = self.quantization.flat_rerank(
             heap,
-            move |u| {
-                (
-                    O::distance(vector, self.storage.vector(u)),
-                    self.payloads[u as usize],
-                )
-            },
+            move |u| (O::distance(vector, self.storage.vector(u)), ()),
             opts.flat_sq_rerank_size,
             opts.flat_pq_rerank_size,
         );
-        (
-            Vec::new(),
-            Box::new(std::iter::from_fn(move || {
-                reranker.pop().map(|(dis_u, _, payload_u)| Element {
-                    distance: dis_u,
-                    payload: payload_u,
-                })
-            })),
-        )
+        Box::new(std::iter::from_fn(move || {
+            reranker.pop().map(|(dis_u, u, ())| Element {
+                distance: dis_u,
+                payload: AlwaysEqual(self.payload(u)),
+            })
+        }))
     }
 
     pub fn len(&self) -> u32 {
