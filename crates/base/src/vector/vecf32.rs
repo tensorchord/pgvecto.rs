@@ -420,6 +420,15 @@ unsafe fn sl2_v3(lhs: &[F32], rhs: &[F32]) -> F32 {
             let d = _mm256_sub_ps(x, y);
             dd = _mm256_fmadd_ps(d, d, dd);
         }
+        if n >= 4 {
+            let x = _mm_loadu_ps(a.cast());
+            let y = _mm_loadu_ps(b.cast());
+            a = a.add(4);
+            b = b.add(4);
+            n -= 4;
+            let d = _mm256_zextps128_ps256(_mm_sub_ps(x, y));
+            dd = _mm256_fmadd_ps(d, d, dd);
+        }
         #[inline]
         #[detect::target_cpu(enable = "v3")]
         unsafe fn _mm256_reduce_add_ps(mut x: __m256) -> f32 {
@@ -431,13 +440,15 @@ unsafe fn sl2_v3(lhs: &[F32], rhs: &[F32]) -> F32 {
             }
         }
         let mut rdd = F32(_mm256_reduce_add_ps(dd));
-        while n > 0 {
-            let x = a.read();
-            let y = b.read();
-            a = a.add(1);
-            b = b.add(1);
-            n -= 1;
-            rdd += (x - y) * (x - y);
+        if std::intrinsics::unlikely(n > 0) {
+            while n > 0 {
+                let x = a.read();
+                let y = b.read();
+                a = a.add(1);
+                b = b.add(1);
+                n -= 1;
+                rdd += (x - y) * (x - y);
+            }
         }
         rdd
     }

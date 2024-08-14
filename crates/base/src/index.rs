@@ -560,7 +560,7 @@ impl Default for ProductQuantizationOptions {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Alter)]
 pub struct SearchOptions {
     #[validate(range(min = 0, max = 65535))]
     pub flat_sq_rerank_size: u32,
@@ -583,6 +583,26 @@ pub struct SearchOptions {
     pub rabitq_fast_scan: bool,
     #[validate(range(min = 1, max = 65535))]
     pub diskann_ef_search: u32,
+}
+
+impl Default for SearchOptions {
+    fn default() -> Self {
+        SearchOptions {
+            flat_sq_rerank_size: 0,
+            flat_sq_fast_scan: false,
+            flat_pq_rerank_size: 0,
+            flat_pq_fast_scan: false,
+            ivf_sq_rerank_size: 0,
+            ivf_sq_fast_scan: false,
+            ivf_pq_rerank_size: 0,
+            ivf_pq_fast_scan: false,
+            ivf_nprobe: 10,
+            hnsw_ef_search: 100,
+            rabitq_nprobe: 10,
+            rabitq_fast_scan: true,
+            diskann_ef_search: 100,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -1,13 +1,16 @@
+cargo-features = ["profile-rustflags"]
+
 [package]
-name = "vectors"
+name = "pgvectors"
 version.workspace = true
 edition.workspace = true
 
 [lib]
+name = "vectors"
 crate-type = ["cdylib", "lib"]
 
 [[bin]]
-name = "pgrx_embed_vectors"
+name = "pgrx_embed_pgvectors"
 path = "./src/bin/pgrx_embed.rs"
 
 [features]
@@ -95,6 +98,7 @@ inherits = "dev"
 opt-level = 3
 debug-assertions = false
 overflow-checks = false
+rustflags = ["-Cforce-frame-pointers=yes"]
 
 [profile.release]
 lto = "fat"

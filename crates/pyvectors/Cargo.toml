@@ -1,0 +1,19 @@
+[package]
+name = "pyvectors"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "pyvectors"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.21", features = ["extension-module"] }
+numpy = { version = "0.21" }
+pythonize = "0.21"
+serde.workspace = true
+
+base = { path = "../base" }
+detect = { path = "../detect" }
+hnsw = { path = "../hnsw" }
+stoppable_rayon = { path = "../stoppable_rayon" }
