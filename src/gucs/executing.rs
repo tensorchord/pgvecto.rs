@@ -27,7 +27,9 @@ static RABITQ_FAST_SCAN: GucSetting<bool> = GucSetting::<bool>::new(true);
 
 static DISKANN_EF_SEARCH: GucSetting<i32> = GucSetting::<i32>::new(100);
 
-static SEISMIC_Q_CUT: GucSetting<i32> = GucSetting::<i32>::new(10);
+static SEISMIC_HEAP_SIZE: GucSetting<i32> = GucSetting::<i32>::new(100);
+
+static SEISMIC_Q_CUT: GucSetting<i32> = GucSetting::<i32>::new(3);
 
 static SEISMIC_HEAP_FACTOR: GucSetting<f64> = GucSetting::<f64>::new(1.0);
 
@@ -153,8 +155,18 @@ pub unsafe fn init() {
         GucFlags::default(),
     );
     GucRegistry::define_int_guc(
+        "vectors.seismic_heap_size",
+        "The heap size of Seismic algorithm.",
+        "https://docs.pgvecto.rs/usage/search.html",
+        &SEISMIC_HEAP_SIZE,
+        1,
+        u16::MAX as _,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
+    GucRegistry::define_int_guc(
         "vectors.seismic_q_cut",
-        "The number of elements to keep in the heap.",
+        "`q_cut` argument of Seismic algorithm.",
         "https://docs.pgvecto.rs/usage/search.html",
         &SEISMIC_Q_CUT,
         1,
@@ -164,7 +176,7 @@ pub unsafe fn init() {
     );
     GucRegistry::define_float_guc(
         "vectors.seismic_heap_factor",
-        "The factor to multiply the number of elements to keep in the heap.",
+        "`heap_factor` argument of Seismic algorithm.",
         "https://docs.pgvecto.rs/usage/search.html",
         &SEISMIC_HEAP_FACTOR,
         0.01,
@@ -189,6 +201,7 @@ pub fn search_options() -> SearchOptions {
         rabitq_nprobe: RABITQ_NPROBE.get() as u32,
         rabitq_fast_scan: RABITQ_FAST_SCAN.get(),
         diskann_ef_search: DISKANN_EF_SEARCH.get() as u32,
+        seismic_heap_size: SEISMIC_HEAP_SIZE.get() as u32,
         seismic_q_cut: SEISMIC_Q_CUT.get() as u32,
         seismic_heap_factor: SEISMIC_HEAP_FACTOR.get() as f32,
     }

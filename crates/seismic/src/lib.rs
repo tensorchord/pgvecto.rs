@@ -64,7 +64,7 @@ impl<O: OperatorSeismic> Seismic<O> {
         vbase(
             self,
             vector,
-            opts.hnsw_ef_search,
+            opts.seismic_heap_size,
             opts.seismic_q_cut,
             opts.seismic_heap_factor,
         )

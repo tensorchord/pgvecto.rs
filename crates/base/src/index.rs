@@ -648,6 +648,8 @@ pub struct SearchOptions {
     pub rabitq_fast_scan: bool,
     #[validate(range(min = 1, max = 65535))]
     pub diskann_ef_search: u32,
+    #[validate(range(min = 1, max = 65535))]
+    pub seismic_heap_size: u32,
     #[validate(range(min = 1, max = 100_000))]
     pub seismic_q_cut: u32,
     #[validate(range(min = 0.01, max = 1.))]
