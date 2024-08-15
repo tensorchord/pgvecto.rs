@@ -9,9 +9,11 @@ pub mod quant;
 
 use crate::operator::OperatorRabitq as Op;
 use crate::quant::quantization::Quantization;
+use base::always_equal::AlwaysEqual;
 use base::index::{IndexOptions, RabitqIndexingOptions, SearchOptions};
 use base::operator::Borrowed;
 use base::scalar::F32;
+use base::search::RerankerPop;
 use base::search::{Collection, Element, Payload, Source, Vectors};
 use common::json::Json;
 use common::mmap_array::MmapArray;
@@ -58,7 +60,7 @@ impl<O: Op> Rabitq<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
+    ) -> Box<dyn Iterator<Item = Element> + 'a> {
         let projected_query = O::proj(&self.projection, O::cast(vector));
         let lists = select(
             k_means_lookup_many(&projected_query, &self.centroids),
@@ -80,20 +82,14 @@ impl<O: Op> Rabitq<O> {
             );
         }
         let mut reranker = self.quantization.rerank(heap, move |u| {
-            (
-                O::distance(vector, self.storage.vector(u)),
-                self.payloads[u as usize],
-            )
+            (O::distance(vector, self.storage.vector(u)), ())
         });
-        (
-            Vec::new(),
-            Box::new(std::iter::from_fn(move || {
-                reranker.pop().map(|(dis_u, _, payload_u)| Element {
-                    distance: dis_u,
-                    payload: payload_u,
-                })
-            })),
-        )
+        Box::new(std::iter::from_fn(move || {
+            reranker.pop().map(|(dis_u, u, ())| Element {
+                distance: dis_u,
+                payload: AlwaysEqual(self.payload(u)),
+            })
+        }))
     }
 }
 

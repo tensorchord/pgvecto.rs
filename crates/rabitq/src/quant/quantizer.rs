@@ -1,5 +1,6 @@
 use super::error_based::ErrorBasedReranker;
 use crate::operator::OperatorRabitq;
+use base::always_equal::AlwaysEqual;
 use base::index::VectorOptions;
 use base::scalar::F32;
 use base::search::RerankerPop;
@@ -95,7 +96,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         &self,
         (p0, p1): &(O::QuantizationPreprocessed0, O::QuantizationPreprocessed1),
         rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, u32)>,
+        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         codes: &[u8],
         packed_codes: &[u8],
         meta: &[F32],
@@ -123,7 +124,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                         },
                         epsilon,
                     )),
-                    u,
+                    AlwaysEqual(u),
                 )
             }));
             let lut = O::fast_scan(p1);
@@ -147,7 +148,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                                         O::rabitq_quantization_process_1(a, b, c, d, p0, param);
                                     est - err * epsilon
                                 }),
-                                u,
+                                AlwaysEqual(u),
                             )
                         })
                         .collect::<Vec<_>>()
@@ -170,7 +171,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                         },
                         epsilon,
                     )),
-                    u,
+                    AlwaysEqual(u),
                 )
             }));
             return;
@@ -192,14 +193,14 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                     },
                     epsilon,
                 )),
-                u,
+                AlwaysEqual(u),
             )
         }));
     }
 
     pub fn rerank<'a, T: 'a>(
         &'a self,
-        heap: Vec<(Reverse<F32>, u32)>,
+        heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         r: impl Fn(u32) -> (F32, T) + 'a,
     ) -> impl RerankerPop<T> + 'a {
         ErrorBasedReranker::new(heap, r)

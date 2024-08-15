@@ -1,8 +1,9 @@
 pub mod operator;
 
 use self::operator::OperatorTrivialQuantization;
-use crate::reranker::disabled::DisabledFlatReranker;
-use crate::reranker::disabled::DisabledGraphReranker;
+use crate::reranker::flat::DisabledFlatReranker;
+use crate::reranker::graph::GraphReranker;
+use base::always_equal::AlwaysEqual;
 use base::index::*;
 use base::operator::*;
 use base::scalar::*;
@@ -50,14 +51,14 @@ impl<O: OperatorTrivialQuantization> TrivialQuantizer<O> {
         &self,
         _preprocessed: &O::TrivialQuantizationPreprocessed,
         rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, u32)>,
+        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
     ) {
-        heap.extend(rhs.map(|u| (Reverse(F32::zero()), u)));
+        heap.extend(rhs.map(|u| (Reverse(F32::zero()), AlwaysEqual(u))));
     }
 
     pub fn flat_rerank<'a, T: 'a>(
         &'a self,
-        heap: Vec<(Reverse<F32>, u32)>,
+        heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         r: impl Fn(u32) -> (F32, T) + 'a,
     ) -> impl RerankerPop<T> + 'a {
         DisabledFlatReranker::new(heap, r)
@@ -67,7 +68,7 @@ impl<O: OperatorTrivialQuantization> TrivialQuantizer<O> {
         &'a self,
         _: Borrowed<'a, O>,
         r: R,
-    ) -> impl RerankerPop<T> + RerankerPush + 'a {
-        DisabledGraphReranker::new(r)
+    ) -> GraphReranker<T, R> {
+        GraphReranker::new(None, r)
     }
 }

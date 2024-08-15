@@ -48,7 +48,7 @@ impl<O: Op> SealedIndexing<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
+    ) -> Box<dyn Iterator<Item = Element> + 'a> {
         match self {
             SealedIndexing::Flat(x) => x.vbase(vector, opts),
             SealedIndexing::Ivf(x) => x.vbase(vector, opts),

@@ -1,6 +1,9 @@
-use std::cmp::Ordering;
+use serde::{Deserialize, Serialize};
+use std::{cmp::Ordering, hash::Hash};
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[repr(transparent)]
+#[serde(transparent)]
 pub struct AlwaysEqual<T>(pub T);
 
 impl<T> PartialEq for AlwaysEqual<T> {
@@ -21,4 +24,8 @@ impl<T> Ord for AlwaysEqual<T> {
     fn cmp(&self, _: &Self) -> Ordering {
         Ordering::Equal
     }
+}
+
+impl<T> Hash for AlwaysEqual<T> {
+    fn hash<H: std::hash::Hasher>(&self, _: &mut H) {}
 }

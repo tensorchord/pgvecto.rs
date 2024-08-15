@@ -420,30 +420,24 @@ impl<O: Op> IndexView<O> {
             });
         }
 
-        let n = self.sealed_segments.len() + self.read_segments.len() + 2;
-        let mut elements = Vec::new();
+        let n = self.sealed_segments.len() + self.read_segments.len() + 1;
         let mut iterators = Vec::with_capacity(n);
         for (_, sealed) in self.sealed_segments.iter() {
-            let (stage1, stage2) = sealed.vbase(vector, opts);
-            elements.extend(stage1);
+            let stage2 = sealed.vbase(vector, opts);
             iterators.push(stage2);
         }
         for (_, read) in self.read_segments.iter() {
-            let (stage1, stage2) = read.vbase(vector, opts);
-            elements.extend(stage1);
+            let stage2 = read.vbase(vector, opts);
             iterators.push(stage2);
         }
         if let Some((_, write)) = &self.write_segment {
-            let (stage1, stage2) = write.vbase(vector, opts);
-            elements.extend(stage1);
+            let stage2 = write.vbase(vector, opts);
             iterators.push(stage2);
         }
-        elements.sort_unstable();
-        iterators.push(Box::new(elements.into_iter()));
         let loser = LoserTree::new(iterators);
         Ok(loser.filter_map(|x| {
-            if self.delete.check(x.payload) {
-                Some((x.distance, x.payload.pointer()))
+            if self.delete.check(x.payload.0) {
+                Some((x.distance, x.payload.0.pointer()))
             } else {
                 None
             }

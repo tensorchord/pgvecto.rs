@@ -79,7 +79,7 @@ impl<O: OperatorIvf> Ivf<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-    ) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>) {
+    ) -> Box<dyn Iterator<Item = Element> + 'a> {
         match self {
             Ivf::Naive(x) => x.vbase(vector, opts),
             Ivf::Residual(x) => x.vbase(vector, opts),

@@ -8,6 +8,7 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::nonminimal_bool)]
 
+pub mod always_equal;
 pub mod distance;
 pub mod index;
 pub mod operator;

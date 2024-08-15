@@ -17,12 +17,14 @@ pub mod utils;
 use self::product::ProductQuantizer;
 use self::scalar::ScalarQuantizer;
 use crate::operator::OperatorQuantization;
+use base::always_equal::AlwaysEqual;
 use base::index::*;
 use base::operator::*;
 use base::scalar::*;
 use base::search::*;
 use common::json::Json;
 use common::mmap_array::MmapArray;
+use reranker::graph::GraphReranker;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cmp::Reverse;
@@ -269,7 +271,7 @@ impl<O: OperatorQuantization> Quantization<O> {
         &self,
         preprocessed: &QuantizationPreprocessed<O>,
         rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, u32)>,
+        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         sq_fast_scan: bool,
         pq_fast_scan: bool,
     ) {
@@ -299,7 +301,7 @@ impl<O: OperatorQuantization> Quantization<O> {
 
     pub fn flat_rerank<'a, T: 'a>(
         &'a self,
-        heap: Vec<(Reverse<F32>, u32)>,
+        heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         r: impl Fn(u32) -> (F32, T) + 'a,
         sq_rerank_size: u32,
         pq_rerank_size: u32,
@@ -312,15 +314,15 @@ impl<O: OperatorQuantization> Quantization<O> {
         }
     }
 
-    pub fn graph_rerank<'a, T: 'a>(
+    pub fn graph_rerank<'a, T: 'a, R: Fn(u32) -> (F32, T) + 'a>(
         &'a self,
         vector: Borrowed<'a, O>,
-        r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn GraphReranker<T> + 'a> {
+        r: R,
+    ) -> GraphReranker<'a, T, R> {
         use Quantizer::*;
         match &*self.train {
-            Trivial(x) => Box::new(x.graph_rerank(vector, r)),
-            Scalar(x) => Box::new(x.graph_rerank(
+            Trivial(x) => x.graph_rerank(vector, r),
+            Scalar(x) => x.graph_rerank(
                 vector,
                 |u| {
                     let bytes = x.bytes() as usize;
@@ -329,8 +331,8 @@ impl<O: OperatorQuantization> Quantization<O> {
                     &self.codes[start..end]
                 },
                 r,
-            )),
-            Product(x) => Box::new(x.graph_rerank(
+            ),
+            Product(x) => x.graph_rerank(
                 vector,
                 |u| {
                     let bytes = x.bytes() as usize;
@@ -339,7 +341,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                     &self.codes[start..end]
                 },
                 r,
-            )),
+            ),
         }
     }
 }

@@ -1,3 +1,4 @@
+use crate::always_equal::AlwaysEqual;
 use crate::operator::{Borrowed, Operator};
 use crate::scalar::F32;
 use serde::{Deserialize, Serialize};
@@ -47,7 +48,7 @@ impl Pointer {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(C)]
 pub struct Payload {
     pointer: Pointer,
@@ -69,7 +70,7 @@ impl Payload {
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Element {
     pub distance: F32,
-    pub payload: Payload,
+    pub payload: AlwaysEqual<Payload>,
 }
 
 pub trait Vectors<O: Operator>: Send + Sync {
@@ -101,21 +102,5 @@ pub trait FlatReranker<T>: RerankerPop<T> {}
 impl<'a, T> RerankerPop<T> for Box<dyn FlatReranker<T> + 'a> {
     fn pop(&mut self) -> Option<(F32, u32, T)> {
         self.as_mut().pop()
-    }
-}
-
-pub trait GraphReranker<T>: RerankerPop<T> + RerankerPush {}
-
-impl<S: RerankerPop<T> + RerankerPush, T> GraphReranker<T> for S {}
-
-impl<'a, T> RerankerPop<T> for Box<dyn GraphReranker<T> + 'a> {
-    fn pop(&mut self) -> Option<(F32, u32, T)> {
-        self.as_mut().pop()
-    }
-}
-
-impl<'a, T> RerankerPush for Box<dyn GraphReranker<T> + 'a> {
-    fn push(&mut self, u: u32) {
-        self.as_mut().push(u)
     }
 }

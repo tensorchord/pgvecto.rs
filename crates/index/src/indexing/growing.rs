@@ -2,8 +2,6 @@ use crate::Op;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
-use std::cmp::Reverse;
-use std::collections::BinaryHeap;
 use std::convert::Infallible;
 use thiserror::Error;
 
@@ -29,10 +27,6 @@ impl<O: Op> GrowingIndexing<O> {
     }
 
     pub fn insert(&self, _: O::VectorOwned, _: Payload) -> Result<(), GrowingIndexingInsertError> {
-        unimplemented!()
-    }
-
-    pub fn basic(&self, _: Borrowed<'_, O>, _: &SearchOptions) -> BinaryHeap<Reverse<Element>> {
         unimplemented!()
     }
 

@@ -1,9 +1,9 @@
 use crate::visited::VisitedGuard;
 use crate::visited::VisitedPool;
+use base::always_equal::AlwaysEqual;
 use base::scalar::F32;
-use base::search::Element;
-use base::search::GraphReranker;
-use base::search::Payload;
+use base::search::RerankerPop;
+use base::search::RerankerPush;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
@@ -17,14 +17,6 @@ impl<T: Ord + Copy, U: Ord> ResultsBound for (T, U) {
 
     fn bound(&self) -> T {
         self.0
-    }
-}
-
-impl ResultsBound for Element {
-    type T = F32;
-
-    fn bound(&self) -> F32 {
-        self.distance
     }
 }
 
@@ -135,14 +127,15 @@ where
     (results.into_sorted_vec(), trace)
 }
 
-pub fn vbase_internal<'a, T, E>(
+pub fn vbase_internal<'a, G, E, T>(
     visited: &'a VisitedPool,
     s: u32,
-    mut reranker: T,
-) -> impl Iterator<Item = Element> + 'a
+    mut reranker: G,
+) -> impl Iterator<Item = (F32, u32, T)> + 'a
 where
-    T: GraphReranker<(Payload, E)> + 'a,
+    G: RerankerPush + RerankerPop<(E, T)> + 'a,
     E: Iterator<Item = u32>,
+    T: 'a,
 {
     let mut visited = visited.fetch_guard_checker();
     {
@@ -150,7 +143,7 @@ where
         reranker.push(s);
     }
     std::iter::from_fn(move || {
-        let (dis_u, _, (payload_u, outs_u)) = reranker.pop()?;
+        let (dis_u, u, (outs_u, pay_u)) = reranker.pop()?;
         for v in outs_u {
             if !visited.check(v) {
                 continue;
@@ -158,34 +151,47 @@ where
             visited.mark(v);
             reranker.push(v);
         }
-        Some(Element {
-            distance: dis_u,
-            payload: payload_u,
-        })
+        Some((dis_u, u, pay_u))
     })
 }
 
-pub fn vbase_generic<'a, T, E>(
+pub fn vbase_generic<'a, G, E, T>(
     visited: &'a VisitedPool,
     s: u32,
+    reranker: G,
     ef_search: u32,
-    reranker: T,
-) -> (Vec<Element>, Box<dyn Iterator<Item = Element> + 'a>)
+) -> impl Iterator<Item = (F32, u32, T)> + 'a
 where
-    T: GraphReranker<(Payload, E)> + 'a,
+    G: RerankerPush + RerankerPop<(E, T)> + 'a,
     E: Iterator<Item = u32>,
+    T: 'a,
 {
     let mut iter = vbase_internal(visited, s, reranker);
-    let mut results = Results::<Element>::new(ef_search as _);
+    let mut results = Results::new(ef_search as _);
     let mut stage1 = Vec::new();
-    for x in &mut iter {
-        if results.check(x.distance) {
-            results.push(x);
-            stage1.push(x);
+    for (dis_u, u, pay_u) in &mut iter {
+        if results.check(dis_u) {
+            results.push((dis_u, AlwaysEqual(u)));
+            stage1.push((dis_u, u, pay_u));
         } else {
-            stage1.push(x);
+            stage1.push((dis_u, u, pay_u));
             break;
         }
     }
-    (stage1, Box::new(iter))
+    stage1.sort_unstable_by_key(|x| x.0);
+    let mut stage1 = stage1.into_iter().peekable();
+    let mut stage2 = iter.peekable();
+    std::iter::from_fn(move || {
+        if stage1.peek().is_none() {
+            return stage2.next();
+        }
+        if stage2.peek().is_none() {
+            return stage1.next();
+        }
+        if stage1.peek().map(|(dis_u, ..)| dis_u) < stage2.peek().map(|(dis_u, ..)| dis_u) {
+            stage1.next()
+        } else {
+            stage2.next()
+        }
+    })
 }

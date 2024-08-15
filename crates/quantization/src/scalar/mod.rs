@@ -1,13 +1,13 @@
 pub mod operator;
 
 use self::operator::OperatorScalarQuantization;
-use crate::reranker::window::WindowFlatReranker;
-use crate::reranker::window_0::Window0GraphReranker;
+use crate::reranker::flat::WindowFlatReranker;
+use crate::reranker::graph::GraphReranker;
+use base::always_equal::AlwaysEqual;
 use base::index::*;
 use base::operator::*;
 use base::scalar::*;
 use base::search::RerankerPop;
-use base::search::RerankerPush;
 use base::search::Vectors;
 use base::vector::*;
 use common::vec2::Vec2;
@@ -118,7 +118,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
         &self,
         preprocessed: &O::QuantizationPreprocessed,
         rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, u32)>,
+        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         codes: &[u8],
         packed_codes: &[u8],
         fast_scan: bool,
@@ -142,7 +142,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
                         let end = start + bytes;
                         &codes[start..end]
                     })),
-                    u,
+                    AlwaysEqual(u),
                 )
             }));
             let (k, b, lut) = quantize_255(&O::fast_scan(preprocessed));
@@ -154,7 +154,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
                     let res = fast_scan(width, &packed_codes[start..end], &lut);
                     let r = res.map(|x| O::fast_scan_resolve(dequantize(width, k, b, x)));
                     (i..i + BLOCK_SIZE)
-                        .map(|u| (Reverse(r[(u - i) as usize]), u))
+                        .map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
                         .collect::<Vec<_>>()
                 });
             }
@@ -166,7 +166,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
                         let end = start + bytes;
                         &codes[start..end]
                     })),
-                    u,
+                    AlwaysEqual(u),
                 )
             }));
             return;
@@ -179,14 +179,14 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
                     let end = start + bytes;
                     &codes[start..end]
                 })),
-                u,
+                AlwaysEqual(u),
             )
         }));
     }
 
     pub fn flat_rerank<'a, T: 'a, R: Fn(u32) -> (F32, T) + 'a>(
         &'a self,
-        heap: Vec<(Reverse<F32>, u32)>,
+        heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         r: R,
         rerank_size: u32,
     ) -> impl RerankerPop<T> + 'a {
@@ -198,9 +198,9 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
         vector: Borrowed<'a, O>,
         c: C,
         r: R,
-    ) -> impl RerankerPush + RerankerPop<T> + 'a {
+    ) -> GraphReranker<'a, T, R> {
         let p =
             O::scalar_quantization_preprocess(self.dims, self.bits, &self.max, &self.min, vector);
-        Window0GraphReranker::new(move |u| self.process(&p, c(u)), r)
+        GraphReranker::new(Some(Box::new(move |u| self.process(&p, c(u)))), r)
     }
 }
