@@ -1,3 +1,5 @@
+use crate::vector::vecf32;
+
 use super::ScalarLike;
 use detect::multiversion;
 use num_traits::{Float, Zero};
@@ -781,15 +783,7 @@ impl ScalarLike for F32 {
         F32(Self::to_f32(self))
     }
 
-    #[multiversion(v4, v3, v2, neon, fallback)]
     fn impl_l2(lhs: &[F32], rhs: &[F32]) -> F32 {
-        assert!(lhs.len() == rhs.len());
-        let n = lhs.len();
-        let mut d2 = F32::zero();
-        for i in 0..n {
-            let d = lhs[i].to_f() - rhs[i].to_f();
-            d2 += d * d;
-        }
-        d2
+        vecf32::sl2(lhs, rhs)
     }
 }

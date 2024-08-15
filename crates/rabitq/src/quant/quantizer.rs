@@ -78,8 +78,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         p1: &O::QuantizationPreprocessed1,
         (a, b, c, d, e): (F32, F32, F32, F32, &[u8]),
     ) -> F32 {
-        let (est, _) = O::rabitq_quantization_process(a, b, c, d, e, p0, p1);
-        est
+        todo!()
     }
 
     pub fn process_lowerbound(
@@ -88,8 +87,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         p1: &O::QuantizationPreprocessed1,
         (a, b, c, d, e): (F32, F32, F32, F32, &[u8]),
     ) -> F32 {
-        let (est, err) = O::rabitq_quantization_process(a, b, c, d, e, p0, p1);
-        est - err * F32(1.9)
+        todo!()
     }
 
     pub fn push_batch(
@@ -107,6 +105,11 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         meta_d: &[F32],
         fast_scan: bool,
     ) {
+        let mut barrier = if result.len() >= 10 {
+            result.peek().unwrap().0
+        } else {
+            F32::infinity()
+        };
         if fast_scan && O::SUPPORT_FAST_SCAN && quantization::fast_scan::b4::is_supported() {
             use quantization::fast_scan::b4::{fast_scan, BLOCK_SIZE};
             let lut = O::fast_scan(p1);
@@ -119,46 +122,29 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
                 let res = fast_scan(t, &packed_codes[start..end], &lut);
-                heap.extend((rhs.start..s).map(|u| {
-                    (
-                        Reverse({
-                            let a = meta_a[u as usize];
-                            let b = meta_b[u as usize];
-                            let c = meta_c[u as usize];
-                            let d = meta_d[u as usize];
-                            let param = res[(u - i) as usize];
-                            let (est, err) =
-                                O::rabitq_quantization_process_1(a, b, c, d, p0, param);
-                            est - err * 1.9
-                        }),
-                        AlwaysEqual(u),
-                    )
-                }));
-                (rhs.start..s)
-                    .map(|u| {
-                        (
-                            Reverse({
-                                let a = meta_a[u as usize];
-                                let b = meta_b[u as usize];
-                                let c = meta_c[u as usize];
-                                let d = meta_d[u as usize];
-                                let param = res[(u - i) as usize];
-                                let (est, err) =
-                                    O::rabitq_quantization_process_1(a, b, c, d, p0, param);
-                                est - err * 1.9
-                            }),
-                            AlwaysEqual(u),
-                        )
-                    })
-                    .for_each(|(Reverse(low_u), AlwaysEqual(u))| {
-                        if result.len() < 10 || low_u < result.peek().unwrap().0 {
-                            let (dis_u, ()) = rerank(u);
+                for u in rhs.start..s {
+                    let low_u = {
+                        let a = meta_a[u as usize];
+                        let b = meta_b[u as usize];
+                        let c = meta_c[u as usize];
+                        let d = meta_d[u as usize];
+                        let param = res[(u - i) as usize];
+                        let (est, err) = O::rabitq_quantization_process_1(a, b, c, d, p0, param);
+                        est - err * 1.9
+                    };
+                    if low_u < barrier {
+                        let (dis_u, ()) = rerank(u);
+                        if dis_u < barrier {
+                            if result.len() >= 10 {
+                                result.pop();
+                            }
                             result.push((dis_u, AlwaysEqual(u), ()));
+                            if result.len() >= 10 {
+                                barrier = result.peek().unwrap().0;
+                            }
                         }
-                        while result.len() > 10 {
-                            result.pop();
-                        }
-                    });
+                    }
+                }
             }
             for i in (s..e).step_by(BLOCK_SIZE as _) {
                 let t = self.dims.div_ceil(4);
@@ -178,17 +164,22 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                     p0,
                     &res,
                 );
-                (0..BLOCK_SIZE)
-                    .map(|index| (Reverse(temp[index as usize]), AlwaysEqual(i + index)))
-                    .for_each(|(Reverse(low_u), AlwaysEqual(u))| {
-                        if result.len() < 10 || low_u < result.peek().unwrap().0 {
-                            let (dis_u, ()) = rerank(u);
+                for index in 0..BLOCK_SIZE {
+                    let (Reverse(low_u), AlwaysEqual(u)) =
+                        (Reverse(temp[index as usize]), AlwaysEqual(i + index));
+                    if low_u < barrier {
+                        let (dis_u, ()) = rerank(u);
+                        if dis_u < barrier {
+                            if result.len() >= 10 {
+                                result.pop();
+                            }
                             result.push((dis_u, AlwaysEqual(u), ()));
+                            if result.len() >= 10 {
+                                barrier = result.peek().unwrap().0;
+                            }
                         }
-                        while result.len() > 10 {
-                            result.pop();
-                        }
-                    });
+                    }
+                }
             }
             if e != rhs.end {
                 let i = e / BLOCK_SIZE * BLOCK_SIZE;
@@ -197,49 +188,33 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
                 let res = fast_scan(t, &packed_codes[start..end], &lut);
-                (e..rhs.end)
-                    .map(|u| {
-                        (
-                            Reverse({
-                                let a = meta_a[u as usize];
-                                let b = meta_b[u as usize];
-                                let c = meta_c[u as usize];
-                                let d = meta_d[u as usize];
-                                let param = res[(u - i) as usize];
-                                let (est, err) =
-                                    O::rabitq_quantization_process_1(a, b, c, d, p0, param);
-                                est - err * 1.9
-                            }),
-                            AlwaysEqual(u),
-                        )
-                    })
-                    .for_each(|(Reverse(low_u), AlwaysEqual(u))| {
-                        if result.len() < 10 || low_u < result.peek().unwrap().0 {
-                            let (dis_u, ()) = rerank(u);
+                for u in e..rhs.end {
+                    let low_u = {
+                        let a = meta_a[u as usize];
+                        let b = meta_b[u as usize];
+                        let c = meta_c[u as usize];
+                        let d = meta_d[u as usize];
+                        let param = res[(u - i) as usize];
+                        let (est, err) = O::rabitq_quantization_process_1(a, b, c, d, p0, param);
+                        est - err * 1.9
+                    };
+                    if low_u < barrier {
+                        let (dis_u, ()) = rerank(u);
+                        if dis_u < barrier {
+                            if result.len() >= 10 {
+                                result.pop();
+                            }
                             result.push((dis_u, AlwaysEqual(u), ()));
+                            if result.len() >= 10 {
+                                barrier = result.peek().unwrap().0;
+                            }
                         }
-                        while result.len() > 10 {
-                            result.pop();
-                        }
-                    });
+                    }
+                }
             }
             return;
         }
-        heap.extend(rhs.map(|u| {
-            (
-                Reverse(self.process_lowerbound(p0, p1, {
-                    let bytes = self.bytes() as usize;
-                    let start = u as usize * bytes;
-                    let end = start + bytes;
-                    let a = meta_a[u as usize];
-                    let b = meta_b[u as usize];
-                    let c = meta_c[u as usize];
-                    let d = meta_d[u as usize];
-                    (a, b, c, d, &codes[start..end])
-                })),
-                AlwaysEqual(u),
-            )
-        }));
+        todo!()
     }
 
     pub fn rerank<'a, T: 'a>(

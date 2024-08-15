@@ -20,15 +20,6 @@ pub trait OperatorRabitq: OperatorStorage {
         Self::QuantizationPreprocessed0,
         Self::QuantizationPreprocessed1,
     );
-    fn rabitq_quantization_process(
-        dis_u_2: F32,
-        factor_ppc: F32,
-        factor_ip: F32,
-        factor_err: F32,
-        code: &[u8],
-        p0: &Self::QuantizationPreprocessed0,
-        p1: &Self::QuantizationPreprocessed1,
-    ) -> (F32, F32);
     fn rabitq_quantization_process_1(
         dis_u_2: F32,
         factor_ppc: F32,
@@ -63,32 +54,14 @@ impl OperatorRabitq for Vecf32L2 {
     }
 
     type QuantizationPreprocessed0 = (F32, F32, F32, F32);
-    type QuantizationPreprocessed1 = ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>);
+    type QuantizationPreprocessed1 = Vec<u8>;
 
-    fn rabitq_quantization_preprocess(
-        vector: &[F32],
-    ) -> (
-        (F32, F32, F32, F32),
-        ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>),
-    ) {
+    fn rabitq_quantization_preprocess(vector: &[F32]) -> ((F32, F32, F32, F32), Vec<u8>) {
         let dis_v_2 = vector.iter().map(|&x| x * x).sum();
         let (k, b, qvector) = quantization::quantize::quantize_15(vector);
         let qvector_sum = F32(qvector.iter().fold(0_u32, |x, &y| x + y as u32) as _);
-        let blut = binarize(&qvector);
         let lut = gen(&qvector);
-        ((dis_v_2, b, k, qvector_sum), (blut, lut))
-    }
-
-    fn rabitq_quantization_process(
-        dis_u_2: F32,
-        factor_ppc: F32,
-        factor_ip: F32,
-        factor_err: F32,
-        code: &[u8],
-        p0: &(F32, F32, F32, F32),
-        p1: &((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>),
-    ) -> (F32, F32) {
-        rabitq_quantization_process(dis_u_2, factor_ppc, factor_ip, factor_err, code, *p0, p1)
+        ((dis_v_2, b, k, qvector_sum), lut)
     }
 
     #[inline(always)]
@@ -133,8 +106,8 @@ impl OperatorRabitq for Vecf32L2 {
     }
 
     const SUPPORT_FAST_SCAN: bool = true;
-    fn fast_scan(preprocessed: &((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>)) -> Vec<u8> {
-        preprocessed.1.clone()
+    fn fast_scan(preprocessed: &Vec<u8>) -> Vec<u8> {
+        preprocessed.clone()
     }
     fn fast_scan_resolve(x: F32) -> F32 {
         x
@@ -166,18 +139,6 @@ macro_rules! unimpl_operator_rabitq {
                 Self::QuantizationPreprocessed0,
                 Self::QuantizationPreprocessed1,
             ) {
-                unimplemented!()
-            }
-
-            fn rabitq_quantization_process(
-                _: F32,
-                _: F32,
-                _: F32,
-                _: F32,
-                _: &[u8],
-                _: &Self::QuantizationPreprocessed0,
-                _: &Self::QuantizationPreprocessed1,
-            ) -> (F32, F32) {
                 unimplemented!()
             }
 
@@ -226,20 +187,6 @@ unimpl_operator_rabitq!(BVectorJaccard);
 
 unimpl_operator_rabitq!(SVecf32Dot);
 unimpl_operator_rabitq!(SVecf32L2);
-
-#[inline(always)]
-pub fn rabitq_quantization_process(
-    dis_u_2: F32,
-    factor_ppc: F32,
-    factor_ip: F32,
-    factor_err: F32,
-    code: &[u8],
-    params: (F32, F32, F32, F32),
-    (blut, _lut): &((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>),
-) -> (F32, F32) {
-    let abdp = asymmetric_binary_dot_product(code, blut) as u16;
-    rabitq_quantization_process_1(dis_u_2, factor_ppc, factor_ip, factor_err, params, abdp)
-}
 
 #[inline(always)]
 pub fn rabitq_quantization_process_1(
@@ -319,39 +266,6 @@ pub unsafe fn rabitq_quantization_process_1_parallel_avx2(
         }
         result
     }
-}
-
-fn binarize(vector: &[u8]) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
-    let n = vector.len();
-    let t0 = {
-        let mut t = vec![0u8; n.div_ceil(8)];
-        for i in 0..n {
-            t[i / 8] |= ((vector[i] >> 0) & 1) << (i % 8);
-        }
-        t
-    };
-    let t1 = {
-        let mut t = vec![0u8; n.div_ceil(8)];
-        for i in 0..n {
-            t[i / 8] |= ((vector[i] >> 1) & 1) << (i % 8);
-        }
-        t
-    };
-    let t2 = {
-        let mut t = vec![0u8; n.div_ceil(8)];
-        for i in 0..n {
-            t[i / 8] |= ((vector[i] >> 2) & 1) << (i % 8);
-        }
-        t
-    };
-    let t3 = {
-        let mut t = vec![0u8; n.div_ceil(8)];
-        for i in 0..n {
-            t[i / 8] |= ((vector[i] >> 3) & 1) << (i % 8);
-        }
-        t
-    };
-    (t0, t1, t2, t3)
 }
 
 fn gen(qvector: &[u8]) -> Vec<u8> {
