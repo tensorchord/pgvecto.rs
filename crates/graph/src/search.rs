@@ -182,7 +182,13 @@ where
     let mut stage1 = stage1.into_iter().peekable();
     let mut stage2 = iter.peekable();
     std::iter::from_fn(move || {
-        if stage1.peek().is_some() && stage1.peek().map(|x| x.0) < stage2.peek().map(|x| x.0) {
+        if stage1.peek().is_none() {
+            return stage2.next();
+        }
+        if stage2.peek().is_none() {
+            return stage1.next();
+        }
+        if stage1.peek().map(|(dis_u, ..)| dis_u) < stage2.peek().map(|(dis_u, ..)| dis_u) {
             stage1.next()
         } else {
             stage2.next()
