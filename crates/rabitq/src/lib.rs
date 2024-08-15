@@ -13,13 +13,14 @@ use base::always_equal::AlwaysEqual;
 use base::index::{IndexOptions, RabitqIndexingOptions, SearchOptions};
 use base::operator::Borrowed;
 use base::scalar::F32;
-use base::search::RerankerPop;
 use base::search::{Collection, Element, Payload, Source, Vectors};
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use common::vec2::Vec2;
 use k_means::{k_means, k_means_lookup, k_means_lookup_many};
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::fs::create_dir;
 use std::path::Path;
 use stoppable_rayon as rayon;
@@ -67,6 +68,7 @@ impl<O: Op> Rabitq<O> {
             opts.rabitq_nprobe as usize,
         );
         let mut heap = Vec::new();
+        let mut result = BinaryHeap::new();
         for &(_, i) in lists.iter() {
             let preprocessed = self
                 .quantization
@@ -77,15 +79,23 @@ impl<O: Op> Rabitq<O> {
                 &preprocessed,
                 start..end,
                 &mut heap,
-                F32(1.9),
+                &mut result,
+                move |u| {
+                    // print!("FUCK\n");
+                    (O::distance(vector, self.storage.vector(u)), ())
+                },
                 opts.rabitq_fast_scan,
             );
         }
+        /*
         let mut reranker = self.quantization.rerank(heap, move |u| {
             (O::distance(vector, self.storage.vector(u)), ())
         });
+        */
+        let mut result = result.into_vec();
+        result.sort_unstable_by_key(|(dis_u, ..)| Reverse(*dis_u));
         Box::new(std::iter::from_fn(move || {
-            reranker.pop().map(|(dis_u, u, ())| Element {
+            result.pop().map(|(dis_u, AlwaysEqual(u), ())| Element {
                 distance: dis_u,
                 payload: AlwaysEqual(self.payload(u)),
             })

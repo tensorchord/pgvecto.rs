@@ -12,6 +12,7 @@ use std::sync::Arc;
 fn pyvectors(m: &Bound<'_, PyModule>) -> PyResult<()> {
     detect::init();
     m.add_class::<Hnsw>()?;
+    m.add_class::<Rabitq>()?;
     Ok(())
 }
 
@@ -111,6 +112,62 @@ impl Hnsw {
         );
         self.0
             .vbase(vector.as_borrowed(), &SearchOptions::default())
+            .map(|Element { payload, .. }| payload.0.pointer().as_u64() as u32)
+            .take(k as usize)
+            .collect()
+    }
+}
+
+#[pyclass]
+struct Rabitq(Arc<rabitq::Rabitq<Vecf32L2>>);
+
+#[pymethods]
+impl Rabitq {
+    #[staticmethod]
+    fn create(
+        path: &str,
+        index_options: Pythonized<IndexOptions>,
+        dataset: PyReadonlyArray2<'_, f32>,
+    ) -> Self {
+        let dataset = dataset.as_array();
+        let (len, dims) = dataset.dim();
+        let source = IndexSource(
+            dims as u32,
+            (0..len)
+                .map(|x| {
+                    let vector = dataset.slice(s!(x, ..));
+                    let vector = vector.as_slice().unwrap();
+                    let vector = vector.iter().copied().map(F32).collect::<Vec<_>>();
+                    Vecf32Owned::new(vector)
+                })
+                .collect(),
+        );
+        let x = stoppable_rayon::ThreadPoolBuilder::new()
+            .build_scoped(|pool| {
+                pool.install(|| rabitq::Rabitq::create(path, index_options.0, &source))
+            })
+            .unwrap()
+            .unwrap();
+        Self(Arc::new(x))
+    }
+    #[staticmethod]
+    fn open(path: &str) -> Self {
+        Self(Arc::new(rabitq::Rabitq::open(path)))
+    }
+    fn search(&self, vector: PyReadonlyArray1<'_, f32>, k: u32) -> Vec<u32> {
+        let vector = Vecf32Owned::new(
+            vector
+                .as_slice()
+                .unwrap()
+                .iter()
+                .copied()
+                .map(F32)
+                .collect::<Vec<_>>(),
+        );
+        let mut options = SearchOptions::default();
+        options.rabitq_nprobe = 100;
+        self.0
+            .vbase(vector.as_borrowed(), &options)
             .map(|Element { payload, .. }| payload.0.pointer().as_u64() as u32)
             .take(k as usize)
             .collect()

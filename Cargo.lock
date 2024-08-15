@@ -661,6 +661,7 @@ version = "0.0.0"
 dependencies = [
  "argh",
  "base",
+ "detect",
  "env_logger",
  "index",
  "log",
@@ -2444,6 +2445,7 @@ dependencies = [
  "numpy",
  "pyo3",
  "pythonize",
+ "rabitq",
  "serde",
  "stoppable_rayon",
 ]

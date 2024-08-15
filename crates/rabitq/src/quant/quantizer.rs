@@ -1,4 +1,4 @@
-use super::error_based::ErrorBasedReranker;
+use super::error_based::ErrorBasedFlatReranker;
 use crate::operator::OperatorRabitq;
 use base::always_equal::AlwaysEqual;
 use base::index::VectorOptions;
@@ -7,6 +7,7 @@ use base::search::RerankerPop;
 use num_traits::Float;
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::marker::PhantomData;
 use std::ops::Range;
 
@@ -86,10 +87,9 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         p0: &O::QuantizationPreprocessed0,
         p1: &O::QuantizationPreprocessed1,
         (a, b, c, d, e): (F32, F32, F32, F32, &[u8]),
-        epsilon: F32,
     ) -> F32 {
         let (est, err) = O::rabitq_quantization_process(a, b, c, d, e, p0, p1);
-        est - err * epsilon
+        est - err * F32(1.9)
     }
 
     pub fn push_batch(
@@ -97,102 +97,146 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         (p0, p1): &(O::QuantizationPreprocessed0, O::QuantizationPreprocessed1),
         rhs: Range<u32>,
         heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
+        result: &mut BinaryHeap<(F32, AlwaysEqual<u32>, ())>,
+        rerank: impl Fn(u32) -> (F32, ()),
         codes: &[u8],
         packed_codes: &[u8],
-        meta: &[F32],
-        epsilon: F32,
+        meta_a: &[F32],
+        meta_b: &[F32],
+        meta_c: &[F32],
+        meta_d: &[F32],
         fast_scan: bool,
     ) {
         if fast_scan && O::SUPPORT_FAST_SCAN && quantization::fast_scan::b4::is_supported() {
             use quantization::fast_scan::b4::{fast_scan, BLOCK_SIZE};
+            let lut = O::fast_scan(p1);
             let s = rhs.start.next_multiple_of(BLOCK_SIZE);
             let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
-            heap.extend((rhs.start..s).map(|u| {
-                (
-                    Reverse(self.process_lowerbound(
-                        p0,
-                        p1,
-                        {
-                            let bytes = self.bytes() as usize;
-                            let start = u as usize * bytes;
-                            let end = start + bytes;
-                            let a = meta[4 * u as usize + 0];
-                            let b = meta[4 * u as usize + 1];
-                            let c = meta[4 * u as usize + 2];
-                            let d = meta[4 * u as usize + 3];
-                            (a, b, c, d, &codes[start..end])
-                        },
-                        epsilon,
-                    )),
-                    AlwaysEqual(u),
-                )
-            }));
-            let lut = O::fast_scan(p1);
+            if rhs.start != s {
+                let i = rhs.start / BLOCK_SIZE * BLOCK_SIZE;
+                let t = self.dims.div_ceil(4);
+                let bytes = (t * 16) as usize;
+                let start = (i / BLOCK_SIZE) as usize * bytes;
+                let end = start + bytes;
+                let res = fast_scan(t, &packed_codes[start..end], &lut);
+                heap.extend((rhs.start..s).map(|u| {
+                    (
+                        Reverse({
+                            let a = meta_a[u as usize];
+                            let b = meta_b[u as usize];
+                            let c = meta_c[u as usize];
+                            let d = meta_d[u as usize];
+                            let param = res[(u - i) as usize];
+                            let (est, err) =
+                                O::rabitq_quantization_process_1(a, b, c, d, p0, param);
+                            est - err * 1.9
+                        }),
+                        AlwaysEqual(u),
+                    )
+                }));
+                (rhs.start..s)
+                    .map(|u| {
+                        (
+                            Reverse({
+                                let a = meta_a[u as usize];
+                                let b = meta_b[u as usize];
+                                let c = meta_c[u as usize];
+                                let d = meta_d[u as usize];
+                                let param = res[(u - i) as usize];
+                                let (est, err) =
+                                    O::rabitq_quantization_process_1(a, b, c, d, p0, param);
+                                est - err * 1.9
+                            }),
+                            AlwaysEqual(u),
+                        )
+                    })
+                    .for_each(|(Reverse(low_u), AlwaysEqual(u))| {
+                        if result.len() < 10 || low_u < result.peek().unwrap().0 {
+                            let (dis_u, ()) = rerank(u);
+                            result.push((dis_u, AlwaysEqual(u), ()));
+                        }
+                        while result.len() > 10 {
+                            result.pop();
+                        }
+                    });
+            }
             for i in (s..e).step_by(BLOCK_SIZE as _) {
                 let t = self.dims.div_ceil(4);
                 let bytes = (t * 16) as usize;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                heap.extend({
-                    let res = fast_scan(t, &packed_codes[start..end], &lut);
-                    (i..i + BLOCK_SIZE)
-                        .map(|u| {
-                            (
-                                Reverse({
-                                    let a = meta[4 * u as usize + 0];
-                                    let b = meta[4 * u as usize + 1];
-                                    let c = meta[4 * u as usize + 2];
-                                    let d = meta[4 * u as usize + 3];
-                                    let param = res[(u - i) as usize];
-                                    let (est, err) =
-                                        O::rabitq_quantization_process_1(a, b, c, d, p0, param);
-                                    est - err * epsilon
-                                }),
-                                AlwaysEqual(u),
-                            )
-                        })
-                        .collect::<Vec<_>>()
-                });
+                let res = fast_scan(t, &packed_codes[start..end], &lut);
+                let meta_a = &meta_a[i as usize..][..BLOCK_SIZE as usize];
+                let meta_b = &meta_b[i as usize..][..BLOCK_SIZE as usize];
+                let meta_c = &meta_c[i as usize..][..BLOCK_SIZE as usize];
+                let meta_d = &meta_d[i as usize..][..BLOCK_SIZE as usize];
+                let temp = O::rabitq_quantization_process_1_parallel(
+                    meta_a.try_into().unwrap(),
+                    meta_b.try_into().unwrap(),
+                    meta_c.try_into().unwrap(),
+                    meta_d.try_into().unwrap(),
+                    p0,
+                    &res,
+                );
+                (0..BLOCK_SIZE)
+                    .map(|index| (Reverse(temp[index as usize]), AlwaysEqual(i + index)))
+                    .for_each(|(Reverse(low_u), AlwaysEqual(u))| {
+                        if result.len() < 10 || low_u < result.peek().unwrap().0 {
+                            let (dis_u, ()) = rerank(u);
+                            result.push((dis_u, AlwaysEqual(u), ()));
+                        }
+                        while result.len() > 10 {
+                            result.pop();
+                        }
+                    });
             }
-            heap.extend((e..rhs.end).map(|u| {
-                (
-                    Reverse(self.process_lowerbound(
-                        p0,
-                        p1,
-                        {
-                            let bytes = self.bytes() as usize;
-                            let start = u as usize * bytes;
-                            let end = start + bytes;
-                            let a = meta[4 * u as usize + 0];
-                            let b = meta[4 * u as usize + 1];
-                            let c = meta[4 * u as usize + 2];
-                            let d = meta[4 * u as usize + 3];
-                            (a, b, c, d, &codes[start..end])
-                        },
-                        epsilon,
-                    )),
-                    AlwaysEqual(u),
-                )
-            }));
+            if e != rhs.end {
+                let i = e / BLOCK_SIZE * BLOCK_SIZE;
+                let t = self.dims.div_ceil(4);
+                let bytes = (t * 16) as usize;
+                let start = (i / BLOCK_SIZE) as usize * bytes;
+                let end = start + bytes;
+                let res = fast_scan(t, &packed_codes[start..end], &lut);
+                (e..rhs.end)
+                    .map(|u| {
+                        (
+                            Reverse({
+                                let a = meta_a[u as usize];
+                                let b = meta_b[u as usize];
+                                let c = meta_c[u as usize];
+                                let d = meta_d[u as usize];
+                                let param = res[(u - i) as usize];
+                                let (est, err) =
+                                    O::rabitq_quantization_process_1(a, b, c, d, p0, param);
+                                est - err * 1.9
+                            }),
+                            AlwaysEqual(u),
+                        )
+                    })
+                    .for_each(|(Reverse(low_u), AlwaysEqual(u))| {
+                        if result.len() < 10 || low_u < result.peek().unwrap().0 {
+                            let (dis_u, ()) = rerank(u);
+                            result.push((dis_u, AlwaysEqual(u), ()));
+                        }
+                        while result.len() > 10 {
+                            result.pop();
+                        }
+                    });
+            }
             return;
         }
         heap.extend(rhs.map(|u| {
             (
-                Reverse(self.process_lowerbound(
-                    p0,
-                    p1,
-                    {
-                        let bytes = self.bytes() as usize;
-                        let start = u as usize * bytes;
-                        let end = start + bytes;
-                        let a = meta[4 * u as usize + 0];
-                        let b = meta[4 * u as usize + 1];
-                        let c = meta[4 * u as usize + 2];
-                        let d = meta[4 * u as usize + 3];
-                        (a, b, c, d, &codes[start..end])
-                    },
-                    epsilon,
-                )),
+                Reverse(self.process_lowerbound(p0, p1, {
+                    let bytes = self.bytes() as usize;
+                    let start = u as usize * bytes;
+                    let end = start + bytes;
+                    let a = meta_a[u as usize];
+                    let b = meta_b[u as usize];
+                    let c = meta_c[u as usize];
+                    let d = meta_d[u as usize];
+                    (a, b, c, d, &codes[start..end])
+                })),
                 AlwaysEqual(u),
             )
         }));
@@ -203,6 +247,6 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         r: impl Fn(u32) -> (F32, T) + 'a,
     ) -> impl RerankerPop<T> + 'a {
-        ErrorBasedReranker::new(heap, r)
+        ErrorBasedFlatReranker::new(heap, r)
     }
 }

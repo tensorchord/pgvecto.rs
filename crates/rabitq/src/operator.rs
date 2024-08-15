@@ -37,6 +37,14 @@ pub trait OperatorRabitq: OperatorStorage {
         p0: &Self::QuantizationPreprocessed0,
         param: u16,
     ) -> (F32, F32);
+    fn rabitq_quantization_process_1_parallel(
+        dis_u_2: &[F32; 32],
+        factor_ppc: &[F32; 32],
+        factor_ip: &[F32; 32],
+        factor_err: &[F32; 32],
+        p0: &Self::QuantizationPreprocessed0,
+        param: &[u16; 32],
+    ) -> [F32; 32];
 
     const SUPPORT_FAST_SCAN: bool;
     fn fast_scan(preprocessed: &Self::QuantizationPreprocessed1) -> Vec<u8>;
@@ -83,6 +91,7 @@ impl OperatorRabitq for Vecf32L2 {
         rabitq_quantization_process(dis_u_2, factor_ppc, factor_ip, factor_err, code, *p0, p1)
     }
 
+    #[inline(always)]
     fn rabitq_quantization_process_1(
         dis_u_2: F32,
         factor_ppc: F32,
@@ -92,6 +101,20 @@ impl OperatorRabitq for Vecf32L2 {
         param: u16,
     ) -> (F32, F32) {
         rabitq_quantization_process_1(dis_u_2, factor_ppc, factor_ip, factor_err, *p0, param)
+    }
+
+    #[inline(always)]
+    fn rabitq_quantization_process_1_parallel(
+        dis_u_2: &[F32; 32],
+        factor_ppc: &[F32; 32],
+        factor_ip: &[F32; 32],
+        factor_err: &[F32; 32],
+        p0: &Self::QuantizationPreprocessed0,
+        param: &[u16; 32],
+    ) -> [F32; 32] {
+        rabitq_quantization_process_1_parallel(
+            dis_u_2, factor_ppc, factor_ip, factor_err, *p0, param,
+        )
     }
 
     fn proj(projection: &[Vec<F32>], vector: &[F32]) -> Vec<F32> {
@@ -169,6 +192,18 @@ macro_rules! unimpl_operator_rabitq {
                 unimplemented!()
             }
 
+            #[inline(always)]
+            fn rabitq_quantization_process_1_parallel(
+                _: &[F32; 32],
+                _: &[F32; 32],
+                _: &[F32; 32],
+                _: &[F32; 32],
+                _: &Self::QuantizationPreprocessed0,
+                _: &[u16; 32],
+            ) -> [F32; 32] {
+                unimplemented!()
+            }
+
             const SUPPORT_FAST_SCAN: bool = false;
             fn fast_scan(_: &Self::QuantizationPreprocessed1) -> Vec<u8> {
                 unimplemented!()
@@ -219,6 +254,71 @@ pub fn rabitq_quantization_process_1(
         dis_u_2 + dis_v_2 + b * factor_ppc + (F32(2.0 * abdp as f32) - qvector_sum) * factor_ip * k;
     let err = factor_err * dis_v_2.sqrt();
     (rough, err)
+}
+
+#[inline(always)]
+pub fn rabitq_quantization_process_1_parallel(
+    dis_u_2: &[F32; 32],
+    factor_ppc: &[F32; 32],
+    factor_ip: &[F32; 32],
+    factor_err: &[F32; 32],
+    (dis_v_2, b, k, qvector_sum): (F32, F32, F32, F32),
+    abdp: &[u16; 32],
+) -> [F32; 32] {
+    unsafe {
+        // todo: fix detect target
+        rabitq_quantization_process_1_parallel_avx2(
+            dis_u_2,
+            factor_ppc,
+            factor_ip,
+            factor_err,
+            (dis_v_2, b, k, qvector_sum),
+            abdp,
+        )
+    }
+}
+
+#[detect::target_cpu(enable = "v3")]
+pub unsafe fn rabitq_quantization_process_1_parallel_avx2(
+    dis_u_2: &[F32; 32],
+    factor_ppc: &[F32; 32],
+    factor_ip: &[F32; 32],
+    factor_err: &[F32; 32],
+    (dis_v_2, b, k, qvector_sum): (F32, F32, F32, F32),
+    abdp: &[u16; 32],
+) -> [F32; 32] {
+    unsafe {
+        use core::arch::x86_64::*;
+        let mut result = [F32(0.0); 32];
+        let dis_v_2 = _mm256_set1_ps(dis_v_2.0);
+        let b = _mm256_set1_ps(b.0);
+        let k = _mm256_set1_ps(k.0);
+        let qvector_sum = _mm256_set1_ps(qvector_sum.0);
+        let epsilon = _mm256_set1_ps(1.9);
+        for i in (0_usize..32).step_by(8) {
+            let dis_u_2 = _mm256_loadu_ps(dis_u_2.as_ptr().add(i).cast());
+            let factor_ppc = _mm256_loadu_ps(factor_ppc.as_ptr().add(i).cast());
+            let factor_ip = _mm256_loadu_ps(factor_ip.as_ptr().add(i).cast());
+            let factor_err = _mm256_loadu_ps(factor_err.as_ptr().add(i).cast());
+            let abdp = _mm256_cvtepi32_ps(_mm256_cvtepi16_epi32(_mm_loadu_si128(
+                abdp.as_ptr().add(i).cast(),
+            )));
+            // dis_u_2 + dis_v_2 + b * factor_ppc + (F32(2.0 * abdp as f32) - qvector_sum) * factor_ip * k - factor_err * dis_v_2.sqrt() * epsilon
+            let part_2 = _mm256_mul_ps(b, factor_ppc);
+            let part_3_left = _mm256_sub_ps(_mm256_mul_ps(_mm256_set1_ps(2.0), abdp), qvector_sum);
+            let part_3_right = _mm256_mul_ps(factor_ip, k);
+            let part_4 = _mm256_mul_ps(factor_err, _mm256_sqrt_ps(dis_v_2));
+            let full = _mm256_sub_ps(
+                _mm256_add_ps(
+                    _mm256_fmadd_ps(part_3_left, part_3_right, part_2),
+                    _mm256_add_ps(dis_v_2, dis_u_2),
+                ),
+                _mm256_mul_ps(part_4, epsilon),
+            );
+            _mm256_storeu_ps(result.as_mut_ptr().add(i).cast(), full);
+        }
+        result
+    }
 }
 
 fn binarize(vector: &[u8]) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {

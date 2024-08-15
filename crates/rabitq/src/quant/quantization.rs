@@ -9,6 +9,7 @@ use common::mmap_array::MmapArray;
 use quantization::utils::InfiniteByteChunks;
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::ops::Range;
 use std::path::Path;
 
@@ -37,7 +38,10 @@ pub struct Quantization<O: OperatorRabitq> {
     train: Json<Quantizer<O>>,
     codes: MmapArray<u8>,
     packed_codes: MmapArray<u8>,
-    meta: MmapArray<F32>,
+    meta_a: MmapArray<F32>,
+    meta_b: MmapArray<F32>,
+    meta_c: MmapArray<F32>,
+    meta_d: MmapArray<F32>,
 }
 
 impl<O: OperatorRabitq> Quantization<O> {
@@ -105,12 +109,39 @@ impl<O: OperatorRabitq> Quantization<O> {
                 }
             },
         );
-        let meta = MmapArray::create(
-            path.as_ref().join("meta"),
+        let meta_a = MmapArray::create(
+            path.as_ref().join("meta_a"),
             match &*train {
-                Quantizer::Rabitq(x) => Box::new((0..n).flat_map(|i| {
-                    let (a, b, c, d, _) = x.encode(&vectors(i));
-                    [a, b, c, d].into_iter()
+                Quantizer::Rabitq(x) => Box::new((0..n).map(|i| {
+                    let (a, _, _, _, _) = x.encode(&vectors(i));
+                    a
+                })),
+            },
+        );
+        let meta_b = MmapArray::create(
+            path.as_ref().join("meta_b"),
+            match &*train {
+                Quantizer::Rabitq(x) => Box::new((0..n).map(|i| {
+                    let (_, b, _, _, _) = x.encode(&vectors(i));
+                    b
+                })),
+            },
+        );
+        let meta_c = MmapArray::create(
+            path.as_ref().join("meta_c"),
+            match &*train {
+                Quantizer::Rabitq(x) => Box::new((0..n).map(|i| {
+                    let (_, _, c, _, _) = x.encode(&vectors(i));
+                    c
+                })),
+            },
+        );
+        let meta_d = MmapArray::create(
+            path.as_ref().join("meta_d"),
+            match &*train {
+                Quantizer::Rabitq(x) => Box::new((0..n).map(|i| {
+                    let (_, _, _, d, _) = x.encode(&vectors(i));
+                    d
                 })),
             },
         );
@@ -118,7 +149,10 @@ impl<O: OperatorRabitq> Quantization<O> {
             train,
             codes,
             packed_codes,
-            meta,
+            meta_a,
+            meta_b,
+            meta_c,
+            meta_d,
         }
     }
 
@@ -126,12 +160,18 @@ impl<O: OperatorRabitq> Quantization<O> {
         let train = Json::open(path.as_ref().join("train"));
         let codes = MmapArray::open(path.as_ref().join("codes"));
         let packed_codes = MmapArray::open(path.as_ref().join("packed_codes"));
-        let meta = MmapArray::open(path.as_ref().join("meta"));
+        let meta_a = MmapArray::open(path.as_ref().join("meta_a"));
+        let meta_b = MmapArray::open(path.as_ref().join("meta_b"));
+        let meta_c = MmapArray::open(path.as_ref().join("meta_c"));
+        let meta_d = MmapArray::open(path.as_ref().join("meta_d"));
         Self {
             train,
             codes,
             packed_codes,
-            meta,
+            meta_a,
+            meta_b,
+            meta_c,
+            meta_d,
         }
     }
 
@@ -147,10 +187,10 @@ impl<O: OperatorRabitq> Quantization<O> {
                 let bytes = x.bytes() as usize;
                 let start = u as usize * bytes;
                 let end = start + bytes;
-                let a = self.meta[4 * u as usize + 0];
-                let b = self.meta[4 * u as usize + 1];
-                let c = self.meta[4 * u as usize + 2];
-                let d = self.meta[4 * u as usize + 3];
+                let a = self.meta_a[u as usize];
+                let b = self.meta_b[u as usize];
+                let c = self.meta_c[u as usize];
+                let d = self.meta_d[u as usize];
                 let codes = &self.codes[start..end];
                 x.process(&lhs.0, &lhs.1, (a, b, c, d, codes))
             }
@@ -162,7 +202,8 @@ impl<O: OperatorRabitq> Quantization<O> {
         preprocessed: &QuantizationPreprocessed<O>,
         rhs: Range<u32>,
         heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
-        rq_epsilon: F32,
+        result: &mut BinaryHeap<(F32, AlwaysEqual<u32>, ())>,
+        rerank: impl Fn(u32) -> (F32, ()),
         rq_fast_scan: bool,
     ) {
         match (&*self.train, preprocessed) {
@@ -170,10 +211,14 @@ impl<O: OperatorRabitq> Quantization<O> {
                 lhs,
                 rhs,
                 heap,
+                result,
+                rerank,
                 &self.codes,
                 &self.packed_codes,
-                &self.meta,
-                rq_epsilon,
+                &self.meta_a,
+                &self.meta_b,
+                &self.meta_c,
+                &self.meta_d,
                 rq_fast_scan,
             ),
         }
