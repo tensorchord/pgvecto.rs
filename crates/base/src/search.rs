@@ -104,19 +104,3 @@ impl<'a, T> RerankerPop<T> for Box<dyn FlatReranker<T> + 'a> {
         self.as_mut().pop()
     }
 }
-
-pub trait GraphReranker<T>: RerankerPop<T> + RerankerPush {}
-
-impl<S: RerankerPop<T> + RerankerPush, T> GraphReranker<T> for S {}
-
-impl<'a, T> RerankerPop<T> for Box<dyn GraphReranker<T> + 'a> {
-    fn pop(&mut self) -> Option<(F32, u32, T)> {
-        self.as_mut().pop()
-    }
-}
-
-impl<'a, T> RerankerPush for Box<dyn GraphReranker<T> + 'a> {
-    fn push(&mut self, u: u32) {
-        self.as_mut().push(u)
-    }
-}

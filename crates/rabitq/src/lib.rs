@@ -13,6 +13,7 @@ use base::always_equal::AlwaysEqual;
 use base::index::{IndexOptions, RabitqIndexingOptions, SearchOptions};
 use base::operator::Borrowed;
 use base::scalar::F32;
+use base::search::RerankerPop;
 use base::search::{Collection, Element, Payload, Source, Vectors};
 use common::json::Json;
 use common::mmap_array::MmapArray;

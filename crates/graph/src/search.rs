@@ -2,7 +2,8 @@ use crate::visited::VisitedGuard;
 use crate::visited::VisitedPool;
 use base::always_equal::AlwaysEqual;
 use base::scalar::F32;
-use base::search::GraphReranker;
+use base::search::RerankerPop;
+use base::search::RerankerPush;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
@@ -132,7 +133,7 @@ pub fn vbase_internal<'a, G, E, T>(
     mut reranker: G,
 ) -> impl Iterator<Item = (F32, u32, T)> + 'a
 where
-    G: GraphReranker<(E, T)> + 'a,
+    G: RerankerPush + RerankerPop<(E, T)> + 'a,
     E: Iterator<Item = u32>,
     T: 'a,
 {
@@ -161,7 +162,7 @@ pub fn vbase_generic<'a, G, E, T>(
     ef_search: u32,
 ) -> impl Iterator<Item = (F32, u32, T)> + 'a
 where
-    G: GraphReranker<(E, T)> + 'a,
+    G: RerankerPush + RerankerPop<(E, T)> + 'a,
     E: Iterator<Item = u32>,
     T: 'a,
 {

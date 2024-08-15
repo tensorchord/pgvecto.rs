@@ -1,8 +1,8 @@
 pub mod operator;
 
 use self::operator::OperatorTrivialQuantization;
-use crate::reranker::disabled::DisabledFlatReranker;
-use crate::reranker::disabled::DisabledGraphReranker;
+use crate::reranker::flat::DisabledFlatReranker;
+use crate::reranker::graph::GraphReranker;
 use base::always_equal::AlwaysEqual;
 use base::index::*;
 use base::operator::*;
@@ -68,7 +68,7 @@ impl<O: OperatorTrivialQuantization> TrivialQuantizer<O> {
         &'a self,
         _: Borrowed<'a, O>,
         r: R,
-    ) -> impl RerankerPop<T> + RerankerPush + 'a {
-        DisabledGraphReranker::new(r)
+    ) -> GraphReranker<T, R> {
+        GraphReranker::new(None, r)
     }
 }

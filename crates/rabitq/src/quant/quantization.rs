@@ -183,10 +183,10 @@ impl<O: OperatorRabitq> Quantization<O> {
         &'a self,
         heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
         r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn RerankerPop<T> + 'a> {
+    ) -> impl RerankerPop<T> + 'a {
         use Quantizer::*;
         match &*self.train {
-            Rabitq(x) => Box::new(x.rerank(heap, r)),
+            Rabitq(x) => x.rerank(heap, r),
         }
     }
 }

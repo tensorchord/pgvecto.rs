@@ -1,8 +1,8 @@
 pub mod operator;
 
 use self::operator::OperatorProductQuantization;
-use crate::reranker::window::WindowFlatReranker;
-use crate::reranker::window_0::Window0GraphReranker;
+use crate::reranker::flat::WindowFlatReranker;
+use crate::reranker::graph::GraphReranker;
 use base::always_equal::AlwaysEqual;
 use base::index::*;
 use base::operator::*;
@@ -207,7 +207,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
         vector: Borrowed<'a, O>,
         c: C,
         r: R,
-    ) -> impl RerankerPop<T> + RerankerPush + 'a {
+    ) -> GraphReranker<'a, T, R> {
         let p = O::product_quantization_preprocess(
             self.dims,
             self.ratio,
@@ -215,6 +215,6 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
             self.centroids.as_slice(),
             vector,
         );
-        Window0GraphReranker::new(move |u| self.process(&p, c(u)), r)
+        GraphReranker::new(Some(Box::new(move |u| self.process(&p, c(u)))), r)
     }
 }

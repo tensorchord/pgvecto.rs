@@ -24,6 +24,7 @@ use base::scalar::*;
 use base::search::*;
 use common::json::Json;
 use common::mmap_array::MmapArray;
+use reranker::graph::GraphReranker;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cmp::Reverse;
@@ -313,15 +314,15 @@ impl<O: OperatorQuantization> Quantization<O> {
         }
     }
 
-    pub fn graph_rerank<'a, T: 'a>(
+    pub fn graph_rerank<'a, T: 'a, R: Fn(u32) -> (F32, T) + 'a>(
         &'a self,
         vector: Borrowed<'a, O>,
-        r: impl Fn(u32) -> (F32, T) + 'a,
-    ) -> Box<dyn GraphReranker<T> + 'a> {
+        r: R,
+    ) -> GraphReranker<'a, T, R> {
         use Quantizer::*;
         match &*self.train {
-            Trivial(x) => Box::new(x.graph_rerank(vector, r)),
-            Scalar(x) => Box::new(x.graph_rerank(
+            Trivial(x) => x.graph_rerank(vector, r),
+            Scalar(x) => x.graph_rerank(
                 vector,
                 |u| {
                     let bytes = x.bytes() as usize;
@@ -330,8 +331,8 @@ impl<O: OperatorQuantization> Quantization<O> {
                     &self.codes[start..end]
                 },
                 r,
-            )),
-            Product(x) => Box::new(x.graph_rerank(
+            ),
+            Product(x) => x.graph_rerank(
                 vector,
                 |u| {
                     let bytes = x.bytes() as usize;
@@ -340,7 +341,7 @@ impl<O: OperatorQuantization> Quantization<O> {
                     &self.codes[start..end]
                 },
                 r,
-            )),
+            ),
         }
     }
 }

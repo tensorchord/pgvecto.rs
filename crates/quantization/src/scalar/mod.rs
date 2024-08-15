@@ -1,14 +1,13 @@
 pub mod operator;
 
 use self::operator::OperatorScalarQuantization;
-use crate::reranker::window::WindowFlatReranker;
-use crate::reranker::window_0::Window0GraphReranker;
+use crate::reranker::flat::WindowFlatReranker;
+use crate::reranker::graph::GraphReranker;
 use base::always_equal::AlwaysEqual;
 use base::index::*;
 use base::operator::*;
 use base::scalar::*;
 use base::search::RerankerPop;
-use base::search::RerankerPush;
 use base::search::Vectors;
 use base::vector::*;
 use common::vec2::Vec2;
@@ -199,9 +198,9 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
         vector: Borrowed<'a, O>,
         c: C,
         r: R,
-    ) -> impl RerankerPush + RerankerPop<T> + 'a {
+    ) -> GraphReranker<'a, T, R> {
         let p =
             O::scalar_quantization_preprocess(self.dims, self.bits, &self.max, &self.min, vector);
-        Window0GraphReranker::new(move |u| self.process(&p, c(u)), r)
+        GraphReranker::new(Some(Box::new(move |u| self.process(&p, c(u)))), r)
     }
 }
