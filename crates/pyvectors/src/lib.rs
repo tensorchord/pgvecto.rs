@@ -165,7 +165,7 @@ impl Rabitq {
                 .collect::<Vec<_>>(),
         );
         let mut options = SearchOptions::default();
-        options.rabitq_nprobe = 100;
+        options.rabitq_nprobe = 300;
         self.0
             .vbase(vector.as_borrowed(), &options)
             .map(|Element { payload, .. }| payload.0.pointer().as_u64() as u32)

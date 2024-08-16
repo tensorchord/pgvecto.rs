@@ -21,6 +21,8 @@ use common::remap::RemappedCollection;
 use common::vec2::Vec2;
 use k_means::{k_means, k_means_lookup, k_means_lookup_many};
 use num_traits::Float;
+use rayon::iter::IntoParallelIterator;
+use rayon::iter::ParallelIterator;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::create_dir;
@@ -146,6 +148,27 @@ fn from_nothing<O: Op>(
     let centroids: Vec2<F32> = k_means(nlist as usize, samples, false);
     rayon::check();
     let mut ls = vec![Vec::new(); nlist as usize];
+    (0..collection.len())
+        .into_par_iter()
+        .fold(
+            || vec![Vec::new(); nlist as usize],
+            |mut state, i| {
+                state[k_means_lookup(O::cast(collection.vector(i)), &centroids)].push(i);
+                state
+            },
+        )
+        .reduce(
+            || vec![Vec::new(); nlist as usize],
+            |lhs, rhs| {
+                std::iter::zip(lhs.into_iter(), rhs.into_iter())
+                    .map(|(lhs, rhs)| {
+                        let mut x = lhs;
+                        x.extend(rhs);
+                        x
+                    })
+                    .collect()
+            },
+        );
     for i in 0..collection.len() {
         ls[k_means_lookup(O::cast(collection.vector(i)), &centroids)].push(i);
     }

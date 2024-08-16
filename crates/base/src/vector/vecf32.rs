@@ -478,9 +478,10 @@ unsafe fn sqr_dist(mut d: *const f32, mut q: *const f32) -> f32 {
 
 #[inline(always)]
 pub fn sl2(lhs: &[F32], rhs: &[F32]) -> F32 {
-    assert!(lhs.len() == 100);
-    assert!(rhs.len() == 100);
-    unsafe { F32(sqr_dist(lhs.as_ptr().cast(), rhs.as_ptr().cast())) }
+    // assert!(lhs.len() == 100);
+    // assert!(rhs.len() == 100);
+    // unsafe { F32(sqr_dist(lhs.as_ptr().cast(), rhs.as_ptr().cast())) }
+    unsafe { sl2_v3(lhs, rhs) }
 }
 
 #[detect::multiversion(v4, v3, v2, neon, fallback)]
