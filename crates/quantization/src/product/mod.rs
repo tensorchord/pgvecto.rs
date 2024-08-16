@@ -131,66 +131,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
         packed_codes: &[u8],
         fast_scan: bool,
     ) {
-        let dims = self.dims;
-        let ratio = self.ratio;
-        let width = dims.div_ceil(ratio);
-        if fast_scan
-            && O::SUPPORT_FAST_SCAN
-            && self.bits == 4
-            && crate::fast_scan::b4::is_supported()
-        {
-            use crate::fast_scan::b4::{fast_scan, BLOCK_SIZE};
-            use crate::quantize::{dequantize, quantize_255};
-            let s = rhs.start.next_multiple_of(BLOCK_SIZE);
-            let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
-            heap.extend((rhs.start..s).map(|u| {
-                (
-                    Reverse(self.process(preprocessed, {
-                        let bytes = self.bytes() as usize;
-                        let start = u as usize * bytes;
-                        let end = start + bytes;
-                        &codes[start..end]
-                    })),
-                    AlwaysEqual(u),
-                )
-            }));
-            let (k, b, lut) = quantize_255(&O::fast_scan(preprocessed));
-            for i in (s..e).step_by(BLOCK_SIZE as _) {
-                let bytes = width as usize * 16;
-                let start = (i / BLOCK_SIZE) as usize * bytes;
-                let end = start + bytes;
-                heap.extend({
-                    let res = fast_scan(width, &packed_codes[start..end], &lut);
-                    let r = res.map(|x| O::fast_scan_resolve(dequantize(width, k, b, x)));
-                    (i..i + BLOCK_SIZE)
-                        .map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
-                        .collect::<Vec<_>>()
-                });
-            }
-            heap.extend((e..rhs.end).map(|u| {
-                (
-                    Reverse(self.process(preprocessed, {
-                        let bytes = self.bytes() as usize;
-                        let start = u as usize * bytes;
-                        let end = start + bytes;
-                        &codes[start..end]
-                    })),
-                    AlwaysEqual(u),
-                )
-            }));
-            return;
-        }
-        heap.extend(rhs.map(|u| {
-            (
-                Reverse(self.process(preprocessed, {
-                    let bytes = self.bytes() as usize;
-                    let start = u as usize * bytes;
-                    let end = start + bytes;
-                    &codes[start..end]
-                })),
-                AlwaysEqual(u),
-            )
-        }));
+        todo!()
     }
 
     pub fn flat_rerank<'a, T: 'a, R: Fn(u32) -> (F32, T) + 'a>(

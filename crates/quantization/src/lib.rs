@@ -4,6 +4,7 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
+#![feature(pointer_is_aligned_to)]
 
 pub mod fast_scan;
 pub mod operator;

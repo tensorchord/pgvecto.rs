@@ -25,6 +25,7 @@ impl<O: Operator<VectorOwned = Vecf32Owned>> Vectors<O> for VecStorage<F32> {
     fn vector(&self, i: u32) -> Vecf32Borrowed<'_> {
         let s = i as usize * *self.dims as usize;
         let e = (i + 1) as usize * *self.dims as usize;
+
         Vecf32Borrowed::new(&self.slice[s..e])
     }
 }

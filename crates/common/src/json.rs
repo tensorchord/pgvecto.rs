@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::{ops::Deref, path::Path};
 
 #[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
 pub struct Json<T>(pub T);
 
 impl<T: Serialize> Json<T> {
@@ -19,6 +20,7 @@ impl<T: for<'a> Deserialize<'a>> Json<T> {
 }
 
 impl<T> AsRef<T> for Json<T> {
+    #[inline(always)]
     fn as_ref(&self) -> &T {
         &self.0
     }
@@ -27,6 +29,7 @@ impl<T> AsRef<T> for Json<T> {
 impl<T> Deref for Json<T> {
     type Target = T;
 
+    #[inline(always)]
     fn deref(&self) -> &T {
         &self.0
     }

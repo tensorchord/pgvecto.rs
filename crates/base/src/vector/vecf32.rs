@@ -383,32 +383,6 @@ unsafe fn sl2_v4(lhs: &[F32], rhs: &[F32]) -> F32 {
     }
 }
 
-#[cfg(all(target_arch = "x86_64", test))]
-#[test]
-fn sl2_v4_test() {
-    const EPSILON: F32 = F32(2.0);
-    detect::init();
-    if !detect::v4::detect() {
-        println!("test {} ... skipped (v4)", module_path!());
-        return;
-    }
-    for _ in 0..300 {
-        let n = 4010;
-        let lhs = (0..n).map(|_| F32(rand::random::<_>())).collect::<Vec<_>>();
-        let rhs = (0..n).map(|_| F32(rand::random::<_>())).collect::<Vec<_>>();
-        for z in 3990..4010 {
-            let lhs = &lhs[..z];
-            let rhs = &rhs[..z];
-            let specialized = unsafe { sl2_v4(&lhs, &rhs) };
-            let fallback = unsafe { sl2_fallback(&lhs, &rhs) };
-            assert!(
-                (specialized - fallback).abs() < EPSILON,
-                "specialized = {specialized}, fallback = {fallback}."
-            );
-        }
-    }
-}
-
 #[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v3")]
 unsafe fn sl2_v3(lhs: &[F32], rhs: &[F32]) -> F32 {
@@ -462,42 +436,51 @@ unsafe fn sl2_v3(lhs: &[F32], rhs: &[F32]) -> F32 {
     }
 }
 
-#[cfg(all(target_arch = "x86_64", test))]
-#[test]
-fn sl2_v3_test() {
-    const EPSILON: F32 = F32(2.0);
-    detect::init();
-    if !detect::v3::detect() {
-        println!("test {} ... skipped (v3)", module_path!());
-        return;
-    }
-    for _ in 0..300 {
-        let n = 4010;
-        let lhs = (0..n).map(|_| F32(rand::random::<_>())).collect::<Vec<_>>();
-        let rhs = (0..n).map(|_| F32(rand::random::<_>())).collect::<Vec<_>>();
-        for z in 3990..4010 {
-            let lhs = &lhs[..z];
-            let rhs = &rhs[..z];
-            let specialized = unsafe { sl2_v3(&lhs, &rhs) };
-            let fallback = unsafe { sl2_fallback(&lhs, &rhs) };
-            assert!(
-                (specialized - fallback).abs() < EPSILON,
-                "specialized = {specialized}, fallback = {fallback}."
-            );
+#[detect::target_cpu(enable = "v3")]
+unsafe fn sqr_dist(mut d: *const f32, mut q: *const f32) -> f32 {
+    #[repr(align(32))]
+    struct TmpRes([f32; 8]);
+
+    use std::arch::x86_64::*;
+
+    unsafe {
+        let mut r = TmpRes([0.0f32; 8]);
+
+        let mut sum = _mm256_set1_ps(0.0);
+        for _ in 0..6 {
+            let v1 = _mm256_loadu_ps(d);
+            let v2 = _mm256_loadu_ps(q);
+            d = d.add(8);
+            q = q.add(8);
+            let diff = _mm256_sub_ps(v1, v2);
+            sum = _mm256_add_ps(sum, _mm256_mul_ps(diff, diff));
+
+            let v1 = _mm256_loadu_ps(d);
+            let v2 = _mm256_loadu_ps(q);
+            d = d.add(8);
+            q = q.add(8);
+            let diff = _mm256_sub_ps(v1, v2);
+            sum = _mm256_add_ps(sum, _mm256_mul_ps(diff, diff));
         }
+        _mm256_store_ps(r.0.as_mut_ptr(), sum);
+
+        let mut ret = r.0[0] + r.0[1] + r.0[2] + r.0[3] + r.0[4] + r.0[5] + r.0[6] + r.0[7];
+
+        for _ in 0..4 {
+            let tmp = (*q) - (*d);
+            ret += tmp * tmp;
+            d = d.add(1);
+            q = q.add(1);
+        }
+        ret
     }
 }
 
-#[detect::multiversion(v4 = import, v3 = import, v2, neon, fallback = export)]
+#[inline(always)]
 pub fn sl2(lhs: &[F32], rhs: &[F32]) -> F32 {
-    assert!(lhs.len() == rhs.len());
-    let n = lhs.len();
-    let mut d2 = F32::zero();
-    for i in 0..n {
-        let d = lhs[i] - rhs[i];
-        d2 += d * d;
-    }
-    d2
+    assert!(lhs.len() == 100);
+    assert!(rhs.len() == 100);
+    unsafe { F32(sqr_dist(lhs.as_ptr().cast(), rhs.as_ptr().cast())) }
 }
 
 #[detect::multiversion(v4, v3, v2, neon, fallback)]

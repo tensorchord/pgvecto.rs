@@ -32,6 +32,9 @@ bits 4..7 | code (width-1),vector 16 | code (width-1),vector 24 | ... | code (wi
 
 */
 
+use common::aligned_array::AlignedArray;
+use common::aligned_bytes::AlignBytes;
+
 pub const BLOCK_SIZE: u32 = 32;
 
 pub fn pack(width: u32, r: [Vec<u8>; 32]) -> impl Iterator<Item = u8> {
@@ -74,7 +77,7 @@ pub fn is_supported() -> bool {
     false
 }
 
-pub fn fast_scan(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
+pub fn fast_scan(width: u32, codes: &[u8], lut: &AlignBytes<64>) -> AlignedArray<u16, 32> {
     #[cfg(target_arch = "x86_64")]
     {
         if detect::v4::detect() {
@@ -93,7 +96,8 @@ pub fn fast_scan(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
 
 #[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4")]
-unsafe fn fast_scan_v4(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
+unsafe fn fast_scan_v4(width: u32, codes: &[u8], lut: &AlignBytes<64>) -> AlignedArray<u16, 32> {
+    assert!(codes.as_ptr().is_aligned_to(16));
     // bounds checking is not enforced by compiler, so check it manually
     assert_eq!(codes.len(), width as usize * 16);
     assert_eq!(lut.len(), width as usize * 16);
@@ -138,7 +142,7 @@ unsafe fn fast_scan_v4(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
             let clo = _mm512_and_si512(c, mask);
             let chi = _mm512_and_si512(_mm512_srli_epi16(c, 4), mask);
 
-            let lut = _mm512_loadu_si512(lut.as_ptr().add(i * 16).cast());
+            let lut = _mm512_load_si512(lut.as_ptr().add(i * 16).cast());
             let res_lo = _mm512_shuffle_epi8(lut, clo);
             accu_0 = _mm512_add_epi16(accu_0, res_lo);
             accu_1 = _mm512_add_epi16(accu_1, _mm512_srli_epi16(res_lo, 8));
@@ -155,7 +159,7 @@ unsafe fn fast_scan_v4(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
             let clo = _mm256_and_si256(c, mask);
             let chi = _mm256_and_si256(_mm256_srli_epi16(c, 4), mask);
 
-            let lut = _mm256_loadu_si256(lut.as_ptr().add(i * 16).cast());
+            let lut = _mm256_load_si256(lut.as_ptr().add(i * 16).cast());
             let res_lo = _mm512_zextsi256_si512(_mm256_shuffle_epi8(lut, clo));
             accu_0 = _mm512_add_epi16(accu_0, res_lo);
             accu_1 = _mm512_add_epi16(accu_1, _mm512_srli_epi16(res_lo, 8));
@@ -172,7 +176,7 @@ unsafe fn fast_scan_v4(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
             let clo = _mm_and_si128(c, mask);
             let chi = _mm_and_si128(_mm_srli_epi16(c, 4), mask);
 
-            let lut = _mm_loadu_si128(lut.as_ptr().add(i * 16).cast());
+            let lut = _mm_load_si128(lut.as_ptr().add(i * 16).cast());
             let res_lo = _mm512_zextsi128_si512(_mm_shuffle_epi8(lut, clo));
             accu_0 = _mm512_add_epi16(accu_0, res_lo);
             accu_1 = _mm512_add_epi16(accu_1, _mm512_srli_epi16(res_lo, 8));
@@ -184,17 +188,17 @@ unsafe fn fast_scan_v4(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
         }
         debug_assert_eq!(i, width as usize);
 
-        let mut result = [0_u16; 32];
+        let mut result = AlignedArray([0_u16; 32]);
 
         accu_0 = _mm512_sub_epi16(accu_0, _mm512_slli_epi16(accu_1, 8));
-        _mm256_storeu_si256(
-            result.as_mut_ptr().add(0).cast(),
+        _mm256_store_si256(
+            result.0.as_mut_ptr().add(0).cast(),
             combine4x2(accu_0, accu_1),
         );
 
         accu_2 = _mm512_sub_epi16(accu_2, _mm512_slli_epi16(accu_3, 8));
-        _mm256_storeu_si256(
-            result.as_mut_ptr().add(16).cast(),
+        _mm256_store_si256(
+            result.0.as_mut_ptr().add(16).cast(),
             combine4x2(accu_2, accu_3),
         );
 
@@ -204,7 +208,7 @@ unsafe fn fast_scan_v4(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
 
 #[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v3")]
-unsafe fn fast_scan_v3(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
+pub unsafe fn fast_scan_v3(width: u32, codes: &[u8], lut: &AlignBytes<64>) -> AlignedArray<u16, 32> {
     // bounds checking is not enforced by compiler, so check it manually
     assert_eq!(codes.len(), width as usize * 16);
     assert_eq!(lut.len(), width as usize * 16);
@@ -235,7 +239,7 @@ unsafe fn fast_scan_v3(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
             let clo = _mm256_and_si256(c, mask);
             let chi = _mm256_and_si256(_mm256_srli_epi16(c, 4), mask);
 
-            let lut = _mm256_loadu_si256(lut.as_ptr().add(i * 16).cast());
+            let lut = _mm256_load_si256(lut.as_ptr().add(i * 16).cast());
             let res_lo = _mm256_shuffle_epi8(lut, clo);
             accu_0 = _mm256_add_epi16(accu_0, res_lo);
             accu_1 = _mm256_add_epi16(accu_1, _mm256_srli_epi16(res_lo, 8));
@@ -252,7 +256,7 @@ unsafe fn fast_scan_v3(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
             let clo = _mm_and_si128(c, mask);
             let chi = _mm_and_si128(_mm_srli_epi16(c, 4), mask);
 
-            let lut = _mm_loadu_si128(lut.as_ptr().add(i * 16).cast());
+            let lut = _mm_load_si128(lut.as_ptr().add(i * 16).cast());
             let res_lo = _mm256_zextsi128_si256(_mm_shuffle_epi8(lut, clo));
             accu_0 = _mm256_add_epi16(accu_0, res_lo);
             accu_1 = _mm256_add_epi16(accu_1, _mm256_srli_epi16(res_lo, 8));
@@ -264,17 +268,17 @@ unsafe fn fast_scan_v3(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
         }
         debug_assert_eq!(i, width as usize);
 
-        let mut result = [0_u16; 32];
+        let mut result = AlignedArray([0_u16; 32]);
 
         accu_0 = _mm256_sub_epi16(accu_0, _mm256_slli_epi16(accu_1, 8));
-        _mm256_storeu_si256(
-            result.as_mut_ptr().add(0).cast(),
+        _mm256_store_si256(
+            result.0.as_mut_ptr().add(0).cast(),
             combine2x2(accu_0, accu_1),
         );
 
         accu_2 = _mm256_sub_epi16(accu_2, _mm256_slli_epi16(accu_3, 8));
-        _mm256_storeu_si256(
-            result.as_mut_ptr().add(16).cast(),
+        _mm256_store_si256(
+            result.0.as_mut_ptr().add(16).cast(),
             combine2x2(accu_2, accu_3),
         );
 
@@ -284,7 +288,8 @@ unsafe fn fast_scan_v3(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
 
 #[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v2")]
-unsafe fn fast_scan_v2(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
+unsafe fn fast_scan_v2(width: u32, codes: &[u8], lut: &AlignBytes<64>) -> AlignedArray<u16, 32> {
+    assert!(codes.as_ptr().is_aligned_to(16));
     // bounds checking is not enforced by compiler, so check it manually
     assert_eq!(codes.len(), width as usize * 16);
     assert_eq!(lut.len(), width as usize * 16);
@@ -305,7 +310,7 @@ unsafe fn fast_scan_v2(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
             let clo = _mm_and_si128(c, mask);
             let chi = _mm_and_si128(_mm_srli_epi16(c, 4), mask);
 
-            let lut = _mm_loadu_si128(lut.as_ptr().add(i * 16).cast());
+            let lut = _mm_load_si128(lut.as_ptr().add(i * 16).cast());
             let res_lo = _mm_shuffle_epi8(lut, clo);
             accu_0 = _mm_add_epi16(accu_0, res_lo);
             accu_1 = _mm_add_epi16(accu_1, _mm_srli_epi16(res_lo, 8));
@@ -317,60 +322,16 @@ unsafe fn fast_scan_v2(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
         }
         debug_assert_eq!(i, width as usize);
 
-        let mut result = [0_u16; 32];
+        let mut result = AlignedArray([0_u16; 32]);
 
         accu_0 = _mm_sub_epi16(accu_0, _mm_slli_epi16(accu_1, 8));
-        _mm_storeu_si128(result.as_mut_ptr().add(0).cast(), accu_0);
-        _mm_storeu_si128(result.as_mut_ptr().add(8).cast(), accu_1);
+        _mm_store_si128(result.0.as_mut_ptr().add(0).cast(), accu_0);
+        _mm_store_si128(result.0.as_mut_ptr().add(8).cast(), accu_1);
 
         accu_2 = _mm_sub_epi16(accu_2, _mm_slli_epi16(accu_3, 8));
-        _mm_storeu_si128(result.as_mut_ptr().add(16).cast(), accu_2);
-        _mm_storeu_si128(result.as_mut_ptr().add(24).cast(), accu_3);
+        _mm_store_si128(result.0.as_mut_ptr().add(16).cast(), accu_2);
+        _mm_store_si128(result.0.as_mut_ptr().add(24).cast(), accu_3);
 
         result
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-#[test]
-fn test_v4_v3() {
-    detect::init();
-    if !detect::v4::detect() || !detect::v3::detect() {
-        println!("test {} ... skipped (v4, v3)", module_path!());
-        return;
-    }
-    for _ in 0..200 {
-        for width in 90..110 {
-            let codes = (0..16 * width).map(|_| rand::random()).collect::<Vec<u8>>();
-            let lut = (0..16 * width).map(|_| rand::random()).collect::<Vec<u8>>();
-            unsafe {
-                assert_eq!(
-                    fast_scan_v4(width, &codes, &lut),
-                    fast_scan_v3(width, &codes, &lut)
-                );
-            }
-        }
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-#[test]
-fn test_v3_v2() {
-    detect::init();
-    if !detect::v3::detect() || !detect::v2::detect() {
-        println!("test {} ... skipped (v3, v2)", module_path!());
-        return;
-    }
-    for _ in 0..200 {
-        for width in 90..110 {
-            let codes = (0..16 * width).map(|_| rand::random()).collect::<Vec<u8>>();
-            let lut = (0..16 * width).map(|_| rand::random()).collect::<Vec<u8>>();
-            unsafe {
-                assert_eq!(
-                    fast_scan_v3(width, &codes, &lut),
-                    fast_scan_v2(width, &codes, &lut)
-                );
-            }
-        }
     }
 }

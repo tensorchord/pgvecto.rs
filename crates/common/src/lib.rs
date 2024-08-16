@@ -1,3 +1,5 @@
+pub mod aligned_array;
+pub mod aligned_bytes;
 pub mod clean;
 pub mod dir_ops;
 pub mod file_atomic;

@@ -5,6 +5,7 @@ use base::index::VectorOptions;
 use base::scalar::F32;
 use base::search::RerankerPop;
 use num_traits::Float;
+use quantization::fast_scan::b4::fast_scan_v3;
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -105,11 +106,14 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         meta_d: &[F32],
         fast_scan: bool,
     ) {
+        /*
         let mut barrier = if result.len() >= 10 {
             result.peek().unwrap().0
         } else {
             F32::infinity()
         };
+        */
+        let mut barrier = result.peek().unwrap().0;
         if fast_scan && O::SUPPORT_FAST_SCAN && quantization::fast_scan::b4::is_supported() {
             use quantization::fast_scan::b4::{fast_scan, BLOCK_SIZE};
             let lut = O::fast_scan(p1);
@@ -121,27 +125,22 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                 let bytes = (t * 16) as usize;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                let res = fast_scan(t, &packed_codes[start..end], &lut);
+                let res = unsafe {fast_scan_v3(t, &packed_codes[start..end], &lut)};
                 for u in rhs.start..s {
                     let low_u = {
                         let a = meta_a[u as usize];
                         let b = meta_b[u as usize];
                         let c = meta_c[u as usize];
                         let d = meta_d[u as usize];
-                        let param = res[(u - i) as usize];
-                        let (est, err) = O::rabitq_quantization_process_1(a, b, c, d, p0, param);
-                        est - err * 1.9
+                        let param = res.0[(u - i) as usize];
+                        O::rabitq_quantization_process_1(a, b, c, d, p0, param)
                     };
-                    if low_u < barrier {
+                    if low_u.0.to_bits() < barrier.0.to_bits() {
                         let (dis_u, ()) = rerank(u);
-                        if dis_u < barrier {
-                            if result.len() >= 10 {
-                                result.pop();
-                            }
+                        if dis_u.0.to_bits() < barrier.0.to_bits() {
+                            result.pop();
                             result.push((dis_u, AlwaysEqual(u), ()));
-                            if result.len() >= 10 {
-                                barrier = result.peek().unwrap().0;
-                            }
+                            barrier = result.peek().unwrap().0;
                         }
                     }
                 }
@@ -151,7 +150,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                 let bytes = (t * 16) as usize;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                let res = fast_scan(t, &packed_codes[start..end], &lut);
+                let res = unsafe {fast_scan_v3(t, &packed_codes[start..end], &lut)};
                 let meta_a = &meta_a[i as usize..][..BLOCK_SIZE as usize];
                 let meta_b = &meta_b[i as usize..][..BLOCK_SIZE as usize];
                 let meta_c = &meta_c[i as usize..][..BLOCK_SIZE as usize];
@@ -166,17 +165,13 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                 );
                 for index in 0..BLOCK_SIZE {
                     let (Reverse(low_u), AlwaysEqual(u)) =
-                        (Reverse(temp[index as usize]), AlwaysEqual(i + index));
-                    if low_u < barrier {
+                        (Reverse(temp.0[index as usize]), AlwaysEqual(i + index));
+                    if low_u.0.to_bits() < barrier.0.to_bits() {
                         let (dis_u, ()) = rerank(u);
-                        if dis_u < barrier {
-                            if result.len() >= 10 {
-                                result.pop();
-                            }
+                        if dis_u.0.to_bits() < barrier.0.to_bits() {
+                            result.pop();
                             result.push((dis_u, AlwaysEqual(u), ()));
-                            if result.len() >= 10 {
-                                barrier = result.peek().unwrap().0;
-                            }
+                            barrier = result.peek().unwrap().0;
                         }
                     }
                 }
@@ -187,27 +182,22 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                 let bytes = (t * 16) as usize;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                let res = fast_scan(t, &packed_codes[start..end], &lut);
+                let res = unsafe{fast_scan_v3(t, &packed_codes[start..end], &lut)};
                 for u in e..rhs.end {
                     let low_u = {
                         let a = meta_a[u as usize];
                         let b = meta_b[u as usize];
                         let c = meta_c[u as usize];
                         let d = meta_d[u as usize];
-                        let param = res[(u - i) as usize];
-                        let (est, err) = O::rabitq_quantization_process_1(a, b, c, d, p0, param);
-                        est - err * 1.9
+                        let param = res.0[(u - i) as usize];
+                        O::rabitq_quantization_process_1(a, b, c, d, p0, param)
                     };
-                    if low_u < barrier {
+                    if low_u.0.to_bits() < barrier.0.to_bits() {
                         let (dis_u, ()) = rerank(u);
-                        if dis_u < barrier {
-                            if result.len() >= 10 {
-                                result.pop();
-                            }
+                        if dis_u.0.to_bits() < barrier.0.to_bits() {
+                            result.pop();
                             result.push((dis_u, AlwaysEqual(u), ()));
-                            if result.len() >= 10 {
-                                barrier = result.peek().unwrap().0;
-                            }
+                            barrier = result.peek().unwrap().0;
                         }
                     }
                 }

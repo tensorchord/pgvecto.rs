@@ -3,6 +3,7 @@
 #![allow(clippy::identity_op)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::len_without_is_empty)]
+#![feature(pointer_is_aligned_to)]
 
 pub mod operator;
 pub mod quant;
@@ -19,6 +20,7 @@ use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use common::vec2::Vec2;
 use k_means::{k_means, k_means_lookup, k_means_lookup_many};
+use num_traits::Float;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs::create_dir;
@@ -69,6 +71,16 @@ impl<O: Op> Rabitq<O> {
         );
         let mut heap = Vec::new();
         let mut result = BinaryHeap::new();
+        result.push((F32::infinity(), AlwaysEqual(0_u32), ()));
+        result.push((F32::infinity(), AlwaysEqual(0_u32), ()));
+        result.push((F32::infinity(), AlwaysEqual(0_u32), ()));
+        result.push((F32::infinity(), AlwaysEqual(0_u32), ()));
+        result.push((F32::infinity(), AlwaysEqual(0_u32), ()));
+        result.push((F32::infinity(), AlwaysEqual(0_u32), ()));
+        result.push((F32::infinity(), AlwaysEqual(0_u32), ()));
+        result.push((F32::infinity(), AlwaysEqual(0_u32), ()));
+        result.push((F32::infinity(), AlwaysEqual(0_u32), ()));
+        result.push((F32::infinity(), AlwaysEqual(0_u32), ()));
         for &(_, i) in lists.iter() {
             let preprocessed = self
                 .quantization

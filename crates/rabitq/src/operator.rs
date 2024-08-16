@@ -1,6 +1,8 @@
 use base::operator::Borrowed;
 use base::operator::*;
 use base::scalar::F32;
+use common::aligned_array::AlignedArray;
+use common::aligned_bytes::AlignBytes;
 use num_traits::Float;
 use storage::OperatorStorage;
 
@@ -27,18 +29,18 @@ pub trait OperatorRabitq: OperatorStorage {
         factor_err: F32,
         p0: &Self::QuantizationPreprocessed0,
         param: u16,
-    ) -> (F32, F32);
+    ) -> F32;
     fn rabitq_quantization_process_1_parallel(
         dis_u_2: &[F32; 32],
         factor_ppc: &[F32; 32],
         factor_ip: &[F32; 32],
         factor_err: &[F32; 32],
         p0: &Self::QuantizationPreprocessed0,
-        param: &[u16; 32],
-    ) -> [F32; 32];
+        param: &AlignedArray<u16, 32>,
+    ) -> AlignedArray<F32, 32>;
 
     const SUPPORT_FAST_SCAN: bool;
-    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed1) -> Vec<u8>;
+    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed1) -> AlignBytes<64>;
     fn fast_scan_resolve(x: F32) -> F32;
 }
 
@@ -54,9 +56,9 @@ impl OperatorRabitq for Vecf32L2 {
     }
 
     type QuantizationPreprocessed0 = (F32, F32, F32, F32);
-    type QuantizationPreprocessed1 = Vec<u8>;
+    type QuantizationPreprocessed1 = AlignBytes<64>;
 
-    fn rabitq_quantization_preprocess(vector: &[F32]) -> ((F32, F32, F32, F32), Vec<u8>) {
+    fn rabitq_quantization_preprocess(vector: &[F32]) -> ((F32, F32, F32, F32), AlignBytes<64>) {
         let dis_v_2 = vector.iter().map(|&x| x * x).sum();
         let (k, b, qvector) = quantization::quantize::quantize_15(vector);
         let qvector_sum = F32(qvector.iter().fold(0_u32, |x, &y| x + y as u32) as _);
@@ -72,7 +74,7 @@ impl OperatorRabitq for Vecf32L2 {
         factor_err: F32,
         p0: &Self::QuantizationPreprocessed0,
         param: u16,
-    ) -> (F32, F32) {
+    ) -> F32 {
         rabitq_quantization_process_1(dis_u_2, factor_ppc, factor_ip, factor_err, *p0, param)
     }
 
@@ -83,8 +85,8 @@ impl OperatorRabitq for Vecf32L2 {
         factor_ip: &[F32; 32],
         factor_err: &[F32; 32],
         p0: &Self::QuantizationPreprocessed0,
-        param: &[u16; 32],
-    ) -> [F32; 32] {
+        param: &AlignedArray<u16, 32>,
+    ) -> AlignedArray<F32, 32> {
         rabitq_quantization_process_1_parallel(
             dis_u_2, factor_ppc, factor_ip, factor_err, *p0, param,
         )
@@ -106,7 +108,7 @@ impl OperatorRabitq for Vecf32L2 {
     }
 
     const SUPPORT_FAST_SCAN: bool = true;
-    fn fast_scan(preprocessed: &Vec<u8>) -> Vec<u8> {
+    fn fast_scan(preprocessed: &AlignBytes<64>) -> AlignBytes<64> {
         preprocessed.clone()
     }
     fn fast_scan_resolve(x: F32) -> F32 {
@@ -149,7 +151,7 @@ macro_rules! unimpl_operator_rabitq {
                 _: F32,
                 _: &Self::QuantizationPreprocessed0,
                 _: u16,
-            ) -> (F32, F32) {
+            ) -> F32 {
                 unimplemented!()
             }
 
@@ -160,13 +162,13 @@ macro_rules! unimpl_operator_rabitq {
                 _: &[F32; 32],
                 _: &[F32; 32],
                 _: &Self::QuantizationPreprocessed0,
-                _: &[u16; 32],
-            ) -> [F32; 32] {
+                _: &AlignedArray<u16, 32>,
+            ) -> AlignedArray<F32, 32> {
                 unimplemented!()
             }
 
             const SUPPORT_FAST_SCAN: bool = false;
-            fn fast_scan(_: &Self::QuantizationPreprocessed1) -> Vec<u8> {
+            fn fast_scan(_: &Self::QuantizationPreprocessed1) -> AlignBytes<64> {
                 unimplemented!()
             }
             fn fast_scan_resolve(_: F32) -> F32 {
@@ -196,11 +198,11 @@ pub fn rabitq_quantization_process_1(
     factor_err: F32,
     (dis_v_2, b, k, qvector_sum): (F32, F32, F32, F32),
     abdp: u16,
-) -> (F32, F32) {
+) -> F32 {
     let rough =
         dis_u_2 + dis_v_2 + b * factor_ppc + (F32(2.0 * abdp as f32) - qvector_sum) * factor_ip * k;
     let err = factor_err * dis_v_2.sqrt();
-    (rough, err)
+    rough - F32(1.9) * err
 }
 
 #[inline(always)]
@@ -210,45 +212,45 @@ pub fn rabitq_quantization_process_1_parallel(
     factor_ip: &[F32; 32],
     factor_err: &[F32; 32],
     (dis_v_2, b, k, qvector_sum): (F32, F32, F32, F32),
-    abdp: &[u16; 32],
-) -> [F32; 32] {
+    abdp: &AlignedArray<u16, 32>,
+) -> AlignedArray<F32, 32> {
     unsafe {
-        // todo: fix detect target
+        // todo: fix
         rabitq_quantization_process_1_parallel_avx2(
-            dis_u_2,
-            factor_ppc,
-            factor_ip,
-            factor_err,
+            std::mem::transmute(dis_u_2),
+            std::mem::transmute(factor_ppc),
+            std::mem::transmute(factor_ip),
+            std::mem::transmute(factor_err),
             (dis_v_2, b, k, qvector_sum),
-            abdp,
+            std::mem::transmute(abdp),
         )
     }
 }
 
 #[detect::target_cpu(enable = "v3")]
 pub unsafe fn rabitq_quantization_process_1_parallel_avx2(
-    dis_u_2: &[F32; 32],
-    factor_ppc: &[F32; 32],
-    factor_ip: &[F32; 32],
-    factor_err: &[F32; 32],
+    dis_u_2: &AlignedArray<F32, 32>,
+    factor_ppc: &AlignedArray<F32, 32>,
+    factor_ip: &AlignedArray<F32, 32>,
+    factor_err: &AlignedArray<F32, 32>,
     (dis_v_2, b, k, qvector_sum): (F32, F32, F32, F32),
-    abdp: &[u16; 32],
-) -> [F32; 32] {
+    abdp: &AlignedArray<u16, 32>,
+) -> AlignedArray<F32, 32> {
     unsafe {
         use core::arch::x86_64::*;
-        let mut result = [F32(0.0); 32];
+        let mut result = AlignedArray::<F32, 32>([F32(0.0); 32]);
         let dis_v_2 = _mm256_set1_ps(dis_v_2.0);
         let b = _mm256_set1_ps(b.0);
         let k = _mm256_set1_ps(k.0);
         let qvector_sum = _mm256_set1_ps(qvector_sum.0);
         let epsilon = _mm256_set1_ps(1.9);
         for i in (0_usize..32).step_by(8) {
-            let dis_u_2 = _mm256_loadu_ps(dis_u_2.as_ptr().add(i).cast());
-            let factor_ppc = _mm256_loadu_ps(factor_ppc.as_ptr().add(i).cast());
-            let factor_ip = _mm256_loadu_ps(factor_ip.as_ptr().add(i).cast());
-            let factor_err = _mm256_loadu_ps(factor_err.as_ptr().add(i).cast());
-            let abdp = _mm256_cvtepi32_ps(_mm256_cvtepi16_epi32(_mm_loadu_si128(
-                abdp.as_ptr().add(i).cast(),
+            let dis_u_2 = _mm256_load_ps(dis_u_2.0.as_ptr().add(i).cast());
+            let factor_ppc = _mm256_load_ps(factor_ppc.0.as_ptr().add(i).cast());
+            let factor_ip = _mm256_load_ps(factor_ip.0.as_ptr().add(i).cast());
+            let factor_err = _mm256_load_ps(factor_err.0.as_ptr().add(i).cast());
+            let abdp = _mm256_cvtepi32_ps(_mm256_cvtepi16_epi32(_mm_load_si128(
+                abdp.0.as_ptr().add(i).cast(),
             )));
             // dis_u_2 + dis_v_2 + b * factor_ppc + (F32(2.0 * abdp as f32) - qvector_sum) * factor_ip * k - factor_err * dis_v_2.sqrt() * epsilon
             let part_2 = _mm256_mul_ps(b, factor_ppc);
@@ -262,16 +264,16 @@ pub unsafe fn rabitq_quantization_process_1_parallel_avx2(
                 ),
                 _mm256_mul_ps(part_4, epsilon),
             );
-            _mm256_storeu_ps(result.as_mut_ptr().add(i).cast(), full);
+            _mm256_store_ps(result.0.as_mut_ptr().add(i).cast(), full);
         }
         result
     }
 }
 
-fn gen(qvector: &[u8]) -> Vec<u8> {
+fn gen(qvector: &[u8]) -> AlignBytes<64> {
     let dims = qvector.len() as u32;
     let t = dims.div_ceil(4);
-    let mut lut = vec![0u8; t as usize * 16];
+    let mut lut = AlignBytes::new_zeroed(t as usize * 16);
     for i in 0..t as usize {
         let t0 = qvector.get(4 * i + 0).copied().unwrap_or_default();
         let t1 = qvector.get(4 * i + 1).copied().unwrap_or_default();
