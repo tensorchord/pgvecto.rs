@@ -13,7 +13,7 @@ rm -rf ./build/vectors-pg${VERSION}_${SEMVER}_${PLATFORM}.deb
 
 mkdir -p ./build/dir_zip
 cp -a ./sql/upgrade/. ./build/dir_zip/
-cp ./target/vectors--$SEMVER.sql ./build/dir_zip/vectors--$SEMVER.sql
+cp ./target/schema.sql ./build/dir_zip/vectors--$SEMVER.sql
 sed -e "s/@CARGO_VERSION@/$SEMVER/g" < ./vectors.control > ./build/dir_zip/vectors.control
 cp ./target/${ARCH}-unknown-linux-gnu/release/libvectors.so ./build/dir_zip/vectors.so
 zip ./build/vectors-pg${VERSION}_${ARCH}-unknown-linux-gnu_${SEMVER}.zip -j ./build/dir_zip/*

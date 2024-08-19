@@ -42,16 +42,19 @@ env:
   SCCACHE_GHA_ENABLED: true
   RUSTC_WRAPPER: sccache
   RUSTFLAGS: "-Dwarnings"
+  CARGO_PROFILE_OPT_BUILD_OVERRIDE_DEBUG: true
 
 jobs:
   test:
     strategy:
       matrix:
         version: [14, 15, 16]
+        arch: ["x86_64"]
     runs-on: ubuntu-latest
     env:
       SEMVER: "0.0.0"
       VERSION: ${{ matrix.version }}
+      ARCH: ${{ matrix.arch }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -81,41 +84,41 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang-16
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-16 128
-      - name: Set up Pgrx
-        run: |
-          # pg_config
-          mkdir -p ~/.pg_config
-          touch ~/.pg_config/pg_config
-          chmod 777 ~/.pg_config/pg_config
-          echo "#!/usr/bin/env bash" >> ~/.pg_config/pg_config
-          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg${VERSION}_$(uname --machine)-unknown-linux-gnu.txt" >> ~/.pg_config/pg_config
-          mkdir -p ~/.pgrx && echo "configs.pg$VERSION=\"$HOME/.pg_config/pg_config\"" > ~/.pgrx/config.toml
-          # pgrx_binding
-          mkdir -p ~/.pgrx_binding
-          cp ./vendor/pgrx_binding/pg${VERSION}_$(uname --machine)-unknown-linux-gnu.rs ~/.pgrx_binding/pg${VERSION}_raw_bindings.rs
-          echo PGRX_TARGET_INFO_PATH_PG$VERSION=$HOME/.pgrx_binding >> "$GITHUB_ENV"
-      - name: Build Release
-        run: |
-          cargo build --lib --features "pg$VERSION" --profile opt
-          ./tools/schema.sh --features "pg$VERSION" --profile opt | expand -t 4 > ./target/vectors--$SEMVER.sql
       - name: Set up PostgreSQL
+        run: |
+          mkdir -p ~/.pg14/pg_binding && touch ~/.pg14/pg_config && chmod 777 ~/.pg14/pg_config
+          mkdir -p ~/.pg15/pg_binding && touch ~/.pg15/pg_config && chmod 777 ~/.pg15/pg_config
+          mkdir -p ~/.pg16/pg_binding && touch ~/.pg16/pg_config && chmod 777 ~/.pg16/pg_config
+          cp ./vendor/pgrx_binding/pg14_${ARCH}-unknown-linux-gnu.rs ~/.pg14/pg_binding/pg14_raw_bindings.rs
+          cp ./vendor/pgrx_binding/pg15_${ARCH}-unknown-linux-gnu.rs ~/.pg15/pg_binding/pg15_raw_bindings.rs
+          cp ./vendor/pgrx_binding/pg16_${ARCH}-unknown-linux-gnu.rs ~/.pg16/pg_binding/pg16_raw_bindings.rs
+          echo "#!/usr/bin/env bash" >> ~/.pg14/pg_config
+          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg14_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg14/pg_config
+          echo "#!/usr/bin/env bash" >> ~/.pg15/pg_config
+          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg15_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg15/pg_config
+          echo "#!/usr/bin/env bash" >> ~/.pg16/pg_config
+          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg16_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg16/pg_config
+      - name: Build
+        run: |
+          export PGRX_PG_CONFIG_PATH=$HOME/.pg$VERSION/pg_config
+          export PGRX_TARGET_INFO_PATH_PG$VERSION=$HOME/.pg$VERSION/pg_binding
+          cargo build --package pgvectors --lib --features pg$VERSION --target $ARCH-unknown-linux-gnu --profile opt
+          ./tools/schema.sh --features pg$VERSION --target $ARCH-unknown-linux-gnu --profile opt | expand -t 4 > ./target/schema.sql
+      - name: Install
         run: |
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
           wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
           sudo apt-get update
           sudo apt-get -y install postgresql-$VERSION
-
           echo "local all all trust" | sudo tee /etc/postgresql/$VERSION/main/pg_hba.conf
           echo "host all all 127.0.0.1/32 trust" | sudo tee -a /etc/postgresql/$VERSION/main/pg_hba.conf
           echo "host all all ::1/128 trust" | sudo tee -a /etc/postgresql/$VERSION/main/pg_hba.conf
           sudo systemctl restart postgresql
-
           sudo -iu postgres createuser -s -r $USER
           createdb
-      - name: Install Release
-        run: |
-          sudo cp ./target/vectors--$SEMVER.sql /usr/share/postgresql/$VERSION/extension/vectors--$SEMVER.sql
-          sudo cp ./target/opt/libvectors.so "/usr/lib/postgresql/$VERSION/lib/vectors.so"
+
+          sudo cp ./target/schema.sql /usr/share/postgresql/$VERSION/extension/vectors--$SEMVER.sql
+          sudo cp ./target/$ARCH-unknown-linux-gnu/opt/libvectors.so "/usr/lib/postgresql/$VERSION/lib/vectors.so"
           sed -e "s/@CARGO_VERSION@/$SEMVER/g" < ./vectors.control | sudo tee "/usr/share/postgresql/$VERSION/extension/vectors.control"
 
           psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'

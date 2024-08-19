@@ -10,11 +10,10 @@ if [[ " $@ " =~ --target' '([^ ]+) ]]; then
     DIR="./target/$TARGET/debug"
   fi
 else
-  TARGET=""
   if [[ " $@ " =~ " --release " ]]; then
     DIR="./target/release"
   elif [[ " $@ " =~ " --profile opt " ]]; then
-    DIR="./target/$TARGET/opt"
+    DIR="./target/opt"
   else
     DIR="./target/debug"
   fi
@@ -43,6 +42,6 @@ code=$(mktemp)
 chmod 700 $code
 CONTROL_FILEPATH="./vectors.control" SO_FILEPATH="$DIR/libvectors.so" $(dirname "$0")/schema-codegen.sh >> $code
 
-PGRX_EMBED=$code cargo rustc --bin pgrx_embed_vectors "$@" -- --cfg pgrx_embed
+PGRX_EMBED=$code cargo rustc --package pgvectors --bin pgrx_embed_pgvectors "$@" -- --cfg pgrx_embed
 
-CARGO_PKG_VERSION="0.0.0" QEMU_LD_PREFIX=$QEMU_LD_PREFIX "${RUNNER[@]}" "$DIR/pgrx_embed_vectors" | expand -t 4
+CARGO_PKG_VERSION="0.0.0" QEMU_LD_PREFIX=$QEMU_LD_PREFIX "${RUNNER[@]}" "$DIR/pgrx_embed_pgvectors" | expand -t 4
