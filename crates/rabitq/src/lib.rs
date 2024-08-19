@@ -11,7 +11,7 @@ use crate::operator::OperatorRabitq as Op;
 use crate::quant::quantization::Quantization;
 use base::always_equal::AlwaysEqual;
 use base::index::{IndexOptions, RabitqIndexingOptions, SearchOptions};
-use base::operator::Borrowed;
+use base::operator::{Borrowed, Owned};
 use base::scalar::F32;
 use base::search::RerankerPop;
 use base::search::{Collection, Element, Payload, Source, Vectors};
@@ -35,13 +35,21 @@ pub struct Rabitq<O: Op> {
 }
 
 impl<O: Op> Rabitq<O> {
-    pub fn create(path: impl AsRef<Path>, options: IndexOptions, source: &impl Source<O>) -> Self {
+    pub fn create(
+        path: impl AsRef<Path>,
+        options: IndexOptions,
+        source: &(impl Vectors<Owned<O>> + Collection + Source),
+    ) -> Self {
         let remapped = RemappedCollection::from_source(source);
         from_nothing(path, options, &remapped)
     }
 
     pub fn open(path: impl AsRef<Path>) -> Self {
         open(path)
+    }
+
+    pub fn dims(&self) -> u32 {
+        self.storage.dims()
     }
 
     pub fn len(&self) -> u32 {
@@ -96,7 +104,7 @@ impl<O: Op> Rabitq<O> {
 fn from_nothing<O: Op>(
     path: impl AsRef<Path>,
     options: IndexOptions,
-    collection: &impl Collection<O>,
+    collection: &(impl Vectors<Owned<O>> + Collection),
 ) -> Rabitq<O> {
     create_dir(path.as_ref()).unwrap();
     let RabitqIndexingOptions { nlist } = options.indexing.clone().unwrap_rabitq();
@@ -119,7 +127,7 @@ fn from_nothing<O: Op>(
         }
         projection
     };
-    let samples = common::sample::sample_cast(collection);
+    let samples = common::sample::sample_cast::<O>(collection);
     rayon::check();
     let centroids: Vec2<F32> = k_means(nlist as usize, samples, false);
     rayon::check();

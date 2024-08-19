@@ -33,7 +33,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
     pub fn train(
         vector_options: VectorOptions,
         product_quantization_options: ProductQuantizationOptions,
-        vectors: &impl Vectors<O>,
+        vectors: &(impl Vectors<Owned<O>> + Sync),
         transform: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy + Send + Sync,
     ) -> Self {
         let dims = vector_options.dims;
@@ -46,7 +46,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                 let subdims = std::cmp::min(ratio, dims - ratio * p);
                 let start = (p * ratio) as usize;
                 let end = start + subdims as usize;
-                let subsamples = sample_subvector_transform(vectors, start, end, transform);
+                let subsamples = sample_subvector_transform::<O>(vectors, start, end, transform);
                 k_means(1 << bits, subsamples, false)
             })
             .collect::<Vec<_>>();

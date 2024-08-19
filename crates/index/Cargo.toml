@@ -9,7 +9,7 @@ bincode.workspace = true
 byteorder.workspace = true
 crc32fast = "1.4.0"
 crossbeam = "0.8.4"
-dashmap = "5.5.3"
+dashmap = "6.0.1"
 log.workspace = true
 parking_lot.workspace = true
 rand.workspace = true
@@ -20,17 +20,8 @@ validator.workspace = true
 
 base = { path = "../base" }
 common = { path = "../common" }
-k_means = { path = "../k_means" }
-quantization = { path = "../quantization" }
+indexing = { path = "../indexing" }
 stoppable_rayon = { path = "../stoppable_rayon" }
-storage = { path = "../storage" }
-
-# algorithms
-flat = { path = "../flat" }
-hnsw = { path = "../hnsw" }
-inverted = { path = "../inverted" }
-ivf = { path = "../ivf" }
-rabitq = { path = "../rabitq" }
 
 [lints]
 workspace = true

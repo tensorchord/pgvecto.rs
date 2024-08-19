@@ -1,31 +1,44 @@
 use base::index::*;
 use pgrx::guc::{GucContext, GucFlags, GucRegistry, GucSetting};
 
-static FLAT_SQ_RERANK_SIZE: GucSetting<i32> = GucSetting::<i32>::new(0);
+static FLAT_SQ_RERANK_SIZE: GucSetting<i32> =
+    GucSetting::<i32>::new(SearchOptions::default_flat_sq_rerank_size() as i32);
 
-static FLAT_SQ_FAST_SCAN: GucSetting<bool> = GucSetting::<bool>::new(false);
+static FLAT_SQ_FAST_SCAN: GucSetting<bool> =
+    GucSetting::<bool>::new(SearchOptions::default_flat_sq_fast_scan());
 
-static FLAT_PQ_RERANK_SIZE: GucSetting<i32> = GucSetting::<i32>::new(0);
+static FLAT_PQ_RERANK_SIZE: GucSetting<i32> =
+    GucSetting::<i32>::new(SearchOptions::default_flat_pq_rerank_size() as i32);
 
-static FLAT_PQ_FAST_SCAN: GucSetting<bool> = GucSetting::<bool>::new(false);
+static FLAT_PQ_FAST_SCAN: GucSetting<bool> =
+    GucSetting::<bool>::new(SearchOptions::default_flat_pq_fast_scan());
 
-static IVF_SQ_RERANK_SIZE: GucSetting<i32> = GucSetting::<i32>::new(0);
+static IVF_SQ_RERANK_SIZE: GucSetting<i32> =
+    GucSetting::<i32>::new(SearchOptions::default_ivf_sq_rerank_size() as i32);
 
-static IVF_SQ_FAST_SCAN: GucSetting<bool> = GucSetting::<bool>::new(false);
+static IVF_SQ_FAST_SCAN: GucSetting<bool> =
+    GucSetting::<bool>::new(SearchOptions::default_ivf_sq_fast_scan());
 
-static IVF_PQ_RERANK_SIZE: GucSetting<i32> = GucSetting::<i32>::new(0);
+static IVF_PQ_RERANK_SIZE: GucSetting<i32> =
+    GucSetting::<i32>::new(SearchOptions::default_ivf_pq_rerank_size() as i32);
 
-static IVF_PQ_FAST_SCAN: GucSetting<bool> = GucSetting::<bool>::new(false);
+static IVF_PQ_FAST_SCAN: GucSetting<bool> =
+    GucSetting::<bool>::new(SearchOptions::default_ivf_pq_fast_scan());
 
-static IVF_NPROBE: GucSetting<i32> = GucSetting::<i32>::new(10);
+static IVF_NPROBE: GucSetting<i32> =
+    GucSetting::<i32>::new(SearchOptions::default_ivf_nprobe() as i32);
 
-static HNSW_EF_SEARCH: GucSetting<i32> = GucSetting::<i32>::new(100);
+static HNSW_EF_SEARCH: GucSetting<i32> =
+    GucSetting::<i32>::new(SearchOptions::default_hnsw_ef_search() as i32);
 
-static RABITQ_NPROBE: GucSetting<i32> = GucSetting::<i32>::new(10);
+static RABITQ_NPROBE: GucSetting<i32> =
+    GucSetting::<i32>::new(SearchOptions::default_rabitq_nprobe() as i32);
 
-static RABITQ_FAST_SCAN: GucSetting<bool> = GucSetting::<bool>::new(true);
+static RABITQ_FAST_SCAN: GucSetting<bool> =
+    GucSetting::<bool>::new(SearchOptions::default_rabitq_fast_scan());
 
-static DISKANN_EF_SEARCH: GucSetting<i32> = GucSetting::<i32>::new(100);
+static DISKANN_EF_SEARCH: GucSetting<i32> =
+    GucSetting::<i32>::new(SearchOptions::default_diskann_ef_search() as i32);
 
 pub unsafe fn init() {
     GucRegistry::define_int_guc(

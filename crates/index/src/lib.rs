@@ -1,7 +1,6 @@
 #![allow(clippy::len_without_is_empty)]
 
 pub mod delete;
-pub mod indexing;
 pub mod optimizing;
 pub mod segment;
 
@@ -25,11 +24,8 @@ use common::dir_ops::sync_walk_from_dir;
 use common::file_atomic::FileAtomic;
 use crossbeam::atomic::AtomicCell;
 use crossbeam::channel::Sender;
-use inverted::operator::OperatorInvertedIndex;
-use ivf::operator::OperatorIvf;
+use indexing::OperatorIndexing;
 use parking_lot::Mutex;
-use quantization::operator::OperatorQuantization;
-use rabitq::operator::OperatorRabitq;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -39,30 +35,12 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::Instant;
-use storage::OperatorStorage;
 use thiserror::Error;
 use validator::Validate;
 
-pub trait Op:
-    Operator
-    + OperatorQuantization
-    + OperatorStorage
-    + OperatorIvf
-    + OperatorInvertedIndex
-    + OperatorRabitq
-{
-}
+pub trait Op: OperatorIndexing {}
 
-impl<
-        T: Operator
-            + OperatorQuantization
-            + OperatorStorage
-            + OperatorIvf
-            + OperatorInvertedIndex
-            + OperatorRabitq,
-    > Op for T
-{
-}
+impl<T: OperatorIndexing> Op for T {}
 
 #[derive(Debug, Error)]
 #[error("The index view is outdated.")]
@@ -338,7 +316,7 @@ impl<O: Op> Index<O> {
     }
     pub fn create_sealed_segment(
         &self,
-        source: &(impl Source<O> + Sync),
+        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
         sealed_segment_ids: &[NonZeroU128],
         growing_segment_ids: &[NonZeroU128],
     ) -> Option<Arc<SealedSegment<O>>> {

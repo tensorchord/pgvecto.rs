@@ -46,7 +46,7 @@ impl<O: OperatorHnsw> Hnsw<O> {
     pub fn create(
         path: impl AsRef<Path>,
         options: IndexOptions,
-        source: &(impl Source<O> + Sync),
+        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
     ) -> Self {
         let remapped = RemappedCollection::from_source(source);
         if let Some(main) = source.get_main::<Self>() {
@@ -97,6 +97,10 @@ impl<O: OperatorHnsw> Hnsw<O> {
         )
     }
 
+    pub fn dims(&self) -> u32 {
+        self.storage.dims()
+    }
+
     pub fn len(&self) -> u32 {
         self.storage.len()
     }
@@ -113,7 +117,7 @@ impl<O: OperatorHnsw> Hnsw<O> {
 fn from_nothing<O: OperatorHnsw>(
     path: impl AsRef<Path>,
     options: IndexOptions,
-    collection: &(impl Collection<O> + Sync),
+    collection: &(impl Vectors<Owned<O>> + Collection + Sync),
 ) -> Hnsw<O> {
     create_dir(path.as_ref()).unwrap();
     let HnswIndexingOptions {
@@ -134,7 +138,7 @@ fn from_nothing<O: OperatorHnsw>(
     finish(&mut g, m);
     let storage = O::Storage::create(path.as_ref().join("storage"), collection);
     rayon::check();
-    let quantization = Quantization::create(
+    let quantization = Quantization::<O>::create(
         path.as_ref().join("quantization"),
         options.vector,
         quantization_options,
@@ -195,7 +199,7 @@ fn from_nothing<O: OperatorHnsw>(
 fn from_main<O: OperatorHnsw>(
     path: impl AsRef<Path>,
     options: IndexOptions,
-    remapped: &RemappedCollection<O, impl Collection<O> + Sync>,
+    remapped: &RemappedCollection<Owned<O>, impl Vectors<Owned<O>> + Collection + Sync>,
     main: &Hnsw<O>,
 ) -> Hnsw<O> {
     create_dir(path.as_ref()).unwrap();
@@ -232,7 +236,7 @@ fn from_main<O: OperatorHnsw>(
     finish(&mut g, m);
     let storage = O::Storage::create(path.as_ref().join("storage"), remapped);
     rayon::check();
-    let quantization = Quantization::create(
+    let quantization = Quantization::<O>::create(
         path.as_ref().join("quantization"),
         options.vector,
         quantization_options,

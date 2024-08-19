@@ -8,7 +8,7 @@ use base::vector::VectorOwned;
 
 const SAMPLES: usize = 65536;
 
-pub fn sample<O: Operator>(vectors: &impl Vectors<O>) -> Vec2<Scalar<O>> {
+pub fn sample<O: Operator>(vectors: &impl Vectors<Owned<O>>) -> Vec2<Scalar<O>> {
     let n = vectors.len();
     let m = std::cmp::min(SAMPLES as u32, n);
     let f = super::rand::sample_u32(&mut rand::thread_rng(), n, m);
@@ -20,7 +20,7 @@ pub fn sample<O: Operator>(vectors: &impl Vectors<O>) -> Vec2<Scalar<O>> {
     samples
 }
 
-pub fn sample_cast<O: Operator>(vectors: &impl Vectors<O>) -> Vec2<F32> {
+pub fn sample_cast<O: Operator>(vectors: &impl Vectors<Owned<O>>) -> Vec2<F32> {
     let n = vectors.len();
     let m = std::cmp::min(SAMPLES as u32, n);
     let f = super::rand::sample_u32(&mut rand::thread_rng(), n, m);
@@ -38,7 +38,7 @@ pub fn sample_cast<O: Operator>(vectors: &impl Vectors<O>) -> Vec2<F32> {
 }
 
 pub fn sample_subvector_transform<O: Operator>(
-    vectors: &impl Vectors<O>,
+    vectors: &impl Vectors<Owned<O>>,
     s: usize,
     e: usize,
     transform: impl Fn(Borrowed<'_, O>) -> Owned<O>,

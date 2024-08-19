@@ -1,4 +1,3 @@
-use crate::indexing::sealed::SealedIndexing;
 use crate::utils::dir_ops::dir_size;
 use crate::IndexTracker;
 use crate::Op;
@@ -6,6 +5,7 @@ use base::index::*;
 use base::operator::*;
 use base::search::*;
 use crossbeam::atomic::AtomicCell;
+use indexing::SealedIndexing;
 use std::any::Any;
 use std::fmt::Debug;
 use std::num::NonZeroU128;
@@ -37,7 +37,7 @@ impl<O: Op> SealedSegment<O> {
         path: PathBuf,
         id: NonZeroU128,
         options: IndexOptions,
-        source: &(impl Source<O> + Sync),
+        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
     ) -> Arc<Self> {
         let indexing = SealedIndexing::create(&path, options, source);
         Arc::new(Self {

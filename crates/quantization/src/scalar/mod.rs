@@ -33,7 +33,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
     pub fn train(
         vector_options: VectorOptions,
         scalar_quantization_options: ScalarQuantizationOptions,
-        vectors: &impl Vectors<O>,
+        vectors: &impl Vectors<Owned<O>>,
         transform: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy,
     ) -> Self {
         let dims = vector_options.dims;

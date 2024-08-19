@@ -1,6 +1,6 @@
 use crate::always_equal::AlwaysEqual;
-use crate::operator::{Borrowed, Operator};
 use crate::scalar::F32;
+use crate::vector::VectorOwned;
 use serde::{Deserialize, Serialize};
 use std::any::Any;
 use std::fmt::Display;
@@ -73,17 +73,17 @@ pub struct Element {
     pub payload: AlwaysEqual<Payload>,
 }
 
-pub trait Vectors<O: Operator>: Send + Sync {
+pub trait Vectors<V: VectorOwned> {
     fn dims(&self) -> u32;
     fn len(&self) -> u32;
-    fn vector(&self, i: u32) -> Borrowed<'_, O>;
+    fn vector(&self, i: u32) -> V::Borrowed<'_>;
 }
 
-pub trait Collection<O: Operator>: Vectors<O> {
+pub trait Collection {
     fn payload(&self, i: u32) -> Payload;
 }
 
-pub trait Source<O: Operator>: Collection<O> {
+pub trait Source {
     fn get_main<T: Any>(&self) -> Option<&T>;
     fn get_main_len(&self) -> u32;
     fn check_existing(&self, i: u32) -> bool;

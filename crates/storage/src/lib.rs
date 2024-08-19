@@ -5,15 +5,16 @@ mod vec;
 use base::operator::*;
 use base::scalar::*;
 use base::search::*;
+use base::vector::VectorOwned;
 use std::path::Path;
 
-pub trait Storage<O: Operator>: Vectors<O> {
+pub trait Storage<V: VectorOwned>: Vectors<V> {
     fn open(path: impl AsRef<Path>) -> Self;
-    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<O>) -> Self;
+    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<V>) -> Self;
 }
 
 pub trait OperatorStorage: Operator {
-    type Storage: Storage<Self> + Send + Sync;
+    type Storage: Storage<Owned<Self>> + Send + Sync;
 }
 
 impl OperatorStorage for SVecf32Dot {

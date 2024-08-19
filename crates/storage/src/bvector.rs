@@ -1,5 +1,4 @@
 use crate::Storage;
-use base::operator::Operator;
 use base::search::*;
 use base::vector::*;
 use common::json::Json;
@@ -12,7 +11,7 @@ pub struct BVectorStorage {
     slice: MmapArray<u64>,
 }
 
-impl<O: Operator<VectorOwned = BVectorOwned>> Vectors<O> for BVectorStorage {
+impl Vectors<BVectorOwned> for BVectorStorage {
     fn dims(&self) -> u32 {
         *self.dims
     }
@@ -29,8 +28,8 @@ impl<O: Operator<VectorOwned = BVectorOwned>> Vectors<O> for BVectorStorage {
     }
 }
 
-impl<O: Operator<VectorOwned = BVectorOwned>> Storage<O> for BVectorStorage {
-    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<O>) -> Self {
+impl Storage<BVectorOwned> for BVectorStorage {
+    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<BVectorOwned>) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
         let dims = Json::create(path.as_ref().join("dims"), vectors.dims());
         let len = Json::create(path.as_ref().join("len"), vectors.len());

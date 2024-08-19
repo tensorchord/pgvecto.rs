@@ -1,5 +1,4 @@
 use crate::Storage;
-use base::operator::Operator;
 use base::scalar::*;
 use base::search::*;
 use base::vector::*;
@@ -13,7 +12,7 @@ pub struct VecStorage<T> {
     slice: MmapArray<T>,
 }
 
-impl<O: Operator<VectorOwned = Vecf32Owned>> Vectors<O> for VecStorage<F32> {
+impl Vectors<Vecf32Owned> for VecStorage<F32> {
     fn dims(&self) -> u32 {
         *self.dims
     }
@@ -29,8 +28,8 @@ impl<O: Operator<VectorOwned = Vecf32Owned>> Vectors<O> for VecStorage<F32> {
     }
 }
 
-impl<O: Operator<VectorOwned = Vecf32Owned>> Storage<O> for VecStorage<F32> {
-    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<O>) -> Self {
+impl Storage<Vecf32Owned> for VecStorage<F32> {
+    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<Vecf32Owned>) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
         let dims = Json::create(path.as_ref().join("dims"), vectors.dims());
         let len = Json::create(path.as_ref().join("len"), vectors.len());
@@ -49,7 +48,7 @@ impl<O: Operator<VectorOwned = Vecf32Owned>> Storage<O> for VecStorage<F32> {
     }
 }
 
-impl<O: Operator<VectorOwned = Vecf16Owned>> Vectors<O> for VecStorage<F16> {
+impl Vectors<Vecf16Owned> for VecStorage<F16> {
     fn dims(&self) -> u32 {
         *self.dims
     }
@@ -65,8 +64,8 @@ impl<O: Operator<VectorOwned = Vecf16Owned>> Vectors<O> for VecStorage<F16> {
     }
 }
 
-impl<O: Operator<VectorOwned = Vecf16Owned>> Storage<O> for VecStorage<F16> {
-    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<O>) -> Self {
+impl Storage<Vecf16Owned> for VecStorage<F16> {
+    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<Vecf16Owned>) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
         let dims = Json::create(path.as_ref().join("dims"), vectors.dims());
         let len = Json::create(path.as_ref().join("len"), vectors.len());
