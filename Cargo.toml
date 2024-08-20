@@ -1,13 +1,14 @@
 [package]
-name = "vectors"
+name = "pgvectors"
 version.workspace = true
 edition.workspace = true
 
 [lib]
+name = "vectors"
 crate-type = ["cdylib", "lib"]
 
 [[bin]]
-name = "pgrx_embed_vectors"
+name = "pgrx_embed_pgvectors"
 path = "./src/bin/pgrx_embed.rs"
 
 [features]
@@ -49,13 +50,8 @@ tikv-jemallocator = { version = "0.6.0", features = [
     "disable_initial_exec_tls",
 ] }
 
-[patch.crates-io]
-pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.0-alpha.1-patch3" }
-
 [lints]
-rust.unsafe_op_in_unsafe_fn = "forbid"
-rust.unused_lifetimes = "warn"
-rust.unused_qualifications = "warn"
+workspace = true
 
 [workspace]
 resolver = "2"
@@ -89,6 +85,9 @@ validator = { version = "0.18.0", features = ["derive"] }
 rust.unsafe_op_in_unsafe_fn = "deny"
 rust.unused_lifetimes = "warn"
 rust.unused_qualifications = "warn"
+
+[patch.crates-io]
+pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.0-alpha.1-patch3" }
 
 [profile.opt]
 inherits = "dev"

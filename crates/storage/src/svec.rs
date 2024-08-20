@@ -1,5 +1,4 @@
 use crate::Storage;
-use base::operator::Operator;
 use base::scalar::*;
 use base::search::*;
 use base::vector::*;
@@ -15,7 +14,7 @@ pub struct SVecStorage {
     offsets: MmapArray<usize>,
 }
 
-impl<O: Operator<VectorOwned = SVecf32Owned>> Vectors<O> for SVecStorage {
+impl Vectors<SVecf32Owned> for SVecStorage {
     fn dims(&self) -> u32 {
         *self.dims
     }
@@ -33,8 +32,8 @@ impl<O: Operator<VectorOwned = SVecf32Owned>> Vectors<O> for SVecStorage {
     }
 }
 
-impl<O: Operator<VectorOwned = SVecf32Owned>> Storage<O> for SVecStorage {
-    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<O>) -> Self {
+impl Storage<SVecf32Owned> for SVecStorage {
+    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<SVecf32Owned>) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
         let dims = Json::create(path.as_ref().join("dims"), vectors.dims());
         let len = Json::create(path.as_ref().join("len"), vectors.len());

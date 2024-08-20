@@ -45,7 +45,7 @@ impl<O: OperatorQuantization> Quantizer<O> {
     pub fn train(
         vector_options: VectorOptions,
         quantization_options: QuantizationOptions,
-        vectors: &impl Vectors<O>,
+        vectors: &(impl Vectors<Owned<O>> + Sync),
         transform: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy + Send + Sync,
     ) -> Self {
         use QuantizationOptions::*;
@@ -91,7 +91,7 @@ impl<O: OperatorQuantization> Quantization<O> {
         path: impl AsRef<Path>,
         vector_options: VectorOptions,
         quantization_options: QuantizationOptions,
-        vectors: &impl Vectors<O>,
+        vectors: &(impl Vectors<Owned<O>> + Sync),
         transform: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy + Send + Sync,
     ) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
@@ -240,7 +240,7 @@ impl<O: OperatorQuantization> Quantization<O> {
 
     pub fn process(
         &self,
-        vectors: &impl Vectors<O>,
+        vectors: &impl Vectors<Owned<O>>,
         preprocessed: &QuantizationPreprocessed<O>,
         u: u32,
     ) -> F32 {

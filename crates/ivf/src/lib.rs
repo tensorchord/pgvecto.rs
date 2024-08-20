@@ -20,7 +20,11 @@ pub enum Ivf<O: OperatorIvf> {
 }
 
 impl<O: OperatorIvf> Ivf<O> {
-    pub fn create(path: impl AsRef<Path>, options: IndexOptions, source: &impl Source<O>) -> Self {
+    pub fn create(
+        path: impl AsRef<Path>,
+        options: IndexOptions,
+        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
+    ) -> Self {
         let IvfIndexingOptions {
             quantization: quantization_options,
             residual_quantization,
@@ -51,6 +55,13 @@ impl<O: OperatorIvf> Ivf<O> {
             "ivf_naive" => Self::Naive(IvfNaive::open(path.as_ref().join("ivf_naive"))),
             "ivf_residual" => Self::Residual(IvfResidual::open(path.as_ref().join("ivf_residual"))),
             _ => unreachable!(),
+        }
+    }
+
+    pub fn dims(&self) -> u32 {
+        match self {
+            Ivf::Naive(x) => x.dims(),
+            Ivf::Residual(x) => x.dims(),
         }
     }
 

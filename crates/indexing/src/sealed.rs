@@ -1,4 +1,4 @@
-use crate::Op;
+use crate::OperatorIndexing;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
@@ -9,7 +9,7 @@ use ivf::Ivf;
 use rabitq::Rabitq;
 use std::path::Path;
 
-pub enum SealedIndexing<O: Op> {
+pub enum SealedIndexing<O: OperatorIndexing> {
     Flat(Flat<O>),
     Ivf(Ivf<O>),
     Hnsw(Hnsw<O>),
@@ -17,11 +17,11 @@ pub enum SealedIndexing<O: Op> {
     Rabitq(Rabitq<O>),
 }
 
-impl<O: Op> SealedIndexing<O> {
+impl<O: OperatorIndexing> SealedIndexing<O> {
     pub fn create(
         path: impl AsRef<Path>,
         options: IndexOptions,
-        source: &(impl Source<O> + Sync),
+        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
     ) -> Self {
         match options.indexing {
             IndexingOptions::Flat(_) => Self::Flat(Flat::create(path, options, source)),
@@ -57,8 +57,20 @@ impl<O: Op> SealedIndexing<O> {
             SealedIndexing::Rabitq(x) => x.vbase(vector, opts),
         }
     }
+}
 
-    pub fn len(&self) -> u32 {
+impl<O: OperatorIndexing> Vectors<Owned<O>> for SealedIndexing<O> {
+    fn dims(&self) -> u32 {
+        match self {
+            SealedIndexing::Flat(x) => x.dims(),
+            SealedIndexing::Ivf(x) => x.dims(),
+            SealedIndexing::Hnsw(x) => x.dims(),
+            SealedIndexing::InvertedIndex(x) => x.dims(),
+            SealedIndexing::Rabitq(x) => x.dims(),
+        }
+    }
+
+    fn len(&self) -> u32 {
         match self {
             SealedIndexing::Flat(x) => x.len(),
             SealedIndexing::Ivf(x) => x.len(),
@@ -68,7 +80,7 @@ impl<O: Op> SealedIndexing<O> {
         }
     }
 
-    pub fn vector(&self, i: u32) -> Borrowed<'_, O> {
+    fn vector(&self, i: u32) -> Borrowed<'_, O> {
         match self {
             SealedIndexing::Flat(x) => x.vector(i),
             SealedIndexing::Ivf(x) => x.vector(i),
@@ -77,8 +89,10 @@ impl<O: Op> SealedIndexing<O> {
             SealedIndexing::Rabitq(x) => x.vector(i),
         }
     }
+}
 
-    pub fn payload(&self, i: u32) -> Payload {
+impl<O: OperatorIndexing> Collection for SealedIndexing<O> {
+    fn payload(&self, i: u32) -> Payload {
         match self {
             SealedIndexing::Flat(x) => x.payload(i),
             SealedIndexing::Ivf(x) => x.payload(i),

@@ -1,5 +1,5 @@
-use base::operator::*;
 use base::search::*;
+use base::vector::VectorOwned;
 use std::marker::PhantomData;
 
 pub fn remap(
@@ -36,14 +36,14 @@ pub fn remap(
     remap
 }
 
-pub struct RemappedCollection<'a, O: Operator, C: Collection<O>> {
+pub struct RemappedCollection<'a, V: VectorOwned, C: Collection> {
     collection: &'a C,
     remap: Vec<u32>,
     barrier: u32,
-    _phantom: PhantomData<fn(O) -> O>,
+    _phantom: PhantomData<fn(V) -> V>,
 }
 
-impl<'a, O: Operator, S: Source<O>> RemappedCollection<'a, O, S> {
+impl<'a, V: VectorOwned, S: Vectors<V> + Collection + Source> RemappedCollection<'a, V, S> {
     pub fn from_source(source: &'a S) -> Self {
         let barrier = source.get_main_len();
         let remap = remap(source.len(), barrier, |i| source.check_existing(i));
@@ -56,7 +56,7 @@ impl<'a, O: Operator, S: Source<O>> RemappedCollection<'a, O, S> {
     }
 }
 
-impl<'a, O: Operator, C: Collection<O>> RemappedCollection<'a, O, C> {
+impl<'a, V: VectorOwned, C: Vectors<V> + Collection> RemappedCollection<'a, V, C> {
     pub fn from_collection(collection: &'a C, remap: Vec<u32>) -> Self {
         assert_eq!(remap.len(), collection.len() as usize);
         let barrier = collection.len();
@@ -69,7 +69,7 @@ impl<'a, O: Operator, C: Collection<O>> RemappedCollection<'a, O, C> {
     }
 }
 
-impl<'a, O: Operator, C: Collection<O>> RemappedCollection<'a, O, C> {
+impl<V: VectorOwned, C: Collection> RemappedCollection<'_, V, C> {
     #[inline(always)]
     pub fn skip(&self, x: u32) -> bool {
         x < self.barrier && (x as usize) < self.remap.len() && self.remap[x as usize] == x
@@ -80,7 +80,7 @@ impl<'a, O: Operator, C: Collection<O>> RemappedCollection<'a, O, C> {
     }
 }
 
-impl<O: Operator, C: Collection<O>> Vectors<O> for RemappedCollection<'_, O, C> {
+impl<V: VectorOwned, C: Vectors<V> + Collection> Vectors<V> for RemappedCollection<'_, V, C> {
     fn dims(&self) -> u32 {
         self.collection.dims()
     }
@@ -89,12 +89,12 @@ impl<O: Operator, C: Collection<O>> Vectors<O> for RemappedCollection<'_, O, C> 
         self.remap.len() as u32
     }
 
-    fn vector(&self, i: u32) -> Borrowed<'_, O> {
+    fn vector(&self, i: u32) -> V::Borrowed<'_> {
         self.collection.vector(self.remap[i as usize])
     }
 }
 
-impl<O: Operator, C: Collection<O>> Collection<O> for RemappedCollection<'_, O, C> {
+impl<V: VectorOwned, C: Collection> Collection for RemappedCollection<'_, V, C> {
     fn payload(&self, i: u32) -> Payload {
         self.collection.payload(self.remap[i as usize])
     }

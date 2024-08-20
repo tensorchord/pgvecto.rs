@@ -26,7 +26,7 @@ impl<O: OperatorTrivialQuantization> TrivialQuantizer<O> {
     pub fn train(
         vector_options: VectorOptions,
         _: TrivialQuantizationOptions,
-        _: &impl Vectors<O>,
+        _: &impl Vectors<Owned<O>>,
         _: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy,
     ) -> Self {
         Self {

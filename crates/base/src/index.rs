@@ -560,29 +560,104 @@ impl Default for ProductQuantizationOptions {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Alter)]
 pub struct SearchOptions {
+    #[serde(default = "SearchOptions::default_flat_sq_rerank_size")]
     #[validate(range(min = 0, max = 65535))]
     pub flat_sq_rerank_size: u32,
+    #[serde(default = "SearchOptions::default_flat_sq_fast_scan")]
     pub flat_sq_fast_scan: bool,
+    #[serde(default = "SearchOptions::default_flat_pq_rerank_size")]
     #[validate(range(min = 0, max = 65535))]
     pub flat_pq_rerank_size: u32,
+    #[serde(default = "SearchOptions::default_flat_pq_fast_scan")]
     pub flat_pq_fast_scan: bool,
+    #[serde(default = "SearchOptions::default_ivf_sq_rerank_size")]
     #[validate(range(min = 0, max = 65535))]
     pub ivf_sq_rerank_size: u32,
+    #[serde(default = "SearchOptions::default_ivf_sq_fast_scan")]
     pub ivf_sq_fast_scan: bool,
+    #[serde(default = "SearchOptions::default_ivf_pq_rerank_size")]
     #[validate(range(min = 0, max = 65535))]
     pub ivf_pq_rerank_size: u32,
+    #[serde(default = "SearchOptions::default_ivf_pq_fast_scan")]
     pub ivf_pq_fast_scan: bool,
+    #[serde(default = "SearchOptions::default_ivf_nprobe")]
     #[validate(range(min = 1, max = 65535))]
     pub ivf_nprobe: u32,
+    #[serde(default = "SearchOptions::default_hnsw_ef_search")]
     #[validate(range(min = 1, max = 65535))]
     pub hnsw_ef_search: u32,
+    #[serde(default = "SearchOptions::default_rabitq_nprobe")]
     #[validate(range(min = 1, max = 65535))]
     pub rabitq_nprobe: u32,
+    #[serde(default = "SearchOptions::default_rabitq_fast_scan")]
     pub rabitq_fast_scan: bool,
+    #[serde(default = "SearchOptions::default_diskann_ef_search")]
     #[validate(range(min = 1, max = 65535))]
     pub diskann_ef_search: u32,
+}
+
+impl SearchOptions {
+    pub const fn default_flat_sq_rerank_size() -> u32 {
+        0
+    }
+    pub const fn default_flat_sq_fast_scan() -> bool {
+        false
+    }
+    pub const fn default_flat_pq_rerank_size() -> u32 {
+        0
+    }
+    pub const fn default_flat_pq_fast_scan() -> bool {
+        false
+    }
+    pub const fn default_ivf_sq_rerank_size() -> u32 {
+        0
+    }
+    pub const fn default_ivf_sq_fast_scan() -> bool {
+        false
+    }
+    pub const fn default_ivf_pq_rerank_size() -> u32 {
+        0
+    }
+    pub const fn default_ivf_pq_fast_scan() -> bool {
+        false
+    }
+    pub const fn default_ivf_nprobe() -> u32 {
+        10
+    }
+    pub const fn default_hnsw_ef_search() -> u32 {
+        100
+    }
+    pub const fn default_rabitq_nprobe() -> u32 {
+        10
+    }
+    pub const fn default_rabitq_fast_scan() -> bool {
+        true
+    }
+    pub const fn default_diskann_ef_search() -> u32 {
+        100
+    }
+}
+
+impl Default for SearchOptions {
+    fn default() -> Self {
+        Self {
+            flat_sq_rerank_size: Self::default_flat_sq_rerank_size(),
+            flat_sq_fast_scan: Self::default_flat_sq_fast_scan(),
+            flat_pq_rerank_size: Self::default_flat_pq_rerank_size(),
+            flat_pq_fast_scan: Self::default_flat_pq_fast_scan(),
+            ivf_sq_rerank_size: Self::default_ivf_sq_rerank_size(),
+            ivf_sq_fast_scan: Self::default_ivf_sq_fast_scan(),
+            ivf_pq_rerank_size: Self::default_ivf_pq_rerank_size(),
+            ivf_pq_fast_scan: Self::default_ivf_pq_fast_scan(),
+            ivf_nprobe: Self::default_ivf_nprobe(),
+            hnsw_ef_search: Self::default_hnsw_ef_search(),
+            rabitq_nprobe: Self::default_rabitq_nprobe(),
+            rabitq_fast_scan: Self::default_rabitq_fast_scan(),
+            diskann_ef_search: Self::default_diskann_ef_search(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

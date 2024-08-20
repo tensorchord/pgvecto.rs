@@ -42,83 +42,15 @@ env:
   SCCACHE_GHA_ENABLED: true
   RUSTC_WRAPPER: sccache
   RUSTFLAGS: "-Dwarnings"
+  CARGO_PROFILE_OPT_BUILD_OVERRIDE_DEBUG: true
 
 jobs:
-  check:
-    strategy:
-      matrix:
-        version: [14, 15, 16]
-        arch: ["x86_64", "aarch64"]
-    runs-on: ubuntu-latest
-    env:
-      SEMVER: "0.0.0"
-      VERSION: ${{ matrix.version }}
-      ARCH: ${{ matrix.arch }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Environment
-        run: |
-          sudo apt-get remove -y '^postgres.*' '^libpq.*' '^clang.*' '^llvm.*' '^libclang.*' '^libllvm.*' '^mono-llvm.*'
-          sudo apt-get purge -y '^postgres.*' '^libpq.*' '^clang.*' '^llvm.*' '^libclang.*' '^libllvm.*' '^mono-llvm.*'
-          sudo apt-get update
-          sudo apt-get install -y build-essential crossbuild-essential-arm64
-          sudo apt-get install -y qemu-user-static
-          touch ~/.cargo/config.toml
-          echo 'target.aarch64-unknown-linux-gnu.linker = "aarch64-linux-gnu-gcc"' >> ~/.cargo/config.toml
-          echo 'target.aarch64-unknown-linux-gnu.runner = ["qemu-aarch64-static", "-L", "/usr/aarch64-linux-gnu"]' >> ~/.cargo/config.toml
-      - name: Set up Sccache
-        uses: mozilla-actions/sccache-action@v0.0.4
-      - name: Set up Cache
-        uses: actions/cache/restore@v4
-        id: cache
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-          key: ${{ github.job }}-${{ hashFiles('./Cargo.lock') }}-${{ matrix.version }}-${{ matrix.arch }}
-      - name: Set up Clang-16
-        run: |
-          sudo sh -c 'echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-16 main" >> /etc/apt/sources.list'
-          wget --quiet -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-          sudo apt-get update
-          sudo apt-get install -y clang-16
-          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-16 128
-      - name: Set up Pgrx
-        run: |
-          # pg_config
-          mkdir -p ~/.pg_config
-          touch ~/.pg_config/pg_config
-          chmod 777 ~/.pg_config/pg_config
-          echo "#!/usr/bin/env bash" >> ~/.pg_config/pg_config
-          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg${VERSION}_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg_config/pg_config
-          mkdir -p ~/.pgrx && echo "configs.pg$VERSION=\"$HOME/.pg_config/pg_config\"" > ~/.pgrx/config.toml
-          # pgrx_binding
-          mkdir -p ~/.pgrx_binding
-          cp ./vendor/pgrx_binding/pg${VERSION}_$(uname --machine)-unknown-linux-gnu.rs ~/.pgrx_binding/pg${VERSION}_raw_bindings.rs
-          echo PGRX_TARGET_INFO_PATH_PG$VERSION=$HOME/.pgrx_binding >> "$GITHUB_ENV"
-      - name: Clippy
-        run: cargo clippy --features "pg$VERSION" --target $ARCH-unknown-linux-gnu
-      - name: Build
-        run: cargo build --lib --features "pg$VERSION" --target $ARCH-unknown-linux-gnu
-      - name: Post Set up Cache
-        uses: actions/cache/save@v4
-        if: ${{ !steps.cache.outputs.cache-hit }}
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-          key: ${{ github.job }}-${{ hashFiles('./Cargo.lock') }}-${{ matrix.version }}-${{ matrix.arch }}
-  test:
+  check_and_test:
     strategy:
       matrix:
         arch: ["x86_64", "aarch64"]
     runs-on: ubuntu-latest
     env:
-      SEMVER: "0.0.0"
-      VERSION: "16"
       ARCH: ${{ matrix.arch }}
     steps:
       - name: Checkout
@@ -151,28 +83,54 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang-16
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-16 128
-      - name: Set up Pgrx
+      - name: Set up PostgreSQL
         run: |
-          # pg_config
-          mkdir -p ~/.pg_config
-          touch ~/.pg_config/pg_config
-          chmod 777 ~/.pg_config/pg_config
-          echo "#!/usr/bin/env bash" >> ~/.pg_config/pg_config
-          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg${VERSION}_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg_config/pg_config
-          mkdir -p ~/.pgrx && echo "configs.pg$VERSION=\"$HOME/.pg_config/pg_config\"" > ~/.pgrx/config.toml
-          # pgrx_binding
-          mkdir -p ~/.pgrx_binding
-          cp ./vendor/pgrx_binding/pg${VERSION}_$(uname --machine)-unknown-linux-gnu.rs ~/.pgrx_binding/pg${VERSION}_raw_bindings.rs
-          echo PGRX_TARGET_INFO_PATH_PG$VERSION=$HOME/.pgrx_binding >> "$GITHUB_ENV"
+          mkdir -p ~/.pg14/pg_binding && touch ~/.pg14/pg_config && chmod 777 ~/.pg14/pg_config
+          mkdir -p ~/.pg15/pg_binding && touch ~/.pg15/pg_config && chmod 777 ~/.pg15/pg_config
+          mkdir -p ~/.pg16/pg_binding && touch ~/.pg16/pg_config && chmod 777 ~/.pg16/pg_config
+          cp ./vendor/pgrx_binding/pg14_${ARCH}-unknown-linux-gnu.rs ~/.pg14/pg_binding/pg14_raw_bindings.rs
+          cp ./vendor/pgrx_binding/pg15_${ARCH}-unknown-linux-gnu.rs ~/.pg15/pg_binding/pg15_raw_bindings.rs
+          cp ./vendor/pgrx_binding/pg16_${ARCH}-unknown-linux-gnu.rs ~/.pg16/pg_binding/pg16_raw_bindings.rs
+          echo "#!/usr/bin/env bash" >> ~/.pg14/pg_config
+          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg14_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg14/pg_config
+          echo "#!/usr/bin/env bash" >> ~/.pg15/pg_config
+          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg15_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg15/pg_config
+          echo "#!/usr/bin/env bash" >> ~/.pg16/pg_config
+          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg16_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg16/pg_config
+      - name: Clippy
+        run: |
+          cargo clippy --workspace --exclude pgvectors --exclude pyvectors --target $ARCH-unknown-linux-gnu
+          export PGRX_PG_CONFIG_PATH=$HOME/.pg14/pg_config
+          export PGRX_TARGET_INFO_PATH_PG14=$HOME/.pg14/pg_binding
+          cargo clippy --package pgvectors --features pg14 --no-deps --target $ARCH-unknown-linux-gnu
+          export PGRX_PG_CONFIG_PATH=$HOME/.pg15/pg_config
+          export PGRX_TARGET_INFO_PATH_PG15=$HOME/.pg15/pg_binding
+          cargo clippy --package pgvectors --features pg15 --no-deps --target $ARCH-unknown-linux-gnu
+          export PGRX_PG_CONFIG_PATH=$HOME/.pg16/pg_config
+          export PGRX_TARGET_INFO_PATH_PG16=$HOME/.pg16/pg_binding
+          cargo clippy --package pgvectors --features pg16 --no-deps --target $ARCH-unknown-linux-gnu
+      - name: Build
+        run: |
+          cargo build --workspace --exclude pgvectors --exclude pyvectors --target $ARCH-unknown-linux-gnu
+          export PGRX_PG_CONFIG_PATH=$HOME/.pg14/pg_config
+          export PGRX_TARGET_INFO_PATH_PG14=$HOME/.pg14/pg_binding
+          cargo build --package pgvectors --lib --features pg14 --target $ARCH-unknown-linux-gnu
+          export PGRX_PG_CONFIG_PATH=$HOME/.pg15/pg_config
+          export PGRX_TARGET_INFO_PATH_PG15=$HOME/.pg15/pg_binding
+          cargo build --package pgvectors --lib --features pg15 --target $ARCH-unknown-linux-gnu
+          export PGRX_PG_CONFIG_PATH=$HOME/.pg16/pg_config
+          export PGRX_TARGET_INFO_PATH_PG16=$HOME/.pg16/pg_binding
+          cargo build --package pgvectors --lib --features pg16 --target $ARCH-unknown-linux-gnu
       - name: Test
-        run: cargo test --all --no-fail-fast --features "pg$VERSION" --target $ARCH-unknown-linux-gnu -- --nocapture
+        run: |
+          cargo test --workspace --exclude pgvectors --exclude pyvectors --no-fail-fast --target $ARCH-unknown-linux-gnu
       - name: Test (x86_64)
         if: matrix.arch == 'x86_64'
         run: |
           ASSETS=$(mktemp -d)
           wget https://downloadmirror.intel.com/813591/sde-external-9.33.0-2024-01-07-lin.tar.xz -O $ASSETS/sde-external.tar.xz
           tar -xf $ASSETS/sde-external.tar.xz -C $ASSETS
-          cargo --config "target.x86_64-unknown-linux-gnu.runner = [\"$ASSETS/sde-external-9.33.0-2024-01-07-lin/sde64\", \"-spr\", \"--\"]" test "_v4" --all --no-fail-fast --features "pg$VERSION" --target $ARCH-unknown-linux-gnu -- --nocapture
+          cargo --config "target.x86_64-unknown-linux-gnu.runner = [\"$ASSETS/sde-external-9.33.0-2024-01-07-lin/sde64\", \"-spr\", \"--\"]" test "_v4" --workspace --exclude pgvectors --exclude pyvectors --no-fail-fast --target $ARCH-unknown-linux-gnu
       - name: Post Set up Cache
         uses: actions/cache/save@v4
         if: ${{ !steps.cache.outputs.cache-hit }}

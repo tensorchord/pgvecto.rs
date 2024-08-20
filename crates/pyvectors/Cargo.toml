@@ -1,0 +1,30 @@
+[package]
+name = "pyvectors"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "pyvectors"
+crate-type = ["cdylib"]
+
+[dependencies]
+num-traits.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+validator.workspace = true
+
+# python
+ndarray = { version = "0.15" }
+numpy = { version = "0.21" }
+pyo3 = { version = "0.21", features = ["extension-module"] }
+pythonize = "0.21"
+
+base = { path = "../base" }
+detect = { path = "../detect" }
+indexing = { path = "../indexing" }
+stoppable_rayon = { path = "../stoppable_rayon" }
+
+[lints]
+rust.unsafe_op_in_unsafe_fn = "allow"
+rust.unused_lifetimes = "warn"
+rust.unused_qualifications = "warn"

@@ -25,7 +25,11 @@ pub struct Flat<O: OperatorFlat> {
 }
 
 impl<O: OperatorFlat> Flat<O> {
-    pub fn create(path: impl AsRef<Path>, options: IndexOptions, source: &impl Source<O>) -> Self {
+    pub fn create(
+        path: impl AsRef<Path>,
+        options: IndexOptions,
+        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
+    ) -> Self {
         let remapped = RemappedCollection::from_source(source);
         from_nothing(path, options, &remapped)
     }
@@ -62,6 +66,10 @@ impl<O: OperatorFlat> Flat<O> {
         }))
     }
 
+    pub fn dims(&self) -> u32 {
+        self.storage.dims()
+    }
+
     pub fn len(&self) -> u32 {
         self.storage.len()
     }
@@ -78,12 +86,12 @@ impl<O: OperatorFlat> Flat<O> {
 fn from_nothing<O: OperatorFlat>(
     path: impl AsRef<Path>,
     options: IndexOptions,
-    collection: &impl Collection<O>,
+    collection: &(impl Vectors<Owned<O>> + Collection + Sync),
 ) -> Flat<O> {
     create_dir(path.as_ref()).unwrap();
     let flat_indexing_options = options.indexing.clone().unwrap_flat();
     let storage = O::Storage::create(path.as_ref().join("storage"), collection);
-    let quantization = Quantization::create(
+    let quantization = Quantization::<O>::create(
         path.as_ref().join("quantization"),
         options.vector,
         flat_indexing_options.quantization,

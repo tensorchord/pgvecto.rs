@@ -2,20 +2,22 @@ use crate::delete::Delete;
 use crate::Op;
 use crate::{GrowingSegment, SealedSegment};
 use base::index::IndexOptions;
-use base::operator::Borrowed;
+use base::operator::{Borrowed, Owned};
 use base::search::*;
 use std::any::Any;
 use std::fmt::Debug;
+use std::marker::PhantomData;
 use std::sync::Arc;
 
-pub struct IndexSource<O: Op> {
+pub struct IndexSource<V, O: Op> {
     pub(super) sealed: Option<Arc<SealedSegment<O>>>,
     pub(super) growing: Vec<Arc<GrowingSegment<O>>>,
     pub(super) dims: u32,
     pub(super) delete: Arc<Delete>,
+    _phantom: PhantomData<fn(V) -> V>,
 }
 
-impl<O: Op> IndexSource<O> {
+impl<O: Op> IndexSource<Owned<O>, O> {
     pub fn new(
         options: IndexOptions,
         sealed: Option<Arc<SealedSegment<O>>>,
@@ -27,11 +29,12 @@ impl<O: Op> IndexSource<O> {
             growing,
             dims: options.vector.dims,
             delete,
+            _phantom: PhantomData,
         }
     }
 }
 
-impl<O: Op> Vectors<O> for IndexSource<O> {
+impl<O: Op> Vectors<Owned<O>> for IndexSource<Owned<O>, O> {
     fn dims(&self) -> u32 {
         self.dims
     }
@@ -58,7 +61,7 @@ impl<O: Op> Vectors<O> for IndexSource<O> {
     }
 }
 
-impl<O: Op> Collection<O> for IndexSource<O> {
+impl<O: Op> Collection for IndexSource<Owned<O>, O> {
     fn payload(&self, mut index: u32) -> Payload {
         for x in self.sealed.iter() {
             if index < x.len() {
@@ -76,7 +79,7 @@ impl<O: Op> Collection<O> for IndexSource<O> {
     }
 }
 
-impl<O: Op> Source<O> for IndexSource<O> {
+impl<O: Op> Source for IndexSource<Owned<O>, O> {
     fn get_main<T: Any>(&self) -> Option<&T> {
         let x = self.sealed.as_ref()?;
         Some(
@@ -95,12 +98,13 @@ impl<O: Op> Source<O> for IndexSource<O> {
     }
 }
 
-pub struct RoGrowingCollection<O: Op> {
+pub struct RoGrowingCollection<V, O: Op> {
     pub(super) growing: Vec<Arc<GrowingSegment<O>>>,
     pub(super) dims: u32,
+    _phantom: PhantomData<fn(V) -> V>,
 }
 
-impl<O: Op> Debug for RoGrowingCollection<O> {
+impl<O: Op> Debug for RoGrowingCollection<Owned<O>, O> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RoGrowingCollection")
             .field("growing", &self.growing)
@@ -109,7 +113,7 @@ impl<O: Op> Debug for RoGrowingCollection<O> {
     }
 }
 
-impl<O: Op> Vectors<O> for RoGrowingCollection<O> {
+impl<O: Op> Vectors<Owned<O>> for RoGrowingCollection<Owned<O>, O> {
     fn dims(&self) -> u32 {
         self.dims
     }
@@ -129,7 +133,7 @@ impl<O: Op> Vectors<O> for RoGrowingCollection<O> {
     }
 }
 
-impl<O: Op> Collection<O> for RoGrowingCollection<O> {
+impl<O: Op> Collection for RoGrowingCollection<Owned<O>, O> {
     fn payload(&self, mut index: u32) -> Payload {
         for x in self.growing.iter() {
             if index < x.len() {
