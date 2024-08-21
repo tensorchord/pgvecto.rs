@@ -1,7 +1,5 @@
 use crate::vector::vecf32;
-
 use super::ScalarLike;
-use detect::multiversion;
 use num_traits::{Float, Zero};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -785,5 +783,9 @@ impl ScalarLike for F32 {
 
     fn impl_l2(lhs: &[F32], rhs: &[F32]) -> F32 {
         vecf32::sl2(lhs, rhs)
+    }
+
+    fn impl_dot(lhs: &[F32], rhs: &[F32]) -> F32 {
+        vecf32::dot(lhs, rhs)
     }
 }

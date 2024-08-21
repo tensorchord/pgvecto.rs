@@ -780,4 +780,8 @@ impl ScalarLike for F16 {
         }
         d2
     }
+
+    fn impl_dot(lhs: &[F16], rhs: &[F16]) -> F32 {
+        todo!()
+    }
 }

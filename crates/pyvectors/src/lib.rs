@@ -172,4 +172,60 @@ impl Rabitq {
             .take(k as usize)
             .collect()
     }
+    fn test_all(
+        &self,
+        test: PyReadonlyArray2<'_, f32>,
+        k: u32,
+        expected: PyReadonlyArray2<'_, i32>,
+    ) -> (f32, f32) {
+        let mut options = SearchOptions::default();
+        options.rabitq_nprobe = 300;
+        let test = test.as_array();
+        let expected = expected.as_array();
+        let (n, _) = test.dim();
+        let mut sum = 0;
+        let mut total_time_ms = 0;
+        for i in 0..n {
+            let vector = test.slice(s!(i, ..));
+            let vector = Vecf32Borrowed::new(cast_slice(vector.as_slice().unwrap()));
+            let start = user_time(); // ms
+            let result = self
+                .0
+                .vbase(vector, &options)
+                .map(|Element { payload, .. }| payload.0.pointer().as_u64() as u32)
+                .take(k as usize)
+                .collect::<Vec<_>>();
+            let end = user_time(); // ms
+            let e = expected.slice(s!(i, ..));
+            let e = e.as_slice().unwrap();
+            let mut count = 0_usize;
+            for i in 0..k as usize {
+                for j in 0..k as usize {
+                    if e[i] == result[j] as i32 {
+                        count += 1;
+                    }
+                }
+            }
+            sum += count;
+            total_time_ms += end - start;
+        }
+        let recall = sum as f32 / (n as u32 * k) as f32;
+        let qps = ((1000 * n) as f32) / total_time_ms as f32;
+        (recall, qps)
+    }
+}
+
+fn cast_slice(x: &[f32]) -> &[F32] {
+    unsafe { std::mem::transmute(x) }
+}
+
+fn user_time() -> i64 {
+    unsafe {
+        let mut cur_time = std::mem::zeroed::<libc::rusage>();
+        let ret = libc::getrusage(libc::RUSAGE_SELF, &mut cur_time);
+        assert_eq!(ret, 0);
+        let secs = cur_time.ru_utime.tv_sec;
+        let micros = cur_time.ru_utime.tv_usec / 1000;
+        secs * 1000 + micros
+    }
 }

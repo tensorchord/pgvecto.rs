@@ -5,6 +5,7 @@ pub mod kmeans1d;
 pub mod lloyd;
 pub mod quick_centers;
 
+use std::cmp::Reverse;
 use base::scalar::*;
 use common::vec2::Vec2;
 use kmeans1d::kmeans1d;
@@ -64,6 +65,16 @@ pub fn k_means_lookup_many<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> 
     for i in 0..centroids.shape_0() {
         let dis = S::impl_l2(vector, &centroids[(i,)]);
         seq.push((dis, i));
+    }
+    seq
+}
+
+pub fn k_means_lookup_many_2<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> Vec<Reverse<(F32, usize)>> {
+    assert_ne!(centroids.shape_0(), 0);
+    let mut seq = Vec::new();
+    for i in 0..centroids.shape_0() {
+        let dis = S::impl_l2(vector, &centroids[(i,)]);
+        seq.push(Reverse((dis, i)));
     }
     seq
 }

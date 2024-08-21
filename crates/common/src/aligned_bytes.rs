@@ -34,24 +34,28 @@ impl<const ALIGN: usize> Clone for AlignBytes<ALIGN> {
 impl<const ALIGN: usize> Deref for AlignBytes<ALIGN> {
     type Target = [u8];
 
+    #[inline(always)]
     fn deref(&self) -> &Self::Target {
         unsafe { self.ptr.as_ref() }
     }
 }
 
 impl<const ALIGN: usize> DerefMut for AlignBytes<ALIGN> {
+    #[inline(always)]
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { self.ptr.as_mut() }
     }
 }
 
 impl<const ALIGN: usize> AsRef<[u8]> for AlignBytes<ALIGN> {
+    #[inline(always)]
     fn as_ref(&self) -> &[u8] {
         unsafe { self.ptr.as_ref() }
     }
 }
 
 impl<const ALIGN: usize> AsMut<[u8]> for AlignBytes<ALIGN> {
+    #[inline(always)]
     fn as_mut(&mut self) -> &mut [u8] {
         unsafe { self.ptr.as_mut() }
     }

@@ -124,12 +124,12 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
 
     pub fn push_batch(
         &self,
-        preprocessed: &O::QuantizationPreprocessed,
-        rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
-        codes: &[u8],
-        packed_codes: &[u8],
-        fast_scan: bool,
+        _preprocessed: &O::QuantizationPreprocessed,
+        _rhs: Range<u32>,
+        _heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
+        _codes: &[u8],
+        _packed_codes: &[u8],
+        _fast_scan: bool,
     ) {
         todo!()
     }

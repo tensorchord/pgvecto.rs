@@ -12,6 +12,7 @@ numpy = { version = "0.21" }
 pyo3 = { version = "0.21", features = ["extension-module"] }
 pythonize = "0.21"
 serde.workspace = true
+libc.workspace = true
 
 base = { path = "../base" }
 detect = { path = "../detect" }

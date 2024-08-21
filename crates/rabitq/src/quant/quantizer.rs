@@ -2,7 +2,7 @@ use super::error_based::ErrorBasedFlatReranker;
 use crate::operator::OperatorRabitq;
 use base::always_equal::AlwaysEqual;
 use base::index::VectorOptions;
-use base::scalar::F32;
+use base::scalar::{ScalarLike, F32};
 use base::search::RerankerPop;
 use num_traits::Float;
 use quantization::fast_scan::b4::fast_scan_v3;
@@ -53,11 +53,11 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         let sum_of_abs_x = vector.iter().map(|x| x.abs()).sum::<F32>();
         let sum_of_x_2 = vector.iter().map(|&x| x * x).sum::<F32>();
         let x0 = sum_of_abs_x / (sum_of_x_2 * F32(self.dims as _)).sqrt();
-        let x_x0 = dis_u / x0;
+        let x_x0: f64 = dis_u.to_f32() as f64 / x0.to_f32() as f64;
         let fac_norm = F32(self.dims as f32).sqrt();
-        let max_x1 = F32(1.0) / F32((self.dims as f32 - 1.0).sqrt());
-        let factor_err = F32(2.0) * max_x1 * (x_x0 * x_x0 - dis_u * dis_u).sqrt();
-        let factor_ip = F32(-2.0) / fac_norm * x_x0;
+        let max_x1 = F32(1.9) / F32((self.dims as f32 - 1.0).sqrt());
+        let factor_err = F32(2.0) * max_x1 * (F32((x_x0 * x_x0) as f32) - dis_u * dis_u).sqrt();
+        let factor_ip = F32((-2.0 / fac_norm.to_f32() as f64 * x_x0) as f32);
         let factor_ppc = factor_ip * vector.iter().map(|x| x.signum()).sum::<F32>();
         let mut codes = Vec::new();
         for i in 0..self.dims {
@@ -68,43 +68,26 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
 
     pub fn preprocess(
         &self,
+        dist: F32,
         lhs: &[F32],
+        centroid: &[F32],
     ) -> (O::QuantizationPreprocessed0, O::QuantizationPreprocessed1) {
-        O::rabitq_quantization_preprocess(lhs)
-    }
-
-    pub fn process(
-        &self,
-        p0: &O::QuantizationPreprocessed0,
-        p1: &O::QuantizationPreprocessed1,
-        (a, b, c, d, e): (F32, F32, F32, F32, &[u8]),
-    ) -> F32 {
-        todo!()
-    }
-
-    pub fn process_lowerbound(
-        &self,
-        p0: &O::QuantizationPreprocessed0,
-        p1: &O::QuantizationPreprocessed1,
-        (a, b, c, d, e): (F32, F32, F32, F32, &[u8]),
-    ) -> F32 {
-        todo!()
+        O::rabitq_quantization_preprocess(dist, lhs, centroid)
     }
 
     pub fn push_batch(
         &self,
         (p0, p1): &(O::QuantizationPreprocessed0, O::QuantizationPreprocessed1),
         rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
-        result: &mut BinaryHeap<(F32, AlwaysEqual<u32>, ())>,
+        result: &mut BinaryHeap<(i32, AlwaysEqual<u32>, ())>,
         rerank: impl Fn(u32) -> (F32, ()),
-        codes: &[u8],
         packed_codes: &[u8],
         meta_a: &[F32],
         meta_b: &[F32],
         meta_c: &[F32],
         meta_d: &[F32],
         fast_scan: bool,
+        hint: impl Fn(u32) -> F32,
     ) {
         /*
         let mut barrier = if result.len() >= 10 {
@@ -114,20 +97,20 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         };
         */
         let mut barrier = result.peek().unwrap().0;
-        if fast_scan && O::SUPPORT_FAST_SCAN && quantization::fast_scan::b4::is_supported() {
-            use quantization::fast_scan::b4::{fast_scan, BLOCK_SIZE};
+        {
+            use quantization::fast_scan::b4::BLOCK_SIZE;
             let lut = O::fast_scan(p1);
             let s = rhs.start.next_multiple_of(BLOCK_SIZE);
-            let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
+            let e = rhs.end & !31;
             if rhs.start != s {
                 let i = rhs.start / BLOCK_SIZE * BLOCK_SIZE;
                 let t = self.dims.div_ceil(4);
                 let bytes = (t * 16) as usize;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                let res = unsafe {fast_scan_v3(t, &packed_codes[start..end], &lut)};
+                let res = unsafe { fast_scan_v3(t, &packed_codes[start..end], &lut) };
                 for u in rhs.start..s {
-                    let low_u = {
+                    let (rough_u, err_u) = {
                         let a = meta_a[u as usize];
                         let b = meta_b[u as usize];
                         let c = meta_c[u as usize];
@@ -135,11 +118,12 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                         let param = res.0[(u - i) as usize];
                         O::rabitq_quantization_process_1(a, b, c, d, p0, param)
                     };
-                    if low_u.0.to_bits() < barrier.0.to_bits() {
+                    let low_u = rough_u - err_u;
+                    if convert(low_u.0) < barrier {
                         let (dis_u, ()) = rerank(u);
-                        if dis_u.0.to_bits() < barrier.0.to_bits() {
+                        if convert(dis_u.0) < barrier {
                             result.pop();
-                            result.push((dis_u, AlwaysEqual(u), ()));
+                            result.push((convert(dis_u.0), AlwaysEqual(u), ()));
                             barrier = result.peek().unwrap().0;
                         }
                     }
@@ -150,7 +134,29 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                 let bytes = (t * 16) as usize;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                let res = unsafe {fast_scan_v3(t, &packed_codes[start..end], &lut)};
+                let res = unsafe { fast_scan_v3(t, &packed_codes[start..end], &lut) };
+                /*
+                for u in i..i + BLOCK_SIZE {
+                    let (rough_u, err_u) = {
+                        let a = meta_a[u as usize];
+                        let b = meta_b[u as usize];
+                        let c = meta_c[u as usize];
+                        let d = meta_d[u as usize];
+                        let param = res.0[(u - i) as usize];
+                        O::rabitq_quantization_process_1(a, b, c, d, p0, param)
+                    };
+                    let low_u = rough_u - err_u;
+                    // println!("lowerbound({u})={rough_u} - {err_u}");
+                    if low_u.0 < barrier {
+                        let (dis_u, ()) = rerank(u);
+                        if dis_u.0 < barrier {
+                            result.pop();
+                            result.push((dis_u, AlwaysEqual(u), ()));
+                            barrier = result.peek().unwrap().0;
+                        }
+                    }
+                }
+                */
                 let meta_a = &meta_a[i as usize..][..BLOCK_SIZE as usize];
                 let meta_b = &meta_b[i as usize..][..BLOCK_SIZE as usize];
                 let meta_c = &meta_c[i as usize..][..BLOCK_SIZE as usize];
@@ -166,25 +172,25 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                 for index in 0..BLOCK_SIZE {
                     let (Reverse(low_u), AlwaysEqual(u)) =
                         (Reverse(temp.0[index as usize]), AlwaysEqual(i + index));
-                    if low_u.0.to_bits() < barrier.0.to_bits() {
+                    if convert(low_u.0) < barrier {
                         let (dis_u, ()) = rerank(u);
-                        if dis_u.0.to_bits() < barrier.0.to_bits() {
+                        if convert(dis_u.0) < barrier {
                             result.pop();
-                            result.push((dis_u, AlwaysEqual(u), ()));
+                            result.push((convert(dis_u.0), AlwaysEqual(u), ()));
                             barrier = result.peek().unwrap().0;
                         }
                     }
                 }
             }
             if e != rhs.end {
-                let i = e / BLOCK_SIZE * BLOCK_SIZE;
+                let i = e;
                 let t = self.dims.div_ceil(4);
                 let bytes = (t * 16) as usize;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                let res = unsafe{fast_scan_v3(t, &packed_codes[start..end], &lut)};
+                let res = unsafe { fast_scan_v3(t, &packed_codes[start..end], &lut) };
                 for u in e..rhs.end {
-                    let low_u = {
+                    let (rough_u, err_u) = {
                         let a = meta_a[u as usize];
                         let b = meta_b[u as usize];
                         let c = meta_c[u as usize];
@@ -192,19 +198,19 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                         let param = res.0[(u - i) as usize];
                         O::rabitq_quantization_process_1(a, b, c, d, p0, param)
                     };
-                    if low_u.0.to_bits() < barrier.0.to_bits() {
+                    let low_u = rough_u - err_u;
+                    // println!("lowerbound({u})={rough_u} - {err_u}");
+                    if convert(low_u.0) < barrier {
                         let (dis_u, ()) = rerank(u);
-                        if dis_u.0.to_bits() < barrier.0.to_bits() {
+                        if convert(dis_u.0) < barrier {
                             result.pop();
-                            result.push((dis_u, AlwaysEqual(u), ()));
+                            result.push((convert(dis_u.0), AlwaysEqual(u), ()));
                             barrier = result.peek().unwrap().0;
                         }
                     }
                 }
             }
-            return;
         }
-        todo!()
     }
 
     pub fn rerank<'a, T: 'a>(
@@ -214,4 +220,10 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
     ) -> impl RerankerPop<T> + 'a {
         ErrorBasedFlatReranker::new(heap, r)
     }
+}
+
+fn convert(x: f32) -> i32 {
+    let mut left = x.to_bits() as i32;
+    // left ^= (((left >> 31) as u32) >> 1) as i32;
+    left
 }

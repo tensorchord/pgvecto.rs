@@ -355,7 +355,7 @@ pub fn dot(lhs: &[F32], rhs: &[F32]) -> F32 {
 
 #[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v4")]
-unsafe fn sl2_v4(lhs: &[F32], rhs: &[F32]) -> F32 {
+pub unsafe fn sl2_v4(lhs: &[F32], rhs: &[F32]) -> F32 {
     assert!(lhs.len() == rhs.len());
     use std::arch::x86_64::*;
     unsafe {
@@ -437,7 +437,7 @@ unsafe fn sl2_v3(lhs: &[F32], rhs: &[F32]) -> F32 {
 }
 
 #[detect::target_cpu(enable = "v3")]
-unsafe fn sqr_dist(mut d: *const f32, mut q: *const f32) -> f32 {
+pub unsafe fn sqr_dist(mut d: *const f32, mut q: *const f32) -> f32 {
     #[repr(align(32))]
     struct TmpRes([f32; 8]);
 
@@ -447,32 +447,23 @@ unsafe fn sqr_dist(mut d: *const f32, mut q: *const f32) -> f32 {
         let mut r = TmpRes([0.0f32; 8]);
 
         let mut sum = _mm256_set1_ps(0.0);
-        for _ in 0..6 {
+        for _ in 0..60 {
             let v1 = _mm256_loadu_ps(d);
             let v2 = _mm256_loadu_ps(q);
             d = d.add(8);
             q = q.add(8);
             let diff = _mm256_sub_ps(v1, v2);
-            sum = _mm256_add_ps(sum, _mm256_mul_ps(diff, diff));
+            sum = _mm256_fmadd_ps(diff, diff, sum);
 
             let v1 = _mm256_loadu_ps(d);
             let v2 = _mm256_loadu_ps(q);
             d = d.add(8);
             q = q.add(8);
             let diff = _mm256_sub_ps(v1, v2);
-            sum = _mm256_add_ps(sum, _mm256_mul_ps(diff, diff));
+            sum = _mm256_fmadd_ps(diff, diff, sum);
         }
         _mm256_store_ps(r.0.as_mut_ptr(), sum);
-
-        let mut ret = r.0[0] + r.0[1] + r.0[2] + r.0[3] + r.0[4] + r.0[5] + r.0[6] + r.0[7];
-
-        for _ in 0..4 {
-            let tmp = (*q) - (*d);
-            ret += tmp * tmp;
-            d = d.add(1);
-            q = q.add(1);
-        }
-        ret
+        r.0[0] + r.0[1] + r.0[2] + r.0[3] + r.0[4] + r.0[5] + r.0[6] + r.0[7]
     }
 }
 
@@ -481,7 +472,10 @@ pub fn sl2(lhs: &[F32], rhs: &[F32]) -> F32 {
     // assert!(lhs.len() == 100);
     // assert!(rhs.len() == 100);
     // unsafe { F32(sqr_dist(lhs.as_ptr().cast(), rhs.as_ptr().cast())) }
-    unsafe { sl2_v3(lhs, rhs) }
+    // unsafe { sl2_v3(lhs, rhs) }
+    assert!(lhs.len() == 960);
+    assert!(rhs.len() == 960);
+    unsafe { F32(sqr_dist(lhs.as_ptr().cast(), rhs.as_ptr().cast())) }
 }
 
 #[detect::multiversion(v4, v3, v2, neon, fallback)]

@@ -1,15 +1,14 @@
 use base::operator::Borrowed;
 use base::operator::*;
-use base::scalar::F32;
+use base::scalar::{ScalarLike, F32};
 use common::aligned_array::AlignedArray;
 use common::aligned_bytes::AlignBytes;
 use num_traits::Float;
 use storage::OperatorStorage;
 
 pub trait OperatorRabitq: OperatorStorage {
-    const RESIDUAL: bool;
     fn cast(vector: Borrowed<'_, Self>) -> &[F32];
-    fn residual(lhs: &[F32], rhs: &[F32]) -> Vec<F32>;
+    fn _residual(lhs: &[F32], rhs: &[F32]) -> Vec<F32>;
 
     fn proj(projection: &[Vec<F32>], vector: &[F32]) -> Vec<F32>;
 
@@ -17,7 +16,9 @@ pub trait OperatorRabitq: OperatorStorage {
     type QuantizationPreprocessed1;
 
     fn rabitq_quantization_preprocess(
+        dist: F32,
         vector: &[F32],
+        centroid: &[F32],
     ) -> (
         Self::QuantizationPreprocessed0,
         Self::QuantizationPreprocessed1,
@@ -29,7 +30,7 @@ pub trait OperatorRabitq: OperatorStorage {
         factor_err: F32,
         p0: &Self::QuantizationPreprocessed0,
         param: u16,
-    ) -> F32;
+    ) -> (F32, F32);
     fn rabitq_quantization_process_1_parallel(
         dis_u_2: &[F32; 32],
         factor_ppc: &[F32; 32],
@@ -45,11 +46,10 @@ pub trait OperatorRabitq: OperatorStorage {
 }
 
 impl OperatorRabitq for Vecf32L2 {
-    const RESIDUAL: bool = false;
     fn cast(vector: Borrowed<'_, Self>) -> &[F32] {
         vector.slice()
     }
-    fn residual(lhs: &[F32], rhs: &[F32]) -> Vec<F32> {
+    fn _residual(lhs: &[F32], rhs: &[F32]) -> Vec<F32> {
         assert_eq!(lhs.len(), rhs.len());
         let n = lhs.len();
         (0..n).map(|i| lhs[i] - rhs[i]).collect()
@@ -58,11 +58,16 @@ impl OperatorRabitq for Vecf32L2 {
     type QuantizationPreprocessed0 = (F32, F32, F32, F32);
     type QuantizationPreprocessed1 = AlignBytes<64>;
 
-    fn rabitq_quantization_preprocess(vector: &[F32]) -> ((F32, F32, F32, F32), AlignBytes<64>) {
-        let dis_v_2 = vector.iter().map(|&x| x * x).sum();
-        let (k, b, qvector) = quantization::quantize::quantize_15(vector);
-        let qvector_sum = F32(qvector.iter().fold(0_u32, |x, &y| x + y as u32) as _);
-        let lut = gen(&qvector);
+    fn rabitq_quantization_preprocess(
+        dist: F32,
+        vector: &[F32],
+        centroid: &[F32],
+    ) -> ((F32, F32, F32, F32), AlignBytes<64>) {
+        let dis_v_2 = dist;
+        let (k, b, qvector, qvector_sum) =
+            unsafe { quantization::quantize::quantize_15(vector, centroid) };
+        let qvector_sum = F32(qvector_sum as f32);
+        let lut = gen(qvector);
         ((dis_v_2, b, k, qvector_sum), lut)
     }
 
@@ -74,7 +79,7 @@ impl OperatorRabitq for Vecf32L2 {
         factor_err: F32,
         p0: &Self::QuantizationPreprocessed0,
         param: u16,
-    ) -> F32 {
+    ) -> (F32, F32) {
         rabitq_quantization_process_1(dis_u_2, factor_ppc, factor_ip, factor_err, *p0, param)
     }
 
@@ -96,14 +101,7 @@ impl OperatorRabitq for Vecf32L2 {
         let dims = vector.len();
         assert_eq!(projection.len(), dims);
         (0..dims)
-            .map(|i| {
-                assert_eq!(projection[i].len(), dims);
-                let mut xy = F32(0.0);
-                for j in 0..dims {
-                    xy += projection[i][j] * vector[j];
-                }
-                xy
-            })
+            .map(|i| F32::impl_dot(&projection[i], vector))
             .collect()
     }
 
@@ -119,12 +117,11 @@ impl OperatorRabitq for Vecf32L2 {
 macro_rules! unimpl_operator_rabitq {
     ($t:ty) => {
         impl OperatorRabitq for $t {
-            const RESIDUAL: bool = false;
             fn cast(_: Borrowed<'_, Self>) -> &[F32] {
                 unimplemented!()
             }
 
-            fn residual(_: &[F32], _: &[F32]) -> Vec<F32> {
+            fn _residual(_: &[F32], _: &[F32]) -> Vec<F32> {
                 unimplemented!()
             }
 
@@ -136,6 +133,8 @@ macro_rules! unimpl_operator_rabitq {
             type QuantizationPreprocessed1 = std::convert::Infallible;
 
             fn rabitq_quantization_preprocess(
+                _: F32,
+                _: &[F32],
                 _: &[F32],
             ) -> (
                 Self::QuantizationPreprocessed0,
@@ -151,7 +150,7 @@ macro_rules! unimpl_operator_rabitq {
                 _: F32,
                 _: &Self::QuantizationPreprocessed0,
                 _: u16,
-            ) -> F32 {
+            ) -> (F32, F32) {
                 unimplemented!()
             }
 
@@ -198,11 +197,12 @@ pub fn rabitq_quantization_process_1(
     factor_err: F32,
     (dis_v_2, b, k, qvector_sum): (F32, F32, F32, F32),
     abdp: u16,
-) -> F32 {
+) -> (F32, F32) {
     let rough =
         dis_u_2 + dis_v_2 + b * factor_ppc + (F32(2.0 * abdp as f32) - qvector_sum) * factor_ip * k;
     let err = factor_err * dis_v_2.sqrt();
-    rough - F32(1.9) * err
+    //println!("lowerbound = {rough} - {err}, dis_u_2 = {dis_u_2}, dis_v_2 = {dis_v_2}, b = {b}, factor_ppc = {factor_ppc}, abdp = {abdp}, qvector_sum = {qvector_sum}, factor_ip = {factor_ip}, k = {k}, factor_err = {factor_err}");
+    (rough, err)
 }
 
 #[inline(always)]
@@ -243,7 +243,6 @@ pub unsafe fn rabitq_quantization_process_1_parallel_avx2(
         let b = _mm256_set1_ps(b.0);
         let k = _mm256_set1_ps(k.0);
         let qvector_sum = _mm256_set1_ps(qvector_sum.0);
-        let epsilon = _mm256_set1_ps(1.9);
         for i in (0_usize..32).step_by(8) {
             let dis_u_2 = _mm256_load_ps(dis_u_2.0.as_ptr().add(i).cast());
             let factor_ppc = _mm256_load_ps(factor_ppc.0.as_ptr().add(i).cast());
@@ -252,7 +251,7 @@ pub unsafe fn rabitq_quantization_process_1_parallel_avx2(
             let abdp = _mm256_cvtepi32_ps(_mm256_cvtepi16_epi32(_mm_load_si128(
                 abdp.0.as_ptr().add(i).cast(),
             )));
-            // dis_u_2 + dis_v_2 + b * factor_ppc + (F32(2.0 * abdp as f32) - qvector_sum) * factor_ip * k - factor_err * dis_v_2.sqrt() * epsilon
+            // dis_u_2 + dis_v_2 + b * factor_ppc + (F32(2.0 * abdp as f32) - qvector_sum) * factor_ip * k - factor_err * dis_v_2.sqrt()
             let part_2 = _mm256_mul_ps(b, factor_ppc);
             let part_3_left = _mm256_sub_ps(_mm256_mul_ps(_mm256_set1_ps(2.0), abdp), qvector_sum);
             let part_3_right = _mm256_mul_ps(factor_ip, k);
@@ -262,7 +261,7 @@ pub unsafe fn rabitq_quantization_process_1_parallel_avx2(
                     _mm256_fmadd_ps(part_3_left, part_3_right, part_2),
                     _mm256_add_ps(dis_v_2, dis_u_2),
                 ),
-                _mm256_mul_ps(part_4, epsilon),
+                part_4,
             );
             _mm256_store_ps(result.0.as_mut_ptr().add(i).cast(), full);
         }
@@ -270,15 +269,46 @@ pub unsafe fn rabitq_quantization_process_1_parallel_avx2(
     }
 }
 
-fn gen(qvector: &[u8]) -> AlignBytes<64> {
+fn gen(mut qvector: Vec<u8>) -> AlignBytes<64> {
     let dims = qvector.len() as u32;
     let t = dims.div_ceil(4);
     let mut lut = AlignBytes::new_zeroed(t as usize * 16);
+    qvector.resize(4 * t as usize, 0);
     for i in 0..t as usize {
-        let t0 = qvector.get(4 * i + 0).copied().unwrap_or_default();
-        let t1 = qvector.get(4 * i + 1).copied().unwrap_or_default();
-        let t2 = qvector.get(4 * i + 2).copied().unwrap_or_default();
-        let t3 = qvector.get(4 * i + 3).copied().unwrap_or_default();
+        unsafe {
+            core::hint::assert_unchecked(4 * i + 0 < qvector.len());
+        }
+        let t0 = qvector[4 * i + 0];
+        unsafe {
+            core::hint::assert_unchecked(4 * i + 1 < qvector.len());
+        }
+        let t1 = qvector[4 * i + 1];
+        unsafe {
+            core::hint::assert_unchecked(4 * i + 2 < qvector.len());
+        }
+        let t2 = qvector[4 * i + 2];
+        unsafe {
+            core::hint::assert_unchecked(4 * i + 3 < qvector.len());
+        }
+        let t3 = qvector[4 * i + 3];
+        unsafe {
+            core::hint::assert_unchecked(16 * i + 0b0000 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b0001 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b0010 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b0011 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b0100 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b0101 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b0110 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b0111 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b1000 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b1001 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b1010 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b1011 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b1100 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b1101 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b1110 < lut.len());
+            core::hint::assert_unchecked(16 * i + 0b1111 < lut.len());
+        }
         lut[16 * i + 0b0000] = 0;
         lut[16 * i + 0b0001] = t0;
         lut[16 * i + 0b0010] = t1;
@@ -297,23 +327,4 @@ fn gen(qvector: &[u8]) -> AlignBytes<64> {
         lut[16 * i + 0b1111] = t3 + t2 + t1 + t0;
     }
     lut
-}
-
-fn binary_dot_product(x: &[u8], y: &[u8]) -> u32 {
-    assert_eq!(x.len(), y.len());
-    let n = x.len();
-    let mut res = 0;
-    for i in 0..n {
-        res += (x[i] & y[i]).count_ones();
-    }
-    res
-}
-
-fn asymmetric_binary_dot_product(x: &[u8], y: &(Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>)) -> u32 {
-    let mut res = 0;
-    res += binary_dot_product(x, &y.0) << 0;
-    res += binary_dot_product(x, &y.1) << 1;
-    res += binary_dot_product(x, &y.2) << 2;
-    res += binary_dot_product(x, &y.3) << 3;
-    res
 }

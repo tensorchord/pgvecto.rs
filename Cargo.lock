@@ -2442,6 +2442,7 @@ dependencies = [
  "base",
  "detect",
  "hnsw",
+ "libc",
  "numpy",
  "pyo3",
  "pythonize",

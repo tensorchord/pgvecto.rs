@@ -31,4 +31,5 @@ pub trait ScalarLike:
     fn to_f(self) -> F32;
 
     fn impl_l2(lhs: &[Self], rhs: &[Self]) -> F32;
+    fn impl_dot(lhs: &[Self], rhs: &[Self]) -> F32;
 }
