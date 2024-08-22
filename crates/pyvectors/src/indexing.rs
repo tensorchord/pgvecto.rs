@@ -1,7 +1,6 @@
-use base::distance::DistanceKind;
+use base::distance::{Distance, DistanceKind};
 use base::index::{IndexOptions, SearchOptions};
 use base::operator::*;
-use base::scalar::F32;
 use base::search::{Collection, Element, Pointer, Source, Vectors};
 use base::vector::*;
 use std::path::Path;
@@ -91,7 +90,7 @@ impl Indexing {
         &'a self,
         vector: BorrowedVector<'a>,
         opts: &'a SearchOptions,
-    ) -> impl Iterator<Item = (F32, Pointer)> + 'a {
+    ) -> impl Iterator<Item = (Distance, Pointer)> + 'a {
         match (self, vector) {
             (Self::Vecf32L2(x), BorrowedVector::Vecf32(vector)) => x.vbase(vector, opts),
             (Self::Vecf32Dot(x), BorrowedVector::Vecf32(vector)) => x.vbase(vector, opts),

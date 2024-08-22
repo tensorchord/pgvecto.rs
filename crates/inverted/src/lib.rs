@@ -4,6 +4,7 @@ pub mod operator;
 
 use self::operator::OperatorInvertedIndex;
 use base::always_equal::AlwaysEqual;
+use base::distance::Distance;
 use base::index::{IndexOptions, SearchOptions};
 use base::operator::{Borrowed, Owned};
 use base::scalar::{ScalarLike, F32};
@@ -55,15 +56,15 @@ impl<O: OperatorInvertedIndex> InvertedIndex<O> {
                 doc_score[self.indexes[i] as usize] += self.scores[i] * val;
             }
         }
-        let mut candidates: BinaryHeap<(F32, AlwaysEqual<u32>)> = doc_score
+        let mut candidates: BinaryHeap<(Distance, AlwaysEqual<u32>)> = doc_score
             .iter()
             .enumerate()
-            .map(|(i, score)| (*score, AlwaysEqual(i as u32)))
+            .map(|(i, score)| (Distance::from(-score.0), AlwaysEqual(i as u32)))
             .collect::<Vec<_>>()
             .into();
         Box::new(std::iter::from_fn(move || {
-            candidates.pop().map(|(score, AlwaysEqual(u))| Element {
-                distance: -score,
+            candidates.pop().map(|(distance, AlwaysEqual(u))| Element {
+                distance,
                 payload: AlwaysEqual(self.payload(u)),
             })
         }))

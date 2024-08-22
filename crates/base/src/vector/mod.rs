@@ -8,6 +8,7 @@ pub use svecf32::{SVecf32Borrowed, SVecf32Owned};
 pub use vecf16::{Vecf16Borrowed, Vecf16Owned};
 pub use vecf32::{Vecf32Borrowed, Vecf32Owned};
 
+use crate::distance::Distance;
 use crate::scalar::ScalarLike;
 use crate::scalar::F32;
 use serde::{Deserialize, Serialize};
@@ -46,15 +47,15 @@ pub trait VectorBorrowed: Copy + PartialEq + PartialOrd {
 
     fn norm(&self) -> F32;
 
-    fn operator_dot(self, rhs: Self) -> F32;
+    fn operator_dot(self, rhs: Self) -> Distance;
 
-    fn operator_l2(self, rhs: Self) -> F32;
+    fn operator_l2(self, rhs: Self) -> Distance;
 
-    fn operator_cos(self, rhs: Self) -> F32;
+    fn operator_cos(self, rhs: Self) -> Distance;
 
-    fn operator_hamming(self, rhs: Self) -> F32;
+    fn operator_hamming(self, rhs: Self) -> Distance;
 
-    fn operator_jaccard(self, rhs: Self) -> F32;
+    fn operator_jaccard(self, rhs: Self) -> Distance;
 
     fn function_normalize(&self) -> Self::Owned;
 

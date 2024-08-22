@@ -105,7 +105,7 @@ impl Indexing {
             let (distances, labels) = self
                 .0
                 .vbase(BorrowedVector::Vecf32(dataset.vector(i)), &search_options)
-                .map(|(distance, label)| (distance.0, label.as_u64() as i64))
+                .map(|(distance, label)| (f32::from(distance), label.as_u64() as i64))
                 .chain(std::iter::repeat((f32::INFINITY, i64::MAX)))
                 .take(k as usize)
                 .unzip::<_, _, Vec<_>, Vec<_>>();

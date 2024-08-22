@@ -3,7 +3,8 @@ use common::vec2::Vec2;
 use num_traits::{Float, Zero};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use stoppable_rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use stoppable_rayon as rayon;
 
 pub struct LloydKMeans<S, F> {
     dims: usize,

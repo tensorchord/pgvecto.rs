@@ -1,6 +1,5 @@
 use crate::datatype::memory_svecf32::{SVecf32Input, SVecf32Output};
 use crate::error::*;
-use base::scalar::*;
 use base::vector::*;
 use std::num::NonZero;
 

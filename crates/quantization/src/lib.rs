@@ -18,6 +18,7 @@ use self::product::ProductQuantizer;
 use self::scalar::ScalarQuantizer;
 use crate::operator::OperatorQuantization;
 use base::always_equal::AlwaysEqual;
+use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
 use base::scalar::*;
@@ -243,7 +244,7 @@ impl<O: OperatorQuantization> Quantization<O> {
         vectors: &impl Vectors<Owned<O>>,
         preprocessed: &QuantizationPreprocessed<O>,
         u: u32,
-    ) -> F32 {
+    ) -> Distance {
         match (&*self.train, preprocessed) {
             (Quantizer::Trivial(x), QuantizationPreprocessed::Trivial(lhs)) => {
                 let rhs = vectors.vector(u);
@@ -271,7 +272,7 @@ impl<O: OperatorQuantization> Quantization<O> {
         &self,
         preprocessed: &QuantizationPreprocessed<O>,
         rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
+        heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         sq_fast_scan: bool,
         pq_fast_scan: bool,
     ) {
@@ -301,8 +302,8 @@ impl<O: OperatorQuantization> Quantization<O> {
 
     pub fn flat_rerank<'a, T: 'a>(
         &'a self,
-        heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
-        r: impl Fn(u32) -> (F32, T) + 'a,
+        heap: Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
+        r: impl Fn(u32) -> (Distance, T) + 'a,
         sq_rerank_size: u32,
         pq_rerank_size: u32,
     ) -> Box<dyn RerankerPop<T> + 'a> {
@@ -314,7 +315,7 @@ impl<O: OperatorQuantization> Quantization<O> {
         }
     }
 
-    pub fn graph_rerank<'a, T: 'a, R: Fn(u32) -> (F32, T) + 'a>(
+    pub fn graph_rerank<'a, T: 'a, R: Fn(u32) -> (Distance, T) + 'a>(
         &'a self,
         vector: Borrowed<'a, O>,
         r: R,

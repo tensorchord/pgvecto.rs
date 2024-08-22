@@ -1,5 +1,5 @@
+use base::distance::Distance;
 use base::operator::*;
-use base::scalar::*;
 use base::vector::VectorBorrowed;
 use base::vector::VectorOwned;
 
@@ -13,7 +13,7 @@ pub trait OperatorTrivialQuantization: Operator {
     fn trivial_quantization_process(
         preprocessed: &Self::TrivialQuantizationPreprocessed,
         rhs: Borrowed<'_, Self>,
-    ) -> F32;
+    ) -> Distance;
 }
 
 impl<O: Operator> OperatorTrivialQuantization for O {
@@ -28,7 +28,7 @@ impl<O: Operator> OperatorTrivialQuantization for O {
     fn trivial_quantization_process(
         preprocessed: &Self::TrivialQuantizationPreprocessed,
         rhs: Borrowed<'_, Self>,
-    ) -> F32 {
+    ) -> Distance {
         O::distance(preprocessed.as_borrowed(), rhs)
     }
 }

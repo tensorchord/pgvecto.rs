@@ -1,10 +1,10 @@
-use base::scalar::F32;
+use base::distance::Distance;
 
 pub fn prune(
-    dist: impl Fn(u32, u32) -> F32,
+    dist: impl Fn(u32, u32) -> Distance,
     u: u32,
-    edges: &mut Vec<(F32, u32)>,
-    add: &[(F32, u32)],
+    edges: &mut Vec<(Distance, u32)>,
+    add: &[(Distance, u32)],
     m: u32,
 ) {
     let mut trace = add.to_vec();
@@ -30,14 +30,13 @@ pub fn prune(
 }
 
 pub fn robust_prune(
-    dist: impl Fn(u32, u32) -> F32,
+    dist: impl Fn(u32, u32) -> Distance,
     u: u32,
-    edges: &mut Vec<(F32, u32)>,
-    add: &[(F32, u32)],
+    edges: &mut Vec<(Distance, u32)>,
+    add: &[(Distance, u32)],
     alpha: f32,
     m: u32,
 ) {
-    let alpha = F32(alpha);
     // V ← (V ∪ Nout(p)) \ {p}
     let mut trace = add.to_vec();
     trace.extend(edges.as_slice());
@@ -54,7 +53,7 @@ pub fn robust_prune(
         let check = res
             .iter()
             .map(|&(_, v)| dist(u, v))
-            .all(|dist| alpha * dist > dis_u);
+            .all(|dist| f32::from(dist) * alpha > f32::from(dis_u));
         if check {
             res.push((dis_u, u));
         }

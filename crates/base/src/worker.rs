@@ -1,5 +1,5 @@
+use crate::distance::Distance;
 use crate::index::*;
-use crate::scalar::F32;
 use crate::search::*;
 use crate::vector::*;
 
@@ -32,7 +32,7 @@ pub trait ViewVbaseOperations {
         &'a self,
         vector: &'a OwnedVector,
         opts: &'a SearchOptions,
-    ) -> Result<Box<dyn Iterator<Item = (F32, Pointer)> + 'a>, VbaseError>;
+    ) -> Result<Box<dyn Iterator<Item = (Distance, Pointer)> + 'a>, VbaseError>;
 }
 
 pub trait ViewListOperations {

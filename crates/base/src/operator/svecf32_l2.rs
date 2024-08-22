@@ -1,6 +1,5 @@
 use crate::distance::*;
 use crate::operator::*;
-use crate::scalar::*;
 use crate::vector::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -11,7 +10,7 @@ impl Operator for SVecf32L2 {
 
     const DISTANCE_KIND: DistanceKind = DistanceKind::L2;
 
-    fn distance(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> F32 {
+    fn distance(lhs: SVecf32Borrowed<'_>, rhs: SVecf32Borrowed<'_>) -> Distance {
         lhs.operator_l2(rhs)
     }
 }

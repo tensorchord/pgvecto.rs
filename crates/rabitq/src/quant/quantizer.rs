@@ -1,6 +1,7 @@
 use super::error_based::ErrorBasedReranker;
 use crate::operator::OperatorRabitq;
 use base::always_equal::AlwaysEqual;
+use base::distance::Distance;
 use base::index::VectorOptions;
 use base::scalar::F32;
 use base::search::RerankerPop;
@@ -76,9 +77,9 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         p0: &O::QuantizationPreprocessed0,
         p1: &O::QuantizationPreprocessed1,
         (a, b, c, d, e): (F32, F32, F32, F32, &[u8]),
-    ) -> F32 {
+    ) -> Distance {
         let (est, _) = O::rabitq_quantization_process(a, b, c, d, e, p0, p1);
-        est
+        Distance::from(est.0)
     }
 
     pub fn process_lowerbound(
@@ -87,16 +88,16 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         p1: &O::QuantizationPreprocessed1,
         (a, b, c, d, e): (F32, F32, F32, F32, &[u8]),
         epsilon: F32,
-    ) -> F32 {
+    ) -> Distance {
         let (est, err) = O::rabitq_quantization_process(a, b, c, d, e, p0, p1);
-        est - err * epsilon
+        Distance::from((est - err * epsilon).0)
     }
 
     pub fn push_batch(
         &self,
         (p0, p1): &(O::QuantizationPreprocessed0, O::QuantizationPreprocessed1),
         rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
+        heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         codes: &[u8],
         packed_codes: &[u8],
         meta: &[F32],
@@ -146,7 +147,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                                     let param = res[(u - i) as usize];
                                     let (est, err) =
                                         O::rabitq_quantization_process_1(a, b, c, d, p0, param);
-                                    est - err * epsilon
+                                    Distance::from((est - err * epsilon).0)
                                 }),
                                 AlwaysEqual(u),
                             )
@@ -200,8 +201,8 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
 
     pub fn rerank<'a, T: 'a>(
         &'a self,
-        heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
-        r: impl Fn(u32) -> (F32, T) + 'a,
+        heap: Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
+        r: impl Fn(u32) -> (Distance, T) + 'a,
     ) -> impl RerankerPop<T> + 'a {
         ErrorBasedReranker::new(heap, r)
     }

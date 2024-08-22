@@ -4,11 +4,10 @@ use self::operator::OperatorTrivialQuantization;
 use crate::reranker::flat::DisabledFlatReranker;
 use crate::reranker::graph::GraphReranker;
 use base::always_equal::AlwaysEqual;
+use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
-use base::scalar::*;
 use base::search::*;
-use num_traits::Zero;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cmp::Reverse;
@@ -43,7 +42,7 @@ impl<O: OperatorTrivialQuantization> TrivialQuantizer<O> {
         &self,
         preprocessed: &O::TrivialQuantizationPreprocessed,
         rhs: Borrowed<'_, O>,
-    ) -> F32 {
+    ) -> Distance {
         O::trivial_quantization_process(preprocessed, rhs)
     }
 
@@ -51,20 +50,20 @@ impl<O: OperatorTrivialQuantization> TrivialQuantizer<O> {
         &self,
         _preprocessed: &O::TrivialQuantizationPreprocessed,
         rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
+        heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
     ) {
-        heap.extend(rhs.map(|u| (Reverse(F32::zero()), AlwaysEqual(u))));
+        heap.extend(rhs.map(|u| (Reverse(Distance::ZERO), AlwaysEqual(u))));
     }
 
     pub fn flat_rerank<'a, T: 'a>(
         &'a self,
-        heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
-        r: impl Fn(u32) -> (F32, T) + 'a,
+        heap: Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
+        r: impl Fn(u32) -> (Distance, T) + 'a,
     ) -> impl RerankerPop<T> + 'a {
         DisabledFlatReranker::new(heap, r)
     }
 
-    pub fn graph_rerank<'a, T: 'a, R: Fn(u32) -> (F32, T) + 'a>(
+    pub fn graph_rerank<'a, T: 'a, R: Fn(u32) -> (Distance, T) + 'a>(
         &'a self,
         _: Borrowed<'a, O>,
         r: R,

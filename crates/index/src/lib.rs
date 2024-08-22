@@ -12,9 +12,9 @@ use self::segment::sealed::SealedSegment;
 use crate::optimizing::Optimizing;
 use crate::utils::tournament_tree::LoserTree;
 use arc_swap::ArcSwap;
+use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
-use base::scalar::F32;
 use base::search::*;
 use base::vector::*;
 use common::clean::clean;
@@ -388,7 +388,7 @@ impl<O: Op> IndexView<O> {
         &'a self,
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
-    ) -> Result<impl Iterator<Item = (F32, Pointer)> + 'a, VbaseError> {
+    ) -> Result<impl Iterator<Item = (Distance, Pointer)> + 'a, VbaseError> {
         if self.options.vector.dims != vector.dims() {
             return Err(VbaseError::InvalidVector);
         }

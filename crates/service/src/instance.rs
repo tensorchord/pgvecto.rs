@@ -1,7 +1,6 @@
 use base::distance::*;
 use base::index::*;
 use base::operator::*;
-use base::scalar::F32;
 use base::search::*;
 use base::vector::*;
 use base::worker::*;
@@ -213,7 +212,7 @@ impl ViewVbaseOperations for InstanceView {
         &'a self,
         vector: &'a OwnedVector,
         opts: &'a SearchOptions,
-    ) -> Result<Box<dyn Iterator<Item = (F32, Pointer)> + 'a>, VbaseError> {
+    ) -> Result<Box<dyn Iterator<Item = (Distance, Pointer)> + 'a>, VbaseError> {
         match (self, vector) {
             (InstanceView::Vecf32Dot(x), OwnedVector::Vecf32(vector)) => {
                 Ok(Box::new(x.vbase(vector.as_borrowed(), opts)?))
