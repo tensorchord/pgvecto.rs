@@ -5,7 +5,6 @@ use crate::gucs::planning::Mode;
 use crate::gucs::planning::SEARCH_MODE;
 use crate::ipc::{client, ClientVbase};
 use base::index::*;
-use base::scalar::F32;
 use base::search::*;
 use base::vector::*;
 
@@ -110,7 +109,7 @@ pub fn scan_next(scanner: &mut Scanner, handle: Handle) -> Option<(Pointer, bool
             threshold,
         ) {
             (Some((_, ptr)), None) => Some((ptr, *recheck)),
-            (Some((distance, ptr)), Some(t)) if distance < F32(*t) => Some((ptr, *recheck)),
+            (Some((distance, ptr)), Some(t)) if distance < *t => Some((ptr, *recheck)),
             _ => {
                 let scanner = std::mem::replace(scanner, Scanner::Empty {});
                 scan_release(scanner);

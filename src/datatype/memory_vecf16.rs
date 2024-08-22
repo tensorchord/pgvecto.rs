@@ -1,5 +1,5 @@
-use base::scalar::*;
 use base::vector::*;
+use half::f16;
 use pgrx::datum::FromDatum;
 use pgrx::datum::IntoDatum;
 use pgrx::pg_sys::Datum;
@@ -20,7 +20,7 @@ pub struct Vecf16Header {
     varlena: u32,
     dims: u16,
     magic: u16,
-    phantom: [F16; 0],
+    phantom: [f16; 0],
 }
 
 impl Vecf16Header {
@@ -30,23 +30,23 @@ impl Vecf16Header {
     fn layout(len: usize) -> Layout {
         u16::try_from(len).expect("Vector is too large.");
         let layout_alpha = Layout::new::<Vecf16Header>();
-        let layout_beta = Layout::array::<F16>(len).unwrap();
+        let layout_beta = Layout::array::<f16>(len).unwrap();
         let layout = layout_alpha.extend(layout_beta).unwrap().0;
         layout.pad_to_align()
     }
     pub fn dims(&self) -> u32 {
         self.dims as u32
     }
-    pub fn slice(&self) -> &[F16] {
+    pub fn slice(&self) -> &[f16] {
         unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.dims as usize) }
     }
-    pub fn as_borrowed(&self) -> Vecf16Borrowed<'_> {
-        unsafe { Vecf16Borrowed::new_unchecked(self.slice()) }
+    pub fn as_borrowed(&self) -> VectBorrowed<'_, f16> {
+        unsafe { VectBorrowed::new_unchecked(self.slice()) }
     }
 }
 
 impl Deref for Vecf16Header {
-    type Target = [F16];
+    type Target = [f16];
 
     fn deref(&self) -> &Self::Target {
         self.slice()
@@ -85,7 +85,7 @@ impl Deref for Vecf16Input<'_> {
 pub struct Vecf16Output(NonNull<Vecf16Header>);
 
 impl Vecf16Output {
-    pub fn new(vector: Vecf16Borrowed<'_>) -> Vecf16Output {
+    pub fn new(vector: VectBorrowed<'_, f16>) -> Vecf16Output {
         unsafe {
             let slice = vector.slice();
             let layout = Vecf16Header::layout(slice.len());

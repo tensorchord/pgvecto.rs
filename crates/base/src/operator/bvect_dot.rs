@@ -6,9 +6,7 @@ use crate::vector::*;
 pub enum BVectorDot {}
 
 impl Operator for BVectorDot {
-    type VectorOwned = BVectorOwned;
-
-    const DISTANCE_KIND: DistanceKind = DistanceKind::Dot;
+    type Vector = BVectOwned;
 
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> Distance {
         lhs.operator_dot(rhs)

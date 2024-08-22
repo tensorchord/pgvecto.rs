@@ -419,11 +419,9 @@ name = "base"
 version = "0.0.0"
 dependencies = [
  "base_macros",
- "ccc",
  "detect",
  "half 2.4.1",
  "libc",
- "num-traits",
  "rand",
  "serde",
  "thiserror",
@@ -583,16 +581,6 @@ name = "cc"
 version = "1.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "504bdec147f2cc13c8b57ed9401fd8a147cc66b67ad5cb241394244f2c947549"
-
-[[package]]
-name = "ccc"
-version = "0.0.0"
-dependencies = [
- "cc",
- "detect",
- "half 2.4.1",
- "rand",
-]
 
 [[package]]
 name = "cee-scape"
@@ -1201,7 +1189,6 @@ checksum = "6dd08c532ae367adf81c312a4580bc67f1d0fe8bc9c460520283f4c0ff277888"
 dependencies = [
  "cfg-if",
  "crunchy",
- "num-traits",
  "rand",
  "rand_distr",
  "serde",
@@ -1258,7 +1245,6 @@ dependencies = [
  "common",
  "graph",
  "log",
- "num-traits",
  "parking_lot",
  "quantization",
  "serde_json",
@@ -1652,7 +1638,6 @@ dependencies = [
  "base",
  "common",
  "k_means",
- "num-traits",
  "quantization",
  "rand",
  "serde_json",
@@ -1675,7 +1660,6 @@ version = "0.0.0"
 dependencies = [
  "base",
  "common",
- "num-traits",
  "rand",
  "smawk",
  "stoppable_rayon",
@@ -2203,12 +2187,12 @@ dependencies = [
  "chrono",
  "detect",
  "embedding",
+ "half 2.4.1",
  "interprocess_atomic_wait",
  "libc",
  "log",
  "memfd",
  "memmap2",
- "num-traits",
  "paste",
  "pgrx",
  "rand",
@@ -2446,9 +2430,9 @@ version = "0.0.0"
 dependencies = [
  "base",
  "detect",
+ "half 2.4.1",
  "indexing",
  "ndarray",
- "num-traits",
  "numpy",
  "pyo3",
  "pythonize",
@@ -2467,7 +2451,6 @@ dependencies = [
  "detect",
  "k_means",
  "log",
- "num-traits",
  "rand",
  "serde",
  "serde_json",
@@ -2538,10 +2521,10 @@ dependencies = [
  "base",
  "common",
  "detect",
+ "half 2.4.1",
  "k_means",
  "log",
  "nalgebra",
- "num-traits",
  "quantization",
  "rand",
  "serde",
@@ -2973,6 +2956,7 @@ dependencies = [
  "arc-swap",
  "base",
  "common",
+ "half 2.4.1",
  "index",
  "parking_lot",
  "serde",
@@ -3093,6 +3077,7 @@ version = "0.0.0"
 dependencies = [
  "base",
  "common",
+ "half 2.4.1",
  "serde",
  "serde_json",
 ]

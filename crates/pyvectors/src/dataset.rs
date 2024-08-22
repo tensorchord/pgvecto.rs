@@ -1,6 +1,5 @@
-use base::scalar::F32;
 use base::search::Vectors;
-use base::vector::{Vecf32Borrowed, Vecf32Owned};
+use base::vector::{VectBorrowed, VectOwned};
 use ndarray::{s, ArrayView2};
 
 pub struct Dataset<'a> {
@@ -18,7 +17,7 @@ impl<'a> Dataset<'a> {
     }
 }
 
-impl<'a> Vectors<Vecf32Owned> for Dataset<'a> {
+impl<'a> Vectors<VectOwned<f32>> for Dataset<'a> {
     fn dims(&self) -> u32 {
         self.underlying.dim().1 as _
     }
@@ -27,15 +26,15 @@ impl<'a> Vectors<Vecf32Owned> for Dataset<'a> {
         self.underlying.dim().0 as _
     }
 
-    fn vector(&self, i: u32) -> Vecf32Borrowed<'_> {
+    fn vector(&self, i: u32) -> VectBorrowed<'_, f32> {
         let s = self
             .underlying
             .slice(s!(i as usize, ..))
             .to_slice()
             .expect("memory is non continuous");
-        fn cast(x: &[f32]) -> &[F32] {
+        fn cast(x: &[f32]) -> &[f32] {
             unsafe { std::mem::transmute(x) }
         }
-        Vecf32Borrowed::new(cast(s))
+        VectBorrowed::new(cast(s))
     }
 }

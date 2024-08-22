@@ -8,8 +8,8 @@ use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
-use base::vector::VectorBorrowed;
-use common::sample::sample_subvector_transform;
+use base::vector::VectorOwned;
+use common::sample::sample;
 use common::vec2::Vec2;
 use k_means::k_means;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -25,8 +25,8 @@ pub struct ProductQuantizer<O: OperatorProductQuantization> {
     dims: u32,
     ratio: u32,
     bits: u32,
-    originals: Vec<Vec2<Scalar<O>>>,
-    centroids: Vec2<Scalar<O>>,
+    originals: Vec<Vec2<O::Scalar>>,
+    centroids: Vec2<O::Scalar>,
 }
 
 impl<O: OperatorProductQuantization> ProductQuantizer<O> {
@@ -44,9 +44,16 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
             .into_par_iter()
             .map(|p| {
                 let subdims = std::cmp::min(ratio, dims - ratio * p);
-                let start = (p * ratio) as usize;
-                let end = start + subdims as usize;
-                let subsamples = sample_subvector_transform::<O>(vectors, start, end, transform);
+                let start = p * ratio;
+                let end = start + subdims;
+                let subsamples = sample(vectors.len(), end - start, |i| {
+                    O::subslice(
+                        transform(vectors.vector(i)).as_borrowed(),
+                        start,
+                        end - start,
+                    )
+                    .to_vec()
+                });
                 k_means(1 << bits, subsamples, false)
             })
             .collect::<Vec<_>>();
@@ -80,14 +87,13 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
     }
 
     pub fn encode(&self, vector: Borrowed<'_, O>) -> Vec<u8> {
-        let vector = vector.to_vec();
         let dims = self.dims;
         let ratio = self.ratio;
         let width = dims.div_ceil(ratio);
         let mut codes = Vec::with_capacity(width.div_ceil(self.bits) as usize);
         for p in 0..width {
             let subdims = std::cmp::min(ratio, dims - ratio * p);
-            let left = &vector[(p * ratio) as usize..][..subdims as usize];
+            let left = O::subslice(vector, p * ratio, subdims);
             let target = k_means::k_means_lookup(left, &self.originals[p as usize]);
             codes.push(target as u8);
         }

@@ -1,6 +1,5 @@
 use base::scalar::*;
 use common::vec2::Vec2;
-use num_traits::{Float, Zero};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use std::ops::{Index, IndexMut};
@@ -11,7 +10,7 @@ pub struct ElkanKMeans<S, F> {
     spherical: F,
     centroids: Vec2<S>,
     lowerbound: Square,
-    upperbound: Vec<F32>,
+    upperbound: Vec<f32>,
     assign: Vec<usize>,
     rand: StdRng,
     samples: Vec2<S>,
@@ -28,17 +27,17 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
         let mut rand = StdRng::from_entropy();
         let mut centroids = Vec2::zeros((c, dims));
         let mut lowerbound = Square::new(n, c);
-        let mut upperbound = vec![F32::zero(); n];
+        let mut upperbound = vec![0.0f32; n];
         let mut assign = vec![0usize; n];
 
         centroids[(0,)].copy_from_slice(&samples[(rand.gen_range(0..n),)]);
 
-        let mut weight = vec![F32::infinity(); n];
-        let mut dis = vec![F32::zero(); n];
+        let mut weight = vec![f32::INFINITY; n];
+        let mut dis = vec![0.0f32; n];
         for i in 0..c {
-            let mut sum = F32::zero();
+            let mut sum = 0.0f32;
             for j in 0..n {
-                dis[j] = S::impl_l2(&samples[(j,)], &centroids[(i,)]).sqrt();
+                dis[j] = S::reduce_sum_of_d2(&samples[(j,)], &centroids[(i,)]).sqrt();
             }
             for j in 0..n {
                 lowerbound[(j, i)] = dis[j];
@@ -54,7 +53,7 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
                 let mut choice = sum * rand.gen_range(0.0..1.0);
                 for j in 0..(n - 1) {
                     choice -= weight[j];
-                    if choice <= F32::zero() {
+                    if choice <= 0.0f32 {
                         break 'a j;
                     }
                 }
@@ -64,7 +63,7 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
         }
 
         for i in 0..n {
-            let mut minimal = F32::infinity();
+            let mut minimal = f32::INFINITY;
             let mut target = 0;
             for j in 0..c {
                 let dis = lowerbound[(i, j)];
@@ -104,14 +103,15 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
         let n = samples.shape_0();
         // Step 1
         let mut dist0 = Square::new(c, c);
-        let mut sp = vec![F32::zero(); c];
+        let mut sp = vec![0.0f32; c];
         for i in 0..c {
             for j in 0..c {
-                dist0[(i, j)] = S::impl_l2(&centroids[(i,)], &centroids[(j,)]).sqrt() * 0.5;
+                dist0[(i, j)] =
+                    S::reduce_sum_of_d2(&centroids[(i,)], &centroids[(j,)]).sqrt() * 0.5;
             }
         }
         for i in 0..c {
-            let mut minimal = F32::infinity();
+            let mut minimal = f32::INFINITY;
             for j in 0..c {
                 if i == j {
                     continue;
@@ -123,10 +123,10 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
             }
             sp[i] = minimal;
         }
-        let mut dis = vec![F32::zero(); n];
+        let mut dis = vec![0.0f32; n];
         for i in 0..n {
             if upperbound[i] > sp[assign[i]] {
-                dis[i] = S::impl_l2(&samples[(i,)], &centroids[(assign[i],)]).sqrt();
+                dis[i] = S::reduce_sum_of_d2(&samples[(i,)], &centroids[(assign[i],)]).sqrt();
             }
         }
         for i in 0..n {
@@ -149,7 +149,7 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
                     continue;
                 }
                 if minimal > lowerbound[(i, j)] || minimal > dist0[(assign[i], j)] {
-                    let dis = S::impl_l2(&samples[(i,)], &centroids[(j,)]).sqrt();
+                    let dis = S::reduce_sum_of_d2(&samples[(i,)], &centroids[(j,)]).sqrt();
                     lowerbound[(i, j)] = dis;
                     if dis < minimal {
                         minimal = dis;
@@ -163,28 +163,24 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
 
         // Step 4, 7
         let old_centroids = std::mem::replace(centroids, Vec2::zeros((c, dims)));
-        let mut count = vec![F32::zero(); c];
+        let mut count = vec![0.0f32; c];
         for i in 0..n {
-            for j in 0..dims {
-                centroids[(self.assign[i], j)] += samples[(i, j)];
-            }
+            S::vector_add_inplace(&mut centroids[(self.assign[i],)], &samples[(i,)]);
             count[self.assign[i]] += 1.0;
         }
         for i in 0..c {
-            if count[i] == F32::zero() {
+            if count[i] == 0.0f32 {
                 continue;
             }
-            for dim in 0..dims {
-                centroids[(i, dim)] /= S::from_f32(count[i].into());
-            }
+            S::vector_div_scalar_inplace(&mut centroids[(i,)], count[i]);
         }
         for i in 0..c {
-            if count[i] != F32::zero() {
+            if count[i] != 0.0f32 {
                 continue;
             }
             let mut o = 0;
             loop {
-                let alpha = F32::from_f32(rand.gen_range(0.0..1.0f32));
+                let alpha = f32::from_f32(rand.gen_range(0.0..1.0f32));
                 let beta = (count[o] - 1.0) / (n - c) as f32;
                 if alpha < beta {
                     break;
@@ -192,31 +188,23 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
                 o = (o + 1) % c;
             }
             centroids.copy_within((o,), (i,));
-            for dim in 0..dims {
-                if dim % 2 == 0 {
-                    centroids[(i, dim)] *= S::from_f32(1.0 + DELTA);
-                    centroids[(o, dim)] *= S::from_f32(1.0 - DELTA);
-                } else {
-                    centroids[(i, dim)] *= S::from_f32(1.0 - DELTA);
-                    centroids[(o, dim)] *= S::from_f32(1.0 + DELTA);
-                }
-            }
+            S::kmeans_helper(&mut centroids[(i,)], 1.0 + DELTA, 1.0 - DELTA);
+            S::kmeans_helper(&mut centroids[(o,)], 1.0 - DELTA, 1.0 + DELTA);
             count[i] = count[o] / 2.0;
-            count[o] = count[o] - count[i];
+            count[o] -= count[i];
         }
         for i in 0..c {
             (self.spherical)(&mut centroids[(i,)]);
         }
 
         // Step 5, 6
-        let mut dist1 = vec![F32::zero(); c];
+        let mut dist1 = vec![0.0f32; c];
         for i in 0..c {
-            dist1[i] = S::impl_l2(&old_centroids[(i,)], &centroids[(i,)]).sqrt();
+            dist1[i] = S::reduce_sum_of_d2(&old_centroids[(i,)], &centroids[(i,)]).sqrt();
         }
         for i in 0..n {
             for j in 0..c {
-                self.lowerbound[(i, j)] =
-                    std::cmp::max(self.lowerbound[(i, j)] - dist1[j], F32::zero());
+                self.lowerbound[(i, j)] = 0.0f32.max(self.lowerbound[(i, j)] - dist1[j]);
             }
         }
         for i in 0..n {
@@ -238,7 +226,7 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
 struct Square {
     x: usize,
     y: usize,
-    v: Vec<F32>,
+    v: Vec<f32>,
 }
 
 impl Square {
@@ -252,7 +240,7 @@ impl Square {
 }
 
 impl Index<(usize, usize)> for Square {
-    type Output = F32;
+    type Output = f32;
 
     fn index(&self, (x, y): (usize, usize)) -> &Self::Output {
         debug_assert!(x < self.x);

@@ -109,19 +109,19 @@ CREATE OPERATOR + (
 );
 
 CREATE OPERATOR - (
-    PROCEDURE = _vectors_vecf32_operator_minus,
+    PROCEDURE = _vectors_vecf32_operator_sub,
     LEFTARG = vector,
     RIGHTARG = vector
 );
 
 CREATE OPERATOR - (
-    PROCEDURE = _vectors_vecf16_operator_minus,
+    PROCEDURE = _vectors_vecf16_operator_sub,
     LEFTARG = vecf16,
     RIGHTARG = vecf16
 );
 
 CREATE OPERATOR - (
-    PROCEDURE = _vectors_svecf32_operator_minus,
+    PROCEDURE = _vectors_svecf32_operator_sub,
     LEFTARG = svector,
     RIGHTARG = svector
 );

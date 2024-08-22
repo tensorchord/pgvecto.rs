@@ -1,8 +1,6 @@
 use super::memory_svecf32::*;
 use crate::error::*;
-use base::scalar::*;
 use base::vector::*;
-use num_traits::Zero;
 use pgrx::datum::Internal;
 
 pub struct SVecf32AggregateAvgSumStype {
@@ -11,7 +9,7 @@ pub struct SVecf32AggregateAvgSumStype {
     capacity: u32,
     count: u64,
     indexes: Vec<u32>,
-    values: Vec<F32>,
+    values: Vec<f32>,
 }
 
 impl SVecf32AggregateAvgSumStype {
@@ -32,11 +30,11 @@ impl SVecf32AggregateAvgSumStype {
         &self.indexes.as_slice()[0..self.len as _]
     }
     /// Get the values of the sparse state.
-    fn values(&self) -> &[F32] {
+    fn values(&self) -> &[f32] {
         &self.values.as_slice()[0..self.len as _]
     }
     /// Get the mutable references of the indexes and values of the sparse state. The indexes and values may contain reserved elements.
-    fn indexes_values_mut(&mut self) -> (&mut [u32], &mut [F32]) {
+    fn indexes_values_mut(&mut self) -> (&mut [u32], &mut [f32]) {
         (self.indexes.as_mut_slice(), self.values.as_mut_slice())
     }
     /// Filter zero values from the sparse state.
@@ -46,7 +44,7 @@ impl SVecf32AggregateAvgSumStype {
         let mut j = 0_u32;
         let (indexes, values) = self.indexes_values_mut();
         while i < len {
-            if !values[i as usize].is_zero() {
+            if values[i as usize] != 0.0 {
                 indexes[j as usize] = indexes[i as usize];
                 values[j as usize] = values[i as usize];
                 j += 1;
@@ -61,7 +59,7 @@ impl SVecf32AggregateAvgSumStype {
         // set capacity at most dims
         let capacity = u32::next_power_of_two(capacity).max(16).min(dims);
         let indexes = vec![0; capacity as _];
-        let values = vec![F32::zero(); capacity as _];
+        let values = vec![0.0f32; capacity as _];
         Self {
             dims,
             len: 0,
@@ -85,7 +83,7 @@ impl SVecf32AggregateAvgSumStype {
 
     /// Merge a sparse vector into the state in place.
     /// To promise the state is enough to merge the sparse vector, the caller should check the capacity of the state before calling this function.
-    pub fn merge_in_place(&mut self, svec: SVecf32Borrowed<'_>) {
+    pub fn merge_in_place(&mut self, svec: SVectBorrowed<'_, f32>) {
         let sindexes = svec.indexes();
         let svalues = svec.values();
         let slen = sindexes.len();
@@ -102,15 +100,15 @@ impl SVecf32AggregateAvgSumStype {
             let value = self.values[i as usize];
             let svalue = svalues[j as usize];
             let pi = std::cmp::max(index, sindex);
-            let pv = F32((pi == index) as usize as f32) * value
-                + F32((pi == sindex) as usize as f32) * svalue;
+            let pv =
+                (pi == index) as usize as f32 * value + (pi == sindex) as usize as f32 * svalue;
             i -= (index >= sindex) as i32;
             j -= (index <= sindex) as i32;
             assert!(p > i, "Conflict occurs when merge in place.");
             self.indexes[p as usize] = pi;
             self.values[p as usize] = pv;
             // Skip zero value.
-            p -= (!pv.is_zero()) as i32;
+            p -= (pv != 0.0) as i32;
         }
         while j >= 0 {
             assert!(p > i, "Conflict occurs when merge in place.");
@@ -181,11 +179,7 @@ fn _vectors_svecf32_aggregate_avg_sum_sfunc(
                 // allocate a new state and merge the old state
                 let mut new_state =
                     SVecf32AggregateAvgSumStype::new_with_capacity(dims, state.len() + value.len());
-                new_state.merge_in_place(SVecf32Borrowed::new(
-                    dims,
-                    state.indexes(),
-                    state.values(),
-                ));
+                new_state.merge_in_place(SVectBorrowed::new(dims, state.indexes(), state.values()));
                 // merge the input vector into state
                 new_state.merge_in_place(value.as_borrowed());
                 new_state.count = count;
@@ -232,7 +226,7 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(
             let total_count = s1.count() + s2.count();
             if s1.check_capacity(s2.len()) {
                 // merge state2 into state
-                s1.merge_in_place(SVecf32Borrowed::new(s2.dims(), s2.indexes(), s2.values()));
+                s1.merge_in_place(SVectBorrowed::new(s2.dims(), s2.indexes(), s2.values()));
                 s1.count = total_count;
                 if larger_internal == 0 {
                     state1
@@ -243,13 +237,9 @@ fn _vectors_svecf32_aggregate_avg_sum_combinefunc(
                 // allocate a new state and merge the old state
                 let mut new_state =
                     SVecf32AggregateAvgSumStype::new_with_capacity(dims1, s1.len() + s2.len());
-                new_state.merge_in_place(SVecf32Borrowed::new(dims1, s1.indexes(), s1.values()));
+                new_state.merge_in_place(SVectBorrowed::new(dims1, s1.indexes(), s1.values()));
                 // merge state2 into state
-                new_state.merge_in_place(SVecf32Borrowed::new(
-                    s2.dims(),
-                    s2.indexes(),
-                    s2.values(),
-                ));
+                new_state.merge_in_place(SVectBorrowed::new(s2.dims(), s2.indexes(), s2.values()));
                 new_state.count = total_count;
                 Internal::new(new_state)
             }
@@ -272,7 +262,7 @@ fn _vectors_svecf32_aggregate_avg_finalfunc(state: Internal) -> Option<SVecf32Ou
             state.filter_zero();
             let indexes = state.indexes();
             let values = state.values();
-            Some(SVecf32Output::new(SVecf32Borrowed::new(
+            Some(SVecf32Output::new(SVectBorrowed::new(
                 state.dims(),
                 indexes,
                 values,
@@ -290,7 +280,7 @@ fn _vectors_svecf32_aggregate_sum_finalfunc(state: Internal) -> Option<SVecf32Ou
             state.filter_zero();
             let indexes = state.indexes();
             let values = state.values();
-            Some(SVecf32Output::new(SVecf32Borrowed::new(
+            Some(SVecf32Output::new(SVectBorrowed::new(
                 state.dims(),
                 indexes,
                 values,
@@ -310,11 +300,11 @@ mod tests {
         let indexes_20: Vec<u32> = vec![
             1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
-        let values_20: Vec<F32> = [
+        let values_20: Vec<f32> = [
             1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ]
         .iter()
-        .map(|&x| F32(x as f32))
+        .map(|&x| x as f32)
         .collect();
         let dims = 20;
         let mut len = 10;
@@ -329,11 +319,11 @@ mod tests {
             values: values_20.clone(),
         };
         let sindexes = vec![0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
-        let svalues: Vec<F32> = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+        let svalues: Vec<f32> = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18]
             .iter()
-            .map(|&x| F32(x as f32))
+            .map(|&x| x as f32)
             .collect();
-        let svec = SVecf32Borrowed::new(dims, sindexes.as_slice(), svalues.as_slice());
+        let svec = SVectBorrowed::new(dims, sindexes.as_slice(), svalues.as_slice());
         state.merge_in_place(svec);
         assert_eq!(state.len, 20);
         assert_eq!(
@@ -344,8 +334,8 @@ mod tests {
             state.values(),
             [1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
                 .iter()
-                .map(|&x| F32(x as f32))
-                .collect::<Vec<F32>>()
+                .map(|&x| x as f32)
+                .collect::<Vec<f32>>()
                 .as_slice()
         );
         // test merge_in_place result is full
@@ -373,8 +363,8 @@ mod tests {
             state.values(),
             [1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18]
                 .iter()
-                .map(|&x| F32(x as f32))
-                .collect::<Vec<F32>>()
+                .map(|&x| x as f32)
+                .collect::<Vec<f32>>()
         );
         // test indexes overlap
         len = 10;
@@ -388,11 +378,8 @@ mod tests {
             values: values_20.clone(),
         };
         let sindexes = vec![0, 3, 6, 9, 12, 15, 18];
-        let svalues: Vec<F32> = [1, 1, 1, 1, 1, 1, 1]
-            .iter()
-            .map(|&x| F32(x as f32))
-            .collect();
-        let svec = SVecf32Borrowed::new(dims, sindexes.as_slice(), svalues.as_slice());
+        let svalues: Vec<f32> = [1, 1, 1, 1, 1, 1, 1].iter().map(|&x| x as f32).collect();
+        let svec = SVectBorrowed::new(dims, sindexes.as_slice(), svalues.as_slice());
         state.merge_in_place(svec);
         let result_len = state.len;
         assert_eq!(result_len, 14);
@@ -407,8 +394,8 @@ mod tests {
             state.values(),
             [1, 1, 4, 5, 1, 7, 10, 11, 1, 13, 16, 17, 1, 19]
                 .iter()
-                .map(|&x| F32(x as f32))
-                .collect::<Vec<F32>>()
+                .map(|&x| x as f32)
+                .collect::<Vec<f32>>()
         );
     }
 }

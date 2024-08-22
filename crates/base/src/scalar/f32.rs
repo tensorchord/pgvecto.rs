@@ -1,795 +1,728 @@
-use super::ScalarLike;
-use detect::multiversion;
-use num_traits::{Float, Zero};
-use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
-use std::fmt::{Debug, Display};
-use std::hash::{Hash, Hasher};
-use std::iter::Sum;
-use std::num::ParseFloatError;
-use std::ops::*;
-use std::str::FromStr;
+use crate::scalar::ScalarLike;
 
-#[derive(Clone, Copy, Default, Serialize, Deserialize)]
-#[repr(transparent)]
-#[serde(transparent)]
-pub struct F32(pub f32);
-
-impl Hash for F32 {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        use num_traits::{Float, Zero};
-        let bits = if self.is_nan() {
-            f32::NAN.to_bits()
-        } else if self.is_zero() {
-            f32::zero().to_bits()
-        } else {
-            self.0.to_bits()
-        };
-        bits.hash(state)
-    }
-}
-
-impl Debug for F32 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Debug::fmt(&self.0, f)
-    }
-}
-
-impl Display for F32 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(&self.0, f)
-    }
-}
-
-impl PartialEq for F32 {
-    #[inline(always)]
-    fn eq(&self, other: &Self) -> bool {
-        self.0.total_cmp(&other.0) == Ordering::Equal
-    }
-}
-
-impl Eq for F32 {}
-
-impl PartialOrd for F32 {
-    #[inline(always)]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(Ord::cmp(self, other))
-    }
-}
-
-impl Ord for F32 {
-    #[inline(always)]
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.0.total_cmp(&other.0)
-    }
-}
-
-impl Zero for F32 {
+impl ScalarLike for f32 {
     #[inline(always)]
     fn zero() -> Self {
-        Self(f32::zero())
-    }
-
-    #[inline(always)]
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-}
-
-impl num_traits::One for F32 {
-    #[inline(always)]
-    fn one() -> Self {
-        Self(f32::one())
-    }
-}
-
-impl num_traits::FromPrimitive for F32 {
-    #[inline(always)]
-    fn from_i64(n: i64) -> Option<Self> {
-        f32::from_i64(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_u64(n: u64) -> Option<Self> {
-        f32::from_u64(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_isize(n: isize) -> Option<Self> {
-        f32::from_isize(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_i8(n: i8) -> Option<Self> {
-        f32::from_i8(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_i16(n: i16) -> Option<Self> {
-        f32::from_i16(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_i32(n: i32) -> Option<Self> {
-        f32::from_i32(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_i128(n: i128) -> Option<Self> {
-        f32::from_i128(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_usize(n: usize) -> Option<Self> {
-        f32::from_usize(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_u8(n: u8) -> Option<Self> {
-        f32::from_u8(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_u16(n: u16) -> Option<Self> {
-        f32::from_u16(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_u32(n: u32) -> Option<Self> {
-        f32::from_u32(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_u128(n: u128) -> Option<Self> {
-        f32::from_u128(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_f32(n: f32) -> Option<Self> {
-        f32::from_f32(n).map(Self)
-    }
-
-    #[inline(always)]
-    fn from_f64(n: f64) -> Option<Self> {
-        f32::from_f64(n).map(Self)
-    }
-}
-
-impl num_traits::ToPrimitive for F32 {
-    #[inline(always)]
-    fn to_i64(&self) -> Option<i64> {
-        self.0.to_i64()
-    }
-
-    #[inline(always)]
-    fn to_u64(&self) -> Option<u64> {
-        self.0.to_u64()
-    }
-
-    #[inline(always)]
-    fn to_isize(&self) -> Option<isize> {
-        self.0.to_isize()
-    }
-
-    #[inline(always)]
-    fn to_i8(&self) -> Option<i8> {
-        self.0.to_i8()
-    }
-
-    #[inline(always)]
-    fn to_i16(&self) -> Option<i16> {
-        self.0.to_i16()
-    }
-
-    #[inline(always)]
-    fn to_i32(&self) -> Option<i32> {
-        self.0.to_i32()
-    }
-
-    #[inline(always)]
-    fn to_i128(&self) -> Option<i128> {
-        self.0.to_i128()
-    }
-
-    #[inline(always)]
-    fn to_usize(&self) -> Option<usize> {
-        self.0.to_usize()
-    }
-
-    #[inline(always)]
-    fn to_u8(&self) -> Option<u8> {
-        self.0.to_u8()
-    }
-
-    #[inline(always)]
-    fn to_u16(&self) -> Option<u16> {
-        self.0.to_u16()
-    }
-
-    #[inline(always)]
-    fn to_u32(&self) -> Option<u32> {
-        self.0.to_u32()
-    }
-
-    #[inline(always)]
-    fn to_u128(&self) -> Option<u128> {
-        self.0.to_u128()
-    }
-
-    #[inline(always)]
-    fn to_f32(&self) -> Option<f32> {
-        self.0.to_f32()
-    }
-
-    #[inline(always)]
-    fn to_f64(&self) -> Option<f64> {
-        self.0.to_f64()
-    }
-}
-
-impl num_traits::NumCast for F32 {
-    #[inline(always)]
-    fn from<T: num_traits::ToPrimitive>(n: T) -> Option<Self> {
-        num_traits::NumCast::from(n).map(Self)
-    }
-}
-
-impl num_traits::Num for F32 {
-    type FromStrRadixErr = <f32 as num_traits::Num>::FromStrRadixErr;
-
-    fn from_str_radix(str: &str, radix: u32) -> Result<Self, Self::FromStrRadixErr> {
-        f32::from_str_radix(str, radix).map(Self)
-    }
-}
-
-impl Float for F32 {
-    #[inline(always)]
-    fn nan() -> Self {
-        Self(f32::nan())
+        0.0f32
     }
 
     #[inline(always)]
     fn infinity() -> Self {
-        Self(f32::infinity())
+        f32::INFINITY
     }
 
     #[inline(always)]
-    fn neg_infinity() -> Self {
-        Self(f32::neg_infinity())
+    fn mask(self, m: bool) -> Self {
+        f32::from_bits(self.to_bits() & (m as u32).wrapping_neg())
     }
 
     #[inline(always)]
-    fn neg_zero() -> Self {
-        Self(f32::neg_zero())
+    fn scalar_neg(this: Self) -> Self {
+        -this
     }
 
     #[inline(always)]
-    fn min_value() -> Self {
-        Self(f32::min_value())
+    fn scalar_add(lhs: Self, rhs: Self) -> Self {
+        lhs + rhs
     }
 
     #[inline(always)]
-    fn min_positive_value() -> Self {
-        Self(f32::min_positive_value())
+    fn scalar_sub(lhs: Self, rhs: Self) -> Self {
+        lhs - rhs
     }
 
     #[inline(always)]
-    fn max_value() -> Self {
-        Self(f32::max_value())
+    fn scalar_mul(lhs: Self, rhs: Self) -> Self {
+        lhs * rhs
     }
 
-    #[inline(always)]
-    fn is_nan(self) -> bool {
-        self.0.is_nan()
-    }
-
-    #[inline(always)]
-    fn is_infinite(self) -> bool {
-        self.0.is_infinite()
-    }
-
-    #[inline(always)]
-    fn is_finite(self) -> bool {
-        self.0.is_finite()
-    }
-
-    #[inline(always)]
-    fn is_normal(self) -> bool {
-        self.0.is_normal()
-    }
-
-    #[inline(always)]
-    fn classify(self) -> std::num::FpCategory {
-        self.0.classify()
-    }
-
-    #[inline(always)]
-    fn floor(self) -> Self {
-        Self(self.0.floor())
-    }
-
-    #[inline(always)]
-    fn ceil(self) -> Self {
-        Self(self.0.ceil())
-    }
-
-    #[inline(always)]
-    fn round(self) -> Self {
-        Self(self.0.round())
-    }
-
-    #[inline(always)]
-    fn trunc(self) -> Self {
-        Self(self.0.trunc())
-    }
-
-    #[inline(always)]
-    fn fract(self) -> Self {
-        Self(self.0.fract())
-    }
-
-    #[inline(always)]
-    fn abs(self) -> Self {
-        Self(self.0.abs())
-    }
-
-    #[inline(always)]
-    fn signum(self) -> Self {
-        Self(self.0.signum())
-    }
-
-    #[inline(always)]
-    fn is_sign_positive(self) -> bool {
-        self.0.is_sign_positive()
-    }
-
-    #[inline(always)]
-    fn is_sign_negative(self) -> bool {
-        self.0.is_sign_negative()
-    }
-
-    #[inline(always)]
-    fn mul_add(self, a: Self, b: Self) -> Self {
-        Self(self.0.mul_add(a.0, b.0))
-    }
-
-    #[inline(always)]
-    fn recip(self) -> Self {
-        Self(self.0.recip())
-    }
-
-    #[inline(always)]
-    fn powi(self, n: i32) -> Self {
-        Self(self.0.powi(n))
-    }
-
-    #[inline(always)]
-    fn powf(self, n: Self) -> Self {
-        Self(self.0.powf(n.0))
-    }
-
-    #[inline(always)]
-    fn sqrt(self) -> Self {
-        Self(self.0.sqrt())
-    }
-
-    #[inline(always)]
-    fn exp(self) -> Self {
-        Self(self.0.exp())
-    }
-
-    #[inline(always)]
-    fn exp2(self) -> Self {
-        Self(self.0.exp2())
-    }
-
-    #[inline(always)]
-    fn ln(self) -> Self {
-        Self(self.0.ln())
-    }
-
-    #[inline(always)]
-    fn log(self, base: Self) -> Self {
-        Self(self.0.log(base.0))
-    }
-
-    #[inline(always)]
-    fn log2(self) -> Self {
-        Self(self.0.log2())
-    }
-
-    #[inline(always)]
-    fn log10(self) -> Self {
-        Self(self.0.log10())
-    }
-
-    #[inline(always)]
-    fn max(self, other: Self) -> Self {
-        Self(self.0.max(other.0))
-    }
-
-    #[inline(always)]
-    fn min(self, other: Self) -> Self {
-        Self(self.0.min(other.0))
-    }
-
-    #[inline(always)]
-    fn abs_sub(self, _: Self) -> Self {
-        unimplemented!()
-    }
-
-    #[inline(always)]
-    fn cbrt(self) -> Self {
-        Self(self.0.cbrt())
-    }
-
-    #[inline(always)]
-    fn hypot(self, other: Self) -> Self {
-        Self(self.0.hypot(other.0))
-    }
-
-    #[inline(always)]
-    fn sin(self) -> Self {
-        Self(self.0.sin())
-    }
-
-    #[inline(always)]
-    fn cos(self) -> Self {
-        Self(self.0.cos())
-    }
-
-    #[inline(always)]
-    fn tan(self) -> Self {
-        Self(self.0.tan())
-    }
-
-    #[inline(always)]
-    fn asin(self) -> Self {
-        Self(self.0.asin())
-    }
-
-    #[inline(always)]
-    fn acos(self) -> Self {
-        Self(self.0.acos())
-    }
-
-    #[inline(always)]
-    fn atan(self) -> Self {
-        Self(self.0.atan())
-    }
-
-    #[inline(always)]
-    fn atan2(self, other: Self) -> Self {
-        Self(self.0.atan2(other.0))
-    }
-
-    #[inline(always)]
-    fn sin_cos(self) -> (Self, Self) {
-        let (_x, _y) = self.0.sin_cos();
-        (Self(_x), Self(_y))
-    }
-
-    #[inline(always)]
-    fn exp_m1(self) -> Self {
-        Self(self.0.exp_m1())
-    }
-
-    #[inline(always)]
-    fn ln_1p(self) -> Self {
-        Self(self.0.ln_1p())
-    }
-
-    #[inline(always)]
-    fn sinh(self) -> Self {
-        Self(self.0.sinh())
-    }
-
-    #[inline(always)]
-    fn cosh(self) -> Self {
-        Self(self.0.cosh())
-    }
-
-    #[inline(always)]
-    fn tanh(self) -> Self {
-        Self(self.0.tanh())
-    }
-
-    #[inline(always)]
-    fn asinh(self) -> Self {
-        Self(self.0.asinh())
-    }
-
-    #[inline(always)]
-    fn acosh(self) -> Self {
-        Self(self.0.acosh())
-    }
-
-    #[inline(always)]
-    fn atanh(self) -> Self {
-        Self(self.0.atanh())
-    }
-
-    #[inline(always)]
-    fn integer_decode(self) -> (u64, i16, i8) {
-        self.0.integer_decode()
-    }
-
-    #[inline(always)]
-    fn epsilon() -> Self {
-        Self(f32::EPSILON)
-    }
-
-    #[inline(always)]
-    fn is_subnormal(self) -> bool {
-        self.0.classify() == std::num::FpCategory::Subnormal
-    }
-
-    #[inline(always)]
-    fn to_degrees(self) -> Self {
-        Self(self.0.to_degrees())
-    }
-
-    #[inline(always)]
-    fn to_radians(self) -> Self {
-        Self(self.0.to_radians())
-    }
-
-    #[inline(always)]
-    fn copysign(self, sign: Self) -> Self {
-        Self(self.0.copysign(sign.0))
-    }
-}
-
-impl Add<F32> for F32 {
-    type Output = F32;
-
-    #[inline(always)]
-    fn add(self, rhs: F32) -> F32 {
-        intrinsics::fadd_algebraic(self.0, rhs.0).into()
-    }
-}
-
-impl AddAssign<F32> for F32 {
-    #[inline(always)]
-    fn add_assign(&mut self, rhs: F32) {
-        self.0 = intrinsics::fadd_algebraic(self.0, rhs.0)
-    }
-}
-
-impl Sum for F32 {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.fold(F32::zero(), Add::add)
-    }
-}
-
-impl Sub<F32> for F32 {
-    type Output = F32;
-
-    #[inline(always)]
-    fn sub(self, rhs: F32) -> F32 {
-        intrinsics::fsub_algebraic(self.0, rhs.0).into()
-    }
-}
-
-impl SubAssign<F32> for F32 {
-    #[inline(always)]
-    fn sub_assign(&mut self, rhs: F32) {
-        self.0 = intrinsics::fsub_algebraic(self.0, rhs.0)
-    }
-}
-
-impl Mul<F32> for F32 {
-    type Output = F32;
-
-    #[inline(always)]
-    fn mul(self, rhs: F32) -> F32 {
-        intrinsics::fmul_algebraic(self.0, rhs.0).into()
-    }
-}
-
-impl MulAssign<F32> for F32 {
-    #[inline(always)]
-    fn mul_assign(&mut self, rhs: F32) {
-        self.0 = intrinsics::fmul_algebraic(self.0, rhs.0)
-    }
-}
-
-impl Div<F32> for F32 {
-    type Output = F32;
-
-    #[inline(always)]
-    fn div(self, rhs: F32) -> F32 {
-        intrinsics::fdiv_algebraic(self.0, rhs.0).into()
-    }
-}
-
-impl DivAssign<F32> for F32 {
-    #[inline(always)]
-    fn div_assign(&mut self, rhs: F32) {
-        self.0 = intrinsics::fdiv_algebraic(self.0, rhs.0)
-    }
-}
-
-impl Rem<F32> for F32 {
-    type Output = F32;
-
-    #[inline(always)]
-    fn rem(self, rhs: F32) -> F32 {
-        intrinsics::frem_algebraic(self.0, rhs.0).into()
-    }
-}
-
-impl RemAssign<F32> for F32 {
-    #[inline(always)]
-    fn rem_assign(&mut self, rhs: F32) {
-        self.0 = intrinsics::frem_algebraic(self.0, rhs.0)
-    }
-}
-
-impl Neg for F32 {
-    type Output = Self;
-
-    #[inline(always)]
-    fn neg(self) -> Self::Output {
-        Self(self.0.neg())
-    }
-}
-
-impl FromStr for F32 {
-    type Err = ParseFloatError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        f32::from_str(s).map(|x| x.into())
-    }
-}
-
-impl From<f32> for F32 {
-    #[inline(always)]
-    fn from(value: f32) -> Self {
-        Self(value)
-    }
-}
-
-impl From<F32> for f32 {
-    #[inline(always)]
-    fn from(F32(float): F32) -> Self {
-        float
-    }
-}
-
-impl Add<f32> for F32 {
-    type Output = F32;
-
-    #[inline(always)]
-    fn add(self, rhs: f32) -> F32 {
-        intrinsics::fadd_algebraic(self.0, rhs).into()
-    }
-}
-
-impl AddAssign<f32> for F32 {
-    #[inline(always)]
-    fn add_assign(&mut self, rhs: f32) {
-        self.0 = intrinsics::fadd_algebraic(self.0, rhs)
-    }
-}
-
-impl Sub<f32> for F32 {
-    type Output = F32;
-
-    #[inline(always)]
-    fn sub(self, rhs: f32) -> F32 {
-        intrinsics::fsub_algebraic(self.0, rhs).into()
-    }
-}
-
-impl SubAssign<f32> for F32 {
-    #[inline(always)]
-    fn sub_assign(&mut self, rhs: f32) {
-        self.0 = intrinsics::fsub_algebraic(self.0, rhs)
-    }
-}
-
-impl Mul<f32> for F32 {
-    type Output = F32;
-
-    #[inline(always)]
-    fn mul(self, rhs: f32) -> F32 {
-        intrinsics::fmul_algebraic(self.0, rhs).into()
-    }
-}
-
-impl MulAssign<f32> for F32 {
-    #[inline(always)]
-    fn mul_assign(&mut self, rhs: f32) {
-        self.0 = intrinsics::fmul_algebraic(self.0, rhs)
-    }
-}
-
-impl Div<f32> for F32 {
-    type Output = F32;
-
-    #[inline(always)]
-    fn div(self, rhs: f32) -> F32 {
-        intrinsics::fdiv_algebraic(self.0, rhs).into()
-    }
-}
-
-impl DivAssign<f32> for F32 {
-    #[inline(always)]
-    fn div_assign(&mut self, rhs: f32) {
-        self.0 = intrinsics::fdiv_algebraic(self.0, rhs)
-    }
-}
-
-impl Rem<f32> for F32 {
-    type Output = F32;
-
-    #[inline(always)]
-    fn rem(self, rhs: f32) -> F32 {
-        intrinsics::frem_algebraic(self.0, rhs).into()
-    }
-}
-
-impl RemAssign<f32> for F32 {
-    #[inline(always)]
-    fn rem_assign(&mut self, rhs: f32) {
-        self.0 = intrinsics::frem_algebraic(self.0, rhs)
-    }
-}
-
-mod intrinsics {
-    #[inline(always)]
-    pub fn fadd_algebraic(lhs: f32, rhs: f32) -> f32 {
-        std::intrinsics::fadd_algebraic(lhs, rhs)
-    }
-    #[inline(always)]
-    pub fn fsub_algebraic(lhs: f32, rhs: f32) -> f32 {
-        std::intrinsics::fsub_algebraic(lhs, rhs)
-    }
-    #[inline(always)]
-    pub fn fmul_algebraic(lhs: f32, rhs: f32) -> f32 {
-        std::intrinsics::fmul_algebraic(lhs, rhs)
-    }
-    #[inline(always)]
-    pub fn fdiv_algebraic(lhs: f32, rhs: f32) -> f32 {
-        std::intrinsics::fdiv_algebraic(lhs, rhs)
-    }
-    #[inline(always)]
-    pub fn frem_algebraic(lhs: f32, rhs: f32) -> f32 {
-        std::intrinsics::frem_algebraic(lhs, rhs)
-    }
-}
-
-impl ScalarLike for F32 {
     #[inline(always)]
     fn from_f32(x: f32) -> Self {
-        Self(x)
+        x
     }
 
     #[inline(always)]
     fn to_f32(self) -> f32 {
-        self.0
+        self
+    }
+
+    // FIXME: add manually-implemented SIMD version
+    #[inline(always)]
+    fn reduce_sum_of_x(this: &[f32]) -> f32 {
+        let n = this.len();
+        let mut x = 0.0f32;
+        for i in 0..n {
+            x += this[i];
+        }
+        x
+    }
+
+    // FIXME: add manually-implemented SIMD version
+    #[inline(always)]
+    fn reduce_sum_of_x2(this: &[f32]) -> f32 {
+        let n = this.len();
+        let mut x2 = 0.0f32;
+        for i in 0..n {
+            x2 += this[i] * this[i];
+        }
+        x2
+    }
+
+    // FIXME: add manually-implemented SIMD version
+    #[inline(always)]
+    fn reduce_min_max_of_x(this: &[f32]) -> (f32, f32) {
+        let mut min = 0.0f32;
+        let mut max = 0.0f32;
+        let n = this.len();
+        for i in 0..n {
+            min = min.min(this[i]);
+            max = max.max(this[i]);
+        }
+        (min, max)
     }
 
     #[inline(always)]
-    fn from_f(x: F32) -> Self {
-        Self::from_f32(x.0)
+    fn reduce_sum_of_xy(lhs: &[Self], rhs: &[Self]) -> f32 {
+        reduce_sum_of_xy::reduce_sum_of_xy(lhs, rhs)
     }
 
     #[inline(always)]
-    fn to_f(self) -> F32 {
-        F32(Self::to_f32(self))
+    fn reduce_sum_of_d2(lhs: &[Self], rhs: &[Self]) -> f32 {
+        reduce_sum_of_d2::reduce_sum_of_d2(lhs, rhs)
     }
 
-    #[multiversion(v4, v3, v2, neon, fallback)]
-    fn impl_l2(lhs: &[F32], rhs: &[F32]) -> F32 {
+    #[inline(always)]
+    fn reduce_sum_of_sparse_xy(lidx: &[u32], lval: &[f32], ridx: &[u32], rval: &[f32]) -> f32 {
+        reduce_sum_of_sparse_xy::reduce_sum_of_sparse_xy(lidx, lval, ridx, rval)
+    }
+
+    #[inline(always)]
+    fn reduce_sum_of_sparse_d2(lidx: &[u32], lval: &[f32], ridx: &[u32], rval: &[f32]) -> f32 {
+        reduce_sum_of_sparse_d2::reduce_sum_of_sparse_d2(lidx, lval, ridx, rval)
+    }
+
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
+    fn vector_add(lhs: &[f32], rhs: &[f32]) -> Vec<f32> {
+        assert_eq!(lhs.len(), rhs.len());
+        let n = lhs.len();
+        let mut r = Vec::<f32>::with_capacity(n);
+        for i in 0..n {
+            unsafe {
+                r.as_mut_ptr().add(i).write(lhs[i] + rhs[i]);
+            }
+        }
+        unsafe {
+            r.set_len(n);
+        }
+        r
+    }
+
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
+    fn vector_add_inplace(lhs: &mut [f32], rhs: &[f32]) {
+        assert_eq!(lhs.len(), rhs.len());
+        let n = lhs.len();
+        for i in 0..n {
+            lhs[i] += rhs[i];
+        }
+    }
+
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
+    fn vector_sub(lhs: &[f32], rhs: &[f32]) -> Vec<f32> {
+        assert_eq!(lhs.len(), rhs.len());
+        let n = lhs.len();
+        let mut r = Vec::<f32>::with_capacity(n);
+        for i in 0..n {
+            unsafe {
+                r.as_mut_ptr().add(i).write(lhs[i] - rhs[i]);
+            }
+        }
+        unsafe {
+            r.set_len(n);
+        }
+        r
+    }
+
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
+    fn vector_mul(lhs: &[f32], rhs: &[f32]) -> Vec<f32> {
+        assert_eq!(lhs.len(), rhs.len());
+        let n = lhs.len();
+        let mut r = Vec::<f32>::with_capacity(n);
+        for i in 0..n {
+            unsafe {
+                r.as_mut_ptr().add(i).write(lhs[i] * rhs[i]);
+            }
+        }
+        unsafe {
+            r.set_len(n);
+        }
+        r
+    }
+
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
+    fn vector_div_scalar(lhs: &[f32], rhs: f32) -> Vec<f32> {
+        let n = lhs.len();
+        let mut r = Vec::<f32>::with_capacity(n);
+        for i in 0..n {
+            unsafe {
+                r.as_mut_ptr().add(i).write(lhs[i] / rhs);
+            }
+        }
+        unsafe {
+            r.set_len(n);
+        }
+        r
+    }
+
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
+    fn vector_div_scalar_inplace(lhs: &mut [f32], rhs: f32) {
+        let n = lhs.len();
+        for i in 0..n {
+            lhs[i] /= rhs;
+        }
+    }
+
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
+    fn vector_from_f32(this: &[f32]) -> Vec<f32> {
+        this.to_vec()
+    }
+
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
+    fn vector_to_f32(this: &[f32]) -> Vec<f32> {
+        this.to_vec()
+    }
+
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
+    fn kmeans_helper(this: &mut [f32], x: f32, y: f32) {
+        let n = this.len();
+        for i in 0..n {
+            if i % 2 == 0 {
+                this[i] *= x;
+            } else {
+                this[i] *= y;
+            }
+        }
+    }
+}
+
+mod reduce_sum_of_xy {
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v4")]
+    unsafe fn reduce_sum_of_xy_v4(lhs: &[f32], rhs: &[f32]) -> f32 {
+        assert!(lhs.len() == rhs.len());
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = lhs.len();
+            let mut a = lhs.as_ptr();
+            let mut b = rhs.as_ptr();
+            let mut xy = _mm512_setzero_ps();
+            while n >= 16 {
+                let x = _mm512_loadu_ps(a.cast());
+                let y = _mm512_loadu_ps(b.cast());
+                a = a.add(16);
+                b = b.add(16);
+                n -= 16;
+                xy = _mm512_fmadd_ps(x, y, xy);
+            }
+            if n > 0 {
+                let mask = _bzhi_u32(0xffff, n as u32) as u16;
+                let x = _mm512_maskz_loadu_ps(mask, a.cast());
+                let y = _mm512_maskz_loadu_ps(mask, b.cast());
+                xy = _mm512_fmadd_ps(x, y, xy);
+            }
+            _mm512_reduce_add_ps(xy)
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_xy_v4_test() {
+        const EPSILON: f32 = 2.0;
+        detect::init();
+        if !detect::v4::detect() {
+            println!("test {} ... skipped (v4)", module_path!());
+            return;
+        }
+        for _ in 0..300 {
+            let n = 4010;
+            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            for z in 3990..4010 {
+                let lhs = &lhs[..z];
+                let rhs = &rhs[..z];
+                let specialized = unsafe { reduce_sum_of_xy_v4(lhs, rhs) };
+                let fallback = unsafe { reduce_sum_of_xy_fallback(lhs, rhs) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v3")]
+    unsafe fn reduce_sum_of_xy_v3(lhs: &[f32], rhs: &[f32]) -> f32 {
+        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        assert!(lhs.len() == rhs.len());
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = lhs.len();
+            let mut a = lhs.as_ptr();
+            let mut b = rhs.as_ptr();
+            let mut xy = _mm256_setzero_ps();
+            while n >= 8 {
+                let x = _mm256_loadu_ps(a.cast());
+                let y = _mm256_loadu_ps(b.cast());
+                a = a.add(8);
+                b = b.add(8);
+                n -= 8;
+                xy = _mm256_fmadd_ps(x, y, xy);
+            }
+            if n >= 4 {
+                let x = _mm256_zextps128_ps256(_mm_loadu_ps(a.cast()));
+                let y = _mm256_zextps128_ps256(_mm_loadu_ps(b.cast()));
+                a = a.add(4);
+                b = b.add(4);
+                n -= 4;
+                xy = _mm256_fmadd_ps(x, y, xy);
+            }
+            let mut xy = emulate_mm256_reduce_add_ps(xy);
+            // this hint is used to disable loop unrolling
+            while std::hint::black_box(n) > 0 {
+                let x = a.read();
+                let y = b.read();
+                a = a.add(1);
+                b = b.add(1);
+                n -= 1;
+                xy = x.mul_add(y, xy);
+            }
+            xy
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_xy_v3_test() {
+        const EPSILON: f32 = 2.0;
+        detect::init();
+        if !detect::v3::detect() {
+            println!("test {} ... skipped (v3)", module_path!());
+            return;
+        }
+        for _ in 0..300 {
+            let n = 4010;
+            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            for z in 3990..4010 {
+                let lhs = &lhs[..z];
+                let rhs = &rhs[..z];
+                let specialized = unsafe { reduce_sum_of_xy_v3(lhs, rhs) };
+                let fallback = unsafe { reduce_sum_of_xy_fallback(lhs, rhs) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[detect::multiversion(v4 = import, v3 = import, v2, neon, fallback = export)]
+    pub fn reduce_sum_of_xy(lhs: &[f32], rhs: &[f32]) -> f32 {
         assert!(lhs.len() == rhs.len());
         let n = lhs.len();
-        let mut d2 = F32::zero();
+        let mut xy = 0.0f32;
         for i in 0..n {
-            let d = lhs[i].to_f() - rhs[i].to_f();
+            xy += lhs[i] * rhs[i];
+        }
+        xy
+    }
+}
+
+mod reduce_sum_of_d2 {
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v4")]
+    unsafe fn reduce_sum_of_d2_v4(lhs: &[f32], rhs: &[f32]) -> f32 {
+        assert!(lhs.len() == rhs.len());
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = lhs.len() as u32;
+            let mut a = lhs.as_ptr();
+            let mut b = rhs.as_ptr();
+            let mut d2 = _mm512_setzero_ps();
+            while n >= 16 {
+                let x = _mm512_loadu_ps(a);
+                let y = _mm512_loadu_ps(b);
+                a = a.add(16);
+                b = b.add(16);
+                n -= 16;
+                let d = _mm512_sub_ps(x, y);
+                d2 = _mm512_fmadd_ps(d, d, d2);
+            }
+            if n > 0 {
+                let mask = _bzhi_u32(0xffff, n) as u16;
+                let x = _mm512_maskz_loadu_ps(mask, a);
+                let y = _mm512_maskz_loadu_ps(mask, b);
+                let d = _mm512_sub_ps(x, y);
+                d2 = _mm512_fmadd_ps(d, d, d2);
+            }
+            _mm512_reduce_add_ps(d2)
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_d2_v4_test() {
+        const EPSILON: f32 = 2.0;
+        detect::init();
+        if !detect::v4::detect() {
+            println!("test {} ... skipped (v4)", module_path!());
+            return;
+        }
+        for _ in 0..300 {
+            let n = 4010;
+            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            for z in 3990..4010 {
+                let lhs = &lhs[..z];
+                let rhs = &rhs[..z];
+                let specialized = unsafe { reduce_sum_of_d2_v4(lhs, rhs) };
+                let fallback = unsafe { reduce_sum_of_d2_fallback(lhs, rhs) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v3")]
+    unsafe fn reduce_sum_of_d2_v3(lhs: &[f32], rhs: &[f32]) -> f32 {
+        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        assert!(lhs.len() == rhs.len());
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = lhs.len();
+            let mut a = lhs.as_ptr();
+            let mut b = rhs.as_ptr();
+            let mut d2 = _mm256_setzero_ps();
+            while n >= 8 {
+                let x = _mm256_loadu_ps(a);
+                let y = _mm256_loadu_ps(b);
+                a = a.add(8);
+                b = b.add(8);
+                n -= 8;
+                let d = _mm256_sub_ps(x, y);
+                d2 = _mm256_fmadd_ps(d, d, d2);
+            }
+            if n >= 4 {
+                let x = _mm256_zextps128_ps256(_mm_loadu_ps(a));
+                let y = _mm256_zextps128_ps256(_mm_loadu_ps(b));
+                a = a.add(4);
+                b = b.add(4);
+                n -= 4;
+                let d = _mm256_sub_ps(x, y);
+                d2 = _mm256_fmadd_ps(d, d, d2);
+            }
+            let mut d2 = emulate_mm256_reduce_add_ps(d2);
+            // this hint is used to disable loop unrolling
+            while std::hint::black_box(n) > 0 {
+                let x = a.read();
+                let y = b.read();
+                a = a.add(1);
+                b = b.add(1);
+                n -= 1;
+                let d = x - y;
+                d2 = d.mul_add(d, d2);
+            }
+            d2
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_d2_v3_test() {
+        const EPSILON: f32 = 2.0;
+        detect::init();
+        if !detect::v3::detect() {
+            println!("test {} ... skipped (v3)", module_path!());
+            return;
+        }
+        for _ in 0..300 {
+            let n = 4010;
+            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            for z in 3990..4010 {
+                let lhs = &lhs[..z];
+                let rhs = &rhs[..z];
+                let specialized = unsafe { reduce_sum_of_d2_v3(lhs, rhs) };
+                let fallback = unsafe { reduce_sum_of_d2_fallback(lhs, rhs) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[detect::multiversion(v4 = import, v3 = import, v2, neon, fallback = export)]
+    pub fn reduce_sum_of_d2(lhs: &[f32], rhs: &[f32]) -> f32 {
+        assert!(lhs.len() == rhs.len());
+        let n = lhs.len();
+        let mut d2 = 0.0f32;
+        for i in 0..n {
+            let d = lhs[i] - rhs[i];
             d2 += d * d;
         }
         d2
     }
+}
+
+mod reduce_sum_of_sparse_xy {
+    #[inline]
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v4")]
+    unsafe fn reduce_sum_of_sparse_xy_v4(li: &[u32], lv: &[f32], ri: &[u32], rv: &[f32]) -> f32 {
+        use crate::scalar::emulate::emulate_mm512_2intersect_epi32;
+        assert_eq!(li.len(), lv.len());
+        assert_eq!(ri.len(), rv.len());
+        let (mut lp, ln) = (0, li.len());
+        let (mut rp, rn) = (0, ri.len());
+        let (li, lv) = (li.as_ptr(), lv.as_ptr());
+        let (ri, rv) = (ri.as_ptr(), rv.as_ptr());
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut xy = _mm512_setzero_ps();
+            while lp + 16 <= ln && rp + 16 <= rn {
+                let lx = _mm512_loadu_epi32(li.add(lp).cast());
+                let rx = _mm512_loadu_epi32(ri.add(rp).cast());
+                let (lk, rk) = emulate_mm512_2intersect_epi32(lx, rx);
+                let lv = _mm512_maskz_compress_ps(lk, _mm512_loadu_ps(lv.add(lp)));
+                let rv = _mm512_maskz_compress_ps(rk, _mm512_loadu_ps(rv.add(rp)));
+                xy = _mm512_fmadd_ps(lv, rv, xy);
+                let lt = li.add(lp + 16 - 1).read();
+                let rt = ri.add(rp + 16 - 1).read();
+                lp += (lt <= rt) as usize * 16;
+                rp += (lt >= rt) as usize * 16;
+            }
+            while lp < ln && rp < rn {
+                let lw = 16.min(ln - lp);
+                let rw = 16.min(rn - rp);
+                let lm = _bzhi_u32(0xffff, lw as _) as u16;
+                let rm = _bzhi_u32(0xffff, rw as _) as u16;
+                let lx = _mm512_mask_loadu_epi32(_mm512_set1_epi32(-1), lm, li.add(lp).cast());
+                let rx = _mm512_mask_loadu_epi32(_mm512_set1_epi32(-1), rm, ri.add(rp).cast());
+                let (lk, rk) = emulate_mm512_2intersect_epi32(lx, rx);
+                let lv = _mm512_maskz_compress_ps(lk, _mm512_maskz_loadu_ps(lm, lv.add(lp)));
+                let rv = _mm512_maskz_compress_ps(rk, _mm512_maskz_loadu_ps(rm, rv.add(rp)));
+                xy = _mm512_fmadd_ps(lv, rv, xy);
+                let lt = li.add(lp + lw - 1).read();
+                let rt = ri.add(rp + rw - 1).read();
+                lp += (lt <= rt) as usize * lw;
+                rp += (lt >= rt) as usize * rw;
+            }
+            _mm512_reduce_add_ps(xy)
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_sparse_xy_v4_test() {
+        const EPSILON: f32 = 5e-4;
+        detect::init();
+        if !detect::v4::detect() {
+            println!("test {} ... skipped (v4)", module_path!());
+            return;
+        }
+        for _ in 0..300 {
+            let (lidx, lval) = super::random_svector(300);
+            let (ridx, rval) = super::random_svector(350);
+            let specialized = unsafe { reduce_sum_of_sparse_xy_v4(&lidx, &lval, &ridx, &rval) };
+            let fallback = unsafe { reduce_sum_of_sparse_xy_fallback(&lidx, &lval, &ridx, &rval) };
+            assert!(
+                (specialized - fallback).abs() < EPSILON,
+                "specialized = {specialized}, fallback = {fallback}."
+            );
+        }
+    }
+
+    #[detect::multiversion(v4 = import, v3, v2, neon, fallback = export)]
+    pub fn reduce_sum_of_sparse_xy(lidx: &[u32], lval: &[f32], ridx: &[u32], rval: &[f32]) -> f32 {
+        use std::cmp::Ordering;
+        assert_eq!(lidx.len(), lval.len());
+        assert_eq!(ridx.len(), rval.len());
+        let (mut lp, ln) = (0, lidx.len());
+        let (mut rp, rn) = (0, ridx.len());
+        let mut xy = 0.0f32;
+        while lp < ln && rp < rn {
+            match Ord::cmp(&lidx[lp], &ridx[rp]) {
+                Ordering::Equal => {
+                    xy += lval[lp] * rval[rp];
+                    lp += 1;
+                    rp += 1;
+                }
+                Ordering::Less => {
+                    lp += 1;
+                }
+                Ordering::Greater => {
+                    rp += 1;
+                }
+            }
+        }
+        xy
+    }
+}
+
+mod reduce_sum_of_sparse_d2 {
+    #[inline]
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v4")]
+    unsafe fn reduce_sum_of_sparse_d2_v4(li: &[u32], lv: &[f32], ri: &[u32], rv: &[f32]) -> f32 {
+        use crate::scalar::emulate::emulate_mm512_2intersect_epi32;
+        assert_eq!(li.len(), lv.len());
+        assert_eq!(ri.len(), rv.len());
+        let (mut lp, ln) = (0, li.len());
+        let (mut rp, rn) = (0, ri.len());
+        let (li, lv) = (li.as_ptr(), lv.as_ptr());
+        let (ri, rv) = (ri.as_ptr(), rv.as_ptr());
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut d2 = _mm512_setzero_ps();
+            while lp + 16 <= ln && rp + 16 <= rn {
+                let lx = _mm512_loadu_epi32(li.add(lp).cast());
+                let rx = _mm512_loadu_epi32(ri.add(rp).cast());
+                let (lk, rk) = emulate_mm512_2intersect_epi32(lx, rx);
+                let lv = _mm512_maskz_compress_ps(lk, _mm512_loadu_ps(lv.add(lp)));
+                let rv = _mm512_maskz_compress_ps(rk, _mm512_loadu_ps(rv.add(rp)));
+                let d = _mm512_sub_ps(lv, rv);
+                d2 = _mm512_fmadd_ps(d, d, d2);
+                d2 = _mm512_sub_ps(d2, _mm512_mul_ps(lv, lv));
+                d2 = _mm512_sub_ps(d2, _mm512_mul_ps(rv, rv));
+                let lt = li.add(lp + 16 - 1).read();
+                let rt = ri.add(rp + 16 - 1).read();
+                lp += (lt <= rt) as usize * 16;
+                rp += (lt >= rt) as usize * 16;
+            }
+            while lp < ln && rp < rn {
+                let lw = 16.min(ln - lp);
+                let rw = 16.min(rn - rp);
+                let lm = _bzhi_u32(0xffff, lw as _) as u16;
+                let rm = _bzhi_u32(0xffff, rw as _) as u16;
+                let lx = _mm512_mask_loadu_epi32(_mm512_set1_epi32(-1), lm, li.add(lp).cast());
+                let rx = _mm512_mask_loadu_epi32(_mm512_set1_epi32(-1), rm, ri.add(rp).cast());
+                let (lk, rk) = emulate_mm512_2intersect_epi32(lx, rx);
+                let lv = _mm512_maskz_compress_ps(lk, _mm512_maskz_loadu_ps(lm, lv.add(lp)));
+                let rv = _mm512_maskz_compress_ps(rk, _mm512_maskz_loadu_ps(rm, rv.add(rp)));
+                let d = _mm512_sub_ps(lv, rv);
+                d2 = _mm512_fmadd_ps(d, d, d2);
+                d2 = _mm512_sub_ps(d2, _mm512_mul_ps(lv, lv));
+                d2 = _mm512_sub_ps(d2, _mm512_mul_ps(rv, rv));
+                let lt = li.add(lp + lw - 1).read();
+                let rt = ri.add(rp + rw - 1).read();
+                lp += (lt <= rt) as usize * lw;
+                rp += (lt >= rt) as usize * rw;
+            }
+            {
+                let mut lp = 0;
+                while lp + 16 <= ln {
+                    let d = _mm512_loadu_ps(lv.add(lp));
+                    d2 = _mm512_fmadd_ps(d, d, d2);
+                    lp += 16;
+                }
+                if lp < ln {
+                    let lw = ln - lp;
+                    let lm = _bzhi_u32(0xffff, lw as _) as u16;
+                    let d = _mm512_maskz_loadu_ps(lm, lv.add(lp));
+                    d2 = _mm512_fmadd_ps(d, d, d2);
+                }
+            }
+            {
+                let mut rp = 0;
+                while rp + 16 <= rn {
+                    let d = _mm512_loadu_ps(rv.add(rp));
+                    d2 = _mm512_fmadd_ps(d, d, d2);
+                    rp += 16;
+                }
+                if rp < rn {
+                    let rw = rn - rp;
+                    let rm = _bzhi_u32(0xffff, rw as _) as u16;
+                    let d = _mm512_maskz_loadu_ps(rm, rv.add(rp));
+                    d2 = _mm512_fmadd_ps(d, d, d2);
+                }
+            }
+            _mm512_reduce_add_ps(d2)
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_sparse_d2_v4_test() {
+        const EPSILON: f32 = 5e-4;
+        detect::init();
+        if !detect::v4::detect() {
+            println!("test {} ... skipped (v4)", module_path!());
+            return;
+        }
+        for _ in 0..30 {
+            let (lidx, lval) = super::random_svector(300);
+            let (ridx, rval) = super::random_svector(350);
+            let specialized = unsafe { reduce_sum_of_sparse_d2_v4(&lidx, &lval, &ridx, &rval) };
+            let fallback = unsafe { reduce_sum_of_sparse_d2_fallback(&lidx, &lval, &ridx, &rval) };
+            assert!(
+                (specialized - fallback).abs() < EPSILON,
+                "specialized = {specialized}, fallback = {fallback}."
+            );
+        }
+    }
+
+    #[detect::multiversion(v4 = import, v3, v2, neon, fallback = export)]
+    pub fn reduce_sum_of_sparse_d2(lidx: &[u32], lval: &[f32], ridx: &[u32], rval: &[f32]) -> f32 {
+        use std::cmp::Ordering;
+        assert_eq!(lidx.len(), lval.len());
+        assert_eq!(ridx.len(), rval.len());
+        let (mut lp, ln) = (0, lidx.len());
+        let (mut rp, rn) = (0, ridx.len());
+        let mut d2 = 0.0f32;
+        while lp < ln && rp < rn {
+            match Ord::cmp(&lidx[lp], &ridx[rp]) {
+                Ordering::Equal => {
+                    let d = lval[lp] - rval[rp];
+                    d2 += d * d;
+                    lp += 1;
+                    rp += 1;
+                }
+                Ordering::Less => {
+                    d2 += lval[lp] * lval[lp];
+                    lp += 1;
+                }
+                Ordering::Greater => {
+                    d2 += rval[rp] * rval[rp];
+                    rp += 1;
+                }
+            }
+        }
+        for i in lp..ln {
+            d2 += lval[i] * lval[i];
+        }
+        for i in rp..rn {
+            d2 += rval[i] * rval[i];
+        }
+        d2
+    }
+}
+
+#[cfg(all(target_arch = "x86_64", test))]
+fn random_svector(len: usize) -> (Vec<u32>, Vec<f32>) {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    let mut indexes = rand::seq::index::sample(&mut rand::thread_rng(), 10000, len)
+        .into_iter()
+        .map(|x| x as _)
+        .collect::<Vec<u32>>();
+    indexes.sort();
+    let values: Vec<f32> = std::iter::from_fn(|| Some(rng.gen_range(-1.0..1.0)))
+        .filter(|&x| x != 0.0)
+        .take(indexes.len())
+        .collect::<Vec<f32>>();
+    (indexes, values)
 }

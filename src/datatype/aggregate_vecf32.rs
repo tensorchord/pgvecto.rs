@@ -1,6 +1,5 @@
 use crate::datatype::memory_vecf32::{Vecf32Input, Vecf32Output};
 use crate::error::*;
-use base::scalar::*;
 use base::vector::*;
 use pgrx::datum::Internal;
 
@@ -8,7 +7,7 @@ use pgrx::datum::Internal;
 pub struct Vecf32AggregateAvgSumStype {
     dims: u32,
     count: u64,
-    values: Vec<F32>,
+    values: Vec<f32>,
 }
 
 impl Vecf32AggregateAvgSumStype {
@@ -18,16 +17,16 @@ impl Vecf32AggregateAvgSumStype {
     pub fn count(&self) -> u64 {
         self.count
     }
-    pub fn slice(&self) -> &[F32] {
+    pub fn slice(&self) -> &[f32] {
         self.values.as_slice()
     }
-    pub fn slice_mut(&mut self) -> &mut [F32] {
+    pub fn slice_mut(&mut self) -> &mut [f32] {
         self.values.as_mut_slice()
     }
 }
 
 impl Vecf32AggregateAvgSumStype {
-    pub fn new_with_slice(count: u64, slice: &[F32]) -> Self {
+    pub fn new_with_slice(count: u64, slice: &[f32]) -> Self {
         let dims = slice.len() as u32;
         let mut values = Vec::with_capacity(dims as _);
         values.extend_from_slice(slice);
@@ -130,9 +129,9 @@ fn _vectors_vecf32_aggregate_avg_finalfunc(state: Internal) -> Option<Vecf32Outp
             state
                 .slice_mut()
                 .iter_mut()
-                .for_each(|x| *x /= F32(count as f32));
+                .for_each(|x| *x /= count as f32);
             Some(Vecf32Output::new(
-                Vecf32Borrowed::new_checked(state.slice()).unwrap(),
+                VectBorrowed::new_checked(state.slice()).unwrap(),
             ))
         }
         None => None,
@@ -143,5 +142,5 @@ fn _vectors_vecf32_aggregate_avg_finalfunc(state: Internal) -> Option<Vecf32Outp
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf32_aggregate_sum_finalfunc(state: Internal) -> Option<Vecf32Output> {
     unsafe { state.get_mut::<Vecf32AggregateAvgSumStype>() }
-        .map(|state| Vecf32Output::new(Vecf32Borrowed::new_checked(state.slice()).unwrap()))
+        .map(|state| Vecf32Output::new(VectBorrowed::new_checked(state.slice()).unwrap()))
 }

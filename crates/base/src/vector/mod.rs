@@ -1,16 +1,13 @@
-pub mod bvector;
-pub mod svecf32;
-pub mod vecf16;
-pub mod vecf32;
+pub mod bvect;
+pub mod svect;
+pub mod vect;
 
-pub use bvector::{BVectorBorrowed, BVectorOwned, BVECTOR_WIDTH};
-pub use svecf32::{SVecf32Borrowed, SVecf32Owned};
-pub use vecf16::{Vecf16Borrowed, Vecf16Owned};
-pub use vecf32::{Vecf32Borrowed, Vecf32Owned};
+pub use bvect::{BVectBorrowed, BVectOwned, BVECTOR_WIDTH};
+pub use svect::{SVectBorrowed, SVectOwned};
+pub use vect::{VectBorrowed, VectOwned};
 
 use crate::distance::Distance;
-use crate::scalar::ScalarLike;
-use crate::scalar::F32;
+use half::f16;
 use serde::{Deserialize, Serialize};
 use std::ops::RangeBounds;
 
@@ -24,28 +21,19 @@ pub enum VectorKind {
 }
 
 pub trait VectorOwned: Clone + Serialize + for<'a> Deserialize<'a> + 'static {
-    type Scalar: ScalarLike;
-    type Borrowed<'a>: VectorBorrowed<Scalar = Self::Scalar, Owned = Self>;
-
-    const VECTOR_KIND: VectorKind;
+    type Borrowed<'a>: VectorBorrowed<Owned = Self>;
 
     fn as_borrowed(&self) -> Self::Borrowed<'_>;
 }
 
 pub trait VectorBorrowed: Copy + PartialEq + PartialOrd {
-    // it will be depcrated
-    type Scalar: ScalarLike;
-
-    // it will be depcrated
-    fn to_vec(&self) -> Vec<Self::Scalar>;
-
-    type Owned: VectorOwned<Scalar = Self::Scalar>;
+    type Owned: VectorOwned;
 
     fn own(&self) -> Self::Owned;
 
     fn dims(&self) -> u32;
 
-    fn norm(&self) -> F32;
+    fn norm(&self) -> f32;
 
     fn operator_dot(self, rhs: Self) -> Distance;
 
@@ -61,7 +49,7 @@ pub trait VectorBorrowed: Copy + PartialEq + PartialOrd {
 
     fn operator_add(&self, rhs: Self) -> Self::Owned;
 
-    fn operator_minus(&self, rhs: Self) -> Self::Owned;
+    fn operator_sub(&self, rhs: Self) -> Self::Owned;
 
     fn operator_mul(&self, rhs: Self) -> Self::Owned;
 
@@ -76,10 +64,10 @@ pub trait VectorBorrowed: Copy + PartialEq + PartialOrd {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OwnedVector {
-    Vecf32(Vecf32Owned),
-    Vecf16(Vecf16Owned),
-    SVecf32(SVecf32Owned),
-    BVector(BVectorOwned),
+    Vecf32(VectOwned<f32>),
+    Vecf16(VectOwned<f16>),
+    SVecf32(SVectOwned<f32>),
+    BVector(BVectOwned),
 }
 
 impl OwnedVector {
@@ -107,10 +95,10 @@ impl PartialOrd for OwnedVector {
 
 #[derive(Debug, Clone, Copy)]
 pub enum BorrowedVector<'a> {
-    Vecf32(Vecf32Borrowed<'a>),
-    Vecf16(Vecf16Borrowed<'a>),
-    SVecf32(SVecf32Borrowed<'a>),
-    BVector(BVectorBorrowed<'a>),
+    Vecf32(VectBorrowed<'a, f32>),
+    Vecf16(VectBorrowed<'a, f16>),
+    SVecf32(SVectBorrowed<'a, f32>),
+    BVector(BVectBorrowed<'a>),
 }
 
 impl PartialEq for BorrowedVector<'_> {

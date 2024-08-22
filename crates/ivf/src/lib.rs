@@ -33,7 +33,7 @@ impl<O: OperatorIvf> Ivf<O> {
         std::fs::create_dir(path.as_ref()).unwrap();
         let this = if !residual_quantization
             || matches!(quantization_options, QuantizationOptions::Trivial(_))
-            || !O::RESIDUAL
+            || !O::SUPPORT_RESIDUAL
         {
             Self::Naive(IvfNaive::create(
                 path.as_ref().join("ivf_naive"),

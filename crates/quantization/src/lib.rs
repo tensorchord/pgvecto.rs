@@ -21,7 +21,6 @@ use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
-use base::scalar::*;
 use base::search::*;
 use common::json::Json;
 use common::mmap_array::MmapArray;
@@ -84,7 +83,7 @@ pub struct Quantization<O: OperatorQuantization> {
     codes: MmapArray<u8>,
     packed_codes: MmapArray<u8>,
     #[allow(unused)]
-    meta: MmapArray<F32>,
+    meta: MmapArray<f32>,
 }
 
 impl<O: OperatorQuantization> Quantization<O> {
@@ -200,13 +199,13 @@ impl<O: OperatorQuantization> Quantization<O> {
             path.as_ref().join("meta"),
             match &*train {
                 Quantizer::Trivial(_) => {
-                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = F32>>
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = f32>>
                 }
                 Quantizer::Scalar(_) => {
-                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = F32>>
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = f32>>
                 }
                 Quantizer::Product(_) => {
-                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = F32>>
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = f32>>
                 }
             },
         );

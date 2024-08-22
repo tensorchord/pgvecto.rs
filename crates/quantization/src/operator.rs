@@ -3,8 +3,7 @@ use crate::scalar::operator::OperatorScalarQuantization;
 use crate::trivial::operator::OperatorTrivialQuantization;
 use base::distance::Distance;
 use base::operator::*;
-use base::scalar::F32;
-use num_traits::Zero;
+use base::scalar::ScalarLike;
 
 pub trait OperatorQuantizationProcess: Operator {
     type QuantizationPreprocessed;
@@ -18,8 +17,8 @@ pub trait OperatorQuantizationProcess: Operator {
     ) -> Distance;
 
     const SUPPORT_FAST_SCAN: bool;
-    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32>;
-    fn fast_scan_resolve(x: F32) -> Distance;
+    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<f32>;
+    fn fast_scan_resolve(x: f32) -> Distance;
 }
 
 macro_rules! unimpl_operator_quantization_process {
@@ -39,19 +38,19 @@ macro_rules! unimpl_operator_quantization_process {
 
             const SUPPORT_FAST_SCAN: bool = false;
 
-            fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32> {
+            fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<f32> {
                 match *preprocessed {}
             }
 
-            fn fast_scan_resolve(_: F32) -> Distance {
+            fn fast_scan_resolve(_: f32) -> Distance {
                 unimplemented!()
             }
         }
     };
 }
 
-impl OperatorQuantizationProcess for Vecf32Dot {
-    type QuantizationPreprocessed = Vec<F32>;
+impl<S: ScalarLike> OperatorQuantizationProcess for VectDot<S> {
+    type QuantizationPreprocessed = Vec<f32>;
 
     fn quantization_process(
         dims: u32,
@@ -62,28 +61,28 @@ impl OperatorQuantizationProcess for Vecf32Dot {
     ) -> Distance {
         let width = dims.div_ceil(ratio);
         let xy = {
-            let mut xy = F32::zero();
+            let mut xy = 0.0f32;
             for i in 0..width as usize {
                 xy += preprocessed[i * (1 << bits) + rhs(i)];
             }
             xy
         };
-        Distance::from((F32(0.0) - xy).0)
+        Distance::from(0.0f32 - xy)
     }
 
     const SUPPORT_FAST_SCAN: bool = true;
 
-    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32> {
+    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<f32> {
         preprocessed.clone()
     }
 
-    fn fast_scan_resolve(x: F32) -> Distance {
-        Distance::from(-x.0)
+    fn fast_scan_resolve(x: f32) -> Distance {
+        Distance::from(-x)
     }
 }
 
-impl OperatorQuantizationProcess for Vecf32L2 {
-    type QuantizationPreprocessed = Vec<F32>;
+impl<S: ScalarLike> OperatorQuantizationProcess for VectL2<S> {
+    type QuantizationPreprocessed = Vec<f32>;
 
     fn quantization_process(
         dims: u32,
@@ -93,82 +92,21 @@ impl OperatorQuantizationProcess for Vecf32L2 {
         rhs: impl Fn(usize) -> usize,
     ) -> Distance {
         let width = dims.div_ceil(ratio);
-        let mut d2 = F32::zero();
+        let mut d2 = 0.0f32;
         for i in 0..width as usize {
             d2 += preprocessed[i * (1 << bits) + rhs(i)];
         }
-        Distance::from(d2.0)
+        Distance::from(d2)
     }
 
     const SUPPORT_FAST_SCAN: bool = true;
 
-    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32> {
+    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<f32> {
         preprocessed.clone()
     }
 
-    fn fast_scan_resolve(x: F32) -> Distance {
-        Distance::from(x.0)
-    }
-}
-
-impl OperatorQuantizationProcess for Vecf16Dot {
-    type QuantizationPreprocessed = Vec<F32>;
-
-    fn quantization_process(
-        dims: u32,
-        ratio: u32,
-        bits: u32,
-        preprocessed: &Self::QuantizationPreprocessed,
-        rhs: impl Fn(usize) -> usize,
-    ) -> Distance {
-        let width = dims.div_ceil(ratio);
-        let xy = {
-            let mut xy = F32::zero();
-            for i in 0..width as usize {
-                xy += preprocessed[i * (1 << bits) + rhs(i)];
-            }
-            xy
-        };
-        Distance::from(-xy.0)
-    }
-
-    const SUPPORT_FAST_SCAN: bool = true;
-
-    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32> {
-        preprocessed.clone()
-    }
-
-    fn fast_scan_resolve(x: F32) -> Distance {
-        Distance::from(-x.0)
-    }
-}
-
-impl OperatorQuantizationProcess for Vecf16L2 {
-    type QuantizationPreprocessed = Vec<F32>;
-
-    fn quantization_process(
-        dims: u32,
-        ratio: u32,
-        bits: u32,
-        preprocessed: &Self::QuantizationPreprocessed,
-        rhs: impl Fn(usize) -> usize,
-    ) -> Distance {
-        let width = dims.div_ceil(ratio);
-        let mut d2 = F32::zero();
-        for i in 0..width as usize {
-            d2 += preprocessed[i * (1 << bits) + rhs(i)];
-        }
-        Distance::from(d2.0)
-    }
-
-    const SUPPORT_FAST_SCAN: bool = true;
-
-    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32> {
-        preprocessed.clone()
-    }
-
-    fn fast_scan_resolve(x: F32) -> Distance {
-        Distance::from(x.0)
+    fn fast_scan_resolve(x: f32) -> Distance {
+        Distance::from(x)
     }
 }
 
@@ -176,8 +114,8 @@ unimpl_operator_quantization_process!(BVectorDot);
 unimpl_operator_quantization_process!(BVectorHamming);
 unimpl_operator_quantization_process!(BVectorJaccard);
 
-unimpl_operator_quantization_process!(SVecf32Dot);
-unimpl_operator_quantization_process!(SVecf32L2);
+unimpl_operator_quantization_process!(SVectDot<f32>);
+unimpl_operator_quantization_process!(SVectL2<f32>);
 
 pub trait OperatorQuantization:
     OperatorQuantizationProcess
@@ -190,9 +128,7 @@ pub trait OperatorQuantization:
 impl OperatorQuantization for BVectorDot {}
 impl OperatorQuantization for BVectorJaccard {}
 impl OperatorQuantization for BVectorHamming {}
-impl OperatorQuantization for SVecf32Dot {}
-impl OperatorQuantization for SVecf32L2 {}
-impl OperatorQuantization for Vecf16Dot {}
-impl OperatorQuantization for Vecf16L2 {}
-impl OperatorQuantization for Vecf32Dot {}
-impl OperatorQuantization for Vecf32L2 {}
+impl OperatorQuantization for SVectDot<f32> {}
+impl OperatorQuantization for SVectL2<f32> {}
+impl<S: ScalarLike> OperatorQuantization for VectDot<S> {}
+impl<S: ScalarLike> OperatorQuantization for VectL2<S> {}

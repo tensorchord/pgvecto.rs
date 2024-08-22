@@ -1,6 +1,5 @@
 use crate::datatype::memory_vecf32::Vecf32Output;
 use crate::gucs::embedding::openai_options;
-use base::scalar::*;
 use base::vector::*;
 use embedding::openai_embedding;
 use pgrx::error;
@@ -13,9 +12,9 @@ fn _vectors_text2vec_openai(input: String, model: String) -> Vecf32Output {
         Err(e) => error!("{}", e.to_string()),
     };
     let embedding = match resp.try_pop_embedding() {
-        Ok(emb) => emb.into_iter().map(F32).collect::<Vec<_>>(),
+        Ok(emb) => emb,
         Err(e) => error!("{}", e.to_string()),
     };
 
-    Vecf32Output::new(Vecf32Borrowed::new(&embedding))
+    Vecf32Output::new(VectBorrowed::new(&embedding))
 }

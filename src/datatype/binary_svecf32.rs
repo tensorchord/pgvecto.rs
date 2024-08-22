@@ -1,8 +1,7 @@
 use super::binary::Bytea;
 use super::memory_svecf32::SVecf32Input;
 use super::memory_svecf32::SVecf32Output;
-use base::scalar::F32;
-use base::vector::SVecf32Borrowed;
+use base::vector::SVectBorrowed;
 use pgrx::datum::Internal;
 use pgrx::datum::IntoDatum;
 use pgrx::pg_sys::Oid;
@@ -17,7 +16,7 @@ fn _vectors_svecf32_send(vector: SVecf32Input<'_>) -> Bytea {
         let len = vector.len();
         let x = vector.as_borrowed();
         let b_indexes = size_of::<u32>() * len as usize;
-        let b_values = size_of::<F32>() * len as usize;
+        let b_values = size_of::<f32>() * len as usize;
         pgrx::pg_sys::pq_begintypsend(&mut buf);
         pgrx::pg_sys::pq_sendbytes(&mut buf, (&dims) as *const u32 as _, 4);
         pgrx::pg_sys::pq_sendbytes(&mut buf, (&len) as *const u32 as _, 4);
@@ -42,13 +41,13 @@ fn _vectors_svecf32_recv(internal: Internal, oid: Oid, typmod: i32) -> SVecf32Ou
         std::ptr::copy(p_indexes, indexes.as_mut_ptr().cast::<c_char>(), b_indexes);
         indexes.set_len(len as usize);
 
-        let b_values = size_of::<F32>() * len as usize;
+        let b_values = size_of::<f32>() * len as usize;
         let p_values = pgrx::pg_sys::pq_getmsgbytes(buf, b_values as _);
-        let mut values = Vec::<F32>::with_capacity(len as usize);
+        let mut values = Vec::<f32>::with_capacity(len as usize);
         std::ptr::copy(p_values, values.as_mut_ptr().cast::<c_char>(), b_values);
         values.set_len(len as usize);
 
-        if let Some(x) = SVecf32Borrowed::new_checked(dims, &indexes, &values) {
+        if let Some(x) = SVectBorrowed::new_checked(dims, &indexes, &values) {
             SVecf32Output::new(x)
         } else {
             pgrx::error!("detect data corruption");

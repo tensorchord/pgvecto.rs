@@ -1,7 +1,7 @@
 use super::binary::Bytea;
 use super::memory_bvector::BVectorInput;
 use super::memory_bvector::BVectorOutput;
-use base::vector::BVectorBorrowed;
+use base::vector::BVectBorrowed;
 use base::vector::BVECTOR_WIDTH;
 use pgrx::datum::Internal;
 use pgrx::datum::IntoDatum;
@@ -38,7 +38,7 @@ fn _vectors_bvector_recv(internal: Internal, oid: Oid, typmod: i32) -> BVectorOu
         std::ptr::copy(p_slice, slice.as_mut_ptr().cast(), b_slice);
         slice.set_len(l_slice);
 
-        if let Some(x) = BVectorBorrowed::new_checked(dims, &slice) {
+        if let Some(x) = BVectBorrowed::new_checked(dims, &slice) {
             BVectorOutput::new(x)
         } else {
             pgrx::error!("detect data corruption");

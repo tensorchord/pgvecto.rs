@@ -1,4 +1,3 @@
-use base::scalar::*;
 use base::vector::*;
 use pgrx::datum::FromDatum;
 use pgrx::datum::IntoDatum;
@@ -20,7 +19,7 @@ pub struct Vecf32Header {
     varlena: u32,
     dims: u16,
     magic: u16,
-    phantom: [F32; 0],
+    phantom: [f32; 0],
 }
 
 impl Vecf32Header {
@@ -30,23 +29,23 @@ impl Vecf32Header {
     fn layout(len: usize) -> Layout {
         u16::try_from(len).expect("Vector is too large.");
         let layout_alpha = Layout::new::<Vecf32Header>();
-        let layout_beta = Layout::array::<F32>(len).unwrap();
+        let layout_beta = Layout::array::<f32>(len).unwrap();
         let layout = layout_alpha.extend(layout_beta).unwrap().0;
         layout.pad_to_align()
     }
     pub fn dims(&self) -> u32 {
         self.dims as u32
     }
-    pub fn slice(&self) -> &[F32] {
+    pub fn slice(&self) -> &[f32] {
         unsafe { std::slice::from_raw_parts(self.phantom.as_ptr(), self.dims as usize) }
     }
-    pub fn as_borrowed(&self) -> Vecf32Borrowed<'_> {
-        unsafe { Vecf32Borrowed::new_unchecked(self.slice()) }
+    pub fn as_borrowed(&self) -> VectBorrowed<'_, f32> {
+        unsafe { VectBorrowed::new_unchecked(self.slice()) }
     }
 }
 
 impl Deref for Vecf32Header {
-    type Target = [F32];
+    type Target = [f32];
 
     fn deref(&self) -> &Self::Target {
         self.slice()
@@ -85,7 +84,7 @@ impl Deref for Vecf32Input<'_> {
 pub struct Vecf32Output(NonNull<Vecf32Header>);
 
 impl Vecf32Output {
-    pub fn new(vector: Vecf32Borrowed<'_>) -> Vecf32Output {
+    pub fn new(vector: VectBorrowed<'_, f32>) -> Vecf32Output {
         unsafe {
             let slice = vector.slice();
             let layout = Vecf32Header::layout(slice.len());

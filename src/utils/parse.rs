@@ -1,4 +1,3 @@
-use num_traits::Zero;
 use thiserror::Error;
 
 #[derive(Debug, Error, PartialEq)]
@@ -96,7 +95,7 @@ enum ParseState {
 }
 
 #[inline(always)]
-pub fn parse_pgvector_svector<T: Zero + Clone, F>(
+pub fn parse_pgvector_svector<T: Clone, F>(
     input: &[u8],
     f: F,
 ) -> Result<(Vec<u32>, Vec<T>, usize), ParseVectorError>
@@ -192,39 +191,27 @@ where
 
 #[cfg(test)]
 mod tests {
-    use base::scalar::F32;
-
     use super::*;
 
     #[test]
     fn test_svector_parse_accept() {
-        let exprs: Vec<(&str, (Vec<u32>, Vec<F32>, usize))> = vec![
+        let exprs: Vec<(&str, (Vec<u32>, Vec<f32>, usize))> = vec![
             ("{}/1", (vec![], vec![], 1)),
-            ("{0:1}/1", (vec![0], vec![F32(1.0)], 1)),
-            (
-                "{0:1, 1:-2, }/2",
-                (vec![0, 1], vec![F32(1.0), F32(-2.0)], 2),
-            ),
-            ("{0:1, 1:1.5}/2", (vec![0, 1], vec![F32(1.0), F32(1.5)], 2)),
-            (
-                "{0:+3, 2:-4.1}/3",
-                (vec![0, 2], vec![F32(3.0), F32(-4.1)], 3),
-            ),
+            ("{0:1}/1", (vec![0], vec![1.0f32], 1)),
+            ("{0:1, 1:-2, }/2", (vec![0, 1], vec![1.0f32, -2.0f32], 2)),
+            ("{0:1, 1:1.5}/2", (vec![0, 1], vec![1.0f32, 1.5], 2)),
+            ("{0:+3, 2:-4.1}/3", (vec![0, 2], vec![3.0, -4.1], 3)),
             (
                 "{0:0, 1:0, 2:0}/3",
-                (vec![0, 1, 2], vec![F32(0.0), F32(0.0), F32(0.0)], 3),
+                (vec![0, 1, 2], vec![0.0f32, 0.0f32, 0.0f32], 3),
             ),
             (
                 "{3:3, 2:2, 1:1, 0:0}/4",
-                (
-                    vec![3, 2, 1, 0],
-                    vec![F32(3.0), F32(2.0), F32(1.0), F32(0.0)],
-                    4,
-                ),
+                (vec![3, 2, 1, 0], vec![3.0, 2.0f32, 1.0f32, 0.0f32], 4),
             ),
         ];
         for (e, parsed) in exprs {
-            let ret = parse_pgvector_svector(e.as_bytes(), |s| s.parse::<F32>().ok());
+            let ret = parse_pgvector_svector(e.as_bytes(), |s| s.parse::<f32>().ok());
             assert!(ret.is_ok(), "at expr {:?}: {:?}", e, ret);
             assert_eq!(ret.unwrap(), parsed, "parsed at expr {:?}", e);
         }
@@ -267,7 +254,7 @@ mod tests {
             ),
         ];
         for (e, err) in exprs {
-            let ret = parse_pgvector_svector(e.as_bytes(), |s| s.parse::<F32>().ok());
+            let ret = parse_pgvector_svector(e.as_bytes(), |s| s.parse::<f32>().ok());
             assert!(ret.is_err(), "at expr {:?}: {:?}", e, ret);
             assert_eq!(ret.unwrap_err(), err, "parsed at expr {:?}", e);
         }

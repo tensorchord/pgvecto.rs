@@ -1,12 +1,9 @@
+use base::vector::{OwnedVector, VectOwned};
+use num_traits::FromBytes;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::Path;
-
-use base::scalar::F32;
-use base::vector::{OwnedVector, Vecf32Owned};
-
-use num_traits::{FromBytes, Num};
 
 fn read_vecs<T>(path: &Path) -> std::io::Result<Vec<Vec<T>>>
 where
@@ -34,12 +31,12 @@ where
 }
 
 pub fn convert_to_owned_vec(vec: &[f32]) -> OwnedVector {
-    OwnedVector::Vecf32(Vecf32Owned::new(vec.iter().map(|v| F32(*v)).collect()))
+    OwnedVector::Vecf32(VectOwned::new(vec.to_vec()))
 }
 
 pub fn read_vectors<T>(path: &Path) -> std::io::Result<Vec<Vec<T>>>
 where
-    T: Num + FromBytes<Bytes = [u8; 4]>,
+    T: FromBytes<Bytes = [u8; 4]>,
 {
     match path.extension().and_then(OsStr::to_str) {
         Some("fvecs") => read_vecs::<T>(path),

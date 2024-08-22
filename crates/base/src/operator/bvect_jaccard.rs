@@ -6,9 +6,7 @@ use crate::vector::*;
 pub enum BVectorJaccard {}
 
 impl Operator for BVectorJaccard {
-    type VectorOwned = BVectorOwned;
-
-    const DISTANCE_KIND: DistanceKind = DistanceKind::Jaccard;
+    type Vector = BVectOwned;
 
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> Distance {
         lhs.operator_jaccard(rhs)

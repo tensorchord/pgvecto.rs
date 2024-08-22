@@ -19,9 +19,9 @@ fn _vectors_binarize(vector: Vecf32Input<'_>) -> BVectorOutput {
     let mut data = vec![0_u64; n.div_ceil(BVECTOR_WIDTH) as _];
     for i in 0..n {
         let x = vector.slice()[i as usize];
-        if x > F32(0.0) {
+        if x > 0.0f32 {
             data[(i / BVECTOR_WIDTH) as usize] |= 1 << (i % BVECTOR_WIDTH);
         }
     }
-    BVectorOutput::new(BVectorBorrowed::new(n as _, &data))
+    BVectorOutput::new(BVectBorrowed::new(n as _, &data))
 }

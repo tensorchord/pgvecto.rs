@@ -14,11 +14,11 @@ fn _vectors_vecf16_operator_add(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> V
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_vecf16_operator_minus(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> Vecf16Output {
+fn _vectors_vecf16_operator_sub(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> Vecf16Output {
     check_matched_dims(lhs.dims(), rhs.dims());
     Vecf16Output::new(
         lhs.as_borrowed()
-            .operator_minus(rhs.as_borrowed())
+            .operator_sub(rhs.as_borrowed())
             .as_borrowed(),
     )
 }
@@ -72,19 +72,19 @@ fn _vectors_vecf16_operator_neq(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> b
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_dot(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> f32 {
     check_matched_dims(lhs.dims(), rhs.dims());
-    Vecf16Borrowed::operator_dot(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
+    VectBorrowed::operator_dot(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_l2(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> f32 {
     check_matched_dims(lhs.dims(), rhs.dims());
-    Vecf16Borrowed::operator_l2(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
+    VectBorrowed::operator_l2(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_vecf16_operator_cos(lhs: Vecf16Input<'_>, rhs: Vecf16Input<'_>) -> f32 {
     check_matched_dims(lhs.dims(), rhs.dims());
-    Vecf16Borrowed::operator_cos(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
+    VectBorrowed::operator_cos(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -103,7 +103,7 @@ fn _vectors_vecf16_sphere_dot_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    Vecf16Borrowed::operator_dot(lhs.as_borrowed(), center.as_borrowed()).to_f32() < radius
+    VectBorrowed::operator_dot(lhs.as_borrowed(), center.as_borrowed()).to_f32() < radius
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -122,7 +122,7 @@ fn _vectors_vecf16_sphere_l2_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    Vecf16Borrowed::operator_l2(lhs.as_borrowed(), center.as_borrowed()).to_f32() < radius
+    VectBorrowed::operator_l2(lhs.as_borrowed(), center.as_borrowed()).to_f32() < radius
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -141,5 +141,5 @@ fn _vectors_vecf16_sphere_cos_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    Vecf16Borrowed::operator_cos(lhs.as_borrowed(), center.as_borrowed()).to_f32() < radius
+    VectBorrowed::operator_cos(lhs.as_borrowed(), center.as_borrowed()).to_f32() < radius
 }

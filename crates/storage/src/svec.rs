@@ -1,20 +1,20 @@
 use crate::Storage;
-use base::scalar::*;
+use base::scalar::ScalarLike;
 use base::search::*;
 use base::vector::*;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use std::path::Path;
 
-pub struct SVecStorage {
+pub struct SVecStorage<S: ScalarLike> {
     dims: Json<u32>,
     len: Json<u32>,
     indexes: MmapArray<u32>,
-    values: MmapArray<F32>,
+    values: MmapArray<S>,
     offsets: MmapArray<usize>,
 }
 
-impl Vectors<SVecf32Owned> for SVecStorage {
+impl<S: ScalarLike> Vectors<SVectOwned<S>> for SVecStorage<S> {
     fn dims(&self) -> u32 {
         *self.dims
     }
@@ -23,17 +23,15 @@ impl Vectors<SVecf32Owned> for SVecStorage {
         *self.len
     }
 
-    fn vector(&self, i: u32) -> SVecf32Borrowed<'_> {
+    fn vector(&self, i: u32) -> SVectBorrowed<'_, S> {
         let s = self.offsets[i as usize];
         let e = self.offsets[i as usize + 1];
-        unsafe {
-            SVecf32Borrowed::new_unchecked(*self.dims, &self.indexes[s..e], &self.values[s..e])
-        }
+        unsafe { SVectBorrowed::new_unchecked(*self.dims, &self.indexes[s..e], &self.values[s..e]) }
     }
 }
 
-impl Storage<SVecf32Owned> for SVecStorage {
-    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<SVecf32Owned>) -> Self {
+impl<S: ScalarLike> Storage<SVectOwned<S>> for SVecStorage<S> {
+    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<SVectOwned<S>>) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
         let dims = Json::create(path.as_ref().join("dims"), vectors.dims());
         let len = Json::create(path.as_ref().join("len"), vectors.len());

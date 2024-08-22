@@ -4,6 +4,7 @@ use base::operator::*;
 use base::search::*;
 use base::vector::*;
 use base::worker::*;
+use half::f16;
 use index::Index;
 use index::IndexTracker;
 use index::IndexView;
@@ -13,12 +14,12 @@ use std::sync::Arc;
 
 #[derive(Clone)]
 pub enum Instance {
-    Vecf32Dot(Arc<Index<Vecf32Dot>>),
-    Vecf32L2(Arc<Index<Vecf32L2>>),
-    Vecf16Dot(Arc<Index<Vecf16Dot>>),
-    Vecf16L2(Arc<Index<Vecf16L2>>),
-    SVecf32Dot(Arc<Index<SVecf32Dot>>),
-    SVecf32L2(Arc<Index<SVecf32L2>>),
+    Vecf32Dot(Arc<Index<VectDot<f32>>>),
+    Vecf32L2(Arc<Index<VectL2<f32>>>),
+    Vecf16Dot(Arc<Index<VectDot<f16>>>),
+    Vecf16L2(Arc<Index<VectL2<f16>>>),
+    SVecf32Dot(Arc<Index<SVectDot<f32>>>),
+    SVecf32L2(Arc<Index<SVectL2<f32>>>),
     BVectorDot(Arc<Index<BVectorDot>>),
     BVectorHamming(Arc<Index<BVectorHamming>>),
     BVectorJaccard(Arc<Index<BVectorJaccard>>),
@@ -196,12 +197,12 @@ impl Instance {
 }
 
 pub enum InstanceView {
-    Vecf32Dot(Arc<IndexView<Vecf32Dot>>),
-    Vecf32L2(Arc<IndexView<Vecf32L2>>),
-    Vecf16Dot(Arc<IndexView<Vecf16Dot>>),
-    Vecf16L2(Arc<IndexView<Vecf16L2>>),
-    SVecf32Dot(Arc<IndexView<SVecf32Dot>>),
-    SVecf32L2(Arc<IndexView<SVecf32L2>>),
+    Vecf32Dot(Arc<IndexView<VectDot<f32>>>),
+    Vecf32L2(Arc<IndexView<VectL2<f32>>>),
+    Vecf16Dot(Arc<IndexView<VectDot<f16>>>),
+    Vecf16L2(Arc<IndexView<VectL2<f16>>>),
+    SVecf32Dot(Arc<IndexView<SVectDot<f32>>>),
+    SVecf32L2(Arc<IndexView<SVectL2<f32>>>),
     BVectorDot(Arc<IndexView<BVectorDot>>),
     BVectorHamming(Arc<IndexView<BVectorHamming>>),
     BVectorJaccard(Arc<IndexView<BVectorJaccard>>),

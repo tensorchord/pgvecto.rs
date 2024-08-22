@@ -8,7 +8,7 @@ name = "pyvectors"
 crate-type = ["cdylib"]
 
 [dependencies]
-num-traits.workspace = true
+half.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 validator.workspace = true
