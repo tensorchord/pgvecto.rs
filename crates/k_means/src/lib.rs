@@ -71,12 +71,63 @@ pub fn k_means_lookup<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> usize
     result.1
 }
 
+/// returns (centroid_dot_dis, index)
+pub fn k_means_lookup_by_dot<S: ScalarLike>(
+    vector: &[S],
+    centroids: &Vec2<S>,
+    centroids_square: &[f32],
+) -> (f32, usize) {
+    assert_ne!(centroids.shape_0(), 0);
+    let vector_square = S::reduce_sum_of_x2(vector);
+    let mut result = (f32::INFINITY, f32::INFINITY, 0);
+
+    for i in 0..centroids.shape_0() {
+        let centroid_square = centroids_square[i];
+        let dot = S::reduce_sum_of_xy(vector, &centroids[(i,)]);
+        let l2_dis = vector_square + centroid_square - 2.0 * dot;
+        if l2_dis <= result.0 {
+            result = (l2_dis, -dot, i);
+        }
+    }
+    (result.1, result.2)
+}
+
 pub fn k_means_lookup_many<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> Vec<(f32, usize)> {
     assert_ne!(centroids.shape_0(), 0);
     let mut seq = Vec::new();
     for i in 0..centroids.shape_0() {
         let dis = S::reduce_sum_of_d2(vector, &centroids[(i,)]);
         seq.push((dis, i));
+    }
+    seq
+}
+
+/// returns Vec of <l2_dis, (centroid_dot_dis, vector_l2_norm, centroids_l2_norm, index)>
+pub fn k_means_lookup_many_by_dot<S: ScalarLike>(
+    vector: &[S],
+    centroids: &Vec2<S>,
+    centroids_square: &[f32],
+) -> Vec<(f32, (f32, f32, f32, usize))> {
+    assert_ne!(centroids.shape_0(), 0);
+    let vector_square = S::reduce_sum_of_x2(vector);
+    let mut seq = Vec::new();
+
+    for i in 0..centroids.shape_0() {
+        let centroid_square = centroids_square[i];
+        let dot = S::reduce_sum_of_xy(vector, &centroids[(i,)]);
+        let l2_dis = vector_square + centroid_square - 2.0 * dot;
+        seq.push((l2_dis, (-dot, vector_square, centroid_square, i)));
+    }
+    seq
+}
+
+pub fn centroids_square<S: ScalarLike>(centroids: &Vec2<S>) -> Vec<f32> {
+    assert_ne!(centroids.shape_0(), 0);
+    let mut seq = Vec::new();
+
+    for i in 0..centroids.shape_0() {
+        let centroids_square = S::reduce_sum_of_x2(&centroids[(i,)]);
+        seq.push(centroids_square);
     }
     seq
 }

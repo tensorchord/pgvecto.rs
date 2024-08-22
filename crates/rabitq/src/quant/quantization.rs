@@ -1,4 +1,4 @@
-use super::quantizer::RabitqQuantizer;
+use super::quantizer::{RabitqLookup, RabitqQuantizer};
 use crate::operator::OperatorRabitq;
 use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
@@ -24,42 +24,8 @@ impl<O: OperatorRabitq> Quantizer<O> {
     }
 }
 
-pub enum QuantizationPreprocessed<O: OperatorRabitq> {
-    Rabitq(
-        (
-            <O as OperatorRabitq>::Params,
-            <O as OperatorRabitq>::Preprocessed,
-        ),
-    ),
-}
-
-impl<O: OperatorRabitq> From<QuantizationPreprocessed<O>> for QuantizationAnyPreprocessed<O> {
-    fn from(value: QuantizationPreprocessed<O>) -> Self {
-        match value {
-            QuantizationPreprocessed::Rabitq((param, blut)) => Self::Rabitq((param, Ok(blut))),
-        }
-    }
-}
-
-pub enum QuantizationFscanPreprocessed<O: OperatorRabitq> {
-    Rabitq((<O as OperatorRabitq>::Params, Vec<u8>)),
-}
-
-impl<O: OperatorRabitq> From<QuantizationFscanPreprocessed<O>> for QuantizationAnyPreprocessed<O> {
-    fn from(value: QuantizationFscanPreprocessed<O>) -> Self {
-        match value {
-            QuantizationFscanPreprocessed::Rabitq((param, lut)) => Self::Rabitq((param, Err(lut))),
-        }
-    }
-}
-
-pub enum QuantizationAnyPreprocessed<O: OperatorRabitq> {
-    Rabitq(
-        (
-            <O as OperatorRabitq>::Params,
-            Result<<O as OperatorRabitq>::Preprocessed, Vec<u8>>,
-        ),
-    ),
+pub enum RabitqPreprocessed<O: OperatorRabitq> {
+    Rabitq((<O as OperatorRabitq>::QvectorParams, RabitqLookup<O>)),
 }
 
 pub struct Quantization<O: OperatorRabitq> {
@@ -74,7 +40,7 @@ impl<O: OperatorRabitq> Quantization<O> {
         path: impl AsRef<Path>,
         vector_options: VectorOptions,
         n: u32,
-        vectors: impl Fn(u32) -> Vec<f32>,
+        vector_fetch: impl Fn(u32) -> (Vec<f32>, f32),
     ) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
         fn merge_8([b0, b1, b2, b3, b4, b5, b6, b7]: [u8; 8]) -> u8 {
@@ -91,7 +57,7 @@ impl<O: OperatorRabitq> Quantization<O> {
         let codes = MmapArray::create(path.as_ref().join("codes"), {
             match &*train {
                 Quantizer::Rabitq(x) => Box::new((0..n).flat_map(|i| {
-                    let vector = vectors(i);
+                    let (vector, _) = vector_fetch(i);
                     let codes = x.encode(&vector);
                     let bytes = x.bytes();
                     match x.bits() {
@@ -123,8 +89,9 @@ impl<O: OperatorRabitq> Quantization<O> {
                         let t = x.dims().div_ceil(4);
                         let raw = std::array::from_fn::<_, { BLOCK_SIZE as _ }, _>(|i| {
                             let id = BLOCK_SIZE * block + i as u32;
-                            let e = x.encode(&vectors(std::cmp::min(id, n - 1)));
-                            InfiniteByteChunks::new(e.into_iter())
+                            let (vector, _) = vector_fetch(std::cmp::min(id, n - 1));
+                            let codes = x.encode(&vector);
+                            InfiniteByteChunks::new(codes.into_iter())
                                 .map(|[b0, b1, b2, b3]| b0 | b1 << 1 | b2 << 2 | b3 << 3)
                                 .take(t as usize)
                                 .collect()
@@ -138,8 +105,8 @@ impl<O: OperatorRabitq> Quantization<O> {
             path.as_ref().join("meta"),
             match &*train {
                 Quantizer::Rabitq(x) => Box::new((0..n).flat_map(|i| {
-                    let (a, b, c, d) = x.encode_meta(&vectors(i));
-                    [a, b, c, d].into_iter()
+                    let (vector, centroid_dot_dis) = vector_fetch(i);
+                    O::train_encode(x.dims(), vector, centroid_dot_dis).into_iter()
                 })),
             },
         );
@@ -164,31 +131,56 @@ impl<O: OperatorRabitq> Quantization<O> {
         }
     }
 
-    pub fn preprocess(&self, lhs: &[f32]) -> QuantizationPreprocessed<O> {
-        match &*self.train {
-            Quantizer::Rabitq(x) => QuantizationPreprocessed::Rabitq(x.preprocess(lhs)),
-        }
+    pub fn preprocess(
+        &self,
+        trans_vector: &[f32],
+        centroid_dot_dis: f32,
+        original_square: f32,
+        centroids_square: f32,
+    ) -> RabitqPreprocessed<O> {
+        let (params, lookup) = match &*self.train {
+            Quantizer::Rabitq(x) => x.preprocess(
+                trans_vector,
+                centroid_dot_dis,
+                original_square,
+                centroids_square,
+            ),
+        };
+        RabitqPreprocessed::Rabitq((params, RabitqLookup::Trivial(lookup)))
     }
 
-    pub fn fscan_preprocess(&self, lhs: &[f32]) -> QuantizationFscanPreprocessed<O> {
-        match &*self.train {
-            Quantizer::Rabitq(x) => QuantizationFscanPreprocessed::Rabitq(x.fscan_preprocess(lhs)),
-        }
+    pub fn fscan_preprocess(
+        &self,
+        trans_vector: &[f32],
+        centroid_dot_dis: f32,
+        original_square: f32,
+        centroids_square: f32,
+    ) -> RabitqPreprocessed<O> {
+        let (params, lookup) = match &*self.train {
+            Quantizer::Rabitq(x) => x.fscan_preprocess(
+                trans_vector,
+                centroid_dot_dis,
+                original_square,
+                centroids_square,
+            ),
+        };
+        RabitqPreprocessed::Rabitq((params, RabitqLookup::FastScan(lookup)))
     }
 
-    pub fn process(&self, preprocessed: &QuantizationPreprocessed<O>, u: u32) -> Distance {
+    pub fn process(&self, preprocessed: &RabitqPreprocessed<O>, u: u32) -> Distance {
         match (&*self.train, preprocessed) {
-            (Quantizer::Rabitq(x), QuantizationPreprocessed::Rabitq(lhs)) => {
+            (
+                Quantizer::Rabitq(x),
+                RabitqPreprocessed::Rabitq((params, RabitqLookup::Trivial(lookup))),
+            ) => {
                 let bytes = x.bytes() as usize;
                 let start = u as usize * bytes;
                 let end = start + bytes;
-                let a = self.meta[4 * u as usize + 0];
-                let b = self.meta[4 * u as usize + 1];
-                let c = self.meta[4 * u as usize + 2];
-                let d = self.meta[4 * u as usize + 3];
-                let codes = &self.codes[start..end];
-                x.process(&lhs.0, &lhs.1, (a, b, c, d, codes))
+                let vector_params = O::train_decode(u, &self.meta);
+                let code = &self.codes[start..end];
+                x.process(&vector_params, params, lookup, code)
             }
+            _ => unreachable!(),
         }
     }
 

@@ -149,9 +149,9 @@ impl IndexOptions {
                 }
             }
             IndexingOptions::Rabitq(_) => {
-                if !matches!(self.vector.d, DistanceKind::L2) {
+                if !matches!(self.vector.d, DistanceKind::L2 | DistanceKind::Dot) {
                     return Err(ValidationError::new(
-                        "rabitq is not support for distance that is not l2",
+                        "rabitq is not support for distance that is not l2 or dot",
                     ));
                 }
                 if !matches!(self.vector.v, VectorKind::Vecf32) {
