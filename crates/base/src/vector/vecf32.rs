@@ -1,4 +1,5 @@
 use super::{VectorBorrowed, VectorKind, VectorOwned};
+use crate::distance::Distance;
 use crate::scalar::F32;
 use num_traits::{Float, Zero};
 use serde::{Deserialize, Serialize};
@@ -110,27 +111,27 @@ impl<'a> VectorBorrowed for Vecf32Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn operator_dot(self, rhs: Self) -> F32 {
-        dot(self.slice(), rhs.slice()) * (-1.0)
+    fn operator_dot(self, rhs: Self) -> Distance {
+        Distance::from(-dot(self.slice(), rhs.slice()).0)
     }
 
     #[inline(always)]
-    fn operator_l2(self, rhs: Self) -> F32 {
-        sl2(self.slice(), rhs.slice())
+    fn operator_l2(self, rhs: Self) -> Distance {
+        Distance::from(sl2(self.slice(), rhs.slice()).0)
     }
 
     #[inline(always)]
-    fn operator_cos(self, rhs: Self) -> F32 {
-        F32(1.0) - dot(self.slice(), rhs.slice()) / (self.norm() * rhs.norm())
+    fn operator_cos(self, rhs: Self) -> Distance {
+        Distance::from(1.0 - (dot(self.slice(), rhs.slice()) / (self.norm() * rhs.norm())).0)
     }
 
     #[inline(always)]
-    fn operator_hamming(self, _: Self) -> F32 {
+    fn operator_hamming(self, _: Self) -> Distance {
         unimplemented!()
     }
 
     #[inline(always)]
-    fn operator_jaccard(self, _: Self) -> F32 {
+    fn operator_jaccard(self, _: Self) -> Distance {
         unimplemented!()
     }
 

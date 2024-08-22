@@ -242,10 +242,10 @@ impl Opfamily {
             (B::BVector(x), _) => O::BVector(x.own()),
         }
     }
-    pub fn process(self, x: F32) -> F32 {
+    pub fn process(self, x: Distance) -> F32 {
         match self.pg_distance {
-            PgDistanceKind::Cos => x + F32(1.0),
-            _ => x,
+            PgDistanceKind::Cos => F32(f32::from(x)) + F32(1.0),
+            _ => F32(f32::from(x)),
         }
     }
 }

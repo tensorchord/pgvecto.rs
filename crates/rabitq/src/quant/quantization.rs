@@ -1,6 +1,7 @@
 use super::quantizer::RabitqQuantizer;
 use crate::operator::OperatorRabitq;
 use base::always_equal::AlwaysEqual;
+use base::distance::Distance;
 use base::index::VectorOptions;
 use base::scalar::F32;
 use base::search::RerankerPop;
@@ -141,7 +142,7 @@ impl<O: OperatorRabitq> Quantization<O> {
         }
     }
 
-    pub fn process(&self, preprocessed: &QuantizationPreprocessed<O>, u: u32) -> F32 {
+    pub fn process(&self, preprocessed: &QuantizationPreprocessed<O>, u: u32) -> Distance {
         match (&*self.train, preprocessed) {
             (Quantizer::Rabitq(x), QuantizationPreprocessed::Rabitq(lhs)) => {
                 let bytes = x.bytes() as usize;
@@ -161,7 +162,7 @@ impl<O: OperatorRabitq> Quantization<O> {
         &self,
         preprocessed: &QuantizationPreprocessed<O>,
         rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
+        heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         rq_epsilon: F32,
         rq_fast_scan: bool,
     ) {
@@ -181,8 +182,8 @@ impl<O: OperatorRabitq> Quantization<O> {
 
     pub fn rerank<'a, T: 'a>(
         &'a self,
-        heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
-        r: impl Fn(u32) -> (F32, T) + 'a,
+        heap: Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
+        r: impl Fn(u32) -> (Distance, T) + 'a,
     ) -> impl RerankerPop<T> + 'a {
         use Quantizer::*;
         match &*self.train {

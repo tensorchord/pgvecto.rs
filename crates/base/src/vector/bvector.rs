@@ -1,5 +1,6 @@
 use std::ops::{Bound, RangeBounds};
 
+use crate::distance::Distance;
 use crate::scalar::F32;
 use crate::vector::{Vecf32Owned, VectorBorrowed, VectorKind, VectorOwned};
 use num_traits::Float;
@@ -151,28 +152,28 @@ impl<'a> VectorBorrowed for BVectorBorrowed<'a> {
     }
 
     #[inline(always)]
-    fn operator_dot(self, rhs: Self) -> F32 {
-        dot(self, rhs) * (-1.0)
+    fn operator_dot(self, rhs: Self) -> Distance {
+        Distance::from(-dot(self, rhs).0)
     }
 
     #[inline(always)]
-    fn operator_l2(self, _: Self) -> F32 {
+    fn operator_l2(self, _: Self) -> Distance {
         unimplemented!()
     }
 
     #[inline(always)]
-    fn operator_cos(self, _: Self) -> F32 {
+    fn operator_cos(self, _: Self) -> Distance {
         unimplemented!()
     }
 
     #[inline(always)]
-    fn operator_hamming(self, rhs: Self) -> F32 {
-        hamming(self, rhs)
+    fn operator_hamming(self, rhs: Self) -> Distance {
+        Distance::from(hamming(self, rhs).0)
     }
 
     #[inline(always)]
-    fn operator_jaccard(self, rhs: Self) -> F32 {
-        F32(1.0) - jaccard(self, rhs)
+    fn operator_jaccard(self, rhs: Self) -> Distance {
+        Distance::from(1.0 - jaccard(self, rhs).0)
     }
 
     #[inline(always)]

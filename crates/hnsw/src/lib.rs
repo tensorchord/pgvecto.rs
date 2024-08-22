@@ -2,16 +2,15 @@
 #![allow(clippy::type_complexity)]
 
 use base::always_equal::AlwaysEqual;
+use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
-use base::scalar::F32;
 use base::search::*;
 use base::vector::VectorBorrowed;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use graph::visited::VisitedPool;
-use num_traits::Float;
 use parking_lot::RwLock;
 use quantization::operator::OperatorQuantization;
 use quantization::Quantization;
@@ -34,9 +33,9 @@ pub struct Hnsw<O: OperatorHnsw> {
     quantization: Quantization<O>,
     payloads: MmapArray<Payload>,
     base_graph_outs: MmapArray<u32>,
-    base_graph_weights: MmapArray<F32>,
+    base_graph_weights: MmapArray<Distance>,
     hyper_graph_outs: MmapArray<u32>,
-    hyper_graph_weights: MmapArray<F32>,
+    hyper_graph_weights: MmapArray<Distance>,
     m: Json<u32>,
     s: Option<u32>,
     visited: VisitedPool,
@@ -214,9 +213,9 @@ fn from_main<O: OperatorHnsw>(
         |u| remapped.skip(u),
         |u, level| {
             if level == 0 {
-                Box::new(base_edges(main, u)) as Box<dyn Iterator<Item = (F32, u32)>>
+                Box::new(base_edges(main, u)) as Box<dyn Iterator<Item = (Distance, u32)>>
             } else {
-                Box::new(hyper_edges(main, u, level)) as Box<dyn Iterator<Item = (F32, u32)>>
+                Box::new(hyper_edges(main, u, level)) as Box<dyn Iterator<Item = (Distance, u32)>>
             }
         },
         remapped.len(),
@@ -320,7 +319,7 @@ fn open<O: OperatorHnsw>(path: impl AsRef<Path>) -> Hnsw<O> {
 }
 
 fn fast_search<E>(
-    dist: impl Fn(u32) -> F32,
+    dist: impl Fn(u32) -> Distance,
     read_outs: impl Fn(u32, u8) -> E,
     levels: RangeInclusive<u8>,
     u: u32,
@@ -346,7 +345,7 @@ where
     u
 }
 
-fn fresh(n: u32, m: u32) -> Vec<Vec<RwLock<Vec<(F32, u32)>>>> {
+fn fresh(n: u32, m: u32) -> Vec<Vec<RwLock<Vec<(Distance, u32)>>>> {
     let mut g = Vec::with_capacity(n as usize);
     for u in 0..n {
         let l = hierarchy_for_a_vertex(m, u);
@@ -358,14 +357,14 @@ fn fresh(n: u32, m: u32) -> Vec<Vec<RwLock<Vec<(F32, u32)>>>> {
 }
 
 fn patch_deletions<E>(
-    dist: impl Fn(u32, u32) -> F32 + Copy + Sync,
+    dist: impl Fn(u32, u32) -> Distance + Copy + Sync,
     skip: impl Fn(u32) -> bool + Sync,
     read_edges: impl Fn(u32, u8) -> E + Sync,
     n: u32,
     m: u32,
-    g: &mut [Vec<RwLock<Vec<(F32, u32)>>>],
+    g: &mut [Vec<RwLock<Vec<(Distance, u32)>>>],
 ) where
-    E: Iterator<Item = (F32, u32)>,
+    E: Iterator<Item = (Distance, u32)>,
 {
     (0..n).into_par_iter().for_each(|u| {
         rayon::check();
@@ -391,12 +390,12 @@ fn patch_deletions<E>(
 }
 
 fn patch_insertions(
-    dist: impl Fn(u32, u32) -> F32 + Copy + Sync,
+    dist: impl Fn(u32, u32) -> Distance + Copy + Sync,
     skip: impl Fn(u32) -> bool + Sync,
     n: u32,
     ef_construction: u32,
     m: u32,
-    g: &mut [Vec<RwLock<Vec<(F32, u32)>>>],
+    g: &mut [Vec<RwLock<Vec<(Distance, u32)>>>],
 ) {
     #[repr(C)]
     #[derive(Debug, Clone, Copy)]
@@ -561,13 +560,13 @@ fn patch_insertions(
     });
 }
 
-fn finish(g: &mut [Vec<RwLock<Vec<(F32, u32)>>>], m: u32) {
+fn finish(g: &mut [Vec<RwLock<Vec<(Distance, u32)>>>], m: u32) {
     for u in 0..g.len() as u32 {
         let l = hierarchy_for_a_vertex(m, u);
         for j in 0..l {
             g[u as usize][j as usize].get_mut().resize(
                 capacity_for_a_hierarchy(m, j) as usize,
-                (F32::infinity(), u32::MAX),
+                (Distance::INFINITY, u32::MAX),
             );
         }
     }
@@ -591,7 +590,10 @@ fn capacity_for_a_hierarchy(m: u32, level: u8) -> u32 {
     }
 }
 
-fn base_edges<O: OperatorHnsw>(hnsw: &Hnsw<O>, u: u32) -> impl Iterator<Item = (F32, u32)> + '_ {
+fn base_edges<O: OperatorHnsw>(
+    hnsw: &Hnsw<O>,
+    u: u32,
+) -> impl Iterator<Item = (Distance, u32)> + '_ {
     let m = *hnsw.m;
     let offset = 2 * m as usize * u as usize;
     let edges_outs = hnsw.base_graph_outs[offset..offset + 2 * m as usize]
@@ -617,7 +619,7 @@ fn hyper_edges<O: OperatorHnsw>(
     hnsw: &Hnsw<O>,
     u: u32,
     level: u8,
-) -> impl Iterator<Item = (F32, u32)> + '_ {
+) -> impl Iterator<Item = (Distance, u32)> + '_ {
     let m = *hnsw.m;
     let offset = {
         let mut offset = 0;

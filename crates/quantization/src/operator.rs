@@ -1,6 +1,7 @@
 use crate::product::operator::OperatorProductQuantization;
 use crate::scalar::operator::OperatorScalarQuantization;
 use crate::trivial::operator::OperatorTrivialQuantization;
+use base::distance::Distance;
 use base::operator::*;
 use base::scalar::F32;
 use num_traits::Zero;
@@ -14,11 +15,11 @@ pub trait OperatorQuantizationProcess: Operator {
         bits: u32,
         preprocessed: &Self::QuantizationPreprocessed,
         rhs: impl Fn(usize) -> usize,
-    ) -> F32;
+    ) -> Distance;
 
     const SUPPORT_FAST_SCAN: bool;
     fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<F32>;
-    fn fast_scan_resolve(x: F32) -> F32;
+    fn fast_scan_resolve(x: F32) -> Distance;
 }
 
 macro_rules! unimpl_operator_quantization_process {
@@ -32,7 +33,7 @@ macro_rules! unimpl_operator_quantization_process {
                 _: u32,
                 preprocessed: &Self::QuantizationPreprocessed,
                 _: impl Fn(usize) -> usize,
-            ) -> F32 {
+            ) -> Distance {
                 match *preprocessed {}
             }
 
@@ -42,7 +43,7 @@ macro_rules! unimpl_operator_quantization_process {
                 match *preprocessed {}
             }
 
-            fn fast_scan_resolve(_: F32) -> F32 {
+            fn fast_scan_resolve(_: F32) -> Distance {
                 unimplemented!()
             }
         }
@@ -58,7 +59,7 @@ impl OperatorQuantizationProcess for Vecf32Dot {
         bits: u32,
         preprocessed: &Self::QuantizationPreprocessed,
         rhs: impl Fn(usize) -> usize,
-    ) -> F32 {
+    ) -> Distance {
         let width = dims.div_ceil(ratio);
         let xy = {
             let mut xy = F32::zero();
@@ -67,7 +68,7 @@ impl OperatorQuantizationProcess for Vecf32Dot {
             }
             xy
         };
-        F32(0.0) - xy
+        Distance::from((F32(0.0) - xy).0)
     }
 
     const SUPPORT_FAST_SCAN: bool = true;
@@ -76,8 +77,8 @@ impl OperatorQuantizationProcess for Vecf32Dot {
         preprocessed.clone()
     }
 
-    fn fast_scan_resolve(x: F32) -> F32 {
-        x * F32(-1.0)
+    fn fast_scan_resolve(x: F32) -> Distance {
+        Distance::from(-x.0)
     }
 }
 
@@ -90,13 +91,13 @@ impl OperatorQuantizationProcess for Vecf32L2 {
         bits: u32,
         preprocessed: &Self::QuantizationPreprocessed,
         rhs: impl Fn(usize) -> usize,
-    ) -> F32 {
+    ) -> Distance {
         let width = dims.div_ceil(ratio);
         let mut d2 = F32::zero();
         for i in 0..width as usize {
             d2 += preprocessed[i * (1 << bits) + rhs(i)];
         }
-        d2
+        Distance::from(d2.0)
     }
 
     const SUPPORT_FAST_SCAN: bool = true;
@@ -105,8 +106,8 @@ impl OperatorQuantizationProcess for Vecf32L2 {
         preprocessed.clone()
     }
 
-    fn fast_scan_resolve(x: F32) -> F32 {
-        x
+    fn fast_scan_resolve(x: F32) -> Distance {
+        Distance::from(x.0)
     }
 }
 
@@ -119,7 +120,7 @@ impl OperatorQuantizationProcess for Vecf16Dot {
         bits: u32,
         preprocessed: &Self::QuantizationPreprocessed,
         rhs: impl Fn(usize) -> usize,
-    ) -> F32 {
+    ) -> Distance {
         let width = dims.div_ceil(ratio);
         let xy = {
             let mut xy = F32::zero();
@@ -128,7 +129,7 @@ impl OperatorQuantizationProcess for Vecf16Dot {
             }
             xy
         };
-        F32(0.0) - xy
+        Distance::from(-xy.0)
     }
 
     const SUPPORT_FAST_SCAN: bool = true;
@@ -137,8 +138,8 @@ impl OperatorQuantizationProcess for Vecf16Dot {
         preprocessed.clone()
     }
 
-    fn fast_scan_resolve(x: F32) -> F32 {
-        x * F32(-1.0)
+    fn fast_scan_resolve(x: F32) -> Distance {
+        Distance::from(-x.0)
     }
 }
 
@@ -151,13 +152,13 @@ impl OperatorQuantizationProcess for Vecf16L2 {
         bits: u32,
         preprocessed: &Self::QuantizationPreprocessed,
         rhs: impl Fn(usize) -> usize,
-    ) -> F32 {
+    ) -> Distance {
         let width = dims.div_ceil(ratio);
         let mut d2 = F32::zero();
         for i in 0..width as usize {
             d2 += preprocessed[i * (1 << bits) + rhs(i)];
         }
-        d2
+        Distance::from(d2.0)
     }
 
     const SUPPORT_FAST_SCAN: bool = true;
@@ -166,8 +167,8 @@ impl OperatorQuantizationProcess for Vecf16L2 {
         preprocessed.clone()
     }
 
-    fn fast_scan_resolve(x: F32) -> F32 {
-        x
+    fn fast_scan_resolve(x: F32) -> Distance {
+        Distance::from(x.0)
     }
 }
 

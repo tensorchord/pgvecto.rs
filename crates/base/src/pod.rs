@@ -1,6 +1,8 @@
 // This module is a workaround for orphan rules
 
-use crate::scalar::{F16, F32, I8};
+use crate::distance::Distance;
+use crate::scalar::{F16, F32};
+use crate::search::Payload;
 
 /// # Safety
 ///
@@ -26,13 +28,11 @@ unsafe impl Pod for isize {}
 unsafe impl Pod for f32 {}
 unsafe impl Pod for f64 {}
 
-unsafe impl Pod for I8 {}
 unsafe impl Pod for F16 {}
 unsafe impl Pod for F32 {}
 
-unsafe impl Pod for (F32, u32) {}
-
-unsafe impl Pod for crate::search::Payload {}
+unsafe impl Pod for Payload {}
+unsafe impl Pod for Distance {}
 
 pub fn bytes_of<T: Pod>(t: &T) -> &[u8] {
     unsafe { core::slice::from_raw_parts(std::ptr::addr_of!(*t) as *const u8, size_of::<T>()) }

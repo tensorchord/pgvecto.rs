@@ -19,7 +19,6 @@ pub use vecf32_dot::Vecf32Dot;
 pub use vecf32_l2::Vecf32L2;
 
 use crate::distance::*;
-use crate::scalar::*;
 use crate::vector::*;
 
 pub trait Operator: Copy + 'static + Send + Sync {
@@ -27,7 +26,7 @@ pub trait Operator: Copy + 'static + Send + Sync {
 
     const DISTANCE_KIND: DistanceKind;
 
-    fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> F32;
+    fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> Distance;
 }
 
 pub type Owned<T> = <T as Operator>::VectorOwned;

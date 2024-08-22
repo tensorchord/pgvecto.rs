@@ -6,8 +6,8 @@ use crate::error::*;
 use crate::gucs::internal::{Transport, TRANSPORT};
 use crate::ipc::transport::Packet;
 use crate::utils::cells::PgRefCell;
+use base::distance::Distance;
 use base::index::*;
-use base::scalar::F32;
 use base::search::*;
 use base::vector::*;
 use serde::{Deserialize, Serialize};
@@ -326,7 +326,7 @@ defines! {
     unary flush(handle: Handle) -> ();
     unary insert(handle: Handle, vector: OwnedVector, pointer: Pointer) -> ();
     unary delete(handle: Handle, pointer: Pointer) -> ();
-    stream vbase(handle: Handle, vector: OwnedVector, opts: SearchOptions) -> (F32, Pointer);
+    stream vbase(handle: Handle, vector: OwnedVector, opts: SearchOptions) -> (Distance, Pointer);
     stream list(handle: Handle) -> Pointer;
     unary stat(handle: Handle) -> IndexStat;
     unary alter(handle: Handle, key: String, value: String) -> ();

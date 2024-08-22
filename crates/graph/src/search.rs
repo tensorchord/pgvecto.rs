@@ -1,7 +1,7 @@
 use crate::visited::VisitedGuard;
 use crate::visited::VisitedPool;
 use base::always_equal::AlwaysEqual;
-use base::scalar::F32;
+use base::distance::Distance;
 use base::search::RerankerPop;
 use base::search::RerankerPush;
 use std::cmp::Reverse;
@@ -52,17 +52,17 @@ impl<T: ResultsBound> Results<T> {
 }
 
 pub fn search<E>(
-    dist: impl Fn(u32) -> F32,
+    dist: impl Fn(u32) -> Distance,
     read_outs: impl Fn(u32) -> E,
     visited: &mut VisitedGuard,
     s: u32,
     ef_construction: u32,
-) -> Vec<(F32, u32)>
+) -> Vec<(Distance, u32)>
 where
     E: Iterator<Item = u32>,
 {
     let mut visited = visited.fetch_checker();
-    let mut candidates = BinaryHeap::<Reverse<(F32, u32)>>::new();
+    let mut candidates = BinaryHeap::<Reverse<(Distance, u32)>>::new();
     let mut results = Results::new(ef_construction as _);
     {
         let dis_s = dist(s);
@@ -89,17 +89,17 @@ where
 }
 
 pub fn search_returning_trace<E>(
-    dist: impl Fn(u32) -> F32,
+    dist: impl Fn(u32) -> Distance,
     read_outs: impl Fn(u32) -> E,
     visited: &mut VisitedGuard,
     s: u32,
     ef_construction: u32,
-) -> (Vec<(F32, u32)>, Vec<(F32, u32)>)
+) -> (Vec<(Distance, u32)>, Vec<(Distance, u32)>)
 where
     E: Iterator<Item = u32>,
 {
     let mut visited = visited.fetch_checker();
-    let mut reranker = BinaryHeap::<Reverse<(F32, u32)>>::new();
+    let mut reranker = BinaryHeap::<Reverse<(Distance, u32)>>::new();
     let mut results = Results::new(ef_construction as _);
     let mut trace = Vec::new();
     {
@@ -131,7 +131,7 @@ pub fn vbase_internal<'a, G, E, T>(
     visited: &'a VisitedPool,
     s: u32,
     mut reranker: G,
-) -> impl Iterator<Item = (F32, u32, T)> + 'a
+) -> impl Iterator<Item = (Distance, u32, T)> + 'a
 where
     G: RerankerPush + RerankerPop<(E, T)> + 'a,
     E: Iterator<Item = u32>,
@@ -160,7 +160,7 @@ pub fn vbase_generic<'a, G, E, T>(
     s: u32,
     reranker: G,
     ef_search: u32,
-) -> impl Iterator<Item = (F32, u32, T)> + 'a
+) -> impl Iterator<Item = (Distance, u32, T)> + 'a
 where
     G: RerankerPush + RerankerPop<(E, T)> + 'a,
     E: Iterator<Item = u32>,

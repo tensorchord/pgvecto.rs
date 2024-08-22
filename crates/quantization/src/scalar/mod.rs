@@ -4,6 +4,7 @@ use self::operator::OperatorScalarQuantization;
 use crate::reranker::flat::WindowFlatReranker;
 use crate::reranker::graph::GraphReranker;
 use base::always_equal::AlwaysEqual;
+use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
 use base::scalar::*;
@@ -97,7 +98,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
         O::scalar_quantization_preprocess(self.dims, self.bits, &self.max, &self.min, lhs)
     }
 
-    pub fn process(&self, preprocessed: &O::QuantizationPreprocessed, rhs: &[u8]) -> F32 {
+    pub fn process(&self, preprocessed: &O::QuantizationPreprocessed, rhs: &[u8]) -> Distance {
         let dims = self.dims;
         match self.bits {
             1 => O::quantization_process(dims, 1, 1, preprocessed, |i| {
@@ -118,7 +119,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
         &self,
         preprocessed: &O::QuantizationPreprocessed,
         rhs: Range<u32>,
-        heap: &mut Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
+        heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         codes: &[u8],
         packed_codes: &[u8],
         fast_scan: bool,
@@ -184,16 +185,21 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
         }));
     }
 
-    pub fn flat_rerank<'a, T: 'a, R: Fn(u32) -> (F32, T) + 'a>(
+    pub fn flat_rerank<'a, T: 'a, R: Fn(u32) -> (Distance, T) + 'a>(
         &'a self,
-        heap: Vec<(Reverse<F32>, AlwaysEqual<u32>)>,
+        heap: Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         r: R,
         rerank_size: u32,
     ) -> impl RerankerPop<T> + 'a {
         WindowFlatReranker::new(heap, r, rerank_size)
     }
 
-    pub fn graph_rerank<'a, T: 'a, C: Fn(u32) -> &'a [u8] + 'a, R: Fn(u32) -> (F32, T) + 'a>(
+    pub fn graph_rerank<
+        'a,
+        T: 'a,
+        C: Fn(u32) -> &'a [u8] + 'a,
+        R: Fn(u32) -> (Distance, T) + 'a,
+    >(
         &'a self,
         vector: Borrowed<'a, O>,
         c: C,

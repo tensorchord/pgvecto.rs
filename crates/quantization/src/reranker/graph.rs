@@ -1,18 +1,18 @@
 use base::always_equal::AlwaysEqual;
-use base::scalar::F32;
+use base::distance::Distance;
 use base::search::*;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
 pub struct GraphReranker<'a, T, R> {
-    compute: Option<Box<dyn Fn(u32) -> F32 + 'a>>,
+    compute: Option<Box<dyn Fn(u32) -> Distance + 'a>>,
     rerank: R,
-    heap: BinaryHeap<(Reverse<F32>, AlwaysEqual<u32>)>,
-    cache: BinaryHeap<(Reverse<F32>, AlwaysEqual<u32>, AlwaysEqual<T>)>,
+    heap: BinaryHeap<(Reverse<Distance>, AlwaysEqual<u32>)>,
+    cache: BinaryHeap<(Reverse<Distance>, AlwaysEqual<u32>, AlwaysEqual<T>)>,
 }
 
 impl<'a, T, R> GraphReranker<'a, T, R> {
-    pub fn new(compute: Option<Box<dyn Fn(u32) -> F32 + 'a>>, rerank: R) -> Self {
+    pub fn new(compute: Option<Box<dyn Fn(u32) -> Distance + 'a>>, rerank: R) -> Self {
         Self {
             compute,
             rerank,
@@ -24,9 +24,9 @@ impl<'a, T, R> GraphReranker<'a, T, R> {
 
 impl<'a, T, R> RerankerPop<T> for GraphReranker<'a, T, R>
 where
-    R: Fn(u32) -> (F32, T),
+    R: Fn(u32) -> (Distance, T),
 {
-    fn pop(&mut self) -> Option<(F32, u32, T)> {
+    fn pop(&mut self) -> Option<(Distance, u32, T)> {
         if self.compute.is_some() {
             let (_, AlwaysEqual(u)) = self.heap.pop()?;
             let (dis_u, pay_u) = (self.rerank)(u);
@@ -40,7 +40,7 @@ where
 
 impl<'a, T, R> RerankerPush for GraphReranker<'a, T, R>
 where
-    R: Fn(u32) -> (F32, T),
+    R: Fn(u32) -> (Distance, T),
 {
     fn push(&mut self, u: u32) {
         if let Some(compute) = self.compute.as_ref() {

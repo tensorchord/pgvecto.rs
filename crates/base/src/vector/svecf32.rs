@@ -1,3 +1,4 @@
+use crate::distance::Distance;
 use crate::scalar::F32;
 use crate::vector::{VectorBorrowed, VectorKind, VectorOwned};
 use num_traits::{Float, Zero};
@@ -186,27 +187,27 @@ impl<'a> VectorBorrowed for SVecf32Borrowed<'a> {
     }
 
     #[inline(always)]
-    fn operator_dot(self, rhs: Self) -> F32 {
-        dot(self, rhs) * (-1.0)
+    fn operator_dot(self, rhs: Self) -> Distance {
+        Distance::from(-dot(self, rhs).0)
     }
 
     #[inline(always)]
-    fn operator_l2(self, rhs: Self) -> F32 {
-        sl2(self, rhs)
+    fn operator_l2(self, rhs: Self) -> Distance {
+        Distance::from(sl2(self, rhs).0)
     }
 
     #[inline(always)]
-    fn operator_cos(self, rhs: Self) -> F32 {
-        F32(1.0) - dot(self, rhs) / (self.norm() * rhs.norm())
+    fn operator_cos(self, rhs: Self) -> Distance {
+        Distance::from(1.0 - (dot(self, rhs) / (self.norm() * rhs.norm())).0)
     }
 
     #[inline(always)]
-    fn operator_hamming(self, _: Self) -> F32 {
+    fn operator_hamming(self, _: Self) -> Distance {
         unimplemented!()
     }
 
     #[inline(always)]
-    fn operator_jaccard(self, _: Self) -> F32 {
+    fn operator_jaccard(self, _: Self) -> Distance {
         unimplemented!()
     }
 

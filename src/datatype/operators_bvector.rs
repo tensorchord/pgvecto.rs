@@ -1,6 +1,5 @@
 use crate::datatype::memory_bvector::{BVectorInput, BVectorOutput};
 use crate::error::*;
-use base::scalar::*;
 use base::vector::*;
 use std::num::NonZero;
 

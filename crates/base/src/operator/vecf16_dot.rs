@@ -1,6 +1,5 @@
 use crate::distance::*;
 use crate::operator::*;
-use crate::scalar::*;
 use crate::vector::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -11,7 +10,7 @@ impl Operator for Vecf16Dot {
 
     const DISTANCE_KIND: DistanceKind = DistanceKind::Dot;
 
-    fn distance(lhs: Vecf16Borrowed<'_>, rhs: Vecf16Borrowed<'_>) -> F32 {
+    fn distance(lhs: Vecf16Borrowed<'_>, rhs: Vecf16Borrowed<'_>) -> Distance {
         lhs.operator_dot(rhs)
     }
 }
