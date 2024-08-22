@@ -11,4 +11,4 @@ extend-ignore-re = [
 ]
 
 [files]
-extend-exclude = ["vendor/pg_config/*.txt", "vendor/pgrx_binding/*.rs"]
+extend-exclude = ["vendor"]

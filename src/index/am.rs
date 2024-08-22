@@ -14,7 +14,7 @@ use base::index::*;
 use pgrx::datum::Internal;
 use pgrx::pg_sys::Datum;
 
-static RELOPT_KIND_VECTORS: PgCell<pgrx::pg_sys::relopt_kind> = unsafe { PgCell::new(0) };
+static RELOPT_KIND_VECTORS: PgCell<pgrx::pg_sys::relopt_kind::Type> = unsafe { PgCell::new(0) };
 
 pub unsafe fn init() {
     unsafe {
@@ -159,7 +159,7 @@ pub unsafe extern "C" fn ambuild(
         Ok(()) => (),
         Err(StopError::NotExist) => pgrx::error!("internal error"),
     }
-    let result = unsafe { pgrx::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0() };
+    let result = unsafe { pgrx::pgbox::PgBox::<pgrx::pg_sys::IndexBuildResult>::alloc0() };
     let mut builder = Builder {
         opfamily,
         rpc,
@@ -235,7 +235,7 @@ pub unsafe extern "C" fn ambuild(
                     | pgrx::pg_sys::WL_TIMEOUT
                     | pgrx::pg_sys::WL_EXIT_ON_PM_DEATH) as _,
                 1000,
-                pgrx::pg_sys::WaitEventTimeout_WAIT_EVENT_PG_SLEEP,
+                pgrx::pg_sys::WaitEventTimeout::WAIT_EVENT_PG_SLEEP,
             );
             pgrx::pg_sys::ResetLatch(pgrx::pg_sys::MyLatch);
         }
@@ -255,7 +255,7 @@ pub unsafe extern "C" fn aminsert(
     is_null: *mut bool,
     heap_tid: pgrx::pg_sys::ItemPointer,
     _heap: pgrx::pg_sys::Relation,
-    _check_unique: pgrx::pg_sys::IndexUniqueCheck,
+    _check_unique: pgrx::pg_sys::IndexUniqueCheck::Type,
     _index_unchanged: bool,
     _index_info: *mut pgrx::pg_sys::IndexInfo,
 ) -> bool {
@@ -285,7 +285,7 @@ pub unsafe extern "C" fn ambeginscan(
     n_keys: std::os::raw::c_int,
     n_orderbys: std::os::raw::c_int,
 ) -> pgrx::pg_sys::IndexScanDesc {
-    use pgrx::PgMemoryContexts::CurrentMemoryContext;
+    use pgrx::memcxt::PgMemoryContexts::CurrentMemoryContext;
 
     let scan = unsafe { pgrx::pg_sys::RelationGetIndexScan(index, n_keys, n_orderbys) };
     unsafe {
@@ -349,16 +349,17 @@ pub unsafe extern "C" fn amrescan(
 #[pgrx::pg_guard]
 pub unsafe extern "C" fn amgettuple(
     scan: pgrx::pg_sys::IndexScanDesc,
-    direction: pgrx::pg_sys::ScanDirection,
+    direction: pgrx::pg_sys::ScanDirection::Type,
 ) -> bool {
-    if direction != pgrx::pg_sys::ScanDirection_ForwardScanDirection {
+    if direction != pgrx::pg_sys::ScanDirection::ForwardScanDirection {
         pgrx::error!("vector search without a forward scan direction is not supported");
     }
     // https://www.postgresql.org/docs/current/index-locking.html
     // If heap entries referenced physical pointers are deleted before
     // they are consumed by PostgreSQL, PostgreSQL will received wrong
     // physical pointers: no rows or irreverent rows are referenced.
-    if unsafe { (*(*scan).xs_snapshot).snapshot_type } != pgrx::pg_sys::SnapshotType_SNAPSHOT_MVCC {
+    if unsafe { (*(*scan).xs_snapshot).snapshot_type } != pgrx::pg_sys::SnapshotType::SNAPSHOT_MVCC
+    {
         pgrx::error!("scanning with a non-MVCC-compliant snapshot is not supported");
     }
     let scanner = unsafe { (*scan).opaque.cast::<Scanner>().as_mut().unwrap_unchecked() };

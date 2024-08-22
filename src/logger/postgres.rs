@@ -12,7 +12,7 @@ pub fn send_message_to_server_log(record: &Record) {
     if log_destination as u32 & pgrx::pg_sys::LOG_DESTINATION_CSVLOG != 0 {
         write_csvlog(record);
     }
-    #[cfg(any(feature = "pg15", feature = "pg16"))]
+    #[cfg(any(feature = "pg15", feature = "pg16", feature = "pg17"))]
     if log_destination as u32 & pgrx::pg_sys::LOG_DESTINATION_JSONLOG != 0 {
         write_jsonlog(record);
     }
@@ -22,7 +22,7 @@ pub fn send_message_to_server_log(record: &Record) {
 pub enum LogDestination {
     Stderr,
     Csvlog,
-    #[cfg(any(feature = "pg15", feature = "pg16"))]
+    #[cfg(any(feature = "pg15", feature = "pg16", feature = "pg17"))]
     Jsonlog,
 }
 
@@ -75,7 +75,7 @@ fn write_csvlog(record: &Record) {
     write_pipe_chunks(pid, msg.as_bytes(), LogDestination::Csvlog);
 }
 
-#[cfg(any(feature = "pg15", feature = "pg16"))]
+#[cfg(any(feature = "pg15", feature = "pg16", feature = "pg17"))]
 fn write_jsonlog(record: &Record) {
     use std::fmt::Write;
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
@@ -107,7 +107,7 @@ fn write_pipe_chunks(pid: u32, mut msg: &[u8], dest: LogDestination) {
             (LogDestination::Csvlog, true) => b'T',
             (LogDestination::Csvlog, false) => b'F',
         };
-        #[cfg(any(feature = "pg15", feature = "pg16"))]
+        #[cfg(any(feature = "pg15", feature = "pg16", feature = "pg17"))]
         let flags = match dest {
             LogDestination::Stderr => pgrx::pg_sys::PIPE_PROTO_DEST_STDERR,
             LogDestination::Csvlog => pgrx::pg_sys::PIPE_PROTO_DEST_CSVLOG,
@@ -123,7 +123,7 @@ fn write_pipe_chunks(pid: u32, mut msg: &[u8], dest: LogDestination) {
         chunk.extend((pid as i32).to_le_bytes());
         #[cfg(feature = "pg14")]
         chunk.extend((is_last as u8).to_le_bytes());
-        #[cfg(any(feature = "pg15", feature = "pg16"))]
+        #[cfg(any(feature = "pg15", feature = "pg16", feature = "pg17"))]
         chunk.extend((flags as u8).to_le_bytes());
         chunk.extend_from_slice(&msg[..len]);
         msg = &msg[len..];

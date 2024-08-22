@@ -61,7 +61,7 @@ pub fn on_index_write(handle: Handle) {
 }
 
 pub unsafe fn on_object_access(
-    access: pgrx::pg_sys::ObjectAccessType,
+    access: pgrx::pg_sys::ObjectAccessType::Type,
     class_id: Oid,
     object_id: Oid,
     sub_id: i32,
@@ -76,7 +76,7 @@ pub unsafe fn on_object_access(
     if sub_id != 0 {
         return;
     }
-    if access == pgrx::pg_sys::ObjectAccessType_OAT_DROP {
+    if access == pgrx::pg_sys::ObjectAccessType::OAT_DROP {
         let search = pgrx::pg_catalog::PgClass::search_reloid(object_id).unwrap();
         if let Some(pg_class) = search.get() {
             if let Some(()) = check_vector_index(pg_class) {

@@ -83,43 +83,29 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang-16
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-16 128
-      - name: Set up PostgreSQL
-        run: |
-          mkdir -p ~/.pg14/pg_binding && touch ~/.pg14/pg_config && chmod 777 ~/.pg14/pg_config
-          mkdir -p ~/.pg15/pg_binding && touch ~/.pg15/pg_config && chmod 777 ~/.pg15/pg_config
-          mkdir -p ~/.pg16/pg_binding && touch ~/.pg16/pg_config && chmod 777 ~/.pg16/pg_config
-          cp ./vendor/pgrx_binding/pg14_${ARCH}-unknown-linux-gnu.rs ~/.pg14/pg_binding/pg14_raw_bindings.rs
-          cp ./vendor/pgrx_binding/pg15_${ARCH}-unknown-linux-gnu.rs ~/.pg15/pg_binding/pg15_raw_bindings.rs
-          cp ./vendor/pgrx_binding/pg16_${ARCH}-unknown-linux-gnu.rs ~/.pg16/pg_binding/pg16_raw_bindings.rs
-          echo "#!/usr/bin/env bash" >> ~/.pg14/pg_config
-          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg14_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg14/pg_config
-          echo "#!/usr/bin/env bash" >> ~/.pg15/pg_config
-          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg15_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg15/pg_config
-          echo "#!/usr/bin/env bash" >> ~/.pg16/pg_config
-          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg16_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg16/pg_config
       - name: Clippy
         run: |
           cargo clippy --workspace --exclude pgvectors --exclude pyvectors --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$HOME/.pg14/pg_config
-          export PGRX_TARGET_INFO_PATH_PG14=$HOME/.pg14/pg_binding
+          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg14_${ARCH}_debian/pg_config/pg_config
+          export PGRX_TARGET_INFO_PATH_PG14=$(pwd)/vendor/pg14_${ARCH}_debian/pgrx_binding
           cargo clippy --package pgvectors --features pg14 --no-deps --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$HOME/.pg15/pg_config
-          export PGRX_TARGET_INFO_PATH_PG15=$HOME/.pg15/pg_binding
+          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg15_${ARCH}_debian/pg_config/pg_config
+          export PGRX_TARGET_INFO_PATH_PG15=$(pwd)/vendor/pg15_${ARCH}_debian/pgrx_binding
           cargo clippy --package pgvectors --features pg15 --no-deps --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$HOME/.pg16/pg_config
-          export PGRX_TARGET_INFO_PATH_PG16=$HOME/.pg16/pg_binding
+          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg16_${ARCH}_debian/pg_config/pg_config
+          export PGRX_TARGET_INFO_PATH_PG16=$(pwd)/vendor/pg16_${ARCH}_debian/pgrx_binding
           cargo clippy --package pgvectors --features pg16 --no-deps --target $ARCH-unknown-linux-gnu
       - name: Build
         run: |
           cargo build --workspace --exclude pgvectors --exclude pyvectors --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$HOME/.pg14/pg_config
-          export PGRX_TARGET_INFO_PATH_PG14=$HOME/.pg14/pg_binding
+          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg14_${ARCH}_debian/pg_config/pg_config
+          export PGRX_TARGET_INFO_PATH_PG14=$(pwd)/vendor/pg14_${ARCH}_debian/pgrx_binding
           cargo build --package pgvectors --lib --features pg14 --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$HOME/.pg15/pg_config
-          export PGRX_TARGET_INFO_PATH_PG15=$HOME/.pg15/pg_binding
+          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg15_${ARCH}_debian/pg_config/pg_config
+          export PGRX_TARGET_INFO_PATH_PG15=$(pwd)/vendor/pg15_${ARCH}_debian/pgrx_binding
           cargo build --package pgvectors --lib --features pg15 --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$HOME/.pg16/pg_config
-          export PGRX_TARGET_INFO_PATH_PG16=$HOME/.pg16/pg_binding
+          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg16_${ARCH}_debian/pg_config/pg_config
+          export PGRX_TARGET_INFO_PATH_PG16=$(pwd)/vendor/pg16_${ARCH}_debian/pgrx_binding
           cargo build --package pgvectors --lib --features pg16 --target $ARCH-unknown-linux-gnu
       - name: Test
         run: |

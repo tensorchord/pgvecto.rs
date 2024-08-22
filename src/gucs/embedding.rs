@@ -1,6 +1,6 @@
 use super::guc_string_parse;
 use embedding::OpenAIOptions;
-use pgrx::{GucContext, GucFlags, GucRegistry, GucSetting};
+use pgrx::guc::{GucContext, GucFlags, GucRegistry, GucSetting};
 use std::ffi::CStr;
 
 pub fn openai_options() -> OpenAIOptions {

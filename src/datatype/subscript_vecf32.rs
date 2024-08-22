@@ -42,8 +42,8 @@ fn _vectors_vecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Interna
                         pgrx::pg_sys::exprType(subexpr),
                         pgrx::pg_sys::INT4OID,
                         -1,
-                        pgrx::pg_sys::CoercionContext_COERCION_ASSIGNMENT,
-                        pgrx::pg_sys::CoercionForm_COERCE_IMPLICIT_CAST,
+                        pgrx::pg_sys::CoercionContext::COERCION_ASSIGNMENT,
+                        pgrx::pg_sys::CoercionForm::COERCE_IMPLICIT_CAST,
                         -1,
                     );
                     if subexpr.is_null() {
@@ -65,8 +65,8 @@ fn _vectors_vecf32_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Interna
                         pgrx::pg_sys::exprType(subexpr),
                         pgrx::pg_sys::INT4OID,
                         -1,
-                        pgrx::pg_sys::CoercionContext_COERCION_ASSIGNMENT,
-                        pgrx::pg_sys::CoercionForm_COERCE_IMPLICIT_CAST,
+                        pgrx::pg_sys::CoercionContext::COERCION_ASSIGNMENT,
+                        pgrx::pg_sys::CoercionForm::COERCE_IMPLICIT_CAST,
                         -1,
                     );
                     if subexpr.is_null() {

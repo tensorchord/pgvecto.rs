@@ -3,7 +3,7 @@ use crate::error::*;
 use base::scalar::*;
 use base::vector::*;
 use num_traits::Zero;
-use pgrx::Internal;
+use pgrx::datum::Internal;
 
 pub struct SVecf32AggregateAvgSumStype {
     dims: u32,

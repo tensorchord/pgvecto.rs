@@ -136,7 +136,7 @@ unsafe fn rewrite_opclass(istmt: *mut pgrx::pg_sys::IndexStmt) {
             }
             #[cfg(feature = "pg14")]
             let opclass_ptr = (*(opclass_name as *mut pgrx::pg_sys::Value)).val.str_;
-            #[cfg(any(feature = "pg15", feature = "pg16"))]
+            #[cfg(any(feature = "pg15", feature = "pg16", feature = "pg17"))]
             let opclass_ptr = (*(opclass_name as *mut pgrx::pg_sys::String)).sval;
             let opclass = match CStr::from_ptr(opclass_ptr).to_str() {
                 Ok("vector_l2_ops") => "vector_l2_ops",
