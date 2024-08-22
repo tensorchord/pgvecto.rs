@@ -2,7 +2,7 @@ use crate::datatype::memory_vecf32::{Vecf32Input, Vecf32Output};
 use crate::error::*;
 use base::scalar::*;
 use base::vector::*;
-use pgrx::Internal;
+use pgrx::datum::Internal;
 
 #[repr(C, align(8))]
 pub struct Vecf32AggregateAvgSumStype {

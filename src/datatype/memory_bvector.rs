@@ -1,4 +1,6 @@
 use base::vector::*;
+use pgrx::datum::FromDatum;
+use pgrx::datum::IntoDatum;
 use pgrx::pg_sys::Datum;
 use pgrx::pg_sys::Oid;
 use pgrx::pgrx_sql_entity_graph::metadata::ArgumentError;
@@ -6,9 +8,6 @@ use pgrx::pgrx_sql_entity_graph::metadata::Returns;
 use pgrx::pgrx_sql_entity_graph::metadata::ReturnsError;
 use pgrx::pgrx_sql_entity_graph::metadata::SqlMapping;
 use pgrx::pgrx_sql_entity_graph::metadata::SqlTranslatable;
-use pgrx::FromDatum;
-use pgrx::IntoDatum;
-use pgrx::UnboxDatum;
 use std::alloc::Layout;
 use std::ops::Deref;
 use std::ops::DerefMut;
@@ -175,10 +174,10 @@ impl FromDatum for BVectorOutput {
     }
 }
 
-unsafe impl UnboxDatum for BVectorOutput {
+unsafe impl pgrx::datum::UnboxDatum for BVectorOutput {
     type As<'src> = BVectorOutput;
     #[inline]
-    unsafe fn unbox<'src>(d: pgrx::Datum<'src>) -> Self::As<'src>
+    unsafe fn unbox<'src>(d: pgrx::datum::Datum<'src>) -> Self::As<'src>
     where
         Self: 'src,
     {
@@ -214,9 +213,17 @@ unsafe impl SqlTranslatable for BVectorOutput {
     }
 }
 
+unsafe impl<'fcx> pgrx::callconv::ArgAbi<'fcx> for BVectorInput<'fcx> {
+    unsafe fn unbox_arg_unchecked(arg: pgrx::callconv::Arg<'_, 'fcx>) -> Self {
+        unsafe { arg.unbox_arg_using_from_datum().unwrap() }
+    }
+}
+
 unsafe impl pgrx::callconv::BoxRet for BVectorOutput {
-    unsafe fn box_in_fcinfo(self, fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
-        self.into_datum()
-            .unwrap_or_else(|| unsafe { pgrx::fcinfo::pg_return_null(fcinfo) })
+    unsafe fn box_into<'fcx>(
+        self,
+        fcinfo: &mut pgrx::callconv::FcInfo<'fcx>,
+    ) -> pgrx::datum::Datum<'fcx> {
+        unsafe { fcinfo.return_raw_datum(Datum::from(self.into_raw() as *mut ())) }
     }
 }

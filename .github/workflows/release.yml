@@ -78,24 +78,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang-16
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-16 128
-      - name: Set up PostgreSQL
-        run: |
-          mkdir -p ~/.pg14/pg_binding && touch ~/.pg14/pg_config && chmod 777 ~/.pg14/pg_config
-          mkdir -p ~/.pg15/pg_binding && touch ~/.pg15/pg_config && chmod 777 ~/.pg15/pg_config
-          mkdir -p ~/.pg16/pg_binding && touch ~/.pg16/pg_config && chmod 777 ~/.pg16/pg_config
-          cp ./vendor/pgrx_binding/pg14_${ARCH}-unknown-linux-gnu.rs ~/.pg14/pg_binding/pg14_raw_bindings.rs
-          cp ./vendor/pgrx_binding/pg15_${ARCH}-unknown-linux-gnu.rs ~/.pg15/pg_binding/pg15_raw_bindings.rs
-          cp ./vendor/pgrx_binding/pg16_${ARCH}-unknown-linux-gnu.rs ~/.pg16/pg_binding/pg16_raw_bindings.rs
-          echo "#!/usr/bin/env bash" >> ~/.pg14/pg_config
-          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg14_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg14/pg_config
-          echo "#!/usr/bin/env bash" >> ~/.pg15/pg_config
-          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg15_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg15/pg_config
-          echo "#!/usr/bin/env bash" >> ~/.pg16/pg_config
-          echo "$(pwd)/tools/pg_config.sh \"\$@\" < $(pwd)/vendor/pg_config/pg16_${ARCH}-unknown-linux-gnu.txt" >> ~/.pg16/pg_config
       - name: Build
         run: |
-          export PGRX_PG_CONFIG_PATH=$HOME/.pg$VERSION/pg_config
-          export PGRX_TARGET_INFO_PATH_PG$VERSION=$HOME/.pg$VERSION/pg_binding
+          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg${VERSION}_${ARCH}_debian/pg_config/pg_config
+          export PGRX_TARGET_INFO_PATH_PG$VERSION=$(pwd)/vendor/pg${VERSION}_${ARCH}_debian/pgrx_binding
           cargo build --package pgvectors --lib --features pg$VERSION --target $ARCH-unknown-linux-gnu --release
           ./tools/schema.sh --features pg$VERSION --target $ARCH-unknown-linux-gnu --release | expand -t 4 > ./target/schema.sql
       - name: Package

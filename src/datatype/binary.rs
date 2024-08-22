@@ -36,8 +36,10 @@ unsafe impl SqlTranslatable for Bytea {
 }
 
 unsafe impl pgrx::callconv::BoxRet for Bytea {
-    unsafe fn box_in_fcinfo(self, fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Datum {
-        self.into_datum()
-            .unwrap_or_else(|| unsafe { pgrx::fcinfo::pg_return_null(fcinfo) })
+    unsafe fn box_into<'fcx>(
+        self,
+        fcinfo: &mut pgrx::callconv::FcInfo<'fcx>,
+    ) -> pgrx::datum::Datum<'fcx> {
+        unsafe { fcinfo.return_raw_datum(Datum::from(self.0 as *mut ())) }
     }
 }

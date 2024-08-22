@@ -1,6 +1,7 @@
-use pgrx::{GucContext, GucFlags, GucRegistry, GucSetting};
+use pgrx::guc::{GucContext, GucFlags, GucRegistry, GucSetting};
+use pgrx::PostgresGucEnum;
 
-#[derive(Debug, Clone, Copy, pgrx::PostgresGucEnum)]
+#[derive(Debug, Clone, Copy, PostgresGucEnum)]
 #[allow(non_camel_case_types)]
 pub enum Transport {
     unix,

@@ -1,5 +1,4 @@
 use crate::error::*;
-use pgrx::Array;
 use serde::{Deserialize, Serialize};
 use std::ffi::{CStr, CString};
 use std::num::NonZeroU32;
@@ -45,7 +44,7 @@ impl Typmod {
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_typmod_in_65535(list: Array<&CStr>) -> i32 {
+fn _vectors_typmod_in_65535(list: pgrx::datum::Array<&CStr>) -> i32 {
     if list.is_empty() {
         -1
     } else if list.len() == 1 {
@@ -63,7 +62,7 @@ ADVICE: Check if modifier of the type is an integer among 1 and 65535."
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
-fn _vectors_typmod_in_1048575(list: Array<&CStr>) -> i32 {
+fn _vectors_typmod_in_1048575(list: pgrx::datum::Array<&CStr>) -> i32 {
     if list.is_empty() {
         -1
     } else if list.len() == 1 {

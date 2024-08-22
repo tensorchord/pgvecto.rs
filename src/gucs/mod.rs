@@ -1,5 +1,5 @@
 use crate::error::*;
-use pgrx::GucSetting;
+use pgrx::guc::GucSetting;
 use std::ffi::CStr;
 
 pub mod embedding;

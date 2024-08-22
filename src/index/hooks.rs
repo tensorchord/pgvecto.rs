@@ -21,7 +21,7 @@ unsafe extern "C" fn vectors_process_utility(
     pstmt: *mut pgrx::pg_sys::PlannedStmt,
     query_string: *const ::std::os::raw::c_char,
     read_only_tree: bool,
-    context: pgrx::pg_sys::ProcessUtilityContext,
+    context: pgrx::pg_sys::ProcessUtilityContext::Type,
     params: pgrx::pg_sys::ParamListInfo,
     query_env: *mut pgrx::pg_sys::QueryEnvironment,
     dest: *mut pgrx::pg_sys::DestReceiver,
@@ -59,7 +59,7 @@ unsafe extern "C" fn vectors_process_utility(
 
 #[pgrx::pg_guard]
 unsafe extern "C" fn vectors_object_access(
-    access: pgrx::pg_sys::ObjectAccessType,
+    access: pgrx::pg_sys::ObjectAccessType::Type,
     class_id: pgrx::pg_sys::Oid,
     object_id: pgrx::pg_sys::Oid,
     sub_id: i32,
@@ -74,14 +74,17 @@ unsafe extern "C" fn vectors_object_access(
 }
 
 #[pgrx::pg_guard]
-unsafe extern "C" fn xact_callback(event: pgrx::pg_sys::XactEvent, _data: pgrx::void_mut_ptr) {
+unsafe extern "C" fn xact_callback(
+    event: pgrx::pg_sys::XactEvent::Type,
+    _data: pgrx::void_mut_ptr,
+) {
     match event {
-        pgrx::pg_sys::XactEvent_XACT_EVENT_PRE_COMMIT
-        | pgrx::pg_sys::XactEvent_XACT_EVENT_PARALLEL_PRE_COMMIT => unsafe {
+        pgrx::pg_sys::XactEvent::XACT_EVENT_PRE_COMMIT
+        | pgrx::pg_sys::XactEvent::XACT_EVENT_PARALLEL_PRE_COMMIT => unsafe {
             super::catalog::on_commit();
         },
-        pgrx::pg_sys::XactEvent_XACT_EVENT_ABORT
-        | pgrx::pg_sys::XactEvent_XACT_EVENT_PARALLEL_ABORT => unsafe {
+        pgrx::pg_sys::XactEvent::XACT_EVENT_ABORT
+        | pgrx::pg_sys::XactEvent::XACT_EVENT_PARALLEL_ABORT => unsafe {
             super::catalog::on_abort();
         },
         _ => {}

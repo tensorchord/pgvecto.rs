@@ -33,7 +33,7 @@ fn _vectors_fence_vector_index(oid: Oid) {
                     | pgrx::pg_sys::WL_TIMEOUT
                     | pgrx::pg_sys::WL_EXIT_ON_PM_DEATH) as _,
                 1000,
-                pgrx::pg_sys::WaitEventTimeout_WAIT_EVENT_PG_SLEEP,
+                pgrx::pg_sys::WaitEventTimeout::WAIT_EVENT_PG_SLEEP,
             );
             pgrx::pg_sys::ResetLatch(pgrx::pg_sys::MyLatch);
         }

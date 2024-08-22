@@ -21,8 +21,8 @@ fn _vectors_svecf32_normalize(vector: SVecf32Input<'_>) -> SVecf32Output {
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_to_svector(
     dims: i32,
-    index: pgrx::Array<i32>,
-    value: pgrx::Array<f32>,
+    index: pgrx::datum::Array<i32>,
+    value: pgrx::datum::Array<f32>,
 ) -> SVecf32Output {
     let dims = dims as u32;
     check_value_dims_1048575(dims);

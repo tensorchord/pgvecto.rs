@@ -9,7 +9,7 @@ use num_traits::Zero;
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_cast_array_to_vecf32(
-    array: pgrx::Array<f32>,
+    array: pgrx::datum::Array<f32>,
     typmod: i32,
     _explicit: bool,
 ) -> Vecf32Output {
