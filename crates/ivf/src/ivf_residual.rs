@@ -170,7 +170,8 @@ fn select(mut lists: Vec<(f32, usize)>, n: usize) -> Vec<(f32, usize)> {
         return Vec::new();
     }
     let n = n.min(lists.len());
-    lists.select_nth_unstable_by(n - 1, |x, y| f32::total_cmp(&x.0, &y.0));
+    lists.select_nth_unstable_by(n - 1, |(x, _), (y, _)| f32::total_cmp(x, y));
     lists.truncate(n);
+    lists.sort_by(|(x, _), (y, _)| f32::total_cmp(x, y));
     lists
 }
