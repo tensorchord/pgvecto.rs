@@ -112,7 +112,7 @@ impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
         let mut centroids = (0..c)
             .into_par_iter()
             .map(|i| {
-                let mut centroid = S::vector_div_scalar(&sum[i], count[i]);
+                let mut centroid = S::vector_mul_scalar(&sum[i], 1.0 / count[i]);
                 (self.spherical)(&mut centroid);
                 centroid
             })

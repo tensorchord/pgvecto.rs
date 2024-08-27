@@ -70,10 +70,10 @@ impl ScalarLike for f16 {
     }
 
     // FIXME: add manually-implemented SIMD version
-    #[inline(always)]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn reduce_min_max_of_x(this: &[f16]) -> (f32, f32) {
-        let mut min = 0.0f32;
-        let mut max = 0.0f32;
+        let mut min = f32::INFINITY;
+        let mut max = f32::NEG_INFINITY;
         let n = this.len();
         for i in 0..n {
             min = min.min(this[i].to_f32());
@@ -160,13 +160,13 @@ impl ScalarLike for f16 {
     }
 
     #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn vector_div_scalar(lhs: &[f16], rhs: f32) -> Vec<f16> {
+    fn vector_mul_scalar(lhs: &[f16], rhs: f32) -> Vec<f16> {
         let rhs = f16::from_f32(rhs);
         let n = lhs.len();
         let mut r = Vec::<f16>::with_capacity(n);
         for i in 0..n {
             unsafe {
-                r.as_mut_ptr().add(i).write(lhs[i] / rhs);
+                r.as_mut_ptr().add(i).write(lhs[i] * rhs);
             }
         }
         unsafe {
@@ -176,11 +176,11 @@ impl ScalarLike for f16 {
     }
 
     #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn vector_div_scalar_inplace(lhs: &mut [f16], rhs: f32) {
+    fn vector_mul_scalar_inplace(lhs: &mut [f16], rhs: f32) {
         let rhs = f16::from_f32(rhs);
         let n = lhs.len();
         for i in 0..n {
-            lhs[i] /= rhs;
+            lhs[i] *= rhs;
         }
     }
 

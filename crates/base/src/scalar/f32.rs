@@ -68,17 +68,9 @@ impl ScalarLike for f32 {
         x2
     }
 
-    // FIXME: add manually-implemented SIMD version
     #[inline(always)]
     fn reduce_min_max_of_x(this: &[f32]) -> (f32, f32) {
-        let mut min = 0.0f32;
-        let mut max = 0.0f32;
-        let n = this.len();
-        for i in 0..n {
-            min = min.min(this[i]);
-            max = max.max(this[i]);
-        }
-        (min, max)
+        reduce_min_max_of_x::reduce_min_max_of_x(this)
     }
 
     #[inline(always)]
@@ -159,12 +151,12 @@ impl ScalarLike for f32 {
     }
 
     #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn vector_div_scalar(lhs: &[f32], rhs: f32) -> Vec<f32> {
+    fn vector_mul_scalar(lhs: &[f32], rhs: f32) -> Vec<f32> {
         let n = lhs.len();
         let mut r = Vec::<f32>::with_capacity(n);
         for i in 0..n {
             unsafe {
-                r.as_mut_ptr().add(i).write(lhs[i] / rhs);
+                r.as_mut_ptr().add(i).write(lhs[i] * rhs);
             }
         }
         unsafe {
@@ -174,10 +166,10 @@ impl ScalarLike for f32 {
     }
 
     #[detect::multiversion(v4, v3, v2, neon, fallback)]
-    fn vector_div_scalar_inplace(lhs: &mut [f32], rhs: f32) {
+    fn vector_mul_scalar_inplace(lhs: &mut [f32], rhs: f32) {
         let n = lhs.len();
         for i in 0..n {
-            lhs[i] /= rhs;
+            lhs[i] *= rhs;
         }
     }
 
@@ -204,6 +196,147 @@ impl ScalarLike for f32 {
     }
 }
 
+mod reduce_min_max_of_x {
+    // Semanctics of `f32::min` is different from `_mm256_min_ps`,
+    // which may lead to issues...
+
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v4")]
+    unsafe fn reduce_min_max_of_x_v4(this: &[f32]) -> (f32, f32) {
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = this.len();
+            let mut a = this.as_ptr();
+            let mut min = _mm512_set1_ps(f32::INFINITY);
+            let mut max = _mm512_set1_ps(f32::NEG_INFINITY);
+            while n >= 16 {
+                let x = _mm512_loadu_ps(a);
+                a = a.add(16);
+                n -= 16;
+                min = _mm512_min_ps(x, min);
+                max = _mm512_max_ps(x, max);
+            }
+            if n > 0 {
+                let mask = _bzhi_u32(0xffff, n as u32) as u16;
+                let x = _mm512_maskz_loadu_ps(mask, a);
+                min = _mm512_mask_min_ps(min, mask, x, min);
+                max = _mm512_mask_max_ps(max, mask, x, max);
+            }
+            let min = _mm512_reduce_min_ps(min);
+            let max = _mm512_reduce_max_ps(max);
+            (min, max)
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_min_max_of_x_v4_test() {
+        const EPSILON: f32 = 0.0001;
+        detect::init();
+        if !detect::v4::detect() {
+            println!("test {} ... skipped (v4)", module_path!());
+            return;
+        }
+        for _ in 0..300 {
+            let n = 200;
+            let x = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            for z in 50..200 {
+                let x = &x[..z];
+                let specialized = unsafe { reduce_min_max_of_x_v4(x) };
+                let fallback = unsafe { reduce_min_max_of_x_fallback(x) };
+                assert!(
+                    (specialized.0 - fallback.0).abs() < EPSILON,
+                    "min: specialized = {}, fallback = {}.",
+                    specialized.0,
+                    fallback.0,
+                );
+                assert!(
+                    (specialized.1 - fallback.1).abs() < EPSILON,
+                    "max: specialized = {}, fallback = {}.",
+                    specialized.1,
+                    fallback.1,
+                );
+            }
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v3")]
+    unsafe fn reduce_min_max_of_x_v3(this: &[f32]) -> (f32, f32) {
+        use crate::scalar::emulate::emulate_mm256_reduce_max_ps;
+        use crate::scalar::emulate::emulate_mm256_reduce_min_ps;
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = this.len();
+            let mut a = this.as_ptr();
+            let mut min = _mm256_set1_ps(f32::INFINITY);
+            let mut max = _mm256_set1_ps(f32::NEG_INFINITY);
+            while n >= 8 {
+                let x = _mm256_loadu_ps(a);
+                a = a.add(8);
+                n -= 8;
+                min = _mm256_min_ps(x, min);
+                max = _mm256_max_ps(x, max);
+            }
+            let mut min = emulate_mm256_reduce_min_ps(min);
+            let mut max = emulate_mm256_reduce_max_ps(max);
+            // this hint is used to disable loop unrolling
+            while std::hint::black_box(n) > 0 {
+                let x = a.read();
+                a = a.add(1);
+                n -= 1;
+                min = x.min(min);
+                max = x.max(max);
+            }
+            (min, max)
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_min_max_of_x_v3_test() {
+        const EPSILON: f32 = 0.0001;
+        detect::init();
+        if !detect::v3::detect() {
+            println!("test {} ... skipped (v3)", module_path!());
+            return;
+        }
+        for _ in 0..300 {
+            let n = 200;
+            let x = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            for z in 50..200 {
+                let x = &x[..z];
+                let specialized = unsafe { reduce_min_max_of_x_v3(x) };
+                let fallback = unsafe { reduce_min_max_of_x_fallback(x) };
+                assert!(
+                    (specialized.0 - fallback.0).abs() < EPSILON,
+                    "specialized = {}, fallback = {}.",
+                    specialized.0,
+                    fallback.0,
+                );
+                assert!(
+                    (specialized.1 - fallback.1).abs() < EPSILON,
+                    "specialized = {}, fallback = {}.",
+                    specialized.1,
+                    fallback.1,
+                );
+            }
+        }
+    }
+
+    #[detect::multiversion(v4 = import, v3 = import, v2, neon, fallback = export)]
+    pub fn reduce_min_max_of_x(this: &[f32]) -> (f32, f32) {
+        let mut min = f32::INFINITY;
+        let mut max = f32::NEG_INFINITY;
+        let n = this.len();
+        for i in 0..n {
+            min = min.min(this[i]);
+            max = max.max(this[i]);
+        }
+        (min, max)
+    }
+}
+
 mod reduce_sum_of_xy {
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v4")]
@@ -216,8 +349,8 @@ mod reduce_sum_of_xy {
             let mut b = rhs.as_ptr();
             let mut xy = _mm512_setzero_ps();
             while n >= 16 {
-                let x = _mm512_loadu_ps(a.cast());
-                let y = _mm512_loadu_ps(b.cast());
+                let x = _mm512_loadu_ps(a);
+                let y = _mm512_loadu_ps(b);
                 a = a.add(16);
                 b = b.add(16);
                 n -= 16;
@@ -225,8 +358,8 @@ mod reduce_sum_of_xy {
             }
             if n > 0 {
                 let mask = _bzhi_u32(0xffff, n as u32) as u16;
-                let x = _mm512_maskz_loadu_ps(mask, a.cast());
-                let y = _mm512_maskz_loadu_ps(mask, b.cast());
+                let x = _mm512_maskz_loadu_ps(mask, a);
+                let y = _mm512_maskz_loadu_ps(mask, b);
                 xy = _mm512_fmadd_ps(x, y, xy);
             }
             _mm512_reduce_add_ps(xy)
@@ -271,16 +404,16 @@ mod reduce_sum_of_xy {
             let mut b = rhs.as_ptr();
             let mut xy = _mm256_setzero_ps();
             while n >= 8 {
-                let x = _mm256_loadu_ps(a.cast());
-                let y = _mm256_loadu_ps(b.cast());
+                let x = _mm256_loadu_ps(a);
+                let y = _mm256_loadu_ps(b);
                 a = a.add(8);
                 b = b.add(8);
                 n -= 8;
                 xy = _mm256_fmadd_ps(x, y, xy);
             }
             if n >= 4 {
-                let x = _mm256_zextps128_ps256(_mm_loadu_ps(a.cast()));
-                let y = _mm256_zextps128_ps256(_mm_loadu_ps(b.cast()));
+                let x = _mm256_zextps128_ps256(_mm_loadu_ps(a));
+                let y = _mm256_zextps128_ps256(_mm_loadu_ps(b));
                 a = a.add(4);
                 b = b.add(4);
                 n -= 4;
