@@ -208,7 +208,7 @@ impl<'a, S: ScalarLike> VectorBorrowed for SVectBorrowed<'a, S> {
         let l = S::reduce_sum_of_x2(self.values).sqrt();
         let indexes = self.indexes.to_vec();
         let mut values = self.values.to_vec();
-        S::vector_div_scalar_inplace(&mut values, l);
+        S::vector_mul_scalar_inplace(&mut values, 1.0 / l);
         // FIXME: it may panic because of zeros
         SVectOwned::new(self.dims, indexes, values)
     }

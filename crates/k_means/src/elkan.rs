@@ -172,7 +172,7 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
             if count[i] == 0.0f32 {
                 continue;
             }
-            S::vector_div_scalar_inplace(&mut centroids[(i,)], count[i]);
+            S::vector_mul_scalar_inplace(&mut centroids[(i,)], 1.0 / count[i]);
         }
         for i in 0..c {
             if count[i] != 0.0f32 {

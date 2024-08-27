@@ -68,7 +68,7 @@ impl OperatorRabitq for VectL2<f32> {
         ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>),
     ) {
         let dis_v_2 = vector.iter().map(|&x| x * x).sum();
-        let (k, b, qvector) = quantization::quantize::quantize_15(vector);
+        let (k, b, qvector) = quantization::quantize::quantize::<15>(vector);
         let qvector_sum = qvector.iter().fold(0_u32, |x, &y| x + y as u32) as f32;
         let blut = binarize(&qvector);
         let lut = gen(&qvector);

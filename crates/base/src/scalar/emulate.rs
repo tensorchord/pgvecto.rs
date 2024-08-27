@@ -1,3 +1,5 @@
+#![allow(clippy::missing_safety_doc)]
+
 // VP2INTERSECT emulation.
 // Díez-Cañas, G. (2021). Faster-Than-Native Alternatives for x86 VP2INTERSECT
 // Instructions. arXiv preprint arXiv:2112.06342.
@@ -68,5 +70,37 @@ pub unsafe fn emulate_mm256_reduce_add_ps(mut x: std::arch::x86_64::__m256) -> f
         x = _mm256_hadd_ps(x, x);
         x = _mm256_hadd_ps(x, x);
         _mm256_cvtss_f32(x)
+    }
+}
+
+#[inline]
+#[cfg(target_arch = "x86_64")]
+#[detect::target_cpu(enable = "v3")]
+pub unsafe fn emulate_mm256_reduce_min_ps(x: std::arch::x86_64::__m256) -> f32 {
+    use crate::aligned::Aligned16;
+    unsafe {
+        use std::arch::x86_64::*;
+        let lo = _mm256_castps256_ps128(x);
+        let hi = _mm256_extractf128_ps(x, 1);
+        let min = _mm_min_ps(lo, hi);
+        let mut x = Aligned16([0.0f32; 4]);
+        _mm_store_ps(x.0.as_mut_ptr(), min);
+        f32::min(f32::min(x.0[0], x.0[1]), f32::min(x.0[2], x.0[3]))
+    }
+}
+
+#[inline]
+#[cfg(target_arch = "x86_64")]
+#[detect::target_cpu(enable = "v3")]
+pub unsafe fn emulate_mm256_reduce_max_ps(x: std::arch::x86_64::__m256) -> f32 {
+    use crate::aligned::Aligned16;
+    unsafe {
+        use std::arch::x86_64::*;
+        let lo = _mm256_castps256_ps128(x);
+        let hi = _mm256_extractf128_ps(x, 1);
+        let max = _mm_max_ps(lo, hi);
+        let mut x = Aligned16([0.0f32; 4]);
+        _mm_store_ps(x.0.as_mut_ptr(), max);
+        f32::max(f32::max(x.0[0], x.0[1]), f32::max(x.0[2], x.0[3]))
     }
 }

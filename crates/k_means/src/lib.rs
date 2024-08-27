@@ -73,7 +73,7 @@ pub fn k_means_lookup_many<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> 
 
 fn spherical<S: ScalarLike>(vector: &mut [S]) {
     let l = S::reduce_sum_of_x2(vector).sqrt();
-    S::vector_div_scalar_inplace(vector, l);
+    S::vector_mul_scalar_inplace(vector, 1.0 / l);
 }
 
 fn dummy<S: ScalarLike>(_: &mut [S]) {}

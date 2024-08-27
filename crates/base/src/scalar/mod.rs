@@ -1,5 +1,5 @@
 pub mod bit;
-mod emulate;
+pub mod emulate;
 mod f16;
 mod f32;
 pub mod impossible;
@@ -44,8 +44,8 @@ pub trait ScalarLike:
     fn vector_add_inplace(lhs: &mut [Self], rhs: &[Self]);
     fn vector_sub(lhs: &[Self], rhs: &[Self]) -> Vec<Self>;
     fn vector_mul(lhs: &[Self], rhs: &[Self]) -> Vec<Self>;
-    fn vector_div_scalar(lhs: &[Self], rhs: f32) -> Vec<Self>;
-    fn vector_div_scalar_inplace(lhs: &mut [Self], rhs: f32);
+    fn vector_mul_scalar(lhs: &[Self], rhs: f32) -> Vec<Self>;
+    fn vector_mul_scalar_inplace(lhs: &mut [Self], rhs: f32);
 
     fn kmeans_helper(this: &mut [Self], x: f32, y: f32);
 }

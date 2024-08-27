@@ -109,11 +109,11 @@ impl ScalarLike for Impossible {
         unimplemented!()
     }
 
-    fn vector_div_scalar(_lhs: &[Self], _rhs: f32) -> Vec<Self> {
+    fn vector_mul_scalar(_lhs: &[Self], _rhs: f32) -> Vec<Self> {
         unimplemented!()
     }
 
-    fn vector_div_scalar_inplace(_lhs: &mut [Self], _rhs: f32) {
+    fn vector_mul_scalar_inplace(_lhs: &mut [Self], _rhs: f32) {
         unimplemented!()
     }
 

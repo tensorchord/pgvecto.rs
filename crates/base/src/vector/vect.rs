@@ -132,7 +132,7 @@ impl<'a, S: ScalarLike> VectorBorrowed for VectBorrowed<'a, S> {
     fn function_normalize(&self) -> VectOwned<S> {
         let mut data = self.0.to_vec();
         let l = S::reduce_sum_of_x2(&data).sqrt();
-        S::vector_div_scalar_inplace(&mut data, l);
+        S::vector_mul_scalar_inplace(&mut data, 1.0 / l);
         VectOwned(data)
     }
 
