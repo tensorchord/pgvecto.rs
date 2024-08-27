@@ -147,43 +147,41 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
         {
             use crate::fast_scan::b4::{fast_scan, BLOCK_SIZE};
             use crate::quantize::{dequantize, quantize};
+            let (k, b, lut) = quantize::<255>(&O::fast_scan(preprocessed));
             let s = rhs.start.next_multiple_of(BLOCK_SIZE);
             let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
-            heap.extend((rhs.start..s).map(|u| {
-                (
-                    Reverse(self.process(preprocessed, {
-                        let bytes = self.bytes() as usize;
-                        let start = u as usize * bytes;
-                        let end = start + bytes;
-                        &codes[start..end]
-                    })),
-                    AlwaysEqual(u),
-                )
-            }));
-            let (k, b, lut) = quantize::<255>(&O::fast_scan(preprocessed));
+            if rhs.start != s {
+                let i = s - BLOCK_SIZE;
+                let bytes = width as usize * 16;
+                let start = (i / BLOCK_SIZE) as usize * bytes;
+                let end = start + bytes;
+                let res = fast_scan(width, &packed_codes[start..end], &lut);
+                let r = res.map(|x| O::fast_scan_resolve(dequantize(width, k, b, x)));
+                heap.extend({
+                    (rhs.start..s).map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
+                });
+            }
             for i in (s..e).step_by(BLOCK_SIZE as _) {
                 let bytes = width as usize * 16;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
+                let res = fast_scan(width, &packed_codes[start..end], &lut);
+                let r = res.map(|x| O::fast_scan_resolve(dequantize(width, k, b, x)));
                 heap.extend({
-                    let res = fast_scan(width, &packed_codes[start..end], &lut);
-                    let r = res.map(|x| O::fast_scan_resolve(dequantize(width, k, b, x)));
-                    (i..i + BLOCK_SIZE)
-                        .map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
-                        .collect::<Vec<_>>()
+                    (i..i + BLOCK_SIZE).map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
                 });
             }
-            heap.extend((e..rhs.end).map(|u| {
-                (
-                    Reverse(self.process(preprocessed, {
-                        let bytes = self.bytes() as usize;
-                        let start = u as usize * bytes;
-                        let end = start + bytes;
-                        &codes[start..end]
-                    })),
-                    AlwaysEqual(u),
-                )
-            }));
+            if e != rhs.end {
+                let i = e;
+                let bytes = width as usize * 16;
+                let start = (i / BLOCK_SIZE) as usize * bytes;
+                let end = start + bytes;
+                let res = fast_scan(width, &packed_codes[start..end], &lut);
+                let r = res.map(|x| O::fast_scan_resolve(dequantize(width, k, b, x)));
+                heap.extend({
+                    (e..rhs.end).map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
+                });
+            }
             return;
         }
         heap.extend(rhs.map(|u| {
