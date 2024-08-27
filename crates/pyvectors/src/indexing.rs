@@ -3,26 +3,27 @@ use base::index::{IndexOptions, SearchOptions};
 use base::operator::*;
 use base::search::{Collection, Element, Pointer, Source, Vectors};
 use base::vector::*;
+use half::f16;
 use std::path::Path;
 
 #[allow(dead_code)]
 pub enum Indexing {
-    Vecf32Dot(indexing::SealedIndexing<Vecf32Dot>),
-    Vecf32L2(indexing::SealedIndexing<Vecf32L2>),
-    Vecf16Dot(indexing::SealedIndexing<Vecf16Dot>),
-    Vecf16L2(indexing::SealedIndexing<Vecf16L2>),
+    Vecf32Dot(indexing::SealedIndexing<VectDot<f32>>),
+    Vecf32L2(indexing::SealedIndexing<VectL2<f32>>),
+    Vecf16Dot(indexing::SealedIndexing<VectDot<f16>>),
+    Vecf16L2(indexing::SealedIndexing<VectL2<f16>>),
     BVectorDot(indexing::SealedIndexing<BVectorDot>),
     BVectorHamming(indexing::SealedIndexing<BVectorHamming>),
     BVectorJaccard(indexing::SealedIndexing<BVectorJaccard>),
-    SVecf32Dot(indexing::SealedIndexing<SVecf32Dot>),
-    SVecf32L2(indexing::SealedIndexing<SVecf32L2>),
+    SVecf32Dot(indexing::SealedIndexing<SVectDot<f32>>),
+    SVecf32L2(indexing::SealedIndexing<SVectL2<f32>>),
 }
 
 impl Indexing {
     pub fn create(
         path: impl AsRef<Path>,
         index_options: IndexOptions,
-        source: impl Vectors<Vecf32Owned> + Collection + Source + Sync,
+        source: impl Vectors<VectOwned<f32>> + Collection + Source + Sync,
     ) -> Self {
         let path = path.as_ref();
         match (index_options.vector.v, index_options.vector.d) {

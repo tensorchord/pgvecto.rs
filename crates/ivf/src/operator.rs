@@ -1,94 +1,122 @@
 use base::operator::*;
+use base::scalar::impossible::Impossible;
+use base::scalar::ScalarLike;
+use base::search::Vectors;
 use base::vector::*;
-use num_traits::Zero;
+use common::vec2::Vec2;
 use quantization::operator::OperatorQuantization;
 use storage::OperatorStorage;
 
 pub trait OperatorIvf: OperatorQuantization + OperatorStorage {
-    const RESIDUAL: bool;
-    fn residual(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> Owned<Self>;
+    const SUPPORT: bool;
+    type Scalar: ScalarLike;
+    fn sample(vectors: &impl Vectors<Self::Vector>) -> Vec2<<Self as OperatorIvf>::Scalar>;
+    fn interpret(vector: Borrowed<'_, Self>) -> &[<Self as OperatorIvf>::Scalar];
+    const SUPPORT_RESIDUAL: bool;
+    fn residual(lhs: Borrowed<'_, Self>, rhs: &[<Self as OperatorIvf>::Scalar]) -> Owned<Self>;
 }
 
 impl OperatorIvf for BVectorDot {
-    const RESIDUAL: bool = false;
-    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
+    const SUPPORT: bool = false;
+    type Scalar = Impossible;
+    fn sample(_: &impl Vectors<Self::Vector>) -> Vec2<<Self as OperatorIvf>::Scalar> {
+        unimplemented!()
+    }
+    fn interpret(_: Borrowed<'_, Self>) -> &[<Self as OperatorIvf>::Scalar] {
+        unimplemented!()
+    }
+    const SUPPORT_RESIDUAL: bool = false;
+    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[<Self as OperatorIvf>::Scalar]) -> Owned<Self> {
         unimplemented!()
     }
 }
 
 impl OperatorIvf for BVectorJaccard {
-    const RESIDUAL: bool = false;
-    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
+    const SUPPORT: bool = false;
+    type Scalar = Impossible;
+    fn sample(_: &impl Vectors<Self::Vector>) -> Vec2<<Self as OperatorIvf>::Scalar> {
+        unimplemented!()
+    }
+    fn interpret(_: Borrowed<'_, Self>) -> &[<Self as OperatorIvf>::Scalar] {
+        unimplemented!()
+    }
+    const SUPPORT_RESIDUAL: bool = false;
+    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[<Self as OperatorIvf>::Scalar]) -> Owned<Self> {
         unimplemented!()
     }
 }
 
 impl OperatorIvf for BVectorHamming {
-    const RESIDUAL: bool = false;
-    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
+    const SUPPORT: bool = false;
+    type Scalar = Impossible;
+    fn sample(_: &impl Vectors<Self::Vector>) -> Vec2<<Self as OperatorIvf>::Scalar> {
+        unimplemented!()
+    }
+    fn interpret(_: Borrowed<'_, Self>) -> &[<Self as OperatorIvf>::Scalar] {
+        unimplemented!()
+    }
+    const SUPPORT_RESIDUAL: bool = false;
+    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[<Self as OperatorIvf>::Scalar]) -> Owned<Self> {
         unimplemented!()
     }
 }
 
-impl OperatorIvf for SVecf32Dot {
-    const RESIDUAL: bool = false;
-    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
+impl OperatorIvf for SVectDot<f32> {
+    const SUPPORT: bool = false;
+    type Scalar = Impossible;
+    fn sample(_: &impl Vectors<Self::Vector>) -> Vec2<<Self as OperatorIvf>::Scalar> {
+        unimplemented!()
+    }
+    fn interpret(_: Borrowed<'_, Self>) -> &[<Self as OperatorIvf>::Scalar] {
+        unimplemented!()
+    }
+    const SUPPORT_RESIDUAL: bool = false;
+    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[<Self as OperatorIvf>::Scalar]) -> Owned<Self> {
         unimplemented!()
     }
 }
 
-impl OperatorIvf for SVecf32L2 {
-    const RESIDUAL: bool = true;
-    fn residual(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> Owned<Self> {
-        assert_eq!(lhs.dims() as usize, rhs.len());
-        let n = lhs.dims();
-        let mut indexes = Vec::new();
-        let mut values = Vec::new();
-        let mut j = 0_usize;
-        for i in 0..n {
-            if lhs.indexes().get(j).copied() == Some(i) {
-                let val = lhs.values()[j] - rhs[j];
-                if !val.is_zero() {
-                    indexes.push(i);
-                    values.push(val);
-                }
-                j += 1;
-            } else {
-                let val = -rhs[j];
-                if !val.is_zero() {
-                    indexes.push(i);
-                    values.push(val);
-                }
-            }
-        }
-        SVecf32Owned::new(lhs.dims(), indexes, values)
+impl OperatorIvf for SVectL2<f32> {
+    const SUPPORT: bool = false;
+    type Scalar = Impossible;
+    fn sample(_: &impl Vectors<Self::Vector>) -> Vec2<<Self as OperatorIvf>::Scalar> {
+        unimplemented!()
     }
-}
-
-impl OperatorIvf for Vecf32Dot {
-    const RESIDUAL: bool = false;
-    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
+    fn interpret(_: Borrowed<'_, Self>) -> &[<Self as OperatorIvf>::Scalar] {
+        unimplemented!()
+    }
+    const SUPPORT_RESIDUAL: bool = false;
+    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[<Self as OperatorIvf>::Scalar]) -> Owned<Self> {
         unimplemented!()
     }
 }
 
-impl OperatorIvf for Vecf32L2 {
-    const RESIDUAL: bool = true;
-    fn residual(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> Owned<Self> {
-        lhs.operator_minus(Vecf32Borrowed::new(rhs))
+impl<S: ScalarLike> OperatorIvf for VectDot<S> {
+    const SUPPORT: bool = true;
+    type Scalar = S;
+    fn sample(vectors: &impl Vectors<Self::Vector>) -> Vec2<<Self as OperatorIvf>::Scalar> {
+        common::sample::sample(vectors.len(), vectors.dims(), |i| vectors.vector(i).slice())
     }
-}
-
-impl OperatorIvf for Vecf16Dot {
-    const RESIDUAL: bool = false;
-    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Scalar<Self>]) -> Owned<Self> {
+    fn interpret(x: Borrowed<'_, Self>) -> &[<Self as OperatorIvf>::Scalar] {
+        x.slice()
+    }
+    const SUPPORT_RESIDUAL: bool = false;
+    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[S]) -> Owned<Self> {
         unimplemented!()
     }
 }
 
-impl OperatorIvf for Vecf16L2 {
-    const RESIDUAL: bool = true;
-    fn residual(lhs: Borrowed<'_, Self>, rhs: &[Scalar<Self>]) -> Owned<Self> {
-        lhs.operator_minus(Vecf16Borrowed::new(rhs))
+impl<S: ScalarLike> OperatorIvf for VectL2<S> {
+    const SUPPORT: bool = true;
+    type Scalar = S;
+    fn sample(vectors: &impl Vectors<Self::Vector>) -> Vec2<<Self as OperatorIvf>::Scalar> {
+        common::sample::sample(vectors.len(), vectors.dims(), |i| vectors.vector(i).slice())
+    }
+    fn interpret(x: Borrowed<'_, Self>) -> &[<Self as OperatorIvf>::Scalar] {
+        x.slice()
+    }
+    const SUPPORT_RESIDUAL: bool = true;
+    fn residual(lhs: Borrowed<'_, Self>, rhs: &[S]) -> Owned<Self> {
+        lhs.operator_sub(VectBorrowed::new(rhs))
     }
 }

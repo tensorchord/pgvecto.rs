@@ -1,10 +1,8 @@
+pub mod bit;
+mod emulate;
+mod f16;
 mod f32;
-mod half_f16;
-
-use std::iter::Sum;
-
-pub use f32::F32;
-pub use half_f16::F16;
+pub mod impossible;
 
 pub trait ScalarLike:
     Copy
@@ -13,17 +11,41 @@ pub trait ScalarLike:
     + std::fmt::Debug
     + serde::Serialize
     + for<'a> serde::Deserialize<'a>
-    + Ord
-    + num_traits::Float
-    + num_traits::NumAssignOps
     + Default
     + crate::pod::Pod
-    + Sum
+    + 'static
+    + PartialEq
+    + PartialOrd
 {
+    fn zero() -> Self;
+    fn infinity() -> Self;
+    fn mask(self, m: bool) -> Self;
+    fn scalar_neg(this: Self) -> Self;
+    fn scalar_add(lhs: Self, rhs: Self) -> Self;
+    fn scalar_sub(lhs: Self, rhs: Self) -> Self;
+    fn scalar_mul(lhs: Self, rhs: Self) -> Self;
+
     fn from_f32(x: f32) -> Self;
     fn to_f32(self) -> f32;
-    fn from_f(x: F32) -> Self;
-    fn to_f(self) -> F32;
 
-    fn impl_l2(lhs: &[Self], rhs: &[Self]) -> F32;
+    fn reduce_sum_of_x(lhs: &[Self]) -> f32;
+    fn reduce_sum_of_x2(this: &[Self]) -> f32;
+    fn reduce_min_max_of_x(this: &[Self]) -> (f32, f32);
+
+    fn reduce_sum_of_xy(lhs: &[Self], rhs: &[Self]) -> f32;
+    fn reduce_sum_of_d2(lhs: &[Self], rhs: &[Self]) -> f32;
+
+    fn reduce_sum_of_sparse_xy(lidx: &[u32], lval: &[Self], ridx: &[u32], rval: &[Self]) -> f32;
+    fn reduce_sum_of_sparse_d2(lidx: &[u32], lval: &[Self], ridx: &[u32], rval: &[Self]) -> f32;
+
+    fn vector_from_f32(this: &[f32]) -> Vec<Self>;
+    fn vector_to_f32(this: &[Self]) -> Vec<f32>;
+    fn vector_add(lhs: &[Self], rhs: &[Self]) -> Vec<Self>;
+    fn vector_add_inplace(lhs: &mut [Self], rhs: &[Self]);
+    fn vector_sub(lhs: &[Self], rhs: &[Self]) -> Vec<Self>;
+    fn vector_mul(lhs: &[Self], rhs: &[Self]) -> Vec<Self>;
+    fn vector_div_scalar(lhs: &[Self], rhs: f32) -> Vec<Self>;
+    fn vector_div_scalar_inplace(lhs: &mut [Self], rhs: f32);
+
+    fn kmeans_helper(this: &mut [Self], x: f32, y: f32);
 }

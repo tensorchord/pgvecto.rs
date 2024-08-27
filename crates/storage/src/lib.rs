@@ -3,7 +3,7 @@ mod svec;
 mod vec;
 
 use base::operator::*;
-use base::scalar::*;
+use base::scalar::ScalarLike;
 use base::search::*;
 use base::vector::VectorOwned;
 use std::path::Path;
@@ -17,28 +17,20 @@ pub trait OperatorStorage: Operator {
     type Storage: Storage<Owned<Self>> + Send + Sync;
 }
 
-impl OperatorStorage for SVecf32Dot {
-    type Storage = svec::SVecStorage;
+impl<S: ScalarLike> OperatorStorage for SVectDot<S> {
+    type Storage = svec::SVecStorage<S>;
 }
 
-impl OperatorStorage for SVecf32L2 {
-    type Storage = svec::SVecStorage;
+impl<S: ScalarLike> OperatorStorage for SVectL2<S> {
+    type Storage = svec::SVecStorage<S>;
 }
 
-impl OperatorStorage for Vecf16Dot {
-    type Storage = vec::VecStorage<F16>;
+impl<S: ScalarLike> OperatorStorage for VectDot<S> {
+    type Storage = vec::VecStorage<S>;
 }
 
-impl OperatorStorage for Vecf16L2 {
-    type Storage = vec::VecStorage<F16>;
-}
-
-impl OperatorStorage for Vecf32Dot {
-    type Storage = vec::VecStorage<F32>;
-}
-
-impl OperatorStorage for Vecf32L2 {
-    type Storage = vec::VecStorage<F32>;
+impl<S: ScalarLike> OperatorStorage for VectL2<S> {
+    type Storage = vec::VecStorage<S>;
 }
 
 impl OperatorStorage for BVectorDot {

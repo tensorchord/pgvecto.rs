@@ -1,7 +1,7 @@
 // This module is a workaround for orphan rules
 
 use crate::distance::Distance;
-use crate::scalar::{F16, F32};
+use crate::scalar::impossible::Impossible;
 use crate::search::Payload;
 
 /// # Safety
@@ -25,14 +25,15 @@ unsafe impl Pod for i64 {}
 unsafe impl Pod for i128 {}
 unsafe impl Pod for isize {}
 
+unsafe impl Pod for half::f16 {}
 unsafe impl Pod for f32 {}
 unsafe impl Pod for f64 {}
 
-unsafe impl Pod for F16 {}
-unsafe impl Pod for F32 {}
-
 unsafe impl Pod for Payload {}
 unsafe impl Pod for Distance {}
+
+// FIXME: it's not inhabited
+unsafe impl Pod for Impossible {}
 
 pub fn bytes_of<T: Pod>(t: &T) -> &[u8] {
     unsafe { core::slice::from_raw_parts(std::ptr::addr_of!(*t) as *const u8, size_of::<T>()) }

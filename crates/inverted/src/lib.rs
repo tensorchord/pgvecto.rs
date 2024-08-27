@@ -7,7 +7,7 @@ use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
 use base::index::{IndexOptions, SearchOptions};
 use base::operator::{Borrowed, Owned};
-use base::scalar::{ScalarLike, F32};
+use base::scalar::ScalarLike;
 use base::search::{Collection, Element, Payload, Source, Vectors};
 use common::json::Json;
 use common::mmap_array::MmapArray;
@@ -18,7 +18,7 @@ use std::collections::BinaryHeap;
 use std::fs::create_dir;
 use std::path::Path;
 
-const ZERO: F32 = F32(0.0);
+const ZERO: f32 = 0.0f32;
 
 #[allow(dead_code)]
 pub struct InvertedIndex<O: OperatorInvertedIndex> {
@@ -26,7 +26,7 @@ pub struct InvertedIndex<O: OperatorInvertedIndex> {
     payloads: MmapArray<Payload>,
     indexes: Json<Vec<u32>>,
     offsets: Json<Vec<u32>>,
-    scores: Json<Vec<F32>>,
+    scores: Json<Vec<f32>>,
 }
 
 impl<O: OperatorInvertedIndex> InvertedIndex<O> {
@@ -59,7 +59,7 @@ impl<O: OperatorInvertedIndex> InvertedIndex<O> {
         let mut candidates: BinaryHeap<(Distance, AlwaysEqual<u32>)> = doc_score
             .iter()
             .enumerate()
-            .map(|(i, score)| (Distance::from(-score.0), AlwaysEqual(i as u32)))
+            .map(|(i, score)| (Distance::from(-score), AlwaysEqual(i as u32)))
             .collect::<Vec<_>>()
             .into();
         Box::new(std::iter::from_fn(move || {
@@ -97,7 +97,7 @@ fn from_nothing<O: OperatorInvertedIndex>(
     let mut token_collection = vec![Vec::new(); opts.vector.dims as usize];
     for i in 0..collection.len() {
         for (token, score) in O::to_index_vec(collection.vector(i)) {
-            token_collection[token as usize].push((i, score.to_f()));
+            token_collection[token as usize].push((i, score.to_f32()));
         }
     }
     let (indexes, offsets, scores) = build_compressed_matrix(token_collection);
@@ -135,8 +135,8 @@ fn open<O: OperatorInvertedIndex>(path: impl AsRef<Path>) -> InvertedIndex<O> {
 }
 
 fn build_compressed_matrix(
-    token_collection: Vec<Vec<(u32, F32)>>,
-) -> (Vec<u32>, Vec<u32>, Vec<F32>) {
+    token_collection: Vec<Vec<(u32, f32)>>,
+) -> (Vec<u32>, Vec<u32>, Vec<f32>) {
     let mut indexes = Vec::new();
     let mut offsets = Vec::new();
     let mut scores = Vec::new();

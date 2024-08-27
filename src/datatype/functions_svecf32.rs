@@ -32,14 +32,14 @@ fn _vectors_to_svector(
     if index.contains_nulls() || value.contains_nulls() {
         bad_literal("Index or value contains nulls.");
     }
-    let mut vector: Vec<(u32, F32)> = index
+    let mut vector: Vec<(u32, f32)> = index
         .iter_deny_null()
         .zip(value.iter_deny_null())
         .map(|(index, value)| {
             if index < 0 || index as u32 >= dims {
                 bad_literal("Index out of bound.");
             }
-            (index as u32, F32(value))
+            (index as u32, value)
         })
         .collect();
     vector.sort_unstable_by_key(|x| x.0);
@@ -52,10 +52,10 @@ fn _vectors_to_svector(
     }
 
     let mut indexes = Vec::<u32>::with_capacity(vector.len());
-    let mut values = Vec::<F32>::with_capacity(vector.len());
+    let mut values = Vec::<f32>::with_capacity(vector.len());
     for x in vector {
         indexes.push(x.0);
         values.push(x.1);
     }
-    SVecf32Output::new(SVecf32Borrowed::new(dims, &indexes, &values))
+    SVecf32Output::new(SVectBorrowed::new(dims, &indexes, &values))
 }

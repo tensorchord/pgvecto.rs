@@ -22,7 +22,7 @@ fn _vectors_vecf16_in(input: &CStr, _oid: Oid, typmod: i32) -> Vecf16Output {
         Ok(vector) => {
             let dims = u32::try_from(vector.len()).expect("input is too large");
             check_value_dims_65535(dims);
-            Vecf16Output::new(Vecf16Borrowed::new(&vector))
+            Vecf16Output::new(VectBorrowed::new(&vector))
         }
     }
 }

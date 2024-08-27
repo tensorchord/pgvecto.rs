@@ -3,9 +3,7 @@ use crate::operator::OperatorRabitq;
 use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
 use base::index::VectorOptions;
-use base::scalar::F32;
 use base::search::RerankerPop;
-use num_traits::Float;
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
 use std::marker::PhantomData;
@@ -47,17 +45,17 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         self.dims
     }
 
-    pub fn encode(&self, vector: &[F32]) -> (F32, F32, F32, F32, Vec<u8>) {
-        let dis_u = vector.iter().map(|&x| x * x).sum::<F32>().sqrt();
-        let sum_of_abs_x = vector.iter().map(|x| x.abs()).sum::<F32>();
-        let sum_of_x_2 = vector.iter().map(|&x| x * x).sum::<F32>();
-        let x0 = sum_of_abs_x / (sum_of_x_2 * F32(self.dims as _)).sqrt();
+    pub fn encode(&self, vector: &[f32]) -> (f32, f32, f32, f32, Vec<u8>) {
+        let dis_u = vector.iter().map(|&x| x * x).sum::<f32>().sqrt();
+        let sum_of_abs_x = vector.iter().map(|x| x.abs()).sum::<f32>();
+        let sum_of_x_2 = vector.iter().map(|&x| x * x).sum::<f32>();
+        let x0 = sum_of_abs_x / (sum_of_x_2 * (self.dims as f32)).sqrt();
         let x_x0 = dis_u / x0;
-        let fac_norm = F32(self.dims as f32).sqrt();
-        let max_x1 = F32(1.0) / F32((self.dims as f32 - 1.0).sqrt());
-        let factor_err = F32(2.0) * max_x1 * (x_x0 * x_x0 - dis_u * dis_u).sqrt();
-        let factor_ip = F32(-2.0) / fac_norm * x_x0;
-        let factor_ppc = factor_ip * vector.iter().map(|x| x.signum()).sum::<F32>();
+        let fac_norm = (self.dims as f32).sqrt();
+        let max_x1 = 1.0f32 / (self.dims as f32 - 1.0).sqrt();
+        let factor_err = 2.0f32 * max_x1 * (x_x0 * x_x0 - dis_u * dis_u).sqrt();
+        let factor_ip = -2.0f32 / fac_norm * x_x0;
+        let factor_ppc = factor_ip * vector.iter().map(|x| x.signum()).sum::<f32>();
         let mut codes = Vec::new();
         for i in 0..self.dims {
             codes.push(vector[i as usize].is_sign_positive() as u8);
@@ -67,7 +65,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
 
     pub fn preprocess(
         &self,
-        lhs: &[F32],
+        lhs: &[f32],
     ) -> (O::QuantizationPreprocessed0, O::QuantizationPreprocessed1) {
         O::rabitq_quantization_preprocess(lhs)
     }
@@ -76,21 +74,21 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         &self,
         p0: &O::QuantizationPreprocessed0,
         p1: &O::QuantizationPreprocessed1,
-        (a, b, c, d, e): (F32, F32, F32, F32, &[u8]),
+        (a, b, c, d, e): (f32, f32, f32, f32, &[u8]),
     ) -> Distance {
         let (est, _) = O::rabitq_quantization_process(a, b, c, d, e, p0, p1);
-        Distance::from(est.0)
+        Distance::from(est)
     }
 
     pub fn process_lowerbound(
         &self,
         p0: &O::QuantizationPreprocessed0,
         p1: &O::QuantizationPreprocessed1,
-        (a, b, c, d, e): (F32, F32, F32, F32, &[u8]),
-        epsilon: F32,
+        (a, b, c, d, e): (f32, f32, f32, f32, &[u8]),
+        epsilon: f32,
     ) -> Distance {
         let (est, err) = O::rabitq_quantization_process(a, b, c, d, e, p0, p1);
-        Distance::from((est - err * epsilon).0)
+        Distance::from(est - err * epsilon)
     }
 
     pub fn push_batch(
@@ -100,8 +98,8 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         codes: &[u8],
         packed_codes: &[u8],
-        meta: &[F32],
-        epsilon: F32,
+        meta: &[f32],
+        epsilon: f32,
         fast_scan: bool,
     ) {
         if fast_scan && O::SUPPORT_FAST_SCAN && quantization::fast_scan::b4::is_supported() {
@@ -147,7 +145,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                                     let param = res[(u - i) as usize];
                                     let (est, err) =
                                         O::rabitq_quantization_process_1(a, b, c, d, p0, param);
-                                    Distance::from((est - err * epsilon).0)
+                                    Distance::from(est - err * epsilon)
                                 }),
                                 AlwaysEqual(u),
                             )

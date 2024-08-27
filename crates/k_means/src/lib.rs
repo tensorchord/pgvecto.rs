@@ -8,7 +8,6 @@ pub mod quick_centers;
 use base::scalar::*;
 use common::vec2::Vec2;
 use kmeans1d::kmeans1d;
-use num_traits::Float;
 use stoppable_rayon as rayon;
 
 pub fn k_means<S: ScalarLike>(c: usize, mut samples: Vec2<S>, is_spherical: bool) -> Vec2<S> {
@@ -26,7 +25,9 @@ pub fn k_means<S: ScalarLike>(c: usize, mut samples: Vec2<S>, is_spherical: bool
         return quick_centers::quick_centers(c, samples);
     }
     if dims == 1 {
-        return Vec2::from_vec((c, 1), kmeans1d(c, samples.as_slice()));
+        let samples = S::vector_to_f32(samples.as_slice());
+        let centroids = S::vector_from_f32(&kmeans1d(c, samples.as_slice()));
+        return Vec2::from_vec((c, 1), centroids);
     }
     if dims < 16 || samples.shape_0() < 1024 || rayon::current_num_threads() <= 1 {
         let mut elkan_k_means = elkan::ElkanKMeans::<S, _>::new(c, samples, spherical);
@@ -50,34 +51,29 @@ pub fn k_means<S: ScalarLike>(c: usize, mut samples: Vec2<S>, is_spherical: bool
 
 pub fn k_means_lookup<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> usize {
     assert_ne!(centroids.shape_0(), 0);
-    let mut result = (F32::infinity(), 0);
+    let mut result = (f32::INFINITY, 0);
     for i in 0..centroids.shape_0() {
-        let dis = S::impl_l2(vector, &centroids[(i,)]);
-        result = std::cmp::min(result, (dis, i));
+        let dis = S::reduce_sum_of_d2(vector, &centroids[(i,)]);
+        if dis <= result.0 {
+            result = (dis, i);
+        }
     }
     result.1
 }
 
-pub fn k_means_lookup_many<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> Vec<(F32, usize)> {
+pub fn k_means_lookup_many<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> Vec<(f32, usize)> {
     assert_ne!(centroids.shape_0(), 0);
     let mut seq = Vec::new();
     for i in 0..centroids.shape_0() {
-        let dis = S::impl_l2(vector, &centroids[(i,)]);
+        let dis = S::reduce_sum_of_d2(vector, &centroids[(i,)]);
         seq.push((dis, i));
     }
     seq
 }
 
 fn spherical<S: ScalarLike>(vector: &mut [S]) {
-    let n = vector.len();
-    let mut dot = F32(0.0);
-    for i in 0..n {
-        dot += vector[i].to_f() * vector[i].to_f();
-    }
-    let l = dot.sqrt();
-    for i in 0..n {
-        vector[i] /= S::from_f(l);
-    }
+    let l = S::reduce_sum_of_x2(vector).sqrt();
+    S::vector_div_scalar_inplace(vector, l);
 }
 
 fn dummy<S: ScalarLike>(_: &mut [S]) {}

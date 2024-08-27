@@ -45,8 +45,8 @@ impl BVectorHeader {
             )
         }
     }
-    pub fn as_borrowed(&self) -> BVectorBorrowed<'_> {
-        unsafe { BVectorBorrowed::new_unchecked(self.dims(), self.data()) }
+    pub fn as_borrowed(&self) -> BVectBorrowed<'_> {
+        unsafe { BVectBorrowed::new_unchecked(self.dims(), self.data()) }
     }
 }
 
@@ -82,7 +82,7 @@ impl Deref for BVectorInput<'_> {
 pub struct BVectorOutput(NonNull<BVectorHeader>);
 
 impl BVectorOutput {
-    pub fn new(vector: BVectorBorrowed<'_>) -> BVectorOutput {
+    pub fn new(vector: BVectBorrowed<'_>) -> BVectorOutput {
         unsafe {
             let dims = vector.dims();
             let internal_dims = dims as u16;

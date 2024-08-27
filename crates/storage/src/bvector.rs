@@ -11,7 +11,7 @@ pub struct BVectorStorage {
     slice: MmapArray<u64>,
 }
 
-impl Vectors<BVectorOwned> for BVectorStorage {
+impl Vectors<BVectOwned> for BVectorStorage {
     fn dims(&self) -> u32 {
         *self.dims
     }
@@ -20,16 +20,16 @@ impl Vectors<BVectorOwned> for BVectorStorage {
         *self.len
     }
 
-    fn vector(&self, i: u32) -> BVectorBorrowed<'_> {
+    fn vector(&self, i: u32) -> BVectBorrowed<'_> {
         let w = self.dims.div_ceil(BVECTOR_WIDTH);
         let s = i as usize * w as usize;
         let e = (i + 1) as usize * w as usize;
-        BVectorBorrowed::new(*self.dims as _, &self.slice[s..e])
+        BVectBorrowed::new(*self.dims as _, &self.slice[s..e])
     }
 }
 
-impl Storage<BVectorOwned> for BVectorStorage {
-    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<BVectorOwned>) -> Self {
+impl Storage<BVectOwned> for BVectorStorage {
+    fn create(path: impl AsRef<Path>, vectors: &impl Vectors<BVectOwned>) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
         let dims = Json::create(path.as_ref().join("dims"), vectors.dims());
         let len = Json::create(path.as_ref().join("len"), vectors.len());

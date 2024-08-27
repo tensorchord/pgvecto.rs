@@ -34,7 +34,7 @@ fn _vectors_bvector_in(input: &CStr, _oid: Oid, typmod: i32) -> BVectorOutput {
                     data[(i / BVECTOR_WIDTH) as usize] |= 1 << (i % BVECTOR_WIDTH);
                 }
             }
-            BVectorOutput::new(BVectorBorrowed::new(dims, &data))
+            BVectorOutput::new(BVectBorrowed::new(dims, &data))
         }
     }
 }

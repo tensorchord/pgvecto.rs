@@ -6,9 +6,7 @@ use crate::vector::*;
 pub enum BVectorHamming {}
 
 impl Operator for BVectorHamming {
-    type VectorOwned = BVectorOwned;
-
-    const DISTANCE_KIND: DistanceKind = DistanceKind::Hamming;
+    type Vector = BVectOwned;
 
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> Distance {
         lhs.operator_hamming(rhs)

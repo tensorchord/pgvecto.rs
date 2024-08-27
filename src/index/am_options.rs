@@ -10,7 +10,6 @@ use crate::datatype::typmod::Typmod;
 use crate::error::*;
 use base::distance::*;
 use base::index::*;
-use base::scalar::F32;
 use base::vector::*;
 use pgrx::datum::FromDatum;
 use pgrx::heap_tuple::PgHeapTuple;
@@ -242,10 +241,10 @@ impl Opfamily {
             (B::BVector(x), _) => O::BVector(x.own()),
         }
     }
-    pub fn process(self, x: Distance) -> F32 {
+    pub fn process(self, x: Distance) -> f32 {
         match self.pg_distance {
-            PgDistanceKind::Cos => F32(f32::from(x)) + F32(1.0),
-            _ => F32(f32::from(x)),
+            PgDistanceKind::Cos => f32::from(x) + 1.0f32,
+            _ => f32::from(x),
         }
     }
 }

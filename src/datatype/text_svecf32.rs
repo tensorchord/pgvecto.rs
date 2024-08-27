@@ -1,11 +1,8 @@
-use num_traits::Zero;
-use pgrx::error;
-
 use super::memory_svecf32::SVecf32Output;
 use crate::datatype::memory_svecf32::SVecf32Input;
 use crate::error::*;
-use base::scalar::*;
 use base::vector::*;
+use pgrx::error;
 use pgrx::pg_sys::Oid;
 use std::ffi::{CStr, CString};
 use std::fmt::Write;
@@ -13,7 +10,7 @@ use std::fmt::Write;
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
     use crate::utils::parse::parse_pgvector_svector;
-    let v = parse_pgvector_svector(input.to_bytes(), |s| s.parse::<F32>().ok());
+    let v = parse_pgvector_svector(input.to_bytes(), |s| s.parse::<f32>().ok());
     match v {
         Err(e) => {
             bad_literal(&e.to_string());
@@ -61,7 +58,7 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
                     let mut i = 0;
                     let mut j = 0;
                     while j < values.len() {
-                        if !values[j].is_zero() {
+                        if values[j] != 0.0 {
                             indexes[i] = indexes[j];
                             values[i] = values[j];
                             i += 1;
@@ -72,7 +69,7 @@ fn _vectors_svecf32_in(input: &CStr, _oid: Oid, _typmod: i32) -> SVecf32Output {
                     values.truncate(i);
                 }
             }
-            SVecf32Output::new(SVecf32Borrowed::new(dims, &indexes, &values))
+            SVecf32Output::new(SVectBorrowed::new(dims, &indexes, &values))
         }
     }
 }

@@ -12,7 +12,6 @@ use crate::quant::quantization::Quantization;
 use base::always_equal::AlwaysEqual;
 use base::index::{IndexOptions, RabitqIndexingOptions, SearchOptions};
 use base::operator::{Borrowed, Owned};
-use base::scalar::F32;
 use base::search::{Collection, Element, Payload, RerankerPop, Source, Vectors};
 use common::json::Json;
 use common::mmap_array::MmapArray;
@@ -29,8 +28,8 @@ pub struct Rabitq<O: Op> {
     quantization: Quantization<O>,
     payloads: MmapArray<Payload>,
     offsets: Json<Vec<u32>>,
-    centroids: Json<Vec2<F32>>,
-    projection: Json<Vec<Vec<F32>>>,
+    centroids: Json<Vec2<f32>>,
+    projection: Json<Vec<Vec<f32>>>,
 }
 
 impl<O: Op> Rabitq<O> {
@@ -84,7 +83,7 @@ impl<O: Op> Rabitq<O> {
                 &preprocessed,
                 start..end,
                 &mut heap,
-                F32(1.9),
+                1.9,
                 opts.rabitq_fast_scan,
             );
         }
@@ -121,14 +120,14 @@ fn from_nothing<O: Op>(
         // but we need to transpose it again to make it efficient for the dot production
         for (i, vec) in random_matrix.row_iter().enumerate() {
             for &val in vec.iter() {
-                projection[i].push(F32(val));
+                projection[i].push(val);
             }
         }
         projection
     };
-    let samples = common::sample::sample_cast::<O>(collection);
+    let samples = O::sample(collection);
     rayon::check();
-    let centroids: Vec2<F32> = k_means(nlist as usize, samples, false);
+    let centroids: Vec2<f32> = k_means(nlist as usize, samples, false);
     rayon::check();
     let mut ls = vec![Vec::new(); nlist as usize];
     for i in 0..collection.len() {
@@ -195,12 +194,12 @@ fn open<O: Op>(path: impl AsRef<Path>) -> Rabitq<O> {
     }
 }
 
-fn select<T: Ord>(mut lists: Vec<T>, n: usize) -> Vec<T> {
+fn select(mut lists: Vec<(f32, usize)>, n: usize) -> Vec<(f32, usize)> {
     if lists.is_empty() || n == 0 {
         return Vec::new();
     }
     let n = n.min(lists.len());
-    lists.select_nth_unstable(n - 1);
+    lists.select_nth_unstable_by(n - 1, |x, y| f32::total_cmp(&x.0, &y.0));
     lists.truncate(n);
     lists
 }

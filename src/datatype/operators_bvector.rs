@@ -72,19 +72,19 @@ fn _vectors_bvector_operator_neq(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_bvector_operator_dot(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> f32 {
     check_matched_dims(lhs.dims(), rhs.dims());
-    BVectorBorrowed::operator_dot(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
+    BVectBorrowed::operator_dot(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_bvector_operator_hamming(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> f32 {
     check_matched_dims(lhs.dims(), rhs.dims());
-    BVectorBorrowed::operator_hamming(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
+    BVectBorrowed::operator_hamming(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
 fn _vectors_bvector_operator_jaccard(lhs: BVectorInput<'_>, rhs: BVectorInput<'_>) -> f32 {
     check_matched_dims(lhs.dims(), rhs.dims());
-    BVectorBorrowed::operator_jaccard(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
+    BVectBorrowed::operator_jaccard(lhs.as_borrowed(), rhs.as_borrowed()).to_f32()
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -103,7 +103,7 @@ fn _vectors_bvector_sphere_dot_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    BVectorBorrowed::operator_dot(lhs.as_borrowed(), center.as_borrowed()).to_f32() < radius
+    BVectBorrowed::operator_dot(lhs.as_borrowed(), center.as_borrowed()).to_f32() < radius
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -122,7 +122,7 @@ fn _vectors_bvector_sphere_hamming_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    BVectorBorrowed::operator_hamming(lhs.as_borrowed(), center.as_borrowed()).to_f32() < radius
+    BVectBorrowed::operator_hamming(lhs.as_borrowed(), center.as_borrowed()).to_f32() < radius
 }
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]
@@ -142,5 +142,5 @@ fn _vectors_bvector_sphere_jaccard_in(
         Ok(None) => pgrx::error!("Bad input: empty radius at sphere"),
         Err(_) => unreachable!(),
     };
-    BVectorBorrowed::operator_jaccard(lhs.as_borrowed(), center.as_borrowed()).to_f32() < radius
+    BVectBorrowed::operator_jaccard(lhs.as_borrowed(), center.as_borrowed()).to_f32() < radius
 }

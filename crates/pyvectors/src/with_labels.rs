@@ -6,7 +6,7 @@ pub struct WithLabels<'a, T> {
     labels: &'a [i64],
 }
 
-impl<'a, T: Vectors<Vecf32Owned>> WithLabels<'a, T> {
+impl<'a, T: Vectors<VectOwned<f32>>> WithLabels<'a, T> {
     pub fn new(dataset: T, labels: &'a [i64]) -> Self {
         assert!(dataset.len() as usize == labels.len());
         Self { dataset, labels }

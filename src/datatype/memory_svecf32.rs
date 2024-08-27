@@ -1,4 +1,3 @@
-use base::scalar::*;
 use base::vector::*;
 use pgrx::datum::FromDatum;
 use pgrx::datum::IntoDatum;
@@ -33,7 +32,7 @@ impl SVecf32Header {
         u32::try_from(len).expect("Vector is too large.");
         let layout = Layout::new::<SVecf32Header>();
         let layout1 = Layout::array::<u32>(len).unwrap();
-        let layout2 = Layout::array::<F32>(len).unwrap();
+        let layout2 = Layout::array::<f32>(len).unwrap();
         let layout = layout.extend(layout1).unwrap().0.pad_to_align();
         layout.extend(layout2).unwrap().0.pad_to_align()
     }
@@ -47,7 +46,7 @@ impl SVecf32Header {
         let ptr = self.phantom.as_ptr().cast();
         unsafe { std::slice::from_raw_parts(ptr, self.len as usize) }
     }
-    fn values(&self) -> &[F32] {
+    fn values(&self) -> &[f32] {
         let len = self.len as usize;
         unsafe {
             let ptr = self.phantom.as_ptr().cast::<u32>().add(len);
@@ -56,8 +55,8 @@ impl SVecf32Header {
             std::slice::from_raw_parts(ptr, len)
         }
     }
-    pub fn as_borrowed(&self) -> SVecf32Borrowed<'_> {
-        unsafe { SVecf32Borrowed::new_unchecked(self.dims, self.indexes(), self.values()) }
+    pub fn as_borrowed(&self) -> SVectBorrowed<'_, f32> {
+        unsafe { SVectBorrowed::new_unchecked(self.dims, self.indexes(), self.values()) }
     }
 }
 
@@ -93,7 +92,7 @@ impl Deref for SVecf32Input<'_> {
 pub struct SVecf32Output(NonNull<SVecf32Header>);
 
 impl SVecf32Output {
-    pub fn new(vector: SVecf32Borrowed<'_>) -> SVecf32Output {
+    pub fn new(vector: SVectBorrowed<'_, f32>) -> SVecf32Output {
         unsafe {
             let layout = SVecf32Header::layout(vector.len() as usize);
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut SVecf32Header;

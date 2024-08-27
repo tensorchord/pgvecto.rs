@@ -22,7 +22,7 @@ pub struct IvfResidual<O: Op> {
     quantization: Quantization<O>,
     payloads: MmapArray<Payload>,
     offsets: Json<Vec<u32>>,
-    centroids: Json<Vec2<Scalar<O>>>,
+    centroids: Json<Vec2<<O as Op>::Scalar>>,
 }
 
 impl<O: Op> IvfResidual<O> {
@@ -61,7 +61,7 @@ impl<O: Op> IvfResidual<O> {
         opts: &'a SearchOptions,
     ) -> Box<dyn Iterator<Item = Element> + 'a> {
         let lists = select(
-            k_means_lookup_many(&vector.to_vec(), &self.centroids),
+            k_means_lookup_many(O::interpret(vector), &self.centroids),
             opts.ivf_nprobe as usize,
         );
         let mut heap = Vec::new();
@@ -106,13 +106,13 @@ fn from_nothing<O: Op>(
         residual_quantization: _,
         quantization: quantization_options,
     } = options.indexing.clone().unwrap_ivf();
-    let samples = common::sample::sample::<O>(collection);
+    let samples = O::sample(collection);
     rayon::check();
     let centroids = k_means(nlist as usize, samples, spherical_centroids);
     rayon::check();
     let mut ls = vec![Vec::new(); nlist as usize];
     for i in 0..collection.len() {
-        ls[k_means_lookup(&collection.vector(i).to_vec(), &centroids)].push(i);
+        ls[k_means_lookup(O::interpret(collection.vector(i)), &centroids)].push(i);
     }
     let mut offsets = vec![0u32; nlist as usize + 1];
     for i in 0..nlist {
@@ -131,7 +131,7 @@ fn from_nothing<O: Op>(
         quantization_options,
         &collection,
         |vector| {
-            let target = k_means_lookup(&vector.to_vec(), &centroids);
+            let target = k_means_lookup(O::interpret(vector), &centroids);
             O::residual(vector, &centroids[(target,)])
         },
     );
@@ -165,12 +165,12 @@ fn open<O: Op>(path: impl AsRef<Path>) -> IvfResidual<O> {
     }
 }
 
-fn select<T: Ord>(mut lists: Vec<T>, n: usize) -> Vec<T> {
+fn select(mut lists: Vec<(f32, usize)>, n: usize) -> Vec<(f32, usize)> {
     if lists.is_empty() || n == 0 {
         return Vec::new();
     }
     let n = n.min(lists.len());
-    lists.select_nth_unstable(n - 1);
+    lists.select_nth_unstable_by(n - 1, |x, y| f32::total_cmp(&x.0, &y.0));
     lists.truncate(n);
     lists
 }

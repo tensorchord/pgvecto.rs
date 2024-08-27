@@ -3,7 +3,6 @@ use crate::operator::OperatorRabitq;
 use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
 use base::index::VectorOptions;
-use base::scalar::F32;
 use base::search::RerankerPop;
 use common::json::Json;
 use common::mmap_array::MmapArray;
@@ -38,7 +37,7 @@ pub struct Quantization<O: OperatorRabitq> {
     train: Json<Quantizer<O>>,
     codes: MmapArray<u8>,
     packed_codes: MmapArray<u8>,
-    meta: MmapArray<F32>,
+    meta: MmapArray<f32>,
 }
 
 impl<O: OperatorRabitq> Quantization<O> {
@@ -46,7 +45,7 @@ impl<O: OperatorRabitq> Quantization<O> {
         path: impl AsRef<Path>,
         vector_options: VectorOptions,
         n: u32,
-        vectors: impl Fn(u32) -> Vec<F32>,
+        vectors: impl Fn(u32) -> Vec<f32>,
     ) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
         fn merge_8([b0, b1, b2, b3, b4, b5, b6, b7]: [u8; 8]) -> u8 {
@@ -136,7 +135,7 @@ impl<O: OperatorRabitq> Quantization<O> {
         }
     }
 
-    pub fn preprocess(&self, lhs: &[F32]) -> QuantizationPreprocessed<O> {
+    pub fn preprocess(&self, lhs: &[f32]) -> QuantizationPreprocessed<O> {
         match &*self.train {
             Quantizer::Rabitq(x) => QuantizationPreprocessed::Rabitq(x.preprocess(lhs)),
         }
@@ -163,7 +162,7 @@ impl<O: OperatorRabitq> Quantization<O> {
         preprocessed: &QuantizationPreprocessed<O>,
         rhs: Range<u32>,
         heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
-        rq_epsilon: F32,
+        rq_epsilon: f32,
         rq_fast_scan: bool,
     ) {
         match (&*self.train, preprocessed) {

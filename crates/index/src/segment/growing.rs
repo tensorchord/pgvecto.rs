@@ -131,7 +131,7 @@ impl<O: Op> GrowingSegment<O> {
 
     pub fn insert(
         &self,
-        vector: O::VectorOwned,
+        vector: O::Vector,
         payload: Payload,
     ) -> Result<(), GrowingSegmentInsertError> {
         let log = Log { vector, payload };
@@ -235,7 +235,7 @@ impl<O: Op> Drop for GrowingSegment<O> {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Log<O: Op> {
-    vector: O::VectorOwned,
+    vector: O::Vector,
     payload: Payload,
 }
 

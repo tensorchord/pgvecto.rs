@@ -12,7 +12,6 @@ use base::search::RerankerPop;
 use base::search::Vectors;
 use base::vector::*;
 use common::vec2::Vec2;
-use num_traits::Float;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cmp::Reverse;
@@ -24,9 +23,9 @@ use std::ops::Range;
 pub struct ScalarQuantizer<O: OperatorScalarQuantization> {
     dims: u32,
     bits: u32,
-    max: Vec<F32>,
-    min: Vec<F32>,
-    centroids: Vec2<F32>,
+    max: Vec<f32>,
+    min: Vec<f32>,
+    centroids: Vec2<f32>,
     _phantom: PhantomData<fn(O) -> O>,
 }
 
@@ -39,14 +38,15 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
     ) -> Self {
         let dims = vector_options.dims;
         let bits = scalar_quantization_options.bits;
-        let mut max = vec![F32::neg_infinity(); dims as usize];
-        let mut min = vec![F32::infinity(); dims as usize];
+        let mut max = vec![f32::NEG_INFINITY; dims as usize];
+        let mut min = vec![f32::INFINITY; dims as usize];
         let n = vectors.len();
         for i in 0..n {
-            let vector = transform(vectors.vector(i)).as_borrowed().to_vec();
-            for j in 0..dims as usize {
-                max[j] = std::cmp::max(max[j], vector[j].to_f());
-                min[j] = std::cmp::min(min[j], vector[j].to_f());
+            let vector = transform(vectors.vector(i));
+            let vector = vector.as_borrowed();
+            for j in 0..dims {
+                min[j as usize] = min[j as usize].min(O::get(vector, j).to_f32());
+                max[j as usize] = max[j as usize].max(O::get(vector, j).to_f32());
             }
         }
         let mut centroids = Vec2::zeros((1 << bits, dims as usize));
@@ -54,7 +54,7 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
             let bas = min[p as usize];
             let del = max[p as usize] - min[p as usize];
             for j in 0_usize..(1 << bits) {
-                let val = F32(j as f32 / ((1 << bits) - 1) as f32);
+                let val = j as f32 / ((1 << bits) - 1) as f32;
                 centroids[(j, p as usize)] = bas + val * del;
             }
         }
@@ -81,14 +81,13 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
     }
 
     pub fn encode(&self, vector: Borrowed<'_, O>) -> Vec<u8> {
-        let vector = vector.to_vec();
         let dims = self.dims;
         let bits = self.bits;
         let mut codes = Vec::with_capacity(dims as usize);
-        for i in 0..dims as usize {
-            let del = self.max[i] - self.min[i];
-            let w = (((vector[i].to_f() - self.min[i]) / del).to_f32() * (((1 << bits) - 1) as f32))
-                as u32;
+        for i in 0..dims {
+            let del = self.max[i as usize] - self.min[i as usize];
+            let w = (((O::get(vector, i).to_f32() - self.min[i as usize]) / del).to_f32()
+                * (((1 << bits) - 1) as f32)) as u32;
             codes.push(w.clamp(0, 255) as u8);
         }
         codes
