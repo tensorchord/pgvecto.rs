@@ -15,10 +15,29 @@ impl<T, R> ErrorFlatReranker<T, R> {
     where
         R: Fn(u32) -> (Distance, T),
     {
+        let mut top = BinaryHeap::new();
+        let mut boundary = Distance::INFINITY;
+        for (Reverse(low_u), AlwaysEqual(u)) in heap.into_iter() {
+            if low_u < boundary {
+                let (dis_u, pay_u) = (rerank)(u);
+                if dis_u < boundary {
+                    top.push((dis_u, AlwaysEqual(u), AlwaysEqual(pay_u)));
+                    if top.len() > 10 {
+                        top.pop();
+                    }
+                    if top.len() == 10 {
+                        boundary = top.peek().unwrap().0;
+                    }
+                }
+            }
+        }
         Self {
             rerank,
-            heap: heap.into(),
-            cache: BinaryHeap::new(),
+            heap: BinaryHeap::new(),
+            cache: top
+                .into_iter()
+                .map(|(a, b, c)| (Reverse(a), b, c))
+                .collect(),
         }
     }
 }
