@@ -46,26 +46,14 @@ impl ScalarLike for f32 {
         self
     }
 
-    // FIXME: add manually-implemented SIMD version
     #[inline(always)]
     fn reduce_sum_of_x(this: &[f32]) -> f32 {
-        let n = this.len();
-        let mut x = 0.0f32;
-        for i in 0..n {
-            x += this[i];
-        }
-        x
+        reduce_sum_of_x::reduce_sum_of_x(this)
     }
 
-    // FIXME: add manually-implemented SIMD version
     #[inline(always)]
     fn reduce_sum_of_x2(this: &[f32]) -> f32 {
-        let n = this.len();
-        let mut x2 = 0.0f32;
-        for i in 0..n {
-            x2 += this[i] * this[i];
-        }
-        x2
+        reduce_sum_of_x2::reduce_sum_of_x2(this)
     }
 
     #[inline(always)]
@@ -193,6 +181,238 @@ impl ScalarLike for f32 {
                 this[i] *= y;
             }
         }
+    }
+}
+
+mod reduce_sum_of_x {
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v4")]
+    unsafe fn reduce_sum_of_x_v4(this: &[f32]) -> f32 {
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = this.len();
+            let mut a = this.as_ptr();
+            let mut sum_of_x = _mm512_setzero_ps();
+            while n >= 16 {
+                let x = _mm512_loadu_ps(a);
+                a = a.add(16);
+                n -= 16;
+                sum_of_x = _mm512_add_ps(x, sum_of_x);
+            }
+            if n > 0 {
+                let mask = _bzhi_u32(0xffff, n as u32) as u16;
+                let x = _mm512_maskz_loadu_ps(mask, a);
+                sum_of_x = _mm512_add_ps(x, sum_of_x);
+            }
+            _mm512_reduce_add_ps(sum_of_x)
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_x_v4_test() {
+        const EPSILON: f32 = 0.01;
+        detect::init();
+        if !detect::v4::detect() {
+            println!("test {} ... skipped (v4)", module_path!());
+            return;
+        }
+        for _ in 0..300 {
+            let n = 4010;
+            let this = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            for z in 3990..4010 {
+                let this = &this[..z];
+                let specialized = unsafe { reduce_sum_of_x_v4(&this) };
+                let fallback = unsafe { reduce_sum_of_x_fallback(&this) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v3")]
+    unsafe fn reduce_sum_of_x_v3(this: &[f32]) -> f32 {
+        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = this.len();
+            let mut a = this.as_ptr();
+            let mut sum_of_x = _mm256_setzero_ps();
+            while n >= 8 {
+                let x = _mm256_loadu_ps(a);
+                a = a.add(8);
+                n -= 8;
+                sum_of_x = _mm256_add_ps(x, sum_of_x);
+            }
+            if n >= 4 {
+                let x = _mm256_zextps128_ps256(_mm_loadu_ps(a));
+                a = a.add(4);
+                n -= 4;
+                sum_of_x = _mm256_add_ps(x, sum_of_x);
+            }
+            let mut sum_of_x = emulate_mm256_reduce_add_ps(sum_of_x);
+            // this hint is used to disable loop unrolling
+            while std::hint::black_box(n) > 0 {
+                let x = a.read();
+                a = a.add(1);
+                n -= 1;
+                sum_of_x += x;
+            }
+            sum_of_x
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_x_v3_test() {
+        const EPSILON: f32 = 0.01;
+        detect::init();
+        if !detect::v3::detect() {
+            println!("test {} ... skipped (v3)", module_path!());
+            return;
+        }
+        for _ in 0..300 {
+            let n = 4010;
+            let this = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            for z in 3990..4010 {
+                let this = &this[..z];
+                let specialized = unsafe { reduce_sum_of_x_v3(this) };
+                let fallback = unsafe { reduce_sum_of_x_fallback(this) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[detect::multiversion(v4 = import, v3 = import, v2, neon, fallback = export)]
+    pub fn reduce_sum_of_x(this: &[f32]) -> f32 {
+        let n = this.len();
+        let mut sum_of_x = 0.0f32;
+        for i in 0..n {
+            sum_of_x += this[i];
+        }
+        sum_of_x
+    }
+}
+
+mod reduce_sum_of_x2 {
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v4")]
+    unsafe fn reduce_sum_of_x2_v4(this: &[f32]) -> f32 {
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = this.len();
+            let mut a = this.as_ptr();
+            let mut x2 = _mm512_setzero_ps();
+            while n >= 16 {
+                let x = _mm512_loadu_ps(a);
+                a = a.add(16);
+                n -= 16;
+                x2 = _mm512_fmadd_ps(x, x, x2);
+            }
+            if n > 0 {
+                let mask = _bzhi_u32(0xffff, n as u32) as u16;
+                let x = _mm512_maskz_loadu_ps(mask, a);
+                x2 = _mm512_fmadd_ps(x, x, x2);
+            }
+            _mm512_reduce_add_ps(x2)
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_x2_v4_test() {
+        const EPSILON: f32 = 0.01;
+        detect::init();
+        if !detect::v4::detect() {
+            println!("test {} ... skipped (v4)", module_path!());
+            return;
+        }
+        for _ in 0..300 {
+            let n = 4010;
+            let this = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            for z in 3990..4010 {
+                let this = &this[..z];
+                let specialized = unsafe { reduce_sum_of_x2_v4(&this) };
+                let fallback = unsafe { reduce_sum_of_x2_fallback(&this) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v3")]
+    unsafe fn reduce_sum_of_x2_v3(this: &[f32]) -> f32 {
+        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = this.len();
+            let mut a = this.as_ptr();
+            let mut x2 = _mm256_setzero_ps();
+            while n >= 8 {
+                let x = _mm256_loadu_ps(a);
+                a = a.add(8);
+                n -= 8;
+                x2 = _mm256_fmadd_ps(x, x, x2);
+            }
+            if n >= 4 {
+                let x = _mm256_zextps128_ps256(_mm_loadu_ps(a));
+                a = a.add(4);
+                n -= 4;
+                x2 = _mm256_fmadd_ps(x, x, x2);
+            }
+            let mut x2 = emulate_mm256_reduce_add_ps(x2);
+            // this hint is used to disable loop unrolling
+            while std::hint::black_box(n) > 0 {
+                let x = a.read();
+                a = a.add(1);
+                n -= 1;
+                x2 = x.mul_add(x, x2);
+            }
+            x2
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_x2_v3_test() {
+        const EPSILON: f32 = 0.01;
+        detect::init();
+        if !detect::v3::detect() {
+            println!("test {} ... skipped (v3)", module_path!());
+            return;
+        }
+        for _ in 0..300 {
+            let n = 4010;
+            let this = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            for z in 3990..4010 {
+                let this = &this[..z];
+                let specialized = unsafe { reduce_sum_of_x2_v3(this) };
+                let fallback = unsafe { reduce_sum_of_x2_fallback(this) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[detect::multiversion(v4 = import, v3 = import, v2, neon, fallback = export)]
+    pub fn reduce_sum_of_x2(this: &[f32]) -> f32 {
+        let n = this.len();
+        let mut x2 = 0.0f32;
+        for i in 0..n {
+            x2 = this[i].mul_add(this[i], x2);
+        }
+        x2
     }
 }
 

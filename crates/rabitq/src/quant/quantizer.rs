@@ -3,6 +3,7 @@ use crate::operator::OperatorRabitq;
 use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
 use base::index::VectorOptions;
+use base::scalar::ScalarLike;
 use base::search::RerankerPop;
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
@@ -42,16 +43,24 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
     }
 
     pub fn encode(&self, vector: &[f32]) -> (f32, f32, f32, f32, Vec<u8>) {
-        let dis_u = vector.iter().map(|&x| x * x).sum::<f32>().sqrt();
         let sum_of_abs_x = vector.iter().map(|x| x.abs()).sum::<f32>();
-        let sum_of_x_2 = vector.iter().map(|&x| x * x).sum::<f32>();
+        let sum_of_x_2 = f32::reduce_sum_of_x2(vector);
+        let dis_u = sum_of_x_2.sqrt();
         let x0 = sum_of_abs_x / (sum_of_x_2 * (self.dims as f32)).sqrt();
         let x_x0 = dis_u / x0;
         let fac_norm = (self.dims as f32).sqrt();
         let max_x1 = 1.0f32 / (self.dims as f32 - 1.0).sqrt();
         let factor_err = 2.0f32 * max_x1 * (x_x0 * x_x0 - dis_u * dis_u).sqrt();
         let factor_ip = -2.0f32 / fac_norm * x_x0;
-        let factor_ppc = factor_ip * vector.iter().map(|x| x.signum()).sum::<f32>();
+        let cnt_pos = vector
+            .iter()
+            .map(|x| x.is_sign_positive() as i32)
+            .sum::<i32>();
+        let cnt_neg = vector
+            .iter()
+            .map(|x| x.is_sign_negative() as i32)
+            .sum::<i32>();
+        let factor_ppc = factor_ip * (cnt_pos - cnt_neg) as f32;
         let mut codes = Vec::new();
         for i in 0..self.dims {
             codes.push(vector[i as usize].is_sign_positive() as u8);
