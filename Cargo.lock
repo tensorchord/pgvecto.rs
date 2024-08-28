@@ -2527,6 +2527,7 @@ dependencies = [
  "nalgebra",
  "quantization",
  "rand",
+ "rand_distr",
  "serde",
  "serde_json",
  "stoppable_rayon",

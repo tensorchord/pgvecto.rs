@@ -83,7 +83,7 @@ impl<O: Op> Rabitq<O> {
                 &preprocessed,
                 start..end,
                 &mut heap,
-                1.9,
+                opts.rabitq_epsilon,
                 opts.rabitq_fast_scan,
             );
         }
@@ -105,21 +105,25 @@ fn from_nothing<O: Op>(
     collection: &(impl Vectors<Owned<O>> + Collection),
 ) -> Rabitq<O> {
     create_dir(path.as_ref()).unwrap();
-    let RabitqIndexingOptions { nlist } = options.indexing.clone().unwrap_rabitq();
+    let RabitqIndexingOptions {
+        nlist,
+        spherical_centroids,
+    } = options.indexing.clone().unwrap_rabitq();
     let projection = {
-        use nalgebra::debug::RandomOrthogonal;
-        use nalgebra::{Dim, Dyn};
+        use nalgebra::{DMatrix, QR};
         use rand::Rng;
-        let dims = options.vector.dims as usize;
+        use rand_distr::StandardNormal;
         let mut rng = rand::thread_rng();
-        let random_orth: RandomOrthogonal<f32, Dyn> =
-            RandomOrthogonal::new(Dim::from_usize(dims), || rng.gen());
-        let random_matrix = random_orth.unwrap();
-        let mut projection = vec![Vec::with_capacity(dims); dims];
-        // use the transpose of the random matrix as the inverse of the orthogonal matrix,
-        // but we need to transpose it again to make it efficient for the dot production
-        for (i, vec) in random_matrix.row_iter().enumerate() {
-            for &val in vec.iter() {
+        let dims = options.vector.dims;
+        let matrix: Vec<f32> = (0..dims as usize * dims as usize)
+            .map(|_| rng.sample(StandardNormal))
+            .collect();
+        let matrix = DMatrix::from_vec(dims as usize, dims as usize, matrix);
+        let qr = QR::new(matrix);
+        let q = qr.q();
+        let mut projection = vec![Vec::with_capacity(dims as usize); dims as usize];
+        for (i, v) in q.row_iter().enumerate() {
+            for &val in v.iter() {
                 projection[i].push(val);
             }
         }
@@ -127,7 +131,7 @@ fn from_nothing<O: Op>(
     };
     let samples = O::sample(collection);
     rayon::check();
-    let centroids: Vec2<f32> = k_means(nlist as usize, samples, false);
+    let centroids: Vec2<f32> = k_means(nlist as usize, samples, spherical_centroids);
     rayon::check();
     let mut ls = vec![Vec::new(); nlist as usize];
     for i in 0..collection.len() {

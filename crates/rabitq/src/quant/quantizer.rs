@@ -9,10 +9,6 @@ use std::cmp::Reverse;
 use std::marker::PhantomData;
 use std::ops::Range;
 
-pub const EPSILON: f32 = 1.9;
-pub const THETA_LOG_DIM: u32 = 4;
-pub const DEFAULT_X_DOT_PRODUCT: f32 = 0.8;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(bound = "")]
 pub struct RabitqQuantizer<O: OperatorRabitq> {
@@ -66,34 +62,32 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
     pub fn preprocess(
         &self,
         lhs: &[f32],
-    ) -> (O::QuantizationPreprocessed0, O::QuantizationPreprocessed1) {
-        O::rabitq_quantization_preprocess(lhs)
+    ) -> (O::Preprocessed0, O::Preprocessed1) {
+        O::preprocess(lhs)
     }
 
     pub fn process(
         &self,
-        p0: &O::QuantizationPreprocessed0,
-        p1: &O::QuantizationPreprocessed1,
+        p0: &O::Preprocessed0,
+        p1: &O::Preprocessed1,
         (a, b, c, d, e): (f32, f32, f32, f32, &[u8]),
     ) -> Distance {
-        let (est, _) = O::rabitq_quantization_process(a, b, c, d, e, p0, p1);
-        Distance::from(est)
+        O::process(a, b, c, d, e, p0, p1)
     }
 
     pub fn process_lowerbound(
         &self,
-        p0: &O::QuantizationPreprocessed0,
-        p1: &O::QuantizationPreprocessed1,
+        p0: &O::Preprocessed0,
+        p1: &O::Preprocessed1,
         (a, b, c, d, e): (f32, f32, f32, f32, &[u8]),
         epsilon: f32,
     ) -> Distance {
-        let (est, err) = O::rabitq_quantization_process(a, b, c, d, e, p0, p1);
-        Distance::from(est - err * epsilon)
+        O::process_lowerbound(a, b, c, d, e, p0, p1, epsilon)
     }
 
     pub fn push_batch(
         &self,
-        (p0, p1): &(O::QuantizationPreprocessed0, O::QuantizationPreprocessed1),
+        (p0, p1): &(O::Preprocessed0, O::Preprocessed1),
         rhs: Range<u32>,
         heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         codes: &[u8],
@@ -102,11 +96,11 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         epsilon: f32,
         fast_scan: bool,
     ) {
-        if fast_scan && O::SUPPORT_FAST_SCAN && quantization::fast_scan::b4::is_supported() {
+        if fast_scan && quantization::fast_scan::b4::is_supported() {
             use quantization::fast_scan::b4::{fast_scan, BLOCK_SIZE};
             let s = rhs.start.next_multiple_of(BLOCK_SIZE);
             let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
-            let lut = O::fast_scan(p1);
+            let lut = O::fscan_preprocess(p1);
             if rhs.start != s {
                 let i = s - BLOCK_SIZE;
                 let t = self.dims.div_ceil(4);
@@ -123,9 +117,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                                 let c = meta[4 * u as usize + 2];
                                 let d = meta[4 * u as usize + 3];
                                 let param = res[(u - i) as usize];
-                                let (est, err) =
-                                    O::rabitq_quantization_process_1(a, b, c, d, p0, param);
-                                Distance::from(est - err * epsilon)
+                                O::fscan_process_lowerbound(a, b, c, d, p0, param, epsilon)
                             }),
                             AlwaysEqual(u),
                         )
@@ -147,9 +139,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                                 let c = meta[4 * u as usize + 2];
                                 let d = meta[4 * u as usize + 3];
                                 let param = res[(u - i) as usize];
-                                let (est, err) =
-                                    O::rabitq_quantization_process_1(a, b, c, d, p0, param);
-                                Distance::from(est - err * epsilon)
+                                O::fscan_process_lowerbound(a, b, c, d, p0, param, epsilon)
                             }),
                             AlwaysEqual(u),
                         )
@@ -172,9 +162,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                                 let c = meta[4 * u as usize + 2];
                                 let d = meta[4 * u as usize + 3];
                                 let param = res[(u - i) as usize];
-                                let (est, err) =
-                                    O::rabitq_quantization_process_1(a, b, c, d, p0, param);
-                                Distance::from(est - err * epsilon)
+                                O::fscan_process_lowerbound(a, b, c, d, p0, param, epsilon)
                             }),
                             AlwaysEqual(u),
                         )

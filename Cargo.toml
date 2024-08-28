@@ -74,6 +74,7 @@ memmap2 = "0.9.4"
 parking_lot = "0.12.1"
 paste = "1.0.14"
 rand = "0.8.5"
+rand_distr = "0.4.3"
 rustix = { version = "0.38.31", features = ["fs", "mm", "net"] }
 serde = "1"
 serde_json = "1"
