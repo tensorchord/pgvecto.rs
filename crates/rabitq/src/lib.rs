@@ -18,6 +18,7 @@ use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use common::vec2::Vec2;
 use k_means::{k_means, k_means_lookup, k_means_lookup_many};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::fs::create_dir;
 use std::path::Path;
 use stoppable_rayon as rayon;
@@ -36,7 +37,7 @@ impl<O: Op> Rabitq<O> {
     pub fn create(
         path: impl AsRef<Path>,
         options: IndexOptions,
-        source: &(impl Vectors<Owned<O>> + Collection + Source),
+        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
     ) -> Self {
         let remapped = RemappedCollection::from_source(source);
         from_nothing(path, options, &remapped)
@@ -102,7 +103,7 @@ impl<O: Op> Rabitq<O> {
 fn from_nothing<O: Op>(
     path: impl AsRef<Path>,
     options: IndexOptions,
-    collection: &(impl Vectors<Owned<O>> + Collection),
+    collection: &(impl Vectors<Owned<O>> + Collection + Sync),
 ) -> Rabitq<O> {
     create_dir(path.as_ref()).unwrap();
     let RabitqIndexingOptions {
@@ -133,10 +134,27 @@ fn from_nothing<O: Op>(
     rayon::check();
     let centroids: Vec2<f32> = k_means(nlist as usize, samples, spherical_centroids);
     rayon::check();
-    let mut ls = vec![Vec::new(); nlist as usize];
-    for i in 0..collection.len() {
-        ls[k_means_lookup(O::cast(collection.vector(i)), &centroids)].push(i);
-    }
+    let ls = (0..collection.len())
+        .into_par_iter()
+        .fold(
+            || vec![Vec::new(); nlist as usize],
+            |mut state, i| {
+                state[k_means_lookup(O::cast(collection.vector(i)), &centroids)].push(i);
+                state
+            },
+        )
+        .reduce(
+            || vec![Vec::new(); nlist as usize],
+            |lhs, rhs| {
+                std::iter::zip(lhs, rhs)
+                    .map(|(lhs, rhs)| {
+                        let mut x = lhs;
+                        x.extend(rhs);
+                        x
+                    })
+                    .collect()
+            },
+        );
     let mut offsets = vec![0u32; nlist as usize + 1];
     for i in 0..nlist {
         offsets[i as usize + 1] = offsets[i as usize] + ls[i as usize].len() as u32;
