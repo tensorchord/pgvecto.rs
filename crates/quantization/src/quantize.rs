@@ -161,3 +161,15 @@ pub fn quantize<const N: u8>(lut: &[f32]) -> (f32, f32, Vec<u8>) {
 pub fn dequantize(sum_1: u32, k: f32, b: f32, sum_x: u16) -> f32 {
     (sum_1 as f32) * b + (sum_x as f32) * k
 }
+
+// FIXME: the result may not fit in an u16
+// FIXME: generated code for AVX512 is bad, and that for AVX2 is not good, so rewrite it
+#[detect::multiversion(v4, v3, v2, neon, fallback)]
+pub fn reduce_sum_of_x(vector: &[u8]) -> u16 {
+    let n = vector.len();
+    let mut sum = 0;
+    for i in 0..n {
+        sum += vector[i] as u16;
+    }
+    sum
+}

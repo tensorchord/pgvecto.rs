@@ -75,11 +75,12 @@ impl OperatorRabitq for VectL2<f32> {
         (f32, f32, f32, f32),
         ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>),
     ) {
+        use quantization::quantize;
         let dis_v_2 = f32::reduce_sum_of_x2(vector);
-        let (k, b, qvector) = quantization::quantize::quantize::<15>(vector);
-        let qvector_sum = qvector.iter().fold(0_u32, |x, &y| x + y as u32) as f32;
+        let (k, b, qvector) = quantize::quantize::<15>(vector);
+        let qvector_sum = quantize::reduce_sum_of_x(&qvector) as f32;
         let blut = binarize(&qvector);
-        let lut = gen(&qvector);
+        let lut = gen(qvector);
         ((dis_v_2, b, k, qvector_sum), (blut, lut))
     }
 
@@ -260,15 +261,21 @@ fn binarize(vector: &[u8]) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
     (t0, t1, t2, t3)
 }
 
-fn gen(qvector: &[u8]) -> Vec<u8> {
+fn gen(mut qvector: Vec<u8>) -> Vec<u8> {
     let dims = qvector.len() as u32;
     let t = dims.div_ceil(4);
+    qvector.resize(qvector.len().next_multiple_of(4), 0);
     let mut lut = vec![0u8; t as usize * 16];
     for i in 0..t as usize {
-        let t0 = qvector.get(4 * i + 0).copied().unwrap_or_default();
-        let t1 = qvector.get(4 * i + 1).copied().unwrap_or_default();
-        let t2 = qvector.get(4 * i + 2).copied().unwrap_or_default();
-        let t3 = qvector.get(4 * i + 3).copied().unwrap_or_default();
+        unsafe {
+            // this hint is used to skip bound checks
+            std::hint::assert_unchecked(4 * i + 3 < qvector.len());
+            std::hint::assert_unchecked(16 * i + 15 < lut.len());
+        }
+        let t0 = qvector[4 * i + 0];
+        let t1 = qvector[4 * i + 1];
+        let t2 = qvector[4 * i + 2];
+        let t3 = qvector[4 * i + 3];
         lut[16 * i + 0b0000] = 0;
         lut[16 * i + 0b0001] = t0;
         lut[16 * i + 0b0010] = t1;
