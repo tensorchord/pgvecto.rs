@@ -24,23 +24,21 @@ impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
 
         let mut rand = StdRng::from_entropy();
         let mut centroids = Vec::with_capacity(c);
-        let mut assign = vec![0usize; n];
 
         centroids.push(samples[(rand.gen_range(0..n),)].to_vec());
 
         let mut weight = vec![f32::INFINITY; n];
-        let mut dis = vec![0.0f32; n];
         for i in 0..c {
-            let mut sum = 0.0f32;
+            let dis_2 = (0..n)
+                .into_par_iter()
+                .map(|j| S::reduce_sum_of_d2(&samples[(j,)], &centroids[i]))
+                .collect::<Vec<_>>();
             for j in 0..n {
-                dis[j] = S::reduce_sum_of_d2(&samples[(j,)], &centroids[i]);
-            }
-            for j in 0..n {
-                if dis[j] * dis[j] < weight[j] {
-                    weight[j] = dis[j] * dis[j];
+                if dis_2[j] < weight[j] {
+                    weight[j] = dis_2[j];
                 }
-                sum += weight[j];
             }
+            let sum = f32::reduce_sum_of_x(&weight);
             if i + 1 == c {
                 break;
             }
@@ -57,18 +55,19 @@ impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
             centroids.push(samples[(index,)].to_vec());
         }
 
-        for j in 0..n {
-            let mut minimal = f32::INFINITY;
-            let mut target = 0;
-            for i in 0..c {
-                let dis = S::reduce_sum_of_d2(&samples[(j,)], &centroids[i]);
-                if dis < minimal {
-                    minimal = dis;
-                    target = i;
+        let assign = (0..n)
+            .into_par_iter()
+            .map(|i| {
+                let mut result = (f32::INFINITY, 0);
+                for j in 0..c {
+                    let dis_2 = S::reduce_sum_of_d2(&samples[(i,)], &centroids[j]);
+                    if dis_2 <= result.0 {
+                        result = (dis_2, j);
+                    }
                 }
-            }
-            assign[j] = target;
-        }
+                result.1
+            })
+            .collect::<Vec<_>>();
 
         Self {
             dims,
@@ -143,9 +142,9 @@ impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
             .map(|i| {
                 let mut result = (f32::INFINITY, 0);
                 for j in 0..c {
-                    let dis = S::reduce_sum_of_d2(&samples[(i,)], &centroids[j]);
-                    if dis <= result.0 {
-                        result = (dis, j);
+                    let dis_2 = S::reduce_sum_of_d2(&samples[(i,)], &centroids[j]);
+                    if dis_2 <= result.0 {
+                        result = (dis_2, j);
                     }
                 }
                 result.1
