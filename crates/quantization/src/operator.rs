@@ -92,9 +92,7 @@ macro_rules! unimpl_operator_quantization_process {
                 unimplemented!()
             }
 
-            fn fscan_preprocess(
-                _: &Self::QuantizationPreprocessed,
-            ) -> (f32, f32, Vec<u8>) {
+            fn fscan_preprocess(_: &Self::QuantizationPreprocessed) -> (f32, f32, Vec<u8>) {
                 unimplemented!()
             }
 

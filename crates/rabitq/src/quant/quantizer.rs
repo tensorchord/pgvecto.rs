@@ -1,4 +1,4 @@
-use super::error_based::ErrorBasedReranker;
+use super::error::ErrorFlatReranker;
 use crate::operator::OperatorRabitq;
 use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
@@ -59,10 +59,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         (dis_u * dis_u, factor_ppc, factor_ip, factor_err, codes)
     }
 
-    pub fn preprocess(
-        &self,
-        lhs: &[f32],
-    ) -> (O::Preprocessed0, O::Preprocessed1) {
+    pub fn preprocess(&self, lhs: &[f32]) -> (O::Preprocessed0, O::Preprocessed1) {
         O::preprocess(lhs)
     }
 
@@ -198,6 +195,6 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         heap: Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         r: impl Fn(u32) -> (Distance, T) + 'a,
     ) -> impl RerankerPop<T> + 'a {
-        ErrorBasedReranker::new(heap, r)
+        ErrorFlatReranker::new(heap, r)
     }
 }
