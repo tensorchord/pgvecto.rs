@@ -54,7 +54,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                     )
                     .to_vec()
                 });
-                k_means(1 << bits, subsamples, false)
+                k_means(1 << bits, subsamples, false, false)
             })
             .collect::<Vec<_>>();
         let mut centroids = Vec2::zeros((1 << bits, dims as usize));
