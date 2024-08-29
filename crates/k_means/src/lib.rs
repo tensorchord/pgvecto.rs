@@ -7,7 +7,9 @@ pub mod quick_centers;
 
 use base::scalar::*;
 use common::vec2::Vec2;
+use elkan::ElkanKMeans;
 use kmeans1d::kmeans1d;
+use lloyd::LloydKMeans;
 use stoppable_rayon as rayon;
 
 pub fn k_means<S: ScalarLike>(
@@ -19,11 +21,12 @@ pub fn k_means<S: ScalarLike>(
     assert!(c > 0);
     let n = samples.shape_0();
     let dims = samples.shape_1();
-    let spherical = if is_spherical { spherical } else { dummy };
     assert!(dims > 0);
-    if dims > 1 && is_spherical {
+    if is_spherical {
         for i in 0..n {
-            spherical(&mut samples[(i,)]);
+            let sample = &mut samples[(i,)];
+            let l = S::reduce_sum_of_x2(sample).sqrt();
+            S::vector_mul_scalar_inplace(sample, 1.0 / l);
         }
     }
     if n <= c {
@@ -35,7 +38,7 @@ pub fn k_means<S: ScalarLike>(
         return Vec2::from_vec((c, 1), centroids);
     }
     if prefer_multithreading {
-        let mut lloyd_k_means = lloyd::LloydKMeans::<S, _>::new(c, samples, spherical);
+        let mut lloyd_k_means = LloydKMeans::new(c, samples, is_spherical);
         for _ in 0..25 {
             rayon::check();
             if lloyd_k_means.iterate() {
@@ -44,7 +47,7 @@ pub fn k_means<S: ScalarLike>(
         }
         lloyd_k_means.finish()
     } else {
-        let mut elkan_k_means = elkan::ElkanKMeans::<S, _>::new(c, samples, spherical);
+        let mut elkan_k_means = ElkanKMeans::new(c, samples, is_spherical);
         for _ in 0..100 {
             rayon::check();
             if elkan_k_means.iterate() {
@@ -76,10 +79,3 @@ pub fn k_means_lookup_many<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> 
     }
     seq
 }
-
-fn spherical<S: ScalarLike>(vector: &mut [S]) {
-    let l = S::reduce_sum_of_x2(vector).sqrt();
-    S::vector_mul_scalar_inplace(vector, 1.0 / l);
-}
-
-fn dummy<S: ScalarLike>(_: &mut [S]) {}

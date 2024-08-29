@@ -4,10 +4,10 @@ use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use std::ops::{Index, IndexMut};
 
-pub struct ElkanKMeans<S, F> {
+pub struct ElkanKMeans<S> {
     dims: usize,
     c: usize,
-    spherical: F,
+    is_spherical: bool,
     centroids: Vec2<S>,
     lowerbound: Square,
     upperbound: Vec<f32>,
@@ -19,8 +19,8 @@ pub struct ElkanKMeans<S, F> {
 
 const DELTA: f32 = 1.0 / 1024.0;
 
-impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
-    pub fn new(c: usize, samples: Vec2<S>, spherical: F) -> Self {
+impl<S: ScalarLike> ElkanKMeans<S> {
+    pub fn new(c: usize, samples: Vec2<S>, is_spherical: bool) -> Self {
         let n = samples.shape_0();
         let dims = samples.shape_1();
 
@@ -79,7 +79,7 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
         Self {
             dims,
             c,
-            spherical,
+            is_spherical,
             centroids,
             lowerbound,
             upperbound,
@@ -193,8 +193,13 @@ impl<S: ScalarLike, F: FnMut(&mut [S])> ElkanKMeans<S, F> {
             count[i] = count[o] / 2.0;
             count[o] -= count[i];
         }
-        for i in 0..c {
-            (self.spherical)(&mut centroids[(i,)]);
+
+        if self.is_spherical {
+            for i in 0..c {
+                let centroid = &mut centroids[(i,)];
+                let l = S::reduce_sum_of_x2(centroid).sqrt();
+                S::vector_mul_scalar_inplace(centroid, 1.0 / l);
+            }
         }
 
         // Step 5, 6

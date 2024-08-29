@@ -2,13 +2,14 @@ use base::scalar::*;
 use common::vec2::Vec2;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use rayon::iter::IntoParallelRefMutIterator;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use stoppable_rayon as rayon;
 
-pub struct LloydKMeans<S, F> {
+pub struct LloydKMeans<S> {
     dims: usize,
     c: usize,
-    spherical: F,
+    is_spherical: bool,
     centroids: Vec<Vec<S>>,
     assign: Vec<usize>,
     rand: StdRng,
@@ -17,8 +18,8 @@ pub struct LloydKMeans<S, F> {
 
 const DELTA: f32 = 1.0 / 1024.0;
 
-impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
-    pub fn new(c: usize, samples: Vec2<S>, spherical: F) -> Self {
+impl<S: ScalarLike> LloydKMeans<S> {
+    pub fn new(c: usize, samples: Vec2<S>, is_spherical: bool) -> Self {
         let n = samples.shape_0();
         let dims = samples.shape_1();
 
@@ -72,7 +73,7 @@ impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
         Self {
             dims,
             c,
-            spherical,
+            is_spherical,
             centroids,
             assign,
             rand,
@@ -90,7 +91,7 @@ impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
         let (sum, mut count) = (0..n)
             .into_par_iter()
             .fold(
-                || (vec![vec![S::zero(); dims]; c], vec![f32::zero(); c]),
+                || (vec![vec![S::zero(); dims]; c], vec![0.0f32; c]),
                 |(mut sum, mut count), i| {
                     S::vector_add_inplace(&mut sum[self.assign[i]], &samples[(i,)]);
                     count[self.assign[i]] += 1.0;
@@ -98,7 +99,7 @@ impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
                 },
             )
             .reduce(
-                || (vec![vec![S::zero(); dims]; c], vec![f32::zero(); c]),
+                || (vec![vec![S::zero(); dims]; c], vec![0.0f32; c]),
                 |(mut sum, mut count), (sum_1, count_1)| {
                     for i in 0..c {
                         S::vector_add_inplace(&mut sum[i], &sum_1[i]);
@@ -110,20 +111,16 @@ impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
 
         let mut centroids = (0..c)
             .into_par_iter()
-            .map(|i| {
-                let mut centroid = S::vector_mul_scalar(&sum[i], 1.0 / count[i]);
-                (self.spherical)(&mut centroid);
-                centroid
-            })
+            .map(|i| S::vector_mul_scalar(&sum[i], 1.0 / count[i]))
             .collect::<Vec<_>>();
 
         for i in 0..c {
-            if count[i] != f32::zero() {
+            if count[i] != 0.0f32 {
                 continue;
             }
             let mut o = 0;
             loop {
-                let alpha = f32::from_f32(rand.gen_range(0.0..1.0f32));
+                let alpha = rand.gen_range(0.0..1.0f32);
                 let beta = (count[o] - 1.0) / (n - c) as f32;
                 if alpha < beta {
                     break;
@@ -135,6 +132,13 @@ impl<S: ScalarLike, F: Fn(&mut [S]) + Sync> LloydKMeans<S, F> {
             S::kmeans_helper(&mut centroids[o], 1.0 - DELTA, 1.0 + DELTA);
             count[i] = count[o] / 2.0;
             count[o] -= count[i];
+        }
+
+        if self.is_spherical {
+            centroids.par_iter_mut().for_each(|centroid| {
+                let l = S::reduce_sum_of_x2(centroid).sqrt();
+                S::vector_mul_scalar_inplace(centroid, 1.0 / l);
+            });
         }
 
         let assign = (0..n)
