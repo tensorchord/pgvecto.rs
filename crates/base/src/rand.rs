@@ -9,3 +9,12 @@ where
         _ => unreachable!(),
     }
 }
+
+pub fn sample_u32_sorted<R>(rng: &mut R, length: u32, amount: u32) -> Vec<u32>
+where
+    R: Rng + ?Sized,
+{
+    let mut x = sample_u32(rng, length, amount);
+    x.sort();
+    x
+}

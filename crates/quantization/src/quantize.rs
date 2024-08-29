@@ -163,7 +163,7 @@ pub fn dequantize(sum_1: u32, k: f32, b: f32, sum_x: u16) -> f32 {
 }
 
 // FIXME: the result may not fit in an u16
-// FIXME: generated code for AVX512 is bad, and that for AVX2 is not good, so rewrite it
+// FIXME: add manually-implemented SIMD version
 #[detect::multiversion(v4, v3, v2, neon, fallback)]
 pub fn reduce_sum_of_x(vector: &[u8]) -> u16 {
     let n = vector.len();

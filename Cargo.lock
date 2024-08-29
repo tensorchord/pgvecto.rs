@@ -1660,6 +1660,7 @@ version = "0.0.0"
 dependencies = [
  "base",
  "common",
+ "half 2.4.1",
  "rand",
  "smawk",
  "stoppable_rayon",

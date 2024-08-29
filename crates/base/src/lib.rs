@@ -14,6 +14,7 @@ pub mod distance;
 pub mod index;
 pub mod operator;
 pub mod pod;
+pub mod rand;
 pub mod scalar;
 pub mod search;
 pub mod vector;

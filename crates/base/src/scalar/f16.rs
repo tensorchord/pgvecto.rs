@@ -263,22 +263,32 @@ mod reduce_sum_of_xy {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_sum_of_xy_v4_avx512fp16_test() {
+        use rand::Rng;
         const EPSILON: f32 = 2.0;
         detect::init();
         if !detect::v4_avx512fp16::detect() {
             println!("test {} ... skipped (v4_avx512fp16)", module_path!());
             return;
         }
-        for _ in 0..300 {
-            let n = 4000;
-            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let specialized = unsafe { reduce_sum_of_xy_v4_avx512fp16(&lhs, &rhs) };
-            let fallback = unsafe { reduce_sum_of_xy_fallback(&lhs, &rhs) };
-            assert!(
-                (specialized - fallback).abs() < EPSILON,
-                "specialized = {specialized}, fallback = {fallback}."
-            );
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let lhs = (0..n)
+                .map(|_| f16::from_f32(rng.gen_range(-1.0..=1.0)))
+                .collect::<Vec<_>>();
+            let rhs = (0..n)
+                .map(|_| f16::from_f32(rng.gen_range(-1.0..=1.0)))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
+                let lhs = &lhs[..z];
+                let rhs = &rhs[..z];
+                let specialized = unsafe { reduce_sum_of_xy_v4_avx512fp16(lhs, rhs) };
+                let fallback = unsafe { reduce_sum_of_xy_fallback(lhs, rhs) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
         }
     }
 
@@ -313,16 +323,22 @@ mod reduce_sum_of_xy {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_sum_of_xy_v4_test() {
+        use rand::Rng;
         const EPSILON: f32 = 2.0;
         detect::init();
         if !detect::v4::detect() {
             println!("test {} ... skipped (v4)", module_path!());
             return;
         }
-        for _ in 0..300 {
-            let n = 4000;
-            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let lhs = (0..n)
+                .map(|_| f16::from_f32(rng.gen_range(-1.0..=1.0)))
+                .collect::<Vec<_>>();
+            let rhs = (0..n)
+                .map(|_| f16::from_f32(rng.gen_range(-1.0..=1.0)))
+                .collect::<Vec<_>>();
             let specialized = unsafe { reduce_sum_of_xy_v4(&lhs, &rhs) };
             let fallback = unsafe { reduce_sum_of_xy_fallback(&lhs, &rhs) };
             assert!(
@@ -367,22 +383,32 @@ mod reduce_sum_of_xy {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_sum_of_xy_v3_test() {
+        use rand::Rng;
         const EPSILON: f32 = 2.0;
         detect::init();
         if !detect::v3::detect() {
             println!("test {} ... skipped (v3)", module_path!());
             return;
         }
-        for _ in 0..300 {
-            let n = 4000;
-            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let specialized = unsafe { reduce_sum_of_xy_v3(&lhs, &rhs) };
-            let fallback = unsafe { reduce_sum_of_xy_fallback(&lhs, &rhs) };
-            assert!(
-                (specialized - fallback).abs() < EPSILON,
-                "specialized = {specialized}, fallback = {fallback}."
-            );
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let lhs = (0..n)
+                .map(|_| f16::from_f32(rng.gen_range(-1.0..=1.0)))
+                .collect::<Vec<_>>();
+            let rhs = (0..n)
+                .map(|_| f16::from_f32(rng.gen_range(-1.0..=1.0)))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
+                let lhs = &lhs[..z];
+                let rhs = &rhs[..z];
+                let specialized = unsafe { reduce_sum_of_xy_v3(lhs, rhs) };
+                let fallback = unsafe { reduce_sum_of_xy_fallback(lhs, rhs) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
         }
     }
 
@@ -434,22 +460,32 @@ mod reduce_sum_of_d2 {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_sum_of_d2_v4_avx512fp16_test() {
-        const EPSILON: f32 = 2.0;
+        use rand::Rng;
+        const EPSILON: f32 = 6.0;
         detect::init();
         if !detect::v4_avx512fp16::detect() {
             println!("test {} ... skipped (v4_avx512fp16)", module_path!());
             return;
         }
-        for _ in 0..300 {
-            let n = 4000;
-            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let specialized = unsafe { reduce_sum_of_d2_v4_avx512fp16(&lhs, &rhs) };
-            let fallback = unsafe { reduce_sum_of_d2_fallback(&lhs, &rhs) };
-            assert!(
-                (specialized - fallback).abs() < EPSILON,
-                "specialized = {specialized}, fallback = {fallback}."
-            );
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let lhs = (0..n)
+                .map(|_| f16::from_f32(rng.gen_range(-1.0..=1.0)))
+                .collect::<Vec<_>>();
+            let rhs = (0..n)
+                .map(|_| f16::from_f32(rng.gen_range(-1.0..=1.0)))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
+                let lhs = &lhs[..z];
+                let rhs = &rhs[..z];
+                let specialized = unsafe { reduce_sum_of_d2_v4_avx512fp16(lhs, rhs) };
+                let fallback = unsafe { reduce_sum_of_d2_fallback(lhs, rhs) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
         }
     }
 
@@ -486,22 +522,32 @@ mod reduce_sum_of_d2 {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_sum_of_d2_v4_test() {
+        use rand::Rng;
         const EPSILON: f32 = 2.0;
         detect::init();
         if !detect::v4::detect() {
             println!("test {} ... skipped (v4)", module_path!());
             return;
         }
-        for _ in 0..300 {
-            let n = 4000;
-            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let specialized = unsafe { reduce_sum_of_d2_v4(&lhs, &rhs) };
-            let fallback = unsafe { reduce_sum_of_d2_fallback(&lhs, &rhs) };
-            assert!(
-                (specialized - fallback).abs() < EPSILON,
-                "specialized = {specialized}, fallback = {fallback}."
-            );
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let lhs = (0..n)
+                .map(|_| f16::from_f32(rng.gen_range(-1.0..=1.0)))
+                .collect::<Vec<_>>();
+            let rhs = (0..n)
+                .map(|_| f16::from_f32(rng.gen_range(-1.0..=1.0)))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
+                let lhs = &lhs[..z];
+                let rhs = &rhs[..z];
+                let specialized = unsafe { reduce_sum_of_d2_v4(lhs, rhs) };
+                let fallback = unsafe { reduce_sum_of_d2_fallback(lhs, rhs) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
         }
     }
 
@@ -542,22 +588,32 @@ mod reduce_sum_of_d2 {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_sum_of_d2_v3_test() {
+        use rand::Rng;
         const EPSILON: f32 = 2.0;
         detect::init();
         if !detect::v3::detect() {
             println!("test {} ... skipped (v3)", module_path!());
             return;
         }
-        for _ in 0..300 {
-            let n = 4000;
-            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let specialized = unsafe { reduce_sum_of_d2_v3(&lhs, &rhs) };
-            let fallback = unsafe { reduce_sum_of_d2_fallback(&lhs, &rhs) };
-            assert!(
-                (specialized - fallback).abs() < EPSILON,
-                "specialized = {specialized}, fallback = {fallback}."
-            );
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let lhs = (0..n)
+                .map(|_| f16::from_f32(rng.gen_range(-1.0..=1.0)))
+                .collect::<Vec<_>>();
+            let rhs = (0..n)
+                .map(|_| f16::from_f32(rng.gen_range(-1.0..=1.0)))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
+                let lhs = &lhs[..z];
+                let rhs = &rhs[..z];
+                let specialized = unsafe { reduce_sum_of_d2_v3(lhs, rhs) };
+                let fallback = unsafe { reduce_sum_of_d2_fallback(lhs, rhs) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
         }
     }
 

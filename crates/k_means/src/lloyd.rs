@@ -1,5 +1,6 @@
 use base::scalar::*;
 use common::vec2::Vec2;
+use half::f16;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use rayon::iter::IntoParallelRefMutIterator;
@@ -16,7 +17,7 @@ pub struct LloydKMeans<S> {
     samples: Vec2<S>,
 }
 
-const DELTA: f32 = 1.0 / 1024.0;
+const DELTA: f32 = f16::EPSILON.to_f32_const();
 
 impl<S: ScalarLike> LloydKMeans<S> {
     pub fn new(c: usize, samples: Vec2<S>, is_spherical: bool) -> Self {
