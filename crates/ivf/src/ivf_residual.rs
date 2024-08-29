@@ -108,7 +108,7 @@ fn from_nothing<O: Op>(
         residual_quantization: _,
         quantization: quantization_options,
     } = options.indexing.clone().unwrap_ivf();
-    let samples = O::sample(collection);
+    let samples = O::sample(collection, nlist);
     rayon::check();
     let centroids = k_means(nlist as usize, samples, true, spherical_centroids);
     rayon::check();

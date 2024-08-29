@@ -46,7 +46,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                 let subdims = std::cmp::min(ratio, dims - ratio * p);
                 let start = p * ratio;
                 let end = start + subdims;
-                let subsamples = sample(vectors.len(), end - start, |i| {
+                let subsamples = sample(vectors.len(), 65536, end - start, |i| {
                     O::subslice(
                         transform(vectors.vector(i)).as_borrowed(),
                         start,

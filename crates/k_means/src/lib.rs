@@ -36,7 +36,7 @@ pub fn k_means<S: ScalarLike>(
     }
     if prefer_multithreading {
         let mut lloyd_k_means = lloyd::LloydKMeans::<S, _>::new(c, samples, spherical);
-        for _ in 0..800 {
+        for _ in 0..25 {
             rayon::check();
             if lloyd_k_means.iterate() {
                 break;
@@ -45,7 +45,7 @@ pub fn k_means<S: ScalarLike>(
         lloyd_k_means.finish()
     } else {
         let mut elkan_k_means = elkan::ElkanKMeans::<S, _>::new(c, samples, spherical);
-        for _ in 0..400 {
+        for _ in 0..100 {
             rayon::check();
             if elkan_k_means.iterate() {
                 break;

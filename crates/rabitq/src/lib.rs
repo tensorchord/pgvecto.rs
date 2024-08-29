@@ -130,7 +130,8 @@ fn from_nothing<O: Op>(
         }
         projection
     };
-    let samples = O::sample(collection);
+    rayon::check();
+    let samples = O::sample(collection, nlist);
     rayon::check();
     let centroids: Vec2<f32> = k_means(nlist as usize, samples, true, spherical_centroids);
     rayon::check();

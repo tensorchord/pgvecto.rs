@@ -8,7 +8,7 @@ use half::f16;
 use storage::OperatorStorage;
 
 pub trait OperatorRabitq: OperatorStorage {
-    fn sample(vectors: &impl Vectors<Self::Vector>) -> Vec2<f32>;
+    fn sample(vectors: &impl Vectors<Self::Vector>, nlist: u32) -> Vec2<f32>;
     fn cast(vector: Borrowed<'_, Self>) -> &[f32];
     fn residual(lhs: &[f32], rhs: &[f32]) -> Vec<f32>;
     fn proj(projection: &[Vec<f32>], vector: &[f32]) -> Vec<f32>;
@@ -49,8 +49,13 @@ pub trait OperatorRabitq: OperatorStorage {
 }
 
 impl OperatorRabitq for VectL2<f32> {
-    fn sample(vectors: &impl Vectors<Self::Vector>) -> Vec2<f32> {
-        common::sample::sample(vectors.len(), vectors.dims(), |i| vectors.vector(i).slice())
+    fn sample(vectors: &impl Vectors<Self::Vector>, nlist: u32) -> Vec2<f32> {
+        common::sample::sample(
+            vectors.len(),
+            nlist.saturating_mul(256).min(1 << 20),
+            vectors.dims(),
+            |i| vectors.vector(i).slice(),
+        )
     }
     fn cast(vector: Borrowed<'_, Self>) -> &[f32] {
         vector.slice()
@@ -134,7 +139,7 @@ impl OperatorRabitq for VectL2<f32> {
 macro_rules! unimpl_operator_rabitq {
     ($t:ty) => {
         impl OperatorRabitq for $t {
-            fn sample(_: &impl Vectors<Self::Vector>) -> Vec2<f32> {
+            fn sample(_: &impl Vectors<Self::Vector>, _: u32) -> Vec2<f32> {
                 unimplemented!()
             }
 
