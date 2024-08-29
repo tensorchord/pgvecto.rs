@@ -103,8 +103,8 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         epsilon: f32,
         fast_scan: bool,
     ) {
-        if fast_scan && quantization::fast_scan::b4::is_supported() {
-            use quantization::fast_scan::b4::{fast_scan, BLOCK_SIZE};
+        if fast_scan {
+            use quantization::fast_scan::b4::{fast_scan_b4, BLOCK_SIZE};
             let s = rhs.start.next_multiple_of(BLOCK_SIZE);
             let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
             let lut = O::fscan_preprocess(p1);
@@ -114,7 +114,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                 let bytes = (t * 16) as usize;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                let res = fast_scan(t, &packed_codes[start..end], &lut);
+                let res = fast_scan_b4(t, &packed_codes[start..end], &lut);
                 heap.extend({
                     (rhs.start..s).map(|u| {
                         (
@@ -136,7 +136,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                 let bytes = (t * 16) as usize;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                let res = fast_scan(t, &packed_codes[start..end], &lut);
+                let res = fast_scan_b4(t, &packed_codes[start..end], &lut);
                 heap.extend({
                     (i..i + BLOCK_SIZE).map(|u| {
                         (
@@ -159,7 +159,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                 let bytes = (t * 16) as usize;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                let res = fast_scan(t, &packed_codes[start..end], &lut);
+                let res = fast_scan_b4(t, &packed_codes[start..end], &lut);
                 heap.extend({
                     (e..rhs.end).map(|u| {
                         (

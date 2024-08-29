@@ -140,8 +140,8 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
         let dims = self.dims;
         let ratio = self.ratio;
         let width = dims.div_ceil(ratio);
-        if fast_scan && self.bits == 4 && crate::fast_scan::b4::is_supported() {
-            use crate::fast_scan::b4::{fast_scan, BLOCK_SIZE};
+        if fast_scan && self.bits == 4 {
+            use crate::fast_scan::b4::{fast_scan_b4, BLOCK_SIZE};
             let (k, b, lut) = O::fscan_preprocess(preprocessed);
             let s = rhs.start.next_multiple_of(BLOCK_SIZE);
             let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
@@ -150,7 +150,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                 let bytes = width as usize * 16;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                let res = fast_scan(width, &packed_codes[start..end], &lut);
+                let res = fast_scan_b4(width, &packed_codes[start..end], &lut);
                 let r = res.map(|x| O::fscan_process(width, k, b, x));
                 heap.extend({
                     (rhs.start..s).map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
@@ -160,7 +160,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                 let bytes = width as usize * 16;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                let res = fast_scan(width, &packed_codes[start..end], &lut);
+                let res = fast_scan_b4(width, &packed_codes[start..end], &lut);
                 let r = res.map(|x| O::fscan_process(width, k, b, x));
                 heap.extend({
                     (i..i + BLOCK_SIZE).map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
@@ -171,7 +171,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                 let bytes = width as usize * 16;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
-                let res = fast_scan(width, &packed_codes[start..end], &lut);
+                let res = fast_scan_b4(width, &packed_codes[start..end], &lut);
                 let r = res.map(|x| O::fscan_process(width, k, b, x));
                 heap.extend({
                     (e..rhs.end).map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
