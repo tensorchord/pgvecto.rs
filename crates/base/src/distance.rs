@@ -17,27 +17,43 @@ pub enum DistanceKind {
 pub struct Distance(i32);
 
 impl Distance {
-    pub const ZERO: Self = Self(0);
-    pub const INFINITY: Self = Self(2139095040);
-    pub const NEG_INFINITY: Self = Self(-2139095041);
+    pub const ZERO: Self = Distance::from_f32(0.0f32);
+    pub const INFINITY: Self = Distance::from_f32(f32::INFINITY);
+    pub const NEG_INFINITY: Self = Distance::from_f32(f32::NEG_INFINITY);
 
-    pub fn to_f32(self) -> f32 {
-        self.into()
+    #[inline(always)]
+    pub const fn from_f32(value: f32) -> Self {
+        let bits = value.to_bits() as i32;
+        let mask = ((bits >> 31) as u32) >> 1;
+        let res = bits ^ (mask as i32);
+        Self(res)
+    }
+
+    #[inline(always)]
+    pub const fn to_f32(self) -> f32 {
+        let bits = self.0;
+        let mask = ((bits >> 31) as u32) >> 1;
+        let res = bits ^ (mask as i32);
+        f32::from_bits(res as u32)
+    }
+
+    #[inline(always)]
+    pub const fn to_i32(self) -> i32 {
+        self.0
     }
 }
 
 impl From<f32> for Distance {
     #[inline(always)]
     fn from(value: f32) -> Self {
-        let bits = value.to_bits() as i32;
-        Self(bits ^ (((bits >> 31) as u32) >> 1) as i32)
+        Distance::from_f32(value)
     }
 }
 
 impl From<Distance> for f32 {
     #[inline(always)]
-    fn from(Distance(bits): Distance) -> Self {
-        f32::from_bits((bits ^ (((bits >> 31) as u32) >> 1) as i32) as u32)
+    fn from(value: Distance) -> Self {
+        Distance::to_f32(value)
     }
 }
 

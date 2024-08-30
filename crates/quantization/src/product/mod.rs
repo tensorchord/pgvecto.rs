@@ -46,7 +46,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                 let subdims = std::cmp::min(ratio, dims - ratio * p);
                 let start = p * ratio;
                 let end = start + subdims;
-                let subsamples = sample(vectors.len(), end - start, |i| {
+                let subsamples = sample(vectors.len(), 65536, end - start, |i| {
                     O::subslice(
                         transform(vectors.vector(i)).as_borrowed(),
                         start,
@@ -54,7 +54,7 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
                     )
                     .to_vec()
                 });
-                k_means(1 << bits, subsamples, false)
+                k_means(1 << bits, subsamples, false, false)
             })
             .collect::<Vec<_>>();
         let mut centroids = Vec2::zeros((1 << bits, dims as usize));
@@ -114,16 +114,16 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
         let dims = self.dims;
         let ratio = self.ratio;
         match self.bits {
-            1 => O::quantization_process(dims, ratio, 1, preprocessed, |i| {
+            1 => O::process(dims, ratio, 1, preprocessed, |i| {
                 ((rhs[i >> 3] >> ((i & 7) << 0)) & 1) as usize
             }),
-            2 => O::quantization_process(dims, ratio, 2, preprocessed, |i| {
+            2 => O::process(dims, ratio, 2, preprocessed, |i| {
                 ((rhs[i >> 2] >> ((i & 3) << 1)) & 3) as usize
             }),
-            4 => O::quantization_process(dims, ratio, 4, preprocessed, |i| {
+            4 => O::process(dims, ratio, 4, preprocessed, |i| {
                 ((rhs[i >> 1] >> ((i & 1) << 2)) & 15) as usize
             }),
-            8 => O::quantization_process(dims, ratio, 8, preprocessed, |i| rhs[i] as usize),
+            8 => O::process(dims, ratio, 8, preprocessed, |i| rhs[i] as usize),
             _ => unreachable!(),
         }
     }
@@ -140,50 +140,43 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
         let dims = self.dims;
         let ratio = self.ratio;
         let width = dims.div_ceil(ratio);
-        if fast_scan
-            && O::SUPPORT_FAST_SCAN
-            && self.bits == 4
-            && crate::fast_scan::b4::is_supported()
-        {
-            use crate::fast_scan::b4::{fast_scan, BLOCK_SIZE};
-            use crate::quantize::{dequantize, quantize};
+        if fast_scan && self.bits == 4 {
+            use crate::fast_scan::b4::{fast_scan_b4, BLOCK_SIZE};
+            let (k, b, lut) = O::fscan_preprocess(preprocessed);
             let s = rhs.start.next_multiple_of(BLOCK_SIZE);
             let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
-            heap.extend((rhs.start..s).map(|u| {
-                (
-                    Reverse(self.process(preprocessed, {
-                        let bytes = self.bytes() as usize;
-                        let start = u as usize * bytes;
-                        let end = start + bytes;
-                        &codes[start..end]
-                    })),
-                    AlwaysEqual(u),
-                )
-            }));
-            let (k, b, lut) = quantize::<255>(&O::fast_scan(preprocessed));
+            if rhs.start != s {
+                let i = s - BLOCK_SIZE;
+                let bytes = width as usize * 16;
+                let start = (i / BLOCK_SIZE) as usize * bytes;
+                let end = start + bytes;
+                let res = fast_scan_b4(width, &packed_codes[start..end], &lut);
+                let r = res.map(|x| O::fscan_process(width, k, b, x));
+                heap.extend({
+                    (rhs.start..s).map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
+                });
+            }
             for i in (s..e).step_by(BLOCK_SIZE as _) {
                 let bytes = width as usize * 16;
                 let start = (i / BLOCK_SIZE) as usize * bytes;
                 let end = start + bytes;
+                let res = fast_scan_b4(width, &packed_codes[start..end], &lut);
+                let r = res.map(|x| O::fscan_process(width, k, b, x));
                 heap.extend({
-                    let res = fast_scan(width, &packed_codes[start..end], &lut);
-                    let r = res.map(|x| O::fast_scan_resolve(dequantize(width, k, b, x)));
-                    (i..i + BLOCK_SIZE)
-                        .map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
-                        .collect::<Vec<_>>()
+                    (i..i + BLOCK_SIZE).map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
                 });
             }
-            heap.extend((e..rhs.end).map(|u| {
-                (
-                    Reverse(self.process(preprocessed, {
-                        let bytes = self.bytes() as usize;
-                        let start = u as usize * bytes;
-                        let end = start + bytes;
-                        &codes[start..end]
-                    })),
-                    AlwaysEqual(u),
-                )
-            }));
+            if e != rhs.end {
+                let i = e;
+                let bytes = width as usize * 16;
+                let start = (i / BLOCK_SIZE) as usize * bytes;
+                let end = start + bytes;
+                let res = fast_scan_b4(width, &packed_codes[start..end], &lut);
+                let r = res.map(|x| O::fscan_process(width, k, b, x));
+                heap.extend({
+                    (e..rhs.end).map(|u| (Reverse(r[(u - i) as usize]), AlwaysEqual(u)))
+                });
+            }
             return;
         }
         heap.extend(rhs.map(|u| {

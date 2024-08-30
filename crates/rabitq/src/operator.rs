@@ -1,3 +1,4 @@
+use base::distance::Distance;
 use base::operator::Borrowed;
 use base::operator::*;
 use base::scalar::ScalarLike;
@@ -7,49 +8,54 @@ use half::f16;
 use storage::OperatorStorage;
 
 pub trait OperatorRabitq: OperatorStorage {
-    const RESIDUAL: bool;
-    fn sample(vectors: &impl Vectors<Self::Vector>) -> Vec2<f32>;
+    fn sample(vectors: &impl Vectors<Self::Vector>, nlist: u32) -> Vec2<f32>;
     fn cast(vector: Borrowed<'_, Self>) -> &[f32];
     fn residual(lhs: &[f32], rhs: &[f32]) -> Vec<f32>;
-
     fn proj(projection: &[Vec<f32>], vector: &[f32]) -> Vec<f32>;
 
-    type QuantizationPreprocessed0;
-    type QuantizationPreprocessed1;
+    type Preprocessed0;
+    type Preprocessed1;
 
-    fn rabitq_quantization_preprocess(
-        vector: &[f32],
-    ) -> (
-        Self::QuantizationPreprocessed0,
-        Self::QuantizationPreprocessed1,
-    );
-    fn rabitq_quantization_process(
+    fn preprocess(vector: &[f32]) -> (Self::Preprocessed0, Self::Preprocessed1);
+    fn process(
         dis_u_2: f32,
         factor_ppc: f32,
         factor_ip: f32,
         factor_err: f32,
         code: &[u8],
-        p0: &Self::QuantizationPreprocessed0,
-        p1: &Self::QuantizationPreprocessed1,
-    ) -> (f32, f32);
-    fn rabitq_quantization_process_1(
+        p0: &Self::Preprocessed0,
+        p1: &Self::Preprocessed1,
+    ) -> Distance;
+    fn process_lowerbound(
         dis_u_2: f32,
         factor_ppc: f32,
         factor_ip: f32,
         factor_err: f32,
-        p0: &Self::QuantizationPreprocessed0,
+        code: &[u8],
+        p0: &Self::Preprocessed0,
+        p1: &Self::Preprocessed1,
+        epsilon: f32,
+    ) -> Distance;
+    fn fscan_preprocess(preprocessed: &Self::Preprocessed1) -> Vec<u8>;
+    fn fscan_process_lowerbound(
+        dis_u_2: f32,
+        factor_ppc: f32,
+        factor_ip: f32,
+        factor_err: f32,
+        p0: &Self::Preprocessed0,
         param: u16,
-    ) -> (f32, f32);
-
-    const SUPPORT_FAST_SCAN: bool;
-    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed1) -> Vec<u8>;
-    fn fast_scan_resolve(x: f32) -> f32;
+        epsilon: f32,
+    ) -> Distance;
 }
 
 impl OperatorRabitq for VectL2<f32> {
-    const RESIDUAL: bool = false;
-    fn sample(vectors: &impl Vectors<Self::Vector>) -> Vec2<f32> {
-        common::sample::sample(vectors.len(), vectors.dims(), |i| vectors.vector(i).slice())
+    fn sample(vectors: &impl Vectors<Self::Vector>, nlist: u32) -> Vec2<f32> {
+        common::sample::sample(
+            vectors.len(),
+            nlist.saturating_mul(256).min(1 << 20),
+            vectors.dims(),
+            |i| vectors.vector(i).slice(),
+        )
     }
     fn cast(vector: Borrowed<'_, Self>) -> &[f32] {
         vector.slice()
@@ -57,47 +63,6 @@ impl OperatorRabitq for VectL2<f32> {
     fn residual(lhs: &[f32], rhs: &[f32]) -> Vec<f32> {
         f32::vector_sub(lhs, rhs)
     }
-
-    type QuantizationPreprocessed0 = (f32, f32, f32, f32);
-    type QuantizationPreprocessed1 = ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>);
-
-    fn rabitq_quantization_preprocess(
-        vector: &[f32],
-    ) -> (
-        (f32, f32, f32, f32),
-        ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>),
-    ) {
-        let dis_v_2 = vector.iter().map(|&x| x * x).sum();
-        let (k, b, qvector) = quantization::quantize::quantize::<15>(vector);
-        let qvector_sum = qvector.iter().fold(0_u32, |x, &y| x + y as u32) as f32;
-        let blut = binarize(&qvector);
-        let lut = gen(&qvector);
-        ((dis_v_2, b, k, qvector_sum), (blut, lut))
-    }
-
-    fn rabitq_quantization_process(
-        dis_u_2: f32,
-        factor_ppc: f32,
-        factor_ip: f32,
-        factor_err: f32,
-        code: &[u8],
-        p0: &(f32, f32, f32, f32),
-        p1: &((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>),
-    ) -> (f32, f32) {
-        rabitq_quantization_process(dis_u_2, factor_ppc, factor_ip, factor_err, code, *p0, p1)
-    }
-
-    fn rabitq_quantization_process_1(
-        dis_u_2: f32,
-        factor_ppc: f32,
-        factor_ip: f32,
-        factor_err: f32,
-        p0: &Self::QuantizationPreprocessed0,
-        param: u16,
-    ) -> (f32, f32) {
-        rabitq_quantization_process_1(dis_u_2, factor_ppc, factor_ip, factor_err, *p0, param)
-    }
-
     fn proj(projection: &[Vec<f32>], vector: &[f32]) -> Vec<f32> {
         let dims = vector.len();
         assert_eq!(projection.len(), dims);
@@ -106,21 +71,75 @@ impl OperatorRabitq for VectL2<f32> {
             .collect()
     }
 
-    const SUPPORT_FAST_SCAN: bool = true;
-    fn fast_scan(preprocessed: &((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>)) -> Vec<u8> {
+    type Preprocessed0 = (f32, f32, f32, f32);
+    type Preprocessed1 = ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>);
+
+    fn preprocess(
+        vector: &[f32],
+    ) -> (
+        (f32, f32, f32, f32),
+        ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>),
+    ) {
+        use quantization::quantize;
+        let dis_v_2 = f32::reduce_sum_of_x2(vector);
+        let (k, b, qvector) = quantize::quantize::<15>(vector);
+        let qvector_sum = quantize::reduce_sum_of_x(&qvector) as f32;
+        let blut = binarize(&qvector);
+        let lut = gen(qvector);
+        ((dis_v_2, b, k, qvector_sum), (blut, lut))
+    }
+
+    fn process(
+        dis_u_2: f32,
+        factor_ppc: f32,
+        factor_ip: f32,
+        factor_err: f32,
+        code: &[u8],
+        p0: &(f32, f32, f32, f32),
+        p1: &((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>),
+    ) -> Distance {
+        let abdp = asymmetric_binary_dot_product(code, &p1.0) as u16;
+        let (rough, _) = rabitq_l2(dis_u_2, factor_ppc, factor_ip, factor_err, *p0, abdp);
+        Distance::from_f32(rough)
+    }
+
+    fn process_lowerbound(
+        dis_u_2: f32,
+        factor_ppc: f32,
+        factor_ip: f32,
+        factor_err: f32,
+        code: &[u8],
+        p0: &(f32, f32, f32, f32),
+        p1: &((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>),
+        epsilon: f32,
+    ) -> Distance {
+        let abdp = asymmetric_binary_dot_product(code, &p1.0) as u16;
+        let (rough, err) = rabitq_l2(dis_u_2, factor_ppc, factor_ip, factor_err, *p0, abdp);
+        Distance::from_f32(rough - epsilon * err)
+    }
+
+    fn fscan_preprocess(preprocessed: &((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>)) -> Vec<u8> {
         preprocessed.1.clone()
     }
-    fn fast_scan_resolve(x: f32) -> f32 {
-        x
+
+    fn fscan_process_lowerbound(
+        dis_u_2: f32,
+        factor_ppc: f32,
+        factor_ip: f32,
+        factor_err: f32,
+        p0: &Self::Preprocessed0,
+        param: u16,
+        epsilon: f32,
+    ) -> Distance {
+        let (rough, err) = rabitq_l2(dis_u_2, factor_ppc, factor_ip, factor_err, *p0, param);
+        Distance::from_f32(rough - epsilon * err)
     }
 }
 
 macro_rules! unimpl_operator_rabitq {
     ($t:ty) => {
         impl OperatorRabitq for $t {
-            const RESIDUAL: bool = false;
-
-            fn sample(_: &impl Vectors<Self::Vector>) -> Vec2<f32> {
+            fn sample(_: &impl Vectors<Self::Vector>, _: u32) -> Vec2<f32> {
                 unimplemented!()
             }
 
@@ -136,46 +155,51 @@ macro_rules! unimpl_operator_rabitq {
                 unimplemented!()
             }
 
-            type QuantizationPreprocessed0 = std::convert::Infallible;
-            type QuantizationPreprocessed1 = std::convert::Infallible;
+            type Preprocessed0 = std::convert::Infallible;
+            type Preprocessed1 = std::convert::Infallible;
 
-            fn rabitq_quantization_preprocess(
-                _: &[f32],
-            ) -> (
-                Self::QuantizationPreprocessed0,
-                Self::QuantizationPreprocessed1,
-            ) {
+            fn preprocess(_: &[f32]) -> (Self::Preprocessed0, Self::Preprocessed1) {
                 unimplemented!()
             }
 
-            fn rabitq_quantization_process(
+            fn process(
                 _: f32,
                 _: f32,
                 _: f32,
                 _: f32,
                 _: &[u8],
-                _: &Self::QuantizationPreprocessed0,
-                _: &Self::QuantizationPreprocessed1,
-            ) -> (f32, f32) {
+                _: &Self::Preprocessed0,
+                _: &Self::Preprocessed1,
+            ) -> Distance {
                 unimplemented!()
             }
 
-            fn rabitq_quantization_process_1(
+            fn process_lowerbound(
                 _: f32,
                 _: f32,
                 _: f32,
                 _: f32,
-                _: &Self::QuantizationPreprocessed0,
+                _: &[u8],
+                _: &Self::Preprocessed0,
+                _: &Self::Preprocessed1,
+                _: f32,
+            ) -> Distance {
+                unimplemented!()
+            }
+
+            fn fscan_preprocess(_: &Self::Preprocessed1) -> Vec<u8> {
+                unimplemented!()
+            }
+
+            fn fscan_process_lowerbound(
+                _: f32,
+                _: f32,
+                _: f32,
+                _: f32,
+                _: &Self::Preprocessed0,
                 _: u16,
-            ) -> (f32, f32) {
-                unimplemented!()
-            }
-
-            const SUPPORT_FAST_SCAN: bool = false;
-            fn fast_scan(_: &Self::QuantizationPreprocessed1) -> Vec<u8> {
-                unimplemented!()
-            }
-            fn fast_scan_resolve(_: f32) -> f32 {
+                _: f32,
+            ) -> Distance {
                 unimplemented!()
             }
         }
@@ -195,21 +219,7 @@ unimpl_operator_rabitq!(SVectDot<f32>);
 unimpl_operator_rabitq!(SVectL2<f32>);
 
 #[inline(always)]
-pub fn rabitq_quantization_process(
-    dis_u_2: f32,
-    factor_ppc: f32,
-    factor_ip: f32,
-    factor_err: f32,
-    code: &[u8],
-    params: (f32, f32, f32, f32),
-    (blut, _lut): &((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>),
-) -> (f32, f32) {
-    let abdp = asymmetric_binary_dot_product(code, blut) as u16;
-    rabitq_quantization_process_1(dis_u_2, factor_ppc, factor_ip, factor_err, params, abdp)
-}
-
-#[inline(always)]
-pub fn rabitq_quantization_process_1(
+pub fn rabitq_l2(
     dis_u_2: f32,
     factor_ppc: f32,
     factor_ip: f32,
@@ -256,15 +266,21 @@ fn binarize(vector: &[u8]) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
     (t0, t1, t2, t3)
 }
 
-fn gen(qvector: &[u8]) -> Vec<u8> {
+fn gen(mut qvector: Vec<u8>) -> Vec<u8> {
     let dims = qvector.len() as u32;
     let t = dims.div_ceil(4);
+    qvector.resize(qvector.len().next_multiple_of(4), 0);
     let mut lut = vec![0u8; t as usize * 16];
     for i in 0..t as usize {
-        let t0 = qvector.get(4 * i + 0).copied().unwrap_or_default();
-        let t1 = qvector.get(4 * i + 1).copied().unwrap_or_default();
-        let t2 = qvector.get(4 * i + 2).copied().unwrap_or_default();
-        let t3 = qvector.get(4 * i + 3).copied().unwrap_or_default();
+        unsafe {
+            // this hint is used to skip bound checks
+            std::hint::assert_unchecked(4 * i + 3 < qvector.len());
+            std::hint::assert_unchecked(16 * i + 15 < lut.len());
+        }
+        let t0 = qvector[4 * i + 0];
+        let t1 = qvector[4 * i + 1];
+        let t2 = qvector[4 * i + 2];
+        let t3 = qvector[4 * i + 3];
         lut[16 * i + 0b0000] = 0;
         lut[16 * i + 0b0001] = t0;
         lut[16 * i + 0b0010] = t1;

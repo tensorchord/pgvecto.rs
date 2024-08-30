@@ -1,3 +1,3 @@
-pub mod error_based;
+pub mod error;
 pub mod quantization;
 pub mod quantizer;

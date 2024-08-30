@@ -151,12 +151,12 @@ impl IndexOptions {
             IndexingOptions::Rabitq(_) => {
                 if !matches!(self.vector.d, DistanceKind::L2) {
                     return Err(ValidationError::new(
-                        "inverted_index is not support for distance that is not l2",
+                        "rabitq is not support for distance that is not l2",
                     ));
                 }
                 if !matches!(self.vector.v, VectorKind::Vecf32) {
                     return Err(ValidationError::new(
-                        "inverted_index is not support for vectors that are not vector",
+                        "rabitq is not support for vectors that are not vector",
                     ));
                 }
             }
@@ -446,11 +446,16 @@ pub struct RabitqIndexingOptions {
     #[serde(default = "RabitqIndexingOptions::default_nlist")]
     #[validate(range(min = 1, max = 1_000_000))]
     pub nlist: u32,
+    #[serde(default = "IvfIndexingOptions::default_spherical_centroids")]
+    pub spherical_centroids: bool,
 }
 
 impl RabitqIndexingOptions {
     fn default_nlist() -> u32 {
         1000
+    }
+    fn default_spherical_centroids() -> bool {
+        false
     }
 }
 
@@ -458,6 +463,7 @@ impl Default for RabitqIndexingOptions {
     fn default() -> Self {
         Self {
             nlist: Self::default_nlist(),
+            spherical_centroids: Self::default_spherical_centroids(),
         }
     }
 }
@@ -561,6 +567,7 @@ impl Default for ProductQuantizationOptions {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, Alter)]
+#[serde(deny_unknown_fields)]
 pub struct SearchOptions {
     #[serde(default = "SearchOptions::default_flat_sq_rerank_size")]
     #[validate(range(min = 0, max = 65535))]
@@ -591,6 +598,9 @@ pub struct SearchOptions {
     #[serde(default = "SearchOptions::default_rabitq_nprobe")]
     #[validate(range(min = 1, max = 65535))]
     pub rabitq_nprobe: u32,
+    #[serde(default = "SearchOptions::default_rabitq_epsilon")]
+    #[validate(range(min = 1.0, max = 4.0))]
+    pub rabitq_epsilon: f32,
     #[serde(default = "SearchOptions::default_rabitq_fast_scan")]
     pub rabitq_fast_scan: bool,
     #[serde(default = "SearchOptions::default_diskann_ef_search")]
@@ -632,6 +642,9 @@ impl SearchOptions {
     pub const fn default_rabitq_nprobe() -> u32 {
         10
     }
+    pub const fn default_rabitq_epsilon() -> f32 {
+        1.9
+    }
     pub const fn default_rabitq_fast_scan() -> bool {
         true
     }
@@ -654,6 +667,7 @@ impl Default for SearchOptions {
             ivf_nprobe: Self::default_ivf_nprobe(),
             hnsw_ef_search: Self::default_hnsw_ef_search(),
             rabitq_nprobe: Self::default_rabitq_nprobe(),
+            rabitq_epsilon: Self::default_rabitq_epsilon(),
             rabitq_fast_scan: Self::default_rabitq_fast_scan(),
             diskann_ef_search: Self::default_diskann_ef_search(),
         }

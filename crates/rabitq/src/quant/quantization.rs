@@ -27,8 +27,8 @@ impl<O: OperatorRabitq> Quantizer<O> {
 pub enum QuantizationPreprocessed<O: OperatorRabitq> {
     Rabitq(
         (
-            <O as OperatorRabitq>::QuantizationPreprocessed0,
-            <O as OperatorRabitq>::QuantizationPreprocessed1,
+            <O as OperatorRabitq>::Preprocessed0,
+            <O as OperatorRabitq>::Preprocessed1,
         ),
     ),
 }

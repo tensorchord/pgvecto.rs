@@ -18,6 +18,7 @@ use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use common::vec2::Vec2;
 use k_means::{k_means, k_means_lookup, k_means_lookup_many};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::fs::create_dir;
 use std::path::Path;
 use stoppable_rayon as rayon;
@@ -36,7 +37,7 @@ impl<O: Op> Rabitq<O> {
     pub fn create(
         path: impl AsRef<Path>,
         options: IndexOptions,
-        source: &(impl Vectors<Owned<O>> + Collection + Source),
+        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
     ) -> Self {
         let remapped = RemappedCollection::from_source(source);
         from_nothing(path, options, &remapped)
@@ -83,7 +84,7 @@ impl<O: Op> Rabitq<O> {
                 &preprocessed,
                 start..end,
                 &mut heap,
-                1.9,
+                opts.rabitq_epsilon,
                 opts.rabitq_fast_scan,
             );
         }
@@ -102,37 +103,59 @@ impl<O: Op> Rabitq<O> {
 fn from_nothing<O: Op>(
     path: impl AsRef<Path>,
     options: IndexOptions,
-    collection: &(impl Vectors<Owned<O>> + Collection),
+    collection: &(impl Vectors<Owned<O>> + Collection + Sync),
 ) -> Rabitq<O> {
     create_dir(path.as_ref()).unwrap();
-    let RabitqIndexingOptions { nlist } = options.indexing.clone().unwrap_rabitq();
+    let RabitqIndexingOptions {
+        nlist,
+        spherical_centroids,
+    } = options.indexing.clone().unwrap_rabitq();
     let projection = {
-        use nalgebra::debug::RandomOrthogonal;
-        use nalgebra::{Dim, Dyn};
+        use nalgebra::{DMatrix, QR};
         use rand::Rng;
-        let dims = options.vector.dims as usize;
+        use rand_distr::StandardNormal;
         let mut rng = rand::thread_rng();
-        let random_orth: RandomOrthogonal<f32, Dyn> =
-            RandomOrthogonal::new(Dim::from_usize(dims), || rng.gen());
-        let random_matrix = random_orth.unwrap();
-        let mut projection = vec![Vec::with_capacity(dims); dims];
-        // use the transpose of the random matrix as the inverse of the orthogonal matrix,
-        // but we need to transpose it again to make it efficient for the dot production
-        for (i, vec) in random_matrix.row_iter().enumerate() {
-            for &val in vec.iter() {
+        let dims = options.vector.dims;
+        let matrix: Vec<f32> = (0..dims as usize * dims as usize)
+            .map(|_| rng.sample(StandardNormal))
+            .collect();
+        let matrix = DMatrix::from_vec(dims as usize, dims as usize, matrix);
+        let qr = QR::new(matrix);
+        let q = qr.q();
+        let mut projection = vec![Vec::with_capacity(dims as usize); dims as usize];
+        for (i, v) in q.row_iter().enumerate() {
+            for &val in v.iter() {
                 projection[i].push(val);
             }
         }
         projection
     };
-    let samples = O::sample(collection);
     rayon::check();
-    let centroids: Vec2<f32> = k_means(nlist as usize, samples, false);
+    let samples = O::sample(collection, nlist);
     rayon::check();
-    let mut ls = vec![Vec::new(); nlist as usize];
-    for i in 0..collection.len() {
-        ls[k_means_lookup(O::cast(collection.vector(i)), &centroids)].push(i);
-    }
+    let centroids: Vec2<f32> = k_means(nlist as usize, samples, true, spherical_centroids);
+    rayon::check();
+    let ls = (0..collection.len())
+        .into_par_iter()
+        .fold(
+            || vec![Vec::new(); nlist as usize],
+            |mut state, i| {
+                state[k_means_lookup(O::cast(collection.vector(i)), &centroids)].push(i);
+                state
+            },
+        )
+        .reduce(
+            || vec![Vec::new(); nlist as usize],
+            |lhs, rhs| {
+                std::iter::zip(lhs, rhs)
+                    .map(|(lhs, rhs)| {
+                        let mut x = lhs;
+                        x.extend(rhs);
+                        x
+                    })
+                    .collect()
+            },
+        );
     let mut offsets = vec![0u32; nlist as usize + 1];
     for i in 0..nlist {
         offsets[i as usize + 1] = offsets[i as usize] + ls[i as usize].len() as u32;
@@ -199,7 +222,8 @@ fn select(mut lists: Vec<(f32, usize)>, n: usize) -> Vec<(f32, usize)> {
         return Vec::new();
     }
     let n = n.min(lists.len());
-    lists.select_nth_unstable_by(n - 1, |x, y| f32::total_cmp(&x.0, &y.0));
+    lists.select_nth_unstable_by(n - 1, |(x, _), (y, _)| f32::total_cmp(x, y));
     lists.truncate(n);
+    lists.sort_by(|(x, _), (y, _)| f32::total_cmp(x, y));
     lists
 }

@@ -291,6 +291,11 @@ pub fn main(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
                     true #(&& std::arch::is_aarch64_feature_detected!(#target_features))*
                 }
 
+                #[cfg(target_arch = "riscv64")]
+                pub fn test() -> bool {
+                    true #(&& std::arch::is_riscv_feature_detected!(#target_features))*
+                }
+
                 pub(crate) fn init() {
                     ATOMIC.store(test(), Ordering::Relaxed);
                 }

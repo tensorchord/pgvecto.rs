@@ -34,7 +34,7 @@ impl<S: ScalarLike> SVectOwned<S> {
         if len != 0 && !(indexes[len - 1] < dims) {
             return None;
         }
-        // FIXME: SIMD
+        // FIXME: add manually-implemented SIMD version
         for i in 0..len {
             if values[i] == S::zero() {
                 return None;

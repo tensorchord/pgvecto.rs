@@ -12,6 +12,8 @@ use k_means::k_means;
 use k_means::k_means_lookup;
 use k_means::k_means_lookup_many;
 use quantization::Quantization;
+use rayon::iter::IntoParallelIterator;
+use rayon::iter::ParallelIterator;
 use std::fs::create_dir;
 use std::path::Path;
 use stoppable_rayon as rayon;
@@ -106,14 +108,31 @@ fn from_nothing<O: Op>(
         residual_quantization: _,
         quantization: quantization_options,
     } = options.indexing.clone().unwrap_ivf();
-    let samples = O::sample(collection);
+    let samples = O::sample(collection, nlist);
     rayon::check();
-    let centroids = k_means(nlist as usize, samples, spherical_centroids);
+    let centroids = k_means(nlist as usize, samples, true, spherical_centroids);
     rayon::check();
-    let mut ls = vec![Vec::new(); nlist as usize];
-    for i in 0..collection.len() {
-        ls[k_means_lookup(O::interpret(collection.vector(i)), &centroids)].push(i);
-    }
+    let ls = (0..collection.len())
+        .into_par_iter()
+        .fold(
+            || vec![Vec::new(); nlist as usize],
+            |mut state, i| {
+                state[k_means_lookup(O::interpret(collection.vector(i)), &centroids)].push(i);
+                state
+            },
+        )
+        .reduce(
+            || vec![Vec::new(); nlist as usize],
+            |lhs, rhs| {
+                std::iter::zip(lhs, rhs)
+                    .map(|(lhs, rhs)| {
+                        let mut x = lhs;
+                        x.extend(rhs);
+                        x
+                    })
+                    .collect()
+            },
+        );
     let mut offsets = vec![0u32; nlist as usize + 1];
     for i in 0..nlist {
         offsets[i as usize + 1] = offsets[i as usize] + ls[i as usize].len() as u32;
@@ -170,7 +189,8 @@ fn select(mut lists: Vec<(f32, usize)>, n: usize) -> Vec<(f32, usize)> {
         return Vec::new();
     }
     let n = n.min(lists.len());
-    lists.select_nth_unstable_by(n - 1, |x, y| f32::total_cmp(&x.0, &y.0));
+    lists.select_nth_unstable_by(n - 1, |(x, _), (y, _)| f32::total_cmp(x, y));
     lists.truncate(n);
+    lists.sort_by(|(x, _), (y, _)| f32::total_cmp(x, y));
     lists
 }

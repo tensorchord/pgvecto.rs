@@ -46,26 +46,14 @@ impl ScalarLike for f32 {
         self
     }
 
-    // FIXME: add manually-implemented SIMD version
     #[inline(always)]
     fn reduce_sum_of_x(this: &[f32]) -> f32 {
-        let n = this.len();
-        let mut x = 0.0f32;
-        for i in 0..n {
-            x += this[i];
-        }
-        x
+        reduce_sum_of_x::reduce_sum_of_x(this)
     }
 
-    // FIXME: add manually-implemented SIMD version
     #[inline(always)]
     fn reduce_sum_of_x2(this: &[f32]) -> f32 {
-        let n = this.len();
-        let mut x2 = 0.0f32;
-        for i in 0..n {
-            x2 += this[i] * this[i];
-        }
-        x2
+        reduce_sum_of_x2::reduce_sum_of_x2(this)
     }
 
     #[inline(always)]
@@ -196,6 +184,254 @@ impl ScalarLike for f32 {
     }
 }
 
+mod reduce_sum_of_x {
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v4")]
+    unsafe fn reduce_sum_of_x_v4(this: &[f32]) -> f32 {
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = this.len();
+            let mut a = this.as_ptr();
+            let mut sum_of_x = _mm512_setzero_ps();
+            while n >= 16 {
+                let x = _mm512_loadu_ps(a);
+                a = a.add(16);
+                n -= 16;
+                sum_of_x = _mm512_add_ps(x, sum_of_x);
+            }
+            if n > 0 {
+                let mask = _bzhi_u32(0xffff, n as u32) as u16;
+                let x = _mm512_maskz_loadu_ps(mask, a);
+                sum_of_x = _mm512_add_ps(x, sum_of_x);
+            }
+            _mm512_reduce_add_ps(sum_of_x)
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_x_v4_test() {
+        use rand::Rng;
+        const EPSILON: f32 = 0.008;
+        detect::init();
+        if !detect::v4::detect() {
+            println!("test {} ... skipped (v4)", module_path!());
+            return;
+        }
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let this = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
+                let this = &this[..z];
+                let specialized = unsafe { reduce_sum_of_x_v4(&this) };
+                let fallback = unsafe { reduce_sum_of_x_fallback(&this) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v3")]
+    unsafe fn reduce_sum_of_x_v3(this: &[f32]) -> f32 {
+        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = this.len();
+            let mut a = this.as_ptr();
+            let mut sum_of_x = _mm256_setzero_ps();
+            while n >= 8 {
+                let x = _mm256_loadu_ps(a);
+                a = a.add(8);
+                n -= 8;
+                sum_of_x = _mm256_add_ps(x, sum_of_x);
+            }
+            if n >= 4 {
+                let x = _mm256_zextps128_ps256(_mm_loadu_ps(a));
+                a = a.add(4);
+                n -= 4;
+                sum_of_x = _mm256_add_ps(x, sum_of_x);
+            }
+            let mut sum_of_x = emulate_mm256_reduce_add_ps(sum_of_x);
+            // this hint is used to disable loop unrolling
+            while std::hint::black_box(n) > 0 {
+                let x = a.read();
+                a = a.add(1);
+                n -= 1;
+                sum_of_x += x;
+            }
+            sum_of_x
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_x_v3_test() {
+        use rand::Rng;
+        const EPSILON: f32 = 0.008;
+        detect::init();
+        if !detect::v3::detect() {
+            println!("test {} ... skipped (v3)", module_path!());
+            return;
+        }
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let this = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
+                let this = &this[..z];
+                let specialized = unsafe { reduce_sum_of_x_v3(this) };
+                let fallback = unsafe { reduce_sum_of_x_fallback(this) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[detect::multiversion(v4 = import, v3 = import, v2, neon, fallback = export)]
+    pub fn reduce_sum_of_x(this: &[f32]) -> f32 {
+        let n = this.len();
+        let mut sum_of_x = 0.0f32;
+        for i in 0..n {
+            sum_of_x += this[i];
+        }
+        sum_of_x
+    }
+}
+
+mod reduce_sum_of_x2 {
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v4")]
+    unsafe fn reduce_sum_of_x2_v4(this: &[f32]) -> f32 {
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = this.len();
+            let mut a = this.as_ptr();
+            let mut x2 = _mm512_setzero_ps();
+            while n >= 16 {
+                let x = _mm512_loadu_ps(a);
+                a = a.add(16);
+                n -= 16;
+                x2 = _mm512_fmadd_ps(x, x, x2);
+            }
+            if n > 0 {
+                let mask = _bzhi_u32(0xffff, n as u32) as u16;
+                let x = _mm512_maskz_loadu_ps(mask, a);
+                x2 = _mm512_fmadd_ps(x, x, x2);
+            }
+            _mm512_reduce_add_ps(x2)
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_x2_v4_test() {
+        use rand::Rng;
+        const EPSILON: f32 = 0.006;
+        detect::init();
+        if !detect::v4::detect() {
+            println!("test {} ... skipped (v4)", module_path!());
+            return;
+        }
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let this = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
+                let this = &this[..z];
+                let specialized = unsafe { reduce_sum_of_x2_v4(&this) };
+                let fallback = unsafe { reduce_sum_of_x2_fallback(&this) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v3")]
+    unsafe fn reduce_sum_of_x2_v3(this: &[f32]) -> f32 {
+        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = this.len();
+            let mut a = this.as_ptr();
+            let mut x2 = _mm256_setzero_ps();
+            while n >= 8 {
+                let x = _mm256_loadu_ps(a);
+                a = a.add(8);
+                n -= 8;
+                x2 = _mm256_fmadd_ps(x, x, x2);
+            }
+            if n >= 4 {
+                let x = _mm256_zextps128_ps256(_mm_loadu_ps(a));
+                a = a.add(4);
+                n -= 4;
+                x2 = _mm256_fmadd_ps(x, x, x2);
+            }
+            let mut x2 = emulate_mm256_reduce_add_ps(x2);
+            // this hint is used to disable loop unrolling
+            while std::hint::black_box(n) > 0 {
+                let x = a.read();
+                a = a.add(1);
+                n -= 1;
+                x2 = x.mul_add(x, x2);
+            }
+            x2
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_x2_v3_test() {
+        use rand::Rng;
+        const EPSILON: f32 = 0.006;
+        detect::init();
+        if !detect::v3::detect() {
+            println!("test {} ... skipped (v3)", module_path!());
+            return;
+        }
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let this = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
+                let this = &this[..z];
+                let specialized = unsafe { reduce_sum_of_x2_v3(this) };
+                let fallback = unsafe { reduce_sum_of_x2_fallback(this) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[detect::multiversion(v4 = import, v3 = import, v2, neon, fallback = export)]
+    pub fn reduce_sum_of_x2(this: &[f32]) -> f32 {
+        let n = this.len();
+        let mut x2 = 0.0f32;
+        for i in 0..n {
+            x2 = this[i].mul_add(this[i], x2);
+        }
+        x2
+    }
+}
+
 mod reduce_min_max_of_x {
     // Semanctics of `f32::min` is different from `_mm256_min_ps`,
     // which may lead to issues...
@@ -231,31 +467,24 @@ mod reduce_min_max_of_x {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_min_max_of_x_v4_test() {
-        const EPSILON: f32 = 0.0001;
+        use rand::Rng;
         detect::init();
         if !detect::v4::detect() {
             println!("test {} ... skipped (v4)", module_path!());
             return;
         }
-        for _ in 0..300 {
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
             let n = 200;
-            let x = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            let x = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
             for z in 50..200 {
                 let x = &x[..z];
                 let specialized = unsafe { reduce_min_max_of_x_v4(x) };
                 let fallback = unsafe { reduce_min_max_of_x_fallback(x) };
-                assert!(
-                    (specialized.0 - fallback.0).abs() < EPSILON,
-                    "min: specialized = {}, fallback = {}.",
-                    specialized.0,
-                    fallback.0,
-                );
-                assert!(
-                    (specialized.1 - fallback.1).abs() < EPSILON,
-                    "max: specialized = {}, fallback = {}.",
-                    specialized.1,
-                    fallback.1,
-                );
+                assert_eq!(specialized.0, fallback.0);
+                assert_eq!(specialized.1, fallback.1);
             }
         }
     }
@@ -295,31 +524,24 @@ mod reduce_min_max_of_x {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_min_max_of_x_v3_test() {
-        const EPSILON: f32 = 0.0001;
+        use rand::Rng;
         detect::init();
         if !detect::v3::detect() {
             println!("test {} ... skipped (v3)", module_path!());
             return;
         }
-        for _ in 0..300 {
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
             let n = 200;
-            let x = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
+            let x = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
             for z in 50..200 {
                 let x = &x[..z];
                 let specialized = unsafe { reduce_min_max_of_x_v3(x) };
                 let fallback = unsafe { reduce_min_max_of_x_fallback(x) };
-                assert!(
-                    (specialized.0 - fallback.0).abs() < EPSILON,
-                    "specialized = {}, fallback = {}.",
-                    specialized.0,
-                    fallback.0,
-                );
-                assert!(
-                    (specialized.1 - fallback.1).abs() < EPSILON,
-                    "specialized = {}, fallback = {}.",
-                    specialized.1,
-                    fallback.1,
-                );
+                assert_eq!(specialized.0, fallback.0,);
+                assert_eq!(specialized.1, fallback.1,);
             }
         }
     }
@@ -369,17 +591,23 @@ mod reduce_sum_of_xy {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_sum_of_xy_v4_test() {
-        const EPSILON: f32 = 2.0;
+        use rand::Rng;
+        const EPSILON: f32 = 0.004;
         detect::init();
         if !detect::v4::detect() {
             println!("test {} ... skipped (v4)", module_path!());
             return;
         }
-        for _ in 0..300 {
-            let n = 4010;
-            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            for z in 3990..4010 {
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let lhs = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            let rhs = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
                 let lhs = &lhs[..z];
                 let rhs = &rhs[..z];
                 let specialized = unsafe { reduce_sum_of_xy_v4(lhs, rhs) };
@@ -436,17 +664,23 @@ mod reduce_sum_of_xy {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_sum_of_xy_v3_test() {
-        const EPSILON: f32 = 2.0;
+        use rand::Rng;
+        const EPSILON: f32 = 0.004;
         detect::init();
         if !detect::v3::detect() {
             println!("test {} ... skipped (v3)", module_path!());
             return;
         }
-        for _ in 0..300 {
-            let n = 4010;
-            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            for z in 3990..4010 {
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let lhs = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            let rhs = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
                 let lhs = &lhs[..z];
                 let rhs = &rhs[..z];
                 let specialized = unsafe { reduce_sum_of_xy_v3(lhs, rhs) };
@@ -505,17 +739,23 @@ mod reduce_sum_of_d2 {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_sum_of_d2_v4_test() {
-        const EPSILON: f32 = 2.0;
+        use rand::Rng;
+        const EPSILON: f32 = 0.02;
         detect::init();
         if !detect::v4::detect() {
             println!("test {} ... skipped (v4)", module_path!());
             return;
         }
-        for _ in 0..300 {
-            let n = 4010;
-            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            for z in 3990..4010 {
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let lhs = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            let rhs = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
                 let lhs = &lhs[..z];
                 let rhs = &rhs[..z];
                 let specialized = unsafe { reduce_sum_of_d2_v4(lhs, rhs) };
@@ -575,17 +815,23 @@ mod reduce_sum_of_d2 {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_sum_of_d2_v3_test() {
-        const EPSILON: f32 = 2.0;
+        use rand::Rng;
+        const EPSILON: f32 = 0.02;
         detect::init();
         if !detect::v3::detect() {
             println!("test {} ... skipped (v3)", module_path!());
             return;
         }
-        for _ in 0..300 {
-            let n = 4010;
-            let lhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            let rhs = (0..n).map(|_| rand::random::<_>()).collect::<Vec<_>>();
-            for z in 3990..4010 {
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let lhs = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            let rhs = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
                 let lhs = &lhs[..z];
                 let rhs = &rhs[..z];
                 let specialized = unsafe { reduce_sum_of_d2_v3(lhs, rhs) };
@@ -661,15 +907,25 @@ mod reduce_sum_of_sparse_xy {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_sum_of_sparse_xy_v4_test() {
-        const EPSILON: f32 = 5e-4;
+        use rand::Rng;
+        const EPSILON: f32 = 0.000001;
         detect::init();
         if !detect::v4::detect() {
             println!("test {} ... skipped (v4)", module_path!());
             return;
         }
-        for _ in 0..300 {
-            let (lidx, lval) = super::random_svector(300);
-            let (ridx, rval) = super::random_svector(350);
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let lm = 300;
+            let lidx = crate::rand::sample_u32_sorted(&mut rng, 10000, lm);
+            let lval = (0..lm)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            let rm = 350;
+            let ridx = crate::rand::sample_u32_sorted(&mut rng, 10000, rm);
+            let rval = (0..rm)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
             let specialized = unsafe { reduce_sum_of_sparse_xy_v4(&lidx, &lval, &ridx, &rval) };
             let fallback = unsafe { reduce_sum_of_sparse_xy_fallback(&lidx, &lval, &ridx, &rval) };
             assert!(
@@ -790,15 +1046,25 @@ mod reduce_sum_of_sparse_d2 {
     #[cfg(all(target_arch = "x86_64", test))]
     #[test]
     fn reduce_sum_of_sparse_d2_v4_test() {
-        const EPSILON: f32 = 5e-4;
+        use rand::Rng;
+        const EPSILON: f32 = 0.0004;
         detect::init();
         if !detect::v4::detect() {
             println!("test {} ... skipped (v4)", module_path!());
             return;
         }
-        for _ in 0..30 {
-            let (lidx, lval) = super::random_svector(300);
-            let (ridx, rval) = super::random_svector(350);
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let lm = 300;
+            let lidx = crate::rand::sample_u32_sorted(&mut rng, 10000, lm);
+            let lval = (0..lm)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            let rm = 350;
+            let ridx = crate::rand::sample_u32_sorted(&mut rng, 10000, rm);
+            let rval = (0..rm)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
             let specialized = unsafe { reduce_sum_of_sparse_d2_v4(&lidx, &lval, &ridx, &rval) };
             let fallback = unsafe { reduce_sum_of_sparse_d2_fallback(&lidx, &lval, &ridx, &rval) };
             assert!(
@@ -842,20 +1108,4 @@ mod reduce_sum_of_sparse_d2 {
         }
         d2
     }
-}
-
-#[cfg(all(target_arch = "x86_64", test))]
-fn random_svector(len: usize) -> (Vec<u32>, Vec<f32>) {
-    use rand::Rng;
-    let mut rng = rand::thread_rng();
-    let mut indexes = rand::seq::index::sample(&mut rand::thread_rng(), 10000, len)
-        .into_iter()
-        .map(|x| x as _)
-        .collect::<Vec<u32>>();
-    indexes.sort();
-    let values: Vec<f32> = std::iter::from_fn(|| Some(rng.gen_range(-1.0..1.0)))
-        .filter(|&x| x != 0.0)
-        .take(indexes.len())
-        .collect::<Vec<f32>>();
-    (indexes, values)
 }

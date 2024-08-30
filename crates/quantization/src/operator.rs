@@ -1,4 +1,5 @@
 use crate::product::operator::OperatorProductQuantization;
+use crate::quantize::{dequantize, quantize};
 use crate::scalar::operator::OperatorScalarQuantization;
 use crate::trivial::operator::OperatorTrivialQuantization;
 use base::distance::Distance;
@@ -8,51 +9,21 @@ use base::scalar::ScalarLike;
 pub trait OperatorQuantizationProcess: Operator {
     type QuantizationPreprocessed;
 
-    fn quantization_process(
+    fn process(
         dims: u32,
         ratio: u32,
         bits: u32,
         preprocessed: &Self::QuantizationPreprocessed,
         rhs: impl Fn(usize) -> usize,
     ) -> Distance;
-
-    const SUPPORT_FAST_SCAN: bool;
-    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<f32>;
-    fn fast_scan_resolve(x: f32) -> Distance;
-}
-
-macro_rules! unimpl_operator_quantization_process {
-    ($t:ty) => {
-        impl OperatorQuantizationProcess for $t {
-            type QuantizationPreprocessed = std::convert::Infallible;
-
-            fn quantization_process(
-                _: u32,
-                _: u32,
-                _: u32,
-                preprocessed: &Self::QuantizationPreprocessed,
-                _: impl Fn(usize) -> usize,
-            ) -> Distance {
-                match *preprocessed {}
-            }
-
-            const SUPPORT_FAST_SCAN: bool = false;
-
-            fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<f32> {
-                match *preprocessed {}
-            }
-
-            fn fast_scan_resolve(_: f32) -> Distance {
-                unimplemented!()
-            }
-        }
-    };
+    fn fscan_preprocess(preprocessed: &Self::QuantizationPreprocessed) -> (f32, f32, Vec<u8>);
+    fn fscan_process(width: u32, k: f32, b: f32, x: u16) -> Distance;
 }
 
 impl<S: ScalarLike> OperatorQuantizationProcess for VectDot<S> {
     type QuantizationPreprocessed = Vec<f32>;
 
-    fn quantization_process(
+    fn process(
         dims: u32,
         ratio: u32,
         bits: u32,
@@ -70,21 +41,19 @@ impl<S: ScalarLike> OperatorQuantizationProcess for VectDot<S> {
         Distance::from(0.0f32 - xy)
     }
 
-    const SUPPORT_FAST_SCAN: bool = true;
-
-    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<f32> {
-        preprocessed.clone()
+    fn fscan_preprocess(preprocessed: &Self::QuantizationPreprocessed) -> (f32, f32, Vec<u8>) {
+        quantize::<255>(preprocessed)
     }
 
-    fn fast_scan_resolve(x: f32) -> Distance {
-        Distance::from(-x)
+    fn fscan_process(width: u32, k: f32, b: f32, x: u16) -> Distance {
+        Distance::from(-dequantize(width, k, b, x))
     }
 }
 
 impl<S: ScalarLike> OperatorQuantizationProcess for VectL2<S> {
     type QuantizationPreprocessed = Vec<f32>;
 
-    fn quantization_process(
+    fn process(
         dims: u32,
         ratio: u32,
         bits: u32,
@@ -99,15 +68,39 @@ impl<S: ScalarLike> OperatorQuantizationProcess for VectL2<S> {
         Distance::from(d2)
     }
 
-    const SUPPORT_FAST_SCAN: bool = true;
-
-    fn fast_scan(preprocessed: &Self::QuantizationPreprocessed) -> Vec<f32> {
-        preprocessed.clone()
+    fn fscan_preprocess(preprocessed: &Self::QuantizationPreprocessed) -> (f32, f32, Vec<u8>) {
+        quantize::<255>(preprocessed)
     }
 
-    fn fast_scan_resolve(x: f32) -> Distance {
-        Distance::from(x)
+    fn fscan_process(width: u32, k: f32, b: f32, x: u16) -> Distance {
+        Distance::from(dequantize(width, k, b, x))
     }
+}
+
+macro_rules! unimpl_operator_quantization_process {
+    ($t:ty) => {
+        impl OperatorQuantizationProcess for $t {
+            type QuantizationPreprocessed = std::convert::Infallible;
+
+            fn process(
+                _: u32,
+                _: u32,
+                _: u32,
+                _: &Self::QuantizationPreprocessed,
+                _: impl Fn(usize) -> usize,
+            ) -> Distance {
+                unimplemented!()
+            }
+
+            fn fscan_preprocess(_: &Self::QuantizationPreprocessed) -> (f32, f32, Vec<u8>) {
+                unimplemented!()
+            }
+
+            fn fscan_process(_: u32, _: f32, _: f32, _: u16) -> Distance {
+                unimplemented!()
+            }
+        }
+    };
 }
 
 unimpl_operator_quantization_process!(BVectorDot);
