@@ -13,48 +13,50 @@ pub struct LloydKMeans<S> {
     is_spherical: bool,
     centroids: Vec<Vec<S>>,
     assign: Vec<usize>,
-    rand: StdRng,
+    rng: StdRng,
     samples: Vec2<S>,
 }
 
 const DELTA: f32 = f16::EPSILON.to_f32_const();
 
 impl<S: ScalarLike> LloydKMeans<S> {
-    pub fn new(c: usize, samples: Vec2<S>, is_spherical: bool) -> Self {
+    pub fn new(c: usize, samples: Vec2<S>, is_spherical: bool, prefer_kmeanspp: bool) -> Self {
         let n = samples.shape_0();
         let dims = samples.shape_1();
 
-        let mut rand = StdRng::from_entropy();
+        let mut rng = StdRng::from_entropy();
         let mut centroids = Vec::with_capacity(c);
 
-        centroids.push(samples[(rand.gen_range(0..n),)].to_vec());
-
-        let mut weight = vec![f32::INFINITY; n];
-        for i in 0..c {
-            let dis_2 = (0..n)
-                .into_par_iter()
-                .map(|j| S::reduce_sum_of_d2(&samples[(j,)], &centroids[i]))
-                .collect::<Vec<_>>();
-            for j in 0..n {
-                if dis_2[j] < weight[j] {
-                    weight[j] = dis_2[j];
-                }
-            }
-            let sum = f32::reduce_sum_of_x(&weight);
-            if i + 1 == c {
-                break;
-            }
-            let index = 'a: {
-                let mut choice = sum * rand.gen_range(0.0..1.0);
-                for j in 0..(n - 1) {
-                    choice -= weight[j];
-                    if choice <= 0.0f32 {
-                        break 'a j;
+        if prefer_kmeanspp {
+            centroids.push(samples[(rng.gen_range(0..n),)].to_vec());
+            let mut weight = vec![f32::INFINITY; n];
+            for i in 1..c {
+                let dis_2 = (0..n)
+                    .into_par_iter()
+                    .map(|j| S::reduce_sum_of_d2(&samples[(j,)], &centroids[i - 1]))
+                    .collect::<Vec<_>>();
+                for j in 0..n {
+                    if dis_2[j] < weight[j] {
+                        weight[j] = dis_2[j];
                     }
                 }
-                n - 1
-            };
-            centroids.push(samples[(index,)].to_vec());
+                let sum = f32::reduce_sum_of_x(&weight);
+                let index = 'a: {
+                    let mut choice = sum * rng.gen_range(0.0..1.0);
+                    for j in 0..(n - 1) {
+                        choice -= weight[j];
+                        if choice < 0.0f32 {
+                            break 'a j;
+                        }
+                    }
+                    n - 1
+                };
+                centroids.push(samples[(index,)].to_vec());
+            }
+        } else {
+            for index in rand::seq::index::sample(&mut rng, n, c).into_iter() {
+                centroids.push(samples[(index,)].to_vec());
+            }
         }
 
         let assign = (0..n)
@@ -77,7 +79,7 @@ impl<S: ScalarLike> LloydKMeans<S> {
             is_spherical,
             centroids,
             assign,
-            rand,
+            rng,
             samples,
         }
     }
@@ -85,7 +87,7 @@ impl<S: ScalarLike> LloydKMeans<S> {
     pub fn iterate(&mut self) -> bool {
         let dims = self.dims;
         let c = self.c;
-        let rand = &mut self.rand;
+        let rand = &mut self.rng;
         let samples = &self.samples;
         let n = samples.shape_0();
 

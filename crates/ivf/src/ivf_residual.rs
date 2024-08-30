@@ -110,7 +110,7 @@ fn from_nothing<O: Op>(
     } = options.indexing.clone().unwrap_ivf();
     let samples = O::sample(collection, nlist);
     rayon::check();
-    let centroids = k_means(nlist as usize, samples, true, spherical_centroids);
+    let centroids = k_means(nlist as usize, samples, true, spherical_centroids, false);
     rayon::check();
     let ls = (0..collection.len())
         .into_par_iter()
