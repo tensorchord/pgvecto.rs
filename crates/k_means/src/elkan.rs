@@ -13,7 +13,7 @@ pub struct ElkanKMeans<S> {
     lowerbound: Square,
     upperbound: Vec<f32>,
     assign: Vec<usize>,
-    rand: StdRng,
+    rng: StdRng,
     samples: Vec2<S>,
     first: bool,
 }
@@ -25,13 +25,13 @@ impl<S: ScalarLike> ElkanKMeans<S> {
         let n = samples.shape_0();
         let dims = samples.shape_1();
 
-        let mut rand = StdRng::from_entropy();
+        let mut rng = StdRng::from_entropy();
         let mut centroids = Vec2::zeros((c, dims));
         let mut lowerbound = Square::new(n, c);
         let mut upperbound = vec![0.0f32; n];
         let mut assign = vec![0usize; n];
 
-        centroids[(0,)].copy_from_slice(&samples[(rand.gen_range(0..n),)]);
+        centroids[(0,)].copy_from_slice(&samples[(rng.gen_range(0..n),)]);
 
         let mut weight = vec![f32::INFINITY; n];
         let mut dis = vec![0.0f32; n];
@@ -51,10 +51,10 @@ impl<S: ScalarLike> ElkanKMeans<S> {
                 break;
             }
             let index = 'a: {
-                let mut choice = sum * rand.gen_range(0.0..1.0);
+                let mut choice = sum * rng.gen_range(0.0..1.0);
                 for j in 0..(n - 1) {
                     choice -= weight[j];
-                    if choice <= 0.0f32 {
+                    if choice < 0.0f32 {
                         break 'a j;
                     }
                 }
@@ -85,7 +85,7 @@ impl<S: ScalarLike> ElkanKMeans<S> {
             lowerbound,
             upperbound,
             assign,
-            rand,
+            rng,
             samples,
             first: true,
         }
@@ -95,7 +95,7 @@ impl<S: ScalarLike> ElkanKMeans<S> {
         let c = self.c;
         let dims = self.dims;
         let samples = &self.samples;
-        let rand = &mut self.rand;
+        let rand = &mut self.rng;
         let assign = &mut self.assign;
         let centroids = &mut self.centroids;
         let lowerbound = &mut self.lowerbound;

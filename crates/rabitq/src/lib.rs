@@ -133,7 +133,7 @@ fn from_nothing<O: Op>(
     rayon::check();
     let samples = O::sample(collection, nlist);
     rayon::check();
-    let centroids: Vec2<f32> = k_means(nlist as usize, samples, true, spherical_centroids);
+    let centroids: Vec2<f32> = k_means(nlist as usize, samples, true, spherical_centroids, false);
     rayon::check();
     let ls = (0..collection.len())
         .into_par_iter()

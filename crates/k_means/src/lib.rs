@@ -17,6 +17,7 @@ pub fn k_means<S: ScalarLike>(
     mut samples: Vec2<S>,
     prefer_multithreading: bool,
     is_spherical: bool,
+    prefer_kmeanspp: bool,
 ) -> Vec2<S> {
     assert!(c > 0);
     let n = samples.shape_0();
@@ -38,7 +39,7 @@ pub fn k_means<S: ScalarLike>(
         return Vec2::from_vec((c, 1), centroids);
     }
     if prefer_multithreading {
-        let mut lloyd_k_means = LloydKMeans::new(c, samples, is_spherical);
+        let mut lloyd_k_means = LloydKMeans::new(c, samples, is_spherical, prefer_kmeanspp);
         for _ in 0..25 {
             rayon::check();
             if lloyd_k_means.iterate() {
