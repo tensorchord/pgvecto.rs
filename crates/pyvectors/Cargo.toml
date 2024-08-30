@@ -24,6 +24,9 @@ detect = { path = "../detect" }
 indexing = { path = "../indexing" }
 stoppable_rayon = { path = "../stoppable_rayon" }
 
+[target.'cfg(target_os = "linux")'.dependencies]
+tikv-jemallocator.workspace = true
+
 [lints]
 rust.unsafe_op_in_unsafe_fn = "allow"
 rust.unused_lifetimes = "warn"

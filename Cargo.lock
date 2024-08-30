@@ -2440,6 +2440,7 @@ dependencies = [
  "serde",
  "serde_json",
  "stoppable_rayon",
+ "tikv-jemallocator",
  "validator",
 ]
 
