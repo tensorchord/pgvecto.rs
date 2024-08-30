@@ -42,4 +42,4 @@ Homepage: https://pgvecto.rs/
 License: apache2" \
 > ./build/dir_deb/DEBIAN/control
 (cd ./build/dir_deb && md5sum usr/share/postgresql/$VERSION/extension/* usr/lib/postgresql/$VERSION/lib/*) > ./build/dir_deb/DEBIAN/md5sums
-dpkg --build ./build/dir_deb/ ./build/vectors-pg${VERSION}_${SEMVER}_${PLATFORM}.deb
+dpkg-deb -Zxz --build ./build/dir_deb/ ./build/vectors-pg${VERSION}_${SEMVER}_${PLATFORM}.deb
