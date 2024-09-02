@@ -167,7 +167,7 @@ pub struct BuildArguments {
     pub threads: Option<u16>,
 
     /// timeout for the building process
-    #[argh(option, default = "3600")]
+    #[argh(option, default = "10800")]
     pub timeout_seconds: u64,
 }
 

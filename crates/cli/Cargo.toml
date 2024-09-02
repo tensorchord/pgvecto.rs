@@ -12,6 +12,7 @@ rand.workspace = true
 toml.workspace = true
 
 base = { path = "../base" }
+detect = { path = "../detect" }
 index = { path = "../index" }
 service = { path = "../service" }
 
