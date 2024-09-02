@@ -42,7 +42,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         self.dims
     }
 
-    pub fn encode(&self, vector: &[f32]) -> (f32, f32, f32, f32, Vec<u8>) {
+    pub fn encode_meta(&self, vector: &[f32]) -> (f32, f32, f32, f32) {
         let sum_of_abs_x = f32::reduce_sum_of_abs_x(vector);
         let sum_of_x_2 = f32::reduce_sum_of_x2(vector);
         let dis_u = sum_of_x_2.sqrt();
@@ -61,11 +61,15 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
             .map(|x| x.is_sign_negative() as i32)
             .sum::<i32>();
         let factor_ppc = factor_ip * (cnt_pos - cnt_neg) as f32;
+        (sum_of_x_2, factor_ppc, factor_ip, factor_err)
+    }
+
+    pub fn encode(&self, vector: &[f32]) -> Vec<u8> {
         let mut codes = Vec::new();
         for i in 0..self.dims {
             codes.push(vector[i as usize].is_sign_positive() as u8);
         }
-        (dis_u * dis_u, factor_ppc, factor_ip, factor_err, codes)
+        codes
     }
 
     pub fn preprocess(&self, lhs: &[f32]) -> (O::Params, O::Preprocessed) {
