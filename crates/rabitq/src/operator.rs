@@ -13,18 +13,19 @@ pub trait OperatorRabitq: OperatorStorage {
     fn residual(lhs: &[f32], rhs: &[f32]) -> Vec<f32>;
     fn proj(projection: &[Vec<f32>], vector: &[f32]) -> Vec<f32>;
 
-    type Preprocessed0;
-    type Preprocessed1;
+    type Params;
 
-    fn preprocess(vector: &[f32]) -> (Self::Preprocessed0, Self::Preprocessed1);
+    type Preprocessed;
+
+    fn preprocess(vector: &[f32]) -> (Self::Params, Self::Preprocessed);
     fn process(
         dis_u_2: f32,
         factor_ppc: f32,
         factor_ip: f32,
         factor_err: f32,
         code: &[u8],
-        p0: &Self::Preprocessed0,
-        p1: &Self::Preprocessed1,
+        p0: &Self::Params,
+        p1: &Self::Preprocessed,
     ) -> Distance;
     fn process_lowerbound(
         dis_u_2: f32,
@@ -32,17 +33,18 @@ pub trait OperatorRabitq: OperatorStorage {
         factor_ip: f32,
         factor_err: f32,
         code: &[u8],
-        p0: &Self::Preprocessed0,
-        p1: &Self::Preprocessed1,
+        p0: &Self::Params,
+        p1: &Self::Preprocessed,
         epsilon: f32,
     ) -> Distance;
-    fn fscan_preprocess(preprocessed: &Self::Preprocessed1) -> Vec<u8>;
+
+    fn fscan_preprocess(vector: &[f32]) -> (Self::Params, Vec<u8>);
     fn fscan_process_lowerbound(
         dis_u_2: f32,
         factor_ppc: f32,
         factor_ip: f32,
         factor_err: f32,
-        p0: &Self::Preprocessed0,
+        p0: &Self::Params,
         param: u16,
         epsilon: f32,
     ) -> Distance;
@@ -71,8 +73,9 @@ impl OperatorRabitq for VectL2<f32> {
             .collect()
     }
 
-    type Preprocessed0 = (f32, f32, f32, f32);
-    type Preprocessed1 = ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>);
+    type Params = (f32, f32, f32, f32);
+
+    type Preprocessed = ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>);
 
     fn preprocess(
         vector: &[f32],
@@ -122,8 +125,17 @@ impl OperatorRabitq for VectL2<f32> {
         Distance::from_f32(rough - epsilon * err)
     }
 
-    fn fscan_preprocess(preprocessed: &((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>)) -> Vec<u8> {
-        preprocessed.1.clone()
+    fn fscan_preprocess(vector: &[f32]) -> ((f32, f32, f32, f32), Vec<u8>) {
+        use quantization::quantize;
+        let dis_v_2 = f32::reduce_sum_of_x2(vector);
+        let (k, b, qvector) = quantize::quantize::<15>(vector);
+        let qvector_sum = if vector.len() <= 4369 {
+            quantize::reduce_sum_of_x_as_u16(&qvector) as f32
+        } else {
+            quantize::reduce_sum_of_x_as_u32(&qvector) as f32
+        };
+        let lut = gen(qvector);
+        ((dis_v_2, b, k, qvector_sum), lut)
     }
 
     fn fscan_process_lowerbound(
@@ -131,7 +143,7 @@ impl OperatorRabitq for VectL2<f32> {
         factor_ppc: f32,
         factor_ip: f32,
         factor_err: f32,
-        p0: &Self::Preprocessed0,
+        p0: &Self::Params,
         param: u16,
         epsilon: f32,
     ) -> Distance {
@@ -159,10 +171,10 @@ macro_rules! unimpl_operator_rabitq {
                 unimplemented!()
             }
 
-            type Preprocessed0 = std::convert::Infallible;
-            type Preprocessed1 = std::convert::Infallible;
+            type Params = std::convert::Infallible;
+            type Preprocessed = std::convert::Infallible;
 
-            fn preprocess(_: &[f32]) -> (Self::Preprocessed0, Self::Preprocessed1) {
+            fn preprocess(_: &[f32]) -> (Self::Params, Self::Preprocessed) {
                 unimplemented!()
             }
 
@@ -172,8 +184,8 @@ macro_rules! unimpl_operator_rabitq {
                 _: f32,
                 _: f32,
                 _: &[u8],
-                _: &Self::Preprocessed0,
-                _: &Self::Preprocessed1,
+                _: &Self::Params,
+                _: &Self::Preprocessed,
             ) -> Distance {
                 unimplemented!()
             }
@@ -184,14 +196,14 @@ macro_rules! unimpl_operator_rabitq {
                 _: f32,
                 _: f32,
                 _: &[u8],
-                _: &Self::Preprocessed0,
-                _: &Self::Preprocessed1,
+                _: &Self::Params,
+                _: &Self::Preprocessed,
                 _: f32,
             ) -> Distance {
                 unimplemented!()
             }
 
-            fn fscan_preprocess(_: &Self::Preprocessed1) -> Vec<u8> {
+            fn fscan_preprocess(_: &[f32]) -> (Self::Params, Vec<u8>) {
                 unimplemented!()
             }
 
@@ -200,7 +212,7 @@ macro_rules! unimpl_operator_rabitq {
                 _: f32,
                 _: f32,
                 _: f32,
-                _: &Self::Preprocessed0,
+                _: &Self::Params,
                 _: u16,
                 _: f32,
             ) -> Distance {

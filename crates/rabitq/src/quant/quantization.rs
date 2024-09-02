@@ -27,8 +27,37 @@ impl<O: OperatorRabitq> Quantizer<O> {
 pub enum QuantizationPreprocessed<O: OperatorRabitq> {
     Rabitq(
         (
-            <O as OperatorRabitq>::Preprocessed0,
-            <O as OperatorRabitq>::Preprocessed1,
+            <O as OperatorRabitq>::Params,
+            <O as OperatorRabitq>::Preprocessed,
+        ),
+    ),
+}
+
+impl<O: OperatorRabitq> From<QuantizationPreprocessed<O>> for QuantizationAnyPreprocessed<O> {
+    fn from(value: QuantizationPreprocessed<O>) -> Self {
+        match value {
+            QuantizationPreprocessed::Rabitq((param, blut)) => Self::Rabitq((param, Ok(blut))),
+        }
+    }
+}
+
+pub enum QuantizationFscanPreprocessed<O: OperatorRabitq> {
+    Rabitq((<O as OperatorRabitq>::Params, Vec<u8>)),
+}
+
+impl<O: OperatorRabitq> From<QuantizationFscanPreprocessed<O>> for QuantizationAnyPreprocessed<O> {
+    fn from(value: QuantizationFscanPreprocessed<O>) -> Self {
+        match value {
+            QuantizationFscanPreprocessed::Rabitq((param, lut)) => Self::Rabitq((param, Err(lut))),
+        }
+    }
+}
+
+pub enum QuantizationAnyPreprocessed<O: OperatorRabitq> {
+    Rabitq(
+        (
+            <O as OperatorRabitq>::Params,
+            Result<<O as OperatorRabitq>::Preprocessed, Vec<u8>>,
         ),
     ),
 }
@@ -141,6 +170,12 @@ impl<O: OperatorRabitq> Quantization<O> {
         }
     }
 
+    pub fn fscan_preprocess(&self, lhs: &[f32]) -> QuantizationFscanPreprocessed<O> {
+        match &*self.train {
+            Quantizer::Rabitq(x) => QuantizationFscanPreprocessed::Rabitq(x.fscan_preprocess(lhs)),
+        }
+    }
+
     pub fn process(&self, preprocessed: &QuantizationPreprocessed<O>, u: u32) -> Distance {
         match (&*self.train, preprocessed) {
             (Quantizer::Rabitq(x), QuantizationPreprocessed::Rabitq(lhs)) => {
@@ -159,22 +194,21 @@ impl<O: OperatorRabitq> Quantization<O> {
 
     pub fn push_batch(
         &self,
-        preprocessed: &QuantizationPreprocessed<O>,
+        preprocessed: &QuantizationAnyPreprocessed<O>,
         rhs: Range<u32>,
         heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         rq_epsilon: f32,
-        rq_fast_scan: bool,
     ) {
         match (&*self.train, preprocessed) {
-            (Quantizer::Rabitq(x), QuantizationPreprocessed::Rabitq(lhs)) => x.push_batch(
-                lhs,
+            (Quantizer::Rabitq(x), QuantizationAnyPreprocessed::Rabitq((a, b))) => x.push_batch(
+                a,
+                b,
                 rhs,
                 heap,
                 &self.codes,
                 &self.packed_codes,
                 &self.meta,
                 rq_epsilon,
-                rq_fast_scan,
             ),
         }
     }
