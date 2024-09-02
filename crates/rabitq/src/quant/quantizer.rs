@@ -43,8 +43,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
     }
 
     pub fn encode(&self, vector: &[f32]) -> (f32, f32, f32, f32, Vec<u8>) {
-        // FIXME: add manually-implemented SIMD version
-        let sum_of_abs_x = vector.iter().map(|x| x.abs()).sum::<f32>();
+        let sum_of_abs_x = f32::reduce_sum_of_abs_x(vector);
         let sum_of_x_2 = f32::reduce_sum_of_x2(vector);
         let dis_u = sum_of_x_2.sqrt();
         let x0 = sum_of_abs_x / (sum_of_x_2 * (self.dims as f32)).sqrt();

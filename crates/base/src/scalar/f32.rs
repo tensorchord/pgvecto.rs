@@ -52,6 +52,11 @@ impl ScalarLike for f32 {
     }
 
     #[inline(always)]
+    fn reduce_sum_of_abs_x(this: &[f32]) -> f32 {
+        reduce_sum_of_abs_x::reduce_sum_of_abs_x(this)
+    }
+
+    #[inline(always)]
     fn reduce_sum_of_x2(this: &[f32]) -> f32 {
         reduce_sum_of_x2::reduce_sum_of_x2(this)
     }
@@ -192,19 +197,19 @@ mod reduce_sum_of_x {
             use std::arch::x86_64::*;
             let mut n = this.len();
             let mut a = this.as_ptr();
-            let mut sum_of_x = _mm512_setzero_ps();
+            let mut sum = _mm512_setzero_ps();
             while n >= 16 {
                 let x = _mm512_loadu_ps(a);
                 a = a.add(16);
                 n -= 16;
-                sum_of_x = _mm512_add_ps(x, sum_of_x);
+                sum = _mm512_add_ps(x, sum);
             }
             if n > 0 {
                 let mask = _bzhi_u32(0xffff, n as u32) as u16;
                 let x = _mm512_maskz_loadu_ps(mask, a);
-                sum_of_x = _mm512_add_ps(x, sum_of_x);
+                sum = _mm512_add_ps(x, sum);
             }
-            _mm512_reduce_add_ps(sum_of_x)
+            _mm512_reduce_add_ps(sum)
         }
     }
 
@@ -244,28 +249,28 @@ mod reduce_sum_of_x {
             use std::arch::x86_64::*;
             let mut n = this.len();
             let mut a = this.as_ptr();
-            let mut sum_of_x = _mm256_setzero_ps();
+            let mut sum = _mm256_setzero_ps();
             while n >= 8 {
                 let x = _mm256_loadu_ps(a);
                 a = a.add(8);
                 n -= 8;
-                sum_of_x = _mm256_add_ps(x, sum_of_x);
+                sum = _mm256_add_ps(x, sum);
             }
             if n >= 4 {
                 let x = _mm256_zextps128_ps256(_mm_loadu_ps(a));
                 a = a.add(4);
                 n -= 4;
-                sum_of_x = _mm256_add_ps(x, sum_of_x);
+                sum = _mm256_add_ps(x, sum);
             }
-            let mut sum_of_x = emulate_mm256_reduce_add_ps(sum_of_x);
+            let mut sum = emulate_mm256_reduce_add_ps(sum);
             // this hint is used to disable loop unrolling
             while std::hint::black_box(n) > 0 {
                 let x = a.read();
                 a = a.add(1);
                 n -= 1;
-                sum_of_x += x;
+                sum += x;
             }
-            sum_of_x
+            sum
         }
     }
 
@@ -300,11 +305,141 @@ mod reduce_sum_of_x {
     #[detect::multiversion(v4 = import, v3 = import, v2, neon, fallback = export)]
     pub fn reduce_sum_of_x(this: &[f32]) -> f32 {
         let n = this.len();
-        let mut sum_of_x = 0.0f32;
+        let mut sum = 0.0f32;
         for i in 0..n {
-            sum_of_x += this[i];
+            sum += this[i];
         }
-        sum_of_x
+        sum
+    }
+}
+
+mod reduce_sum_of_abs_x {
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v4")]
+    unsafe fn reduce_sum_of_abs_x_v4(this: &[f32]) -> f32 {
+        unsafe {
+            use std::arch::x86_64::*;
+            let mut n = this.len();
+            let mut a = this.as_ptr();
+            let mut sum = _mm512_setzero_ps();
+            while n >= 16 {
+                let x = _mm512_loadu_ps(a);
+                let abs_x = _mm512_abs_ps(x);
+                a = a.add(16);
+                n -= 16;
+                sum = _mm512_add_ps(abs_x, sum);
+            }
+            if n > 0 {
+                let mask = _bzhi_u32(0xffff, n as u32) as u16;
+                let x = _mm512_maskz_loadu_ps(mask, a);
+                let abs_x = _mm512_abs_ps(x);
+                sum = _mm512_add_ps(abs_x, sum);
+            }
+            _mm512_reduce_add_ps(sum)
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_abs_x_v4_test() {
+        use rand::Rng;
+        const EPSILON: f32 = 0.008;
+        detect::init();
+        if !detect::v4::detect() {
+            println!("test {} ... skipped (v4)", module_path!());
+            return;
+        }
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let this = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
+                let this = &this[..z];
+                let specialized = unsafe { reduce_sum_of_abs_x_v4(&this) };
+                let fallback = unsafe { reduce_sum_of_abs_x_fallback(&this) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[detect::target_cpu(enable = "v3")]
+    unsafe fn reduce_sum_of_abs_x_v3(this: &[f32]) -> f32 {
+        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        unsafe {
+            use std::arch::x86_64::*;
+            let abs = _mm256_castsi256_ps(_mm256_srli_epi32(_mm256_set1_epi32(-1), 1));
+            let mut n = this.len();
+            let mut a = this.as_ptr();
+            let mut sum = _mm256_setzero_ps();
+            while n >= 8 {
+                let x = _mm256_loadu_ps(a);
+                let abs_x = _mm256_and_ps(abs, x);
+                a = a.add(8);
+                n -= 8;
+                sum = _mm256_add_ps(abs_x, sum);
+            }
+            if n >= 4 {
+                let x = _mm256_zextps128_ps256(_mm_loadu_ps(a));
+                let abs_x = _mm256_and_ps(abs, x);
+                a = a.add(4);
+                n -= 4;
+                sum = _mm256_add_ps(abs_x, sum);
+            }
+            let mut sum = emulate_mm256_reduce_add_ps(sum);
+            // this hint is used to disable loop unrolling
+            while std::hint::black_box(n) > 0 {
+                let x = a.read();
+                let abs_x = x.abs();
+                a = a.add(1);
+                n -= 1;
+                sum += abs_x;
+            }
+            sum
+        }
+    }
+
+    #[cfg(all(target_arch = "x86_64", test))]
+    #[test]
+    fn reduce_sum_of_abs_x_v3_test() {
+        use rand::Rng;
+        const EPSILON: f32 = 0.008;
+        detect::init();
+        if !detect::v3::detect() {
+            println!("test {} ... skipped (v3)", module_path!());
+            return;
+        }
+        let mut rng = rand::thread_rng();
+        for _ in 0..256 {
+            let n = 4016;
+            let this = (0..n)
+                .map(|_| rng.gen_range(-1.0..=1.0))
+                .collect::<Vec<_>>();
+            for z in 3984..4016 {
+                let this = &this[..z];
+                let specialized = unsafe { reduce_sum_of_abs_x_v3(this) };
+                let fallback = unsafe { reduce_sum_of_abs_x_fallback(this) };
+                assert!(
+                    (specialized - fallback).abs() < EPSILON,
+                    "specialized = {specialized}, fallback = {fallback}."
+                );
+            }
+        }
+    }
+
+    #[detect::multiversion(v4 = import, v3 = import, v2, neon, fallback = export)]
+    pub fn reduce_sum_of_abs_x(this: &[f32]) -> f32 {
+        let n = this.len();
+        let mut sum = 0.0f32;
+        for i in 0..n {
+            sum += this[i].abs();
+        }
+        sum
     }
 }
 

@@ -75,6 +75,44 @@ pub unsafe fn emulate_mm256_reduce_add_ps(mut x: std::arch::x86_64::__m256) -> f
 
 #[inline]
 #[cfg(target_arch = "x86_64")]
+#[detect::target_cpu(enable = "v4")]
+pub unsafe fn emulate_mm512_reduce_add_epi16(x: std::arch::x86_64::__m512i) -> i16 {
+    unsafe {
+        use std::arch::x86_64::*;
+        _mm256_reduce_add_epi16(_mm512_castsi512_si256(x))
+            + _mm256_reduce_add_epi16(_mm512_extracti32x8_epi32(x, 1))
+    }
+}
+
+#[inline]
+#[cfg(target_arch = "x86_64")]
+#[detect::target_cpu(enable = "v3")]
+pub unsafe fn emulate_mm256_reduce_add_epi16(mut x: std::arch::x86_64::__m256i) -> i16 {
+    unsafe {
+        use std::arch::x86_64::*;
+        x = _mm256_add_epi16(x, _mm256_permute2f128_si256(x, x, 1));
+        x = _mm256_hadd_epi16(x, x);
+        x = _mm256_hadd_epi16(x, x);
+        let x = _mm256_cvtsi256_si32(x);
+        (x as i16) + ((x >> 16) as i16)
+    }
+}
+
+#[inline]
+#[cfg(target_arch = "x86_64")]
+#[detect::target_cpu(enable = "v3")]
+pub unsafe fn emulate_mm256_reduce_add_epi32(mut x: std::arch::x86_64::__m256i) -> i32 {
+    unsafe {
+        use std::arch::x86_64::*;
+        x = _mm256_add_epi32(x, _mm256_permute2f128_si256(x, x, 1));
+        x = _mm256_hadd_epi32(x, x);
+        x = _mm256_hadd_epi32(x, x);
+        _mm256_cvtsi256_si32(x)
+    }
+}
+
+#[inline]
+#[cfg(target_arch = "x86_64")]
 #[detect::target_cpu(enable = "v3")]
 pub unsafe fn emulate_mm256_reduce_min_ps(x: std::arch::x86_64::__m256) -> f32 {
     use crate::aligned::Aligned16;
