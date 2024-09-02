@@ -46,6 +46,17 @@ impl ScalarLike for f32 {
         self
     }
 
+    // FIXME: add manually-implemented SIMD version
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
+    fn reduce_or_of_is_zero(this: &[f32]) -> bool {
+        for &x in this {
+            if x == 0.0f32 {
+                return true;
+            }
+        }
+        false
+    }
+
     #[inline(always)]
     fn reduce_sum_of_x(this: &[f32]) -> f32 {
         reduce_sum_of_x::reduce_sum_of_x(this)

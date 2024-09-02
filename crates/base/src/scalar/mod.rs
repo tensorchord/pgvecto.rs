@@ -28,8 +28,9 @@ pub trait ScalarLike:
     fn from_f32(x: f32) -> Self;
     fn to_f32(self) -> f32;
 
-    fn reduce_sum_of_x(lhs: &[Self]) -> f32;
-    fn reduce_sum_of_abs_x(lhs: &[Self]) -> f32;
+    fn reduce_or_of_is_zero(this: &[Self]) -> bool;
+    fn reduce_sum_of_x(this: &[Self]) -> f32;
+    fn reduce_sum_of_abs_x(this: &[Self]) -> f32;
     fn reduce_sum_of_x2(this: &[Self]) -> f32;
     fn reduce_min_max_of_x(this: &[Self]) -> (f32, f32);
 
