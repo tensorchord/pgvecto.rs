@@ -60,6 +60,17 @@ impl ScalarLike for f16 {
 
     // FIXME: add manually-implemented SIMD version
     #[inline(always)]
+    fn reduce_sum_of_abs_x(this: &[f16]) -> f32 {
+        let n = this.len();
+        let mut x = 0.0f32;
+        for i in 0..n {
+            x += this[i].to_f32().abs();
+        }
+        x
+    }
+
+    // FIXME: add manually-implemented SIMD version
+    #[inline(always)]
     fn reduce_sum_of_x2(this: &[f16]) -> f32 {
         let n = this.len();
         let mut x2 = 0.0f32;

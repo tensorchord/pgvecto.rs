@@ -51,6 +51,10 @@ impl ScalarLike for Impossible {
         unimplemented!()
     }
 
+    fn reduce_sum_of_abs_x(_lhs: &[Self]) -> f32 {
+        unimplemented!()
+    }
+
     fn reduce_sum_of_x2(_this: &[Self]) -> f32 {
         unimplemented!()
     }

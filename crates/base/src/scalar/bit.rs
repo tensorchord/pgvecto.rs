@@ -4,6 +4,8 @@ pub fn sum_of_and(lhs: &[u64], rhs: &[u64]) -> u32 {
 }
 
 mod sum_of_and {
+    // FIXME: add manually-implemented SIMD version for AVX512 and AVX2
+
     #[inline]
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
@@ -68,6 +70,8 @@ pub fn sum_of_or(lhs: &[u64], rhs: &[u64]) -> u32 {
 }
 
 mod sum_of_or {
+    // FIXME: add manually-implemented SIMD version for AVX512 and AVX2
+
     #[inline]
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
@@ -132,6 +136,8 @@ pub fn sum_of_xor(lhs: &[u64], rhs: &[u64]) -> u32 {
 }
 
 mod sum_of_xor {
+    // FIXME: add manually-implemented SIMD version for AVX512 and AVX2
+
     #[inline]
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
@@ -196,6 +202,8 @@ pub fn sum_of_and_or(lhs: &[u64], rhs: &[u64]) -> (u32, u32) {
 }
 
 mod sum_of_and_or {
+    // FIXME: add manually-implemented SIMD version for AVX512 and AVX2
+
     #[inline]
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
@@ -268,6 +276,8 @@ pub fn sum_of_x(this: &[u64]) -> u32 {
 }
 
 mod sum_of_x {
+    // FIXME: add manually-implemented SIMD version for AVX512 and AVX2
+
     #[inline]
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]

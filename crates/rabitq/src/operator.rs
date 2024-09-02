@@ -83,7 +83,11 @@ impl OperatorRabitq for VectL2<f32> {
         use quantization::quantize;
         let dis_v_2 = f32::reduce_sum_of_x2(vector);
         let (k, b, qvector) = quantize::quantize::<15>(vector);
-        let qvector_sum = quantize::reduce_sum_of_x(&qvector) as f32;
+        let qvector_sum = if vector.len() <= 4369 {
+            quantize::reduce_sum_of_x_as_u16(&qvector) as f32
+        } else {
+            quantize::reduce_sum_of_x_as_u32(&qvector) as f32
+        };
         let blut = binarize(&qvector);
         let lut = gen(qvector);
         ((dis_v_2, b, k, qvector_sum), (blut, lut))
