@@ -8,6 +8,7 @@ use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
+use base::vector::VectorBorrowed;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cmp::Reverse;
@@ -32,6 +33,10 @@ impl<O: OperatorTrivialQuantization> TrivialQuantizer<O> {
             dims: vector_options.dims,
             _maker: PhantomData,
         }
+    }
+
+    pub fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+        vector.own()
     }
 
     pub fn preprocess(&self, lhs: Borrowed<'_, O>) -> O::TrivialQuantizationPreprocessed {

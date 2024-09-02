@@ -8,6 +8,7 @@ use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
+use base::vector::VectorBorrowed;
 use base::vector::VectorOwned;
 use common::sample::sample;
 use common::vec2::Vec2;
@@ -98,6 +99,10 @@ impl<O: OperatorProductQuantization> ProductQuantizer<O> {
             codes.push(target as u8);
         }
         codes
+    }
+
+    pub fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+        vector.own()
     }
 
     pub fn preprocess(&self, lhs: Borrowed<'_, O>) -> O::QuantizationPreprocessed {
