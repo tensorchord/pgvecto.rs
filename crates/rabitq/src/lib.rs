@@ -75,19 +75,25 @@ impl<O: Op> Rabitq<O> {
         );
         let mut heap = Vec::new();
         for &(_, i) in lists.iter() {
-            let preprocessed = self.quantization.preprocess(&O::residual(
-                &projected_query,
-                &self.projected_centroids[(i,)],
-            ));
+            let preprocessed = if opts.rabitq_fast_scan {
+                self.quantization
+                    .fscan_preprocess(&O::residual(
+                        &projected_query,
+                        &self.projected_centroids[(i,)],
+                    ))
+                    .into()
+            } else {
+                self.quantization
+                    .preprocess(&O::residual(
+                        &projected_query,
+                        &self.projected_centroids[(i,)],
+                    ))
+                    .into()
+            };
             let start = self.offsets[i];
             let end = self.offsets[i + 1];
-            self.quantization.push_batch(
-                &preprocessed,
-                start..end,
-                &mut heap,
-                opts.rabitq_epsilon,
-                opts.rabitq_fast_scan,
-            );
+            self.quantization
+                .push_batch(&preprocessed, start..end, &mut heap, opts.rabitq_epsilon);
         }
         let mut reranker = self.quantization.rerank(heap, move |u| {
             (O::distance(vector, self.storage.vector(u)), ())
