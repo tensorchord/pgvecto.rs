@@ -22,6 +22,7 @@ use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
 use base::search::*;
+use base::vector::VectorOwned;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use reranker::graph::GraphReranker;
@@ -112,8 +113,8 @@ impl<O: OperatorQuantization> Quantization<O> {
                     Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>
                 }
                 Quantizer::Scalar(x) => Box::new((0..vectors.len()).flat_map(|i| {
-                    let vector = vectors.vector(i);
-                    let codes = x.encode(vector);
+                    let vector = transform(vectors.vector(i));
+                    let codes = x.encode(vector.as_borrowed());
                     let bytes = x.bytes();
                     match x.bits() {
                         1 => InfiniteByteChunks::new(codes.into_iter())
@@ -133,8 +134,8 @@ impl<O: OperatorQuantization> Quantization<O> {
                     }
                 })),
                 Quantizer::Product(x) => Box::new((0..vectors.len()).flat_map(|i| {
-                    let vector = vectors.vector(i);
-                    let codes = x.encode(vector);
+                    let vector = transform(vectors.vector(i));
+                    let codes = x.encode(vector.as_borrowed());
                     let bytes = x.bytes();
                     match x.bits() {
                         1 => InfiniteByteChunks::new(codes.into_iter())
@@ -170,7 +171,10 @@ impl<O: OperatorQuantization> Quantization<O> {
                             let n = vectors.len();
                             let raw = std::array::from_fn::<_, { BLOCK_SIZE as _ }, _>(|i| {
                                 let id = BLOCK_SIZE * block + i as u32;
-                                x.encode(vectors.vector(std::cmp::min(id, n - 1)))
+                                x.encode(
+                                    transform(vectors.vector(std::cmp::min(id, n - 1)))
+                                        .as_borrowed(),
+                                )
                             });
                             pack(width, raw)
                         })) as Box<dyn Iterator<Item = u8>>
@@ -186,7 +190,10 @@ impl<O: OperatorQuantization> Quantization<O> {
                             let n = vectors.len();
                             let raw = std::array::from_fn::<_, { BLOCK_SIZE as _ }, _>(|i| {
                                 let id = BLOCK_SIZE * block + i as u32;
-                                x.encode(vectors.vector(std::cmp::min(id, n - 1)))
+                                x.encode(
+                                    transform(vectors.vector(std::cmp::min(id, n - 1)))
+                                        .as_borrowed(),
+                                )
                             });
                             pack(width, raw)
                         })) as Box<dyn Iterator<Item = u8>>

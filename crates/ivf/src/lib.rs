@@ -121,12 +121,16 @@ fn from_nothing<O: Op>(
     rayon::check();
     let centroids = k_means(nlist as usize, samples, true, spherical_centroids, false);
     rayon::check();
+    let fa = (0..collection.len())
+        .into_par_iter()
+        .map(|i| k_means_lookup(O::interpret(collection.vector(i)), &centroids))
+        .collect::<Vec<_>>();
     let ls = (0..collection.len())
         .into_par_iter()
         .fold(
             || vec![Vec::new(); nlist as usize],
             |mut state, i| {
-                state[k_means_lookup(O::interpret(collection.vector(i)), &centroids)].push(i);
+                state[fa[i as usize]].push(i);
                 state
             },
         )
