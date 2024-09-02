@@ -48,7 +48,18 @@ impl ScalarLike for f16 {
     }
 
     // FIXME: add manually-implemented SIMD version
-    #[inline(always)]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
+    fn reduce_or_of_is_zero(this: &[f16]) -> bool {
+        for &x in this {
+            if x == f16::ZERO {
+                return true;
+            }
+        }
+        false
+    }
+
+    // FIXME: add manually-implemented SIMD version
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn reduce_sum_of_x(this: &[f16]) -> f32 {
         let n = this.len();
         let mut x = 0.0f32;
@@ -59,7 +70,7 @@ impl ScalarLike for f16 {
     }
 
     // FIXME: add manually-implemented SIMD version
-    #[inline(always)]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn reduce_sum_of_abs_x(this: &[f16]) -> f32 {
         let n = this.len();
         let mut x = 0.0f32;
@@ -70,7 +81,7 @@ impl ScalarLike for f16 {
     }
 
     // FIXME: add manually-implemented SIMD version
-    #[inline(always)]
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn reduce_sum_of_x2(this: &[f16]) -> f32 {
         let n = this.len();
         let mut x2 = 0.0f32;

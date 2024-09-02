@@ -34,11 +34,8 @@ impl<S: ScalarLike> SVectOwned<S> {
         if len != 0 && !(indexes[len - 1] < dims) {
             return None;
         }
-        // FIXME: add manually-implemented SIMD version
-        for i in 0..len {
-            if values[i] == S::zero() {
-                return None;
-            }
+        if S::reduce_or_of_is_zero(&values) {
+            return None;
         }
         unsafe { Some(Self::new_unchecked(dims, indexes, values)) }
     }
@@ -206,10 +203,20 @@ impl<'a, S: ScalarLike> VectorBorrowed for SVectBorrowed<'a, S> {
     #[inline(always)]
     fn function_normalize(&self) -> SVectOwned<S> {
         let l = S::reduce_sum_of_x2(self.values).sqrt();
-        let indexes = self.indexes.to_vec();
+        let mut indexes = self.indexes.to_vec();
         let mut values = self.values.to_vec();
+        let n = indexes.len();
         S::vector_mul_scalar_inplace(&mut values, 1.0 / l);
-        // FIXME: it may panic because of zeros
+        let mut j = 0_usize;
+        for i in 0..n {
+            if values[i] != S::zero() {
+                indexes[j] = indexes[i];
+                values[j] = values[i];
+                j += 1;
+            }
+        }
+        indexes.truncate(j);
+        values.truncate(j);
         SVectOwned::new(self.dims, indexes, values)
     }
 

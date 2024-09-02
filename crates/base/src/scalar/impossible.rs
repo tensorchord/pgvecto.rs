@@ -47,11 +47,15 @@ impl ScalarLike for Impossible {
         unimplemented!()
     }
 
-    fn reduce_sum_of_x(_lhs: &[Self]) -> f32 {
+    fn reduce_or_of_is_zero(_this: &[Self]) -> bool {
         unimplemented!()
     }
 
-    fn reduce_sum_of_abs_x(_lhs: &[Self]) -> f32 {
+    fn reduce_sum_of_x(_this: &[Self]) -> f32 {
+        unimplemented!()
+    }
+
+    fn reduce_sum_of_abs_x(_this: &[Self]) -> f32 {
         unimplemented!()
     }
 
