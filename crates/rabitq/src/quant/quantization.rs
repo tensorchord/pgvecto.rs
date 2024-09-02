@@ -63,7 +63,7 @@ impl<O: OperatorRabitq> Quantization<O> {
             match &*train {
                 Quantizer::Rabitq(x) => Box::new((0..n).flat_map(|i| {
                     let vector = vectors(i);
-                    let (_, _, _, _, codes) = x.encode(&vector);
+                    let codes = x.encode(&vector);
                     let bytes = x.bytes();
                     match x.bits() {
                         1 => InfiniteByteChunks::new(codes.into_iter())
@@ -94,7 +94,7 @@ impl<O: OperatorRabitq> Quantization<O> {
                         let t = x.dims().div_ceil(4);
                         let raw = std::array::from_fn::<_, { BLOCK_SIZE as _ }, _>(|i| {
                             let id = BLOCK_SIZE * block + i as u32;
-                            let (_, _, _, _, e) = x.encode(&vectors(std::cmp::min(id, n - 1)));
+                            let e = x.encode(&vectors(std::cmp::min(id, n - 1)));
                             InfiniteByteChunks::new(e.into_iter())
                                 .map(|[b0, b1, b2, b3]| b0 | b1 << 1 | b2 << 2 | b3 << 3)
                                 .take(t as usize)
@@ -109,7 +109,7 @@ impl<O: OperatorRabitq> Quantization<O> {
             path.as_ref().join("meta"),
             match &*train {
                 Quantizer::Rabitq(x) => Box::new((0..n).flat_map(|i| {
-                    let (a, b, c, d, _) = x.encode(&vectors(i));
+                    let (a, b, c, d) = x.encode_meta(&vectors(i));
                     [a, b, c, d].into_iter()
                 })),
             },
