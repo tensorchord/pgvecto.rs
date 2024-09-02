@@ -29,7 +29,7 @@ pub struct Rabitq<O: Op> {
     quantization: Quantization<O>,
     payloads: MmapArray<Payload>,
     offsets: Json<Vec<u32>>,
-    centroids: Json<Vec2<f32>>,
+    projected_centroids: Json<Vec2<f32>>,
     projection: Json<Vec<Vec<f32>>>,
 }
 
@@ -70,14 +70,15 @@ impl<O: Op> Rabitq<O> {
     ) -> Box<dyn Iterator<Item = Element> + 'a> {
         let projected_query = O::proj(&self.projection, O::cast(vector));
         let lists = select(
-            k_means_lookup_many(&projected_query, &self.centroids),
+            k_means_lookup_many(&projected_query, &self.projected_centroids),
             opts.rabitq_nprobe as usize,
         );
         let mut heap = Vec::new();
         for &(_, i) in lists.iter() {
-            let preprocessed = self
-                .quantization
-                .preprocess(&O::residual(&projected_query, &self.centroids[(i,)]));
+            let preprocessed = self.quantization.preprocess(&O::residual(
+                &projected_query,
+                &self.projected_centroids[(i,)],
+            ));
             let start = self.offsets[i];
             let end = self.offsets[i + 1];
             self.quantization.push_batch(
@@ -188,13 +189,16 @@ fn from_nothing<O: Op>(
         (0..collection.len()).map(|i| collection.payload(i)),
     );
     let offsets = Json::create(path.as_ref().join("offsets"), offsets);
-    let centroids = Json::create(path.as_ref().join("centroids"), projected_centroids);
+    let projected_centroids = Json::create(
+        path.as_ref().join("projected_centroids"),
+        projected_centroids,
+    );
     let projection = Json::create(path.as_ref().join("projection"), projection);
     Rabitq {
         storage,
         payloads,
         offsets,
-        centroids,
+        projected_centroids,
         quantization,
         projection,
     }
@@ -205,14 +209,14 @@ fn open<O: Op>(path: impl AsRef<Path>) -> Rabitq<O> {
     let quantization = Quantization::open(path.as_ref().join("quantization"));
     let payloads = MmapArray::open(path.as_ref().join("payloads"));
     let offsets = Json::open(path.as_ref().join("offsets"));
-    let centroids = Json::open(path.as_ref().join("centroids"));
+    let projected_centroids = Json::open(path.as_ref().join("projected_centroids"));
     let projection = Json::open(path.as_ref().join("projection"));
     Rabitq {
         storage,
         quantization,
         payloads,
         offsets,
-        centroids,
+        projected_centroids,
         projection,
     }
 }

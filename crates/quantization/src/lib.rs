@@ -230,6 +230,14 @@ impl<O: OperatorQuantization> Quantization<O> {
         }
     }
 
+    pub fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+        match &*self.train {
+            Quantizer::Trivial(x) => x.project(vector),
+            Quantizer::Scalar(x) => x.project(vector),
+            Quantizer::Product(x) => x.project(vector),
+        }
+    }
+
     pub fn preprocess(&self, lhs: Borrowed<'_, O>) -> QuantizationPreprocessed<O> {
         match &*self.train {
             Quantizer::Trivial(x) => QuantizationPreprocessed::Trivial(x.preprocess(lhs)),

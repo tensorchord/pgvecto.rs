@@ -93,6 +93,10 @@ impl<O: OperatorScalarQuantization> ScalarQuantizer<O> {
         codes
     }
 
+    pub fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+        vector.own()
+    }
+
     pub fn preprocess(&self, lhs: Borrowed<'_, O>) -> O::QuantizationPreprocessed {
         O::scalar_quantization_preprocess(self.dims, self.bits, &self.max, &self.min, lhs)
     }
