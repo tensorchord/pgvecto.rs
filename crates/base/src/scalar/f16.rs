@@ -382,8 +382,8 @@ mod reduce_sum_of_xy {
             let mut b = rhs.as_ptr();
             let mut xy = _mm256_setzero_ps();
             while n >= 8 {
-                let x = _mm256_cvtph_ps(_mm_loadu_epi16(a.cast()));
-                let y = _mm256_cvtph_ps(_mm_loadu_epi16(b.cast()));
+                let x = _mm256_cvtph_ps(_mm_loadu_si128(a.cast()));
+                let y = _mm256_cvtph_ps(_mm_loadu_si128(b.cast()));
                 a = a.add(8);
                 b = b.add(8);
                 n -= 8;
@@ -585,8 +585,8 @@ mod reduce_sum_of_d2 {
             let mut b = rhs.as_ptr();
             let mut d2 = _mm256_setzero_ps();
             while n >= 8 {
-                let x = _mm256_cvtph_ps(_mm_loadu_epi16(a.cast()));
-                let y = _mm256_cvtph_ps(_mm_loadu_epi16(b.cast()));
+                let x = _mm256_cvtph_ps(_mm_loadu_si128(a.cast()));
+                let y = _mm256_cvtph_ps(_mm_loadu_si128(b.cast()));
                 a = a.add(8);
                 b = b.add(8);
                 n -= 8;
