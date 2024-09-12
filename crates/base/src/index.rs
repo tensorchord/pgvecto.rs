@@ -446,8 +446,10 @@ pub struct RabitqIndexingOptions {
     #[serde(default = "RabitqIndexingOptions::default_nlist")]
     #[validate(range(min = 1, max = 1_000_000))]
     pub nlist: u32,
-    #[serde(default = "IvfIndexingOptions::default_spherical_centroids")]
+    #[serde(default = "RabitqIndexingOptions::default_spherical_centroids")]
     pub spherical_centroids: bool,
+    #[serde(default = "RabitqIndexingOptions::default_residual_quantization")]
+    pub residual_quantization: bool,
 }
 
 impl RabitqIndexingOptions {
@@ -457,6 +459,9 @@ impl RabitqIndexingOptions {
     fn default_spherical_centroids() -> bool {
         false
     }
+    fn default_residual_quantization() -> bool {
+        false
+    }
 }
 
 impl Default for RabitqIndexingOptions {
@@ -464,6 +469,7 @@ impl Default for RabitqIndexingOptions {
         Self {
             nlist: Self::default_nlist(),
             spherical_centroids: Self::default_spherical_centroids(),
+            residual_quantization: Self::default_residual_quantization(),
         }
     }
 }

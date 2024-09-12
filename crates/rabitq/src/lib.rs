@@ -34,6 +34,7 @@ pub struct Rabitq<O: Op> {
     projected_centroids: Json<Vec2<f32>>,
     centroids_square: Json<Vec<f32>>,
     projection: Json<Vec<Vec<f32>>>,
+    is_residual: Json<bool>,
 }
 
 impl<O: Op> Rabitq<O> {
@@ -82,18 +83,26 @@ impl<O: Op> Rabitq<O> {
         );
         let mut heap = Vec::new();
         for &(_, payload) in lists.iter() {
-            let (centroid_dot_dis, original_square, centroids_square, i) = payload;
-            let residue = O::residual(&projected_query, &self.projected_centroids[(i,)]);
+            let (centroid_dot_dis, original_square, centroids_square, i) = if *self.is_residual {
+                payload
+            } else {
+                (0.0, payload.1, 0.0, payload.3)
+            };
+            let trans_vector = if *self.is_residual {
+                &O::residual(&projected_query, &self.projected_centroids[(i,)])
+            } else {
+                &projected_query
+            };
             let preprocessed = if opts.rabitq_fast_scan {
                 self.quantization.fscan_preprocess(
-                    &residue,
+                    trans_vector,
                     centroid_dot_dis,
                     original_square,
                     centroids_square,
                 )
             } else {
                 self.quantization.preprocess(
-                    &residue,
+                    trans_vector,
                     centroid_dot_dis,
                     original_square,
                     centroids_square,
@@ -125,6 +134,7 @@ fn from_nothing<O: Op>(
     let RabitqIndexingOptions {
         nlist,
         spherical_centroids,
+        residual_quantization,
     } = options.indexing.clone().unwrap_rabitq();
     let projection = {
         use nalgebra::{DMatrix, QR};
@@ -146,6 +156,7 @@ fn from_nothing<O: Op>(
         }
         projection
     };
+    let is_residual = residual_quantization;
     rayon::check();
     let samples = O::sample(collection, nlist);
     rayon::check();
@@ -190,12 +201,16 @@ fn from_nothing<O: Op>(
         collection.len(),
         |vector| {
             let vector = O::cast(collection.vector(vector));
-            let (centroid_dot_dis, target) =
-                k_means_lookup_by_dot(vector, &centroids, &centroids_squares);
-            (
-                O::proj(&projection, &O::residual(vector, &centroids[(target,)])),
-                centroid_dot_dis,
-            )
+            if is_residual {
+                let (centroid_dot_dis, target) =
+                    k_means_lookup_by_dot(vector, &centroids, &centroids_squares);
+                (
+                    O::proj(&projection, &O::residual(vector, &centroids[(target,)])),
+                    centroid_dot_dis,
+                )
+            } else {
+                (O::proj(&projection, vector), 0.0)
+            }
         },
     );
     let projected_centroids = Vec2::from_vec(
@@ -219,6 +234,7 @@ fn from_nothing<O: Op>(
         projected_centroids_square,
     );
     let projection = Json::create(path.as_ref().join("projection"), projection);
+    let is_residual = Json::create(path.as_ref().join("is_residual"), is_residual);
     Rabitq {
         storage,
         payloads,
@@ -227,6 +243,7 @@ fn from_nothing<O: Op>(
         centroids_square,
         quantization,
         projection,
+        is_residual,
     }
 }
 
@@ -238,6 +255,7 @@ fn open<O: Op>(path: impl AsRef<Path>) -> Rabitq<O> {
     let projected_centroids = Json::open(path.as_ref().join("projected_centroids"));
     let centroids_square = Json::open(path.as_ref().join("centroids_square"));
     let projection = Json::open(path.as_ref().join("projection"));
+    let is_residual = Json::open(path.as_ref().join("is_residual"));
     Rabitq {
         storage,
         quantization,
@@ -246,6 +264,7 @@ fn open<O: Op>(path: impl AsRef<Path>) -> Rabitq<O> {
         projected_centroids,
         centroids_square,
         projection,
+        is_residual,
     }
 }
 
