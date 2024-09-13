@@ -103,7 +103,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         &self,
         alpha: &O::Params,
         beta: &Result<O::Preprocessed, Vec<u8>>,
-        rhs: Range<u32>,
+        range: Range<u32>,
         heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         codes: &[u8],
         packed_codes: &[u8],
@@ -113,9 +113,9 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         match beta {
             Err(lut) => {
                 use quantization::fast_scan::b4::{fast_scan_b4, BLOCK_SIZE};
-                let s = rhs.start.next_multiple_of(BLOCK_SIZE);
-                let e = (rhs.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
-                if rhs.start != s {
+                let s = range.start.next_multiple_of(BLOCK_SIZE);
+                let e = (range.end + 1 - BLOCK_SIZE).next_multiple_of(BLOCK_SIZE);
+                if range.start != s {
                     let i = s - BLOCK_SIZE;
                     let t = self.dims.div_ceil(4);
                     let bytes = (t * 16) as usize;
@@ -123,7 +123,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                     let end = start + bytes;
                     let res = fast_scan_b4(t, &packed_codes[start..end], lut);
                     heap.extend({
-                        (rhs.start..s).map(|u| {
+                        (range.start..s).map(|u| {
                             (
                                 Reverse({
                                     let a = meta[4 * u as usize + 0];
@@ -160,7 +160,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                         })
                     });
                 }
-                if e != rhs.end {
+                if e != range.end {
                     let i = e;
                     let t = self.dims.div_ceil(4);
                     let bytes = (t * 16) as usize;
@@ -168,7 +168,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                     let end = start + bytes;
                     let res = fast_scan_b4(t, &packed_codes[start..end], lut);
                     heap.extend({
-                        (e..rhs.end).map(|u| {
+                        (e..range.end).map(|u| {
                             (
                                 Reverse({
                                     let a = meta[4 * u as usize + 0];
@@ -185,7 +185,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
                 }
             }
             Ok(blut) => {
-                heap.extend(rhs.map(|u| {
+                heap.extend(range.map(|u| {
                     (
                         Reverse(self.process_lowerbound(
                             alpha,
@@ -212,8 +212,8 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
     pub fn rerank<'a, T: 'a>(
         &'a self,
         heap: Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
-        r: impl Fn(u32) -> (Distance, T) + 'a,
+        rerank: impl Fn(u32) -> (Distance, T) + 'a,
     ) -> impl RerankerPop<T> + 'a {
-        ErrorFlatReranker::new(heap, r)
+        ErrorFlatReranker::new(heap, rerank)
     }
 }

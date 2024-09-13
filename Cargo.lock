@@ -1521,6 +1521,7 @@ dependencies = [
  "hnsw",
  "inverted",
  "ivf",
+ "quantization",
  "rabitq",
  "thiserror",
 ]

@@ -97,11 +97,11 @@ impl SVecf32Output {
             let layout = SVecf32Header::layout(vector.len() as usize);
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut SVecf32Header;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
-            std::ptr::addr_of_mut!((*ptr).varlena).write(SVecf32Header::varlena(layout.size()));
-            std::ptr::addr_of_mut!((*ptr).reserved).write(0);
-            std::ptr::addr_of_mut!((*ptr).magic).write(HEADER_MAGIC);
-            std::ptr::addr_of_mut!((*ptr).dims).write(vector.dims());
-            std::ptr::addr_of_mut!((*ptr).len).write(vector.len());
+            (&raw mut (*ptr).varlena).write(SVecf32Header::varlena(layout.size()));
+            (&raw mut (*ptr).reserved).write(0);
+            (&raw mut (*ptr).magic).write(HEADER_MAGIC);
+            (&raw mut (*ptr).dims).write(vector.dims());
+            (&raw mut (*ptr).len).write(vector.len());
             let mut data_ptr = (*ptr).phantom.as_mut_ptr().cast::<u32>();
             std::ptr::copy_nonoverlapping(
                 vector.indexes().as_ptr(),

@@ -4,34 +4,6 @@ use base::search::*;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
-pub struct DisabledFlatReranker<T> {
-    heap: BinaryHeap<(Reverse<Distance>, AlwaysEqual<u32>, AlwaysEqual<T>)>,
-}
-
-impl<T> DisabledFlatReranker<T> {
-    pub fn new<R>(heap: Vec<(Reverse<Distance>, AlwaysEqual<u32>)>, rerank: R) -> Self
-    where
-        R: Fn(u32) -> (Distance, T),
-    {
-        Self {
-            heap: heap
-                .into_iter()
-                .map(|(_, AlwaysEqual(u))| {
-                    let (dis_u, pay_u) = rerank(u);
-                    (Reverse(dis_u), AlwaysEqual(u), AlwaysEqual(pay_u))
-                })
-                .collect(),
-        }
-    }
-}
-
-impl<T> RerankerPop<T> for DisabledFlatReranker<T> {
-    fn pop(&mut self) -> Option<(Distance, u32, T)> {
-        let (Reverse(dis_u), AlwaysEqual(u), AlwaysEqual(pay_u)) = self.heap.pop()?;
-        Some((dis_u, u, pay_u))
-    }
-}
-
 pub struct WindowFlatReranker<T, R> {
     rerank: R,
     size: u32,

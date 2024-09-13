@@ -4,10 +4,9 @@ use base::scalar::ScalarLike;
 use base::search::Vectors;
 use base::vector::*;
 use common::vec2::Vec2;
-use quantization::operator::OperatorQuantization;
 use storage::OperatorStorage;
 
-pub trait OperatorIvf: OperatorQuantization + OperatorStorage {
+pub trait OperatorIvf: OperatorStorage {
     const SUPPORT: bool;
     type Scalar: ScalarLike;
     fn sample(

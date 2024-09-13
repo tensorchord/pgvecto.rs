@@ -12,7 +12,7 @@ use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use graph::visited::VisitedPool;
 use parking_lot::RwLock;
-use quantization::operator::OperatorQuantization;
+use quantization::quantizer::Quantizer;
 use quantization::Quantization;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::fs::create_dir;
@@ -24,13 +24,13 @@ use stoppable_rayon as rayon;
 use storage::OperatorStorage;
 use storage::Storage;
 
-pub trait OperatorHnsw: OperatorQuantization + OperatorStorage {}
+pub trait OperatorHnsw: OperatorStorage {}
 
-impl<T: OperatorQuantization + OperatorStorage> OperatorHnsw for T {}
+impl<T: OperatorStorage> OperatorHnsw for T {}
 
-pub struct Hnsw<O: OperatorHnsw> {
+pub struct Hnsw<O: OperatorHnsw, Q: Quantizer<O>> {
     storage: O::Storage,
-    quantization: Quantization<O>,
+    quantization: Quantization<O, Q>,
     payloads: MmapArray<Payload>,
     base_graph_outs: MmapArray<u32>,
     base_graph_weights: MmapArray<Distance>,
@@ -41,7 +41,7 @@ pub struct Hnsw<O: OperatorHnsw> {
     visited: VisitedPool,
 }
 
-impl<O: OperatorHnsw> Hnsw<O> {
+impl<O: OperatorHnsw, Q: Quantizer<O>> Hnsw<O, Q> {
     pub fn create(
         path: impl AsRef<Path>,
         options: IndexOptions,
@@ -113,11 +113,11 @@ impl<O: OperatorHnsw> Hnsw<O> {
     }
 }
 
-fn from_nothing<O: OperatorHnsw>(
+fn from_nothing<O: OperatorHnsw, Q: Quantizer<O>>(
     path: impl AsRef<Path>,
     options: IndexOptions,
     collection: &(impl Vectors<Owned<O>> + Collection + Sync),
-) -> Hnsw<O> {
+) -> Hnsw<O, Q> {
     create_dir(path.as_ref()).unwrap();
     let HnswIndexingOptions {
         m,
@@ -137,7 +137,7 @@ fn from_nothing<O: OperatorHnsw>(
     finish(&mut g, m);
     let storage = O::Storage::create(path.as_ref().join("storage"), collection);
     rayon::check();
-    let quantization = Quantization::<O>::create(
+    let quantization = Quantization::<O, Q>::create(
         path.as_ref().join("quantization"),
         options.vector,
         quantization_options,
@@ -195,12 +195,12 @@ fn from_nothing<O: OperatorHnsw>(
     }
 }
 
-fn from_main<O: OperatorHnsw>(
+fn from_main<O: OperatorHnsw, Q: Quantizer<O>>(
     path: impl AsRef<Path>,
     options: IndexOptions,
     remapped: &RemappedCollection<Owned<O>, impl Vectors<Owned<O>> + Collection + Sync>,
-    main: &Hnsw<O>,
-) -> Hnsw<O> {
+    main: &Hnsw<O, Q>,
+) -> Hnsw<O, Q> {
     create_dir(path.as_ref()).unwrap();
     let HnswIndexingOptions {
         m,
@@ -235,7 +235,7 @@ fn from_main<O: OperatorHnsw>(
     finish(&mut g, m);
     let storage = O::Storage::create(path.as_ref().join("storage"), remapped);
     rayon::check();
-    let quantization = Quantization::<O>::create(
+    let quantization = Quantization::<O, Q>::create(
         path.as_ref().join("quantization"),
         options.vector,
         quantization_options,
@@ -294,7 +294,7 @@ fn from_main<O: OperatorHnsw>(
     }
 }
 
-fn open<O: OperatorHnsw>(path: impl AsRef<Path>) -> Hnsw<O> {
+fn open<O: OperatorHnsw, Q: Quantizer<O>>(path: impl AsRef<Path>) -> Hnsw<O, Q> {
     let storage = O::Storage::open(path.as_ref().join("storage"));
     let quantization = Quantization::open(path.as_ref().join("quantization"));
     let payloads = MmapArray::open(path.as_ref().join("payloads"));
@@ -590,8 +590,8 @@ fn capacity_for_a_hierarchy(m: u32, level: u8) -> u32 {
     }
 }
 
-fn base_edges<O: OperatorHnsw>(
-    hnsw: &Hnsw<O>,
+fn base_edges<O: OperatorHnsw, Q: Quantizer<O>>(
+    hnsw: &Hnsw<O, Q>,
     u: u32,
 ) -> impl Iterator<Item = (Distance, u32)> + '_ {
     let m = *hnsw.m;
@@ -606,7 +606,10 @@ fn base_edges<O: OperatorHnsw>(
     edges_weights.zip(edges_outs)
 }
 
-fn base_outs<O: OperatorHnsw>(hnsw: &Hnsw<O>, u: u32) -> impl Iterator<Item = u32> + '_ {
+fn base_outs<O: OperatorHnsw, Q: Quantizer<O>>(
+    hnsw: &Hnsw<O, Q>,
+    u: u32,
+) -> impl Iterator<Item = u32> + '_ {
     let m = *hnsw.m;
     let offset = 2 * m as usize * u as usize;
     hnsw.base_graph_outs[offset..offset + 2 * m as usize]
@@ -615,8 +618,8 @@ fn base_outs<O: OperatorHnsw>(hnsw: &Hnsw<O>, u: u32) -> impl Iterator<Item = u3
         .copied()
 }
 
-fn hyper_edges<O: OperatorHnsw>(
-    hnsw: &Hnsw<O>,
+fn hyper_edges<O: OperatorHnsw, Q: Quantizer<O>>(
+    hnsw: &Hnsw<O, Q>,
     u: u32,
     level: u8,
 ) -> impl Iterator<Item = (Distance, u32)> + '_ {
@@ -643,8 +646,8 @@ fn hyper_edges<O: OperatorHnsw>(
     edges_weights.zip(edges_outs)
 }
 
-fn hyper_outs<O: OperatorHnsw>(
-    hnsw: &Hnsw<O>,
+fn hyper_outs<O: OperatorHnsw, Q: Quantizer<O>>(
+    hnsw: &Hnsw<O, Q>,
     u: u32,
     level: u8,
 ) -> impl Iterator<Item = u32> + '_ {

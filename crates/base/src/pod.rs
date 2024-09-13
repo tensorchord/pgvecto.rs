@@ -36,7 +36,7 @@ unsafe impl Pod for Distance {}
 unsafe impl Pod for Impossible {}
 
 pub fn bytes_of<T: Pod>(t: &T) -> &[u8] {
-    unsafe { core::slice::from_raw_parts(std::ptr::addr_of!(*t) as *const u8, size_of::<T>()) }
+    unsafe { core::slice::from_raw_parts(t as *const T as *const u8, size_of::<T>()) }
 }
 
 pub fn zeroed_vec<T: Pod>(length: usize) -> Vec<T> {

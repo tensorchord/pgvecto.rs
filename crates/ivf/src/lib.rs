@@ -17,6 +17,7 @@ use k_means::k_means;
 use k_means::k_means_lookup;
 use k_means::k_means_lookup_many;
 use operator::OperatorIvf as Op;
+use quantization::quantizer::Quantizer;
 use quantization::Quantization;
 use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
@@ -25,16 +26,16 @@ use std::path::Path;
 use stoppable_rayon as rayon;
 use storage::Storage;
 
-pub struct Ivf<O: Op> {
+pub struct Ivf<O: Op, Q: Quantizer<O>> {
     storage: O::Storage,
-    quantization: Quantization<O>,
+    quantization: Quantization<O, Q>,
     payloads: MmapArray<Payload>,
     offsets: Json<Vec<u32>>,
     centroids: Json<Vec2<<O as Op>::Scalar>>,
     is_residual: Json<bool>,
 }
 
-impl<O: Op> Ivf<O> {
+impl<O: Op, Q: Quantizer<O>> Ivf<O, Q> {
     pub fn create(
         path: impl AsRef<Path>,
         options: IndexOptions,
@@ -73,28 +74,24 @@ impl<O: Op> Ivf<O> {
             k_means_lookup_many(O::interpret(vector), &self.centroids),
             opts.ivf_nprobe as usize,
         );
-        let mut heap = Vec::new();
-        let mut preprocessed = self.quantization.preprocess(vector);
+        let mut heap = Q::flat_rerank_start();
+        let mut lut = self.quantization.flat_rerank_preprocess(vector, opts);
         for i in lists.iter().map(|(_, i)| *i) {
             if *self.is_residual {
                 let vector = O::residual(vector, &self.centroids[(i,)]);
-                preprocessed = self.quantization.preprocess(vector.as_borrowed());
+                lut = self
+                    .quantization
+                    .flat_rerank_preprocess(vector.as_borrowed(), opts);
             }
             let start = self.offsets[i];
             let end = self.offsets[i + 1];
-            self.quantization.push_batch(
-                &preprocessed,
-                start..end,
-                &mut heap,
-                opts.ivf_sq_fast_scan,
-                opts.ivf_pq_fast_scan,
-            );
+            self.quantization
+                .flat_rerank_continue(&lut, start..end, &mut heap);
         }
-        let mut reranker = self.quantization.flat_rerank(
+        let mut reranker = self.quantization.flat_rerank_break(
             heap,
             move |u| (O::distance(vector, self.storage.vector(u)), ()),
-            opts.ivf_sq_rerank_size,
-            opts.ivf_pq_rerank_size,
+            opts,
         );
         Box::new(std::iter::from_fn(move || {
             reranker.pop().map(|(dis_u, u, ())| Element {
@@ -105,11 +102,11 @@ impl<O: Op> Ivf<O> {
     }
 }
 
-fn from_nothing<O: Op>(
+fn from_nothing<O: Op, Q: Quantizer<O>>(
     path: impl AsRef<Path>,
     options: IndexOptions,
     collection: &(impl Vectors<Owned<O>> + Collection + Sync),
-) -> Ivf<O> {
+) -> Ivf<O, Q> {
     create_dir(path.as_ref()).unwrap();
     let IvfIndexingOptions {
         nlist,
@@ -158,7 +155,7 @@ fn from_nothing<O: Op>(
     let is_residual = residual_quantization && O::SUPPORT_RESIDUAL;
     rayon::check();
     let storage = O::Storage::create(path.as_ref().join("storage"), &collection);
-    let quantization = Quantization::<O>::create(
+    let quantization = Quantization::<O, Q>::create(
         path.as_ref().join("quantization"),
         options.vector,
         quantization_options,
@@ -189,7 +186,7 @@ fn from_nothing<O: Op>(
     }
 }
 
-fn open<O: Op>(path: impl AsRef<Path>) -> Ivf<O> {
+fn open<O: Op, Q: Quantizer<O>>(path: impl AsRef<Path>) -> Ivf<O, Q> {
     let storage = O::Storage::open(path.as_ref().join("storage"));
     let quantization = Quantization::open(path.as_ref().join("quantization"));
     let payloads = MmapArray::open(path.as_ref().join("payloads"));

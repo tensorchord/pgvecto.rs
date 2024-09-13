@@ -106,11 +106,11 @@ pub struct IndexOptions {
 impl IndexOptions {
     fn validate_self_quantization(
         &self,
-        quantization: &QuantizationOptions,
+        quantization: &Option<QuantizationOptions>,
     ) -> Result<(), ValidationError> {
         match quantization {
-            QuantizationOptions::Trivial(_) => Ok(()),
-            QuantizationOptions::Scalar(_) | QuantizationOptions::Product(_) => {
+            None => Ok(()),
+            Some(QuantizationOptions::Scalar(_) | QuantizationOptions::Product(_)) => {
                 if !matches!(self.vector.v, VectorKind::Vecf32 | VectorKind::Vecf16) {
                     return Err(ValidationError::new(
                         "scalar quantization or product quantization is not support for vectors that are not dense vectors",
@@ -356,13 +356,13 @@ impl Default for InvertedIndexingOptions {
 pub struct FlatIndexingOptions {
     #[serde(default)]
     #[validate(nested)]
-    pub quantization: QuantizationOptions,
+    pub quantization: Option<QuantizationOptions>,
 }
 
 impl Default for FlatIndexingOptions {
     fn default() -> Self {
         Self {
-            quantization: QuantizationOptions::default(),
+            quantization: Default::default(),
         }
     }
 }
@@ -379,7 +379,7 @@ pub struct IvfIndexingOptions {
     pub residual_quantization: bool,
     #[serde(default)]
     #[validate(nested)]
-    pub quantization: QuantizationOptions,
+    pub quantization: Option<QuantizationOptions>,
 }
 
 impl IvfIndexingOptions {
@@ -418,7 +418,7 @@ pub struct HnswIndexingOptions {
     pub ef_construction: u32,
     #[serde(default)]
     #[validate(nested)]
-    pub quantization: QuantizationOptions,
+    pub quantization: Option<QuantizationOptions>,
 }
 
 impl HnswIndexingOptions {
@@ -472,7 +472,6 @@ impl Default for RabitqIndexingOptions {
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "snake_case")]
 pub enum QuantizationOptions {
-    Trivial(TrivialQuantizationOptions),
     Scalar(ScalarQuantizationOptions),
     Product(ProductQuantizationOptions),
 }
@@ -480,26 +479,9 @@ pub enum QuantizationOptions {
 impl Validate for QuantizationOptions {
     fn validate(&self) -> Result<(), validator::ValidationErrors> {
         match self {
-            Self::Trivial(x) => x.validate(),
             Self::Scalar(x) => x.validate(),
             Self::Product(x) => x.validate(),
         }
-    }
-}
-
-impl Default for QuantizationOptions {
-    fn default() -> Self {
-        Self::Trivial(Default::default())
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-#[serde(deny_unknown_fields)]
-pub struct TrivialQuantizationOptions {}
-
-impl Default for TrivialQuantizationOptions {
-    fn default() -> Self {
-        Self {}
     }
 }
 
@@ -569,26 +551,16 @@ impl Default for ProductQuantizationOptions {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, Alter)]
 #[serde(deny_unknown_fields)]
 pub struct SearchOptions {
-    #[serde(default = "SearchOptions::default_flat_sq_rerank_size")]
+    #[serde(default = "SearchOptions::default_sq_rerank_size")]
     #[validate(range(min = 0, max = 65535))]
-    pub flat_sq_rerank_size: u32,
-    #[serde(default = "SearchOptions::default_flat_sq_fast_scan")]
-    pub flat_sq_fast_scan: bool,
-    #[serde(default = "SearchOptions::default_flat_pq_rerank_size")]
+    pub sq_rerank_size: u32,
+    #[serde(default = "SearchOptions::default_sq_fast_scan")]
+    pub sq_fast_scan: bool,
+    #[serde(default = "SearchOptions::default_pq_rerank_size")]
     #[validate(range(min = 0, max = 65535))]
-    pub flat_pq_rerank_size: u32,
-    #[serde(default = "SearchOptions::default_flat_pq_fast_scan")]
-    pub flat_pq_fast_scan: bool,
-    #[serde(default = "SearchOptions::default_ivf_sq_rerank_size")]
-    #[validate(range(min = 0, max = 65535))]
-    pub ivf_sq_rerank_size: u32,
-    #[serde(default = "SearchOptions::default_ivf_sq_fast_scan")]
-    pub ivf_sq_fast_scan: bool,
-    #[serde(default = "SearchOptions::default_ivf_pq_rerank_size")]
-    #[validate(range(min = 0, max = 65535))]
-    pub ivf_pq_rerank_size: u32,
-    #[serde(default = "SearchOptions::default_ivf_pq_fast_scan")]
-    pub ivf_pq_fast_scan: bool,
+    pub pq_rerank_size: u32,
+    #[serde(default = "SearchOptions::default_pq_fast_scan")]
+    pub pq_fast_scan: bool,
     #[serde(default = "SearchOptions::default_ivf_nprobe")]
     #[validate(range(min = 1, max = 65535))]
     pub ivf_nprobe: u32,
@@ -609,28 +581,16 @@ pub struct SearchOptions {
 }
 
 impl SearchOptions {
-    pub const fn default_flat_sq_rerank_size() -> u32 {
+    pub const fn default_sq_rerank_size() -> u32 {
         0
     }
-    pub const fn default_flat_sq_fast_scan() -> bool {
+    pub const fn default_sq_fast_scan() -> bool {
         false
     }
-    pub const fn default_flat_pq_rerank_size() -> u32 {
+    pub const fn default_pq_rerank_size() -> u32 {
         0
     }
-    pub const fn default_flat_pq_fast_scan() -> bool {
-        false
-    }
-    pub const fn default_ivf_sq_rerank_size() -> u32 {
-        0
-    }
-    pub const fn default_ivf_sq_fast_scan() -> bool {
-        false
-    }
-    pub const fn default_ivf_pq_rerank_size() -> u32 {
-        0
-    }
-    pub const fn default_ivf_pq_fast_scan() -> bool {
+    pub const fn default_pq_fast_scan() -> bool {
         false
     }
     pub const fn default_ivf_nprobe() -> u32 {
@@ -656,14 +616,10 @@ impl SearchOptions {
 impl Default for SearchOptions {
     fn default() -> Self {
         Self {
-            flat_sq_rerank_size: Self::default_flat_sq_rerank_size(),
-            flat_sq_fast_scan: Self::default_flat_sq_fast_scan(),
-            flat_pq_rerank_size: Self::default_flat_pq_rerank_size(),
-            flat_pq_fast_scan: Self::default_flat_pq_fast_scan(),
-            ivf_sq_rerank_size: Self::default_ivf_sq_rerank_size(),
-            ivf_sq_fast_scan: Self::default_ivf_sq_fast_scan(),
-            ivf_pq_rerank_size: Self::default_ivf_pq_rerank_size(),
-            ivf_pq_fast_scan: Self::default_ivf_pq_fast_scan(),
+            sq_rerank_size: Self::default_sq_rerank_size(),
+            sq_fast_scan: Self::default_sq_fast_scan(),
+            pq_rerank_size: Self::default_pq_rerank_size(),
+            pq_fast_scan: Self::default_pq_fast_scan(),
             ivf_nprobe: Self::default_ivf_nprobe(),
             hnsw_ef_search: Self::default_hnsw_ef_search(),
             rabitq_nprobe: Self::default_rabitq_nprobe(),

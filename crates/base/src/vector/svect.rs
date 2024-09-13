@@ -77,6 +77,11 @@ impl<S: ScalarLike> VectorOwned for SVectOwned<S> {
             values: &self.values,
         }
     }
+
+    #[inline(always)]
+    fn zero(dims: u32) -> Self {
+        Self::new(dims, vec![], vec![])
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

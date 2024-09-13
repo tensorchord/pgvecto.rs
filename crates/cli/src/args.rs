@@ -131,17 +131,13 @@ pub struct QueryArguments {
 impl QueryArguments {
     pub fn get_search_options(&self) -> SearchOptions {
         SearchOptions {
-            flat_sq_rerank_size: 0,
-            flat_pq_rerank_size: 0,
-            ivf_sq_rerank_size: 0,
-            ivf_pq_rerank_size: 0,
+            sq_rerank_size: 0,
+            pq_rerank_size: 0,
             hnsw_ef_search: self.ef,
             ivf_nprobe: self.probe,
             diskann_ef_search: 100,
-            flat_sq_fast_scan: false,
-            flat_pq_fast_scan: false,
-            ivf_sq_fast_scan: false,
-            ivf_pq_fast_scan: false,
+            sq_fast_scan: false,
+            pq_fast_scan: false,
             rabitq_epsilon: 1.9,
             rabitq_fast_scan: true,
             rabitq_nprobe: self.probe,

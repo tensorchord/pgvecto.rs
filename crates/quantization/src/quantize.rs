@@ -375,11 +375,6 @@ pub fn quantize<const N: u8>(lut: &[f32]) -> (f32, f32, Vec<u8>) {
 }
 
 #[inline(always)]
-pub fn dequantize(sum_1: u32, k: f32, b: f32, sum_x: u16) -> f32 {
-    (sum_1 as f32) * b + (sum_x as f32) * k
-}
-
-#[inline(always)]
 pub fn reduce_sum_of_x_as_u16(vector: &[u8]) -> u16 {
     reduce_sum_of_x_as_u16::reduce_sum_of_x_as_u16(vector)
 }

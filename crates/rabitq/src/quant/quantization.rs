@@ -195,7 +195,7 @@ impl<O: OperatorRabitq> Quantization<O> {
     pub fn push_batch(
         &self,
         preprocessed: &QuantizationAnyPreprocessed<O>,
-        rhs: Range<u32>,
+        range: Range<u32>,
         heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         rq_epsilon: f32,
     ) {
@@ -203,7 +203,7 @@ impl<O: OperatorRabitq> Quantization<O> {
             (Quantizer::Rabitq(x), QuantizationAnyPreprocessed::Rabitq((a, b))) => x.push_batch(
                 a,
                 b,
-                rhs,
+                range,
                 heap,
                 &self.codes,
                 &self.packed_codes,
