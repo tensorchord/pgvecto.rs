@@ -12,6 +12,8 @@ use storage::OperatorStorage;
 pub trait OperatorRabitq: OperatorStorage {
     fn sample(vectors: &impl Vectors<Self::Vector>, nlist: u32) -> Vec2<f32>;
     fn cast(vector: Borrowed<'_, Self>) -> &[f32];
+
+    const SUPPORT_RESIDUAL: bool;
     fn residual(lhs: &[f32], rhs: &[f32]) -> Vec<f32>;
     fn proj(projection: &[Vec<f32>], vector: &[f32]) -> Vec<f32>;
 
@@ -19,15 +21,11 @@ pub trait OperatorRabitq: OperatorStorage {
     type QvectorParams;
     type QvectorLookup;
 
-    fn train_encode(dims: u32, vector: Vec<f32>, centroid_dot_dis: f32) -> Self::VectorParams;
+    fn train_encode(dims: u32, vector: Vec<f32>) -> Self::VectorParams;
     fn train_decode<T: Index<usize, Output = f32> + ?Sized>(u: u32, meta: &T)
         -> Self::VectorParams;
-    fn preprocess(
-        trans_vector: &[f32],
-        centroid_dot_dis: f32,
-        original_square: f32,
-        centroids_square: f32,
-    ) -> (Self::QvectorParams, Self::QvectorLookup);
+    fn preprocess(trans_vector: &[f32], dis_v_2: f32)
+        -> (Self::QvectorParams, Self::QvectorLookup);
     fn process(
         vector_params: &Self::VectorParams,
         qvector_code: &[u8],
@@ -41,12 +39,7 @@ pub trait OperatorRabitq: OperatorStorage {
         qvector_lookup: &Self::QvectorLookup,
         epsilon: f32,
     ) -> Distance;
-    fn fscan_preprocess(
-        trans_vector: &[f32],
-        centroid_dot_dis: f32,
-        original_square: f32,
-        centroids_square: f32,
-    ) -> (Self::QvectorParams, Vec<u8>);
+    fn fscan_preprocess(trans_vector: &[f32], dis_v_2: f32) -> (Self::QvectorParams, Vec<u8>);
     fn fscan_process_lowerbound(
         vector_params: &Self::VectorParams,
         qvector_params: &Self::QvectorParams,
@@ -67,6 +60,7 @@ impl OperatorRabitq for VectL2<f32> {
     fn cast(vector: Borrowed<'_, Self>) -> &[f32] {
         vector.slice()
     }
+    const SUPPORT_RESIDUAL: bool = true;
     fn residual(lhs: &[f32], rhs: &[f32]) -> Vec<f32> {
         f32::vector_sub(lhs, rhs)
     }
@@ -84,7 +78,7 @@ impl OperatorRabitq for VectL2<f32> {
     type QvectorParams = (f32, f32, f32, f32);
     type QvectorLookup = ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>);
 
-    fn train_encode(dims: u32, vector: Vec<f32>, _centroid_dot_dis: f32) -> Self::VectorParams {
+    fn train_encode(dims: u32, vector: Vec<f32>) -> Self::VectorParams {
         let sum_of_abs_x = f32::reduce_sum_of_abs_x(&vector);
         let dis_u_2 = f32::reduce_sum_of_x2(&vector);
         let dis_u = dis_u_2.sqrt();
@@ -119,12 +113,9 @@ impl OperatorRabitq for VectL2<f32> {
 
     fn preprocess(
         trans_vector: &[f32],
-        centroid_dot_dis: f32,
-        original_square: f32,
-        centroids_square: f32,
+        dis_v_2: f32,
     ) -> (Self::QvectorParams, Self::QvectorLookup) {
         use quantization::quantize;
-        let dis_v_2 = original_square + centroids_square + 2.0 * centroid_dot_dis;
         let (delta, lower_bound, qvector) = quantize::quantize::<15>(trans_vector);
         let qvector_sum = if trans_vector.len() <= 4369 {
             quantize::reduce_sum_of_x_as_u16(&qvector) as f32
@@ -182,16 +173,10 @@ impl OperatorRabitq for VectL2<f32> {
         Distance::from_f32(rough - epsilon * err)
     }
 
-    fn fscan_preprocess(
-        vector: &[f32],
-        centroid_dot_dis: f32,
-        original_square: f32,
-        centroids_square: f32,
-    ) -> (Self::QvectorParams, Vec<u8>) {
+    fn fscan_preprocess(trans_vector: &[f32], dis_v_2: f32) -> (Self::QvectorParams, Vec<u8>) {
         use quantization::quantize;
-        let dis_v_2 = original_square + centroids_square + 2.0 * centroid_dot_dis;
-        let (k, b, qvector) = quantize::quantize::<15>(vector);
-        let qvector_sum = if vector.len() <= 4369 {
+        let (k, b, qvector) = quantize::quantize::<15>(trans_vector);
+        let qvector_sum = if trans_vector.len() <= 4369 {
             quantize::reduce_sum_of_x_as_u16(&qvector) as f32
         } else {
             quantize::reduce_sum_of_x_as_u32(&qvector) as f32
@@ -228,63 +213,43 @@ impl OperatorRabitq for VectDot<f32> {
     fn cast(vector: Borrowed<'_, Self>) -> &[f32] {
         VectL2::<f32>::cast(vector)
     }
-    fn residual(lhs: &[f32], rhs: &[f32]) -> Vec<f32> {
-        VectL2::<f32>::residual(lhs, rhs)
+    const SUPPORT_RESIDUAL: bool = false;
+    fn residual(_lhs: &[f32], _rhs: &[f32]) -> Vec<f32> {
+        unimplemented!()
     }
     fn proj(projection: &[Vec<f32>], vector: &[f32]) -> Vec<f32> {
         VectL2::<f32>::proj(projection, vector)
     }
 
-    // [centroid_dot_dis, factor_ppc, factor_ip, factor_err]
-    type VectorParams = [f32; 4];
-    // (dis_v_2, centroid_dot_vector, lower_bound, delta, qvector_sum)
-    type QvectorParams = (f32, f32, f32, f32, f32);
+    // [factor_ppc, factor_ip, factor_err]
+    type VectorParams = [f32; 3];
+    // (dis_v_2, lower_bound, delta, qvector_sum)
+    type QvectorParams = (f32, f32, f32, f32);
     type QvectorLookup = ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>);
 
-    fn train_encode(dims: u32, vector: Vec<f32>, centroid_dot_dis: f32) -> Self::VectorParams {
-        let (factor_ppc, factor_ip, factor_err) =
-            match VectL2::<f32>::train_encode(dims, vector, centroid_dot_dis) {
-                [_, b, c, d] => (b, c, d),
-            };
+    fn train_encode(dims: u32, vector: Vec<f32>) -> Self::VectorParams {
+        let (factor_ppc, factor_ip, factor_err) = match VectL2::<f32>::train_encode(dims, vector) {
+            [_, b, c, d] => (b, c, d),
+        };
 
-        [centroid_dot_dis, factor_ppc, factor_ip, factor_err]
+        [factor_ppc, factor_ip, factor_err]
     }
 
     fn train_decode<T: Index<usize, Output = f32> + ?Sized>(
         u: u32,
         meta: &T,
     ) -> Self::VectorParams {
-        let dis_u_c_dot = meta[4 * u as usize + 0];
-        let factor_ppc = meta[4 * u as usize + 1];
-        let factor_ip = meta[4 * u as usize + 2];
-        let factor_err = meta[4 * u as usize + 3];
-        [dis_u_c_dot, factor_ppc, factor_ip, factor_err]
+        let factor_ppc = meta[4 * u as usize + 0];
+        let factor_ip = meta[4 * u as usize + 1];
+        let factor_err = meta[4 * u as usize + 2];
+        [factor_ppc, factor_ip, factor_err]
     }
 
     fn preprocess(
         trans_vector: &[f32],
-        centroid_dot_dis: f32,
-        original_square: f32,
-        centroids_square: f32,
+        dis_v_2: f32,
     ) -> (Self::QvectorParams, Self::QvectorLookup) {
-        // centroid_dot_vector = <c, c-q_r> = |c| - <c, q_r>
-        let centroid_dot_vector = centroids_square + centroid_dot_dis;
-        let ((dis_v_2, lower_bound, delta, qvector_sum), lookup) = VectL2::<f32>::preprocess(
-            trans_vector,
-            centroid_dot_dis,
-            original_square,
-            centroids_square,
-        );
-        (
-            (
-                dis_v_2,
-                centroid_dot_vector,
-                lower_bound,
-                delta,
-                qvector_sum,
-            ),
-            lookup,
-        )
+        VectL2::<f32>::preprocess(trans_vector, dis_v_2)
     }
 
     fn process(
@@ -295,11 +260,10 @@ impl OperatorRabitq for VectDot<f32> {
     ) -> Distance {
         let (blut, _) = qvector_lookup;
         let binary_prod = asymmetric_binary_dot_product(qvector_code, blut) as u16;
-        let (dis_u_2, factor_ppc, factor_ip, factor_err) = match vector_params {
-            [a, b, c, d] => (*a, *b, *c, *d),
+        let (factor_ppc, factor_ip, factor_err) = match vector_params {
+            [a, b, c] => (*a, *b, *c),
         };
         let (rough, _) = rabitq_dot(
-            dis_u_2,
             factor_ppc,
             factor_ip,
             factor_err,
@@ -318,11 +282,10 @@ impl OperatorRabitq for VectDot<f32> {
     ) -> Distance {
         let (blut, _) = qvector_lookup;
         let binary_prod = asymmetric_binary_dot_product(qvector_code, blut) as u16;
-        let (dis_u_c_dot, factor_ppc, factor_ip, factor_err) = match vector_params {
-            [a, b, c, d] => (*a, *b, *c, *d),
+        let (factor_ppc, factor_ip, factor_err) = match vector_params {
+            [a, b, c] => (*a, *b, *c),
         };
         let (rough, err) = rabitq_dot(
-            dis_u_c_dot,
             factor_ppc,
             factor_ip,
             factor_err,
@@ -331,24 +294,8 @@ impl OperatorRabitq for VectDot<f32> {
         );
         Distance::from_f32(rough - epsilon * err)
     }
-    fn fscan_preprocess(
-        vector: &[f32],
-        centroid_dot_dis: f32,
-        original_square: f32,
-        centroids_square: f32,
-    ) -> (Self::QvectorParams, Vec<u8>) {
-        use quantization::quantize;
-        let dis_v_2 = original_square + centroids_square + 2.0 * centroid_dot_dis;
-        // centroid_dot_vector = <c, c-q_r> = |c| - <c, q_r>
-        let centroid_dot_vector = centroids_square + centroid_dot_dis;
-        let (k, b, qvector) = quantize::quantize::<15>(vector);
-        let qvector_sum = if vector.len() <= 4369 {
-            quantize::reduce_sum_of_x_as_u16(&qvector) as f32
-        } else {
-            quantize::reduce_sum_of_x_as_u32(&qvector) as f32
-        };
-        let lut = gen(qvector);
-        ((dis_v_2, centroid_dot_vector, b, k, qvector_sum), lut)
+    fn fscan_preprocess(trans_vector: &[f32], dis_v_2: f32) -> (Self::QvectorParams, Vec<u8>) {
+        VectL2::<f32>::fscan_preprocess(trans_vector, dis_v_2)
     }
 
     fn fscan_process_lowerbound(
@@ -357,11 +304,10 @@ impl OperatorRabitq for VectDot<f32> {
         binary_prod: u16,
         epsilon: f32,
     ) -> Distance {
-        let (dis_u_c_dot, factor_ppc, factor_ip, factor_err) = match vector_params {
-            [a, b, c, d] => (*a, *b, *c, *d),
+        let (factor_ppc, factor_ip, factor_err) = match vector_params {
+            [a, b, c] => (*a, *b, *c),
         };
         let (rough, err) = rabitq_dot(
-            dis_u_c_dot,
             factor_ppc,
             factor_ip,
             factor_err,
@@ -383,6 +329,7 @@ macro_rules! unimpl_operator_rabitq {
                 unimplemented!()
             }
 
+            const SUPPORT_RESIDUAL: bool = false;
             fn residual(_: &[f32], _: &[f32]) -> Vec<f32> {
                 unimplemented!()
             }
@@ -395,7 +342,7 @@ macro_rules! unimpl_operator_rabitq {
             type QvectorParams = std::convert::Infallible;
             type QvectorLookup = std::convert::Infallible;
 
-            fn train_encode(_: u32, _: Vec<f32>, _: f32) -> Self::VectorParams {
+            fn train_encode(_: u32, _: Vec<f32>) -> Self::VectorParams {
                 unimplemented!()
             }
 
@@ -406,12 +353,7 @@ macro_rules! unimpl_operator_rabitq {
                 unimplemented!()
             }
 
-            fn preprocess(
-                _: &[f32],
-                _: f32,
-                _: f32,
-                _: f32,
-            ) -> (Self::QvectorParams, Self::QvectorLookup) {
+            fn preprocess(_: &[f32], _: f32) -> (Self::QvectorParams, Self::QvectorLookup) {
                 unimplemented!()
             }
 
@@ -434,12 +376,7 @@ macro_rules! unimpl_operator_rabitq {
                 unimplemented!()
             }
 
-            fn fscan_preprocess(
-                _: &[f32],
-                _: f32,
-                _: f32,
-                _: f32,
-            ) -> (Self::QvectorLookup, Vec<u8>) {
+            fn fscan_preprocess(_: &[f32], _: f32) -> (Self::QvectorLookup, Vec<u8>) {
                 unimplemented!()
             }
             fn fscan_process_lowerbound(
@@ -483,16 +420,13 @@ pub fn rabitq_l2(
 
 #[inline(always)]
 pub fn rabitq_dot(
-    dis_u_c_dot: f32,
     factor_ppc: f32,
     factor_ip: f32,
     factor_err: f32,
-    (dis_v_2, centroid_dot_vector, lower_bound, delta, qvector_sum): (f32, f32, f32, f32, f32),
+    (dis_v_2, lower_bound, delta, qvector_sum): (f32, f32, f32, f32),
     binary_prod: u16,
 ) -> (f32, f32) {
-    let rough = dis_u_c_dot
-        + centroid_dot_vector
-        + 0.5 * lower_bound * factor_ppc
+    let rough = 0.5 * lower_bound * factor_ppc
         + 0.5 * ((2.0 * binary_prod as f32) - qvector_sum) * factor_ip * delta;
     let err = factor_err * dis_v_2.sqrt() * 0.5;
     (rough, err)
@@ -601,8 +535,6 @@ mod test {
         original: Vec<f32>,
         centroid: Vec<f32>,
         trans_vector: Vec<f32>,
-        centroid_dot_dis: f32,
-        centroids_square: f32,
     }
 
     static PREPROCESS_O: LazyLock<Case> = LazyLock::new(|| {
@@ -615,8 +547,6 @@ mod test {
             original: original.clone(),
             centroid: centroid.clone(),
             trans_vector: VectL2::<f32>::residual(&original, &centroid),
-            centroid_dot_dis: -f32::reduce_sum_of_xy(&original, &centroid),
-            centroids_square: f32::reduce_sum_of_x2(&centroid),
         }
     });
 
@@ -626,11 +556,8 @@ mod test {
         let _ = std::fs::remove_file(path.clone());
         let case = &*PREPROCESS_O;
 
-        let meta = VectL2::<f32>::train_encode(
-            case.trans_vector.len() as u32,
-            case.trans_vector.clone(),
-            case.centroid_dot_dis,
-        );
+        let meta =
+            VectL2::<f32>::train_encode(case.trans_vector.len() as u32, case.trans_vector.clone());
         let mmap = MmapArray::create(path.clone(), Box::new(meta.into_iter()));
         let params = VectL2::<f32>::train_decode(0, &mmap);
         assert_eq!(
@@ -647,11 +574,8 @@ mod test {
         let _ = std::fs::remove_file(path.clone());
         let case = &*PREPROCESS_O;
 
-        let meta = VectDot::<f32>::train_encode(
-            case.trans_vector.len() as u32,
-            case.trans_vector.clone(),
-            case.centroid_dot_dis,
-        );
+        let meta =
+            VectDot::<f32>::train_encode(case.trans_vector.len() as u32, case.trans_vector.clone());
         let mmap = MmapArray::create(path.clone(), Box::new(meta.into_iter()));
         let params = VectDot::<f32>::train_decode(0, &mmap);
         assert_eq!(
@@ -663,24 +587,19 @@ mod test {
     }
 
     #[test]
-    fn vector_f32l2_estimate() {
+    fn vector_f32l2_no_residual_estimate() {
         let mut bad: usize = 0;
         let case = &*PREPROCESS_O;
         for _ in 0..ATTEMPTS {
-            let (query, trans_vector, centroid_dot_dis, original_square, codes, estimate_failed) =
+            let (query, trans_vector, dis_v_2, codes, estimate_failed) =
                 estimate_prepare_query(&case.centroid);
 
             let vector_params = VectL2::<f32>::train_encode(
                 case.trans_vector.len() as u32,
                 case.trans_vector.clone(),
-                case.centroid_dot_dis,
             );
-            let (qvector_params, qvector_lookup) = VectL2::<f32>::preprocess(
-                &trans_vector,
-                centroid_dot_dis,
-                original_square,
-                case.centroids_square,
-            );
+            let (qvector_params, qvector_lookup) =
+                VectL2::<f32>::preprocess(&trans_vector, dis_v_2);
             let est =
                 VectL2::<f32>::process(&vector_params, &codes, &qvector_params, &qvector_lookup);
             let lower_bound = VectL2::<f32>::process_lowerbound(
@@ -706,24 +625,19 @@ mod test {
     }
 
     #[test]
-    fn vector_f32dot_estimate() {
+    fn vector_f32dot_no_residual_estimate() {
         let mut bad: usize = 0;
         let case = &*PREPROCESS_O;
         for _ in 0..ATTEMPTS {
-            let (query, trans_vector, centroid_dot_dis, original_square, codes, estimate_failed) =
+            let (query, trans_vector, dis_v_2, codes, estimate_failed) =
                 estimate_prepare_query(&case.centroid);
 
             let vector_params = VectDot::<f32>::train_encode(
                 case.trans_vector.len() as u32,
                 case.trans_vector.clone(),
-                case.centroid_dot_dis,
             );
-            let (qvector_params, qvector_lookup) = VectDot::<f32>::preprocess(
-                &trans_vector,
-                centroid_dot_dis,
-                original_square,
-                case.centroids_square,
-            );
+            let (qvector_params, qvector_lookup) =
+                VectDot::<f32>::preprocess(&trans_vector, dis_v_2);
             let est =
                 VectDot::<f32>::process(&vector_params, &codes, &qvector_params, &qvector_lookup);
             let lower_bound = VectDot::<f32>::process_lowerbound(
@@ -754,7 +668,6 @@ mod test {
         Vec<f32>,
         Vec<f32>,
         f32,
-        f32,
         Vec<u8>,
         impl Fn(f32, f32, f32) -> bool,
     ) {
@@ -766,8 +679,7 @@ mod test {
             .map(|_| thread_rng().gen_range((-1.0 * LENGTH as f32)..(LENGTH as f32)))
             .collect();
         let trans_vector = VectL2::<f32>::residual(&query, centroid);
-        let centroid_dot_dis = -f32::reduce_sum_of_xy(&query, centroid);
-        let original_square = f32::reduce_sum_of_x2(centroid);
+        let dis_v_2 = f32::reduce_sum_of_xy(&query, centroid);
         let codes =
             InfiniteByteChunks::new(trans_vector.iter().map(|e| e.is_sign_positive() as u8))
                 .map(merge_8)
@@ -777,13 +689,6 @@ mod test {
             let upper_bound = 2.0 * est - lower_bound;
             lower_bound <= real && upper_bound >= real
         }
-        (
-            query,
-            trans_vector,
-            centroid_dot_dis,
-            original_square,
-            codes,
-            estimate_failed,
-        )
+        (query, trans_vector, dis_v_2, codes, estimate_failed)
     }
 }

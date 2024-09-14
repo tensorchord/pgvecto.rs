@@ -17,9 +17,7 @@ use common::json::Json;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use common::vec2::Vec2;
-use k_means::{
-    centroids_square, k_means, k_means_lookup, k_means_lookup_by_dot, k_means_lookup_many_by_dot,
-};
+use k_means::{k_means, k_means_lookup, k_means_lookup_many};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::fs::create_dir;
 use std::path::Path;
@@ -32,7 +30,6 @@ pub struct Rabitq<O: Op> {
     payloads: MmapArray<Payload>,
     offsets: Json<Vec<u32>>,
     projected_centroids: Json<Vec2<f32>>,
-    centroids_square: Json<Vec<f32>>,
     projection: Json<Vec<Vec<f32>>>,
     is_residual: Json<bool>,
 }
@@ -74,39 +71,20 @@ impl<O: Op> Rabitq<O> {
     ) -> Box<dyn Iterator<Item = Element> + 'a> {
         let projected_query = O::proj(&self.projection, O::cast(vector));
         let lists = select(
-            k_means_lookup_many_by_dot(
-                &projected_query,
-                &self.projected_centroids,
-                &self.centroids_square,
-            ),
+            k_means_lookup_many(&projected_query, &self.projected_centroids),
             opts.rabitq_nprobe as usize,
         );
         let mut heap = Vec::new();
-        for &(_, payload) in lists.iter() {
-            let (centroid_dot_dis, original_square, centroids_square, i) = if *self.is_residual {
-                payload
-            } else {
-                (0.0, payload.1, 0.0, payload.3)
-            };
+        for &(dis_v2, i) in lists.iter() {
             let trans_vector = if *self.is_residual {
                 &O::residual(&projected_query, &self.projected_centroids[(i,)])
             } else {
                 &projected_query
             };
             let preprocessed = if opts.rabitq_fast_scan {
-                self.quantization.fscan_preprocess(
-                    trans_vector,
-                    centroid_dot_dis,
-                    original_square,
-                    centroids_square,
-                )
+                self.quantization.fscan_preprocess(trans_vector, dis_v2)
             } else {
-                self.quantization.preprocess(
-                    trans_vector,
-                    centroid_dot_dis,
-                    original_square,
-                    centroids_square,
-                )
+                self.quantization.preprocess(trans_vector, dis_v2)
             };
             let start = self.offsets[i];
             let end = self.offsets[i + 1];
@@ -156,12 +134,11 @@ fn from_nothing<O: Op>(
         }
         projection
     };
-    let is_residual = residual_quantization;
+    let is_residual = residual_quantization && O::SUPPORT_RESIDUAL;
     rayon::check();
     let samples = O::sample(collection, nlist);
     rayon::check();
     let centroids: Vec2<f32> = k_means(nlist as usize, samples, true, spherical_centroids, false);
-    let centroids_squares = centroids_square(&centroids);
     rayon::check();
     let ls = (0..collection.len())
         .into_par_iter()
@@ -195,31 +172,36 @@ fn from_nothing<O: Op>(
     let collection = RemappedCollection::from_collection(collection, remap);
     rayon::check();
     let storage = O::Storage::create(path.as_ref().join("storage"), &collection);
-    let quantization = Quantization::create(
-        path.as_ref().join("quantization"),
-        options.vector,
-        collection.len(),
-        |vector| {
-            let vector = O::cast(collection.vector(vector));
-            if is_residual {
-                let (centroid_dot_dis, target) =
-                    k_means_lookup_by_dot(vector, &centroids, &centroids_squares);
-                (
-                    O::proj(&projection, &O::residual(vector, &centroids[(target,)])),
-                    centroid_dot_dis,
-                )
-            } else {
-                (O::proj(&projection, vector), 0.0)
-            }
-        },
-    );
+
+    let quantization = if is_residual {
+        Quantization::create(
+            path.as_ref().join("quantization"),
+            options.vector,
+            collection.len(),
+            |vector| {
+                let vector = O::cast(collection.vector(vector));
+                let target = k_means_lookup(vector, &centroids);
+                O::proj(&projection, &O::residual(vector, &centroids[(target,)]))
+            },
+        )
+    } else {
+        Quantization::create(
+            path.as_ref().join("quantization"),
+            options.vector,
+            collection.len(),
+            |vector| {
+                let vector = O::cast(collection.vector(vector));
+                O::proj(&projection, vector)
+            },
+        )
+    };
+
     let projected_centroids = Vec2::from_vec(
         (centroids.shape_0(), centroids.shape_1()),
         (0..centroids.shape_0())
             .flat_map(|x| O::proj(&projection, &centroids[(x,)]))
             .collect(),
     );
-    let projected_centroids_square = centroids_square(&projected_centroids);
     let payloads = MmapArray::create(
         path.as_ref().join("payloads"),
         (0..collection.len()).map(|i| collection.payload(i)),
@@ -229,10 +211,6 @@ fn from_nothing<O: Op>(
         path.as_ref().join("projected_centroids"),
         projected_centroids,
     );
-    let centroids_square = Json::create(
-        path.as_ref().join("centroids_square"),
-        projected_centroids_square,
-    );
     let projection = Json::create(path.as_ref().join("projection"), projection);
     let is_residual = Json::create(path.as_ref().join("is_residual"), is_residual);
     Rabitq {
@@ -240,7 +218,6 @@ fn from_nothing<O: Op>(
         payloads,
         offsets,
         projected_centroids,
-        centroids_square,
         quantization,
         projection,
         is_residual,
@@ -253,7 +230,6 @@ fn open<O: Op>(path: impl AsRef<Path>) -> Rabitq<O> {
     let payloads = MmapArray::open(path.as_ref().join("payloads"));
     let offsets = Json::open(path.as_ref().join("offsets"));
     let projected_centroids = Json::open(path.as_ref().join("projected_centroids"));
-    let centroids_square = Json::open(path.as_ref().join("centroids_square"));
     let projection = Json::open(path.as_ref().join("projection"));
     let is_residual = Json::open(path.as_ref().join("is_residual"));
     Rabitq {
@@ -262,7 +238,6 @@ fn open<O: Op>(path: impl AsRef<Path>) -> Rabitq<O> {
         payloads,
         offsets,
         projected_centroids,
-        centroids_square,
         projection,
         is_residual,
     }

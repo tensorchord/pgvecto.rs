@@ -40,7 +40,7 @@ impl<O: OperatorRabitq> Quantization<O> {
         path: impl AsRef<Path>,
         vector_options: VectorOptions,
         n: u32,
-        vector_fetch: impl Fn(u32) -> (Vec<f32>, f32),
+        vector_fetch: impl Fn(u32) -> Vec<f32>,
     ) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
         fn merge_8([b0, b1, b2, b3, b4, b5, b6, b7]: [u8; 8]) -> u8 {
@@ -57,7 +57,7 @@ impl<O: OperatorRabitq> Quantization<O> {
         let codes = MmapArray::create(path.as_ref().join("codes"), {
             match &*train {
                 Quantizer::Rabitq(x) => Box::new((0..n).flat_map(|i| {
-                    let (vector, _) = vector_fetch(i);
+                    let vector = vector_fetch(i);
                     let codes = x.encode(&vector);
                     let bytes = x.bytes();
                     match x.bits() {
@@ -89,7 +89,7 @@ impl<O: OperatorRabitq> Quantization<O> {
                         let t = x.dims().div_ceil(4);
                         let raw = std::array::from_fn::<_, { BLOCK_SIZE as _ }, _>(|i| {
                             let id = BLOCK_SIZE * block + i as u32;
-                            let (vector, _) = vector_fetch(std::cmp::min(id, n - 1));
+                            let vector = vector_fetch(std::cmp::min(id, n - 1));
                             let codes = x.encode(&vector);
                             InfiniteByteChunks::new(codes.into_iter())
                                 .map(|[b0, b1, b2, b3]| b0 | b1 << 1 | b2 << 2 | b3 << 3)
@@ -105,8 +105,8 @@ impl<O: OperatorRabitq> Quantization<O> {
             path.as_ref().join("meta"),
             match &*train {
                 Quantizer::Rabitq(x) => Box::new((0..n).flat_map(|i| {
-                    let (vector, centroid_dot_dis) = vector_fetch(i);
-                    O::train_encode(x.dims(), vector, centroid_dot_dis).into_iter()
+                    let vector = vector_fetch(i);
+                    O::train_encode(x.dims(), vector).into_iter()
                 })),
             },
         );
@@ -131,38 +131,16 @@ impl<O: OperatorRabitq> Quantization<O> {
         }
     }
 
-    pub fn preprocess(
-        &self,
-        trans_vector: &[f32],
-        centroid_dot_dis: f32,
-        original_square: f32,
-        centroids_square: f32,
-    ) -> RabitqPreprocessed<O> {
+    pub fn preprocess(&self, trans_vector: &[f32], dis_v_2: f32) -> RabitqPreprocessed<O> {
         let (params, lookup) = match &*self.train {
-            Quantizer::Rabitq(x) => x.preprocess(
-                trans_vector,
-                centroid_dot_dis,
-                original_square,
-                centroids_square,
-            ),
+            Quantizer::Rabitq(x) => x.preprocess(trans_vector, dis_v_2),
         };
         RabitqPreprocessed::Rabitq((params, RabitqLookup::Trivial(lookup)))
     }
 
-    pub fn fscan_preprocess(
-        &self,
-        trans_vector: &[f32],
-        centroid_dot_dis: f32,
-        original_square: f32,
-        centroids_square: f32,
-    ) -> RabitqPreprocessed<O> {
+    pub fn fscan_preprocess(&self, trans_vector: &[f32], dis_v_2: f32) -> RabitqPreprocessed<O> {
         let (params, lookup) = match &*self.train {
-            Quantizer::Rabitq(x) => x.fscan_preprocess(
-                trans_vector,
-                centroid_dot_dis,
-                original_square,
-                centroids_square,
-            ),
+            Quantizer::Rabitq(x) => x.fscan_preprocess(trans_vector, dis_v_2),
         };
         RabitqPreprocessed::Rabitq((params, RabitqLookup::FastScan(lookup)))
     }

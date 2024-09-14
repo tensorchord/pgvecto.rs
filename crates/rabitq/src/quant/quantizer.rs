@@ -57,31 +57,17 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
     pub fn preprocess(
         &self,
         trans_vector: &[f32],
-        centroid_dot_dis: f32,
-        original_square: f32,
-        centroids_square: f32,
+        dis_v_2: f32,
     ) -> (O::QvectorParams, O::QvectorLookup) {
-        O::preprocess(
-            trans_vector,
-            centroid_dot_dis,
-            original_square,
-            centroids_square,
-        )
+        O::preprocess(trans_vector, dis_v_2)
     }
 
     pub fn fscan_preprocess(
         &self,
         trans_vector: &[f32],
-        centroid_dot_dis: f32,
-        original_square: f32,
-        centroids_square: f32,
+        dis_v_2: f32,
     ) -> (O::QvectorParams, Vec<u8>) {
-        O::fscan_preprocess(
-            trans_vector,
-            centroid_dot_dis,
-            original_square,
-            centroids_square,
-        )
+        O::fscan_preprocess(trans_vector, dis_v_2)
     }
 
     pub fn process(
