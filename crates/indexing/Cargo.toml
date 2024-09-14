@@ -14,7 +14,6 @@ hnsw = { path = "../hnsw" }
 inverted = { path = "../inverted" }
 ivf = { path = "../ivf" }
 quantization = { path = "../quantization" }
-rabitq = { path = "../rabitq" }
 
 [lints]
 workspace = true

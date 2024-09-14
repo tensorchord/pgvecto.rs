@@ -1,13 +1,11 @@
 #![allow(clippy::needless_range_loop)]
 
-pub mod elkan;
 pub mod kmeans1d;
 pub mod lloyd;
 pub mod quick_centers;
 
 use base::scalar::*;
 use common::vec2::Vec2;
-use elkan::ElkanKMeans;
 use kmeans1d::kmeans1d;
 use lloyd::LloydKMeans;
 use stoppable_rayon as rayon;
@@ -15,8 +13,8 @@ use stoppable_rayon as rayon;
 pub fn k_means<S: ScalarLike>(
     c: usize,
     mut samples: Vec2<S>,
-    prefer_multithreading: bool,
     is_spherical: bool,
+    iterations: usize,
     prefer_kmeanspp: bool,
 ) -> Vec2<S> {
     assert!(c > 0);
@@ -38,25 +36,14 @@ pub fn k_means<S: ScalarLike>(
         let centroids = S::vector_from_f32(&kmeans1d(c, samples.as_slice()));
         return Vec2::from_vec((c, 1), centroids);
     }
-    if prefer_multithreading {
-        let mut lloyd_k_means = LloydKMeans::new(c, samples, is_spherical, prefer_kmeanspp);
-        for _ in 0..25 {
-            rayon::check();
-            if lloyd_k_means.iterate() {
-                break;
-            }
+    let mut lloyd_k_means = LloydKMeans::new(c, samples, is_spherical, prefer_kmeanspp);
+    for _ in 0..iterations {
+        rayon::check();
+        if lloyd_k_means.iterate() {
+            break;
         }
-        lloyd_k_means.finish()
-    } else {
-        let mut elkan_k_means = ElkanKMeans::new(c, samples, is_spherical);
-        for _ in 0..100 {
-            rayon::check();
-            if elkan_k_means.iterate() {
-                break;
-            }
-        }
-        elkan_k_means.finish()
     }
+    lloyd_k_means.finish()
 }
 
 pub fn k_means_lookup<S: ScalarLike>(vector: &[S], centroids: &Vec2<S>) -> usize {

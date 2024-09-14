@@ -110,10 +110,14 @@ impl IndexOptions {
     ) -> Result<(), ValidationError> {
         match quantization {
             None => Ok(()),
-            Some(QuantizationOptions::Scalar(_) | QuantizationOptions::Product(_)) => {
+            Some(
+                QuantizationOptions::Scalar(_)
+                | QuantizationOptions::Product(_)
+                | QuantizationOptions::Rabitq(_),
+            ) => {
                 if !matches!(self.vector.v, VectorKind::Vecf32 | VectorKind::Vecf16) {
                     return Err(ValidationError::new(
-                        "scalar quantization or product quantization is not support for vectors that are not dense vectors",
+                        "quantization is not support for vectors that are not dense vectors",
                     ));
                 }
                 Ok(())
@@ -145,18 +149,6 @@ impl IndexOptions {
                 if !matches!(self.vector.v, VectorKind::SVecf32) {
                     return Err(ValidationError::new(
                         "inverted_index is not support for vectors that are not sparse vectors",
-                    ));
-                }
-            }
-            IndexingOptions::Rabitq(_) => {
-                if !matches!(self.vector.d, DistanceKind::L2 | DistanceKind::Dot) {
-                    return Err(ValidationError::new(
-                        "rabitq is not support for distance that is not l2 or dot",
-                    ));
-                }
-                if !matches!(self.vector.v, VectorKind::Vecf32) {
-                    return Err(ValidationError::new(
-                        "rabitq is not support for vectors that are not vector",
                     ));
                 }
             }
@@ -293,7 +285,6 @@ pub enum IndexingOptions {
     Ivf(IvfIndexingOptions),
     Hnsw(HnswIndexingOptions),
     InvertedIndex(InvertedIndexingOptions),
-    Rabitq(RabitqIndexingOptions),
 }
 
 impl IndexingOptions {
@@ -315,12 +306,6 @@ impl IndexingOptions {
         };
         x
     }
-    pub fn unwrap_rabitq(self) -> RabitqIndexingOptions {
-        let IndexingOptions::Rabitq(x) = self else {
-            unreachable!()
-        };
-        x
-    }
 }
 
 impl Default for IndexingOptions {
@@ -336,7 +321,6 @@ impl Validate for IndexingOptions {
             Self::Ivf(x) => x.validate(),
             Self::Hnsw(x) => x.validate(),
             Self::InvertedIndex(x) => x.validate(),
-            Self::Rabitq(x) => x.validate(),
         }
     }
 }
@@ -440,46 +424,13 @@ impl Default for HnswIndexingOptions {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-#[serde(deny_unknown_fields)]
-pub struct RabitqIndexingOptions {
-    #[serde(default = "RabitqIndexingOptions::default_nlist")]
-    #[validate(range(min = 1, max = 1_000_000))]
-    pub nlist: u32,
-    #[serde(default = "RabitqIndexingOptions::default_spherical_centroids")]
-    pub spherical_centroids: bool,
-    #[serde(default = "RabitqIndexingOptions::default_residual_quantization")]
-    pub residual_quantization: bool,
-}
-
-impl RabitqIndexingOptions {
-    fn default_nlist() -> u32 {
-        1000
-    }
-    fn default_spherical_centroids() -> bool {
-        false
-    }
-    fn default_residual_quantization() -> bool {
-        false
-    }
-}
-
-impl Default for RabitqIndexingOptions {
-    fn default() -> Self {
-        Self {
-            nlist: Self::default_nlist(),
-            spherical_centroids: Self::default_spherical_centroids(),
-            residual_quantization: Self::default_residual_quantization(),
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "snake_case")]
 pub enum QuantizationOptions {
     Scalar(ScalarQuantizationOptions),
     Product(ProductQuantizationOptions),
+    Rabitq(RabitqQuantizationOptions),
 }
 
 impl Validate for QuantizationOptions {
@@ -487,6 +438,7 @@ impl Validate for QuantizationOptions {
         match self {
             Self::Scalar(x) => x.validate(),
             Self::Product(x) => x.validate(),
+            Self::Rabitq(x) => x.validate(),
         }
     }
 }
@@ -554,6 +506,18 @@ impl Default for ProductQuantizationOptions {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct RabitqQuantizationOptions {}
+
+impl RabitqQuantizationOptions {}
+
+impl Default for RabitqQuantizationOptions {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, Alter)]
 #[serde(deny_unknown_fields)]
 pub struct SearchOptions {
@@ -567,23 +531,14 @@ pub struct SearchOptions {
     pub pq_rerank_size: u32,
     #[serde(default = "SearchOptions::default_pq_fast_scan")]
     pub pq_fast_scan: bool,
+    #[serde(default = "SearchOptions::default_rq_fast_scan")]
+    pub rq_fast_scan: bool,
     #[serde(default = "SearchOptions::default_ivf_nprobe")]
     #[validate(range(min = 1, max = 65535))]
     pub ivf_nprobe: u32,
     #[serde(default = "SearchOptions::default_hnsw_ef_search")]
     #[validate(range(min = 1, max = 65535))]
     pub hnsw_ef_search: u32,
-    #[serde(default = "SearchOptions::default_rabitq_nprobe")]
-    #[validate(range(min = 1, max = 65535))]
-    pub rabitq_nprobe: u32,
-    #[serde(default = "SearchOptions::default_rabitq_epsilon")]
-    #[validate(range(min = 1.0, max = 4.0))]
-    pub rabitq_epsilon: f32,
-    #[serde(default = "SearchOptions::default_rabitq_fast_scan")]
-    pub rabitq_fast_scan: bool,
-    #[serde(default = "SearchOptions::default_diskann_ef_search")]
-    #[validate(range(min = 1, max = 65535))]
-    pub diskann_ef_search: u32,
 }
 
 impl SearchOptions {
@@ -599,22 +554,13 @@ impl SearchOptions {
     pub const fn default_pq_fast_scan() -> bool {
         false
     }
+    pub const fn default_rq_fast_scan() -> bool {
+        true
+    }
     pub const fn default_ivf_nprobe() -> u32 {
         10
     }
     pub const fn default_hnsw_ef_search() -> u32 {
-        100
-    }
-    pub const fn default_rabitq_nprobe() -> u32 {
-        10
-    }
-    pub const fn default_rabitq_epsilon() -> f32 {
-        1.9
-    }
-    pub const fn default_rabitq_fast_scan() -> bool {
-        true
-    }
-    pub const fn default_diskann_ef_search() -> u32 {
         100
     }
 }
@@ -626,12 +572,9 @@ impl Default for SearchOptions {
             sq_fast_scan: Self::default_sq_fast_scan(),
             pq_rerank_size: Self::default_pq_rerank_size(),
             pq_fast_scan: Self::default_pq_fast_scan(),
+            rq_fast_scan: Self::default_rq_fast_scan(),
             ivf_nprobe: Self::default_ivf_nprobe(),
             hnsw_ef_search: Self::default_hnsw_ef_search(),
-            rabitq_nprobe: Self::default_rabitq_nprobe(),
-            rabitq_epsilon: Self::default_rabitq_epsilon(),
-            rabitq_fast_scan: Self::default_rabitq_fast_scan(),
-            diskann_ef_search: Self::default_diskann_ef_search(),
         }
     }
 }

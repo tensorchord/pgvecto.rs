@@ -102,7 +102,6 @@ version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cab112f0a86d568ea0e627cc1d6be74a1e9cd55214684db5561995f6dad897c6"
 dependencies = [
- "num-complex",
  "num-traits",
 ]
 
@@ -550,9 +549,9 @@ checksum = "79296716171880943b8470b5f8d03aa55eb2e645a4874bdbb28adb49162e012c"
 
 [[package]]
 name = "bytemuck"
-version = "1.16.3"
+version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "102087e286b4677862ea56cf8fc58bb2cdfa8725c40ffb80fe3a008eb7f2fc83"
+checksum = "94bbb0ad554ad961ddc5da507a12a29b14e4ae5bda06b19f575a3e6079d2e2ae"
 
 [[package]]
 name = "byteorder"
@@ -1522,7 +1521,6 @@ dependencies = [
  "inverted",
  "ivf",
  "quantization",
- "rabitq",
  "thiserror",
 ]
 
@@ -1876,8 +1874,6 @@ dependencies = [
  "num-complex",
  "num-rational",
  "num-traits",
- "rand",
- "rand_distr",
  "simba",
  "typenum",
 ]
@@ -2454,7 +2450,10 @@ dependencies = [
  "detect",
  "k_means",
  "log",
+ "nalgebra",
  "rand",
+ "rand_chacha",
+ "rand_distr",
  "serde",
  "serde_json",
  "stoppable_rayon",
@@ -2515,26 +2514,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fa76aaf39101c457836aec0ce2316dbdc3ab723cdda1c6bd4e6ad4208acaca7"
 dependencies = [
  "proc-macro2",
-]
-
-[[package]]
-name = "rabitq"
-version = "0.0.0"
-dependencies = [
- "base",
- "common",
- "detect",
- "half 2.4.1",
- "k_means",
- "log",
- "nalgebra",
- "quantization",
- "rand",
- "rand_distr",
- "serde",
- "serde_json",
- "stoppable_rayon",
- "storage",
 ]
 
 [[package]]
@@ -3619,9 +3598,9 @@ dependencies = [
 
 [[package]]
 name = "wide"
-version = "0.7.26"
+version = "0.7.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "901e8597c777fa042e9e245bd56c0dc4418c5db3f845b6ff94fbac732c6a0692"
+checksum = "b828f995bf1e9622031f8009f8481a85406ce1f4d4588ff746d872043e855690"
 dependencies = [
  "bytemuck",
  "safe_arch",

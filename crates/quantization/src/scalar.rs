@@ -62,12 +62,12 @@ impl<O: OperatorScalarQuantization> Quantizer<O> for ScalarQuantizer<O> {
             }
         }
         let mut centroids = Vec2::zeros((1 << bits, dims as usize));
-        for p in 0..dims {
-            let bas = min[p as usize];
-            let del = max[p as usize] - min[p as usize];
+        for i in 0..dims {
+            let bas = min[i as usize];
+            let del = max[i as usize] - min[i as usize];
             for j in 0_usize..(1 << bits) {
                 let val = j as f32 / ((1 << bits) - 1) as f32;
-                centroids[(j, p as usize)] = bas + val * del;
+                centroids[(j, i as usize)] = bas + val * del;
             }
         }
         Self {
@@ -143,6 +143,10 @@ impl<O: OperatorScalarQuantization> Quantizer<O> for ScalarQuantizer<O> {
         }
     }
 
+    fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+        vector.own()
+    }
+
     type Lut = Vec<f32>;
 
     fn preprocess(&self, vector: Borrowed<'_, O>) -> Self::Lut {
@@ -164,7 +168,7 @@ impl<O: OperatorScalarQuantization> Quantizer<O> for ScalarQuantizer<O> {
         O::fscan_preprocess(self.dims, self.bits, &self.max, &self.min, vector)
     }
 
-    fn fscan_process(flut: &Self::FLut, code: &[u8]) -> [Distance; 32] {
+    fn fscan_process(&self, flut: &Self::FLut, code: &[u8]) -> [Distance; 32] {
         O::fscan_process(flut, code)
     }
 
@@ -211,19 +215,27 @@ impl<O: OperatorScalarQuantization> Quantizer<O> for ScalarQuantizer<O> {
         match frlut {
             Ok(flut) => {
                 fn divide(r: Range<u32>) -> (Option<u32>, Range<u32>, Option<u32>) {
-                    if r.start > r.end || r.start % 32 == 0 && r.end % 32 == 0 {
-                        (None, r.start / 32..r.end / 32, None)
-                    } else if r.start / 32 == r.end / 32 {
-                        (Some(r.start / 32), 0..0, None)
-                    } else {
-                        let left = (r.start % 32 != 0).then_some(r.start / 32);
-                        let right = (r.end % 32 != 0).then_some(r.end / 32);
-                        (left, r.start / 32 + 1..r.end / 32, right)
+                    if r.start > r.end {
+                        return (None, r.start / 32..r.end / 32, None);
                     }
+                    if r.start / 32 == r.end / 32 {
+                        return (Some(r.start / 32), 0..0, None);
+                    };
+                    let left = if r.start % 32 == 0 {
+                        (None, r.start / 32)
+                    } else {
+                        (Some(r.start / 32), r.start / 32 + 1)
+                    };
+                    let right = if r.end % 32 == 0 {
+                        (r.end / 32, None)
+                    } else {
+                        (r.end / 32, Some(r.end / 32))
+                    };
+                    (left.0, left.1..right.0, right.1)
                 }
                 let (left, main, right) = divide(range.clone());
                 if let Some(i) = left {
-                    let r = Self::fscan_process(flut, locate_1(i).as_ref());
+                    let r = self.fscan_process(flut, locate_1(i).as_ref());
                     for j in 0..32 {
                         if range.contains(&(i * 32 + j)) {
                             heap.push((Reverse(r[j as usize]), AlwaysEqual(i * 32 + j)));
@@ -231,13 +243,13 @@ impl<O: OperatorScalarQuantization> Quantizer<O> for ScalarQuantizer<O> {
                     }
                 }
                 for i in main {
-                    let r = Self::fscan_process(flut, locate_1(i).as_ref());
+                    let r = self.fscan_process(flut, locate_1(i).as_ref());
                     for j in 0..32 {
                         heap.push((Reverse(r[j as usize]), AlwaysEqual(i * 32 + j)));
                     }
                 }
                 if let Some(i) = right {
-                    let r = Self::fscan_process(flut, locate_1(i).as_ref());
+                    let r = self.fscan_process(flut, locate_1(i).as_ref());
                     for j in 0..32 {
                         if range.contains(&(i * 32 + j)) {
                             heap.push((Reverse(r[j as usize]), AlwaysEqual(i * 32 + j)));
@@ -256,8 +268,8 @@ impl<O: OperatorScalarQuantization> Quantizer<O> for ScalarQuantizer<O> {
 
     fn graph_rerank<'a, T, R, C>(
         &'a self,
+        lut: Self::Lut,
         locate: impl Fn(u32) -> C + 'a,
-        vector: Borrowed<'a, O>,
         rerank: R,
     ) -> impl RerankerPush + RerankerPop<T> + 'a
     where
@@ -265,9 +277,8 @@ impl<O: OperatorScalarQuantization> Quantizer<O> for ScalarQuantizer<O> {
         R: Fn(u32) -> (Distance, T) + 'a,
         C: AsRef<[u8]>,
     {
-        let lut = self.preprocess(vector);
         Graph2Reranker::new(
-            move |u| self.process(&lut, locate(u).as_ref(), vector),
+            move |u| O::process(self.dims, self.bits, &lut, locate(u).as_ref()),
             rerank,
         )
     }
@@ -323,28 +334,24 @@ impl<S: ScalarLike> OperatorScalarQuantization for VectDot<S> {
         xy
     }
     fn process(dims: u32, bits: u32, lut: &[f32], rhs: &[u8]) -> Distance {
-        fn internal(dims: u32, bits: u32, t: &[f32], f: impl Fn(usize) -> usize) -> Distance {
-            let width = dims;
-            let xy = {
-                let mut xy = 0.0f32;
-                for i in 0..width as usize {
-                    xy += t[i * (1 << bits) + f(i)];
-                }
-                xy
-            };
+        fn internal<const BITS: u32>(dims: u32, t: &[f32], f: impl Fn(usize) -> usize) -> Distance {
+            let mut xy = 0.0f32;
+            for i in 0..dims as usize {
+                xy += t[i * (1 << BITS) + f(i)];
+            }
             Distance::from(-xy)
         }
         match bits {
-            1 => internal(dims, bits, lut, |i| {
+            1 => internal::<1>(dims, lut, |i| {
                 ((rhs[i >> 3] >> ((i & 7) << 0)) & 1u8) as usize
             }),
-            2 => internal(dims, bits, lut, |i| {
+            2 => internal::<2>(dims, lut, |i| {
                 ((rhs[i >> 2] >> ((i & 3) << 1)) & 3u8) as usize
             }),
-            4 => internal(dims, bits, lut, |i| {
+            4 => internal::<4>(dims, lut, |i| {
                 ((rhs[i >> 1] >> ((i & 1) << 2)) & 15u8) as usize
             }),
-            8 => internal(dims, bits, lut, |i| rhs[i] as usize),
+            8 => internal::<8>(dims, lut, |i| rhs[i] as usize),
             _ => unreachable!(),
         }
     }
@@ -394,25 +401,24 @@ impl<S: ScalarLike> OperatorScalarQuantization for VectL2<S> {
         d2
     }
     fn process(dims: u32, bits: u32, lut: &[f32], rhs: &[u8]) -> Distance {
-        fn internal(dims: u32, bits: u32, t: &[f32], f: impl Fn(usize) -> usize) -> Distance {
-            let width = dims;
+        fn internal<const BITS: u32>(dims: u32, t: &[f32], f: impl Fn(usize) -> usize) -> Distance {
             let mut d2 = 0.0f32;
-            for i in 0..width as usize {
-                d2 += t[i * (1 << bits) + f(i)];
+            for i in 0..dims as usize {
+                d2 += t[i * (1 << BITS) + f(i)];
             }
             Distance::from(d2)
         }
         match bits {
-            1 => internal(dims, bits, lut, |i| {
+            1 => internal::<1>(dims, lut, |i| {
                 ((rhs[i >> 3] >> ((i & 7) << 0)) & 1u8) as usize
             }),
-            2 => internal(dims, bits, lut, |i| {
+            2 => internal::<2>(dims, lut, |i| {
                 ((rhs[i >> 2] >> ((i & 3) << 1)) & 3u8) as usize
             }),
-            4 => internal(dims, bits, lut, |i| {
+            4 => internal::<4>(dims, lut, |i| {
                 ((rhs[i >> 1] >> ((i & 1) << 2)) & 15u8) as usize
             }),
-            8 => internal(dims, bits, lut, |i| rhs[i] as usize),
+            8 => internal::<8>(dims, lut, |i| rhs[i] as usize),
             _ => unreachable!(),
         }
     }

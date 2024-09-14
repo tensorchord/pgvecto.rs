@@ -7,6 +7,7 @@ use base::index::*;
 use base::operator::*;
 use base::search::*;
 use base::vector::VectorBorrowed;
+use base::vector::VectorOwned;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
@@ -71,16 +72,15 @@ impl<O: OperatorHnsw, Q: Quantizer<O>> Hnsw<O, Q> {
         let Some(s) = self.s else {
             return Box::new(std::iter::empty());
         };
-        let s = {
-            let processed = self.quantization.preprocess(vector);
-            fast_search(
-                |u| self.quantization.process(&self.storage, &processed, u),
-                |x, i| hyper_outs(self, x, i),
-                1..=hierarchy_for_a_vertex(*self.m, s) - 1,
-                s,
-            )
-        };
-        let reranker = self.quantization.graph_rerank(vector, move |u| {
+        let projected_vector = self.quantization.project(vector);
+        let lut = self.quantization.preprocess(projected_vector.as_borrowed());
+        let s = fast_search(
+            |u| self.quantization.process(&self.storage, &lut, u),
+            |x, i| hyper_outs(self, x, i),
+            1..=hierarchy_for_a_vertex(*self.m, s) - 1,
+            s,
+        );
+        let reranker = self.quantization.graph_rerank(lut, move |u| {
             (
                 O::distance(self.storage.vector(u), vector),
                 (base_outs(self, u), ()),

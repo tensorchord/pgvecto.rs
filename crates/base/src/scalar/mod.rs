@@ -24,6 +24,8 @@ pub trait ScalarLike:
     fn scalar_add(lhs: Self, rhs: Self) -> Self;
     fn scalar_sub(lhs: Self, rhs: Self) -> Self;
     fn scalar_mul(lhs: Self, rhs: Self) -> Self;
+    fn scalar_is_sign_positive(self) -> bool;
+    fn scalar_is_sign_negative(self) -> bool;
 
     fn from_f32(x: f32) -> Self;
     fn to_f32(self) -> f32;
@@ -42,6 +44,7 @@ pub trait ScalarLike:
 
     fn vector_from_f32(this: &[f32]) -> Vec<Self>;
     fn vector_to_f32(this: &[Self]) -> Vec<f32>;
+    fn vector_to_f32_borrowed(this: &[Self]) -> impl AsRef<[f32]>;
     fn vector_add(lhs: &[Self], rhs: &[Self]) -> Vec<Self>;
     fn vector_add_inplace(lhs: &mut [Self], rhs: &[Self]);
     fn vector_sub(lhs: &[Self], rhs: &[Self]) -> Vec<Self>;

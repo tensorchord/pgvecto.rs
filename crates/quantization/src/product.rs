@@ -15,6 +15,7 @@ use base::operator::*;
 use base::scalar::impossible::Impossible;
 use base::scalar::ScalarLike;
 use base::search::*;
+use base::vector::VectorBorrowed;
 use base::vector::VectorOwned;
 use common::sample::sample;
 use common::vec2::Vec2;
@@ -32,7 +33,6 @@ pub struct ProductQuantizer<O: OperatorProductQuantization> {
     dims: u32,
     ratio: u32,
     bits: u32,
-    originals: Vec<Vec2<O::Scalar>>,
     centroids: Vec2<O::Scalar>,
 }
 
@@ -51,8 +51,7 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
         };
         let ratio = options.ratio;
         let bits = options.bits;
-        let width = dims.div_ceil(ratio);
-        let originals = (0..width)
+        let points = (0..dims.div_ceil(ratio))
             .into_par_iter()
             .map(|p| {
                 let subdims = std::cmp::min(ratio, dims - ratio * p);
@@ -66,22 +65,21 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
                     )
                     .to_vec()
                 });
-                k_means(1 << bits, subsamples, false, false, true)
+                k_means(1 << bits, subsamples, false, 25, true)
             })
             .collect::<Vec<_>>();
         let mut centroids = Vec2::zeros((1 << bits, dims as usize));
-        for p in 0..width {
-            let subdims = std::cmp::min(ratio, dims - ratio * p);
+        for i in 0..dims.div_ceil(ratio) {
+            let subdims = std::cmp::min(ratio, dims - ratio * i);
             for j in 0_usize..(1 << bits) {
-                centroids[(j,)][(p * ratio) as usize..][..subdims as usize]
-                    .copy_from_slice(&originals[p as usize][(j,)]);
+                centroids[(j,)][(i * ratio) as usize..][..subdims as usize]
+                    .copy_from_slice(&points[i as usize][(j,)]);
             }
         }
         Self {
             dims,
             ratio,
             bits,
-            originals,
             centroids,
         }
     }
@@ -90,27 +88,20 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
         let dims = self.dims;
         let ratio = self.ratio;
         let bits = self.bits;
-        let width = dims.div_ceil(ratio);
-        let bytes = (dims.div_ceil(ratio) * bits).div_ceil(8);
-        let mut code = Vec::with_capacity(width.div_ceil(bits) as usize);
-        for p in 0..width {
-            let subdims = std::cmp::min(ratio, dims - ratio * p);
-            let left = O::subslice(vector, p * ratio, subdims);
-            let target = k_means::k_means_lookup(left, &self.originals[p as usize]);
-            code.push(target as u8);
-        }
+        let code_size = (dims.div_ceil(ratio) * bits).div_ceil(8);
+        let code = O::code(dims, ratio, bits, &self.centroids, vector);
         match bits {
             1 => InfiniteByteChunks::new(code.into_iter())
                 .map(merge_8)
-                .take(bytes as usize)
+                .take(code_size as usize)
                 .collect(),
             2 => InfiniteByteChunks::new(code.into_iter())
                 .map(merge_4)
-                .take(bytes as usize)
+                .take(code_size as usize)
                 .collect(),
             4 => InfiniteByteChunks::new(code.into_iter())
                 .map(merge_2)
-                .take(bytes as usize)
+                .take(code_size as usize)
                 .collect(),
             8 => code,
             _ => unreachable!(),
@@ -122,25 +113,16 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
         let ratio = self.ratio;
         let bits = self.bits;
         if bits == 4 {
-            let width = dims.div_ceil(ratio);
-            let codes = vectors.map(|vector| {
-                let mut code = Vec::with_capacity(width.div_ceil(bits) as usize);
-                for p in 0..width {
-                    let subdims = std::cmp::min(ratio, dims - ratio * p);
-                    let left = O::subslice(vector.as_borrowed(), p * ratio, subdims);
-                    let target = k_means::k_means_lookup(left, &self.originals[p as usize]);
-                    code.push(target as u8);
-                }
-                code
-            });
-            pack(width, codes).collect()
+            let codes = vectors
+                .map(|vector| O::code(dims, ratio, bits, &self.centroids, vector.as_borrowed()));
+            pack(dims.div_ceil(ratio), codes).collect()
         } else {
             Vec::new()
         }
     }
 
     fn code_size(&self) -> u32 {
-        (self.dims * self.bits).div_ceil(8)
+        (self.dims.div_ceil(self.ratio) * self.bits).div_ceil(8)
     }
 
     fn fcode_size(&self) -> u32 {
@@ -149,6 +131,10 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
         } else {
             0
         }
+    }
+
+    fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+        vector.own()
     }
 
     type Lut = Vec<f32>;
@@ -184,7 +170,7 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
         )
     }
 
-    fn fscan_process(flut: &Self::FLut, code: &[u8]) -> [Distance; 32] {
+    fn fscan_process(&self, flut: &Self::FLut, code: &[u8]) -> [Distance; 32] {
         O::fscan_process(flut, code)
     }
 
@@ -219,19 +205,27 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
         match frlut {
             Ok(flut) => {
                 fn divide(r: Range<u32>) -> (Option<u32>, Range<u32>, Option<u32>) {
-                    if r.start > r.end || r.start % 32 == 0 && r.end % 32 == 0 {
-                        (None, r.start / 32..r.end / 32, None)
-                    } else if r.start / 32 == r.end / 32 {
-                        (Some(r.start / 32), 0..0, None)
-                    } else {
-                        let left = (r.start % 32 != 0).then_some(r.start / 32);
-                        let right = (r.end % 32 != 0).then_some(r.end / 32);
-                        (left, r.start / 32 + 1..r.end / 32, right)
+                    if r.start > r.end {
+                        return (None, r.start / 32..r.end / 32, None);
                     }
+                    if r.start / 32 == r.end / 32 {
+                        return (Some(r.start / 32), 0..0, None);
+                    };
+                    let left = if r.start % 32 == 0 {
+                        (None, r.start / 32)
+                    } else {
+                        (Some(r.start / 32), r.start / 32 + 1)
+                    };
+                    let right = if r.end % 32 == 0 {
+                        (r.end / 32, None)
+                    } else {
+                        (r.end / 32, Some(r.end / 32))
+                    };
+                    (left.0, left.1..right.0, right.1)
                 }
                 let (left, main, right) = divide(range.clone());
                 if let Some(i) = left {
-                    let r = Self::fscan_process(flut, locate_1(i).as_ref());
+                    let r = self.fscan_process(flut, locate_1(i).as_ref());
                     for j in 0..32 {
                         if range.contains(&(i * 32 + j)) {
                             heap.push((Reverse(r[j as usize]), AlwaysEqual(i * 32 + j)));
@@ -239,13 +233,13 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
                     }
                 }
                 for i in main {
-                    let r = Self::fscan_process(flut, locate_1(i).as_ref());
+                    let r = self.fscan_process(flut, locate_1(i).as_ref());
                     for j in 0..32 {
                         heap.push((Reverse(r[j as usize]), AlwaysEqual(i * 32 + j)));
                     }
                 }
                 if let Some(i) = right {
-                    let r = Self::fscan_process(flut, locate_1(i).as_ref());
+                    let r = self.fscan_process(flut, locate_1(i).as_ref());
                     for j in 0..32 {
                         if range.contains(&(i * 32 + j)) {
                             heap.push((Reverse(r[j as usize]), AlwaysEqual(i * 32 + j)));
@@ -276,8 +270,8 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
 
     fn graph_rerank<'a, T, R, C>(
         &'a self,
+        lut: Self::Lut,
         locate: impl Fn(u32) -> C + 'a,
-        vector: Borrowed<'a, O>,
         rerank: R,
     ) -> impl RerankerPush + RerankerPop<T> + 'a
     where
@@ -285,9 +279,8 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
         R: Fn(u32) -> (Distance, T) + 'a,
         C: AsRef<[u8]>,
     {
-        let lut = self.preprocess(vector);
         Graph2Reranker::new(
-            move |u| self.process(&lut, locate(u).as_ref(), vector),
+            move |u| O::process(self.dims, self.ratio, self.bits, &lut, locate(u).as_ref()),
             rerank,
         )
     }
@@ -296,6 +289,13 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
 pub trait OperatorProductQuantization: Operator {
     type Scalar: ScalarLike;
     fn subslice(vector: Borrowed<'_, Self>, start: u32, len: u32) -> &[Self::Scalar];
+    fn code(
+        dims: u32,
+        ratio: u32,
+        bits: u32,
+        centroids: &Vec2<Self::Scalar>,
+        vector: Borrowed<'_, Self>,
+    ) -> Vec<u8>;
 
     fn preprocess(
         dims: u32,
@@ -320,6 +320,31 @@ impl<S: ScalarLike> OperatorProductQuantization for VectDot<S> {
     fn subslice(vector: Borrowed<'_, Self>, start: u32, len: u32) -> &[Self::Scalar] {
         &vector.slice()[start as usize..][..len as usize]
     }
+    fn code(
+        dims: u32,
+        ratio: u32,
+        bits: u32,
+        centroids: &Vec2<Self::Scalar>,
+        vector: Borrowed<'_, Self>,
+    ) -> Vec<u8> {
+        let mut code = Vec::with_capacity(dims.div_ceil(ratio) as _);
+        for i in 0..dims.div_ceil(ratio) {
+            let subdims = std::cmp::min(ratio, dims - ratio * i);
+            let left = Self::subslice(vector, i * ratio, subdims);
+            let mut minimal = f32::INFINITY;
+            let mut target = 0;
+            for j in 0_usize..(1 << bits) {
+                let right = &centroids[(j,)][(i * ratio) as usize..][..subdims as usize];
+                let dis = S::reduce_sum_of_d2(left, right);
+                if dis < minimal {
+                    minimal = dis;
+                    target = j;
+                }
+            }
+            code.push(target as u8);
+        }
+        code
+    }
 
     fn preprocess(
         dims: u32,
@@ -329,11 +354,11 @@ impl<S: ScalarLike> OperatorProductQuantization for VectDot<S> {
         vector: Borrowed<'_, Self>,
     ) -> Vec<f32> {
         let mut xy = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
-        for p in 0..dims.div_ceil(ratio) {
-            let subdims = std::cmp::min(ratio, dims - ratio * p);
+        for i in 0..dims.div_ceil(ratio) {
+            let subdims = std::cmp::min(ratio, dims - ratio * i);
             xy.extend((0_usize..1 << bits).map(|k| {
                 let mut xy = 0.0f32;
-                for i in ratio * p..ratio * p + subdims {
+                for i in ratio * i..ratio * i + subdims {
                     let x = vector.slice()[i as usize].to_f32();
                     let y = centroids[(k as u32 * dims + i) as usize].to_f32();
                     xy += x * y;
@@ -344,34 +369,27 @@ impl<S: ScalarLike> OperatorProductQuantization for VectDot<S> {
         xy
     }
     fn process(dims: u32, ratio: u32, bits: u32, lut: &[f32], code: &[u8]) -> Distance {
-        fn internal(
-            dims: u32,
-            ratio: u32,
-            bits: u32,
-            t: &[f32],
-            f: impl Fn(usize) -> usize,
-        ) -> Distance {
-            let width = dims.div_ceil(ratio);
-            let xy = {
-                let mut xy = 0.0f32;
-                for i in 0..width as usize {
-                    xy += t[i * (1 << bits) + f(i)];
-                }
-                xy
-            };
+        fn internal<const BITS: u32, F>(dims: u32, ratio: u32, t: &[f32], f: F) -> Distance
+        where
+            F: Fn(usize) -> usize,
+        {
+            let mut xy = 0.0f32;
+            for i in 0..dims.div_ceil(ratio) as usize {
+                xy += t[i * (1 << BITS) + f(i)];
+            }
             Distance::from(-xy)
         }
         match bits {
-            1 => internal(dims, ratio, bits, lut, |i| {
+            1 => internal::<1, _>(dims, ratio, lut, |i| {
                 ((code[i >> 3] >> ((i & 7) << 0)) & 1u8) as usize
             }),
-            2 => internal(dims, ratio, bits, lut, |i| {
+            2 => internal::<2, _>(dims, ratio, lut, |i| {
                 ((code[i >> 2] >> ((i & 3) << 1)) & 3u8) as usize
             }),
-            4 => internal(dims, ratio, bits, lut, |i| {
+            4 => internal::<4, _>(dims, ratio, lut, |i| {
                 ((code[i >> 1] >> ((i & 1) << 2)) & 15u8) as usize
             }),
-            8 => internal(dims, ratio, bits, lut, |i| code[i] as usize),
+            8 => internal::<8, _>(dims, ratio, lut, |i| code[i] as usize),
             _ => unreachable!(),
         }
     }
@@ -398,6 +416,31 @@ impl<S: ScalarLike> OperatorProductQuantization for VectL2<S> {
     fn subslice(vector: Borrowed<'_, Self>, start: u32, len: u32) -> &[Self::Scalar] {
         &vector.slice()[start as usize..][..len as usize]
     }
+    fn code(
+        dims: u32,
+        ratio: u32,
+        bits: u32,
+        centroids: &Vec2<Self::Scalar>,
+        vector: Borrowed<'_, Self>,
+    ) -> Vec<u8> {
+        let mut code = Vec::with_capacity(dims.div_ceil(ratio) as _);
+        for i in 0..dims.div_ceil(ratio) {
+            let subdims = std::cmp::min(ratio, dims - ratio * i);
+            let left = Self::subslice(vector, i * ratio, subdims);
+            let mut minimal = f32::INFINITY;
+            let mut target = 0;
+            for j in 0_usize..(1 << bits) {
+                let right = &centroids[(j,)][(i * ratio) as usize..][..subdims as usize];
+                let dis = S::reduce_sum_of_d2(left, right);
+                if dis < minimal {
+                    minimal = dis;
+                    target = j;
+                }
+            }
+            code.push(target as u8);
+        }
+        code
+    }
 
     fn preprocess(
         dims: u32,
@@ -407,11 +450,11 @@ impl<S: ScalarLike> OperatorProductQuantization for VectL2<S> {
         vector: Borrowed<'_, Self>,
     ) -> Vec<f32> {
         let mut d2 = Vec::with_capacity((dims.div_ceil(ratio) as usize) * (1 << bits));
-        for p in 0..dims.div_ceil(ratio) {
-            let subdims = std::cmp::min(ratio, dims - ratio * p);
+        for i in 0..dims.div_ceil(ratio) {
+            let subdims = std::cmp::min(ratio, dims - ratio * i);
             d2.extend((0_usize..1 << bits).map(|k| {
                 let mut d2 = 0.0f32;
-                for i in ratio * p..ratio * p + subdims {
+                for i in ratio * i..ratio * i + subdims {
                     let x = vector.slice()[i as usize].to_f32();
                     let y = centroids[(k as u32 * dims + i) as usize].to_f32();
                     let d = x - y;
@@ -423,31 +466,27 @@ impl<S: ScalarLike> OperatorProductQuantization for VectL2<S> {
         d2
     }
     fn process(dims: u32, ratio: u32, bits: u32, lut: &[f32], code: &[u8]) -> Distance {
-        fn internal(
-            dims: u32,
-            ratio: u32,
-            bits: u32,
-            t: &[f32],
-            f: impl Fn(usize) -> usize,
-        ) -> Distance {
-            let width = dims.div_ceil(ratio);
+        fn internal<const BITS: u32, F>(dims: u32, ratio: u32, t: &[f32], f: F) -> Distance
+        where
+            F: Fn(usize) -> usize,
+        {
             let mut d2 = 0.0f32;
-            for i in 0..width as usize {
-                d2 += t[i * (1 << bits) + f(i)];
+            for i in 0..dims.div_ceil(ratio) as usize {
+                d2 += t[i * (1 << BITS) + f(i)];
             }
             Distance::from(d2)
         }
         match bits {
-            1 => internal(dims, ratio, bits, lut, |i| {
+            1 => internal::<1, _>(dims, ratio, lut, |i| {
                 ((code[i >> 3] >> ((i & 7) << 0)) & 1u8) as usize
             }),
-            2 => internal(dims, ratio, bits, lut, |i| {
+            2 => internal::<2, _>(dims, ratio, lut, |i| {
                 ((code[i >> 2] >> ((i & 3) << 1)) & 3u8) as usize
             }),
-            4 => internal(dims, ratio, bits, lut, |i| {
+            4 => internal::<4, _>(dims, ratio, lut, |i| {
                 ((code[i >> 1] >> ((i & 1) << 2)) & 15u8) as usize
             }),
-            8 => internal(dims, ratio, bits, lut, |i| code[i] as usize),
+            8 => internal::<8, _>(dims, ratio, lut, |i| code[i] as usize),
             _ => unreachable!(),
         }
     }
@@ -474,6 +513,15 @@ macro_rules! unimpl_operator_product_quantization {
         impl OperatorProductQuantization for $t {
             type Scalar = Impossible;
             fn subslice(_: Borrowed<'_, Self>, _: u32, _: u32) -> &[Self::Scalar] {
+                unimplemented!()
+            }
+            fn code(
+                _: u32,
+                _: u32,
+                _: u32,
+                _: &Vec2<Self::Scalar>,
+                _: Borrowed<'_, Self>,
+            ) -> Vec<u8> {
                 unimplemented!()
             }
 

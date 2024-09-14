@@ -48,6 +48,10 @@ impl<O: Operator> Quantizer<O> for TrivialQuantizer<O> {
         0
     }
 
+    fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+        vector.own()
+    }
+
     type Lut = Owned<O>;
 
     fn preprocess(&self, vector: Borrowed<'_, O>) -> Self::Lut {
@@ -64,7 +68,7 @@ impl<O: Operator> Quantizer<O> for TrivialQuantizer<O> {
         unimplemented!()
     }
 
-    fn fscan_process(_: &Self::FLut, _: &[u8]) -> [Distance; 32] {
+    fn fscan_process(&self, _: &Self::FLut, _: &[u8]) -> [Distance; 32] {
         unimplemented!()
     }
 
@@ -114,8 +118,8 @@ impl<O: Operator> Quantizer<O> for TrivialQuantizer<O> {
 
     fn graph_rerank<'a, T, R, C>(
         &'a self,
+        _: Self::Lut,
         _: impl Fn(u32) -> C + 'a,
-        _: Borrowed<'a, O>,
         rerank: R,
     ) -> impl RerankerPush + RerankerPop<T> + 'a
     where

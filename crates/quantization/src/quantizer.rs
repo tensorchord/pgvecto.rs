@@ -21,13 +21,15 @@ pub trait Quantizer<O: Operator>:
     fn code_size(&self) -> u32;
     fn fcode_size(&self) -> u32;
 
+    fn project(&self, vector: Borrowed<'_, O>) -> Owned<O>;
+
     type Lut;
     fn preprocess(&self, vector: Borrowed<'_, O>) -> Self::Lut;
     fn process(&self, lut: &Self::Lut, code: &[u8], vector: Borrowed<'_, O>) -> Distance;
 
     type FLut;
     fn fscan_preprocess(&self, vector: Borrowed<'_, O>) -> Self::FLut;
-    fn fscan_process(flut: &Self::FLut, code: &[u8]) -> [Distance; 32];
+    fn fscan_process(&self, flut: &Self::FLut, code: &[u8]) -> [Distance; 32];
 
     type FlatRerankVec;
 
@@ -60,8 +62,8 @@ pub trait Quantizer<O: Operator>:
 
     fn graph_rerank<'a, T, R, C>(
         &'a self,
+        lut: Self::Lut,
         locate: impl Fn(u32) -> C + 'a,
-        vector: Borrowed<'a, O>,
         rerank: R,
     ) -> impl RerankerPush + RerankerPop<T> + 'a
     where

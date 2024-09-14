@@ -9,6 +9,7 @@ pub mod fast_scan;
 pub mod product;
 pub mod quantize;
 pub mod quantizer;
+pub mod rabitq;
 pub mod reranker;
 pub mod scalar;
 pub mod trivial;
@@ -22,14 +23,17 @@ use base::vector::VectorOwned;
 use common::json::Json;
 use common::mmap_array::MmapArray;
 use quantizer::Quantizer;
+use rayon::iter::IntoParallelIterator;
+use rayon::iter::ParallelIterator;
 use std::marker::PhantomData;
 use std::ops::Range;
 use std::path::Path;
+use stoppable_rayon as rayon;
 
 pub struct Quantization<O, Q> {
-    train: Json<Q>,
+    quantizer: Json<Q>,
     codes: MmapArray<u8>,
-    packed_codes: MmapArray<u8>,
+    fcodes: MmapArray<u8>,
     _maker: PhantomData<fn(O) -> O>,
 }
 
@@ -42,53 +46,73 @@ impl<O: Operator, Q: Quantizer<O>> Quantization<O, Q> {
         transform: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy + Send + Sync,
     ) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
-        let train = Q::train(vector_options, quantization_options, vectors, transform);
-        let train = Json::create(path.as_ref().join("train"), train);
+        let quantizer = Json::create(
+            path.as_ref().join("quantizer"),
+            Q::train(vector_options, quantization_options, vectors, transform),
+        );
         let codes = MmapArray::create(path.as_ref().join("codes"), {
-            (0..vectors.len()).flat_map(|i| {
-                let vector = transform(vectors.vector(i));
-                train.encode(vector.as_borrowed())
-            })
+            (0..vectors.len())
+                .into_par_iter()
+                .map(|i| {
+                    let vector = quantizer.project(transform(vectors.vector(i)).as_borrowed());
+                    quantizer.encode(vector.as_borrowed())
+                })
+                .collect::<Vec<_>>()
+                .into_iter()
+                .flatten()
         });
-        let packed_codes = MmapArray::create(path.as_ref().join("packed_codes"), {
+        let fcodes = MmapArray::create(path.as_ref().join("fcodes"), {
             let d = vectors.dims();
             let n = vectors.len();
             let m = n.div_ceil(32);
-            let train = &train;
-            (0..m).flat_map(move |alpha| {
-                let vectors = std::array::from_fn(|beta| {
-                    let i = 32 * alpha + beta as u32;
-                    if i < n {
-                        transform(vectors.vector(i))
-                    } else {
-                        O::Vector::zero(d)
-                    }
-                });
-                train.fscan_encode(vectors)
-            })
+            let train = &quantizer;
+            (0..m)
+                .into_par_iter()
+                .map(move |alpha| {
+                    let vectors = std::array::from_fn(|beta| {
+                        let i = 32 * alpha + beta as u32;
+                        if i < n {
+                            train.project(transform(vectors.vector(i)).as_borrowed())
+                        } else {
+                            O::Vector::zero(d)
+                        }
+                    });
+                    train.fscan_encode(vectors)
+                })
+                .collect::<Vec<_>>()
+                .into_iter()
+                .flatten()
         });
         Self {
-            train,
+            quantizer,
             codes,
-            packed_codes,
+            fcodes,
             _maker: PhantomData,
         }
     }
 
     pub fn open(path: impl AsRef<Path>) -> Self {
-        let train = Json::open(path.as_ref().join("train"));
+        let quantizer = Json::open(path.as_ref().join("quantizer"));
         let codes = MmapArray::open(path.as_ref().join("codes"));
-        let packed_codes = MmapArray::open(path.as_ref().join("packed_codes"));
+        let fcodes = MmapArray::open(path.as_ref().join("fcodes"));
         Self {
-            train,
+            quantizer,
             codes,
-            packed_codes,
+            fcodes,
             _maker: PhantomData,
         }
     }
 
+    pub fn quantizer(&self) -> &Q {
+        &self.quantizer
+    }
+
+    pub fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+        Q::project(&self.quantizer, vector)
+    }
+
     pub fn preprocess(&self, vector: Borrowed<'_, O>) -> Q::Lut {
-        Q::preprocess(&self.train, vector)
+        Q::preprocess(&self.quantizer, vector)
     }
 
     pub fn flat_rerank_preprocess(
@@ -96,18 +120,18 @@ impl<O: Operator, Q: Quantizer<O>> Quantization<O, Q> {
         vector: Borrowed<'_, O>,
         opts: &SearchOptions,
     ) -> Result<Q::FLut, Q::Lut> {
-        Q::flat_rerank_preprocess(&self.train, vector, opts)
+        Q::flat_rerank_preprocess(&self.quantizer, vector, opts)
     }
 
     pub fn process(&self, vectors: &impl Vectors<Owned<O>>, lut: &Q::Lut, u: u32) -> Distance {
         let locate = |i| {
-            let code_size = self.train.code_size() as usize;
+            let code_size = self.quantizer.code_size() as usize;
             let start = i as usize * code_size;
             let end = start + code_size;
             &self.codes[start..end]
         };
         let vector = vectors.vector(u);
-        Q::process(&self.train, lut, locate(u), vector)
+        Q::process(&self.quantizer, lut, locate(u), vector)
     }
 
     pub fn flat_rerank_continue(
@@ -117,18 +141,18 @@ impl<O: Operator, Q: Quantizer<O>> Quantization<O, Q> {
         heap: &mut Q::FlatRerankVec,
     ) {
         Q::flat_rerank_continue(
-            &self.train,
+            &self.quantizer,
             |i| {
-                let code_size = self.train.code_size() as usize;
+                let code_size = self.quantizer.code_size() as usize;
                 let start = i as usize * code_size;
                 let end = start + code_size;
                 &self.codes[start..end]
             },
             |i| {
-                let fcode_size = self.train.fcode_size() as usize;
+                let fcode_size = self.quantizer.fcode_size() as usize;
                 let start = i as usize * fcode_size;
                 let end = start + fcode_size;
-                &self.packed_codes[start..end]
+                &self.fcodes[start..end]
             },
             frlut,
             range,
@@ -145,23 +169,23 @@ impl<O: Operator, Q: Quantizer<O>> Quantization<O, Q> {
     where
         R: Fn(u32) -> (Distance, T) + 'a,
     {
-        Q::flat_rerank_break(&self.train, heap, rerank, opts)
+        Q::flat_rerank_break(&self.quantizer, heap, rerank, opts)
     }
 
     pub fn graph_rerank<'a, T: 'a, R: Fn(u32) -> (Distance, T) + 'a>(
         &'a self,
-        vector: Borrowed<'a, O>,
+        lut: Q::Lut,
         rerank: R,
     ) -> impl RerankerPush + RerankerPop<T> + 'a {
         Q::graph_rerank(
-            &self.train,
+            &self.quantizer,
+            lut,
             |i| {
-                let code_size = self.train.code_size() as usize;
+                let code_size = self.quantizer.code_size() as usize;
                 let start = i as usize * code_size;
                 let end = start + code_size;
                 &self.codes[start..end]
             },
-            vector,
             rerank,
         )
     }

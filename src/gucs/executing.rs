@@ -13,23 +13,14 @@ static PQ_RERANK_SIZE: GucSetting<i32> =
 static PQ_FAST_SCAN: GucSetting<bool> =
     GucSetting::<bool>::new(SearchOptions::default_pq_fast_scan());
 
+static RQ_FAST_SCAN: GucSetting<bool> =
+    GucSetting::<bool>::new(SearchOptions::default_rq_fast_scan());
+
 static IVF_NPROBE: GucSetting<i32> =
     GucSetting::<i32>::new(SearchOptions::default_ivf_nprobe() as i32);
 
 static HNSW_EF_SEARCH: GucSetting<i32> =
     GucSetting::<i32>::new(SearchOptions::default_hnsw_ef_search() as i32);
-
-static RABITQ_NPROBE: GucSetting<i32> =
-    GucSetting::<i32>::new(SearchOptions::default_rabitq_nprobe() as i32);
-
-static RABITQ_EPSILON: GucSetting<f64> =
-    GucSetting::<f64>::new(SearchOptions::default_rabitq_epsilon() as f64);
-
-static RABITQ_FAST_SCAN: GucSetting<bool> =
-    GucSetting::<bool>::new(SearchOptions::default_rabitq_fast_scan());
-
-static DISKANN_EF_SEARCH: GucSetting<i32> =
-    GucSetting::<i32>::new(SearchOptions::default_diskann_ef_search() as i32);
 
 pub unsafe fn init() {
     GucRegistry::define_int_guc(
@@ -68,6 +59,14 @@ pub unsafe fn init() {
         GucContext::Userset,
         GucFlags::default(),
     );
+    GucRegistry::define_bool_guc(
+        "vectors.rq_fast_scan",
+        "Enables fast scan or not.",
+        "https://docs.pgvecto.rs/usage/search.html",
+        &PQ_FAST_SCAN,
+        GucContext::Userset,
+        GucFlags::default(),
+    );
     GucRegistry::define_int_guc(
         "vectors.ivf_nprobe",
         "`nprobe` argument of IVF algorithm.",
@@ -88,44 +87,6 @@ pub unsafe fn init() {
         GucContext::Userset,
         GucFlags::default(),
     );
-    GucRegistry::define_int_guc(
-        "vectors.rabitq_nprobe",
-        "`nprobe` argument of RaBitQ algorithm.",
-        "https://docs.pgvecto.rs/usage/search.html",
-        &RABITQ_NPROBE,
-        1,
-        u16::MAX as _,
-        GucContext::Userset,
-        GucFlags::default(),
-    );
-    GucRegistry::define_float_guc(
-        "vectors.rabitq_epsilon",
-        "`epsilon` argument of RaBitQ algorithm.",
-        "https://docs.pgvecto.rs/usage/search.html",
-        &RABITQ_EPSILON,
-        1.0,
-        4.0,
-        GucContext::Userset,
-        GucFlags::default(),
-    );
-    GucRegistry::define_bool_guc(
-        "vectors.rabitq_fast_scan",
-        "Enables fast scan or not.",
-        "https://docs.pgvecto.rs/usage/search.html",
-        &RABITQ_FAST_SCAN,
-        GucContext::Userset,
-        GucFlags::default(),
-    );
-    GucRegistry::define_int_guc(
-        "vectors.diskann_ef_search",
-        "`ef_search` argument of DiskANN algorithm.",
-        "https://docs.pgvecto.rs/usage/search.html",
-        &DISKANN_EF_SEARCH,
-        1,
-        u16::MAX as _,
-        GucContext::Userset,
-        GucFlags::default(),
-    );
 }
 
 pub fn search_options() -> SearchOptions {
@@ -134,11 +95,8 @@ pub fn search_options() -> SearchOptions {
         sq_fast_scan: SQ_FAST_SCAN.get(),
         pq_rerank_size: PQ_RERANK_SIZE.get() as u32,
         pq_fast_scan: PQ_FAST_SCAN.get(),
+        rq_fast_scan: RQ_FAST_SCAN.get(),
         ivf_nprobe: IVF_NPROBE.get() as u32,
         hnsw_ef_search: HNSW_EF_SEARCH.get() as u32,
-        rabitq_nprobe: RABITQ_NPROBE.get() as u32,
-        rabitq_epsilon: RABITQ_EPSILON.get() as f32,
-        rabitq_fast_scan: RABITQ_FAST_SCAN.get(),
-        diskann_ef_search: DISKANN_EF_SEARCH.get() as u32,
     }
 }

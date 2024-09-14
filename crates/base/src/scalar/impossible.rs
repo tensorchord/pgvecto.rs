@@ -39,6 +39,14 @@ impl ScalarLike for Impossible {
         unimplemented!()
     }
 
+    fn scalar_is_sign_positive(self) -> bool {
+        unimplemented!()
+    }
+
+    fn scalar_is_sign_negative(self) -> bool {
+        unimplemented!()
+    }
+
     fn from_f32(_: f32) -> Self {
         unimplemented!()
     }
@@ -99,6 +107,11 @@ impl ScalarLike for Impossible {
 
     fn vector_to_f32(_this: &[Self]) -> Vec<f32> {
         unimplemented!()
+    }
+
+    #[allow(unreachable_code)]
+    fn vector_to_f32_borrowed(_: &[Self]) -> impl AsRef<[f32]> {
+        unimplemented!() as Vec<f32>
     }
 
     fn vector_add(_lhs: &[Self], _rhs: &[Self]) -> Vec<Self> {

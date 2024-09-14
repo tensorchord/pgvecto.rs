@@ -39,6 +39,11 @@ impl<S: ScalarLike> VectOwned<S> {
     pub fn slice_mut(&mut self) -> &mut [S] {
         self.0.as_mut_slice()
     }
+
+    #[inline(always)]
+    pub fn into_vec(self) -> Vec<S> {
+        self.0
+    }
 }
 
 impl<S: ScalarLike> VectorOwned for VectOwned<S> {

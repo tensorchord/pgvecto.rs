@@ -32,6 +32,9 @@ impl<T: Copy> Vec2<T> {
 }
 
 impl<T> Vec2<T> {
+    pub fn shape(&self) -> (usize, usize) {
+        self.shape
+    }
     pub fn shape_0(&self) -> usize {
         self.shape.0
     }
