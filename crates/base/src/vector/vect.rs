@@ -48,6 +48,11 @@ impl<S: ScalarLike> VectorOwned for VectOwned<S> {
     fn as_borrowed(&self) -> VectBorrowed<'_, S> {
         VectBorrowed(self.0.as_slice())
     }
+
+    #[inline(always)]
+    fn zero(dims: u32) -> Self {
+        Self::new(vec![S::zero(); dims as usize])
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

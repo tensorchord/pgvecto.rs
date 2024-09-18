@@ -55,6 +55,11 @@ impl VectorOwned for BVectOwned {
             data: &self.data,
         }
     }
+
+    #[inline(always)]
+    fn zero(dims: u32) -> Self {
+        Self::new(dims, vec![0; dims.div_ceil(BVECTOR_WIDTH) as usize])
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

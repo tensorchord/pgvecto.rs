@@ -177,5 +177,5 @@ fn _vectors_vecf16_subscript(_fcinfo: pgrx::pg_sys::FunctionCallInfo) -> Interna
         fetch_leakproof: false,
         store_leakproof: false,
     };
-    Internal::from(Some(Datum::from(std::ptr::addr_of!(SBSROUTINES))))
+    Internal::from(Some(Datum::from(&SBSROUTINES as *const _)))
 }

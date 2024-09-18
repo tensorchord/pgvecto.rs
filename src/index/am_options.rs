@@ -32,7 +32,7 @@ impl Reloption {
     }];
     unsafe fn options(&self) -> &CStr {
         unsafe {
-            let ptr = std::ptr::addr_of!(*self)
+            let ptr = (self as *const Self)
                 .cast::<std::ffi::c_char>()
                 .offset(self.options as _);
             CStr::from_ptr(ptr)

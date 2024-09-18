@@ -3,6 +3,8 @@ use crate::distance::Distance;
 use crate::vector::VectorOwned;
 use serde::{Deserialize, Serialize};
 use std::any::Any;
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::fmt::Display;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -93,14 +95,13 @@ pub trait RerankerPop<T> {
     fn pop(&mut self) -> Option<(Distance, u32, T)>;
 }
 
-pub trait RerankerPush {
-    fn push(&mut self, u: u32);
+impl<T> RerankerPop<T> for BinaryHeap<(Reverse<Distance>, AlwaysEqual<u32>, AlwaysEqual<T>)> {
+    fn pop(&mut self) -> Option<(Distance, u32, T)> {
+        let (Reverse(dis_u), AlwaysEqual(u), AlwaysEqual(pay_u)) = self.pop()?;
+        Some((dis_u, u, pay_u))
+    }
 }
 
-pub trait FlatReranker<T>: RerankerPop<T> {}
-
-impl<'a, T> RerankerPop<T> for Box<dyn FlatReranker<T> + 'a> {
-    fn pop(&mut self) -> Option<(Distance, u32, T)> {
-        self.as_mut().pop()
-    }
+pub trait RerankerPush {
+    fn push(&mut self, u: u32);
 }

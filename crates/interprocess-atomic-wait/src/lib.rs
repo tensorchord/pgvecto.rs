@@ -70,7 +70,7 @@ pub fn wait(futex: &AtomicU32, value: u32, timeout: Duration) {
             libc::UMTX_OP_WAIT_UINT,
             value as libc::c_ulong,
             std::mem::size_of_val(&timeout) as *mut std::ffi::c_void,
-            std::ptr::addr_of_mut!(timeout).cast(),
+            &mut timeout as *mut libc::timespec as *mut _,
         );
     };
 }

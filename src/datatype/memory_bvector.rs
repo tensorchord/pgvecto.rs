@@ -89,9 +89,9 @@ impl BVectorOutput {
             let layout = BVectorHeader::layout(dims as usize);
             let ptr = pgrx::pg_sys::palloc(layout.size()) as *mut BVectorHeader;
             ptr.cast::<u8>().add(layout.size() - 8).write_bytes(0, 8);
-            std::ptr::addr_of_mut!((*ptr).varlena).write(BVectorHeader::varlena(layout.size()));
-            std::ptr::addr_of_mut!((*ptr).magic).write(HEADER_MAGIC);
-            std::ptr::addr_of_mut!((*ptr).dims).write(internal_dims);
+            (&raw mut (*ptr).varlena).write(BVectorHeader::varlena(layout.size()));
+            (&raw mut (*ptr).magic).write(HEADER_MAGIC);
+            (&raw mut (*ptr).dims).write(internal_dims);
             std::ptr::copy_nonoverlapping(
                 vector.data().as_ptr(),
                 (*ptr).phantom.as_mut_ptr(),

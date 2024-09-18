@@ -5,11 +5,28 @@ pub use sealed::SealedIndexing;
 use base::operator::Operator;
 use inverted::operator::OperatorInvertedIndex;
 use ivf::operator::OperatorIvf;
+use quantization::product::OperatorProductQuantization;
+use quantization::scalar::OperatorScalarQuantization;
 use rabitq::operator::OperatorRabitq;
 
-pub trait OperatorIndexing:
-    Operator + OperatorIvf + OperatorInvertedIndex + OperatorRabitq
+pub trait OperatorIndexing
+where
+    Self: Operator,
+    Self: OperatorIvf,
+    Self: OperatorInvertedIndex,
+    Self: OperatorRabitq,
+    Self: OperatorScalarQuantization,
+    Self: OperatorProductQuantization,
 {
 }
 
-impl<T: Operator + OperatorIvf + OperatorInvertedIndex + OperatorRabitq> OperatorIndexing for T {}
+impl<T> OperatorIndexing for T
+where
+    Self: Operator,
+    Self: OperatorIvf,
+    Self: OperatorInvertedIndex,
+    Self: OperatorRabitq,
+    Self: OperatorScalarQuantization,
+    Self: OperatorProductQuantization,
+{
+}

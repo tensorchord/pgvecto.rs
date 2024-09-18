@@ -1,10 +1,8 @@
 use base::{operator::*, scalar::ScalarLike};
-use quantization::operator::OperatorQuantization;
+use std::iter::{zip, Empty};
 use storage::OperatorStorage;
 
-use std::iter::{zip, Empty};
-
-pub trait OperatorInvertedIndex: OperatorQuantization + OperatorStorage {
+pub trait OperatorInvertedIndex: OperatorStorage {
     fn to_index_vec(vec: Borrowed<'_, Self>) -> impl Iterator<Item = (u32, f32)> + '_;
 }
 

@@ -119,8 +119,17 @@ impl<O: Op> SealedSegment<O> {
     pub fn indexing(&self) -> &dyn Any {
         match &self.indexing {
             SealedIndexing::Flat(x) => x,
+            SealedIndexing::FlatPq(x) => x,
+            SealedIndexing::FlatSq(x) => x,
+
             SealedIndexing::Ivf(x) => x,
+            SealedIndexing::IvfPq(x) => x,
+            SealedIndexing::IvfSq(x) => x,
+
             SealedIndexing::Hnsw(x) => x,
+            SealedIndexing::HnswPq(x) => x,
+            SealedIndexing::HnswSq(x) => x,
+
             SealedIndexing::InvertedIndex(x) => x,
             SealedIndexing::Rabitq(x) => x,
         }

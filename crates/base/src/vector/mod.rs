@@ -24,6 +24,8 @@ pub trait VectorOwned: Clone + Serialize + for<'a> Deserialize<'a> + 'static {
     type Borrowed<'a>: VectorBorrowed<Owned = Self>;
 
     fn as_borrowed(&self) -> Self::Borrowed<'_>;
+
+    fn zero(dims: u32) -> Self;
 }
 
 pub trait VectorBorrowed: Copy + PartialEq + PartialOrd {
