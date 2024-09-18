@@ -9,9 +9,9 @@ use std::cmp::Reverse;
 use std::marker::PhantomData;
 use std::ops::Range;
 
-pub enum RabitqLookup<O: OperatorRabitq> {
-    FastScan(Vec<u8>),
-    Trivial(O::QvectorLookup),
+pub enum Qvector<O: OperatorRabitq> {
+    FastScan((O::QvectorParams, Vec<u8>)),
+    Scan((O::QvectorParams, O::QvectorLookup)),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -99,8 +99,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
 
     pub fn push_batch(
         &self,
-        alpha: &O::Params,
-        beta: &Result<O::Preprocessed, Vec<u8>>,
+        qvector: &Qvector<O>,
         range: Range<u32>,
         heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         codes: &[u8],
@@ -108,12 +107,12 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
         meta: &[f32],
         epsilon: f32,
     ) {
-        match lookup {
-            RabitqLookup::FastScan(lut) => {
-                self.push_back_fscan(qvector_params, &lut, range, heap, packed_codes, meta, epsilon);
+        match qvector {
+            Qvector::FastScan((params, lut)) => {
+                self.push_back_fscan(params, lut, range, heap, packed_codes, meta, epsilon);
             }
-            RabitqLookup::Trivial(blut) => {
-                self.push_back_trivial(qvector_params, blut, range, heap, codes, meta, epsilon);
+            Qvector::Scan((params, blut)) => {
+                self.push_back_scan(params, blut, range, heap, codes, meta, epsilon);
             }
         }
     }
@@ -209,7 +208,7 @@ impl<O: OperatorRabitq> RabitqQuantizer<O> {
     }
 
     #[inline]
-    fn push_back_trivial(
+    fn push_back_scan(
         &self,
         qvector_params: &O::QvectorParams,
         qvector_lookup: &O::QvectorLookup,

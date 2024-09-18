@@ -74,7 +74,7 @@ impl OperatorRabitq for VectL2<f32> {
 
     // [dis_u_2, factor_ppc, factor_ip, factor_err]
     type VectorParams = [f32; 4];
-    // (dis_v_2, lower_bound, delta, qvector_sum)
+    // (dis_v_2, b, k, qvector_sum)
     type QvectorParams = (f32, f32, f32, f32);
     type QvectorLookup = ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>);
 
@@ -116,7 +116,7 @@ impl OperatorRabitq for VectL2<f32> {
         dis_v_2: f32,
     ) -> (Self::QvectorParams, Self::QvectorLookup) {
         use quantization::quantize;
-        let (delta, lower_bound, qvector) = quantize::quantize::<15>(trans_vector);
+        let (k, b, qvector) = quantize::quantize::<15>(trans_vector);
         let qvector_sum = if trans_vector.len() <= 4369 {
             quantize::reduce_sum_of_x_as_u16(&qvector) as f32
         } else {
@@ -125,7 +125,7 @@ impl OperatorRabitq for VectL2<f32> {
 
         let blut = binarize(&qvector);
         let lut = gen(qvector);
-        ((dis_v_2, lower_bound, delta, qvector_sum), (blut, lut))
+        ((dis_v_2, b, k, qvector_sum), (blut, lut))
     }
 
     fn process(
@@ -223,7 +223,7 @@ impl OperatorRabitq for VectDot<f32> {
 
     // [factor_ppc, factor_ip, factor_err]
     type VectorParams = [f32; 3];
-    // (dis_v_2, lower_bound, delta, qvector_sum)
+    // (dis_v_2, b, k, qvector_sum)
     type QvectorParams = (f32, f32, f32, f32);
     type QvectorLookup = ((Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>), Vec<u8>);
 
@@ -407,13 +407,13 @@ pub fn rabitq_l2(
     factor_ppc: f32,
     factor_ip: f32,
     factor_err: f32,
-    (dis_v_2, lower_bound, delta, qvector_sum): (f32, f32, f32, f32),
+    (dis_v_2, b, k, qvector_sum): (f32, f32, f32, f32),
     binary_prod: u16,
 ) -> (f32, f32) {
     let rough = dis_u_2
         + dis_v_2
-        + lower_bound * factor_ppc
-        + ((2.0 * binary_prod as f32) - qvector_sum) * factor_ip * delta;
+        + b * factor_ppc
+        + ((2.0 * binary_prod as f32) - qvector_sum) * factor_ip * k;
     let err = factor_err * dis_v_2.sqrt();
     (rough, err)
 }
@@ -423,11 +423,11 @@ pub fn rabitq_dot(
     factor_ppc: f32,
     factor_ip: f32,
     factor_err: f32,
-    (dis_v_2, lower_bound, delta, qvector_sum): (f32, f32, f32, f32),
+    (dis_v_2, b, k, qvector_sum): (f32, f32, f32, f32),
     binary_prod: u16,
 ) -> (f32, f32) {
-    let rough = 0.5 * lower_bound * factor_ppc
-        + 0.5 * ((2.0 * binary_prod as f32) - qvector_sum) * factor_ip * delta;
+    let rough =
+        0.5 * b * factor_ppc + 0.5 * ((2.0 * binary_prod as f32) - qvector_sum) * factor_ip * k;
     let err = factor_err * dis_v_2.sqrt() * 0.5;
     (rough, err)
 }
@@ -602,7 +602,7 @@ mod test {
                 VectL2::<f32>::preprocess(&trans_vector, dis_v_2);
             let est =
                 VectL2::<f32>::process(&vector_params, &codes, &qvector_params, &qvector_lookup);
-            let lower_bound = VectL2::<f32>::process_lowerbound(
+            let b = VectL2::<f32>::process_lowerbound(
                 &vector_params,
                 &codes,
                 &qvector_params,
@@ -611,7 +611,7 @@ mod test {
             );
 
             let real = f32::reduce_sum_of_d2(&query, &case.original);
-            if estimate_failed(est.to_f32(), lower_bound.to_f32(), real) {
+            if estimate_failed(est.to_f32(), b.to_f32(), real) {
                 bad += 1;
             }
         }
@@ -640,7 +640,7 @@ mod test {
                 VectDot::<f32>::preprocess(&trans_vector, dis_v_2);
             let est =
                 VectDot::<f32>::process(&vector_params, &codes, &qvector_params, &qvector_lookup);
-            let lower_bound = VectDot::<f32>::process_lowerbound(
+            let b = VectDot::<f32>::process_lowerbound(
                 &vector_params,
                 &codes,
                 &qvector_params,
@@ -649,7 +649,7 @@ mod test {
             );
 
             let real = -f32::reduce_sum_of_xy(&query, &case.original);
-            if estimate_failed(est.to_f32(), lower_bound.to_f32(), real) {
+            if estimate_failed(est.to_f32(), b.to_f32(), real) {
                 bad += 1;
             }
         }
@@ -685,9 +685,9 @@ mod test {
                 .map(merge_8)
                 .take(trans_vector.len().div_ceil(8))
                 .collect();
-        fn estimate_failed(est: f32, lower_bound: f32, real: f32) -> bool {
-            let upper_bound = 2.0 * est - lower_bound;
-            lower_bound <= real && upper_bound >= real
+        fn estimate_failed(est: f32, b: f32, real: f32) -> bool {
+            let upper_bound = 2.0 * est - b;
+            b <= real && upper_bound >= real
         }
         (query, trans_vector, dis_v_2, codes, estimate_failed)
     }

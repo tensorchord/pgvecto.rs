@@ -1,4 +1,4 @@
-use super::quantizer::{RabitqLookup, RabitqQuantizer};
+use super::quantizer::{Qvector, RabitqQuantizer};
 use crate::operator::OperatorRabitq;
 use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
@@ -25,7 +25,7 @@ impl<O: OperatorRabitq> Quantizer<O> {
 }
 
 pub enum RabitqPreprocessed<O: OperatorRabitq> {
-    Rabitq((<O as OperatorRabitq>::QvectorParams, RabitqLookup<O>)),
+    Rabitq(Qvector<O>),
 }
 
 pub struct Quantization<O: OperatorRabitq> {
@@ -132,31 +132,28 @@ impl<O: OperatorRabitq> Quantization<O> {
     }
 
     pub fn preprocess(&self, trans_vector: &[f32], dis_v_2: f32) -> RabitqPreprocessed<O> {
-        let (params, lookup) = match &*self.train {
+        let (params, blut) = match &*self.train {
             Quantizer::Rabitq(x) => x.preprocess(trans_vector, dis_v_2),
         };
-        RabitqPreprocessed::Rabitq((params, RabitqLookup::Trivial(lookup)))
+        RabitqPreprocessed::Rabitq(Qvector::Scan((params, blut)))
     }
 
     pub fn fscan_preprocess(&self, trans_vector: &[f32], dis_v_2: f32) -> RabitqPreprocessed<O> {
-        let (params, lookup) = match &*self.train {
+        let (params, lut) = match &*self.train {
             Quantizer::Rabitq(x) => x.fscan_preprocess(trans_vector, dis_v_2),
         };
-        RabitqPreprocessed::Rabitq((params, RabitqLookup::FastScan(lookup)))
+        RabitqPreprocessed::Rabitq(Qvector::FastScan((params, lut)))
     }
 
     pub fn process(&self, preprocessed: &RabitqPreprocessed<O>, u: u32) -> Distance {
         match (&*self.train, preprocessed) {
-            (
-                Quantizer::Rabitq(x),
-                RabitqPreprocessed::Rabitq((params, RabitqLookup::Trivial(lookup))),
-            ) => {
+            (Quantizer::Rabitq(x), RabitqPreprocessed::Rabitq(Qvector::Scan((params, blut)))) => {
                 let bytes = x.bytes() as usize;
                 let start = u as usize * bytes;
                 let end = start + bytes;
                 let vector_params = O::train_decode(u, &self.meta);
                 let code = &self.codes[start..end];
-                x.process(&vector_params, params, lookup, code)
+                x.process(&vector_params, params, blut, code)
             }
             _ => unreachable!(),
         }
@@ -164,15 +161,14 @@ impl<O: OperatorRabitq> Quantization<O> {
 
     pub fn push_batch(
         &self,
-        preprocessed: &QuantizationAnyPreprocessed<O>,
+        preprocessed: &RabitqPreprocessed<O>,
         range: Range<u32>,
         heap: &mut Vec<(Reverse<Distance>, AlwaysEqual<u32>)>,
         rq_epsilon: f32,
     ) {
         match (&*self.train, preprocessed) {
-            (Quantizer::Rabitq(x), QuantizationAnyPreprocessed::Rabitq((a, b))) => x.push_batch(
-                a,
-                b,
+            (Quantizer::Rabitq(x), RabitqPreprocessed::Rabitq(qvector)) => x.push_batch(
+                qvector,
                 range,
                 heap,
                 &self.codes,

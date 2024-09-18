@@ -369,13 +369,9 @@ mod reduce_sum_of_x_as_u32 {
 #[inline(always)]
 pub fn quantize<const N: u8>(lut: &[f32]) -> (f32, f32, Vec<u8>) {
     let (min, max) = f32::reduce_min_max_of_x(lut);
-    let delta = 0.0f32.max((max - min) / (N as f32));
-    let lower_bound = min;
-    (
-        delta,
-        lower_bound,
-        mul_add_round::mul_add_round(lut, 1.0 / delta, -lower_bound / delta),
-    )
+    let k = 0.0f32.max((max - min) / (N as f32));
+    let b = min;
+    (k, b, mul_add_round::mul_add_round(lut, 1.0 / k, -b / k))
 }
 
 #[inline(always)]
