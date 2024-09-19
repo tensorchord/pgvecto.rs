@@ -5,6 +5,7 @@ use base::index::*;
 use base::operator::*;
 use base::search::*;
 use base::vector::VectorBorrowed;
+use base::vector::VectorOwned;
 use common::mmap_array::MmapArray;
 use common::remap::RemappedCollection;
 use quantization::quantizer::Quantizer;
@@ -44,7 +45,9 @@ impl<O: OperatorFlat, Q: Quantizer<O>> Flat<O, Q> {
         opts: &'a SearchOptions,
     ) -> Box<dyn Iterator<Item = Element> + 'a> {
         let mut heap = Q::flat_rerank_start();
-        let lut = self.quantization.flat_rerank_preprocess(vector, opts);
+        let lut = self
+            .quantization
+            .flat_rerank_preprocess(self.quantization.project(vector).as_borrowed(), opts);
         self.quantization
             .flat_rerank_continue(&lut, 0..self.storage.len(), &mut heap);
         let mut reranker = self.quantization.flat_rerank_break(

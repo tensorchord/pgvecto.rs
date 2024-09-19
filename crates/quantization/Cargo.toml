@@ -5,7 +5,10 @@ edition.workspace = true
 
 [dependencies]
 log.workspace = true
+nalgebra = "0.33.0"
 rand.workspace = true
+rand_chacha = "0.3.1"
+rand_distr.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 

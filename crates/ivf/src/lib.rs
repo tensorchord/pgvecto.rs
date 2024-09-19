@@ -31,7 +31,7 @@ pub struct Ivf<O: Op, Q: Quantizer<O>> {
     quantization: Quantization<O, Q>,
     payloads: MmapArray<Payload>,
     offsets: Json<Vec<u32>>,
-    centroids: Json<Vec2<<O as Op>::Scalar>>,
+    projected_centroids: Json<Vec2<<O as Op>::Scalar>>,
     is_residual: Json<bool>,
 }
 
@@ -70,23 +70,40 @@ impl<O: Op, Q: Quantizer<O>> Ivf<O, Q> {
         vector: Borrowed<'a, O>,
         opts: &'a SearchOptions,
     ) -> Box<dyn Iterator<Item = Element> + 'a> {
+        let projected_vector = self.quantization.project(vector);
         let lists = select(
-            k_means_lookup_many(O::interpret(vector), &self.centroids),
+            k_means_lookup_many(
+                O::interpret(projected_vector.as_borrowed()),
+                &self.projected_centroids,
+            ),
             opts.ivf_nprobe as usize,
         );
         let mut heap = Q::flat_rerank_start();
-        let mut lut = self.quantization.flat_rerank_preprocess(vector, opts);
+        let lut = if *self.is_residual {
+            None
+        } else {
+            Some(
+                self.quantization
+                    .flat_rerank_preprocess(projected_vector.as_borrowed(), opts),
+            )
+        };
         for i in lists.iter().map(|(_, i)| *i) {
-            if *self.is_residual {
-                let vector = O::residual(vector, &self.centroids[(i,)]);
-                lut = self
-                    .quantization
-                    .flat_rerank_preprocess(vector.as_borrowed(), opts);
-            }
+            let lut = if let Some(lut) = lut.as_ref() {
+                lut
+            } else {
+                &self.quantization.flat_rerank_preprocess(
+                    O::residual(
+                        projected_vector.as_borrowed(),
+                        &self.projected_centroids[(i,)],
+                    )
+                    .as_borrowed(),
+                    opts,
+                )
+            };
             let start = self.offsets[i];
             let end = self.offsets[i + 1];
             self.quantization
-                .flat_rerank_continue(&lut, start..end, &mut heap);
+                .flat_rerank_continue(lut, start..end, &mut heap);
         }
         let mut reranker = self.quantization.flat_rerank_break(
             heap,
@@ -116,7 +133,7 @@ fn from_nothing<O: Op, Q: Quantizer<O>>(
     } = options.indexing.clone().unwrap_ivf();
     let samples = O::sample(collection, nlist);
     rayon::check();
-    let centroids = k_means(nlist as usize, samples, true, spherical_centroids, false);
+    let centroids = k_means(nlist as usize, samples, spherical_centroids, 10, false);
     rayon::check();
     let fa = (0..collection.len())
         .into_par_iter()
@@ -174,14 +191,21 @@ fn from_nothing<O: Op, Q: Quantizer<O>>(
         (0..collection.len()).map(|i| collection.payload(i)),
     );
     let offsets = Json::create(path.as_ref().join("offsets"), offsets);
-    let centroids = Json::create(path.as_ref().join("centroids"), centroids);
+    let projected_centroids = Json::create(path.as_ref().join("projected_centroids"), {
+        let mut projected_centroids = Vec2::zeros(centroids.shape());
+        for i in 0..centroids.shape_0() {
+            projected_centroids[(i,)]
+                .copy_from_slice(&O::project(quantization.quantizer(), &centroids[(i,)]));
+        }
+        projected_centroids
+    });
     let is_residual = Json::create(path.as_ref().join("is_residual"), is_residual);
     Ivf {
         storage,
         quantization,
         payloads,
         offsets,
-        centroids,
+        projected_centroids,
         is_residual,
     }
 }
@@ -191,14 +215,14 @@ fn open<O: Op, Q: Quantizer<O>>(path: impl AsRef<Path>) -> Ivf<O, Q> {
     let quantization = Quantization::open(path.as_ref().join("quantization"));
     let payloads = MmapArray::open(path.as_ref().join("payloads"));
     let offsets = Json::open(path.as_ref().join("offsets"));
-    let centroids = Json::open(path.as_ref().join("centroids"));
+    let projected_centroids = Json::open(path.as_ref().join("projected_centroids"));
     let is_residual = Json::open(path.as_ref().join("is_residual"));
     Ivf {
         storage,
         quantization,
         payloads,
         offsets,
-        centroids,
+        projected_centroids,
         is_residual,
     }
 }

@@ -133,14 +133,11 @@ impl QueryArguments {
         SearchOptions {
             sq_rerank_size: 0,
             pq_rerank_size: 0,
-            hnsw_ef_search: self.ef,
-            ivf_nprobe: self.probe,
-            diskann_ef_search: 100,
             sq_fast_scan: false,
             pq_fast_scan: false,
-            rabitq_epsilon: 1.9,
-            rabitq_fast_scan: true,
-            rabitq_nprobe: self.probe,
+            rq_fast_scan: true,
+            hnsw_ef_search: self.ef,
+            ivf_nprobe: self.probe,
         }
     }
 }

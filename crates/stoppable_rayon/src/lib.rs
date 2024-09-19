@@ -4,26 +4,11 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
-pub use rayon::array;
-pub use rayon::collections;
-pub use rayon::iter;
-pub use rayon::option;
-pub use rayon::prelude;
-pub use rayon::range;
-pub use rayon::range_inclusive;
-pub use rayon::result;
-pub use rayon::slice;
-pub use rayon::str;
-pub use rayon::string;
-pub use rayon::vec;
-
-pub use rayon::{current_num_threads, current_thread_index, max_num_threads};
-pub use rayon::{in_place_scope, in_place_scope_fifo};
-pub use rayon::{join, join_context};
-pub use rayon::{scope, scope_fifo};
-pub use rayon::{spawn, spawn_fifo};
-pub use rayon::{yield_local, yield_now};
-pub use rayon::{FnContext, Scope, ScopeFifo, Yield};
+pub mod iter {
+    pub use rayon::iter::IntoParallelIterator;
+    pub use rayon::iter::IntoParallelRefMutIterator;
+    pub use rayon::iter::ParallelIterator;
+}
 
 #[derive(Debug, Default)]
 pub struct ThreadPoolBuilder {

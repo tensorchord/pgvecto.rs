@@ -38,6 +38,16 @@ impl ScalarLike for f16 {
     }
 
     #[inline(always)]
+    fn scalar_is_sign_positive(self) -> bool {
+        self.is_sign_positive()
+    }
+
+    #[inline(always)]
+    fn scalar_is_sign_negative(self) -> bool {
+        self.is_sign_negative()
+    }
+
+    #[inline(always)]
     fn from_f32(x: f32) -> Self {
         f16::from_f32(x)
     }
@@ -234,6 +244,10 @@ impl ScalarLike for f16 {
             r.set_len(n);
         }
         r
+    }
+
+    fn vector_to_f32_borrowed(this: &[Self]) -> impl AsRef<[f32]> {
+        Self::vector_to_f32(this)
     }
 
     #[detect::multiversion(v4, v3, v2, neon, fallback)]
