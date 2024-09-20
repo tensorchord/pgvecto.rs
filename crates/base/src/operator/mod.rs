@@ -23,5 +23,4 @@ pub trait Operator: Copy + 'static + Send + Sync {
     fn distance(lhs: Borrowed<'_, Self>, rhs: Borrowed<'_, Self>) -> Distance;
 }
 
-pub type Owned<T> = <T as Operator>::Vector;
 pub type Borrowed<'a, T> = <<T as Operator>::Vector as VectorOwned>::Borrowed<'a>;

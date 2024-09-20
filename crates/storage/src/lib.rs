@@ -14,7 +14,7 @@ pub trait Storage<V: VectorOwned>: Vectors<V> {
 }
 
 pub trait OperatorStorage: Operator {
-    type Storage: Storage<Owned<Self>> + Send + Sync;
+    type Storage: Storage<Self::Vector> + Send + Sync;
 }
 
 impl<S: ScalarLike> OperatorStorage for SVectDot<S> {

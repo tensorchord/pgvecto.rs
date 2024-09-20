@@ -1,14 +1,13 @@
 use crate::optimizing::index_source::IndexSource;
 use crate::Index;
 use crate::Op;
-use base::operator::Owned;
 use std::sync::Arc;
 
 pub fn scan<O: Op>(
     index: Arc<Index<O>>,
     capacity: u32,
     delete_threshold: f64,
-) -> Option<IndexSource<Owned<O>, O>> {
+) -> Option<IndexSource<O::Vector, O>> {
     let (sealed, growing) = 'a: {
         let protect = index.protect.lock();
         // approach 1: merge small segments to a big segment
@@ -87,7 +86,7 @@ pub fn scan<O: Op>(
     ))
 }
 
-pub fn make<O: Op>(index: Arc<Index<O>>, source: IndexSource<Owned<O>, O>) {
+pub fn make<O: Op>(index: Arc<Index<O>>, source: IndexSource<O::Vector, O>) {
     let _ = index.create_sealed_segment(
         &source,
         &source.sealed.iter().map(|x| x.id()).collect::<Vec<_>>(),

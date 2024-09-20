@@ -11,9 +11,9 @@ base = { path = "../base" }
 # algorithms
 flat = { path = "../flat" }
 hnsw = { path = "../hnsw" }
-inverted = { path = "../inverted" }
 ivf = { path = "../ivf" }
 quantization = { path = "../quantization" }
+sparse_inverted_index = { path = "../sparse_inverted_index" }
 
 [lints]
 workspace = true

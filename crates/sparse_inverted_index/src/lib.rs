@@ -2,11 +2,11 @@
 
 pub mod operator;
 
-use self::operator::OperatorInvertedIndex;
+use self::operator::OperatorSparseInvertedIndex;
 use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
 use base::index::{IndexOptions, SearchOptions};
-use base::operator::{Borrowed, Owned};
+use base::operator::Borrowed;
 use base::scalar::ScalarLike;
 use base::search::{Collection, Element, Payload, Source, Vectors};
 use common::json::Json;
@@ -21,7 +21,7 @@ use std::path::Path;
 const ZERO: f32 = 0.0f32;
 
 #[allow(dead_code)]
-pub struct InvertedIndex<O: OperatorInvertedIndex> {
+pub struct SparseInvertedIndex<O: OperatorSparseInvertedIndex> {
     storage: O::Storage,
     payloads: MmapArray<Payload>,
     indexes: Json<Vec<u32>>,
@@ -29,11 +29,11 @@ pub struct InvertedIndex<O: OperatorInvertedIndex> {
     scores: Json<Vec<f32>>,
 }
 
-impl<O: OperatorInvertedIndex> InvertedIndex<O> {
+impl<O: OperatorSparseInvertedIndex> SparseInvertedIndex<O> {
     pub fn create(
         path: impl AsRef<Path>,
         options: IndexOptions,
-        source: &(impl Vectors<Owned<O>> + Collection + Source),
+        source: &(impl Vectors<O::Vector> + Collection + Source),
     ) -> Self {
         let remapped = RemappedCollection::from_source(source);
         from_nothing(path, options, &remapped)
@@ -87,11 +87,11 @@ impl<O: OperatorInvertedIndex> InvertedIndex<O> {
     }
 }
 
-fn from_nothing<O: OperatorInvertedIndex>(
+fn from_nothing<O: OperatorSparseInvertedIndex>(
     path: impl AsRef<Path>,
     opts: IndexOptions,
-    collection: &(impl Vectors<Owned<O>> + Collection),
-) -> InvertedIndex<O> {
+    collection: &(impl Vectors<O::Vector> + Collection),
+) -> SparseInvertedIndex<O> {
     create_dir(path.as_ref()).expect("failed to create path for inverted index");
 
     let mut token_collection = vec![Vec::new(); opts.vector.dims as usize];
@@ -110,7 +110,7 @@ fn from_nothing<O: OperatorInvertedIndex>(
     let json_index = Json::create(path.as_ref().join("indexes"), indexes);
     let json_offset = Json::create(path.as_ref().join("offsets"), offsets);
     let json_score = Json::create(path.as_ref().join("scores"), scores);
-    InvertedIndex {
+    SparseInvertedIndex {
         storage,
         payloads,
         indexes: json_index,
@@ -119,13 +119,13 @@ fn from_nothing<O: OperatorInvertedIndex>(
     }
 }
 
-fn open<O: OperatorInvertedIndex>(path: impl AsRef<Path>) -> InvertedIndex<O> {
+fn open<O: OperatorSparseInvertedIndex>(path: impl AsRef<Path>) -> SparseInvertedIndex<O> {
     let storage = O::Storage::open(path.as_ref().join("storage"));
     let payloads = MmapArray::open(path.as_ref().join("payloads"));
     let offsets = Json::open(path.as_ref().join("offsets"));
     let indexes = Json::open(path.as_ref().join("indexes"));
     let scores = Json::open(path.as_ref().join("scores"));
-    InvertedIndex {
+    SparseInvertedIndex {
         storage,
         payloads,
         indexes,

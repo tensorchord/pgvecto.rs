@@ -13,7 +13,7 @@ pub trait OperatorIvf: OperatorStorage {
     fn interpret(vector: Borrowed<'_, Self>) -> &[Self::Scalar];
     fn project<Q: Quantizer<Self>>(quantizer: &Q, slice: &[Self::Scalar]) -> Vec<Self::Scalar>;
     const SUPPORT_RESIDUAL: bool;
-    fn residual(lhs: Borrowed<'_, Self>, rhs: &[Self::Scalar]) -> Owned<Self>;
+    fn residual(lhs: Borrowed<'_, Self>, rhs: &[Self::Scalar]) -> Self::Vector;
 }
 
 impl OperatorIvf for BVectorDot {
@@ -28,7 +28,7 @@ impl OperatorIvf for BVectorDot {
         unimplemented!()
     }
     const SUPPORT_RESIDUAL: bool = false;
-    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Self::Scalar]) -> Owned<Self> {
+    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Self::Scalar]) -> Self::Vector {
         unimplemented!()
     }
 }
@@ -45,7 +45,7 @@ impl OperatorIvf for BVectorJaccard {
         unimplemented!()
     }
     const SUPPORT_RESIDUAL: bool = false;
-    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Self::Scalar]) -> Owned<Self> {
+    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Self::Scalar]) -> Self::Vector {
         unimplemented!()
     }
 }
@@ -62,7 +62,7 @@ impl OperatorIvf for BVectorHamming {
         unimplemented!()
     }
     const SUPPORT_RESIDUAL: bool = false;
-    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Self::Scalar]) -> Owned<Self> {
+    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Self::Scalar]) -> Self::Vector {
         unimplemented!()
     }
 }
@@ -79,7 +79,7 @@ impl OperatorIvf for SVectDot<f32> {
         unimplemented!()
     }
     const SUPPORT_RESIDUAL: bool = false;
-    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Self::Scalar]) -> Owned<Self> {
+    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Self::Scalar]) -> Self::Vector {
         unimplemented!()
     }
 }
@@ -96,7 +96,7 @@ impl OperatorIvf for SVectL2<f32> {
         unimplemented!()
     }
     const SUPPORT_RESIDUAL: bool = false;
-    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Self::Scalar]) -> Owned<Self> {
+    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[Self::Scalar]) -> Self::Vector {
         unimplemented!()
     }
 }
@@ -118,7 +118,7 @@ impl<S: ScalarLike> OperatorIvf for VectDot<S> {
         quantizer.project(VectBorrowed::new(centroid)).into_vec()
     }
     const SUPPORT_RESIDUAL: bool = false;
-    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[S]) -> Owned<Self> {
+    fn residual(_lhs: Borrowed<'_, Self>, _rhs: &[S]) -> Self::Vector {
         unimplemented!()
     }
 }
@@ -140,7 +140,7 @@ impl<S: ScalarLike> OperatorIvf for VectL2<S> {
         quantizer.project(VectBorrowed::new(vector)).into_vec()
     }
     const SUPPORT_RESIDUAL: bool = true;
-    fn residual(lhs: Borrowed<'_, Self>, rhs: &[S]) -> Owned<Self> {
+    fn residual(lhs: Borrowed<'_, Self>, rhs: &[S]) -> Self::Vector {
         lhs.operator_sub(VectBorrowed::new(rhs))
     }
 }

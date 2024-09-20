@@ -104,51 +104,49 @@ pub struct IndexOptions {
 }
 
 impl IndexOptions {
-    fn validate_self_quantization(
-        &self,
-        quantization: &Option<QuantizationOptions>,
-    ) -> Result<(), ValidationError> {
-        match quantization {
-            None => Ok(()),
-            Some(
-                QuantizationOptions::Scalar(_)
-                | QuantizationOptions::Product(_)
-                | QuantizationOptions::Rabitq(_),
-            ) => {
-                if !matches!(self.vector.v, VectorKind::Vecf32 | VectorKind::Vecf16) {
-                    return Err(ValidationError::new(
-                        "quantization is not support for vectors that are not dense vectors",
-                    ));
-                }
-                Ok(())
-            }
-        }
-    }
     fn validate_self(&self) -> Result<(), ValidationError> {
         match &self.indexing {
             IndexingOptions::Flat(FlatIndexingOptions { quantization }) => {
-                self.validate_self_quantization(quantization)?;
+                if quantization.is_some()
+                    && !matches!(self.vector.v, VectorKind::Vecf32 | VectorKind::Vecf16)
+                {
+                    return Err(ValidationError::new(
+                        "quantization is only supported for dense vectors",
+                    ));
+                }
             }
             IndexingOptions::Ivf(IvfIndexingOptions { quantization, .. }) => {
                 if !matches!(self.vector.v, VectorKind::Vecf32 | VectorKind::Vecf16) {
                     return Err(ValidationError::new(
-                        "ivf is not support for vectors that are not dense vectors",
+                        "ivf is only supported for dense vectors",
                     ));
                 }
-                self.validate_self_quantization(quantization)?;
+                if quantization.is_some()
+                    && !matches!(self.vector.v, VectorKind::Vecf32 | VectorKind::Vecf16)
+                {
+                    return Err(ValidationError::new(
+                        "quantization is only supported for dense vectors",
+                    ));
+                }
             }
             IndexingOptions::Hnsw(HnswIndexingOptions { quantization, .. }) => {
-                self.validate_self_quantization(quantization)?;
-            }
-            IndexingOptions::InvertedIndex(_) => {
-                if !matches!(self.vector.d, DistanceKind::Dot) {
+                if quantization.is_some()
+                    && !matches!(self.vector.v, VectorKind::Vecf32 | VectorKind::Vecf16)
+                {
                     return Err(ValidationError::new(
-                        "inverted_index is not support for distance that is not negative dot product",
+                        "quantization is only supported for dense vectors",
                     ));
                 }
+            }
+            IndexingOptions::SparseInvertedIndex(_) => {
                 if !matches!(self.vector.v, VectorKind::SVecf32) {
                     return Err(ValidationError::new(
-                        "inverted_index is not support for vectors that are not sparse vectors",
+                        "sparse_inverted_index is only supported for sparse vectors",
+                    ));
+                }
+                if !matches!(self.vector.d, DistanceKind::Dot) {
+                    return Err(ValidationError::new(
+                        "sparse_inverted_index is only supported for dot distance",
                     ));
                 }
             }
@@ -284,7 +282,7 @@ pub enum IndexingOptions {
     Flat(FlatIndexingOptions),
     Ivf(IvfIndexingOptions),
     Hnsw(HnswIndexingOptions),
-    InvertedIndex(InvertedIndexingOptions),
+    SparseInvertedIndex(SparseInvertedIndexIndexingOptions),
 }
 
 impl IndexingOptions {
@@ -320,16 +318,16 @@ impl Validate for IndexingOptions {
             Self::Flat(x) => x.validate(),
             Self::Ivf(x) => x.validate(),
             Self::Hnsw(x) => x.validate(),
-            Self::InvertedIndex(x) => x.validate(),
+            Self::SparseInvertedIndex(x) => x.validate(),
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
-pub struct InvertedIndexingOptions {}
+pub struct SparseInvertedIndexIndexingOptions {}
 
-impl Default for InvertedIndexingOptions {
+impl Default for SparseInvertedIndexIndexingOptions {
     fn default() -> Self {
         Self {}
     }

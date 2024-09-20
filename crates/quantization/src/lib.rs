@@ -42,8 +42,8 @@ impl<O: Operator, Q: Quantizer<O>> Quantization<O, Q> {
         path: impl AsRef<Path>,
         vector_options: VectorOptions,
         quantization_options: Option<QuantizationOptions>,
-        vectors: &(impl Vectors<Owned<O>> + Sync),
-        transform: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy + Send + Sync,
+        vectors: &(impl Vectors<O::Vector> + Sync),
+        transform: impl Fn(Borrowed<'_, O>) -> O::Vector + Copy + Send + Sync,
     ) -> Self {
         std::fs::create_dir(path.as_ref()).unwrap();
         let quantizer = Json::create(
@@ -107,7 +107,7 @@ impl<O: Operator, Q: Quantizer<O>> Quantization<O, Q> {
         &self.quantizer
     }
 
-    pub fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+    pub fn project(&self, vector: Borrowed<'_, O>) -> O::Vector {
         Q::project(&self.quantizer, vector)
     }
 
@@ -123,7 +123,7 @@ impl<O: Operator, Q: Quantizer<O>> Quantization<O, Q> {
         Q::flat_rerank_preprocess(&self.quantizer, vector, opts)
     }
 
-    pub fn process(&self, vectors: &impl Vectors<Owned<O>>, lut: &Q::Lut, u: u32) -> Distance {
+    pub fn process(&self, vectors: &impl Vectors<O::Vector>, lut: &Q::Lut, u: u32) -> Distance {
         let locate = |i| {
             let code_size = self.quantizer.code_size() as usize;
             let start = i as usize * code_size;

@@ -1,5 +1,5 @@
 [package]
-name = "inverted"
+name = "sparse_inverted_index"
 version.workspace = true
 edition.workspace = true
 

@@ -40,8 +40,8 @@ impl<O: OperatorScalarQuantization> Quantizer<O> for ScalarQuantizer<O> {
     fn train(
         vector_options: VectorOptions,
         options: Option<QuantizationOptions>,
-        vectors: &impl Vectors<Owned<O>>,
-        transform: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy,
+        vectors: &impl Vectors<O::Vector>,
+        transform: impl Fn(Borrowed<'_, O>) -> O::Vector + Copy,
     ) -> Self {
         let options = if let Some(QuantizationOptions::Scalar(x)) = options {
             x
@@ -109,7 +109,7 @@ impl<O: OperatorScalarQuantization> Quantizer<O> for ScalarQuantizer<O> {
         }
     }
 
-    fn fscan_encode(&self, vectors: [Owned<O>; 32]) -> Vec<u8> {
+    fn fscan_encode(&self, vectors: [O::Vector; 32]) -> Vec<u8> {
         let dims = self.dims;
         let bits = self.bits;
         if bits == 4 {
@@ -143,7 +143,7 @@ impl<O: OperatorScalarQuantization> Quantizer<O> for ScalarQuantizer<O> {
         }
     }
 
-    fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+    fn project(&self, vector: Borrowed<'_, O>) -> O::Vector {
         vector.own()
     }
 

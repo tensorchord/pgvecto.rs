@@ -46,7 +46,7 @@ impl<O: OperatorHnsw, Q: Quantizer<O>> Hnsw<O, Q> {
     pub fn create(
         path: impl AsRef<Path>,
         options: IndexOptions,
-        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
+        source: &(impl Vectors<O::Vector> + Collection + Source + Sync),
     ) -> Self {
         let remapped = RemappedCollection::from_source(source);
         if let Some(main) = source.get_main::<Self>() {
@@ -116,7 +116,7 @@ impl<O: OperatorHnsw, Q: Quantizer<O>> Hnsw<O, Q> {
 fn from_nothing<O: OperatorHnsw, Q: Quantizer<O>>(
     path: impl AsRef<Path>,
     options: IndexOptions,
-    collection: &(impl Vectors<Owned<O>> + Collection + Sync),
+    collection: &(impl Vectors<O::Vector> + Collection + Sync),
 ) -> Hnsw<O, Q> {
     create_dir(path.as_ref()).unwrap();
     let HnswIndexingOptions {
@@ -198,7 +198,7 @@ fn from_nothing<O: OperatorHnsw, Q: Quantizer<O>>(
 fn from_main<O: OperatorHnsw, Q: Quantizer<O>>(
     path: impl AsRef<Path>,
     options: IndexOptions,
-    remapped: &RemappedCollection<Owned<O>, impl Vectors<Owned<O>> + Collection + Sync>,
+    remapped: &RemappedCollection<O::Vector, impl Vectors<O::Vector> + Collection + Sync>,
     main: &Hnsw<O, Q>,
 ) -> Hnsw<O, Q> {
     create_dir(path.as_ref()).unwrap();
