@@ -476,7 +476,7 @@ impl Default for ScalarQuantizationOptions {
 #[validate(schema(function = "Self::validate_self"))]
 pub struct ProductQuantizationOptions {
     #[serde(default = "ProductQuantizationOptions::default_ratio")]
-    #[validate(range(min = 1, max = 1024))]
+    #[validate(range(min = 1, max = 8))]
     pub ratio: u32,
     #[serde(default = "ProductQuantizationOptions::default_bits")]
     pub bits: u32,
