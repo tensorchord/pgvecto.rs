@@ -18,7 +18,6 @@ Checkout [pgvecto.rs vs pgvector](https://docs.pgvecto.rs/faqs/comparison-pgvect
 | Feature | pgvecto.rs | pgvector |
 | --- | --- | --- |
 | Filtering | Introduces VBASE method for vector search and relational query (e.g. Single-Vector TopK + Filter + Join). | When filters are applied, the results may be incomplete. For example, if you originally intended to limit the results to 10, you might end up with only 5 results with filters. |
-| Sparse Vector Search | Supports both dense and sparse vector search. | Supports dense vector search. |
 | Vector Dimensions | Supports up to 65535 dimensions. | Supports up to 2000 dimensions. |
 | SIMD | SIMD instructions are dynamically dispatched at runtime to maximize performance based on the capabilities of the specific machine. | Added CPU dispatching for distance functions on Linux x86-64" in 0.7.0. |
 | Data Types | Introduces additional data types: binary vectors, FP16 (16-bit floating point), and INT8 (8-bit integer). | \- |
