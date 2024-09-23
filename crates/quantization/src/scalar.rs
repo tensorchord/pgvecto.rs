@@ -376,25 +376,34 @@ impl<S: ScalarLike> OperatorScalarQuantization for VectDot<S> {
             _ => unreachable!(),
         }
     }
-    fn process(dims: u32, bits: u32, lut: &[f32], rhs: &[u8]) -> Distance {
-        fn internal<const BITS: u32>(dims: u32, t: &[f32], f: impl Fn(usize) -> usize) -> Distance {
-            let mut xy = 0.0f32;
-            for i in 0..dims as usize {
-                xy += t[i * (1 << BITS) + f(i)];
+    fn process(dims: u32, bits: u32, lut: &[f32], code: &[u8]) -> Distance {
+        #[inline(never)]
+        fn internal<const BITS: usize>(n: usize, lut: &[f32], code: &[u8]) -> Distance {
+            assert!(n >= 1);
+            assert!(n <= 65535);
+            assert!(code.len() == n / (8 / BITS));
+            assert!(lut.len() == n * (1 << BITS));
+            let mut sum = 0.0f32;
+            for i in 0..n {
+                unsafe {
+                    // Safety: `i < n`
+                    std::hint::assert_unchecked(i / (8 / BITS) < n / (8 / BITS));
+                }
+                let (alpha, beta) = (i / (8 / BITS), i % (8 / BITS));
+                let j = (code[alpha] >> (beta * BITS)) as usize % (1 << BITS);
+                unsafe {
+                    // Safety: `i < n`, `j < (1 << BITS)`
+                    std::hint::assert_unchecked(i * (1 << BITS) + j < n * (1 << BITS));
+                }
+                sum += lut[i * (1 << BITS) + j];
             }
-            Distance::from(-xy)
+            Distance::from(-sum)
         }
         match bits {
-            1 => internal::<1>(dims, lut, |i| {
-                ((rhs[i >> 3] >> ((i & 7) << 0)) & 1u8) as usize
-            }),
-            2 => internal::<2>(dims, lut, |i| {
-                ((rhs[i >> 2] >> ((i & 3) << 1)) & 3u8) as usize
-            }),
-            4 => internal::<4>(dims, lut, |i| {
-                ((rhs[i >> 1] >> ((i & 1) << 2)) & 15u8) as usize
-            }),
-            8 => internal::<8>(dims, lut, |i| rhs[i] as usize),
+            1 => internal::<1>(dims as _, lut, code),
+            2 => internal::<2>(dims as _, lut, code),
+            4 => internal::<4>(dims as _, lut, code),
+            8 => internal::<8>(dims as _, lut, code),
             _ => unreachable!(),
         }
     }
@@ -466,25 +475,34 @@ impl<S: ScalarLike> OperatorScalarQuantization for VectL2<S> {
             _ => unreachable!(),
         }
     }
-    fn process(dims: u32, bits: u32, lut: &[f32], rhs: &[u8]) -> Distance {
-        fn internal<const BITS: u32>(dims: u32, t: &[f32], f: impl Fn(usize) -> usize) -> Distance {
-            let mut d2 = 0.0f32;
-            for i in 0..dims as usize {
-                d2 += t[i * (1 << BITS) + f(i)];
+    fn process(dims: u32, bits: u32, lut: &[f32], code: &[u8]) -> Distance {
+        #[inline(never)]
+        fn internal<const BITS: usize>(n: usize, lut: &[f32], code: &[u8]) -> Distance {
+            assert!(n >= 1);
+            assert!(n <= 65535);
+            assert!(code.len() == n / (8 / BITS));
+            assert!(lut.len() == n * (1 << BITS));
+            let mut sum = 0.0f32;
+            for i in 0..n {
+                unsafe {
+                    // Safety: `i < n`
+                    std::hint::assert_unchecked(i / (8 / BITS) < n / (8 / BITS));
+                }
+                let (alpha, beta) = (i / (8 / BITS), i % (8 / BITS));
+                let j = (code[alpha] >> (beta * BITS)) as usize % (1 << BITS);
+                unsafe {
+                    // Safety: `i < n`, `j < (1 << BITS)`
+                    std::hint::assert_unchecked(i * (1 << BITS) + j < n * (1 << BITS));
+                }
+                sum += lut[i * (1 << BITS) + j];
             }
-            Distance::from(d2)
+            Distance::from(sum)
         }
         match bits {
-            1 => internal::<1>(dims, lut, |i| {
-                ((rhs[i >> 3] >> ((i & 7) << 0)) & 1u8) as usize
-            }),
-            2 => internal::<2>(dims, lut, |i| {
-                ((rhs[i >> 2] >> ((i & 3) << 1)) & 3u8) as usize
-            }),
-            4 => internal::<4>(dims, lut, |i| {
-                ((rhs[i >> 1] >> ((i & 1) << 2)) & 15u8) as usize
-            }),
-            8 => internal::<8>(dims, lut, |i| rhs[i] as usize),
+            1 => internal::<1>(dims as _, lut, code),
+            2 => internal::<2>(dims as _, lut, code),
+            4 => internal::<4>(dims as _, lut, code),
+            8 => internal::<8>(dims as _, lut, code),
             _ => unreachable!(),
         }
     }
