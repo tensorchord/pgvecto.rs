@@ -9,17 +9,13 @@ use std::fmt::Display;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Handle {
-    tenant_id: u128,
-    cluster_id: u64,
     database_id: u32,
     index_id: u32,
 }
 
 impl Handle {
-    pub fn new(tenant_id: u128, cluster_id: u64, database_id: u32, index_id: u32) -> Self {
+    pub fn new(database_id: u32, index_id: u32) -> Self {
         Self {
-            tenant_id,
-            cluster_id,
             database_id,
             index_id,
         }
@@ -28,11 +24,7 @@ impl Handle {
 
 impl Display for Handle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{:032x}{:016x}{:08x}{:08x}",
-            self.tenant_id, self.cluster_id, self.database_id, self.index_id
-        )
+        write!(f, "{:08x}{:08x}", self.database_id, self.index_id)
     }
 }
 
