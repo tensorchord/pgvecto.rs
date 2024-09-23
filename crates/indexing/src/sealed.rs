@@ -4,12 +4,12 @@ use base::operator::*;
 use base::search::*;
 use flat::Flat;
 use hnsw::Hnsw;
-use inverted::InvertedIndex;
 use ivf::Ivf;
 use quantization::product::ProductQuantizer;
 use quantization::rabitq::RabitqQuantizer;
 use quantization::scalar::ScalarQuantizer;
 use quantization::trivial::TrivialQuantizer;
+use sparse_inverted_index::SparseInvertedIndex;
 use std::any::Any;
 use std::path::Path;
 
@@ -26,14 +26,14 @@ pub enum SealedIndexing<O: OperatorIndexing> {
     HnswSq(Hnsw<O, ScalarQuantizer<O>>),
     HnswPq(Hnsw<O, ProductQuantizer<O>>),
     HnswRq(Hnsw<O, RabitqQuantizer<O>>),
-    InvertedIndex(InvertedIndex<O>),
+    SparseInvertedIndex(SparseInvertedIndex<O>),
 }
 
 impl<O: OperatorIndexing> SealedIndexing<O> {
     pub fn create(
         path: impl AsRef<Path>,
         options: IndexOptions,
-        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
+        source: &(impl Vectors<O::Vector> + Collection + Source + Sync),
     ) -> Self {
         match options.indexing {
             IndexingOptions::Flat(FlatIndexingOptions {
@@ -78,8 +78,8 @@ impl<O: OperatorIndexing> SealedIndexing<O> {
                     Self::HnswRq(Hnsw::create(path, options, source))
                 }
             },
-            IndexingOptions::InvertedIndex(_) => {
-                Self::InvertedIndex(InvertedIndex::create(path, options, source))
+            IndexingOptions::SparseInvertedIndex(_) => {
+                Self::SparseInvertedIndex(SparseInvertedIndex::create(path, options, source))
             }
         }
     }
@@ -110,7 +110,9 @@ impl<O: OperatorIndexing> SealedIndexing<O> {
                 Some(QuantizationOptions::Product(_)) => Self::HnswPq(Hnsw::open(path)),
                 Some(QuantizationOptions::Rabitq(_)) => Self::HnswRq(Hnsw::open(path)),
             },
-            IndexingOptions::InvertedIndex(_) => Self::InvertedIndex(InvertedIndex::open(path)),
+            IndexingOptions::SparseInvertedIndex(_) => {
+                Self::SparseInvertedIndex(SparseInvertedIndex::open(path))
+            }
         }
     }
 
@@ -132,7 +134,7 @@ impl<O: OperatorIndexing> SealedIndexing<O> {
             SealedIndexing::HnswPq(x) => x.vbase(vector, opts),
             SealedIndexing::HnswSq(x) => x.vbase(vector, opts),
             SealedIndexing::HnswRq(x) => x.vbase(vector, opts),
-            SealedIndexing::InvertedIndex(x) => x.vbase(vector, opts),
+            SealedIndexing::SparseInvertedIndex(x) => x.vbase(vector, opts),
         }
     }
 
@@ -150,12 +152,12 @@ impl<O: OperatorIndexing> SealedIndexing<O> {
             SealedIndexing::HnswPq(x) => x,
             SealedIndexing::HnswSq(x) => x,
             SealedIndexing::HnswRq(x) => x,
-            SealedIndexing::InvertedIndex(x) => x,
+            SealedIndexing::SparseInvertedIndex(x) => x,
         }
     }
 }
 
-impl<O: OperatorIndexing> Vectors<Owned<O>> for SealedIndexing<O> {
+impl<O: OperatorIndexing> Vectors<O::Vector> for SealedIndexing<O> {
     fn dims(&self) -> u32 {
         match self {
             SealedIndexing::Flat(x) => x.dims(),
@@ -170,7 +172,7 @@ impl<O: OperatorIndexing> Vectors<Owned<O>> for SealedIndexing<O> {
             SealedIndexing::HnswPq(x) => x.dims(),
             SealedIndexing::HnswSq(x) => x.dims(),
             SealedIndexing::HnswRq(x) => x.dims(),
-            SealedIndexing::InvertedIndex(x) => x.dims(),
+            SealedIndexing::SparseInvertedIndex(x) => x.dims(),
         }
     }
 
@@ -188,7 +190,7 @@ impl<O: OperatorIndexing> Vectors<Owned<O>> for SealedIndexing<O> {
             SealedIndexing::HnswPq(x) => x.len(),
             SealedIndexing::HnswSq(x) => x.len(),
             SealedIndexing::HnswRq(x) => x.len(),
-            SealedIndexing::InvertedIndex(x) => x.len(),
+            SealedIndexing::SparseInvertedIndex(x) => x.len(),
         }
     }
 
@@ -206,7 +208,7 @@ impl<O: OperatorIndexing> Vectors<Owned<O>> for SealedIndexing<O> {
             SealedIndexing::HnswSq(x) => x.vector(i),
             SealedIndexing::HnswPq(x) => x.vector(i),
             SealedIndexing::HnswRq(x) => x.vector(i),
-            SealedIndexing::InvertedIndex(x) => x.vector(i),
+            SealedIndexing::SparseInvertedIndex(x) => x.vector(i),
         }
     }
 }
@@ -226,7 +228,7 @@ impl<O: OperatorIndexing> Collection for SealedIndexing<O> {
             SealedIndexing::HnswPq(x) => x.payload(i),
             SealedIndexing::HnswSq(x) => x.payload(i),
             SealedIndexing::HnswRq(x) => x.payload(i),
-            SealedIndexing::InvertedIndex(x) => x.payload(i),
+            SealedIndexing::SparseInvertedIndex(x) => x.payload(i),
         }
     }
 }

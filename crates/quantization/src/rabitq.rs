@@ -31,8 +31,8 @@ impl<O: OperatorRabitqQuantization> Quantizer<O> for RabitqQuantizer<O> {
     fn train(
         vector_options: VectorOptions,
         _: Option<QuantizationOptions>,
-        _: &(impl Vectors<Owned<O>> + Sync),
-        _: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy + Sync,
+        _: &(impl Vectors<O::Vector> + Sync),
+        _: impl Fn(Borrowed<'_, O>) -> O::Vector + Copy + Sync,
     ) -> Self {
         let dims = vector_options.dims;
         let projection = {
@@ -78,7 +78,7 @@ impl<O: OperatorRabitqQuantization> Quantizer<O> for RabitqQuantizer<O> {
         result
     }
 
-    fn fscan_encode(&self, vectors: [Owned<O>; 32]) -> Vec<u8> {
+    fn fscan_encode(&self, vectors: [O::Vector; 32]) -> Vec<u8> {
         let dims = self.dims;
         let coded = vectors.map(|vector| O::code(vector.as_borrowed()));
         let codes = coded.clone().map(|(_, _, _, _, e)| {
@@ -123,7 +123,7 @@ impl<O: OperatorRabitqQuantization> Quantizer<O> for RabitqQuantizer<O> {
         O::process(lut, c)
     }
 
-    fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+    fn project(&self, vector: Borrowed<'_, O>) -> O::Vector {
         O::project(&self.projection, vector)
     }
 
@@ -263,7 +263,7 @@ pub trait OperatorRabitqQuantization: Operator {
 
     fn code(vector: Borrowed<'_, Self>) -> (f32, f32, f32, f32, Vec<u8>);
 
-    fn project(projection: &[Vec<Self::Scalar>], vector: Borrowed<'_, Self>) -> Owned<Self>;
+    fn project(projection: &[Vec<Self::Scalar>], vector: Borrowed<'_, Self>) -> Self::Vector;
 
     type Lut;
     fn preprocess(vector: Borrowed<'_, Self>) -> Self::Lut;
@@ -320,7 +320,7 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectL2<S> {
         (sum_of_x2, factor_ppc, factor_ip, factor_err, code)
     }
 
-    fn project(projection: &[Vec<Self::Scalar>], vector: Borrowed<'_, Self>) -> Owned<Self> {
+    fn project(projection: &[Vec<Self::Scalar>], vector: Borrowed<'_, Self>) -> Self::Vector {
         let slice = (0..projection.len())
             .map(|i| S::from_f32(S::reduce_sum_of_xy(&projection[i], vector.slice())))
             .collect();
@@ -465,7 +465,7 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectDot<S> {
         (sum_of_x2, factor_ppc, factor_ip, factor_err, code)
     }
 
-    fn project(projection: &[Vec<Self::Scalar>], vector: Borrowed<'_, Self>) -> Owned<Self> {
+    fn project(projection: &[Vec<Self::Scalar>], vector: Borrowed<'_, Self>) -> Self::Vector {
         let slice = (0..projection.len())
             .map(|i| S::from_f32(S::reduce_sum_of_xy(&projection[i], vector.slice())))
             .collect();
@@ -574,7 +574,7 @@ macro_rules! unimpl_operator_rabitq_quantization {
                 unimplemented!()
             }
 
-            fn project(_: &[Vec<Self::Scalar>], _: Borrowed<'_, Self>) -> Owned<Self> {
+            fn project(_: &[Vec<Self::Scalar>], _: Borrowed<'_, Self>) -> Self::Vector {
                 unimplemented!()
             }
 

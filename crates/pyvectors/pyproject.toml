@@ -7,3 +7,4 @@ module-name = "vectors"
 
 [project]
 name = "vectors"
+version = "0.0.0"

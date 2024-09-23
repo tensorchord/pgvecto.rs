@@ -37,7 +37,7 @@ impl<O: Op> SealedSegment<O> {
         path: PathBuf,
         id: NonZeroU128,
         options: IndexOptions,
-        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
+        source: &(impl Vectors<O::Vector> + Collection + Source + Sync),
     ) -> Arc<Self> {
         let indexing = SealedIndexing::create(&path, options, source);
         Arc::new(Self {

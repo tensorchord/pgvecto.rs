@@ -1518,9 +1518,9 @@ dependencies = [
  "base",
  "flat",
  "hnsw",
- "inverted",
  "ivf",
  "quantization",
+ "sparse_inverted_index",
  "thiserror",
 ]
 
@@ -1555,16 +1555,6 @@ version = "0.0.0"
 dependencies = [
  "libc",
  "ulock-sys",
-]
-
-[[package]]
-name = "inverted"
-version = "0.0.0"
-dependencies = [
- "base",
- "common",
- "quantization",
- "storage",
 ]
 
 [[package]]
@@ -3026,6 +3016,16 @@ checksum = "ce305eb0b4296696835b71df73eb912e0f1ffd2556a501fcede6e0c50349191c"
 dependencies = [
  "libc",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "sparse_inverted_index"
+version = "0.0.0"
+dependencies = [
+ "base",
+ "common",
+ "quantization",
+ "storage",
 ]
 
 [[package]]

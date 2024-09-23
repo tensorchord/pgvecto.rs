@@ -1,7 +1,7 @@
 use base::distance::Distance;
 use base::index::{QuantizationOptions, SearchOptions, VectorOptions};
+use base::operator::Borrowed;
 use base::operator::Operator;
-use base::operator::{Borrowed, Owned};
 use base::search::{RerankerPop, RerankerPush, Vectors};
 use serde::{Deserialize, Serialize};
 use std::ops::Range;
@@ -12,16 +12,16 @@ pub trait Quantizer<O: Operator>:
     fn train(
         vector_options: VectorOptions,
         options: Option<QuantizationOptions>,
-        vectors: &(impl Vectors<Owned<O>> + Sync),
-        transform: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy + Sync,
+        vectors: &(impl Vectors<O::Vector> + Sync),
+        transform: impl Fn(Borrowed<'_, O>) -> O::Vector + Copy + Sync,
     ) -> Self;
 
     fn encode(&self, vector: Borrowed<'_, O>) -> Vec<u8>;
-    fn fscan_encode(&self, vectors: [Owned<O>; 32]) -> Vec<u8>;
+    fn fscan_encode(&self, vectors: [O::Vector; 32]) -> Vec<u8>;
     fn code_size(&self) -> u32;
     fn fcode_size(&self) -> u32;
 
-    fn project(&self, vector: Borrowed<'_, O>) -> Owned<O>;
+    fn project(&self, vector: Borrowed<'_, O>) -> O::Vector;
 
     type Lut;
     fn preprocess(&self, vector: Borrowed<'_, O>) -> Self::Lut;

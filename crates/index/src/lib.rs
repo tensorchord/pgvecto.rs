@@ -316,7 +316,7 @@ impl<O: Op> Index<O> {
     }
     pub fn create_sealed_segment(
         &self,
-        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
+        source: &(impl Vectors<O::Vector> + Collection + Source + Sync),
         sealed_segment_ids: &[NonZeroU128],
         growing_segment_ids: &[NonZeroU128],
     ) -> Option<Arc<SealedSegment<O>>> {
@@ -444,7 +444,7 @@ impl<O: Op> IndexView<O> {
     }
     pub fn insert(
         &self,
-        vector: Owned<O>,
+        vector: O::Vector,
         pointer: Pointer,
     ) -> Result<Result<(), OutdatedError>, InsertError> {
         if self.options.vector.dims != vector.as_borrowed().dims() {

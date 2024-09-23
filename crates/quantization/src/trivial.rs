@@ -24,8 +24,8 @@ impl<O: Operator> Quantizer<O> for TrivialQuantizer<O> {
     fn train(
         _: VectorOptions,
         _: Option<QuantizationOptions>,
-        _: &impl Vectors<Owned<O>>,
-        _: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy,
+        _: &impl Vectors<O::Vector>,
+        _: impl Fn(Borrowed<'_, O>) -> O::Vector + Copy,
     ) -> Self {
         Self {
             _maker: PhantomData,
@@ -36,7 +36,7 @@ impl<O: Operator> Quantizer<O> for TrivialQuantizer<O> {
         Vec::new()
     }
 
-    fn fscan_encode(&self, _: [Owned<O>; 32]) -> Vec<u8> {
+    fn fscan_encode(&self, _: [O::Vector; 32]) -> Vec<u8> {
         Vec::new()
     }
 
@@ -48,11 +48,11 @@ impl<O: Operator> Quantizer<O> for TrivialQuantizer<O> {
         0
     }
 
-    fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+    fn project(&self, vector: Borrowed<'_, O>) -> O::Vector {
         vector.own()
     }
 
-    type Lut = Owned<O>;
+    type Lut = O::Vector;
 
     fn preprocess(&self, vector: Borrowed<'_, O>) -> Self::Lut {
         vector.own()

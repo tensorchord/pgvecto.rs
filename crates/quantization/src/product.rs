@@ -41,8 +41,8 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
     fn train(
         vector_options: VectorOptions,
         options: Option<QuantizationOptions>,
-        vectors: &(impl Vectors<Owned<O>> + Sync),
-        transform: impl Fn(Borrowed<'_, O>) -> Owned<O> + Copy + Sync,
+        vectors: &(impl Vectors<O::Vector> + Sync),
+        transform: impl Fn(Borrowed<'_, O>) -> O::Vector + Copy + Sync,
     ) -> Self {
         let dims = vector_options.dims;
         let options = if let Some(QuantizationOptions::Product(x)) = options {
@@ -116,7 +116,7 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
         }
     }
 
-    fn fscan_encode(&self, vectors: [Owned<O>; 32]) -> Vec<u8> {
+    fn fscan_encode(&self, vectors: [O::Vector; 32]) -> Vec<u8> {
         let dims = self.dims;
         let ratio = self.ratio;
         let bits = self.bits;
@@ -141,7 +141,7 @@ impl<O: OperatorProductQuantization> Quantizer<O> for ProductQuantizer<O> {
         }
     }
 
-    fn project(&self, vector: Borrowed<'_, O>) -> Owned<O> {
+    fn project(&self, vector: Borrowed<'_, O>) -> O::Vector {
         vector.own()
     }
 

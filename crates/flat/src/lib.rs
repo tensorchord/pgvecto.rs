@@ -29,7 +29,7 @@ impl<O: OperatorFlat, Q: Quantizer<O>> Flat<O, Q> {
     pub fn create(
         path: impl AsRef<Path>,
         options: IndexOptions,
-        source: &(impl Vectors<Owned<O>> + Collection + Source + Sync),
+        source: &(impl Vectors<O::Vector> + Collection + Source + Sync),
     ) -> Self {
         let remapped = RemappedCollection::from_source(source);
         from_nothing(path, options, &remapped)
@@ -83,7 +83,7 @@ impl<O: OperatorFlat, Q: Quantizer<O>> Flat<O, Q> {
 fn from_nothing<O: OperatorFlat, Q: Quantizer<O>>(
     path: impl AsRef<Path>,
     options: IndexOptions,
-    collection: &(impl Vectors<Owned<O>> + Collection + Sync),
+    collection: &(impl Vectors<O::Vector> + Collection + Sync),
 ) -> Flat<O, Q> {
     create_dir(path.as_ref()).unwrap();
     let flat_indexing_options = options.indexing.clone().unwrap_flat();
