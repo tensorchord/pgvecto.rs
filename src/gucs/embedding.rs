@@ -1,11 +1,23 @@
-use super::guc_string_parse;
 use embedding::OpenAIOptions;
 use pgrx::guc::{GucContext, GucFlags, GucRegistry, GucSetting};
 use std::ffi::CStr;
 
 pub fn openai_options() -> OpenAIOptions {
-    let base_url = guc_string_parse(&OPENAI_BASE_URL, "vectors.openai_base_url");
-    let api_key = guc_string_parse(&OPENAI_API_KEY, "vectors.openai_api_key");
+    use crate::error::*;
+    use pgrx::guc::GucSetting;
+    use std::ffi::CStr;
+    fn parse(target: &'static GucSetting<Option<&'static CStr>>, name: &'static str) -> String {
+        let value = match target.get() {
+            Some(s) => s,
+            None => bad_guc_literal(name, "should not be `NULL`"),
+        };
+        match value.to_str() {
+            Ok(s) => s.to_string(),
+            Err(_e) => bad_guc_literal(name, "should be a valid UTF-8 string"),
+        }
+    }
+    let base_url = parse(&OPENAI_BASE_URL, "vectors.openai_base_url");
+    let api_key = parse(&OPENAI_API_KEY, "vectors.openai_api_key");
     OpenAIOptions { base_url, api_key }
 }
 
