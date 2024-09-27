@@ -1,0 +1,23 @@
+BINDIR = /usr/lib/postgresql/17/bin
+DOCDIR = /usr/share/doc/postgresql-doc-17
+HTMLDIR = /usr/share/doc/postgresql-doc-17
+INCLUDEDIR = /usr/include/postgresql
+PKGINCLUDEDIR = /usr/include/postgresql
+INCLUDEDIR-SERVER = /usr/include/postgresql/17/server
+LIBDIR = /usr/lib/x86_64-linux-gnu
+PKGLIBDIR = /usr/lib/postgresql/17/lib
+LOCALEDIR = /usr/share/locale
+MANDIR = /usr/share/postgresql/17/man
+SHAREDIR = /usr/share/postgresql/17
+SYSCONFDIR = /etc/postgresql-common
+PGXS = /usr/lib/postgresql/17/lib/pgxs/src/makefiles/pgxs.mk
+CONFIGURE =  '--build=x86_64-linux-gnu' '--prefix=/usr' '--includedir=${prefix}/include' '--mandir=${prefix}/share/man' '--infodir=${prefix}/share/info' '--sysconfdir=/etc' '--localstatedir=/var' '--disable-option-checking' '--disable-silent-rules' '--libdir=${prefix}/lib/x86_64-linux-gnu' '--runstatedir=/run' '--disable-maintainer-mode' '--disable-dependency-tracking' '--with-tcl' '--with-perl' '--with-python' '--with-pam' '--with-openssl' '--with-libxml' '--with-libxslt' '--mandir=/usr/share/postgresql/17/man' '--docdir=/usr/share/doc/postgresql-doc-17' '--sysconfdir=/etc/postgresql-common' '--datarootdir=/usr/share/' '--datadir=/usr/share/postgresql/17' '--bindir=/usr/lib/postgresql/17/bin' '--libdir=/usr/lib/x86_64-linux-gnu/' '--libexecdir=/usr/lib/postgresql/' '--includedir=/usr/include/postgresql/' '--with-extra-version= (Debian 17.0-1.pgdg120+1)' '--enable-nls' '--enable-thread-safety' '--enable-debug' '--disable-rpath' '--with-uuid=e2fs' '--with-gnu-ld' '--with-gssapi' '--with-ldap' '--with-pgport=5432' '--with-system-tzdata=/usr/share/zoneinfo' 'AWK=mawk' 'MKDIR_P=/bin/mkdir -p' 'PROVE=/usr/bin/prove' 'PYTHON=/usr/bin/python3' 'TAR=/bin/tar' 'XSLTPROC=xsltproc --nonet' 'CFLAGS=-g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer' 'LDFLAGS=-Wl,-z,relro -Wl,-z,now' '--enable-tap-tests' '--with-icu' '--with-llvm' 'LLVM_CONFIG=/usr/bin/llvm-config-16' 'CLANG=/usr/bin/clang-16' '--with-lz4' '--with-zstd' '--with-systemd' '--with-selinux' '--enable-dtrace' 'build_alias=x86_64-linux-gnu' 'CPPFLAGS=-Wdate-time -D_FORTIFY_SOURCE=2' 'CXXFLAGS=-g -O2 -fstack-protector-strong -Wformat -Werror=format-security'
+CC = gcc
+CPPFLAGS = -Wdate-time -D_FORTIFY_SOURCE=2 -D_GNU_SOURCE -I/usr/include/libxml2
+CFLAGS = -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Wendif-labels -Wmissing-format-attribute -Wimplicit-fallthrough=3 -Wcast-function-type -Wshadow=compatible-local -Wformat-security -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-format-truncation -Wno-stringop-truncation -g -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer
+CFLAGS_SL = -fPIC
+LDFLAGS = -Wl,-z,relro -Wl,-z,now -L/usr/lib/llvm-16/lib -Wl,--as-needed
+LDFLAGS_EX = 
+LDFLAGS_SL = 
+LIBS = -lpgcommon -lpgport -lselinux -lzstd -llz4 -lxslt -lxml2 -lpam -lssl -lcrypto -lgssapi_krb5 -lz -lreadline -lm 
+VERSION = PostgreSQL 17.0 (Debian 17.0-1.pgdg120+1)

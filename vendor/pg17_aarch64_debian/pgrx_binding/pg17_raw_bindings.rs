@@ -143,13 +143,12 @@ pub const DLSUFFIX: &::core::ffi::CStr =
     unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b".so\0") };
 pub const ENABLE_GSS: u32 = 1;
 pub const ENABLE_NLS: u32 = 1;
-pub const ENABLE_THREAD_SAFETY: u32 = 1;
 #[allow(unsafe_code)]
 pub const INT64_MODIFIER: &::core::ffi::CStr =
     unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"l\0") };
 pub const MAXIMUM_ALIGNOF: u32 = 8;
 pub const MEMSET_LOOP_LIMIT: u32 = 1024;
-pub const OPENSSL_API_COMPAT: u32 = 268439552;
+pub const OPENSSL_API_COMPAT: u32 = 268443648;
 #[allow(unsafe_code)]
 pub const PACKAGE_BUGREPORT: &::core::ffi::CStr = unsafe {
     ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"pgsql-bugs@lists.postgresql.org\0")
@@ -159,7 +158,7 @@ pub const PACKAGE_NAME: &::core::ffi::CStr =
     unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"PostgreSQL\0") };
 #[allow(unsafe_code)]
 pub const PACKAGE_STRING: &::core::ffi::CStr =
-    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"PostgreSQL 16.4\0") };
+    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"PostgreSQL 17.0\0") };
 #[allow(unsafe_code)]
 pub const PACKAGE_TARNAME: &::core::ffi::CStr =
     unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"postgresql\0") };
@@ -168,24 +167,24 @@ pub const PACKAGE_URL: &::core::ffi::CStr =
     unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"https://www.postgresql.org/\0") };
 #[allow(unsafe_code)]
 pub const PACKAGE_VERSION: &::core::ffi::CStr =
-    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"16.4\0") };
+    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"17.0\0") };
 #[allow(unsafe_code)]
 pub const PG_KRB_SRVNAM: &::core::ffi::CStr =
     unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"postgres\0") };
 #[allow(unsafe_code)]
 pub const PG_MAJORVERSION: &::core::ffi::CStr =
-    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"16\0") };
-pub const PG_MAJORVERSION_NUM: u32 = 16;
-pub const PG_MINORVERSION_NUM: u32 = 4;
+    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"17\0") };
+pub const PG_MAJORVERSION_NUM: u32 = 17;
+pub const PG_MINORVERSION_NUM: u32 = 0;
 pub const PG_USE_STDBOOL: u32 = 1;
 #[allow(unsafe_code)]
 pub const PG_VERSION: &::core::ffi::CStr = unsafe {
-    ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"16.4 (Debian 16.4-1.pgdg120+2)\0")
+    ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"17.0 (Debian 17.0-1.pgdg120+1)\0")
 };
-pub const PG_VERSION_NUM: u32 = 160004;
+pub const PG_VERSION_NUM: u32 = 170000;
 #[allow(unsafe_code)]
 pub const PG_VERSION_STR: &::core::ffi::CStr = unsafe {
-    :: core :: ffi :: CStr :: from_bytes_with_nul_unchecked (b"PostgreSQL 16.4 (Debian 16.4-1.pgdg120+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit\0")
+    :: core :: ffi :: CStr :: from_bytes_with_nul_unchecked (b"PostgreSQL 17.0 (Debian 17.0-1.pgdg120+1) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit\0")
 };
 pub const RELSEG_SIZE: u32 = 131072;
 pub const SIZEOF_BOOL: u32 = 1;
@@ -599,7 +598,7 @@ pub const PGINVALID_SOCKET: i32 = -1;
 #[allow(unsafe_code)]
 pub const PG_BACKEND_VERSIONSTR: &::core::ffi::CStr = unsafe {
     ::core::ffi::CStr::from_bytes_with_nul_unchecked(
-        b"postgres (PostgreSQL) 16.4 (Debian 16.4-1.pgdg120+2)\n\0",
+        b"postgres (PostgreSQL) 17.0 (Debian 17.0-1.pgdg120+1)\n\0",
     )
 };
 #[allow(unsafe_code)]
@@ -678,8 +677,8 @@ pub const Anum_pg_attribute_attgenerated: u32 = 17;
 pub const Anum_pg_attribute_attisdropped: u32 = 18;
 pub const Anum_pg_attribute_attislocal: u32 = 19;
 pub const Anum_pg_attribute_attinhcount: u32 = 20;
-pub const Anum_pg_attribute_attstattarget: u32 = 21;
-pub const Anum_pg_attribute_attcollation: u32 = 22;
+pub const Anum_pg_attribute_attcollation: u32 = 21;
+pub const Anum_pg_attribute_attstattarget: u32 = 22;
 pub const Anum_pg_attribute_attacl: u32 = 23;
 pub const Anum_pg_attribute_attoptions: u32 = 24;
 pub const Anum_pg_attribute_attfdwoptions: u32 = 25;
@@ -1217,7 +1216,7 @@ pub const RTPrefixStrategyNumber: u32 = 28;
 pub const RTOldBelowStrategyNumber: u32 = 29;
 pub const RTOldAboveStrategyNumber: u32 = 30;
 pub const RTMaxStrategyNumber: u32 = 30;
-pub const CATALOG_VERSION_NO: u32 = 202307071;
+pub const CATALOG_VERSION_NO: u32 = 202406281;
 pub const OIDCHARS: u32 = 10;
 pub const FORKNAMECHARS: u32 = 4;
 pub const INNER_VAR: i32 = -1;
@@ -1226,66 +1225,6 @@ pub const INDEX_VAR: i32 = -3;
 pub const ROWID_VAR: i32 = -4;
 pub const PRS2_OLD_VARNO: u32 = 1;
 pub const PRS2_NEW_VARNO: u32 = 2;
-pub const ACL_INSERT: u32 = 1;
-pub const ACL_SELECT: u32 = 2;
-pub const ACL_UPDATE: u32 = 4;
-pub const ACL_DELETE: u32 = 8;
-pub const ACL_TRUNCATE: u32 = 16;
-pub const ACL_REFERENCES: u32 = 32;
-pub const ACL_TRIGGER: u32 = 64;
-pub const ACL_EXECUTE: u32 = 128;
-pub const ACL_USAGE: u32 = 256;
-pub const ACL_CREATE: u32 = 512;
-pub const ACL_CREATE_TEMP: u32 = 1024;
-pub const ACL_CONNECT: u32 = 2048;
-pub const ACL_SET: u32 = 4096;
-pub const ACL_ALTER_SYSTEM: u32 = 8192;
-pub const N_ACL_RIGHTS: u32 = 14;
-pub const ACL_NO_RIGHTS: u32 = 0;
-pub const ACL_SELECT_FOR_UPDATE: u32 = 4;
-pub const FRAMEOPTION_NONDEFAULT: u32 = 1;
-pub const FRAMEOPTION_RANGE: u32 = 2;
-pub const FRAMEOPTION_ROWS: u32 = 4;
-pub const FRAMEOPTION_GROUPS: u32 = 8;
-pub const FRAMEOPTION_BETWEEN: u32 = 16;
-pub const FRAMEOPTION_START_UNBOUNDED_PRECEDING: u32 = 32;
-pub const FRAMEOPTION_END_UNBOUNDED_PRECEDING: u32 = 64;
-pub const FRAMEOPTION_START_UNBOUNDED_FOLLOWING: u32 = 128;
-pub const FRAMEOPTION_END_UNBOUNDED_FOLLOWING: u32 = 256;
-pub const FRAMEOPTION_START_CURRENT_ROW: u32 = 512;
-pub const FRAMEOPTION_END_CURRENT_ROW: u32 = 1024;
-pub const FRAMEOPTION_START_OFFSET_PRECEDING: u32 = 2048;
-pub const FRAMEOPTION_END_OFFSET_PRECEDING: u32 = 4096;
-pub const FRAMEOPTION_START_OFFSET_FOLLOWING: u32 = 8192;
-pub const FRAMEOPTION_END_OFFSET_FOLLOWING: u32 = 16384;
-pub const FRAMEOPTION_EXCLUDE_CURRENT_ROW: u32 = 32768;
-pub const FRAMEOPTION_EXCLUDE_GROUP: u32 = 65536;
-pub const FRAMEOPTION_EXCLUDE_TIES: u32 = 131072;
-pub const FRAMEOPTION_START_OFFSET: u32 = 10240;
-pub const FRAMEOPTION_END_OFFSET: u32 = 20480;
-pub const FRAMEOPTION_EXCLUSION: u32 = 229376;
-pub const FRAMEOPTION_DEFAULTS: u32 = 1058;
-pub const FKCONSTR_ACTION_NOACTION: u8 = 97u8;
-pub const FKCONSTR_ACTION_RESTRICT: u8 = 114u8;
-pub const FKCONSTR_ACTION_CASCADE: u8 = 99u8;
-pub const FKCONSTR_ACTION_SETNULL: u8 = 110u8;
-pub const FKCONSTR_ACTION_SETDEFAULT: u8 = 100u8;
-pub const FKCONSTR_MATCH_FULL: u8 = 102u8;
-pub const FKCONSTR_MATCH_PARTIAL: u8 = 112u8;
-pub const FKCONSTR_MATCH_SIMPLE: u8 = 115u8;
-pub const OPCLASS_ITEM_OPERATOR: u32 = 1;
-pub const OPCLASS_ITEM_FUNCTION: u32 = 2;
-pub const OPCLASS_ITEM_STORAGETYPE: u32 = 3;
-pub const CURSOR_OPT_BINARY: u32 = 1;
-pub const CURSOR_OPT_SCROLL: u32 = 2;
-pub const CURSOR_OPT_NO_SCROLL: u32 = 4;
-pub const CURSOR_OPT_INSENSITIVE: u32 = 8;
-pub const CURSOR_OPT_ASENSITIVE: u32 = 16;
-pub const CURSOR_OPT_HOLD: u32 = 32;
-pub const CURSOR_OPT_FAST_PLAN: u32 = 256;
-pub const CURSOR_OPT_GENERIC_PLAN: u32 = 512;
-pub const CURSOR_OPT_CUSTOM_PLAN: u32 = 1024;
-pub const CURSOR_OPT_PARALLEL_OK: u32 = 2048;
 pub const _LIBC_LIMITS_H_: u32 = 1;
 pub const MB_LEN_MAX: u32 = 16;
 pub const _BITS_POSIX1_LIM_H: u32 = 1;
@@ -1384,6 +1323,8 @@ pub const DSA_POINTER_FORMAT: &::core::ffi::CStr =
 pub const DSA_ALLOC_HUGE: u32 = 1;
 pub const DSA_ALLOC_NO_OOM: u32 = 2;
 pub const DSA_ALLOC_ZERO: u32 = 4;
+pub const DSA_OFFSET_WIDTH: u32 = 40;
+pub const INVALID_PROC_NUMBER: i32 = -1;
 pub const DEFAULT_SPINS_PER_DELAY: u32 = 100;
 pub const HASH_PARTITION: u32 = 1;
 pub const HASH_SEGMENT: u32 = 2;
@@ -1400,18 +1341,111 @@ pub const HASH_SHARED_MEM: u32 = 2048;
 pub const HASH_ATTACH: u32 = 4096;
 pub const HASH_FIXED_SIZE: u32 = 8192;
 pub const NO_MAX_DSIZE: i32 = -1;
+pub const __iovec_defined: u32 = 1;
+pub const __IOV_MAX: u32 = 1024;
+pub const UIO_MAXIOV: u32 = 1024;
+pub const _POSIX_VERSION: u32 = 200809;
+pub const __POSIX2_THIS_VERSION: u32 = 200809;
+pub const _POSIX2_VERSION: u32 = 200809;
+pub const _POSIX2_C_VERSION: u32 = 200809;
+pub const _POSIX2_C_BIND: u32 = 200809;
+pub const _POSIX2_C_DEV: u32 = 200809;
+pub const _POSIX2_SW_DEV: u32 = 200809;
+pub const _POSIX2_LOCALEDEF: u32 = 200809;
+pub const _XOPEN_VERSION: u32 = 700;
+pub const _XOPEN_XCU_VERSION: u32 = 4;
+pub const _XOPEN_XPG2: u32 = 1;
+pub const _XOPEN_XPG3: u32 = 1;
+pub const _XOPEN_XPG4: u32 = 1;
+pub const _XOPEN_UNIX: u32 = 1;
+pub const _XOPEN_ENH_I18N: u32 = 1;
+pub const _XOPEN_LEGACY: u32 = 1;
+pub const _POSIX_JOB_CONTROL: u32 = 1;
+pub const _POSIX_SAVED_IDS: u32 = 1;
+pub const _POSIX_PRIORITY_SCHEDULING: u32 = 200809;
+pub const _POSIX_SYNCHRONIZED_IO: u32 = 200809;
+pub const _POSIX_FSYNC: u32 = 200809;
+pub const _POSIX_MAPPED_FILES: u32 = 200809;
+pub const _POSIX_MEMLOCK: u32 = 200809;
+pub const _POSIX_MEMLOCK_RANGE: u32 = 200809;
+pub const _POSIX_MEMORY_PROTECTION: u32 = 200809;
+pub const _POSIX_CHOWN_RESTRICTED: u32 = 0;
+pub const _POSIX_VDISABLE: u8 = 0u8;
+pub const _POSIX_NO_TRUNC: u32 = 1;
+pub const _XOPEN_REALTIME: u32 = 1;
+pub const _XOPEN_REALTIME_THREADS: u32 = 1;
+pub const _XOPEN_SHM: u32 = 1;
+pub const _POSIX_THREADS: u32 = 200809;
+pub const _POSIX_REENTRANT_FUNCTIONS: u32 = 1;
+pub const _POSIX_THREAD_SAFE_FUNCTIONS: u32 = 200809;
+pub const _POSIX_THREAD_PRIORITY_SCHEDULING: u32 = 200809;
+pub const _POSIX_THREAD_ATTR_STACKSIZE: u32 = 200809;
+pub const _POSIX_THREAD_ATTR_STACKADDR: u32 = 200809;
+pub const _POSIX_THREAD_PRIO_INHERIT: u32 = 200809;
+pub const _POSIX_THREAD_PRIO_PROTECT: u32 = 200809;
+pub const _POSIX_THREAD_ROBUST_PRIO_INHERIT: u32 = 200809;
+pub const _POSIX_THREAD_ROBUST_PRIO_PROTECT: i32 = -1;
+pub const _POSIX_SEMAPHORES: u32 = 200809;
+pub const _POSIX_REALTIME_SIGNALS: u32 = 200809;
+pub const _POSIX_ASYNCHRONOUS_IO: u32 = 200809;
+pub const _POSIX_ASYNC_IO: u32 = 1;
+pub const _LFS_ASYNCHRONOUS_IO: u32 = 1;
+pub const _POSIX_PRIORITIZED_IO: u32 = 200809;
+pub const _LFS64_ASYNCHRONOUS_IO: u32 = 1;
+pub const _LFS_LARGEFILE: u32 = 1;
+pub const _LFS64_LARGEFILE: u32 = 1;
+pub const _LFS64_STDIO: u32 = 1;
+pub const _POSIX_SHARED_MEMORY_OBJECTS: u32 = 200809;
+pub const _POSIX_CPUTIME: u32 = 0;
+pub const _POSIX_THREAD_CPUTIME: u32 = 0;
+pub const _POSIX_REGEXP: u32 = 1;
+pub const _POSIX_READER_WRITER_LOCKS: u32 = 200809;
+pub const _POSIX_SHELL: u32 = 1;
+pub const _POSIX_TIMEOUTS: u32 = 200809;
+pub const _POSIX_SPIN_LOCKS: u32 = 200809;
+pub const _POSIX_SPAWN: u32 = 200809;
+pub const _POSIX_TIMERS: u32 = 200809;
+pub const _POSIX_BARRIERS: u32 = 200809;
+pub const _POSIX_MESSAGE_PASSING: u32 = 200809;
+pub const _POSIX_THREAD_PROCESS_SHARED: u32 = 200809;
+pub const _POSIX_MONOTONIC_CLOCK: u32 = 0;
+pub const _POSIX_CLOCK_SELECTION: u32 = 200809;
+pub const _POSIX_ADVISORY_INFO: u32 = 200809;
+pub const _POSIX_IPV6: u32 = 200809;
+pub const _POSIX_RAW_SOCKETS: u32 = 200809;
+pub const _POSIX2_CHAR_TERM: u32 = 200809;
+pub const _POSIX_SPORADIC_SERVER: i32 = -1;
+pub const _POSIX_THREAD_SPORADIC_SERVER: i32 = -1;
+pub const _POSIX_TRACE: i32 = -1;
+pub const _POSIX_TRACE_EVENT_FILTER: i32 = -1;
+pub const _POSIX_TRACE_INHERIT: i32 = -1;
+pub const _POSIX_TRACE_LOG: i32 = -1;
+pub const _POSIX_TYPED_MEMORY_OBJECTS: i32 = -1;
+pub const _POSIX_V7_ILP32_OFF32: i32 = -1;
+pub const _POSIX_V7_ILP32_OFFBIG: i32 = -1;
+pub const _POSIX_V6_ILP32_OFF32: i32 = -1;
+pub const _POSIX_V6_ILP32_OFFBIG: i32 = -1;
+pub const _XBS5_ILP32_OFF32: i32 = -1;
+pub const _XBS5_ILP32_OFFBIG: i32 = -1;
+pub const _POSIX_V7_LPBIG_OFFBIG: i32 = -1;
+pub const _POSIX_V6_LPBIG_OFFBIG: i32 = -1;
+pub const _XBS5_LPBIG_OFFBIG: i32 = -1;
+pub const _POSIX_V7_LP64_OFF64: u32 = 1;
+pub const _POSIX_V6_LP64_OFF64: u32 = 1;
+pub const _XBS5_LP64_OFF64: u32 = 1;
+pub const STDIN_FILENO: u32 = 0;
+pub const STDOUT_FILENO: u32 = 1;
+pub const STDERR_FILENO: u32 = 2;
+pub const L_SET: u32 = 0;
+pub const L_INCR: u32 = 1;
+pub const L_XTND: u32 = 2;
+pub const IOV_MAX: u32 = 16;
 pub const _DIRENT_MATCHES_DIRENT64: u32 = 1;
 pub const MAXNAMLEN: u32 = 255;
 pub const IO_DIRECT_DATA: u32 = 1;
 pub const IO_DIRECT_WAL: u32 = 2;
 pub const IO_DIRECT_WAL_INIT: u32 = 4;
 pub const PG_O_DIRECT: u32 = 0;
-#[allow(unsafe_code)]
-pub const PG_TEMP_FILES_DIR: &::core::ffi::CStr =
-    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"pgsql_tmp\0") };
-#[allow(unsafe_code)]
-pub const PG_TEMP_FILE_PREFIX: &::core::ffi::CStr =
-    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"pgsql_tmp\0") };
 pub const SHARED_TUPLESTORE_SINGLE_PASS: u32 = 1;
 pub const MAX_TIMESTAMP_PRECISION: u32 = 6;
 pub const MAX_INTERVAL_PRECISION: u32 = 6;
@@ -1419,6 +1453,7 @@ pub const TS_PREC_INV: f64 = 1000000.0;
 pub const DAYS_PER_YEAR: f64 = 365.25;
 pub const MONTHS_PER_YEAR: u32 = 12;
 pub const DAYS_PER_MONTH: u32 = 30;
+pub const DAYS_PER_WEEK: u32 = 7;
 pub const HOURS_PER_DAY: u32 = 24;
 pub const SECS_PER_YEAR: u32 = 31557600;
 pub const SECS_PER_DAY: u32 = 86400;
@@ -1441,6 +1476,54 @@ pub const TIMESTAMP_END_JULIAN: u32 = 109203528;
 #[allow(unsafe_code)]
 pub const RELCACHE_INIT_FILENAME: &::core::ffi::CStr =
     unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"pg_internal.init\0") };
+pub const SK_ISNULL: u32 = 1;
+pub const SK_UNARY: u32 = 2;
+pub const SK_ROW_HEADER: u32 = 4;
+pub const SK_ROW_MEMBER: u32 = 8;
+pub const SK_ROW_END: u32 = 16;
+pub const SK_SEARCHARRAY: u32 = 32;
+pub const SK_SEARCHNULL: u32 = 64;
+pub const SK_SEARCHNOTNULL: u32 = 128;
+pub const SK_ORDER_BY: u32 = 256;
+pub const NoLock: u32 = 0;
+pub const AccessShareLock: u32 = 1;
+pub const RowShareLock: u32 = 2;
+pub const RowExclusiveLock: u32 = 3;
+pub const ShareUpdateExclusiveLock: u32 = 4;
+pub const ShareLock: u32 = 5;
+pub const ShareRowExclusiveLock: u32 = 6;
+pub const ExclusiveLock: u32 = 7;
+pub const AccessExclusiveLock: u32 = 8;
+pub const MaxLockMode: u32 = 8;
+pub const TYPECACHE_EQ_OPR: u32 = 1;
+pub const TYPECACHE_LT_OPR: u32 = 2;
+pub const TYPECACHE_GT_OPR: u32 = 4;
+pub const TYPECACHE_CMP_PROC: u32 = 8;
+pub const TYPECACHE_HASH_PROC: u32 = 16;
+pub const TYPECACHE_EQ_OPR_FINFO: u32 = 32;
+pub const TYPECACHE_CMP_PROC_FINFO: u32 = 64;
+pub const TYPECACHE_HASH_PROC_FINFO: u32 = 128;
+pub const TYPECACHE_TUPDESC: u32 = 256;
+pub const TYPECACHE_BTREE_OPFAMILY: u32 = 512;
+pub const TYPECACHE_HASH_OPFAMILY: u32 = 1024;
+pub const TYPECACHE_RANGE_INFO: u32 = 2048;
+pub const TYPECACHE_DOMAIN_BASE_INFO: u32 = 4096;
+pub const TYPECACHE_DOMAIN_CONSTR_INFO: u32 = 8192;
+pub const TYPECACHE_HASH_EXTENDED_PROC: u32 = 16384;
+pub const TYPECACHE_HASH_EXTENDED_PROC_FINFO: u32 = 32768;
+pub const TYPECACHE_MULTIRANGE_INFO: u32 = 65536;
+pub const BRIN_PROCNUM_OPCINFO: u32 = 1;
+pub const BRIN_PROCNUM_ADDVALUE: u32 = 2;
+pub const BRIN_PROCNUM_CONSISTENT: u32 = 3;
+pub const BRIN_PROCNUM_UNION: u32 = 4;
+pub const BRIN_MANDATORY_NPROCS: u32 = 4;
+pub const BRIN_PROCNUM_OPTIONS: u32 = 5;
+pub const BRIN_FIRST_OPTIONAL_PROCNUM: u32 = 11;
+pub const BRIN_LAST_OPTIONAL_PROCNUM: u32 = 15;
+pub const BRIN_OFFSET_MASK: u32 = 31;
+pub const BRIN_EMPTY_RANGE_MASK: u32 = 32;
+pub const BRIN_PLACEHOLDER_MASK: u32 = 64;
+pub const BRIN_NULLS_MASK: u32 = 128;
 pub const INDEX_SIZE_MASK: u32 = 8191;
 pub const INDEX_AM_RESERVED_BIT: u32 = 8192;
 pub const INDEX_VAR_MASK: u32 = 16384;
@@ -1471,6 +1554,67 @@ pub const FIELDNO_AGGSTATE_CURPERTRANS: u32 = 16;
 pub const FIELDNO_AGGSTATE_CURRENT_SET: u32 = 20;
 pub const FIELDNO_AGGSTATE_ALL_PERGROUPS: u32 = 53;
 pub const COMPLETION_TAG_BUFSIZE: u32 = 64;
+pub const ACL_INSERT: u32 = 1;
+pub const ACL_SELECT: u32 = 2;
+pub const ACL_UPDATE: u32 = 4;
+pub const ACL_DELETE: u32 = 8;
+pub const ACL_TRUNCATE: u32 = 16;
+pub const ACL_REFERENCES: u32 = 32;
+pub const ACL_TRIGGER: u32 = 64;
+pub const ACL_EXECUTE: u32 = 128;
+pub const ACL_USAGE: u32 = 256;
+pub const ACL_CREATE: u32 = 512;
+pub const ACL_CREATE_TEMP: u32 = 1024;
+pub const ACL_CONNECT: u32 = 2048;
+pub const ACL_SET: u32 = 4096;
+pub const ACL_ALTER_SYSTEM: u32 = 8192;
+pub const ACL_MAINTAIN: u32 = 16384;
+pub const N_ACL_RIGHTS: u32 = 15;
+pub const ACL_NO_RIGHTS: u32 = 0;
+pub const ACL_SELECT_FOR_UPDATE: u32 = 4;
+pub const FRAMEOPTION_NONDEFAULT: u32 = 1;
+pub const FRAMEOPTION_RANGE: u32 = 2;
+pub const FRAMEOPTION_ROWS: u32 = 4;
+pub const FRAMEOPTION_GROUPS: u32 = 8;
+pub const FRAMEOPTION_BETWEEN: u32 = 16;
+pub const FRAMEOPTION_START_UNBOUNDED_PRECEDING: u32 = 32;
+pub const FRAMEOPTION_END_UNBOUNDED_PRECEDING: u32 = 64;
+pub const FRAMEOPTION_START_UNBOUNDED_FOLLOWING: u32 = 128;
+pub const FRAMEOPTION_END_UNBOUNDED_FOLLOWING: u32 = 256;
+pub const FRAMEOPTION_START_CURRENT_ROW: u32 = 512;
+pub const FRAMEOPTION_END_CURRENT_ROW: u32 = 1024;
+pub const FRAMEOPTION_START_OFFSET_PRECEDING: u32 = 2048;
+pub const FRAMEOPTION_END_OFFSET_PRECEDING: u32 = 4096;
+pub const FRAMEOPTION_START_OFFSET_FOLLOWING: u32 = 8192;
+pub const FRAMEOPTION_END_OFFSET_FOLLOWING: u32 = 16384;
+pub const FRAMEOPTION_EXCLUDE_CURRENT_ROW: u32 = 32768;
+pub const FRAMEOPTION_EXCLUDE_GROUP: u32 = 65536;
+pub const FRAMEOPTION_EXCLUDE_TIES: u32 = 131072;
+pub const FRAMEOPTION_START_OFFSET: u32 = 10240;
+pub const FRAMEOPTION_END_OFFSET: u32 = 20480;
+pub const FRAMEOPTION_EXCLUSION: u32 = 229376;
+pub const FRAMEOPTION_DEFAULTS: u32 = 1058;
+pub const FKCONSTR_ACTION_NOACTION: u8 = 97u8;
+pub const FKCONSTR_ACTION_RESTRICT: u8 = 114u8;
+pub const FKCONSTR_ACTION_CASCADE: u8 = 99u8;
+pub const FKCONSTR_ACTION_SETNULL: u8 = 110u8;
+pub const FKCONSTR_ACTION_SETDEFAULT: u8 = 100u8;
+pub const FKCONSTR_MATCH_FULL: u8 = 102u8;
+pub const FKCONSTR_MATCH_PARTIAL: u8 = 112u8;
+pub const FKCONSTR_MATCH_SIMPLE: u8 = 115u8;
+pub const OPCLASS_ITEM_OPERATOR: u32 = 1;
+pub const OPCLASS_ITEM_FUNCTION: u32 = 2;
+pub const OPCLASS_ITEM_STORAGETYPE: u32 = 3;
+pub const CURSOR_OPT_BINARY: u32 = 1;
+pub const CURSOR_OPT_SCROLL: u32 = 2;
+pub const CURSOR_OPT_NO_SCROLL: u32 = 4;
+pub const CURSOR_OPT_INSENSITIVE: u32 = 8;
+pub const CURSOR_OPT_ASENSITIVE: u32 = 16;
+pub const CURSOR_OPT_HOLD: u32 = 32;
+pub const CURSOR_OPT_FAST_PLAN: u32 = 256;
+pub const CURSOR_OPT_GENERIC_PLAN: u32 = 512;
+pub const CURSOR_OPT_CUSTOM_PLAN: u32 = 1024;
+pub const CURSOR_OPT_PARALLEL_OK: u32 = 2048;
 pub const MaxAllocHugeSize: u32 = 0;
 pub const InvalidAllocSize: i32 = -1;
 pub const ALLOCSET_DEFAULT_MINSIZE: u32 = 0;
@@ -1598,6 +1742,9 @@ pub const MAX_BAS_VAC_RING_SIZE_KB: u32 = 16777216;
 pub const SECURITY_LOCAL_USERID_CHANGE: u32 = 1;
 pub const SECURITY_RESTRICTED_OPERATION: u32 = 2;
 pub const SECURITY_NOFORCE_RLS: u32 = 4;
+pub const INIT_PG_LOAD_SESSION_LIBS: u32 = 1;
+pub const INIT_PG_OVERRIDE_ALLOW_CONNS: u32 = 2;
+pub const INIT_PG_OVERRIDE_ROLE_LOGIN: u32 = 4;
 pub const MIN_XFN_CHARS: u32 = 16;
 pub const MAX_XFN_CHARS: u32 = 40;
 #[allow(unsafe_code)]
@@ -1605,7 +1752,6 @@ pub const VALID_XFN_CHARS: &::core::ffi::CStr = unsafe {
     ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"0123456789ABCDEF.history.backup.partial\0")
 };
 pub const PGSTAT_NUM_PROGRESS_PARAM: u32 = 20;
-pub const __iovec_defined: u32 = 1;
 pub const PF_UNSPEC: u32 = 0;
 pub const PF_LOCAL: u32 = 1;
 pub const PF_UNIX: u32 = 1;
@@ -2023,7 +2169,46 @@ pub const NI_NUMERICSERV: u32 = 2;
 pub const NI_NOFQDN: u32 = 4;
 pub const NI_NAMEREQD: u32 = 8;
 pub const NI_DGRAM: u32 = 16;
-pub const MAX_STARTUP_PACKET_LENGTH: u32 = 10000;
+pub const PqMsg_Bind: u8 = 66u8;
+pub const PqMsg_Close: u8 = 67u8;
+pub const PqMsg_Describe: u8 = 68u8;
+pub const PqMsg_Execute: u8 = 69u8;
+pub const PqMsg_FunctionCall: u8 = 70u8;
+pub const PqMsg_Flush: u8 = 72u8;
+pub const PqMsg_Parse: u8 = 80u8;
+pub const PqMsg_Query: u8 = 81u8;
+pub const PqMsg_Sync: u8 = 83u8;
+pub const PqMsg_Terminate: u8 = 88u8;
+pub const PqMsg_CopyFail: u8 = 102u8;
+pub const PqMsg_GSSResponse: u8 = 112u8;
+pub const PqMsg_PasswordMessage: u8 = 112u8;
+pub const PqMsg_SASLInitialResponse: u8 = 112u8;
+pub const PqMsg_SASLResponse: u8 = 112u8;
+pub const PqMsg_ParseComplete: u8 = 49u8;
+pub const PqMsg_BindComplete: u8 = 50u8;
+pub const PqMsg_CloseComplete: u8 = 51u8;
+pub const PqMsg_NotificationResponse: u8 = 65u8;
+pub const PqMsg_CommandComplete: u8 = 67u8;
+pub const PqMsg_DataRow: u8 = 68u8;
+pub const PqMsg_ErrorResponse: u8 = 69u8;
+pub const PqMsg_CopyInResponse: u8 = 71u8;
+pub const PqMsg_CopyOutResponse: u8 = 72u8;
+pub const PqMsg_EmptyQueryResponse: u8 = 73u8;
+pub const PqMsg_BackendKeyData: u8 = 75u8;
+pub const PqMsg_NoticeResponse: u8 = 78u8;
+pub const PqMsg_AuthenticationRequest: u8 = 82u8;
+pub const PqMsg_ParameterStatus: u8 = 83u8;
+pub const PqMsg_RowDescription: u8 = 84u8;
+pub const PqMsg_FunctionCallResponse: u8 = 86u8;
+pub const PqMsg_CopyBothResponse: u8 = 87u8;
+pub const PqMsg_ReadyForQuery: u8 = 90u8;
+pub const PqMsg_NoData: u8 = 110u8;
+pub const PqMsg_PortalSuspended: u8 = 115u8;
+pub const PqMsg_ParameterDescription: u8 = 116u8;
+pub const PqMsg_NegotiateProtocolVersion: u8 = 118u8;
+pub const PqMsg_CopyDone: u8 = 99u8;
+pub const PqMsg_CopyData: u8 = 100u8;
+pub const PqMsg_Progress: u8 = 80u8;
 pub const AUTH_REQ_OK: u32 = 0;
 pub const AUTH_REQ_KRB4: u32 = 1;
 pub const AUTH_REQ_KRB5: u32 = 2;
@@ -2037,16 +2222,20 @@ pub const AUTH_REQ_SASL: u32 = 10;
 pub const AUTH_REQ_SASL_CONT: u32 = 11;
 pub const AUTH_REQ_SASL_FIN: u32 = 12;
 pub const AUTH_REQ_MAX: u32 = 12;
-pub const InvalidBackendId: i32 = -1;
+pub const MAX_STARTUP_PACKET_LENGTH: u32 = 10000;
+#[allow(unsafe_code)]
+pub const PG_ALPN_PROTOCOL: &::core::ffi::CStr =
+    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"postgresql\0") };
 pub const PG_WAIT_LWLOCK: u32 = 16777216;
 pub const PG_WAIT_LOCK: u32 = 50331648;
-pub const PG_WAIT_BUFFER_PIN: u32 = 67108864;
+pub const PG_WAIT_BUFFERPIN: u32 = 67108864;
 pub const PG_WAIT_ACTIVITY: u32 = 83886080;
 pub const PG_WAIT_CLIENT: u32 = 100663296;
 pub const PG_WAIT_EXTENSION: u32 = 117440512;
 pub const PG_WAIT_IPC: u32 = 134217728;
 pub const PG_WAIT_TIMEOUT: u32 = 150994944;
 pub const PG_WAIT_IO: u32 = 167772160;
+pub const PG_WAIT_INJECTIONPOINT: u32 = 184549376;
 #[allow(unsafe_code)]
 pub const PGSTAT_STAT_PERMANENT_DIRECTORY: &::core::ffi::CStr =
     unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"pg_stat\0") };
@@ -2060,30 +2249,6 @@ pub const PGSTAT_STAT_PERMANENT_TMPFILE: &::core::ffi::CStr =
 pub const PG_STAT_TMP_DIR: &::core::ffi::CStr =
     unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"pg_stat_tmp\0") };
 pub const PGSTAT_FILE_FORMAT_ID: u32 = 27638956;
-pub const SK_ISNULL: u32 = 1;
-pub const SK_UNARY: u32 = 2;
-pub const SK_ROW_HEADER: u32 = 4;
-pub const SK_ROW_MEMBER: u32 = 8;
-pub const SK_ROW_END: u32 = 16;
-pub const SK_SEARCHARRAY: u32 = 32;
-pub const SK_SEARCHNULL: u32 = 64;
-pub const SK_SEARCHNOTNULL: u32 = 128;
-pub const SK_ORDER_BY: u32 = 256;
-pub const NoLock: u32 = 0;
-pub const AccessShareLock: u32 = 1;
-pub const RowShareLock: u32 = 2;
-pub const RowExclusiveLock: u32 = 3;
-pub const ShareUpdateExclusiveLock: u32 = 4;
-pub const ShareLock: u32 = 5;
-pub const ShareRowExclusiveLock: u32 = 6;
-pub const ExclusiveLock: u32 = 7;
-pub const AccessExclusiveLock: u32 = 8;
-pub const MaxLockMode: u32 = 8;
-pub const SYNC_METHOD_FSYNC: u32 = 0;
-pub const SYNC_METHOD_FDATASYNC: u32 = 1;
-pub const SYNC_METHOD_OPEN: u32 = 2;
-pub const SYNC_METHOD_FSYNC_WRITETHROUGH: u32 = 3;
-pub const SYNC_METHOD_OPEN_DSYNC: u32 = 4;
 pub const CHECKPOINT_IS_SHUTDOWN: u32 = 1;
 pub const CHECKPOINT_END_OF_RECOVERY: u32 = 2;
 pub const CHECKPOINT_IMMEDIATE: u32 = 4;
@@ -2143,24 +2308,6 @@ pub const XLR_BLOCK_ID_DATA_SHORT: u32 = 255;
 pub const XLR_BLOCK_ID_DATA_LONG: u32 = 254;
 pub const XLR_BLOCK_ID_ORIGIN: u32 = 253;
 pub const XLR_BLOCK_ID_TOPLEVEL_XID: u32 = 252;
-pub const XLOG_PAGE_MAGIC: u32 = 53523;
-pub const XLP_FIRST_IS_CONTRECORD: u32 = 1;
-pub const XLP_LONG_HEADER: u32 = 2;
-pub const XLP_BKP_REMOVABLE: u32 = 4;
-pub const XLP_FIRST_IS_OVERWRITE_CONTRECORD: u32 = 8;
-pub const XLP_ALL_FLAGS: u32 = 15;
-pub const WalSegMinSize: u32 = 1048576;
-pub const WalSegMaxSize: u32 = 1073741824;
-pub const DEFAULT_MIN_WAL_SEGS: u32 = 5;
-pub const DEFAULT_MAX_WAL_SEGS: u32 = 64;
-#[allow(unsafe_code)]
-pub const XLOGDIR: &::core::ffi::CStr =
-    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"pg_wal\0") };
-#[allow(unsafe_code)]
-pub const XLOG_CONTROL_FILE: &::core::ffi::CStr =
-    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"global/pg_control\0") };
-pub const MAXFNAMELEN: u32 = 64;
-pub const XLOG_FNAME_LEN: u32 = 24;
 pub const XLR_NORMAL_MAX_BLOCK_ID: u32 = 4;
 pub const XLR_NORMAL_RDATAS: u32 = 20;
 pub const REGBUF_FORCE_IMAGE: u32 = 1;
@@ -2168,6 +2315,7 @@ pub const REGBUF_NO_IMAGE: u32 = 2;
 pub const REGBUF_WILL_INIT: u32 = 6;
 pub const REGBUF_STANDARD: u32 = 8;
 pub const REGBUF_KEEP_DATA: u32 = 16;
+pub const REGBUF_NO_CHANGE: u32 = 32;
 pub const RelationRelationId: u32 = 1259;
 pub const RelationRelation_Rowtype_Id: u32 = 83;
 pub const ClassOidIndexId: u32 = 2662;
@@ -2336,6 +2484,34 @@ pub const XACT_XINFO_HAS_DROPPED_STATS: u32 = 256;
 pub const XACT_COMPLETION_APPLY_FEEDBACK: u32 = 536870912;
 pub const XACT_COMPLETION_UPDATE_RELCACHE_FILE: u32 = 1073741824;
 pub const XACT_COMPLETION_FORCE_SYNC_COMMIT: u32 = 2147483648;
+pub const RELEASE_PRIO_BUFFER_IOS: u32 = 100;
+pub const RELEASE_PRIO_BUFFER_PINS: u32 = 200;
+pub const RELEASE_PRIO_RELCACHE_REFS: u32 = 300;
+pub const RELEASE_PRIO_DSMS: u32 = 400;
+pub const RELEASE_PRIO_JIT_CONTEXTS: u32 = 500;
+pub const RELEASE_PRIO_CRYPTOHASH_CONTEXTS: u32 = 600;
+pub const RELEASE_PRIO_HMAC_CONTEXTS: u32 = 700;
+pub const RELEASE_PRIO_CATCACHE_REFS: u32 = 100;
+pub const RELEASE_PRIO_CATCACHE_LIST_REFS: u32 = 200;
+pub const RELEASE_PRIO_PLANCACHE_REFS: u32 = 300;
+pub const RELEASE_PRIO_TUPDESC_REFS: u32 = 400;
+pub const RELEASE_PRIO_SNAPSHOT_REFS: u32 = 500;
+pub const RELEASE_PRIO_FILES: u32 = 600;
+pub const RELEASE_PRIO_WAITEVENTSETS: u32 = 700;
+pub const RELEASE_PRIO_FIRST: u32 = 1;
+pub const RELEASE_PRIO_LAST: u32 = 4294967295;
+pub const READ_BUFFERS_ZERO_ON_ERROR: u32 = 1;
+pub const READ_BUFFERS_ISSUE_ADVICE: u32 = 2;
+pub const DEFAULT_EFFECTIVE_IO_CONCURRENCY: u32 = 1;
+pub const DEFAULT_MAINTENANCE_IO_CONCURRENCY: u32 = 10;
+pub const MAX_IO_CONCURRENCY: u32 = 1000;
+pub const BUFFER_LOCK_UNLOCK: u32 = 0;
+pub const BUFFER_LOCK_SHARE: u32 = 1;
+pub const BUFFER_LOCK_EXCLUSIVE: u32 = 2;
+pub const READ_STREAM_DEFAULT: u32 = 0;
+pub const READ_STREAM_MAINTENANCE: u32 = 1;
+pub const READ_STREAM_SEQUENTIAL: u32 = 2;
+pub const READ_STREAM_FULL: u32 = 4;
 #[allow(unsafe_code)]
 pub const DEFAULT_TABLE_ACCESS_METHOD: &::core::ffi::CStr =
     unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"heap\0") };
@@ -2350,25 +2526,25 @@ pub const HEAP_INSERT_SKIP_FSM: u32 = 2;
 pub const HEAP_INSERT_FROZEN: u32 = 4;
 pub const HEAP_INSERT_NO_LOGICAL: u32 = 8;
 pub const HEAP_INSERT_SPECULATIVE: u32 = 16;
+pub const HEAP_PAGE_PRUNE_MARK_UNUSED_NOW: u32 = 1;
+pub const HEAP_PAGE_PRUNE_FREEZE: u32 = 2;
 pub const HEAP_FREEZE_CHECK_XMIN_COMMITTED: u32 = 1;
 pub const HEAP_FREEZE_CHECK_XMAX_ABORTED: u32 = 2;
-pub const NUM_MULTIXACTOFFSET_BUFFERS: u32 = 8;
-pub const NUM_MULTIXACTMEMBER_BUFFERS: u32 = 16;
 pub const XLOG_MULTIXACT_ZERO_OFF_PAGE: u32 = 0;
 pub const XLOG_MULTIXACT_ZERO_MEM_PAGE: u32 = 16;
 pub const XLOG_MULTIXACT_CREATE_ID: u32 = 32;
 pub const XLOG_MULTIXACT_TRUNCATE_ID: u32 = 48;
+pub const NUM_INDIVIDUAL_LWLOCKS: u32 = 53;
 pub const LWLOCK_PADDED_SIZE: u32 = 128;
-pub const NUM_INDIVIDUAL_LWLOCKS: u32 = 48;
 pub const NUM_BUFFER_PARTITIONS: u32 = 128;
 pub const LOG2_NUM_LOCK_PARTITIONS: u32 = 4;
 pub const NUM_LOCK_PARTITIONS: u32 = 16;
 pub const LOG2_NUM_PREDICATELOCK_PARTITIONS: u32 = 4;
 pub const NUM_PREDICATELOCK_PARTITIONS: u32 = 16;
-pub const BUFFER_MAPPING_LWLOCK_OFFSET: u32 = 48;
-pub const LOCK_MANAGER_LWLOCK_OFFSET: u32 = 176;
-pub const PREDICATELOCK_MANAGER_LWLOCK_OFFSET: u32 = 192;
-pub const NUM_FIXED_LWLOCKS: u32 = 208;
+pub const BUFFER_MAPPING_LWLOCK_OFFSET: u32 = 53;
+pub const LOCK_MANAGER_LWLOCK_OFFSET: u32 = 181;
+pub const PREDICATELOCK_MANAGER_LWLOCK_OFFSET: u32 = 197;
+pub const NUM_FIXED_LWLOCKS: u32 = 213;
 pub const INTERVAL_FULL_RANGE: u32 = 32767;
 pub const INTERVAL_RANGE_MASK: u32 = 32767;
 pub const INTERVAL_FULL_PRECISION: u32 = 65535;
@@ -2383,7 +2559,25 @@ pub const VISIBILITYMAP_ALL_FROZEN: u32 = 2;
 pub const VISIBILITYMAP_VALID_BITS: u32 = 3;
 pub const VISIBILITYMAP_XLOG_CATALOG_REL: u32 = 4;
 pub const VISIBILITYMAP_XLOG_VALID_BITS: u32 = 7;
-pub const PG_CONTROL_VERSION: u32 = 1300;
+pub const XLOG_PAGE_MAGIC: u32 = 53526;
+pub const XLP_FIRST_IS_CONTRECORD: u32 = 1;
+pub const XLP_LONG_HEADER: u32 = 2;
+pub const XLP_BKP_REMOVABLE: u32 = 4;
+pub const XLP_FIRST_IS_OVERWRITE_CONTRECORD: u32 = 8;
+pub const XLP_ALL_FLAGS: u32 = 15;
+pub const WalSegMinSize: u32 = 1048576;
+pub const WalSegMaxSize: u32 = 1073741824;
+pub const DEFAULT_MIN_WAL_SEGS: u32 = 5;
+pub const DEFAULT_MAX_WAL_SEGS: u32 = 64;
+#[allow(unsafe_code)]
+pub const XLOGDIR: &::core::ffi::CStr =
+    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"pg_wal\0") };
+#[allow(unsafe_code)]
+pub const XLOG_CONTROL_FILE: &::core::ffi::CStr =
+    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"global/pg_control\0") };
+pub const MAXFNAMELEN: u32 = 64;
+pub const XLOG_FNAME_LEN: u32 = 24;
+pub const PG_CONTROL_VERSION: u32 = 1700;
 pub const MOCK_AUTH_NONCE_LEN: u32 = 32;
 pub const XLOG_CHECKPOINT_SHUTDOWN: u32 = 0;
 pub const XLOG_CHECKPOINT_ONLINE: u32 = 16;
@@ -2398,16 +2592,10 @@ pub const XLOG_END_OF_RECOVERY: u32 = 144;
 pub const XLOG_FPI_FOR_HINT: u32 = 160;
 pub const XLOG_FPI: u32 = 176;
 pub const XLOG_OVERWRITE_CONTRECORD: u32 = 208;
+pub const XLOG_CHECKPOINT_REDO: u32 = 224;
 pub const FLOATFORMAT_VALUE: f64 = 1234567.0;
 pub const PG_CONTROL_MAX_SAFE_SIZE: u32 = 512;
 pub const PG_CONTROL_FILE_SIZE: u32 = 8192;
-pub const OLD_SNAPSHOT_PADDING_ENTRIES: u32 = 10;
-pub const DEFAULT_EFFECTIVE_IO_CONCURRENCY: u32 = 1;
-pub const DEFAULT_MAINTENANCE_IO_CONCURRENCY: u32 = 10;
-pub const MAX_IO_CONCURRENCY: u32 = 1000;
-pub const BUFFER_LOCK_UNLOCK: u32 = 0;
-pub const BUFFER_LOCK_SHARE: u32 = 1;
-pub const BUFFER_LOCK_EXCLUSIVE: u32 = 2;
 pub const PERFORM_DELETION_INTERNAL: u32 = 1;
 pub const PERFORM_DELETION_CONCURRENTLY: u32 = 2;
 pub const PERFORM_DELETION_QUIETLY: u32 = 4;
@@ -2514,6 +2702,7 @@ pub const ROLE_PG_WRITE_SERVER_FILES: u32 = 4570;
 pub const ROLE_PG_EXECUTE_SERVER_PROGRAM: u32 = 4571;
 pub const ROLE_PG_SIGNAL_BACKEND: u32 = 4200;
 pub const ROLE_PG_CHECKPOINT: u32 = 4544;
+pub const ROLE_PG_MAINTAIN: u32 = 6337;
 pub const ROLE_PG_USE_RESERVED_CONNECTIONS: u32 = 4550;
 pub const ROLE_PG_CREATE_SUBSCRIPTION: u32 = 6304;
 pub const CollationRelationId: u32 = 3456;
@@ -2528,11 +2717,12 @@ pub const Anum_pg_collation_collisdeterministic: u32 = 6;
 pub const Anum_pg_collation_collencoding: u32 = 7;
 pub const Anum_pg_collation_collcollate: u32 = 8;
 pub const Anum_pg_collation_collctype: u32 = 9;
-pub const Anum_pg_collation_colliculocale: u32 = 10;
+pub const Anum_pg_collation_colllocale: u32 = 10;
 pub const Anum_pg_collation_collicurules: u32 = 11;
 pub const Anum_pg_collation_collversion: u32 = 12;
 pub const Natts_pg_collation: u32 = 12;
 pub const COLLPROVIDER_DEFAULT: u8 = 100u8;
+pub const COLLPROVIDER_BUILTIN: u8 = 98u8;
 pub const COLLPROVIDER_ICU: u8 = 105u8;
 pub const COLLPROVIDER_LIBC: u8 = 99u8;
 pub const DEFAULT_COLLATION_OID: u32 = 100;
@@ -2553,17 +2743,18 @@ pub const Anum_pg_database_encoding: u32 = 4;
 pub const Anum_pg_database_datlocprovider: u32 = 5;
 pub const Anum_pg_database_datistemplate: u32 = 6;
 pub const Anum_pg_database_datallowconn: u32 = 7;
-pub const Anum_pg_database_datconnlimit: u32 = 8;
-pub const Anum_pg_database_datfrozenxid: u32 = 9;
-pub const Anum_pg_database_datminmxid: u32 = 10;
-pub const Anum_pg_database_dattablespace: u32 = 11;
-pub const Anum_pg_database_datcollate: u32 = 12;
-pub const Anum_pg_database_datctype: u32 = 13;
-pub const Anum_pg_database_daticulocale: u32 = 14;
-pub const Anum_pg_database_daticurules: u32 = 15;
-pub const Anum_pg_database_datcollversion: u32 = 16;
-pub const Anum_pg_database_datacl: u32 = 17;
-pub const Natts_pg_database: u32 = 17;
+pub const Anum_pg_database_dathasloginevt: u32 = 8;
+pub const Anum_pg_database_datconnlimit: u32 = 9;
+pub const Anum_pg_database_datfrozenxid: u32 = 10;
+pub const Anum_pg_database_datminmxid: u32 = 11;
+pub const Anum_pg_database_dattablespace: u32 = 12;
+pub const Anum_pg_database_datcollate: u32 = 13;
+pub const Anum_pg_database_datctype: u32 = 14;
+pub const Anum_pg_database_datlocale: u32 = 15;
+pub const Anum_pg_database_daticurules: u32 = 16;
+pub const Anum_pg_database_datcollversion: u32 = 17;
+pub const Anum_pg_database_datacl: u32 = 18;
+pub const Natts_pg_database: u32 = 18;
 pub const Template1DbOid: u32 = 1;
 pub const DATCONNLIMIT_UNLIMITED: i32 = -1;
 pub const DATCONNLIMIT_INVALID_DB: i32 = -2;
@@ -2860,11 +3051,12 @@ pub const ACL_CREATE_TEMP_CHR: u8 = 84u8;
 pub const ACL_CONNECT_CHR: u8 = 99u8;
 pub const ACL_SET_CHR: u8 = 115u8;
 pub const ACL_ALTER_SYSTEM_CHR: u8 = 65u8;
+pub const ACL_MAINTAIN_CHR: u8 = 109u8;
 #[allow(unsafe_code)]
 pub const ACL_ALL_RIGHTS_STR: &::core::ffi::CStr =
-    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"arwdDxtXUCTcsA\0") };
+    unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"arwdDxtXUCTcsAm\0") };
 pub const ACL_ALL_RIGHTS_COLUMN: u32 = 39;
-pub const ACL_ALL_RIGHTS_RELATION: u32 = 127;
+pub const ACL_ALL_RIGHTS_RELATION: u32 = 16511;
 pub const ACL_ALL_RIGHTS_SEQUENCE: u32 = 262;
 pub const ACL_ALL_RIGHTS_DATABASE: u32 = 3584;
 pub const ACL_ALL_RIGHTS_FDW: u32 = 256;
@@ -3005,6 +3197,7 @@ pub const GUC_IS_NAME: u32 = 2048;
 pub const GUC_NOT_WHILE_SEC_REST: u32 = 4096;
 pub const GUC_DISALLOW_IN_AUTO_FILE: u32 = 8192;
 pub const GUC_RUNTIME_COMPUTED: u32 = 16384;
+pub const GUC_ALLOW_IN_PARALLEL: u32 = 32768;
 pub const GUC_UNIT_KB: u32 = 16777216;
 pub const GUC_UNIT_BLOCKS: u32 = 33554432;
 pub const GUC_UNIT_XBLOCKS: u32 = 50331648;
@@ -3024,6 +3217,7 @@ pub const BGW_NEVER_RESTART: i32 = -1;
 pub const BGW_MAXLEN: u32 = 96;
 pub const BGW_EXTRALEN: u32 = 128;
 pub const BGWORKER_BYPASS_ALLOWCONN: u32 = 1;
+pub const BGWORKER_BYPASS_ROLELOGINCHECK: u32 = 2;
 pub const TRANSACTION_STATUS_IN_PROGRESS: u32 = 0;
 pub const TRANSACTION_STATUS_COMMITTED: u32 = 1;
 pub const TRANSACTION_STATUS_ABORTED: u32 = 2;
@@ -3050,10 +3244,9 @@ pub const PROC_AFFECTS_ALL_HORIZONS: u32 = 32;
 pub const PROC_VACUUM_STATE_MASK: u32 = 14;
 pub const PROC_XMIN_FLAGS: u32 = 6;
 pub const FP_LOCK_SLOTS_PER_BACKEND: u32 = 16;
-pub const INVALID_PGPROCNO: u32 = 2147483647;
 pub const DELAY_CHKPT_START: u32 = 1;
 pub const DELAY_CHKPT_COMPLETE: u32 = 2;
-pub const NUM_AUXILIARY_PROCS: u32 = 5;
+pub const NUM_AUXILIARY_PROCS: u32 = 6;
 pub const StatisticRelationId: u32 = 2619;
 pub const StatisticRelidAttnumInhIndexId: u32 = 2696;
 pub const Anum_pg_statistic_starelid: u32 = 1;
@@ -3112,6 +3305,7 @@ pub const VACOPT_PROCESS_TOAST: u32 = 128;
 pub const VACOPT_DISABLE_PAGE_SKIPPING: u32 = 256;
 pub const VACOPT_SKIP_DATABASE_STATS: u32 = 512;
 pub const VACOPT_ONLY_DATABASE_STATS: u32 = 1024;
+pub const MAX_STATISTICS_TARGET: u32 = 10000;
 pub const FIELDNO_AGGSTATEPERGROUPDATA_TRANSVALUE: u32 = 0;
 pub const FIELDNO_AGGSTATEPERGROUPDATA_TRANSVALUEISNULL: u32 = 1;
 pub const FIELDNO_AGGSTATEPERGROUPDATA_NOTRANSVALUE: u32 = 2;
@@ -3148,6 +3342,7 @@ pub const SPI_OK_REL_REGISTER: u32 = 15;
 pub const SPI_OK_REL_UNREGISTER: u32 = 16;
 pub const SPI_OK_TD_REGISTER: u32 = 17;
 pub const SPI_OK_MERGE: u32 = 18;
+pub const SPI_OK_MERGE_RETURNING: u32 = 19;
 pub const SPI_OPT_NONATOMIC: u32 = 1;
 pub const AMFLAG_HAS_TID_RANGE: u32 = 1;
 pub const GROUPING_CAN_USE_SORT: u32 = 1;
@@ -3256,23 +3451,6 @@ pub const ER_FLAG_TUPDESC_ALLOCED: u32 = 32;
 pub const ER_FLAG_IS_DOMAIN: u32 = 64;
 pub const ER_FLAG_IS_DUMMY: u32 = 128;
 pub const ER_FLAGS_NON_DATA: u32 = 224;
-pub const TYPECACHE_EQ_OPR: u32 = 1;
-pub const TYPECACHE_LT_OPR: u32 = 2;
-pub const TYPECACHE_GT_OPR: u32 = 4;
-pub const TYPECACHE_CMP_PROC: u32 = 8;
-pub const TYPECACHE_HASH_PROC: u32 = 16;
-pub const TYPECACHE_EQ_OPR_FINFO: u32 = 32;
-pub const TYPECACHE_CMP_PROC_FINFO: u32 = 64;
-pub const TYPECACHE_HASH_PROC_FINFO: u32 = 128;
-pub const TYPECACHE_TUPDESC: u32 = 256;
-pub const TYPECACHE_BTREE_OPFAMILY: u32 = 512;
-pub const TYPECACHE_HASH_OPFAMILY: u32 = 1024;
-pub const TYPECACHE_RANGE_INFO: u32 = 2048;
-pub const TYPECACHE_DOMAIN_BASE_INFO: u32 = 4096;
-pub const TYPECACHE_DOMAIN_CONSTR_INFO: u32 = 8192;
-pub const TYPECACHE_HASH_EXTENDED_PROC: u32 = 16384;
-pub const TYPECACHE_HASH_EXTENDED_PROC_FINFO: u32 = 32768;
-pub const TYPECACHE_MULTIRANGE_INFO: u32 = 65536;
 pub const PLPGSQL_XCHECK_NONE: u32 = 0;
 pub const PLPGSQL_XCHECK_SHADOWVAR: u32 = 2;
 pub const PLPGSQL_XCHECK_TOOMANYROWS: u32 = 4;
@@ -4471,7 +4649,7 @@ pub const F_BITLE: u32 = 1594;
 pub const F_BITLT: u32 = 1595;
 pub const F_BITCMP: u32 = 1596;
 pub const F_PG_ENCODING_TO_CHAR: u32 = 1597;
-pub const F_RANDOM: u32 = 1598;
+pub const F_RANDOM_: u32 = 1598;
 pub const F_SETSEED: u32 = 1599;
 pub const F_ASIN: u32 = 1600;
 pub const F_ACOS: u32 = 1601;
@@ -4661,7 +4839,7 @@ pub const F_NUMERIC_STDDEV_SAMP: u32 = 1839;
 pub const F_INT2_SUM: u32 = 1840;
 pub const F_INT4_SUM: u32 = 1841;
 pub const F_INT8_SUM: u32 = 1842;
-pub const F_INTERVAL_ACCUM: u32 = 1843;
+pub const F_INTERVAL_AVG_ACCUM: u32 = 1843;
 pub const F_INTERVAL_AVG: u32 = 1844;
 pub const F_TO_ASCII_TEXT: u32 = 1845;
 pub const F_TO_ASCII_TEXT_INT4: u32 = 1846;
@@ -5308,13 +5486,12 @@ pub const F_REGEXP_SPLIT_TO_TABLE_TEXT_TEXT: u32 = 2765;
 pub const F_REGEXP_SPLIT_TO_TABLE_TEXT_TEXT_TEXT: u32 = 2766;
 pub const F_REGEXP_SPLIT_TO_ARRAY_TEXT_TEXT: u32 = 2767;
 pub const F_REGEXP_SPLIT_TO_ARRAY_TEXT_TEXT_TEXT: u32 = 2768;
-pub const F_PG_STAT_GET_BGWRITER_TIMED_CHECKPOINTS: u32 = 2769;
-pub const F_PG_STAT_GET_BGWRITER_REQUESTED_CHECKPOINTS: u32 = 2770;
-pub const F_PG_STAT_GET_BGWRITER_BUF_WRITTEN_CHECKPOINTS: u32 = 2771;
+pub const F_PG_STAT_GET_CHECKPOINTER_NUM_TIMED: u32 = 2769;
+pub const F_PG_STAT_GET_CHECKPOINTER_NUM_REQUESTED: u32 = 2770;
+pub const F_PG_STAT_GET_CHECKPOINTER_BUFFERS_WRITTEN: u32 = 2771;
 pub const F_PG_STAT_GET_BGWRITER_BUF_WRITTEN_CLEAN: u32 = 2772;
 pub const F_PG_STAT_GET_BGWRITER_MAXWRITTEN_CLEAN: u32 = 2773;
 pub const F_GINQUERYARRAYEXTRACT: u32 = 2774;
-pub const F_PG_STAT_GET_BUF_WRITTEN_BACKEND: u32 = 2775;
 pub const F_ANYNONARRAY_IN: u32 = 2777;
 pub const F_ANYNONARRAY_OUT: u32 = 2778;
 pub const F_PG_STAT_GET_LAST_VACUUM_TIME: u32 = 2781;
@@ -5535,7 +5712,6 @@ pub const F_CONCAT_WS: u32 = 3059;
 pub const F_LEFT: u32 = 3060;
 pub const F_RIGHT: u32 = 3061;
 pub const F_REVERSE: u32 = 3062;
-pub const F_PG_STAT_GET_BUF_FSYNC_BACKEND: u32 = 3063;
 pub const F_GIST_POINT_DISTANCE: u32 = 3064;
 pub const F_PG_STAT_GET_DB_CONFLICT_TABLESPACE: u32 = 3065;
 pub const F_PG_STAT_GET_DB_CONFLICT_LOCK: u32 = 3066;
@@ -5615,8 +5791,8 @@ pub const F_ROW_TO_JSON_RECORD_BOOL: u32 = 3156;
 pub const F_NUMERIC_SUPPORT: u32 = 3157;
 pub const F_VARBIT_SUPPORT: u32 = 3158;
 pub const F_PG_GET_VIEWDEF_OID_INT4: u32 = 3159;
-pub const F_PG_STAT_GET_CHECKPOINT_WRITE_TIME: u32 = 3160;
-pub const F_PG_STAT_GET_CHECKPOINT_SYNC_TIME: u32 = 3161;
+pub const F_PG_STAT_GET_CHECKPOINTER_WRITE_TIME: u32 = 3160;
+pub const F_PG_STAT_GET_CHECKPOINTER_SYNC_TIME: u32 = 3161;
 pub const F_PG_COLLATION_FOR: u32 = 3162;
 pub const F_PG_TRIGGER_DEPTH: u32 = 3163;
 pub const F_PG_WAL_LSN_DIFF: u32 = 3165;
@@ -5733,7 +5909,7 @@ pub const F_TS_DELETE_TSVECTOR_TEXT: u32 = 3321;
 pub const F_UNNEST_TSVECTOR: u32 = 3322;
 pub const F_TS_DELETE_TSVECTOR__TEXT: u32 = 3323;
 pub const F_INT4_AVG_COMBINE: u32 = 3324;
-pub const F_INTERVAL_COMBINE: u32 = 3325;
+pub const F_INTERVAL_AVG_COMBINE: u32 = 3325;
 pub const F_TSVECTOR_TO_ARRAY: u32 = 3326;
 pub const F_ARRAY_TO_TSVECTOR: u32 = 3327;
 pub const F_BPCHAR_SORTSUPPORT: u32 = 3328;
@@ -5900,7 +6076,7 @@ pub const F_STRING_AGG_BYTEA_BYTEA: u32 = 3545;
 pub const F_INT8DEC: u32 = 3546;
 pub const F_INT8DEC_ANY: u32 = 3547;
 pub const F_NUMERIC_ACCUM_INV: u32 = 3548;
-pub const F_INTERVAL_ACCUM_INV: u32 = 3549;
+pub const F_INTERVAL_AVG_ACCUM_INV: u32 = 3549;
 pub const F_NETWORK_OVERLAP: u32 = 3551;
 pub const F_INET_GIST_CONSISTENT: u32 = 3553;
 pub const F_INET_GIST_UNION: u32 = 3554;
@@ -5923,8 +6099,8 @@ pub const F_INT2_AVG_ACCUM_INV: u32 = 3570;
 pub const F_INT4_AVG_ACCUM_INV: u32 = 3571;
 pub const F_INT2INT4_SUM: u32 = 3572;
 pub const F_INET_GIST_FETCH: u32 = 3573;
-pub const F_PG_LOGICAL_EMIT_MESSAGE_BOOL_TEXT_TEXT: u32 = 3577;
-pub const F_PG_LOGICAL_EMIT_MESSAGE_BOOL_TEXT_BYTEA: u32 = 3578;
+pub const F_PG_LOGICAL_EMIT_MESSAGE_BOOL_TEXT_TEXT_BOOL: u32 = 3577;
+pub const F_PG_LOGICAL_EMIT_MESSAGE_BOOL_TEXT_BYTEA_BOOL: u32 = 3578;
 pub const F_JSONB_INSERT: u32 = 3579;
 pub const F_PG_XACT_COMMIT_TIMESTAMP: u32 = 3581;
 pub const F_BINARY_UPGRADE_SET_NEXT_PG_TYPE_OID: u32 = 3582;
@@ -6090,6 +6266,7 @@ pub const F_PG_EXPORT_SNAPSHOT: u32 = 3809;
 pub const F_PG_IS_IN_RECOVERY: u32 = 3810;
 pub const F_MONEY_INT4: u32 = 3811;
 pub const F_MONEY_INT8: u32 = 3812;
+pub const F_XMLTEXT: u32 = 3813;
 pub const F_PG_COLLATION_IS_VISIBLE: u32 = 3815;
 pub const F_ARRAY_TYPANALYZE: u32 = 3816;
 pub const F_ARRAYCONTSEL: u32 = 3817;
@@ -6289,8 +6466,6 @@ pub const F_TO_REGROLE: u32 = 4093;
 pub const F_REGROLERECV: u32 = 4094;
 pub const F_REGROLESEND: u32 = 4095;
 pub const F_REGROLEIN: u32 = 4098;
-pub const F_PG_ROTATE_LOGFILE_OLD: u32 = 4099;
-pub const F_PG_READ_FILE_OLD: u32 = 4100;
 pub const F_BINARY_UPGRADE_SET_MISSING_VALUE: u32 = 4101;
 pub const F_BRIN_INCLUSION_OPCINFO: u32 = 4105;
 pub const F_BRIN_INCLUSION_ADD_VALUE: u32 = 4106;
@@ -6533,6 +6708,7 @@ pub const F_BINARY_UPGRADE_SET_NEXT_HEAP_RELFILENODE: u32 = 4545;
 pub const F_BINARY_UPGRADE_SET_NEXT_INDEX_RELFILENODE: u32 = 4546;
 pub const F_BINARY_UPGRADE_SET_NEXT_TOAST_RELFILENODE: u32 = 4547;
 pub const F_BINARY_UPGRADE_SET_NEXT_PG_TABLESPACE_OID: u32 = 4548;
+pub const F_UNICODE_VERSION: u32 = 4549;
 pub const F_PG_EVENT_TRIGGER_TABLE_REWRITE_OID: u32 = 4566;
 pub const F_PG_EVENT_TRIGGER_TABLE_REWRITE_REASON: u32 = 4567;
 pub const F_PG_EVENT_TRIGGER_DDL_COMMANDS: u32 = 4568;
@@ -6662,7 +6838,9 @@ pub const F_PG_REPLICATION_ORIGIN_ADVANCE: u32 = 6012;
 pub const F_PG_REPLICATION_ORIGIN_PROGRESS: u32 = 6013;
 pub const F_PG_SHOW_REPLICATION_ORIGIN_STATUS: u32 = 6014;
 pub const F_JSONB_SUBSCRIPT_HANDLER: u32 = 6098;
+pub const F_ICU_UNICODE_VERSION: u32 = 6099;
 pub const F_PG_LSN: u32 = 6103;
+pub const F_UNICODE_ASSIGNED: u32 = 6105;
 pub const F_PG_STAT_GET_BACKEND_SUBXACT: u32 = 6107;
 pub const F_PG_STAT_GET_SUBSCRIPTION: u32 = 6118;
 pub const F_PG_GET_PUBLICATION_TABLES: u32 = 6119;
@@ -6804,6 +6982,39 @@ pub const F_WINDOW_NTILE_SUPPORT: u32 = 6308;
 pub const F_PG_STAT_GET_DB_CONFLICT_LOGICALSLOT: u32 = 6309;
 pub const F_PG_STAT_GET_LASTSCAN: u32 = 6310;
 pub const F_SYSTEM_USER: u32 = 6311;
+pub const F_BINARY_UPGRADE_LOGICAL_SLOT_HAS_CAUGHT_UP: u32 = 6312;
+pub const F_PG_STAT_GET_CHECKPOINTER_STAT_RESET_TIME: u32 = 6314;
+pub const F_PG_BASETYPE: u32 = 6315;
+pub const F_PG_COLUMN_TOAST_CHUNK_ID: u32 = 6316;
+pub const F_TO_REGTYPEMOD: u32 = 6317;
+pub const F_PG_GET_WAIT_EVENTS: u32 = 6318;
+pub const F_BINARY_UPGRADE_ADD_SUB_REL_STATE: u32 = 6319;
+pub const F_BINARY_UPGRADE_REPLORIGIN_ADVANCE: u32 = 6320;
+pub const F_PG_AVAILABLE_WAL_SUMMARIES: u32 = 6321;
+pub const F_PG_WAL_SUMMARY_CONTENTS: u32 = 6322;
+pub const F_PG_GET_WAL_SUMMARIZER_STATE: u32 = 6323;
+pub const F_INTERVAL_AVG_SERIALIZE: u32 = 6324;
+pub const F_INTERVAL_AVG_DESERIALIZE: u32 = 6325;
+pub const F_INTERVAL_SUM: u32 = 6326;
+pub const F_PG_STAT_GET_CHECKPOINTER_RESTARTPOINTS_TIMED: u32 = 6327;
+pub const F_PG_STAT_GET_CHECKPOINTER_RESTARTPOINTS_REQUESTED: u32 = 6328;
+pub const F_PG_STAT_GET_CHECKPOINTER_RESTARTPOINTS_PERFORMED: u32 = 6329;
+pub const F_TO_BIN_INT4: u32 = 6330;
+pub const F_TO_BIN_INT8: u32 = 6331;
+pub const F_TO_OCT_INT4: u32 = 6332;
+pub const F_TO_OCT_INT8: u32 = 6333;
+pub const F_TIMEZONE_TIMESTAMPTZ: u32 = 6334;
+pub const F_TIMEZONE_TIMESTAMP: u32 = 6335;
+pub const F_TIMEZONE_TIMETZ: u32 = 6336;
+pub const F_JSONB_POPULATE_RECORD_VALID: u32 = 6338;
+pub const F_RANDOM_INT4_INT4: u32 = 6339;
+pub const F_RANDOM_INT8_INT8: u32 = 6340;
+pub const F_RANDOM_NUMERIC_NUMERIC: u32 = 6341;
+pub const F_UUID_EXTRACT_TIMESTAMP: u32 = 6342;
+pub const F_UUID_EXTRACT_VERSION: u32 = 6343;
+pub const F_PG_SYNC_REPLICATION_SLOTS: u32 = 6344;
+pub const F_RANGE_CONTAINS_ELEM_SUPPORT: u32 = 6345;
+pub const F_ELEM_CONTAINED_BY_RANGE_SUPPORT: u32 = 6346;
 pub const NUMERIC_MAX_PRECISION: u32 = 1000;
 pub const NUMERIC_MIN_SCALE: i32 = -1000;
 pub const NUMERIC_MAX_SCALE: u32 = 1000;
@@ -6844,9 +7055,6 @@ pub const FORMAT_PROC_INVALID_AS_NULL: u32 = 1;
 pub const FORMAT_PROC_FORCE_QUALIFY: u32 = 2;
 pub const FORMAT_OPERATOR_INVALID_AS_NULL: u32 = 1;
 pub const FORMAT_OPERATOR_FORCE_QUALIFY: u32 = 2;
-pub const CATCACHE_MAXKEYS: u32 = 4;
-pub const CT_MAGIC: u32 = 1462113538;
-pub const CL_MAGIC: u32 = 1383485699;
 pub const RULE_INDEXDEF_PRETTY: u32 = 1;
 pub const RULE_INDEXDEF_KEYS_ONLY: u32 = 2;
 pub const DEFAULT_EQ_SEL: f64 = 0.005;
@@ -6859,6 +7067,9 @@ pub const DEFAULT_NUM_DISTINCT: u32 = 200;
 pub const DEFAULT_UNK_SEL: f64 = 0.005;
 pub const DEFAULT_NOT_UNK_SEL: f64 = 0.995;
 pub const SELFLAG_USED_DEFAULT: u32 = 1;
+pub const CATCACHE_MAXKEYS: u32 = 4;
+pub const CT_MAGIC: u32 = 1462113538;
+pub const CL_MAGIC: u32 = 1383485699;
 #[allow(unsafe_code)]
 pub const RANGE_EMPTY_LITERAL: &::core::ffi::CStr =
     unsafe { ::core::ffi::CStr::from_bytes_with_nul_unchecked(b"empty\0") };
@@ -7862,7 +8073,6 @@ pub struct FormData_pg_attribute {
     pub attisdropped: bool,
     pub attislocal: bool,
     pub attinhcount: int16,
-    pub attstattarget: int16,
     pub attcollation: Oid,
 }
 impl Default for FormData_pg_attribute {
@@ -7875,6 +8085,21 @@ impl Default for FormData_pg_attribute {
     }
 }
 pub type Form_pg_attribute = *mut FormData_pg_attribute;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FormExtraData_pg_attribute {
+    pub attstattarget: NullableDatum,
+    pub attoptions: NullableDatum,
+}
+impl Default for FormExtraData_pg_attribute {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
 #[repr(u32)]
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
@@ -7891,449 +8116,469 @@ pub enum NodeTag {
     T_Aggref = 9,
     T_GroupingFunc = 10,
     T_WindowFunc = 11,
-    T_SubscriptingRef = 12,
-    T_FuncExpr = 13,
-    T_NamedArgExpr = 14,
-    T_OpExpr = 15,
-    T_DistinctExpr = 16,
-    T_NullIfExpr = 17,
-    T_ScalarArrayOpExpr = 18,
-    T_BoolExpr = 19,
-    T_SubLink = 20,
-    T_SubPlan = 21,
-    T_AlternativeSubPlan = 22,
-    T_FieldSelect = 23,
-    T_FieldStore = 24,
-    T_RelabelType = 25,
-    T_CoerceViaIO = 26,
-    T_ArrayCoerceExpr = 27,
-    T_ConvertRowtypeExpr = 28,
-    T_CollateExpr = 29,
-    T_CaseExpr = 30,
-    T_CaseWhen = 31,
-    T_CaseTestExpr = 32,
-    T_ArrayExpr = 33,
-    T_RowExpr = 34,
-    T_RowCompareExpr = 35,
-    T_CoalesceExpr = 36,
-    T_MinMaxExpr = 37,
-    T_SQLValueFunction = 38,
-    T_XmlExpr = 39,
-    T_JsonFormat = 40,
-    T_JsonReturning = 41,
-    T_JsonValueExpr = 42,
-    T_JsonConstructorExpr = 43,
-    T_JsonIsPredicate = 44,
-    T_NullTest = 45,
-    T_BooleanTest = 46,
-    T_CoerceToDomain = 47,
-    T_CoerceToDomainValue = 48,
-    T_SetToDefault = 49,
-    T_CurrentOfExpr = 50,
-    T_NextValueExpr = 51,
-    T_InferenceElem = 52,
-    T_TargetEntry = 53,
-    T_RangeTblRef = 54,
-    T_JoinExpr = 55,
-    T_FromExpr = 56,
-    T_OnConflictExpr = 57,
-    T_Query = 58,
-    T_TypeName = 59,
-    T_ColumnRef = 60,
-    T_ParamRef = 61,
-    T_A_Expr = 62,
-    T_A_Const = 63,
-    T_TypeCast = 64,
-    T_CollateClause = 65,
-    T_RoleSpec = 66,
-    T_FuncCall = 67,
-    T_A_Star = 68,
-    T_A_Indices = 69,
-    T_A_Indirection = 70,
-    T_A_ArrayExpr = 71,
-    T_ResTarget = 72,
-    T_MultiAssignRef = 73,
-    T_SortBy = 74,
-    T_WindowDef = 75,
-    T_RangeSubselect = 76,
-    T_RangeFunction = 77,
-    T_RangeTableFunc = 78,
-    T_RangeTableFuncCol = 79,
-    T_RangeTableSample = 80,
-    T_ColumnDef = 81,
-    T_TableLikeClause = 82,
-    T_IndexElem = 83,
-    T_DefElem = 84,
-    T_LockingClause = 85,
-    T_XmlSerialize = 86,
-    T_PartitionElem = 87,
-    T_PartitionSpec = 88,
-    T_PartitionBoundSpec = 89,
-    T_PartitionRangeDatum = 90,
-    T_PartitionCmd = 91,
-    T_RangeTblEntry = 92,
-    T_RTEPermissionInfo = 93,
-    T_RangeTblFunction = 94,
-    T_TableSampleClause = 95,
-    T_WithCheckOption = 96,
-    T_SortGroupClause = 97,
-    T_GroupingSet = 98,
-    T_WindowClause = 99,
-    T_RowMarkClause = 100,
-    T_WithClause = 101,
-    T_InferClause = 102,
-    T_OnConflictClause = 103,
-    T_CTESearchClause = 104,
-    T_CTECycleClause = 105,
-    T_CommonTableExpr = 106,
-    T_MergeWhenClause = 107,
-    T_MergeAction = 108,
-    T_TriggerTransition = 109,
-    T_JsonOutput = 110,
-    T_JsonKeyValue = 111,
-    T_JsonObjectConstructor = 112,
-    T_JsonArrayConstructor = 113,
-    T_JsonArrayQueryConstructor = 114,
-    T_JsonAggConstructor = 115,
-    T_JsonObjectAgg = 116,
-    T_JsonArrayAgg = 117,
-    T_RawStmt = 118,
-    T_InsertStmt = 119,
-    T_DeleteStmt = 120,
-    T_UpdateStmt = 121,
-    T_MergeStmt = 122,
-    T_SelectStmt = 123,
-    T_SetOperationStmt = 124,
-    T_ReturnStmt = 125,
-    T_PLAssignStmt = 126,
-    T_CreateSchemaStmt = 127,
-    T_AlterTableStmt = 128,
-    T_ReplicaIdentityStmt = 129,
-    T_AlterTableCmd = 130,
-    T_AlterCollationStmt = 131,
-    T_AlterDomainStmt = 132,
-    T_GrantStmt = 133,
-    T_ObjectWithArgs = 134,
-    T_AccessPriv = 135,
-    T_GrantRoleStmt = 136,
-    T_AlterDefaultPrivilegesStmt = 137,
-    T_CopyStmt = 138,
-    T_VariableSetStmt = 139,
-    T_VariableShowStmt = 140,
-    T_CreateStmt = 141,
-    T_Constraint = 142,
-    T_CreateTableSpaceStmt = 143,
-    T_DropTableSpaceStmt = 144,
-    T_AlterTableSpaceOptionsStmt = 145,
-    T_AlterTableMoveAllStmt = 146,
-    T_CreateExtensionStmt = 147,
-    T_AlterExtensionStmt = 148,
-    T_AlterExtensionContentsStmt = 149,
-    T_CreateFdwStmt = 150,
-    T_AlterFdwStmt = 151,
-    T_CreateForeignServerStmt = 152,
-    T_AlterForeignServerStmt = 153,
-    T_CreateForeignTableStmt = 154,
-    T_CreateUserMappingStmt = 155,
-    T_AlterUserMappingStmt = 156,
-    T_DropUserMappingStmt = 157,
-    T_ImportForeignSchemaStmt = 158,
-    T_CreatePolicyStmt = 159,
-    T_AlterPolicyStmt = 160,
-    T_CreateAmStmt = 161,
-    T_CreateTrigStmt = 162,
-    T_CreateEventTrigStmt = 163,
-    T_AlterEventTrigStmt = 164,
-    T_CreatePLangStmt = 165,
-    T_CreateRoleStmt = 166,
-    T_AlterRoleStmt = 167,
-    T_AlterRoleSetStmt = 168,
-    T_DropRoleStmt = 169,
-    T_CreateSeqStmt = 170,
-    T_AlterSeqStmt = 171,
-    T_DefineStmt = 172,
-    T_CreateDomainStmt = 173,
-    T_CreateOpClassStmt = 174,
-    T_CreateOpClassItem = 175,
-    T_CreateOpFamilyStmt = 176,
-    T_AlterOpFamilyStmt = 177,
-    T_DropStmt = 178,
-    T_TruncateStmt = 179,
-    T_CommentStmt = 180,
-    T_SecLabelStmt = 181,
-    T_DeclareCursorStmt = 182,
-    T_ClosePortalStmt = 183,
-    T_FetchStmt = 184,
-    T_IndexStmt = 185,
-    T_CreateStatsStmt = 186,
-    T_StatsElem = 187,
-    T_AlterStatsStmt = 188,
-    T_CreateFunctionStmt = 189,
-    T_FunctionParameter = 190,
-    T_AlterFunctionStmt = 191,
-    T_DoStmt = 192,
-    T_InlineCodeBlock = 193,
-    T_CallStmt = 194,
-    T_CallContext = 195,
-    T_RenameStmt = 196,
-    T_AlterObjectDependsStmt = 197,
-    T_AlterObjectSchemaStmt = 198,
-    T_AlterOwnerStmt = 199,
-    T_AlterOperatorStmt = 200,
-    T_AlterTypeStmt = 201,
-    T_RuleStmt = 202,
-    T_NotifyStmt = 203,
-    T_ListenStmt = 204,
-    T_UnlistenStmt = 205,
-    T_TransactionStmt = 206,
-    T_CompositeTypeStmt = 207,
-    T_CreateEnumStmt = 208,
-    T_CreateRangeStmt = 209,
-    T_AlterEnumStmt = 210,
-    T_ViewStmt = 211,
-    T_LoadStmt = 212,
-    T_CreatedbStmt = 213,
-    T_AlterDatabaseStmt = 214,
-    T_AlterDatabaseRefreshCollStmt = 215,
-    T_AlterDatabaseSetStmt = 216,
-    T_DropdbStmt = 217,
-    T_AlterSystemStmt = 218,
-    T_ClusterStmt = 219,
-    T_VacuumStmt = 220,
-    T_VacuumRelation = 221,
-    T_ExplainStmt = 222,
-    T_CreateTableAsStmt = 223,
-    T_RefreshMatViewStmt = 224,
-    T_CheckPointStmt = 225,
-    T_DiscardStmt = 226,
-    T_LockStmt = 227,
-    T_ConstraintsSetStmt = 228,
-    T_ReindexStmt = 229,
-    T_CreateConversionStmt = 230,
-    T_CreateCastStmt = 231,
-    T_CreateTransformStmt = 232,
-    T_PrepareStmt = 233,
-    T_ExecuteStmt = 234,
-    T_DeallocateStmt = 235,
-    T_DropOwnedStmt = 236,
-    T_ReassignOwnedStmt = 237,
-    T_AlterTSDictionaryStmt = 238,
-    T_AlterTSConfigurationStmt = 239,
-    T_PublicationTable = 240,
-    T_PublicationObjSpec = 241,
-    T_CreatePublicationStmt = 242,
-    T_AlterPublicationStmt = 243,
-    T_CreateSubscriptionStmt = 244,
-    T_AlterSubscriptionStmt = 245,
-    T_DropSubscriptionStmt = 246,
-    T_PlannerGlobal = 247,
-    T_PlannerInfo = 248,
-    T_RelOptInfo = 249,
-    T_IndexOptInfo = 250,
-    T_ForeignKeyOptInfo = 251,
-    T_StatisticExtInfo = 252,
-    T_JoinDomain = 253,
-    T_EquivalenceClass = 254,
-    T_EquivalenceMember = 255,
-    T_PathKey = 256,
-    T_PathTarget = 257,
-    T_ParamPathInfo = 258,
-    T_Path = 259,
-    T_IndexPath = 260,
-    T_IndexClause = 261,
-    T_BitmapHeapPath = 262,
-    T_BitmapAndPath = 263,
-    T_BitmapOrPath = 264,
-    T_TidPath = 265,
-    T_TidRangePath = 266,
-    T_SubqueryScanPath = 267,
-    T_ForeignPath = 268,
-    T_CustomPath = 269,
-    T_AppendPath = 270,
-    T_MergeAppendPath = 271,
-    T_GroupResultPath = 272,
-    T_MaterialPath = 273,
-    T_MemoizePath = 274,
-    T_UniquePath = 275,
-    T_GatherPath = 276,
-    T_GatherMergePath = 277,
-    T_NestPath = 278,
-    T_MergePath = 279,
-    T_HashPath = 280,
-    T_ProjectionPath = 281,
-    T_ProjectSetPath = 282,
-    T_SortPath = 283,
-    T_IncrementalSortPath = 284,
-    T_GroupPath = 285,
-    T_UpperUniquePath = 286,
-    T_AggPath = 287,
-    T_GroupingSetData = 288,
-    T_RollupData = 289,
-    T_GroupingSetsPath = 290,
-    T_MinMaxAggPath = 291,
-    T_WindowAggPath = 292,
-    T_SetOpPath = 293,
-    T_RecursiveUnionPath = 294,
-    T_LockRowsPath = 295,
-    T_ModifyTablePath = 296,
-    T_LimitPath = 297,
-    T_RestrictInfo = 298,
-    T_PlaceHolderVar = 299,
-    T_SpecialJoinInfo = 300,
-    T_OuterJoinClauseInfo = 301,
-    T_AppendRelInfo = 302,
-    T_RowIdentityVarInfo = 303,
-    T_PlaceHolderInfo = 304,
-    T_MinMaxAggInfo = 305,
-    T_PlannerParamItem = 306,
-    T_AggInfo = 307,
-    T_AggTransInfo = 308,
-    T_PlannedStmt = 309,
-    T_Result = 310,
-    T_ProjectSet = 311,
-    T_ModifyTable = 312,
-    T_Append = 313,
-    T_MergeAppend = 314,
-    T_RecursiveUnion = 315,
-    T_BitmapAnd = 316,
-    T_BitmapOr = 317,
-    T_SeqScan = 318,
-    T_SampleScan = 319,
-    T_IndexScan = 320,
-    T_IndexOnlyScan = 321,
-    T_BitmapIndexScan = 322,
-    T_BitmapHeapScan = 323,
-    T_TidScan = 324,
-    T_TidRangeScan = 325,
-    T_SubqueryScan = 326,
-    T_FunctionScan = 327,
-    T_ValuesScan = 328,
-    T_TableFuncScan = 329,
-    T_CteScan = 330,
-    T_NamedTuplestoreScan = 331,
-    T_WorkTableScan = 332,
-    T_ForeignScan = 333,
-    T_CustomScan = 334,
-    T_NestLoop = 335,
-    T_NestLoopParam = 336,
-    T_MergeJoin = 337,
-    T_HashJoin = 338,
-    T_Material = 339,
-    T_Memoize = 340,
-    T_Sort = 341,
-    T_IncrementalSort = 342,
-    T_Group = 343,
-    T_Agg = 344,
-    T_WindowAgg = 345,
-    T_Unique = 346,
-    T_Gather = 347,
-    T_GatherMerge = 348,
-    T_Hash = 349,
-    T_SetOp = 350,
-    T_LockRows = 351,
-    T_Limit = 352,
-    T_PlanRowMark = 353,
-    T_PartitionPruneInfo = 354,
-    T_PartitionedRelPruneInfo = 355,
-    T_PartitionPruneStepOp = 356,
-    T_PartitionPruneStepCombine = 357,
-    T_PlanInvalItem = 358,
-    T_ExprState = 359,
-    T_IndexInfo = 360,
-    T_ExprContext = 361,
-    T_ReturnSetInfo = 362,
-    T_ProjectionInfo = 363,
-    T_JunkFilter = 364,
-    T_OnConflictSetState = 365,
-    T_MergeActionState = 366,
-    T_ResultRelInfo = 367,
-    T_EState = 368,
-    T_WindowFuncExprState = 369,
-    T_SetExprState = 370,
-    T_SubPlanState = 371,
-    T_DomainConstraintState = 372,
-    T_ResultState = 373,
-    T_ProjectSetState = 374,
-    T_ModifyTableState = 375,
-    T_AppendState = 376,
-    T_MergeAppendState = 377,
-    T_RecursiveUnionState = 378,
-    T_BitmapAndState = 379,
-    T_BitmapOrState = 380,
-    T_ScanState = 381,
-    T_SeqScanState = 382,
-    T_SampleScanState = 383,
-    T_IndexScanState = 384,
-    T_IndexOnlyScanState = 385,
-    T_BitmapIndexScanState = 386,
-    T_BitmapHeapScanState = 387,
-    T_TidScanState = 388,
-    T_TidRangeScanState = 389,
-    T_SubqueryScanState = 390,
-    T_FunctionScanState = 391,
-    T_ValuesScanState = 392,
-    T_TableFuncScanState = 393,
-    T_CteScanState = 394,
-    T_NamedTuplestoreScanState = 395,
-    T_WorkTableScanState = 396,
-    T_ForeignScanState = 397,
-    T_CustomScanState = 398,
-    T_JoinState = 399,
-    T_NestLoopState = 400,
-    T_MergeJoinState = 401,
-    T_HashJoinState = 402,
-    T_MaterialState = 403,
-    T_MemoizeState = 404,
-    T_SortState = 405,
-    T_IncrementalSortState = 406,
-    T_GroupState = 407,
-    T_AggState = 408,
-    T_WindowAggState = 409,
-    T_UniqueState = 410,
-    T_GatherState = 411,
-    T_GatherMergeState = 412,
-    T_HashState = 413,
-    T_SetOpState = 414,
-    T_LockRowsState = 415,
-    T_LimitState = 416,
-    T_IndexAmRoutine = 417,
-    T_TableAmRoutine = 418,
-    T_TsmRoutine = 419,
-    T_EventTriggerData = 420,
-    T_TriggerData = 421,
-    T_TupleTableSlot = 422,
-    T_FdwRoutine = 423,
-    T_Bitmapset = 424,
-    T_ExtensibleNode = 425,
-    T_ErrorSaveContext = 426,
-    T_IdentifySystemCmd = 427,
-    T_BaseBackupCmd = 428,
-    T_CreateReplicationSlotCmd = 429,
-    T_DropReplicationSlotCmd = 430,
-    T_StartReplicationCmd = 431,
-    T_ReadReplicationSlotCmd = 432,
-    T_TimeLineHistoryCmd = 433,
-    T_SupportRequestSimplify = 434,
-    T_SupportRequestSelectivity = 435,
-    T_SupportRequestCost = 436,
-    T_SupportRequestRows = 437,
-    T_SupportRequestIndexCondition = 438,
-    T_SupportRequestWFuncMonotonic = 439,
-    T_SupportRequestOptimizeWindowClause = 440,
-    T_Integer = 441,
-    T_Float = 442,
-    T_Boolean = 443,
-    T_String = 444,
-    T_BitString = 445,
-    T_ForeignKeyCacheInfo = 446,
-    T_IntList = 447,
-    T_OidList = 448,
-    T_XidList = 449,
-    T_AllocSetContext = 450,
-    T_GenerationContext = 451,
-    T_SlabContext = 452,
-    T_TIDBitmap = 453,
-    T_WindowObjectData = 454,
+    T_WindowFuncRunCondition = 12,
+    T_MergeSupportFunc = 13,
+    T_SubscriptingRef = 14,
+    T_FuncExpr = 15,
+    T_NamedArgExpr = 16,
+    T_OpExpr = 17,
+    T_DistinctExpr = 18,
+    T_NullIfExpr = 19,
+    T_ScalarArrayOpExpr = 20,
+    T_BoolExpr = 21,
+    T_SubLink = 22,
+    T_SubPlan = 23,
+    T_AlternativeSubPlan = 24,
+    T_FieldSelect = 25,
+    T_FieldStore = 26,
+    T_RelabelType = 27,
+    T_CoerceViaIO = 28,
+    T_ArrayCoerceExpr = 29,
+    T_ConvertRowtypeExpr = 30,
+    T_CollateExpr = 31,
+    T_CaseExpr = 32,
+    T_CaseWhen = 33,
+    T_CaseTestExpr = 34,
+    T_ArrayExpr = 35,
+    T_RowExpr = 36,
+    T_RowCompareExpr = 37,
+    T_CoalesceExpr = 38,
+    T_MinMaxExpr = 39,
+    T_SQLValueFunction = 40,
+    T_XmlExpr = 41,
+    T_JsonFormat = 42,
+    T_JsonReturning = 43,
+    T_JsonValueExpr = 44,
+    T_JsonConstructorExpr = 45,
+    T_JsonIsPredicate = 46,
+    T_JsonBehavior = 47,
+    T_JsonExpr = 48,
+    T_JsonTablePath = 49,
+    T_JsonTablePathScan = 50,
+    T_JsonTableSiblingJoin = 51,
+    T_NullTest = 52,
+    T_BooleanTest = 53,
+    T_MergeAction = 54,
+    T_CoerceToDomain = 55,
+    T_CoerceToDomainValue = 56,
+    T_SetToDefault = 57,
+    T_CurrentOfExpr = 58,
+    T_NextValueExpr = 59,
+    T_InferenceElem = 60,
+    T_TargetEntry = 61,
+    T_RangeTblRef = 62,
+    T_JoinExpr = 63,
+    T_FromExpr = 64,
+    T_OnConflictExpr = 65,
+    T_Query = 66,
+    T_TypeName = 67,
+    T_ColumnRef = 68,
+    T_ParamRef = 69,
+    T_A_Expr = 70,
+    T_A_Const = 71,
+    T_TypeCast = 72,
+    T_CollateClause = 73,
+    T_RoleSpec = 74,
+    T_FuncCall = 75,
+    T_A_Star = 76,
+    T_A_Indices = 77,
+    T_A_Indirection = 78,
+    T_A_ArrayExpr = 79,
+    T_ResTarget = 80,
+    T_MultiAssignRef = 81,
+    T_SortBy = 82,
+    T_WindowDef = 83,
+    T_RangeSubselect = 84,
+    T_RangeFunction = 85,
+    T_RangeTableFunc = 86,
+    T_RangeTableFuncCol = 87,
+    T_RangeTableSample = 88,
+    T_ColumnDef = 89,
+    T_TableLikeClause = 90,
+    T_IndexElem = 91,
+    T_DefElem = 92,
+    T_LockingClause = 93,
+    T_XmlSerialize = 94,
+    T_PartitionElem = 95,
+    T_PartitionSpec = 96,
+    T_PartitionBoundSpec = 97,
+    T_PartitionRangeDatum = 98,
+    T_SinglePartitionSpec = 99,
+    T_PartitionCmd = 100,
+    T_RangeTblEntry = 101,
+    T_RTEPermissionInfo = 102,
+    T_RangeTblFunction = 103,
+    T_TableSampleClause = 104,
+    T_WithCheckOption = 105,
+    T_SortGroupClause = 106,
+    T_GroupingSet = 107,
+    T_WindowClause = 108,
+    T_RowMarkClause = 109,
+    T_WithClause = 110,
+    T_InferClause = 111,
+    T_OnConflictClause = 112,
+    T_CTESearchClause = 113,
+    T_CTECycleClause = 114,
+    T_CommonTableExpr = 115,
+    T_MergeWhenClause = 116,
+    T_TriggerTransition = 117,
+    T_JsonOutput = 118,
+    T_JsonArgument = 119,
+    T_JsonFuncExpr = 120,
+    T_JsonTablePathSpec = 121,
+    T_JsonTable = 122,
+    T_JsonTableColumn = 123,
+    T_JsonKeyValue = 124,
+    T_JsonParseExpr = 125,
+    T_JsonScalarExpr = 126,
+    T_JsonSerializeExpr = 127,
+    T_JsonObjectConstructor = 128,
+    T_JsonArrayConstructor = 129,
+    T_JsonArrayQueryConstructor = 130,
+    T_JsonAggConstructor = 131,
+    T_JsonObjectAgg = 132,
+    T_JsonArrayAgg = 133,
+    T_RawStmt = 134,
+    T_InsertStmt = 135,
+    T_DeleteStmt = 136,
+    T_UpdateStmt = 137,
+    T_MergeStmt = 138,
+    T_SelectStmt = 139,
+    T_SetOperationStmt = 140,
+    T_ReturnStmt = 141,
+    T_PLAssignStmt = 142,
+    T_CreateSchemaStmt = 143,
+    T_AlterTableStmt = 144,
+    T_ReplicaIdentityStmt = 145,
+    T_AlterTableCmd = 146,
+    T_AlterCollationStmt = 147,
+    T_AlterDomainStmt = 148,
+    T_GrantStmt = 149,
+    T_ObjectWithArgs = 150,
+    T_AccessPriv = 151,
+    T_GrantRoleStmt = 152,
+    T_AlterDefaultPrivilegesStmt = 153,
+    T_CopyStmt = 154,
+    T_VariableSetStmt = 155,
+    T_VariableShowStmt = 156,
+    T_CreateStmt = 157,
+    T_Constraint = 158,
+    T_CreateTableSpaceStmt = 159,
+    T_DropTableSpaceStmt = 160,
+    T_AlterTableSpaceOptionsStmt = 161,
+    T_AlterTableMoveAllStmt = 162,
+    T_CreateExtensionStmt = 163,
+    T_AlterExtensionStmt = 164,
+    T_AlterExtensionContentsStmt = 165,
+    T_CreateFdwStmt = 166,
+    T_AlterFdwStmt = 167,
+    T_CreateForeignServerStmt = 168,
+    T_AlterForeignServerStmt = 169,
+    T_CreateForeignTableStmt = 170,
+    T_CreateUserMappingStmt = 171,
+    T_AlterUserMappingStmt = 172,
+    T_DropUserMappingStmt = 173,
+    T_ImportForeignSchemaStmt = 174,
+    T_CreatePolicyStmt = 175,
+    T_AlterPolicyStmt = 176,
+    T_CreateAmStmt = 177,
+    T_CreateTrigStmt = 178,
+    T_CreateEventTrigStmt = 179,
+    T_AlterEventTrigStmt = 180,
+    T_CreatePLangStmt = 181,
+    T_CreateRoleStmt = 182,
+    T_AlterRoleStmt = 183,
+    T_AlterRoleSetStmt = 184,
+    T_DropRoleStmt = 185,
+    T_CreateSeqStmt = 186,
+    T_AlterSeqStmt = 187,
+    T_DefineStmt = 188,
+    T_CreateDomainStmt = 189,
+    T_CreateOpClassStmt = 190,
+    T_CreateOpClassItem = 191,
+    T_CreateOpFamilyStmt = 192,
+    T_AlterOpFamilyStmt = 193,
+    T_DropStmt = 194,
+    T_TruncateStmt = 195,
+    T_CommentStmt = 196,
+    T_SecLabelStmt = 197,
+    T_DeclareCursorStmt = 198,
+    T_ClosePortalStmt = 199,
+    T_FetchStmt = 200,
+    T_IndexStmt = 201,
+    T_CreateStatsStmt = 202,
+    T_StatsElem = 203,
+    T_AlterStatsStmt = 204,
+    T_CreateFunctionStmt = 205,
+    T_FunctionParameter = 206,
+    T_AlterFunctionStmt = 207,
+    T_DoStmt = 208,
+    T_InlineCodeBlock = 209,
+    T_CallStmt = 210,
+    T_CallContext = 211,
+    T_RenameStmt = 212,
+    T_AlterObjectDependsStmt = 213,
+    T_AlterObjectSchemaStmt = 214,
+    T_AlterOwnerStmt = 215,
+    T_AlterOperatorStmt = 216,
+    T_AlterTypeStmt = 217,
+    T_RuleStmt = 218,
+    T_NotifyStmt = 219,
+    T_ListenStmt = 220,
+    T_UnlistenStmt = 221,
+    T_TransactionStmt = 222,
+    T_CompositeTypeStmt = 223,
+    T_CreateEnumStmt = 224,
+    T_CreateRangeStmt = 225,
+    T_AlterEnumStmt = 226,
+    T_ViewStmt = 227,
+    T_LoadStmt = 228,
+    T_CreatedbStmt = 229,
+    T_AlterDatabaseStmt = 230,
+    T_AlterDatabaseRefreshCollStmt = 231,
+    T_AlterDatabaseSetStmt = 232,
+    T_DropdbStmt = 233,
+    T_AlterSystemStmt = 234,
+    T_ClusterStmt = 235,
+    T_VacuumStmt = 236,
+    T_VacuumRelation = 237,
+    T_ExplainStmt = 238,
+    T_CreateTableAsStmt = 239,
+    T_RefreshMatViewStmt = 240,
+    T_CheckPointStmt = 241,
+    T_DiscardStmt = 242,
+    T_LockStmt = 243,
+    T_ConstraintsSetStmt = 244,
+    T_ReindexStmt = 245,
+    T_CreateConversionStmt = 246,
+    T_CreateCastStmt = 247,
+    T_CreateTransformStmt = 248,
+    T_PrepareStmt = 249,
+    T_ExecuteStmt = 250,
+    T_DeallocateStmt = 251,
+    T_DropOwnedStmt = 252,
+    T_ReassignOwnedStmt = 253,
+    T_AlterTSDictionaryStmt = 254,
+    T_AlterTSConfigurationStmt = 255,
+    T_PublicationTable = 256,
+    T_PublicationObjSpec = 257,
+    T_CreatePublicationStmt = 258,
+    T_AlterPublicationStmt = 259,
+    T_CreateSubscriptionStmt = 260,
+    T_AlterSubscriptionStmt = 261,
+    T_DropSubscriptionStmt = 262,
+    T_PlannerGlobal = 263,
+    T_PlannerInfo = 264,
+    T_RelOptInfo = 265,
+    T_IndexOptInfo = 266,
+    T_ForeignKeyOptInfo = 267,
+    T_StatisticExtInfo = 268,
+    T_JoinDomain = 269,
+    T_EquivalenceClass = 270,
+    T_EquivalenceMember = 271,
+    T_PathKey = 272,
+    T_GroupByOrdering = 273,
+    T_PathTarget = 274,
+    T_ParamPathInfo = 275,
+    T_Path = 276,
+    T_IndexPath = 277,
+    T_IndexClause = 278,
+    T_BitmapHeapPath = 279,
+    T_BitmapAndPath = 280,
+    T_BitmapOrPath = 281,
+    T_TidPath = 282,
+    T_TidRangePath = 283,
+    T_SubqueryScanPath = 284,
+    T_ForeignPath = 285,
+    T_CustomPath = 286,
+    T_AppendPath = 287,
+    T_MergeAppendPath = 288,
+    T_GroupResultPath = 289,
+    T_MaterialPath = 290,
+    T_MemoizePath = 291,
+    T_UniquePath = 292,
+    T_GatherPath = 293,
+    T_GatherMergePath = 294,
+    T_NestPath = 295,
+    T_MergePath = 296,
+    T_HashPath = 297,
+    T_ProjectionPath = 298,
+    T_ProjectSetPath = 299,
+    T_SortPath = 300,
+    T_IncrementalSortPath = 301,
+    T_GroupPath = 302,
+    T_UpperUniquePath = 303,
+    T_AggPath = 304,
+    T_GroupingSetData = 305,
+    T_RollupData = 306,
+    T_GroupingSetsPath = 307,
+    T_MinMaxAggPath = 308,
+    T_WindowAggPath = 309,
+    T_SetOpPath = 310,
+    T_RecursiveUnionPath = 311,
+    T_LockRowsPath = 312,
+    T_ModifyTablePath = 313,
+    T_LimitPath = 314,
+    T_RestrictInfo = 315,
+    T_PlaceHolderVar = 316,
+    T_SpecialJoinInfo = 317,
+    T_OuterJoinClauseInfo = 318,
+    T_AppendRelInfo = 319,
+    T_RowIdentityVarInfo = 320,
+    T_PlaceHolderInfo = 321,
+    T_MinMaxAggInfo = 322,
+    T_PlannerParamItem = 323,
+    T_AggInfo = 324,
+    T_AggTransInfo = 325,
+    T_PlannedStmt = 326,
+    T_Result = 327,
+    T_ProjectSet = 328,
+    T_ModifyTable = 329,
+    T_Append = 330,
+    T_MergeAppend = 331,
+    T_RecursiveUnion = 332,
+    T_BitmapAnd = 333,
+    T_BitmapOr = 334,
+    T_SeqScan = 335,
+    T_SampleScan = 336,
+    T_IndexScan = 337,
+    T_IndexOnlyScan = 338,
+    T_BitmapIndexScan = 339,
+    T_BitmapHeapScan = 340,
+    T_TidScan = 341,
+    T_TidRangeScan = 342,
+    T_SubqueryScan = 343,
+    T_FunctionScan = 344,
+    T_ValuesScan = 345,
+    T_TableFuncScan = 346,
+    T_CteScan = 347,
+    T_NamedTuplestoreScan = 348,
+    T_WorkTableScan = 349,
+    T_ForeignScan = 350,
+    T_CustomScan = 351,
+    T_NestLoop = 352,
+    T_NestLoopParam = 353,
+    T_MergeJoin = 354,
+    T_HashJoin = 355,
+    T_Material = 356,
+    T_Memoize = 357,
+    T_Sort = 358,
+    T_IncrementalSort = 359,
+    T_Group = 360,
+    T_Agg = 361,
+    T_WindowAgg = 362,
+    T_Unique = 363,
+    T_Gather = 364,
+    T_GatherMerge = 365,
+    T_Hash = 366,
+    T_SetOp = 367,
+    T_LockRows = 368,
+    T_Limit = 369,
+    T_PlanRowMark = 370,
+    T_PartitionPruneInfo = 371,
+    T_PartitionedRelPruneInfo = 372,
+    T_PartitionPruneStepOp = 373,
+    T_PartitionPruneStepCombine = 374,
+    T_PlanInvalItem = 375,
+    T_ExprState = 376,
+    T_IndexInfo = 377,
+    T_ExprContext = 378,
+    T_ReturnSetInfo = 379,
+    T_ProjectionInfo = 380,
+    T_JunkFilter = 381,
+    T_OnConflictSetState = 382,
+    T_MergeActionState = 383,
+    T_ResultRelInfo = 384,
+    T_EState = 385,
+    T_WindowFuncExprState = 386,
+    T_SetExprState = 387,
+    T_SubPlanState = 388,
+    T_DomainConstraintState = 389,
+    T_ResultState = 390,
+    T_ProjectSetState = 391,
+    T_ModifyTableState = 392,
+    T_AppendState = 393,
+    T_MergeAppendState = 394,
+    T_RecursiveUnionState = 395,
+    T_BitmapAndState = 396,
+    T_BitmapOrState = 397,
+    T_ScanState = 398,
+    T_SeqScanState = 399,
+    T_SampleScanState = 400,
+    T_IndexScanState = 401,
+    T_IndexOnlyScanState = 402,
+    T_BitmapIndexScanState = 403,
+    T_BitmapHeapScanState = 404,
+    T_TidScanState = 405,
+    T_TidRangeScanState = 406,
+    T_SubqueryScanState = 407,
+    T_FunctionScanState = 408,
+    T_ValuesScanState = 409,
+    T_TableFuncScanState = 410,
+    T_CteScanState = 411,
+    T_NamedTuplestoreScanState = 412,
+    T_WorkTableScanState = 413,
+    T_ForeignScanState = 414,
+    T_CustomScanState = 415,
+    T_JoinState = 416,
+    T_NestLoopState = 417,
+    T_MergeJoinState = 418,
+    T_HashJoinState = 419,
+    T_MaterialState = 420,
+    T_MemoizeState = 421,
+    T_SortState = 422,
+    T_IncrementalSortState = 423,
+    T_GroupState = 424,
+    T_AggState = 425,
+    T_WindowAggState = 426,
+    T_UniqueState = 427,
+    T_GatherState = 428,
+    T_GatherMergeState = 429,
+    T_HashState = 430,
+    T_SetOpState = 431,
+    T_LockRowsState = 432,
+    T_LimitState = 433,
+    T_IndexAmRoutine = 434,
+    T_TableAmRoutine = 435,
+    T_TsmRoutine = 436,
+    T_EventTriggerData = 437,
+    T_TriggerData = 438,
+    T_TupleTableSlot = 439,
+    T_FdwRoutine = 440,
+    T_Bitmapset = 441,
+    T_ExtensibleNode = 442,
+    T_ErrorSaveContext = 443,
+    T_IdentifySystemCmd = 444,
+    T_BaseBackupCmd = 445,
+    T_CreateReplicationSlotCmd = 446,
+    T_DropReplicationSlotCmd = 447,
+    T_AlterReplicationSlotCmd = 448,
+    T_StartReplicationCmd = 449,
+    T_ReadReplicationSlotCmd = 450,
+    T_TimeLineHistoryCmd = 451,
+    T_UploadManifestCmd = 452,
+    T_SupportRequestSimplify = 453,
+    T_SupportRequestSelectivity = 454,
+    T_SupportRequestCost = 455,
+    T_SupportRequestRows = 456,
+    T_SupportRequestIndexCondition = 457,
+    T_SupportRequestWFuncMonotonic = 458,
+    T_SupportRequestOptimizeWindowClause = 459,
+    T_Integer = 460,
+    T_Float = 461,
+    T_Boolean = 462,
+    T_String = 463,
+    T_BitString = 464,
+    T_ForeignKeyCacheInfo = 465,
+    T_IntList = 466,
+    T_OidList = 467,
+    T_XidList = 468,
+    T_AllocSetContext = 469,
+    T_GenerationContext = 470,
+    T_SlabContext = 471,
+    T_BumpContext = 472,
+    T_TIDBitmap = 473,
+    T_WindowObjectData = 474,
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -8349,6 +8594,7 @@ impl Default for Node {
         }
     }
 }
+pub type ParseLoc = ::core::ffi::c_int;
 pub type Selectivity = f64;
 pub type Cost = f64;
 pub type Cardinality = f64;
@@ -8410,7 +8656,6 @@ pub mod LimitOption {
     pub type Type = ::core::ffi::c_uint;
     pub const LIMIT_OPTION_COUNT: Type = 0;
     pub const LIMIT_OPTION_WITH_TIES: Type = 1;
-    pub const LIMIT_OPTION_DEFAULT: Type = 2;
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -8780,7 +9025,7 @@ pub struct FullTransactionId {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct VariableCacheData {
+pub struct TransamVariablesData {
     pub nextOid: Oid,
     pub oidCount: uint32,
     pub nextXid: FullTransactionId,
@@ -8796,7 +9041,7 @@ pub struct VariableCacheData {
     pub xactCompletionCount: uint64,
     pub oldestClogXid: TransactionId,
 }
-impl Default for VariableCacheData {
+impl Default for TransamVariablesData {
     fn default() -> Self {
         let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -8805,7 +9050,6 @@ impl Default for VariableCacheData {
         }
     }
 }
-pub type VariableCache = *mut VariableCacheData;
 pub type Item = Pointer;
 pub type Page = Pointer;
 pub type LocationIndex = uint16;
@@ -9058,6 +9302,8 @@ pub struct TupleTableSlotOps {
             isnull: *mut bool,
         ) -> Datum,
     >,
+    pub is_current_xact_tuple:
+        ::core::option::Option<unsafe extern "C" fn(slot: *mut TupleTableSlot) -> bool>,
     pub materialize: ::core::option::Option<unsafe extern "C" fn(slot: *mut TupleTableSlot)>,
     pub copyslot: ::core::option::Option<
         unsafe extern "C" fn(dstslot: *mut TupleTableSlot, srcslot: *mut TupleTableSlot),
@@ -9235,8 +9481,10 @@ pub struct BufferUsage {
     pub local_blks_written: int64,
     pub temp_blks_read: int64,
     pub temp_blks_written: int64,
-    pub blk_read_time: instr_time,
-    pub blk_write_time: instr_time,
+    pub shared_blk_read_time: instr_time,
+    pub shared_blk_write_time: instr_time,
+    pub local_blk_read_time: instr_time,
+    pub local_blk_write_time: instr_time,
     pub temp_blk_read_time: instr_time,
     pub temp_blk_write_time: instr_time,
 }
@@ -9537,6 +9785,23 @@ impl Default for pairingheap {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct ErrorSaveContext {
+    pub type_: NodeTag,
+    pub error_occurred: bool,
+    pub details_wanted: bool,
+    pub error_data: *mut ErrorData,
+}
+impl Default for ErrorSaveContext {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct ParamExternData {
     pub value: Datum,
     pub isnull: bool,
@@ -9663,6 +9928,12 @@ pub mod LockTupleMode {
     pub const LockTupleNoKeyExclusive: Type = 2;
     pub const LockTupleExclusive: Type = 3;
 }
+pub mod OverridingKind {
+    pub type Type = ::core::ffi::c_uint;
+    pub const OVERRIDING_NOT_SET: Type = 0;
+    pub const OVERRIDING_USER_VALUE: Type = 1;
+    pub const OVERRIDING_SYSTEM_VALUE: Type = 2;
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct Alias {
@@ -9696,7 +9967,7 @@ pub struct RangeVar {
     pub inh: bool,
     pub relpersistence: ::core::ffi::c_char,
     pub alias: *mut Alias,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for RangeVar {
     fn default() -> Self {
@@ -9707,10 +9978,16 @@ impl Default for RangeVar {
         }
     }
 }
+pub mod TableFuncType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const TFT_XMLTABLE: Type = 0;
+    pub const TFT_JSON_TABLE: Type = 1;
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct TableFunc {
     pub type_: NodeTag,
+    pub functype: TableFuncType::Type,
     pub ns_uris: *mut List,
     pub ns_names: *mut List,
     pub docexpr: *mut Node,
@@ -9721,9 +9998,12 @@ pub struct TableFunc {
     pub colcollations: *mut List,
     pub colexprs: *mut List,
     pub coldefexprs: *mut List,
+    pub colvalexprs: *mut List,
+    pub passingvalexprs: *mut List,
     pub notnulls: *mut Bitmapset,
+    pub plan: *mut Node,
     pub ordinalitycol: ::core::ffi::c_int,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for TableFunc {
     fn default() -> Self {
@@ -9783,7 +10063,7 @@ pub struct Var {
     pub varlevelsup: Index,
     pub varnosyn: Index,
     pub varattnosyn: AttrNumber,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for Var {
     fn default() -> Self {
@@ -9805,7 +10085,7 @@ pub struct Const {
     pub constvalue: Datum,
     pub constisnull: bool,
     pub constbyval: bool,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for Const {
     fn default() -> Self {
@@ -9832,7 +10112,7 @@ pub struct Param {
     pub paramtype: Oid,
     pub paramtypmod: int32,
     pub paramcollid: Oid,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for Param {
     fn default() -> Self {
@@ -9866,7 +10146,7 @@ pub struct Aggref {
     pub aggsplit: AggSplit::Type,
     pub aggno: ::core::ffi::c_int,
     pub aggtransno: ::core::ffi::c_int,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for Aggref {
     fn default() -> Self {
@@ -9885,7 +10165,7 @@ pub struct GroupingFunc {
     pub refs: *mut List,
     pub cols: *mut List,
     pub agglevelsup: Index,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for GroupingFunc {
     fn default() -> Self {
@@ -9906,12 +10186,48 @@ pub struct WindowFunc {
     pub inputcollid: Oid,
     pub args: *mut List,
     pub aggfilter: *mut Expr,
+    pub runCondition: *mut List,
     pub winref: Index,
     pub winstar: bool,
     pub winagg: bool,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for WindowFunc {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WindowFuncRunCondition {
+    pub xpr: Expr,
+    pub opno: Oid,
+    pub inputcollid: Oid,
+    pub wfunc_left: bool,
+    pub arg: *mut Expr,
+}
+impl Default for WindowFuncRunCondition {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct MergeSupportFunc {
+    pub xpr: Expr,
+    pub msftype: Oid,
+    pub msfcollid: Oid,
+    pub location: ParseLoc,
+}
+impl Default for MergeSupportFunc {
     fn default() -> Self {
         let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -9969,7 +10285,7 @@ pub struct FuncExpr {
     pub funccollid: Oid,
     pub inputcollid: Oid,
     pub args: *mut List,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for FuncExpr {
     fn default() -> Self {
@@ -9987,7 +10303,7 @@ pub struct NamedArgExpr {
     pub arg: *mut Expr,
     pub name: *mut ::core::ffi::c_char,
     pub argnumber: ::core::ffi::c_int,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for NamedArgExpr {
     fn default() -> Self {
@@ -10009,7 +10325,7 @@ pub struct OpExpr {
     pub opcollid: Oid,
     pub inputcollid: Oid,
     pub args: *mut List,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for OpExpr {
     fn default() -> Self {
@@ -10033,7 +10349,7 @@ pub struct ScalarArrayOpExpr {
     pub useOr: bool,
     pub inputcollid: Oid,
     pub args: *mut List,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for ScalarArrayOpExpr {
     fn default() -> Self {
@@ -10056,7 +10372,7 @@ pub struct BoolExpr {
     pub xpr: Expr,
     pub boolop: BoolExprType::Type,
     pub args: *mut List,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for BoolExpr {
     fn default() -> Self {
@@ -10087,7 +10403,7 @@ pub struct SubLink {
     pub testexpr: *mut Node,
     pub operName: *mut List,
     pub subselect: *mut Node,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for SubLink {
     fn default() -> Self {
@@ -10189,7 +10505,7 @@ pub struct RelabelType {
     pub resulttypmod: int32,
     pub resultcollid: Oid,
     pub relabelformat: CoercionForm::Type,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for RelabelType {
     fn default() -> Self {
@@ -10208,7 +10524,7 @@ pub struct CoerceViaIO {
     pub resulttype: Oid,
     pub resultcollid: Oid,
     pub coerceformat: CoercionForm::Type,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for CoerceViaIO {
     fn default() -> Self {
@@ -10229,7 +10545,7 @@ pub struct ArrayCoerceExpr {
     pub resulttypmod: int32,
     pub resultcollid: Oid,
     pub coerceformat: CoercionForm::Type,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for ArrayCoerceExpr {
     fn default() -> Self {
@@ -10247,7 +10563,7 @@ pub struct ConvertRowtypeExpr {
     pub arg: *mut Expr,
     pub resulttype: Oid,
     pub convertformat: CoercionForm::Type,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for ConvertRowtypeExpr {
     fn default() -> Self {
@@ -10264,7 +10580,7 @@ pub struct CollateExpr {
     pub xpr: Expr,
     pub arg: *mut Expr,
     pub collOid: Oid,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for CollateExpr {
     fn default() -> Self {
@@ -10284,7 +10600,7 @@ pub struct CaseExpr {
     pub arg: *mut Expr,
     pub args: *mut List,
     pub defresult: *mut Expr,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for CaseExpr {
     fn default() -> Self {
@@ -10301,7 +10617,7 @@ pub struct CaseWhen {
     pub xpr: Expr,
     pub expr: *mut Expr,
     pub result: *mut Expr,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for CaseWhen {
     fn default() -> Self {
@@ -10338,7 +10654,7 @@ pub struct ArrayExpr {
     pub element_typeid: Oid,
     pub elements: *mut List,
     pub multidims: bool,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for ArrayExpr {
     fn default() -> Self {
@@ -10357,7 +10673,7 @@ pub struct RowExpr {
     pub row_typeid: Oid,
     pub row_format: CoercionForm::Type,
     pub colnames: *mut List,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for RowExpr {
     fn default() -> Self {
@@ -10404,7 +10720,7 @@ pub struct CoalesceExpr {
     pub coalescetype: Oid,
     pub coalescecollid: Oid,
     pub args: *mut List,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for CoalesceExpr {
     fn default() -> Self {
@@ -10429,7 +10745,7 @@ pub struct MinMaxExpr {
     pub inputcollid: Oid,
     pub op: MinMaxOp::Type,
     pub args: *mut List,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for MinMaxExpr {
     fn default() -> Self {
@@ -10465,7 +10781,7 @@ pub struct SQLValueFunction {
     pub op: SQLValueFunctionOp::Type,
     pub type_: Oid,
     pub typmod: int32,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for SQLValueFunction {
     fn default() -> Self {
@@ -10505,7 +10821,7 @@ pub struct XmlExpr {
     pub indent: bool,
     pub type_: Oid,
     pub typmod: int32,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for XmlExpr {
     fn default() -> Self {
@@ -10535,7 +10851,7 @@ pub struct JsonFormat {
     pub type_: NodeTag,
     pub format_type: JsonFormatType::Type,
     pub encoding: JsonEncoding::Type,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for JsonFormat {
     fn default() -> Self {
@@ -10586,6 +10902,9 @@ pub mod JsonConstructorType {
     pub const JSCTOR_JSON_ARRAY: Type = 2;
     pub const JSCTOR_JSON_OBJECTAGG: Type = 3;
     pub const JSCTOR_JSON_ARRAYAGG: Type = 4;
+    pub const JSCTOR_JSON_PARSE: Type = 5;
+    pub const JSCTOR_JSON_SCALAR: Type = 6;
+    pub const JSCTOR_JSON_SERIALIZE: Type = 7;
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -10598,7 +10917,7 @@ pub struct JsonConstructorExpr {
     pub returning: *mut JsonReturning,
     pub absent_on_null: bool,
     pub unique: bool,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for JsonConstructorExpr {
     fn default() -> Self {
@@ -10624,9 +10943,148 @@ pub struct JsonIsPredicate {
     pub format: *mut JsonFormat,
     pub item_type: JsonValueType::Type,
     pub unique_keys: bool,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for JsonIsPredicate {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod JsonWrapper {
+    pub type Type = ::core::ffi::c_uint;
+    pub const JSW_UNSPEC: Type = 0;
+    pub const JSW_NONE: Type = 1;
+    pub const JSW_CONDITIONAL: Type = 2;
+    pub const JSW_UNCONDITIONAL: Type = 3;
+}
+pub mod JsonBehaviorType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const JSON_BEHAVIOR_NULL: Type = 0;
+    pub const JSON_BEHAVIOR_ERROR: Type = 1;
+    pub const JSON_BEHAVIOR_EMPTY: Type = 2;
+    pub const JSON_BEHAVIOR_TRUE: Type = 3;
+    pub const JSON_BEHAVIOR_FALSE: Type = 4;
+    pub const JSON_BEHAVIOR_UNKNOWN: Type = 5;
+    pub const JSON_BEHAVIOR_EMPTY_ARRAY: Type = 6;
+    pub const JSON_BEHAVIOR_EMPTY_OBJECT: Type = 7;
+    pub const JSON_BEHAVIOR_DEFAULT: Type = 8;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonBehavior {
+    pub type_: NodeTag,
+    pub btype: JsonBehaviorType::Type,
+    pub expr: *mut Node,
+    pub coerce: bool,
+    pub location: ParseLoc,
+}
+impl Default for JsonBehavior {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod JsonExprOp {
+    pub type Type = ::core::ffi::c_uint;
+    pub const JSON_EXISTS_OP: Type = 0;
+    pub const JSON_QUERY_OP: Type = 1;
+    pub const JSON_VALUE_OP: Type = 2;
+    pub const JSON_TABLE_OP: Type = 3;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonExpr {
+    pub xpr: Expr,
+    pub op: JsonExprOp::Type,
+    pub column_name: *mut ::core::ffi::c_char,
+    pub formatted_expr: *mut Node,
+    pub format: *mut JsonFormat,
+    pub path_spec: *mut Node,
+    pub returning: *mut JsonReturning,
+    pub passing_names: *mut List,
+    pub passing_values: *mut List,
+    pub on_empty: *mut JsonBehavior,
+    pub on_error: *mut JsonBehavior,
+    pub use_io_coercion: bool,
+    pub use_json_coercion: bool,
+    pub wrapper: JsonWrapper::Type,
+    pub omit_quotes: bool,
+    pub collation: Oid,
+    pub location: ParseLoc,
+}
+impl Default for JsonExpr {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonTablePath {
+    pub type_: NodeTag,
+    pub value: *mut Const,
+    pub name: *mut ::core::ffi::c_char,
+}
+impl Default for JsonTablePath {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonTablePlan {
+    pub type_: NodeTag,
+}
+impl Default for JsonTablePlan {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonTablePathScan {
+    pub plan: JsonTablePlan,
+    pub path: *mut JsonTablePath,
+    pub errorOnError: bool,
+    pub child: *mut JsonTablePlan,
+    pub colMin: ::core::ffi::c_int,
+    pub colMax: ::core::ffi::c_int,
+}
+impl Default for JsonTablePathScan {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonTableSiblingJoin {
+    pub plan: JsonTablePlan,
+    pub lplan: *mut JsonTablePlan,
+    pub rplan: *mut JsonTablePlan,
+}
+impl Default for JsonTableSiblingJoin {
     fn default() -> Self {
         let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -10647,7 +11105,7 @@ pub struct NullTest {
     pub arg: *mut Expr,
     pub nulltesttype: NullTestType::Type,
     pub argisrow: bool,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for NullTest {
     fn default() -> Self {
@@ -10673,9 +11131,35 @@ pub struct BooleanTest {
     pub xpr: Expr,
     pub arg: *mut Expr,
     pub booltesttype: BoolTestType::Type,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for BooleanTest {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod MergeMatchKind {
+    pub type Type = ::core::ffi::c_uint;
+    pub const MERGE_WHEN_MATCHED: Type = 0;
+    pub const MERGE_WHEN_NOT_MATCHED_BY_SOURCE: Type = 1;
+    pub const MERGE_WHEN_NOT_MATCHED_BY_TARGET: Type = 2;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct MergeAction {
+    pub type_: NodeTag,
+    pub matchKind: MergeMatchKind::Type,
+    pub commandType: CmdType::Type,
+    pub override_: OverridingKind::Type,
+    pub qual: *mut Node,
+    pub targetList: *mut List,
+    pub updateColnos: *mut List,
+}
+impl Default for MergeAction {
     fn default() -> Self {
         let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -10693,7 +11177,7 @@ pub struct CoerceToDomain {
     pub resulttypmod: int32,
     pub resultcollid: Oid,
     pub coercionformat: CoercionForm::Type,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for CoerceToDomain {
     fn default() -> Self {
@@ -10711,7 +11195,7 @@ pub struct CoerceToDomainValue {
     pub typeId: Oid,
     pub typeMod: int32,
     pub collation: Oid,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for CoerceToDomainValue {
     fn default() -> Self {
@@ -10729,7 +11213,7 @@ pub struct SetToDefault {
     pub typeId: Oid,
     pub typeMod: int32,
     pub collation: Oid,
-    pub location: ::core::ffi::c_int,
+    pub location: ParseLoc,
 }
 impl Default for SetToDefault {
     fn default() -> Self {
@@ -10889,4086 +11373,6 @@ impl Default for OnConflictExpr {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct Integer {
-    pub type_: NodeTag,
-    pub ival: ::core::ffi::c_int,
-}
-impl Default for Integer {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct Float {
-    pub type_: NodeTag,
-    pub fval: *mut ::core::ffi::c_char,
-}
-impl Default for Float {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct Boolean {
-    pub type_: NodeTag,
-    pub boolval: bool,
-}
-impl Default for Boolean {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct String {
-    pub type_: NodeTag,
-    pub sval: *mut ::core::ffi::c_char,
-}
-impl Default for String {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct BitString {
-    pub type_: NodeTag,
-    pub bsval: *mut ::core::ffi::c_char,
-}
-impl Default for BitString {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PartitionBoundInfoData {
-    _unused: [u8; 0],
-}
-pub type PartitionBoundInfo = *mut PartitionBoundInfoData;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PartitionKeyData {
-    _unused: [u8; 0],
-}
-pub type PartitionKey = *mut PartitionKeyData;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PartitionDescData {
-    _unused: [u8; 0],
-}
-pub type PartitionDesc = *mut PartitionDescData;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PartitionDirectoryData {
-    _unused: [u8; 0],
-}
-pub type PartitionDirectory = *mut PartitionDirectoryData;
-pub mod OverridingKind {
-    pub type Type = ::core::ffi::c_uint;
-    pub const OVERRIDING_NOT_SET: Type = 0;
-    pub const OVERRIDING_USER_VALUE: Type = 1;
-    pub const OVERRIDING_SYSTEM_VALUE: Type = 2;
-}
-pub mod QuerySource {
-    pub type Type = ::core::ffi::c_uint;
-    pub const QSRC_ORIGINAL: Type = 0;
-    pub const QSRC_PARSER: Type = 1;
-    pub const QSRC_INSTEAD_RULE: Type = 2;
-    pub const QSRC_QUAL_INSTEAD_RULE: Type = 3;
-    pub const QSRC_NON_INSTEAD_RULE: Type = 4;
-}
-pub mod SortByDir {
-    pub type Type = ::core::ffi::c_uint;
-    pub const SORTBY_DEFAULT: Type = 0;
-    pub const SORTBY_ASC: Type = 1;
-    pub const SORTBY_DESC: Type = 2;
-    pub const SORTBY_USING: Type = 3;
-}
-pub mod SortByNulls {
-    pub type Type = ::core::ffi::c_uint;
-    pub const SORTBY_NULLS_DEFAULT: Type = 0;
-    pub const SORTBY_NULLS_FIRST: Type = 1;
-    pub const SORTBY_NULLS_LAST: Type = 2;
-}
-pub mod SetQuantifier {
-    pub type Type = ::core::ffi::c_uint;
-    pub const SET_QUANTIFIER_DEFAULT: Type = 0;
-    pub const SET_QUANTIFIER_ALL: Type = 1;
-    pub const SET_QUANTIFIER_DISTINCT: Type = 2;
-}
-pub type AclMode = uint64;
-#[doc = "\tQuery Tree"]
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct Query {
-    pub type_: NodeTag,
-    pub commandType: CmdType::Type,
-    pub querySource: QuerySource::Type,
-    pub queryId: uint64,
-    pub canSetTag: bool,
-    pub utilityStmt: *mut Node,
-    pub resultRelation: ::core::ffi::c_int,
-    pub hasAggs: bool,
-    pub hasWindowFuncs: bool,
-    pub hasTargetSRFs: bool,
-    pub hasSubLinks: bool,
-    pub hasDistinctOn: bool,
-    pub hasRecursive: bool,
-    pub hasModifyingCTE: bool,
-    pub hasForUpdate: bool,
-    pub hasRowSecurity: bool,
-    pub isReturn: bool,
-    pub cteList: *mut List,
-    pub rtable: *mut List,
-    pub rteperminfos: *mut List,
-    pub jointree: *mut FromExpr,
-    pub mergeActionList: *mut List,
-    pub mergeUseOuterJoin: bool,
-    pub targetList: *mut List,
-    pub override_: OverridingKind::Type,
-    pub onConflict: *mut OnConflictExpr,
-    pub returningList: *mut List,
-    pub groupClause: *mut List,
-    pub groupDistinct: bool,
-    pub groupingSets: *mut List,
-    pub havingQual: *mut Node,
-    pub windowClause: *mut List,
-    pub distinctClause: *mut List,
-    pub sortClause: *mut List,
-    pub limitOffset: *mut Node,
-    pub limitCount: *mut Node,
-    pub limitOption: LimitOption::Type,
-    pub rowMarks: *mut List,
-    pub setOperations: *mut Node,
-    pub constraintDeps: *mut List,
-    pub withCheckOptions: *mut List,
-    pub stmt_location: ::core::ffi::c_int,
-    pub stmt_len: ::core::ffi::c_int,
-}
-impl Default for Query {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[doc = "\tSupporting data structures for Parse Trees\n\n\tMost of these node types appear in raw parsetrees output by the grammar,\n\tand get transformed to something else by the analyzer.  A few of them\n\tare used as-is in transformed querytrees."]
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct TypeName {
-    pub type_: NodeTag,
-    pub names: *mut List,
-    pub typeOid: Oid,
-    pub setof: bool,
-    pub pct_type: bool,
-    pub typmods: *mut List,
-    pub typemod: int32,
-    pub arrayBounds: *mut List,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for TypeName {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ColumnRef {
-    pub type_: NodeTag,
-    pub fields: *mut List,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for ColumnRef {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ParamRef {
-    pub type_: NodeTag,
-    pub number: ::core::ffi::c_int,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for ParamRef {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod A_Expr_Kind {
-    pub type Type = ::core::ffi::c_uint;
-    pub const AEXPR_OP: Type = 0;
-    pub const AEXPR_OP_ANY: Type = 1;
-    pub const AEXPR_OP_ALL: Type = 2;
-    pub const AEXPR_DISTINCT: Type = 3;
-    pub const AEXPR_NOT_DISTINCT: Type = 4;
-    pub const AEXPR_NULLIF: Type = 5;
-    pub const AEXPR_IN: Type = 6;
-    pub const AEXPR_LIKE: Type = 7;
-    pub const AEXPR_ILIKE: Type = 8;
-    pub const AEXPR_SIMILAR: Type = 9;
-    pub const AEXPR_BETWEEN: Type = 10;
-    pub const AEXPR_NOT_BETWEEN: Type = 11;
-    pub const AEXPR_BETWEEN_SYM: Type = 12;
-    pub const AEXPR_NOT_BETWEEN_SYM: Type = 13;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct A_Expr {
-    pub type_: NodeTag,
-    pub kind: A_Expr_Kind::Type,
-    pub name: *mut List,
-    pub lexpr: *mut Node,
-    pub rexpr: *mut Node,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for A_Expr {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union ValUnion {
-    pub node: Node,
-    pub ival: Integer,
-    pub fval: Float,
-    pub boolval: Boolean,
-    pub sval: String,
-    pub bsval: BitString,
-}
-impl Default for ValUnion {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct A_Const {
-    pub type_: NodeTag,
-    pub val: ValUnion,
-    pub isnull: bool,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for A_Const {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct TypeCast {
-    pub type_: NodeTag,
-    pub arg: *mut Node,
-    pub typeName: *mut TypeName,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for TypeCast {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CollateClause {
-    pub type_: NodeTag,
-    pub arg: *mut Node,
-    pub collname: *mut List,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for CollateClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod RoleSpecType {
-    pub type Type = ::core::ffi::c_uint;
-    pub const ROLESPEC_CSTRING: Type = 0;
-    pub const ROLESPEC_CURRENT_ROLE: Type = 1;
-    pub const ROLESPEC_CURRENT_USER: Type = 2;
-    pub const ROLESPEC_SESSION_USER: Type = 3;
-    pub const ROLESPEC_PUBLIC: Type = 4;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RoleSpec {
-    pub type_: NodeTag,
-    pub roletype: RoleSpecType::Type,
-    pub rolename: *mut ::core::ffi::c_char,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for RoleSpec {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FuncCall {
-    pub type_: NodeTag,
-    pub funcname: *mut List,
-    pub args: *mut List,
-    pub agg_order: *mut List,
-    pub agg_filter: *mut Node,
-    pub over: *mut WindowDef,
-    pub agg_within_group: bool,
-    pub agg_star: bool,
-    pub agg_distinct: bool,
-    pub func_variadic: bool,
-    pub funcformat: CoercionForm::Type,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for FuncCall {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct A_Star {
-    pub type_: NodeTag,
-}
-impl Default for A_Star {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct A_Indices {
-    pub type_: NodeTag,
-    pub is_slice: bool,
-    pub lidx: *mut Node,
-    pub uidx: *mut Node,
-}
-impl Default for A_Indices {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct A_Indirection {
-    pub type_: NodeTag,
-    pub arg: *mut Node,
-    pub indirection: *mut List,
-}
-impl Default for A_Indirection {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct A_ArrayExpr {
-    pub type_: NodeTag,
-    pub elements: *mut List,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for A_ArrayExpr {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ResTarget {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-    pub indirection: *mut List,
-    pub val: *mut Node,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for ResTarget {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct MultiAssignRef {
-    pub type_: NodeTag,
-    pub source: *mut Node,
-    pub colno: ::core::ffi::c_int,
-    pub ncolumns: ::core::ffi::c_int,
-}
-impl Default for MultiAssignRef {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct SortBy {
-    pub type_: NodeTag,
-    pub node: *mut Node,
-    pub sortby_dir: SortByDir::Type,
-    pub sortby_nulls: SortByNulls::Type,
-    pub useOp: *mut List,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for SortBy {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct WindowDef {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-    pub refname: *mut ::core::ffi::c_char,
-    pub partitionClause: *mut List,
-    pub orderClause: *mut List,
-    pub frameOptions: ::core::ffi::c_int,
-    pub startOffset: *mut Node,
-    pub endOffset: *mut Node,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for WindowDef {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RangeSubselect {
-    pub type_: NodeTag,
-    pub lateral: bool,
-    pub subquery: *mut Node,
-    pub alias: *mut Alias,
-}
-impl Default for RangeSubselect {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RangeFunction {
-    pub type_: NodeTag,
-    pub lateral: bool,
-    pub ordinality: bool,
-    pub is_rowsfrom: bool,
-    pub functions: *mut List,
-    pub alias: *mut Alias,
-    pub coldeflist: *mut List,
-}
-impl Default for RangeFunction {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RangeTableFunc {
-    pub type_: NodeTag,
-    pub lateral: bool,
-    pub docexpr: *mut Node,
-    pub rowexpr: *mut Node,
-    pub namespaces: *mut List,
-    pub columns: *mut List,
-    pub alias: *mut Alias,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for RangeTableFunc {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RangeTableFuncCol {
-    pub type_: NodeTag,
-    pub colname: *mut ::core::ffi::c_char,
-    pub typeName: *mut TypeName,
-    pub for_ordinality: bool,
-    pub is_not_null: bool,
-    pub colexpr: *mut Node,
-    pub coldefexpr: *mut Node,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for RangeTableFuncCol {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RangeTableSample {
-    pub type_: NodeTag,
-    pub relation: *mut Node,
-    pub method: *mut List,
-    pub args: *mut List,
-    pub repeatable: *mut Node,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for RangeTableSample {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ColumnDef {
-    pub type_: NodeTag,
-    pub colname: *mut ::core::ffi::c_char,
-    pub typeName: *mut TypeName,
-    pub compression: *mut ::core::ffi::c_char,
-    pub inhcount: ::core::ffi::c_int,
-    pub is_local: bool,
-    pub is_not_null: bool,
-    pub is_from_type: bool,
-    pub storage: ::core::ffi::c_char,
-    pub storage_name: *mut ::core::ffi::c_char,
-    pub raw_default: *mut Node,
-    pub cooked_default: *mut Node,
-    pub identity: ::core::ffi::c_char,
-    pub identitySequence: *mut RangeVar,
-    pub generated: ::core::ffi::c_char,
-    pub collClause: *mut CollateClause,
-    pub collOid: Oid,
-    pub constraints: *mut List,
-    pub fdwoptions: *mut List,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for ColumnDef {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct TableLikeClause {
-    pub type_: NodeTag,
-    pub relation: *mut RangeVar,
-    pub options: bits32,
-    pub relationOid: Oid,
-}
-impl Default for TableLikeClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod TableLikeOption {
-    pub type Type = ::core::ffi::c_uint;
-    pub const CREATE_TABLE_LIKE_COMMENTS: Type = 1;
-    pub const CREATE_TABLE_LIKE_COMPRESSION: Type = 2;
-    pub const CREATE_TABLE_LIKE_CONSTRAINTS: Type = 4;
-    pub const CREATE_TABLE_LIKE_DEFAULTS: Type = 8;
-    pub const CREATE_TABLE_LIKE_GENERATED: Type = 16;
-    pub const CREATE_TABLE_LIKE_IDENTITY: Type = 32;
-    pub const CREATE_TABLE_LIKE_INDEXES: Type = 64;
-    pub const CREATE_TABLE_LIKE_STATISTICS: Type = 128;
-    pub const CREATE_TABLE_LIKE_STORAGE: Type = 256;
-    pub const CREATE_TABLE_LIKE_ALL: Type = 2147483647;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct IndexElem {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-    pub expr: *mut Node,
-    pub indexcolname: *mut ::core::ffi::c_char,
-    pub collation: *mut List,
-    pub opclass: *mut List,
-    pub opclassopts: *mut List,
-    pub ordering: SortByDir::Type,
-    pub nulls_ordering: SortByNulls::Type,
-}
-impl Default for IndexElem {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod DefElemAction {
-    pub type Type = ::core::ffi::c_uint;
-    pub const DEFELEM_UNSPEC: Type = 0;
-    pub const DEFELEM_SET: Type = 1;
-    pub const DEFELEM_ADD: Type = 2;
-    pub const DEFELEM_DROP: Type = 3;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DefElem {
-    pub type_: NodeTag,
-    pub defnamespace: *mut ::core::ffi::c_char,
-    pub defname: *mut ::core::ffi::c_char,
-    pub arg: *mut Node,
-    pub defaction: DefElemAction::Type,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for DefElem {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct LockingClause {
-    pub type_: NodeTag,
-    pub lockedRels: *mut List,
-    pub strength: LockClauseStrength::Type,
-    pub waitPolicy: LockWaitPolicy::Type,
-}
-impl Default for LockingClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct XmlSerialize {
-    pub type_: NodeTag,
-    pub xmloption: XmlOptionType::Type,
-    pub expr: *mut Node,
-    pub typeName: *mut TypeName,
-    pub indent: bool,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for XmlSerialize {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PartitionElem {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-    pub expr: *mut Node,
-    pub collation: *mut List,
-    pub opclass: *mut List,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for PartitionElem {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod PartitionStrategy {
-    pub type Type = ::core::ffi::c_uint;
-    pub const PARTITION_STRATEGY_LIST: Type = 108;
-    pub const PARTITION_STRATEGY_RANGE: Type = 114;
-    pub const PARTITION_STRATEGY_HASH: Type = 104;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PartitionSpec {
-    pub type_: NodeTag,
-    pub strategy: PartitionStrategy::Type,
-    pub partParams: *mut List,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for PartitionSpec {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PartitionBoundSpec {
-    pub type_: NodeTag,
-    pub strategy: ::core::ffi::c_char,
-    pub is_default: bool,
-    pub modulus: ::core::ffi::c_int,
-    pub remainder: ::core::ffi::c_int,
-    pub listdatums: *mut List,
-    pub lowerdatums: *mut List,
-    pub upperdatums: *mut List,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for PartitionBoundSpec {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod PartitionRangeDatumKind {
-    pub type Type = ::core::ffi::c_int;
-    pub const PARTITION_RANGE_DATUM_MINVALUE: Type = -1;
-    pub const PARTITION_RANGE_DATUM_VALUE: Type = 0;
-    pub const PARTITION_RANGE_DATUM_MAXVALUE: Type = 1;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PartitionRangeDatum {
-    pub type_: NodeTag,
-    pub kind: PartitionRangeDatumKind::Type,
-    pub value: *mut Node,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for PartitionRangeDatum {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PartitionCmd {
-    pub type_: NodeTag,
-    pub name: *mut RangeVar,
-    pub bound: *mut PartitionBoundSpec,
-    pub concurrent: bool,
-}
-impl Default for PartitionCmd {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod RTEKind {
-    pub type Type = ::core::ffi::c_uint;
-    pub const RTE_RELATION: Type = 0;
-    pub const RTE_SUBQUERY: Type = 1;
-    pub const RTE_JOIN: Type = 2;
-    pub const RTE_FUNCTION: Type = 3;
-    pub const RTE_TABLEFUNC: Type = 4;
-    pub const RTE_VALUES: Type = 5;
-    pub const RTE_CTE: Type = 6;
-    pub const RTE_NAMEDTUPLESTORE: Type = 7;
-    pub const RTE_RESULT: Type = 8;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RangeTblEntry {
-    pub type_: NodeTag,
-    pub rtekind: RTEKind::Type,
-    pub relid: Oid,
-    pub relkind: ::core::ffi::c_char,
-    pub rellockmode: ::core::ffi::c_int,
-    pub tablesample: *mut TableSampleClause,
-    pub perminfoindex: Index,
-    pub subquery: *mut Query,
-    pub security_barrier: bool,
-    pub jointype: JoinType::Type,
-    pub joinmergedcols: ::core::ffi::c_int,
-    pub joinaliasvars: *mut List,
-    pub joinleftcols: *mut List,
-    pub joinrightcols: *mut List,
-    pub join_using_alias: *mut Alias,
-    pub functions: *mut List,
-    pub funcordinality: bool,
-    pub tablefunc: *mut TableFunc,
-    pub values_lists: *mut List,
-    pub ctename: *mut ::core::ffi::c_char,
-    pub ctelevelsup: Index,
-    pub self_reference: bool,
-    pub coltypes: *mut List,
-    pub coltypmods: *mut List,
-    pub colcollations: *mut List,
-    pub enrname: *mut ::core::ffi::c_char,
-    pub enrtuples: Cardinality,
-    pub alias: *mut Alias,
-    pub eref: *mut Alias,
-    pub lateral: bool,
-    pub inh: bool,
-    pub inFromCl: bool,
-    pub securityQuals: *mut List,
-}
-impl Default for RangeTblEntry {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RTEPermissionInfo {
-    pub type_: NodeTag,
-    pub relid: Oid,
-    pub inh: bool,
-    pub requiredPerms: AclMode,
-    pub checkAsUser: Oid,
-    pub selectedCols: *mut Bitmapset,
-    pub insertedCols: *mut Bitmapset,
-    pub updatedCols: *mut Bitmapset,
-}
-impl Default for RTEPermissionInfo {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RangeTblFunction {
-    pub type_: NodeTag,
-    pub funcexpr: *mut Node,
-    pub funccolcount: ::core::ffi::c_int,
-    pub funccolnames: *mut List,
-    pub funccoltypes: *mut List,
-    pub funccoltypmods: *mut List,
-    pub funccolcollations: *mut List,
-    pub funcparams: *mut Bitmapset,
-}
-impl Default for RangeTblFunction {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct TableSampleClause {
-    pub type_: NodeTag,
-    pub tsmhandler: Oid,
-    pub args: *mut List,
-    pub repeatable: *mut Expr,
-}
-impl Default for TableSampleClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod WCOKind {
-    pub type Type = ::core::ffi::c_uint;
-    pub const WCO_VIEW_CHECK: Type = 0;
-    pub const WCO_RLS_INSERT_CHECK: Type = 1;
-    pub const WCO_RLS_UPDATE_CHECK: Type = 2;
-    pub const WCO_RLS_CONFLICT_CHECK: Type = 3;
-    pub const WCO_RLS_MERGE_UPDATE_CHECK: Type = 4;
-    pub const WCO_RLS_MERGE_DELETE_CHECK: Type = 5;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct WithCheckOption {
-    pub type_: NodeTag,
-    pub kind: WCOKind::Type,
-    pub relname: *mut ::core::ffi::c_char,
-    pub polname: *mut ::core::ffi::c_char,
-    pub qual: *mut Node,
-    pub cascaded: bool,
-}
-impl Default for WithCheckOption {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct SortGroupClause {
-    pub type_: NodeTag,
-    pub tleSortGroupRef: Index,
-    pub eqop: Oid,
-    pub sortop: Oid,
-    pub nulls_first: bool,
-    pub hashable: bool,
-}
-impl Default for SortGroupClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod GroupingSetKind {
-    pub type Type = ::core::ffi::c_uint;
-    pub const GROUPING_SET_EMPTY: Type = 0;
-    pub const GROUPING_SET_SIMPLE: Type = 1;
-    pub const GROUPING_SET_ROLLUP: Type = 2;
-    pub const GROUPING_SET_CUBE: Type = 3;
-    pub const GROUPING_SET_SETS: Type = 4;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct GroupingSet {
-    pub type_: NodeTag,
-    pub kind: GroupingSetKind::Type,
-    pub content: *mut List,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for GroupingSet {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct WindowClause {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-    pub refname: *mut ::core::ffi::c_char,
-    pub partitionClause: *mut List,
-    pub orderClause: *mut List,
-    pub frameOptions: ::core::ffi::c_int,
-    pub startOffset: *mut Node,
-    pub endOffset: *mut Node,
-    pub runCondition: *mut List,
-    pub startInRangeFunc: Oid,
-    pub endInRangeFunc: Oid,
-    pub inRangeColl: Oid,
-    pub inRangeAsc: bool,
-    pub inRangeNullsFirst: bool,
-    pub winref: Index,
-    pub copiedOrder: bool,
-}
-impl Default for WindowClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RowMarkClause {
-    pub type_: NodeTag,
-    pub rti: Index,
-    pub strength: LockClauseStrength::Type,
-    pub waitPolicy: LockWaitPolicy::Type,
-    pub pushedDown: bool,
-}
-impl Default for RowMarkClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct WithClause {
-    pub type_: NodeTag,
-    pub ctes: *mut List,
-    pub recursive: bool,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for WithClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct InferClause {
-    pub type_: NodeTag,
-    pub indexElems: *mut List,
-    pub whereClause: *mut Node,
-    pub conname: *mut ::core::ffi::c_char,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for InferClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct OnConflictClause {
-    pub type_: NodeTag,
-    pub action: OnConflictAction::Type,
-    pub infer: *mut InferClause,
-    pub targetList: *mut List,
-    pub whereClause: *mut Node,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for OnConflictClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod CTEMaterialize {
-    pub type Type = ::core::ffi::c_uint;
-    pub const CTEMaterializeDefault: Type = 0;
-    pub const CTEMaterializeAlways: Type = 1;
-    pub const CTEMaterializeNever: Type = 2;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CTESearchClause {
-    pub type_: NodeTag,
-    pub search_col_list: *mut List,
-    pub search_breadth_first: bool,
-    pub search_seq_column: *mut ::core::ffi::c_char,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for CTESearchClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CTECycleClause {
-    pub type_: NodeTag,
-    pub cycle_col_list: *mut List,
-    pub cycle_mark_column: *mut ::core::ffi::c_char,
-    pub cycle_mark_value: *mut Node,
-    pub cycle_mark_default: *mut Node,
-    pub cycle_path_column: *mut ::core::ffi::c_char,
-    pub location: ::core::ffi::c_int,
-    pub cycle_mark_type: Oid,
-    pub cycle_mark_typmod: ::core::ffi::c_int,
-    pub cycle_mark_collation: Oid,
-    pub cycle_mark_neop: Oid,
-}
-impl Default for CTECycleClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CommonTableExpr {
-    pub type_: NodeTag,
-    pub ctename: *mut ::core::ffi::c_char,
-    pub aliascolnames: *mut List,
-    pub ctematerialized: CTEMaterialize::Type,
-    pub ctequery: *mut Node,
-    pub search_clause: *mut CTESearchClause,
-    pub cycle_clause: *mut CTECycleClause,
-    pub location: ::core::ffi::c_int,
-    pub cterecursive: bool,
-    pub cterefcount: ::core::ffi::c_int,
-    pub ctecolnames: *mut List,
-    pub ctecoltypes: *mut List,
-    pub ctecoltypmods: *mut List,
-    pub ctecolcollations: *mut List,
-}
-impl Default for CommonTableExpr {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct MergeWhenClause {
-    pub type_: NodeTag,
-    pub matched: bool,
-    pub commandType: CmdType::Type,
-    pub override_: OverridingKind::Type,
-    pub condition: *mut Node,
-    pub targetList: *mut List,
-    pub values: *mut List,
-}
-impl Default for MergeWhenClause {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct MergeAction {
-    pub type_: NodeTag,
-    pub matched: bool,
-    pub commandType: CmdType::Type,
-    pub override_: OverridingKind::Type,
-    pub qual: *mut Node,
-    pub targetList: *mut List,
-    pub updateColnos: *mut List,
-}
-impl Default for MergeAction {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct TriggerTransition {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-    pub isNew: bool,
-    pub isTable: bool,
-}
-impl Default for TriggerTransition {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct JsonOutput {
-    pub type_: NodeTag,
-    pub typeName: *mut TypeName,
-    pub returning: *mut JsonReturning,
-}
-impl Default for JsonOutput {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct JsonKeyValue {
-    pub type_: NodeTag,
-    pub key: *mut Expr,
-    pub value: *mut JsonValueExpr,
-}
-impl Default for JsonKeyValue {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct JsonObjectConstructor {
-    pub type_: NodeTag,
-    pub exprs: *mut List,
-    pub output: *mut JsonOutput,
-    pub absent_on_null: bool,
-    pub unique: bool,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for JsonObjectConstructor {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct JsonArrayConstructor {
-    pub type_: NodeTag,
-    pub exprs: *mut List,
-    pub output: *mut JsonOutput,
-    pub absent_on_null: bool,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for JsonArrayConstructor {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct JsonArrayQueryConstructor {
-    pub type_: NodeTag,
-    pub query: *mut Node,
-    pub output: *mut JsonOutput,
-    pub format: *mut JsonFormat,
-    pub absent_on_null: bool,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for JsonArrayQueryConstructor {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct JsonAggConstructor {
-    pub type_: NodeTag,
-    pub output: *mut JsonOutput,
-    pub agg_filter: *mut Node,
-    pub agg_order: *mut List,
-    pub over: *mut WindowDef,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for JsonAggConstructor {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct JsonObjectAgg {
-    pub type_: NodeTag,
-    pub constructor: *mut JsonAggConstructor,
-    pub arg: *mut JsonKeyValue,
-    pub absent_on_null: bool,
-    pub unique: bool,
-}
-impl Default for JsonObjectAgg {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct JsonArrayAgg {
-    pub type_: NodeTag,
-    pub constructor: *mut JsonAggConstructor,
-    pub arg: *mut JsonValueExpr,
-    pub absent_on_null: bool,
-}
-impl Default for JsonArrayAgg {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[doc = "\t\tRaw Grammar Output Statements"]
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RawStmt {
-    pub type_: NodeTag,
-    pub stmt: *mut Node,
-    pub stmt_location: ::core::ffi::c_int,
-    pub stmt_len: ::core::ffi::c_int,
-}
-impl Default for RawStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[doc = "\t\tOptimizable Statements"]
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct InsertStmt {
-    pub type_: NodeTag,
-    pub relation: *mut RangeVar,
-    pub cols: *mut List,
-    pub selectStmt: *mut Node,
-    pub onConflictClause: *mut OnConflictClause,
-    pub returningList: *mut List,
-    pub withClause: *mut WithClause,
-    pub override_: OverridingKind::Type,
-}
-impl Default for InsertStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DeleteStmt {
-    pub type_: NodeTag,
-    pub relation: *mut RangeVar,
-    pub usingClause: *mut List,
-    pub whereClause: *mut Node,
-    pub returningList: *mut List,
-    pub withClause: *mut WithClause,
-}
-impl Default for DeleteStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct UpdateStmt {
-    pub type_: NodeTag,
-    pub relation: *mut RangeVar,
-    pub targetList: *mut List,
-    pub whereClause: *mut Node,
-    pub fromClause: *mut List,
-    pub returningList: *mut List,
-    pub withClause: *mut WithClause,
-}
-impl Default for UpdateStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct MergeStmt {
-    pub type_: NodeTag,
-    pub relation: *mut RangeVar,
-    pub sourceRelation: *mut Node,
-    pub joinCondition: *mut Node,
-    pub mergeWhenClauses: *mut List,
-    pub withClause: *mut WithClause,
-}
-impl Default for MergeStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod SetOperation {
-    pub type Type = ::core::ffi::c_uint;
-    pub const SETOP_NONE: Type = 0;
-    pub const SETOP_UNION: Type = 1;
-    pub const SETOP_INTERSECT: Type = 2;
-    pub const SETOP_EXCEPT: Type = 3;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct SelectStmt {
-    pub type_: NodeTag,
-    pub distinctClause: *mut List,
-    pub intoClause: *mut IntoClause,
-    pub targetList: *mut List,
-    pub fromClause: *mut List,
-    pub whereClause: *mut Node,
-    pub groupClause: *mut List,
-    pub groupDistinct: bool,
-    pub havingClause: *mut Node,
-    pub windowClause: *mut List,
-    pub valuesLists: *mut List,
-    pub sortClause: *mut List,
-    pub limitOffset: *mut Node,
-    pub limitCount: *mut Node,
-    pub limitOption: LimitOption::Type,
-    pub lockingClause: *mut List,
-    pub withClause: *mut WithClause,
-    pub op: SetOperation::Type,
-    pub all: bool,
-    pub larg: *mut SelectStmt,
-    pub rarg: *mut SelectStmt,
-}
-impl Default for SelectStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct SetOperationStmt {
-    pub type_: NodeTag,
-    pub op: SetOperation::Type,
-    pub all: bool,
-    pub larg: *mut Node,
-    pub rarg: *mut Node,
-    pub colTypes: *mut List,
-    pub colTypmods: *mut List,
-    pub colCollations: *mut List,
-    pub groupClauses: *mut List,
-}
-impl Default for SetOperationStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ReturnStmt {
-    pub type_: NodeTag,
-    pub returnval: *mut Node,
-}
-impl Default for ReturnStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PLAssignStmt {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-    pub indirection: *mut List,
-    pub nnames: ::core::ffi::c_int,
-    pub val: *mut SelectStmt,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for PLAssignStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod ObjectType {
-    #[doc = "\t\tOther Statements (no optimizations required)\n\n\t\tThese are not touched by parser/analyze.c except to put them into\n\t\tthe utilityStmt field of a Query.  This is eventually passed to\n\t\tProcessUtility (by-passing rewriting and planning).  Some of the\n\t\tstatements do need attention from parse analysis, and this is\n\t\tdone by routines in parser/parse_utilcmd.c after ProcessUtility\n\t\treceives the command for execution.\n\t\tDECLARE CURSOR, EXPLAIN, and CREATE TABLE AS are special cases:\n\t\tthey contain optimizable statements, which get processed normally\n\t\tby parser/analyze.c."]
-    pub type Type = ::core::ffi::c_uint;
-    pub const OBJECT_ACCESS_METHOD: Type = 0;
-    pub const OBJECT_AGGREGATE: Type = 1;
-    pub const OBJECT_AMOP: Type = 2;
-    pub const OBJECT_AMPROC: Type = 3;
-    pub const OBJECT_ATTRIBUTE: Type = 4;
-    pub const OBJECT_CAST: Type = 5;
-    pub const OBJECT_COLUMN: Type = 6;
-    pub const OBJECT_COLLATION: Type = 7;
-    pub const OBJECT_CONVERSION: Type = 8;
-    pub const OBJECT_DATABASE: Type = 9;
-    pub const OBJECT_DEFAULT: Type = 10;
-    pub const OBJECT_DEFACL: Type = 11;
-    pub const OBJECT_DOMAIN: Type = 12;
-    pub const OBJECT_DOMCONSTRAINT: Type = 13;
-    pub const OBJECT_EVENT_TRIGGER: Type = 14;
-    pub const OBJECT_EXTENSION: Type = 15;
-    pub const OBJECT_FDW: Type = 16;
-    pub const OBJECT_FOREIGN_SERVER: Type = 17;
-    pub const OBJECT_FOREIGN_TABLE: Type = 18;
-    pub const OBJECT_FUNCTION: Type = 19;
-    pub const OBJECT_INDEX: Type = 20;
-    pub const OBJECT_LANGUAGE: Type = 21;
-    pub const OBJECT_LARGEOBJECT: Type = 22;
-    pub const OBJECT_MATVIEW: Type = 23;
-    pub const OBJECT_OPCLASS: Type = 24;
-    pub const OBJECT_OPERATOR: Type = 25;
-    pub const OBJECT_OPFAMILY: Type = 26;
-    pub const OBJECT_PARAMETER_ACL: Type = 27;
-    pub const OBJECT_POLICY: Type = 28;
-    pub const OBJECT_PROCEDURE: Type = 29;
-    pub const OBJECT_PUBLICATION: Type = 30;
-    pub const OBJECT_PUBLICATION_NAMESPACE: Type = 31;
-    pub const OBJECT_PUBLICATION_REL: Type = 32;
-    pub const OBJECT_ROLE: Type = 33;
-    pub const OBJECT_ROUTINE: Type = 34;
-    pub const OBJECT_RULE: Type = 35;
-    pub const OBJECT_SCHEMA: Type = 36;
-    pub const OBJECT_SEQUENCE: Type = 37;
-    pub const OBJECT_SUBSCRIPTION: Type = 38;
-    pub const OBJECT_STATISTIC_EXT: Type = 39;
-    pub const OBJECT_TABCONSTRAINT: Type = 40;
-    pub const OBJECT_TABLE: Type = 41;
-    pub const OBJECT_TABLESPACE: Type = 42;
-    pub const OBJECT_TRANSFORM: Type = 43;
-    pub const OBJECT_TRIGGER: Type = 44;
-    pub const OBJECT_TSCONFIGURATION: Type = 45;
-    pub const OBJECT_TSDICTIONARY: Type = 46;
-    pub const OBJECT_TSPARSER: Type = 47;
-    pub const OBJECT_TSTEMPLATE: Type = 48;
-    pub const OBJECT_TYPE: Type = 49;
-    pub const OBJECT_USER_MAPPING: Type = 50;
-    pub const OBJECT_VIEW: Type = 51;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateSchemaStmt {
-    pub type_: NodeTag,
-    pub schemaname: *mut ::core::ffi::c_char,
-    pub authrole: *mut RoleSpec,
-    pub schemaElts: *mut List,
-    pub if_not_exists: bool,
-}
-impl Default for CreateSchemaStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod DropBehavior {
-    pub type Type = ::core::ffi::c_uint;
-    pub const DROP_RESTRICT: Type = 0;
-    pub const DROP_CASCADE: Type = 1;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterTableStmt {
-    pub type_: NodeTag,
-    pub relation: *mut RangeVar,
-    pub cmds: *mut List,
-    pub objtype: ObjectType::Type,
-    pub missing_ok: bool,
-}
-impl Default for AlterTableStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod AlterTableType {
-    pub type Type = ::core::ffi::c_uint;
-    pub const AT_AddColumn: Type = 0;
-    pub const AT_AddColumnToView: Type = 1;
-    pub const AT_ColumnDefault: Type = 2;
-    pub const AT_CookedColumnDefault: Type = 3;
-    pub const AT_DropNotNull: Type = 4;
-    pub const AT_SetNotNull: Type = 5;
-    pub const AT_DropExpression: Type = 6;
-    pub const AT_CheckNotNull: Type = 7;
-    pub const AT_SetStatistics: Type = 8;
-    pub const AT_SetOptions: Type = 9;
-    pub const AT_ResetOptions: Type = 10;
-    pub const AT_SetStorage: Type = 11;
-    pub const AT_SetCompression: Type = 12;
-    pub const AT_DropColumn: Type = 13;
-    pub const AT_AddIndex: Type = 14;
-    pub const AT_ReAddIndex: Type = 15;
-    pub const AT_AddConstraint: Type = 16;
-    pub const AT_ReAddConstraint: Type = 17;
-    pub const AT_ReAddDomainConstraint: Type = 18;
-    pub const AT_AlterConstraint: Type = 19;
-    pub const AT_ValidateConstraint: Type = 20;
-    pub const AT_AddIndexConstraint: Type = 21;
-    pub const AT_DropConstraint: Type = 22;
-    pub const AT_ReAddComment: Type = 23;
-    pub const AT_AlterColumnType: Type = 24;
-    pub const AT_AlterColumnGenericOptions: Type = 25;
-    pub const AT_ChangeOwner: Type = 26;
-    pub const AT_ClusterOn: Type = 27;
-    pub const AT_DropCluster: Type = 28;
-    pub const AT_SetLogged: Type = 29;
-    pub const AT_SetUnLogged: Type = 30;
-    pub const AT_DropOids: Type = 31;
-    pub const AT_SetAccessMethod: Type = 32;
-    pub const AT_SetTableSpace: Type = 33;
-    pub const AT_SetRelOptions: Type = 34;
-    pub const AT_ResetRelOptions: Type = 35;
-    pub const AT_ReplaceRelOptions: Type = 36;
-    pub const AT_EnableTrig: Type = 37;
-    pub const AT_EnableAlwaysTrig: Type = 38;
-    pub const AT_EnableReplicaTrig: Type = 39;
-    pub const AT_DisableTrig: Type = 40;
-    pub const AT_EnableTrigAll: Type = 41;
-    pub const AT_DisableTrigAll: Type = 42;
-    pub const AT_EnableTrigUser: Type = 43;
-    pub const AT_DisableTrigUser: Type = 44;
-    pub const AT_EnableRule: Type = 45;
-    pub const AT_EnableAlwaysRule: Type = 46;
-    pub const AT_EnableReplicaRule: Type = 47;
-    pub const AT_DisableRule: Type = 48;
-    pub const AT_AddInherit: Type = 49;
-    pub const AT_DropInherit: Type = 50;
-    pub const AT_AddOf: Type = 51;
-    pub const AT_DropOf: Type = 52;
-    pub const AT_ReplicaIdentity: Type = 53;
-    pub const AT_EnableRowSecurity: Type = 54;
-    pub const AT_DisableRowSecurity: Type = 55;
-    pub const AT_ForceRowSecurity: Type = 56;
-    pub const AT_NoForceRowSecurity: Type = 57;
-    pub const AT_GenericOptions: Type = 58;
-    pub const AT_AttachPartition: Type = 59;
-    pub const AT_DetachPartition: Type = 60;
-    pub const AT_DetachPartitionFinalize: Type = 61;
-    pub const AT_AddIdentity: Type = 62;
-    pub const AT_SetIdentity: Type = 63;
-    pub const AT_DropIdentity: Type = 64;
-    pub const AT_ReAddStatistics: Type = 65;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ReplicaIdentityStmt {
-    pub type_: NodeTag,
-    pub identity_type: ::core::ffi::c_char,
-    pub name: *mut ::core::ffi::c_char,
-}
-impl Default for ReplicaIdentityStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterTableCmd {
-    pub type_: NodeTag,
-    pub subtype: AlterTableType::Type,
-    pub name: *mut ::core::ffi::c_char,
-    pub num: int16,
-    pub newowner: *mut RoleSpec,
-    pub def: *mut Node,
-    pub behavior: DropBehavior::Type,
-    pub missing_ok: bool,
-    pub recurse: bool,
-}
-impl Default for AlterTableCmd {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterCollationStmt {
-    pub type_: NodeTag,
-    pub collname: *mut List,
-}
-impl Default for AlterCollationStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterDomainStmt {
-    pub type_: NodeTag,
-    pub subtype: ::core::ffi::c_char,
-    pub typeName: *mut List,
-    pub name: *mut ::core::ffi::c_char,
-    pub def: *mut Node,
-    pub behavior: DropBehavior::Type,
-    pub missing_ok: bool,
-}
-impl Default for AlterDomainStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod GrantTargetType {
-    pub type Type = ::core::ffi::c_uint;
-    pub const ACL_TARGET_OBJECT: Type = 0;
-    pub const ACL_TARGET_ALL_IN_SCHEMA: Type = 1;
-    pub const ACL_TARGET_DEFAULTS: Type = 2;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct GrantStmt {
-    pub type_: NodeTag,
-    pub is_grant: bool,
-    pub targtype: GrantTargetType::Type,
-    pub objtype: ObjectType::Type,
-    pub objects: *mut List,
-    pub privileges: *mut List,
-    pub grantees: *mut List,
-    pub grant_option: bool,
-    pub grantor: *mut RoleSpec,
-    pub behavior: DropBehavior::Type,
-}
-impl Default for GrantStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ObjectWithArgs {
-    pub type_: NodeTag,
-    pub objname: *mut List,
-    pub objargs: *mut List,
-    pub objfuncargs: *mut List,
-    pub args_unspecified: bool,
-}
-impl Default for ObjectWithArgs {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AccessPriv {
-    pub type_: NodeTag,
-    pub priv_name: *mut ::core::ffi::c_char,
-    pub cols: *mut List,
-}
-impl Default for AccessPriv {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct GrantRoleStmt {
-    pub type_: NodeTag,
-    pub granted_roles: *mut List,
-    pub grantee_roles: *mut List,
-    pub is_grant: bool,
-    pub opt: *mut List,
-    pub grantor: *mut RoleSpec,
-    pub behavior: DropBehavior::Type,
-}
-impl Default for GrantRoleStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterDefaultPrivilegesStmt {
-    pub type_: NodeTag,
-    pub options: *mut List,
-    pub action: *mut GrantStmt,
-}
-impl Default for AlterDefaultPrivilegesStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CopyStmt {
-    pub type_: NodeTag,
-    pub relation: *mut RangeVar,
-    pub query: *mut Node,
-    pub attlist: *mut List,
-    pub is_from: bool,
-    pub is_program: bool,
-    pub filename: *mut ::core::ffi::c_char,
-    pub options: *mut List,
-    pub whereClause: *mut Node,
-}
-impl Default for CopyStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod VariableSetKind {
-    pub type Type = ::core::ffi::c_uint;
-    pub const VAR_SET_VALUE: Type = 0;
-    pub const VAR_SET_DEFAULT: Type = 1;
-    pub const VAR_SET_CURRENT: Type = 2;
-    pub const VAR_SET_MULTI: Type = 3;
-    pub const VAR_RESET: Type = 4;
-    pub const VAR_RESET_ALL: Type = 5;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct VariableSetStmt {
-    pub type_: NodeTag,
-    pub kind: VariableSetKind::Type,
-    pub name: *mut ::core::ffi::c_char,
-    pub args: *mut List,
-    pub is_local: bool,
-}
-impl Default for VariableSetStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct VariableShowStmt {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-}
-impl Default for VariableShowStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateStmt {
-    pub type_: NodeTag,
-    pub relation: *mut RangeVar,
-    pub tableElts: *mut List,
-    pub inhRelations: *mut List,
-    pub partbound: *mut PartitionBoundSpec,
-    pub partspec: *mut PartitionSpec,
-    pub ofTypename: *mut TypeName,
-    pub constraints: *mut List,
-    pub options: *mut List,
-    pub oncommit: OnCommitAction::Type,
-    pub tablespacename: *mut ::core::ffi::c_char,
-    pub accessMethod: *mut ::core::ffi::c_char,
-    pub if_not_exists: bool,
-}
-impl Default for CreateStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod ConstrType {
-    pub type Type = ::core::ffi::c_uint;
-    pub const CONSTR_NULL: Type = 0;
-    pub const CONSTR_NOTNULL: Type = 1;
-    pub const CONSTR_DEFAULT: Type = 2;
-    pub const CONSTR_IDENTITY: Type = 3;
-    pub const CONSTR_GENERATED: Type = 4;
-    pub const CONSTR_CHECK: Type = 5;
-    pub const CONSTR_PRIMARY: Type = 6;
-    pub const CONSTR_UNIQUE: Type = 7;
-    pub const CONSTR_EXCLUSION: Type = 8;
-    pub const CONSTR_FOREIGN: Type = 9;
-    pub const CONSTR_ATTR_DEFERRABLE: Type = 10;
-    pub const CONSTR_ATTR_NOT_DEFERRABLE: Type = 11;
-    pub const CONSTR_ATTR_DEFERRED: Type = 12;
-    pub const CONSTR_ATTR_IMMEDIATE: Type = 13;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct Constraint {
-    pub type_: NodeTag,
-    pub contype: ConstrType::Type,
-    pub conname: *mut ::core::ffi::c_char,
-    pub deferrable: bool,
-    pub initdeferred: bool,
-    pub location: ::core::ffi::c_int,
-    pub is_no_inherit: bool,
-    pub raw_expr: *mut Node,
-    pub cooked_expr: *mut ::core::ffi::c_char,
-    pub generated_when: ::core::ffi::c_char,
-    pub nulls_not_distinct: bool,
-    pub keys: *mut List,
-    pub including: *mut List,
-    pub exclusions: *mut List,
-    pub options: *mut List,
-    pub indexname: *mut ::core::ffi::c_char,
-    pub indexspace: *mut ::core::ffi::c_char,
-    pub reset_default_tblspc: bool,
-    pub access_method: *mut ::core::ffi::c_char,
-    pub where_clause: *mut Node,
-    pub pktable: *mut RangeVar,
-    pub fk_attrs: *mut List,
-    pub pk_attrs: *mut List,
-    pub fk_matchtype: ::core::ffi::c_char,
-    pub fk_upd_action: ::core::ffi::c_char,
-    pub fk_del_action: ::core::ffi::c_char,
-    pub fk_del_set_cols: *mut List,
-    pub old_conpfeqop: *mut List,
-    pub old_pktable_oid: Oid,
-    pub skip_validation: bool,
-    pub initially_valid: bool,
-}
-impl Default for Constraint {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateTableSpaceStmt {
-    pub type_: NodeTag,
-    pub tablespacename: *mut ::core::ffi::c_char,
-    pub owner: *mut RoleSpec,
-    pub location: *mut ::core::ffi::c_char,
-    pub options: *mut List,
-}
-impl Default for CreateTableSpaceStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DropTableSpaceStmt {
-    pub type_: NodeTag,
-    pub tablespacename: *mut ::core::ffi::c_char,
-    pub missing_ok: bool,
-}
-impl Default for DropTableSpaceStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterTableSpaceOptionsStmt {
-    pub type_: NodeTag,
-    pub tablespacename: *mut ::core::ffi::c_char,
-    pub options: *mut List,
-    pub isReset: bool,
-}
-impl Default for AlterTableSpaceOptionsStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterTableMoveAllStmt {
-    pub type_: NodeTag,
-    pub orig_tablespacename: *mut ::core::ffi::c_char,
-    pub objtype: ObjectType::Type,
-    pub roles: *mut List,
-    pub new_tablespacename: *mut ::core::ffi::c_char,
-    pub nowait: bool,
-}
-impl Default for AlterTableMoveAllStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateExtensionStmt {
-    pub type_: NodeTag,
-    pub extname: *mut ::core::ffi::c_char,
-    pub if_not_exists: bool,
-    pub options: *mut List,
-}
-impl Default for CreateExtensionStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterExtensionStmt {
-    pub type_: NodeTag,
-    pub extname: *mut ::core::ffi::c_char,
-    pub options: *mut List,
-}
-impl Default for AlterExtensionStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterExtensionContentsStmt {
-    pub type_: NodeTag,
-    pub extname: *mut ::core::ffi::c_char,
-    pub action: ::core::ffi::c_int,
-    pub objtype: ObjectType::Type,
-    pub object: *mut Node,
-}
-impl Default for AlterExtensionContentsStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateFdwStmt {
-    pub type_: NodeTag,
-    pub fdwname: *mut ::core::ffi::c_char,
-    pub func_options: *mut List,
-    pub options: *mut List,
-}
-impl Default for CreateFdwStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterFdwStmt {
-    pub type_: NodeTag,
-    pub fdwname: *mut ::core::ffi::c_char,
-    pub func_options: *mut List,
-    pub options: *mut List,
-}
-impl Default for AlterFdwStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateForeignServerStmt {
-    pub type_: NodeTag,
-    pub servername: *mut ::core::ffi::c_char,
-    pub servertype: *mut ::core::ffi::c_char,
-    pub version: *mut ::core::ffi::c_char,
-    pub fdwname: *mut ::core::ffi::c_char,
-    pub if_not_exists: bool,
-    pub options: *mut List,
-}
-impl Default for CreateForeignServerStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterForeignServerStmt {
-    pub type_: NodeTag,
-    pub servername: *mut ::core::ffi::c_char,
-    pub version: *mut ::core::ffi::c_char,
-    pub options: *mut List,
-    pub has_version: bool,
-}
-impl Default for AlterForeignServerStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateForeignTableStmt {
-    pub base: CreateStmt,
-    pub servername: *mut ::core::ffi::c_char,
-    pub options: *mut List,
-}
-impl Default for CreateForeignTableStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateUserMappingStmt {
-    pub type_: NodeTag,
-    pub user: *mut RoleSpec,
-    pub servername: *mut ::core::ffi::c_char,
-    pub if_not_exists: bool,
-    pub options: *mut List,
-}
-impl Default for CreateUserMappingStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterUserMappingStmt {
-    pub type_: NodeTag,
-    pub user: *mut RoleSpec,
-    pub servername: *mut ::core::ffi::c_char,
-    pub options: *mut List,
-}
-impl Default for AlterUserMappingStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DropUserMappingStmt {
-    pub type_: NodeTag,
-    pub user: *mut RoleSpec,
-    pub servername: *mut ::core::ffi::c_char,
-    pub missing_ok: bool,
-}
-impl Default for DropUserMappingStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod ImportForeignSchemaType {
-    pub type Type = ::core::ffi::c_uint;
-    pub const FDW_IMPORT_SCHEMA_ALL: Type = 0;
-    pub const FDW_IMPORT_SCHEMA_LIMIT_TO: Type = 1;
-    pub const FDW_IMPORT_SCHEMA_EXCEPT: Type = 2;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ImportForeignSchemaStmt {
-    pub type_: NodeTag,
-    pub server_name: *mut ::core::ffi::c_char,
-    pub remote_schema: *mut ::core::ffi::c_char,
-    pub local_schema: *mut ::core::ffi::c_char,
-    pub list_type: ImportForeignSchemaType::Type,
-    pub table_list: *mut List,
-    pub options: *mut List,
-}
-impl Default for ImportForeignSchemaStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreatePolicyStmt {
-    pub type_: NodeTag,
-    pub policy_name: *mut ::core::ffi::c_char,
-    pub table: *mut RangeVar,
-    pub cmd_name: *mut ::core::ffi::c_char,
-    pub permissive: bool,
-    pub roles: *mut List,
-    pub qual: *mut Node,
-    pub with_check: *mut Node,
-}
-impl Default for CreatePolicyStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterPolicyStmt {
-    pub type_: NodeTag,
-    pub policy_name: *mut ::core::ffi::c_char,
-    pub table: *mut RangeVar,
-    pub roles: *mut List,
-    pub qual: *mut Node,
-    pub with_check: *mut Node,
-}
-impl Default for AlterPolicyStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateAmStmt {
-    pub type_: NodeTag,
-    pub amname: *mut ::core::ffi::c_char,
-    pub handler_name: *mut List,
-    pub amtype: ::core::ffi::c_char,
-}
-impl Default for CreateAmStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateTrigStmt {
-    pub type_: NodeTag,
-    pub replace: bool,
-    pub isconstraint: bool,
-    pub trigname: *mut ::core::ffi::c_char,
-    pub relation: *mut RangeVar,
-    pub funcname: *mut List,
-    pub args: *mut List,
-    pub row: bool,
-    pub timing: int16,
-    pub events: int16,
-    pub columns: *mut List,
-    pub whenClause: *mut Node,
-    pub transitionRels: *mut List,
-    pub deferrable: bool,
-    pub initdeferred: bool,
-    pub constrrel: *mut RangeVar,
-}
-impl Default for CreateTrigStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateEventTrigStmt {
-    pub type_: NodeTag,
-    pub trigname: *mut ::core::ffi::c_char,
-    pub eventname: *mut ::core::ffi::c_char,
-    pub whenclause: *mut List,
-    pub funcname: *mut List,
-}
-impl Default for CreateEventTrigStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterEventTrigStmt {
-    pub type_: NodeTag,
-    pub trigname: *mut ::core::ffi::c_char,
-    pub tgenabled: ::core::ffi::c_char,
-}
-impl Default for AlterEventTrigStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreatePLangStmt {
-    pub type_: NodeTag,
-    pub replace: bool,
-    pub plname: *mut ::core::ffi::c_char,
-    pub plhandler: *mut List,
-    pub plinline: *mut List,
-    pub plvalidator: *mut List,
-    pub pltrusted: bool,
-}
-impl Default for CreatePLangStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod RoleStmtType {
-    pub type Type = ::core::ffi::c_uint;
-    pub const ROLESTMT_ROLE: Type = 0;
-    pub const ROLESTMT_USER: Type = 1;
-    pub const ROLESTMT_GROUP: Type = 2;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateRoleStmt {
-    pub type_: NodeTag,
-    pub stmt_type: RoleStmtType::Type,
-    pub role: *mut ::core::ffi::c_char,
-    pub options: *mut List,
-}
-impl Default for CreateRoleStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterRoleStmt {
-    pub type_: NodeTag,
-    pub role: *mut RoleSpec,
-    pub options: *mut List,
-    pub action: ::core::ffi::c_int,
-}
-impl Default for AlterRoleStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterRoleSetStmt {
-    pub type_: NodeTag,
-    pub role: *mut RoleSpec,
-    pub database: *mut ::core::ffi::c_char,
-    pub setstmt: *mut VariableSetStmt,
-}
-impl Default for AlterRoleSetStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DropRoleStmt {
-    pub type_: NodeTag,
-    pub roles: *mut List,
-    pub missing_ok: bool,
-}
-impl Default for DropRoleStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateSeqStmt {
-    pub type_: NodeTag,
-    pub sequence: *mut RangeVar,
-    pub options: *mut List,
-    pub ownerId: Oid,
-    pub for_identity: bool,
-    pub if_not_exists: bool,
-}
-impl Default for CreateSeqStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterSeqStmt {
-    pub type_: NodeTag,
-    pub sequence: *mut RangeVar,
-    pub options: *mut List,
-    pub for_identity: bool,
-    pub missing_ok: bool,
-}
-impl Default for AlterSeqStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DefineStmt {
-    pub type_: NodeTag,
-    pub kind: ObjectType::Type,
-    pub oldstyle: bool,
-    pub defnames: *mut List,
-    pub args: *mut List,
-    pub definition: *mut List,
-    pub if_not_exists: bool,
-    pub replace: bool,
-}
-impl Default for DefineStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateDomainStmt {
-    pub type_: NodeTag,
-    pub domainname: *mut List,
-    pub typeName: *mut TypeName,
-    pub collClause: *mut CollateClause,
-    pub constraints: *mut List,
-}
-impl Default for CreateDomainStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateOpClassStmt {
-    pub type_: NodeTag,
-    pub opclassname: *mut List,
-    pub opfamilyname: *mut List,
-    pub amname: *mut ::core::ffi::c_char,
-    pub datatype: *mut TypeName,
-    pub items: *mut List,
-    pub isDefault: bool,
-}
-impl Default for CreateOpClassStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateOpClassItem {
-    pub type_: NodeTag,
-    pub itemtype: ::core::ffi::c_int,
-    pub name: *mut ObjectWithArgs,
-    pub number: ::core::ffi::c_int,
-    pub order_family: *mut List,
-    pub class_args: *mut List,
-    pub storedtype: *mut TypeName,
-}
-impl Default for CreateOpClassItem {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateOpFamilyStmt {
-    pub type_: NodeTag,
-    pub opfamilyname: *mut List,
-    pub amname: *mut ::core::ffi::c_char,
-}
-impl Default for CreateOpFamilyStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterOpFamilyStmt {
-    pub type_: NodeTag,
-    pub opfamilyname: *mut List,
-    pub amname: *mut ::core::ffi::c_char,
-    pub isDrop: bool,
-    pub items: *mut List,
-}
-impl Default for AlterOpFamilyStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DropStmt {
-    pub type_: NodeTag,
-    pub objects: *mut List,
-    pub removeType: ObjectType::Type,
-    pub behavior: DropBehavior::Type,
-    pub missing_ok: bool,
-    pub concurrent: bool,
-}
-impl Default for DropStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct TruncateStmt {
-    pub type_: NodeTag,
-    pub relations: *mut List,
-    pub restart_seqs: bool,
-    pub behavior: DropBehavior::Type,
-}
-impl Default for TruncateStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CommentStmt {
-    pub type_: NodeTag,
-    pub objtype: ObjectType::Type,
-    pub object: *mut Node,
-    pub comment: *mut ::core::ffi::c_char,
-}
-impl Default for CommentStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct SecLabelStmt {
-    pub type_: NodeTag,
-    pub objtype: ObjectType::Type,
-    pub object: *mut Node,
-    pub provider: *mut ::core::ffi::c_char,
-    pub label: *mut ::core::ffi::c_char,
-}
-impl Default for SecLabelStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DeclareCursorStmt {
-    pub type_: NodeTag,
-    pub portalname: *mut ::core::ffi::c_char,
-    pub options: ::core::ffi::c_int,
-    pub query: *mut Node,
-}
-impl Default for DeclareCursorStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ClosePortalStmt {
-    pub type_: NodeTag,
-    pub portalname: *mut ::core::ffi::c_char,
-}
-impl Default for ClosePortalStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod FetchDirection {
-    pub type Type = ::core::ffi::c_uint;
-    pub const FETCH_FORWARD: Type = 0;
-    pub const FETCH_BACKWARD: Type = 1;
-    pub const FETCH_ABSOLUTE: Type = 2;
-    pub const FETCH_RELATIVE: Type = 3;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FetchStmt {
-    pub type_: NodeTag,
-    pub direction: FetchDirection::Type,
-    pub howMany: ::core::ffi::c_long,
-    pub portalname: *mut ::core::ffi::c_char,
-    pub ismove: bool,
-}
-impl Default for FetchStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct IndexStmt {
-    pub type_: NodeTag,
-    pub idxname: *mut ::core::ffi::c_char,
-    pub relation: *mut RangeVar,
-    pub accessMethod: *mut ::core::ffi::c_char,
-    pub tableSpace: *mut ::core::ffi::c_char,
-    pub indexParams: *mut List,
-    pub indexIncludingParams: *mut List,
-    pub options: *mut List,
-    pub whereClause: *mut Node,
-    pub excludeOpNames: *mut List,
-    pub idxcomment: *mut ::core::ffi::c_char,
-    pub indexOid: Oid,
-    pub oldNumber: RelFileNumber,
-    pub oldCreateSubid: SubTransactionId,
-    pub oldFirstRelfilelocatorSubid: SubTransactionId,
-    pub unique: bool,
-    pub nulls_not_distinct: bool,
-    pub primary: bool,
-    pub isconstraint: bool,
-    pub deferrable: bool,
-    pub initdeferred: bool,
-    pub transformed: bool,
-    pub concurrent: bool,
-    pub if_not_exists: bool,
-    pub reset_default_tblspc: bool,
-}
-impl Default for IndexStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateStatsStmt {
-    pub type_: NodeTag,
-    pub defnames: *mut List,
-    pub stat_types: *mut List,
-    pub exprs: *mut List,
-    pub relations: *mut List,
-    pub stxcomment: *mut ::core::ffi::c_char,
-    pub transformed: bool,
-    pub if_not_exists: bool,
-}
-impl Default for CreateStatsStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct StatsElem {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-    pub expr: *mut Node,
-}
-impl Default for StatsElem {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterStatsStmt {
-    pub type_: NodeTag,
-    pub defnames: *mut List,
-    pub stxstattarget: ::core::ffi::c_int,
-    pub missing_ok: bool,
-}
-impl Default for AlterStatsStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateFunctionStmt {
-    pub type_: NodeTag,
-    pub is_procedure: bool,
-    pub replace: bool,
-    pub funcname: *mut List,
-    pub parameters: *mut List,
-    pub returnType: *mut TypeName,
-    pub options: *mut List,
-    pub sql_body: *mut Node,
-}
-impl Default for CreateFunctionStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod FunctionParameterMode {
-    pub type Type = ::core::ffi::c_uint;
-    pub const FUNC_PARAM_IN: Type = 105;
-    pub const FUNC_PARAM_OUT: Type = 111;
-    pub const FUNC_PARAM_INOUT: Type = 98;
-    pub const FUNC_PARAM_VARIADIC: Type = 118;
-    pub const FUNC_PARAM_TABLE: Type = 116;
-    pub const FUNC_PARAM_DEFAULT: Type = 100;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FunctionParameter {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-    pub argType: *mut TypeName,
-    pub mode: FunctionParameterMode::Type,
-    pub defexpr: *mut Node,
-}
-impl Default for FunctionParameter {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterFunctionStmt {
-    pub type_: NodeTag,
-    pub objtype: ObjectType::Type,
-    pub func: *mut ObjectWithArgs,
-    pub actions: *mut List,
-}
-impl Default for AlterFunctionStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DoStmt {
-    pub type_: NodeTag,
-    pub args: *mut List,
-}
-impl Default for DoStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct InlineCodeBlock {
-    pub type_: NodeTag,
-    pub source_text: *mut ::core::ffi::c_char,
-    pub langOid: Oid,
-    pub langIsTrusted: bool,
-    pub atomic: bool,
-}
-impl Default for InlineCodeBlock {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CallStmt {
-    pub type_: NodeTag,
-    pub funccall: *mut FuncCall,
-    pub funcexpr: *mut FuncExpr,
-    pub outargs: *mut List,
-}
-impl Default for CallStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CallContext {
-    pub type_: NodeTag,
-    pub atomic: bool,
-}
-impl Default for CallContext {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RenameStmt {
-    pub type_: NodeTag,
-    pub renameType: ObjectType::Type,
-    pub relationType: ObjectType::Type,
-    pub relation: *mut RangeVar,
-    pub object: *mut Node,
-    pub subname: *mut ::core::ffi::c_char,
-    pub newname: *mut ::core::ffi::c_char,
-    pub behavior: DropBehavior::Type,
-    pub missing_ok: bool,
-}
-impl Default for RenameStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterObjectDependsStmt {
-    pub type_: NodeTag,
-    pub objectType: ObjectType::Type,
-    pub relation: *mut RangeVar,
-    pub object: *mut Node,
-    pub extname: *mut String,
-    pub remove: bool,
-}
-impl Default for AlterObjectDependsStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterObjectSchemaStmt {
-    pub type_: NodeTag,
-    pub objectType: ObjectType::Type,
-    pub relation: *mut RangeVar,
-    pub object: *mut Node,
-    pub newschema: *mut ::core::ffi::c_char,
-    pub missing_ok: bool,
-}
-impl Default for AlterObjectSchemaStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterOwnerStmt {
-    pub type_: NodeTag,
-    pub objectType: ObjectType::Type,
-    pub relation: *mut RangeVar,
-    pub object: *mut Node,
-    pub newowner: *mut RoleSpec,
-}
-impl Default for AlterOwnerStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterOperatorStmt {
-    pub type_: NodeTag,
-    pub opername: *mut ObjectWithArgs,
-    pub options: *mut List,
-}
-impl Default for AlterOperatorStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterTypeStmt {
-    pub type_: NodeTag,
-    pub typeName: *mut List,
-    pub options: *mut List,
-}
-impl Default for AlterTypeStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RuleStmt {
-    pub type_: NodeTag,
-    pub relation: *mut RangeVar,
-    pub rulename: *mut ::core::ffi::c_char,
-    pub whereClause: *mut Node,
-    pub event: CmdType::Type,
-    pub instead: bool,
-    pub actions: *mut List,
-    pub replace: bool,
-}
-impl Default for RuleStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct NotifyStmt {
-    pub type_: NodeTag,
-    pub conditionname: *mut ::core::ffi::c_char,
-    pub payload: *mut ::core::ffi::c_char,
-}
-impl Default for NotifyStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ListenStmt {
-    pub type_: NodeTag,
-    pub conditionname: *mut ::core::ffi::c_char,
-}
-impl Default for ListenStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct UnlistenStmt {
-    pub type_: NodeTag,
-    pub conditionname: *mut ::core::ffi::c_char,
-}
-impl Default for UnlistenStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod TransactionStmtKind {
-    pub type Type = ::core::ffi::c_uint;
-    pub const TRANS_STMT_BEGIN: Type = 0;
-    pub const TRANS_STMT_START: Type = 1;
-    pub const TRANS_STMT_COMMIT: Type = 2;
-    pub const TRANS_STMT_ROLLBACK: Type = 3;
-    pub const TRANS_STMT_SAVEPOINT: Type = 4;
-    pub const TRANS_STMT_RELEASE: Type = 5;
-    pub const TRANS_STMT_ROLLBACK_TO: Type = 6;
-    pub const TRANS_STMT_PREPARE: Type = 7;
-    pub const TRANS_STMT_COMMIT_PREPARED: Type = 8;
-    pub const TRANS_STMT_ROLLBACK_PREPARED: Type = 9;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct TransactionStmt {
-    pub type_: NodeTag,
-    pub kind: TransactionStmtKind::Type,
-    pub options: *mut List,
-    pub savepoint_name: *mut ::core::ffi::c_char,
-    pub gid: *mut ::core::ffi::c_char,
-    pub chain: bool,
-}
-impl Default for TransactionStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CompositeTypeStmt {
-    pub type_: NodeTag,
-    pub typevar: *mut RangeVar,
-    pub coldeflist: *mut List,
-}
-impl Default for CompositeTypeStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateEnumStmt {
-    pub type_: NodeTag,
-    pub typeName: *mut List,
-    pub vals: *mut List,
-}
-impl Default for CreateEnumStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateRangeStmt {
-    pub type_: NodeTag,
-    pub typeName: *mut List,
-    pub params: *mut List,
-}
-impl Default for CreateRangeStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterEnumStmt {
-    pub type_: NodeTag,
-    pub typeName: *mut List,
-    pub oldVal: *mut ::core::ffi::c_char,
-    pub newVal: *mut ::core::ffi::c_char,
-    pub newValNeighbor: *mut ::core::ffi::c_char,
-    pub newValIsAfter: bool,
-    pub skipIfNewValExists: bool,
-}
-impl Default for AlterEnumStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod ViewCheckOption {
-    pub type Type = ::core::ffi::c_uint;
-    pub const NO_CHECK_OPTION: Type = 0;
-    pub const LOCAL_CHECK_OPTION: Type = 1;
-    pub const CASCADED_CHECK_OPTION: Type = 2;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ViewStmt {
-    pub type_: NodeTag,
-    pub view: *mut RangeVar,
-    pub aliases: *mut List,
-    pub query: *mut Node,
-    pub replace: bool,
-    pub options: *mut List,
-    pub withCheckOption: ViewCheckOption::Type,
-}
-impl Default for ViewStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct LoadStmt {
-    pub type_: NodeTag,
-    pub filename: *mut ::core::ffi::c_char,
-}
-impl Default for LoadStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreatedbStmt {
-    pub type_: NodeTag,
-    pub dbname: *mut ::core::ffi::c_char,
-    pub options: *mut List,
-}
-impl Default for CreatedbStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterDatabaseStmt {
-    pub type_: NodeTag,
-    pub dbname: *mut ::core::ffi::c_char,
-    pub options: *mut List,
-}
-impl Default for AlterDatabaseStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterDatabaseRefreshCollStmt {
-    pub type_: NodeTag,
-    pub dbname: *mut ::core::ffi::c_char,
-}
-impl Default for AlterDatabaseRefreshCollStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterDatabaseSetStmt {
-    pub type_: NodeTag,
-    pub dbname: *mut ::core::ffi::c_char,
-    pub setstmt: *mut VariableSetStmt,
-}
-impl Default for AlterDatabaseSetStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DropdbStmt {
-    pub type_: NodeTag,
-    pub dbname: *mut ::core::ffi::c_char,
-    pub missing_ok: bool,
-    pub options: *mut List,
-}
-impl Default for DropdbStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterSystemStmt {
-    pub type_: NodeTag,
-    pub setstmt: *mut VariableSetStmt,
-}
-impl Default for AlterSystemStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ClusterStmt {
-    pub type_: NodeTag,
-    pub relation: *mut RangeVar,
-    pub indexname: *mut ::core::ffi::c_char,
-    pub params: *mut List,
-}
-impl Default for ClusterStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct VacuumStmt {
-    pub type_: NodeTag,
-    pub options: *mut List,
-    pub rels: *mut List,
-    pub is_vacuumcmd: bool,
-}
-impl Default for VacuumStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct VacuumRelation {
-    pub type_: NodeTag,
-    pub relation: *mut RangeVar,
-    pub oid: Oid,
-    pub va_cols: *mut List,
-}
-impl Default for VacuumRelation {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ExplainStmt {
-    pub type_: NodeTag,
-    pub query: *mut Node,
-    pub options: *mut List,
-}
-impl Default for ExplainStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateTableAsStmt {
-    pub type_: NodeTag,
-    pub query: *mut Node,
-    pub into: *mut IntoClause,
-    pub objtype: ObjectType::Type,
-    pub is_select_into: bool,
-    pub if_not_exists: bool,
-}
-impl Default for CreateTableAsStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RefreshMatViewStmt {
-    pub type_: NodeTag,
-    pub concurrent: bool,
-    pub skipData: bool,
-    pub relation: *mut RangeVar,
-}
-impl Default for RefreshMatViewStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CheckPointStmt {
-    pub type_: NodeTag,
-}
-impl Default for CheckPointStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod DiscardMode {
-    pub type Type = ::core::ffi::c_uint;
-    pub const DISCARD_ALL: Type = 0;
-    pub const DISCARD_PLANS: Type = 1;
-    pub const DISCARD_SEQUENCES: Type = 2;
-    pub const DISCARD_TEMP: Type = 3;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DiscardStmt {
-    pub type_: NodeTag,
-    pub target: DiscardMode::Type,
-}
-impl Default for DiscardStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct LockStmt {
-    pub type_: NodeTag,
-    pub relations: *mut List,
-    pub mode: ::core::ffi::c_int,
-    pub nowait: bool,
-}
-impl Default for LockStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ConstraintsSetStmt {
-    pub type_: NodeTag,
-    pub constraints: *mut List,
-    pub deferred: bool,
-}
-impl Default for ConstraintsSetStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod ReindexObjectType {
-    pub type Type = ::core::ffi::c_uint;
-    pub const REINDEX_OBJECT_INDEX: Type = 0;
-    pub const REINDEX_OBJECT_TABLE: Type = 1;
-    pub const REINDEX_OBJECT_SCHEMA: Type = 2;
-    pub const REINDEX_OBJECT_SYSTEM: Type = 3;
-    pub const REINDEX_OBJECT_DATABASE: Type = 4;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ReindexStmt {
-    pub type_: NodeTag,
-    pub kind: ReindexObjectType::Type,
-    pub relation: *mut RangeVar,
-    pub name: *const ::core::ffi::c_char,
-    pub params: *mut List,
-}
-impl Default for ReindexStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateConversionStmt {
-    pub type_: NodeTag,
-    pub conversion_name: *mut List,
-    pub for_encoding_name: *mut ::core::ffi::c_char,
-    pub to_encoding_name: *mut ::core::ffi::c_char,
-    pub func_name: *mut List,
-    pub def: bool,
-}
-impl Default for CreateConversionStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateCastStmt {
-    pub type_: NodeTag,
-    pub sourcetype: *mut TypeName,
-    pub targettype: *mut TypeName,
-    pub func: *mut ObjectWithArgs,
-    pub context: CoercionContext::Type,
-    pub inout: bool,
-}
-impl Default for CreateCastStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateTransformStmt {
-    pub type_: NodeTag,
-    pub replace: bool,
-    pub type_name: *mut TypeName,
-    pub lang: *mut ::core::ffi::c_char,
-    pub fromsql: *mut ObjectWithArgs,
-    pub tosql: *mut ObjectWithArgs,
-}
-impl Default for CreateTransformStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PrepareStmt {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-    pub argtypes: *mut List,
-    pub query: *mut Node,
-}
-impl Default for PrepareStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ExecuteStmt {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-    pub params: *mut List,
-}
-impl Default for ExecuteStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DeallocateStmt {
-    pub type_: NodeTag,
-    pub name: *mut ::core::ffi::c_char,
-}
-impl Default for DeallocateStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DropOwnedStmt {
-    pub type_: NodeTag,
-    pub roles: *mut List,
-    pub behavior: DropBehavior::Type,
-}
-impl Default for DropOwnedStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ReassignOwnedStmt {
-    pub type_: NodeTag,
-    pub roles: *mut List,
-    pub newrole: *mut RoleSpec,
-}
-impl Default for ReassignOwnedStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterTSDictionaryStmt {
-    pub type_: NodeTag,
-    pub dictname: *mut List,
-    pub options: *mut List,
-}
-impl Default for AlterTSDictionaryStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod AlterTSConfigType {
-    pub type Type = ::core::ffi::c_uint;
-    pub const ALTER_TSCONFIG_ADD_MAPPING: Type = 0;
-    pub const ALTER_TSCONFIG_ALTER_MAPPING_FOR_TOKEN: Type = 1;
-    pub const ALTER_TSCONFIG_REPLACE_DICT: Type = 2;
-    pub const ALTER_TSCONFIG_REPLACE_DICT_FOR_TOKEN: Type = 3;
-    pub const ALTER_TSCONFIG_DROP_MAPPING: Type = 4;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterTSConfigurationStmt {
-    pub type_: NodeTag,
-    pub kind: AlterTSConfigType::Type,
-    pub cfgname: *mut List,
-    pub tokentype: *mut List,
-    pub dicts: *mut List,
-    pub override_: bool,
-    pub replace: bool,
-    pub missing_ok: bool,
-}
-impl Default for AlterTSConfigurationStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PublicationTable {
-    pub type_: NodeTag,
-    pub relation: *mut RangeVar,
-    pub whereClause: *mut Node,
-    pub columns: *mut List,
-}
-impl Default for PublicationTable {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod PublicationObjSpecType {
-    pub type Type = ::core::ffi::c_uint;
-    pub const PUBLICATIONOBJ_TABLE: Type = 0;
-    pub const PUBLICATIONOBJ_TABLES_IN_SCHEMA: Type = 1;
-    pub const PUBLICATIONOBJ_TABLES_IN_CUR_SCHEMA: Type = 2;
-    pub const PUBLICATIONOBJ_CONTINUATION: Type = 3;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PublicationObjSpec {
-    pub type_: NodeTag,
-    pub pubobjtype: PublicationObjSpecType::Type,
-    pub name: *mut ::core::ffi::c_char,
-    pub pubtable: *mut PublicationTable,
-    pub location: ::core::ffi::c_int,
-}
-impl Default for PublicationObjSpec {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreatePublicationStmt {
-    pub type_: NodeTag,
-    pub pubname: *mut ::core::ffi::c_char,
-    pub options: *mut List,
-    pub pubobjects: *mut List,
-    pub for_all_tables: bool,
-}
-impl Default for CreatePublicationStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod AlterPublicationAction {
-    pub type Type = ::core::ffi::c_uint;
-    pub const AP_AddObjects: Type = 0;
-    pub const AP_DropObjects: Type = 1;
-    pub const AP_SetObjects: Type = 2;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterPublicationStmt {
-    pub type_: NodeTag,
-    pub pubname: *mut ::core::ffi::c_char,
-    pub options: *mut List,
-    pub pubobjects: *mut List,
-    pub for_all_tables: bool,
-    pub action: AlterPublicationAction::Type,
-}
-impl Default for AlterPublicationStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CreateSubscriptionStmt {
-    pub type_: NodeTag,
-    pub subname: *mut ::core::ffi::c_char,
-    pub conninfo: *mut ::core::ffi::c_char,
-    pub publication: *mut List,
-    pub options: *mut List,
-}
-impl Default for CreateSubscriptionStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod AlterSubscriptionType {
-    pub type Type = ::core::ffi::c_uint;
-    pub const ALTER_SUBSCRIPTION_OPTIONS: Type = 0;
-    pub const ALTER_SUBSCRIPTION_CONNECTION: Type = 1;
-    pub const ALTER_SUBSCRIPTION_SET_PUBLICATION: Type = 2;
-    pub const ALTER_SUBSCRIPTION_ADD_PUBLICATION: Type = 3;
-    pub const ALTER_SUBSCRIPTION_DROP_PUBLICATION: Type = 4;
-    pub const ALTER_SUBSCRIPTION_REFRESH: Type = 5;
-    pub const ALTER_SUBSCRIPTION_ENABLED: Type = 6;
-    pub const ALTER_SUBSCRIPTION_SKIP: Type = 7;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct AlterSubscriptionStmt {
-    pub type_: NodeTag,
-    pub kind: AlterSubscriptionType::Type,
-    pub subname: *mut ::core::ffi::c_char,
-    pub conninfo: *mut ::core::ffi::c_char,
-    pub publication: *mut List,
-    pub options: *mut List,
-}
-impl Default for AlterSubscriptionStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DropSubscriptionStmt {
-    pub type_: NodeTag,
-    pub subname: *mut ::core::ffi::c_char,
-    pub missing_ok: bool,
-    pub behavior: DropBehavior::Type,
-}
-impl Default for DropSubscriptionStmt {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
 pub struct PlannedStmt {
     pub type_: NodeTag,
     pub commandType: CmdType::Type,
@@ -14992,8 +11396,8 @@ pub struct PlannedStmt {
     pub invalItems: *mut List,
     pub paramExecTypes: *mut List,
     pub utilityStmt: *mut Node,
-    pub stmt_location: ::core::ffi::c_int,
-    pub stmt_len: ::core::ffi::c_int,
+    pub stmt_location: ParseLoc,
+    pub stmt_len: ParseLoc,
 }
 impl Default for PlannedStmt {
     fn default() -> Self {
@@ -15087,6 +11491,7 @@ pub struct ModifyTable {
     pub exclRelRTI: Index,
     pub exclRelTlist: *mut List,
     pub mergeActionLists: *mut List,
+    pub mergeJoinConditions: *mut List,
 }
 impl Default for ModifyTable {
     fn default() -> Self {
@@ -16082,22 +12487,47 @@ pub struct TBMIterateResult {
     pub offsets: __IncompleteArrayField<OffsetNumber>,
 }
 #[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PartitionBoundInfoData {
+    _unused: [u8; 0],
+}
+pub type PartitionBoundInfo = *mut PartitionBoundInfoData;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PartitionKeyData {
+    _unused: [u8; 0],
+}
+pub type PartitionKey = *mut PartitionKeyData;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PartitionDescData {
+    _unused: [u8; 0],
+}
+pub type PartitionDesc = *mut PartitionDescData;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PartitionDirectoryData {
+    _unused: [u8; 0],
+}
+pub type PartitionDirectory = *mut PartitionDirectoryData;
+pub type ProcNumber = ::core::ffi::c_int;
+#[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub struct proclist_node {
-    pub next: ::core::ffi::c_int,
-    pub prev: ::core::ffi::c_int,
+    pub next: ProcNumber,
+    pub prev: ProcNumber,
 }
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub struct proclist_head {
-    pub head: ::core::ffi::c_int,
-    pub tail: ::core::ffi::c_int,
+    pub head: ProcNumber,
+    pub tail: ProcNumber,
 }
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub struct proclist_mutable_iter {
-    pub cur: ::core::ffi::c_int,
-    pub next: ::core::ffi::c_int,
+    pub cur: ProcNumber,
+    pub next: ProcNumber,
 }
 pub type slock_t = ::core::ffi::c_int;
 #[repr(C)]
@@ -16346,6 +12776,334 @@ impl Default for TriggerDesc {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct iovec {
+    pub iov_base: *mut ::core::ffi::c_void,
+    pub iov_len: usize,
+}
+impl Default for iovec {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub type useconds_t = __useconds_t;
+pub type socklen_t = __socklen_t;
+pub mod _bindgen_ty_3 {
+    pub type Type = ::core::ffi::c_uint;
+    pub const _PC_LINK_MAX: Type = 0;
+    pub const _PC_MAX_CANON: Type = 1;
+    pub const _PC_MAX_INPUT: Type = 2;
+    pub const _PC_NAME_MAX: Type = 3;
+    pub const _PC_PATH_MAX: Type = 4;
+    pub const _PC_PIPE_BUF: Type = 5;
+    pub const _PC_CHOWN_RESTRICTED: Type = 6;
+    pub const _PC_NO_TRUNC: Type = 7;
+    pub const _PC_VDISABLE: Type = 8;
+    pub const _PC_SYNC_IO: Type = 9;
+    pub const _PC_ASYNC_IO: Type = 10;
+    pub const _PC_PRIO_IO: Type = 11;
+    pub const _PC_SOCK_MAXBUF: Type = 12;
+    pub const _PC_FILESIZEBITS: Type = 13;
+    pub const _PC_REC_INCR_XFER_SIZE: Type = 14;
+    pub const _PC_REC_MAX_XFER_SIZE: Type = 15;
+    pub const _PC_REC_MIN_XFER_SIZE: Type = 16;
+    pub const _PC_REC_XFER_ALIGN: Type = 17;
+    pub const _PC_ALLOC_SIZE_MIN: Type = 18;
+    pub const _PC_SYMLINK_MAX: Type = 19;
+    pub const _PC_2_SYMLINKS: Type = 20;
+}
+pub mod _bindgen_ty_4 {
+    pub type Type = ::core::ffi::c_uint;
+    pub const _SC_ARG_MAX: Type = 0;
+    pub const _SC_CHILD_MAX: Type = 1;
+    pub const _SC_CLK_TCK: Type = 2;
+    pub const _SC_NGROUPS_MAX: Type = 3;
+    pub const _SC_OPEN_MAX: Type = 4;
+    pub const _SC_STREAM_MAX: Type = 5;
+    pub const _SC_TZNAME_MAX: Type = 6;
+    pub const _SC_JOB_CONTROL: Type = 7;
+    pub const _SC_SAVED_IDS: Type = 8;
+    pub const _SC_REALTIME_SIGNALS: Type = 9;
+    pub const _SC_PRIORITY_SCHEDULING: Type = 10;
+    pub const _SC_TIMERS: Type = 11;
+    pub const _SC_ASYNCHRONOUS_IO: Type = 12;
+    pub const _SC_PRIORITIZED_IO: Type = 13;
+    pub const _SC_SYNCHRONIZED_IO: Type = 14;
+    pub const _SC_FSYNC: Type = 15;
+    pub const _SC_MAPPED_FILES: Type = 16;
+    pub const _SC_MEMLOCK: Type = 17;
+    pub const _SC_MEMLOCK_RANGE: Type = 18;
+    pub const _SC_MEMORY_PROTECTION: Type = 19;
+    pub const _SC_MESSAGE_PASSING: Type = 20;
+    pub const _SC_SEMAPHORES: Type = 21;
+    pub const _SC_SHARED_MEMORY_OBJECTS: Type = 22;
+    pub const _SC_AIO_LISTIO_MAX: Type = 23;
+    pub const _SC_AIO_MAX: Type = 24;
+    pub const _SC_AIO_PRIO_DELTA_MAX: Type = 25;
+    pub const _SC_DELAYTIMER_MAX: Type = 26;
+    pub const _SC_MQ_OPEN_MAX: Type = 27;
+    pub const _SC_MQ_PRIO_MAX: Type = 28;
+    pub const _SC_VERSION: Type = 29;
+    pub const _SC_PAGESIZE: Type = 30;
+    pub const _SC_RTSIG_MAX: Type = 31;
+    pub const _SC_SEM_NSEMS_MAX: Type = 32;
+    pub const _SC_SEM_VALUE_MAX: Type = 33;
+    pub const _SC_SIGQUEUE_MAX: Type = 34;
+    pub const _SC_TIMER_MAX: Type = 35;
+    pub const _SC_BC_BASE_MAX: Type = 36;
+    pub const _SC_BC_DIM_MAX: Type = 37;
+    pub const _SC_BC_SCALE_MAX: Type = 38;
+    pub const _SC_BC_STRING_MAX: Type = 39;
+    pub const _SC_COLL_WEIGHTS_MAX: Type = 40;
+    pub const _SC_EQUIV_CLASS_MAX: Type = 41;
+    pub const _SC_EXPR_NEST_MAX: Type = 42;
+    pub const _SC_LINE_MAX: Type = 43;
+    pub const _SC_RE_DUP_MAX: Type = 44;
+    pub const _SC_CHARCLASS_NAME_MAX: Type = 45;
+    pub const _SC_2_VERSION: Type = 46;
+    pub const _SC_2_C_BIND: Type = 47;
+    pub const _SC_2_C_DEV: Type = 48;
+    pub const _SC_2_FORT_DEV: Type = 49;
+    pub const _SC_2_FORT_RUN: Type = 50;
+    pub const _SC_2_SW_DEV: Type = 51;
+    pub const _SC_2_LOCALEDEF: Type = 52;
+    pub const _SC_PII: Type = 53;
+    pub const _SC_PII_XTI: Type = 54;
+    pub const _SC_PII_SOCKET: Type = 55;
+    pub const _SC_PII_INTERNET: Type = 56;
+    pub const _SC_PII_OSI: Type = 57;
+    pub const _SC_POLL: Type = 58;
+    pub const _SC_SELECT: Type = 59;
+    pub const _SC_UIO_MAXIOV: Type = 60;
+    pub const _SC_IOV_MAX: Type = 60;
+    pub const _SC_PII_INTERNET_STREAM: Type = 61;
+    pub const _SC_PII_INTERNET_DGRAM: Type = 62;
+    pub const _SC_PII_OSI_COTS: Type = 63;
+    pub const _SC_PII_OSI_CLTS: Type = 64;
+    pub const _SC_PII_OSI_M: Type = 65;
+    pub const _SC_T_IOV_MAX: Type = 66;
+    pub const _SC_THREADS: Type = 67;
+    pub const _SC_THREAD_SAFE_FUNCTIONS: Type = 68;
+    pub const _SC_GETGR_R_SIZE_MAX: Type = 69;
+    pub const _SC_GETPW_R_SIZE_MAX: Type = 70;
+    pub const _SC_LOGIN_NAME_MAX: Type = 71;
+    pub const _SC_TTY_NAME_MAX: Type = 72;
+    pub const _SC_THREAD_DESTRUCTOR_ITERATIONS: Type = 73;
+    pub const _SC_THREAD_KEYS_MAX: Type = 74;
+    pub const _SC_THREAD_STACK_MIN: Type = 75;
+    pub const _SC_THREAD_THREADS_MAX: Type = 76;
+    pub const _SC_THREAD_ATTR_STACKADDR: Type = 77;
+    pub const _SC_THREAD_ATTR_STACKSIZE: Type = 78;
+    pub const _SC_THREAD_PRIORITY_SCHEDULING: Type = 79;
+    pub const _SC_THREAD_PRIO_INHERIT: Type = 80;
+    pub const _SC_THREAD_PRIO_PROTECT: Type = 81;
+    pub const _SC_THREAD_PROCESS_SHARED: Type = 82;
+    pub const _SC_NPROCESSORS_CONF: Type = 83;
+    pub const _SC_NPROCESSORS_ONLN: Type = 84;
+    pub const _SC_PHYS_PAGES: Type = 85;
+    pub const _SC_AVPHYS_PAGES: Type = 86;
+    pub const _SC_ATEXIT_MAX: Type = 87;
+    pub const _SC_PASS_MAX: Type = 88;
+    pub const _SC_XOPEN_VERSION: Type = 89;
+    pub const _SC_XOPEN_XCU_VERSION: Type = 90;
+    pub const _SC_XOPEN_UNIX: Type = 91;
+    pub const _SC_XOPEN_CRYPT: Type = 92;
+    pub const _SC_XOPEN_ENH_I18N: Type = 93;
+    pub const _SC_XOPEN_SHM: Type = 94;
+    pub const _SC_2_CHAR_TERM: Type = 95;
+    pub const _SC_2_C_VERSION: Type = 96;
+    pub const _SC_2_UPE: Type = 97;
+    pub const _SC_XOPEN_XPG2: Type = 98;
+    pub const _SC_XOPEN_XPG3: Type = 99;
+    pub const _SC_XOPEN_XPG4: Type = 100;
+    pub const _SC_CHAR_BIT: Type = 101;
+    pub const _SC_CHAR_MAX: Type = 102;
+    pub const _SC_CHAR_MIN: Type = 103;
+    pub const _SC_INT_MAX: Type = 104;
+    pub const _SC_INT_MIN: Type = 105;
+    pub const _SC_LONG_BIT: Type = 106;
+    pub const _SC_WORD_BIT: Type = 107;
+    pub const _SC_MB_LEN_MAX: Type = 108;
+    pub const _SC_NZERO: Type = 109;
+    pub const _SC_SSIZE_MAX: Type = 110;
+    pub const _SC_SCHAR_MAX: Type = 111;
+    pub const _SC_SCHAR_MIN: Type = 112;
+    pub const _SC_SHRT_MAX: Type = 113;
+    pub const _SC_SHRT_MIN: Type = 114;
+    pub const _SC_UCHAR_MAX: Type = 115;
+    pub const _SC_UINT_MAX: Type = 116;
+    pub const _SC_ULONG_MAX: Type = 117;
+    pub const _SC_USHRT_MAX: Type = 118;
+    pub const _SC_NL_ARGMAX: Type = 119;
+    pub const _SC_NL_LANGMAX: Type = 120;
+    pub const _SC_NL_MSGMAX: Type = 121;
+    pub const _SC_NL_NMAX: Type = 122;
+    pub const _SC_NL_SETMAX: Type = 123;
+    pub const _SC_NL_TEXTMAX: Type = 124;
+    pub const _SC_XBS5_ILP32_OFF32: Type = 125;
+    pub const _SC_XBS5_ILP32_OFFBIG: Type = 126;
+    pub const _SC_XBS5_LP64_OFF64: Type = 127;
+    pub const _SC_XBS5_LPBIG_OFFBIG: Type = 128;
+    pub const _SC_XOPEN_LEGACY: Type = 129;
+    pub const _SC_XOPEN_REALTIME: Type = 130;
+    pub const _SC_XOPEN_REALTIME_THREADS: Type = 131;
+    pub const _SC_ADVISORY_INFO: Type = 132;
+    pub const _SC_BARRIERS: Type = 133;
+    pub const _SC_BASE: Type = 134;
+    pub const _SC_C_LANG_SUPPORT: Type = 135;
+    pub const _SC_C_LANG_SUPPORT_R: Type = 136;
+    pub const _SC_CLOCK_SELECTION: Type = 137;
+    pub const _SC_CPUTIME: Type = 138;
+    pub const _SC_THREAD_CPUTIME: Type = 139;
+    pub const _SC_DEVICE_IO: Type = 140;
+    pub const _SC_DEVICE_SPECIFIC: Type = 141;
+    pub const _SC_DEVICE_SPECIFIC_R: Type = 142;
+    pub const _SC_FD_MGMT: Type = 143;
+    pub const _SC_FIFO: Type = 144;
+    pub const _SC_PIPE: Type = 145;
+    pub const _SC_FILE_ATTRIBUTES: Type = 146;
+    pub const _SC_FILE_LOCKING: Type = 147;
+    pub const _SC_FILE_SYSTEM: Type = 148;
+    pub const _SC_MONOTONIC_CLOCK: Type = 149;
+    pub const _SC_MULTI_PROCESS: Type = 150;
+    pub const _SC_SINGLE_PROCESS: Type = 151;
+    pub const _SC_NETWORKING: Type = 152;
+    pub const _SC_READER_WRITER_LOCKS: Type = 153;
+    pub const _SC_SPIN_LOCKS: Type = 154;
+    pub const _SC_REGEXP: Type = 155;
+    pub const _SC_REGEX_VERSION: Type = 156;
+    pub const _SC_SHELL: Type = 157;
+    pub const _SC_SIGNALS: Type = 158;
+    pub const _SC_SPAWN: Type = 159;
+    pub const _SC_SPORADIC_SERVER: Type = 160;
+    pub const _SC_THREAD_SPORADIC_SERVER: Type = 161;
+    pub const _SC_SYSTEM_DATABASE: Type = 162;
+    pub const _SC_SYSTEM_DATABASE_R: Type = 163;
+    pub const _SC_TIMEOUTS: Type = 164;
+    pub const _SC_TYPED_MEMORY_OBJECTS: Type = 165;
+    pub const _SC_USER_GROUPS: Type = 166;
+    pub const _SC_USER_GROUPS_R: Type = 167;
+    pub const _SC_2_PBS: Type = 168;
+    pub const _SC_2_PBS_ACCOUNTING: Type = 169;
+    pub const _SC_2_PBS_LOCATE: Type = 170;
+    pub const _SC_2_PBS_MESSAGE: Type = 171;
+    pub const _SC_2_PBS_TRACK: Type = 172;
+    pub const _SC_SYMLOOP_MAX: Type = 173;
+    pub const _SC_STREAMS: Type = 174;
+    pub const _SC_2_PBS_CHECKPOINT: Type = 175;
+    pub const _SC_V6_ILP32_OFF32: Type = 176;
+    pub const _SC_V6_ILP32_OFFBIG: Type = 177;
+    pub const _SC_V6_LP64_OFF64: Type = 178;
+    pub const _SC_V6_LPBIG_OFFBIG: Type = 179;
+    pub const _SC_HOST_NAME_MAX: Type = 180;
+    pub const _SC_TRACE: Type = 181;
+    pub const _SC_TRACE_EVENT_FILTER: Type = 182;
+    pub const _SC_TRACE_INHERIT: Type = 183;
+    pub const _SC_TRACE_LOG: Type = 184;
+    pub const _SC_LEVEL1_ICACHE_SIZE: Type = 185;
+    pub const _SC_LEVEL1_ICACHE_ASSOC: Type = 186;
+    pub const _SC_LEVEL1_ICACHE_LINESIZE: Type = 187;
+    pub const _SC_LEVEL1_DCACHE_SIZE: Type = 188;
+    pub const _SC_LEVEL1_DCACHE_ASSOC: Type = 189;
+    pub const _SC_LEVEL1_DCACHE_LINESIZE: Type = 190;
+    pub const _SC_LEVEL2_CACHE_SIZE: Type = 191;
+    pub const _SC_LEVEL2_CACHE_ASSOC: Type = 192;
+    pub const _SC_LEVEL2_CACHE_LINESIZE: Type = 193;
+    pub const _SC_LEVEL3_CACHE_SIZE: Type = 194;
+    pub const _SC_LEVEL3_CACHE_ASSOC: Type = 195;
+    pub const _SC_LEVEL3_CACHE_LINESIZE: Type = 196;
+    pub const _SC_LEVEL4_CACHE_SIZE: Type = 197;
+    pub const _SC_LEVEL4_CACHE_ASSOC: Type = 198;
+    pub const _SC_LEVEL4_CACHE_LINESIZE: Type = 199;
+    pub const _SC_IPV6: Type = 235;
+    pub const _SC_RAW_SOCKETS: Type = 236;
+    pub const _SC_V7_ILP32_OFF32: Type = 237;
+    pub const _SC_V7_ILP32_OFFBIG: Type = 238;
+    pub const _SC_V7_LP64_OFF64: Type = 239;
+    pub const _SC_V7_LPBIG_OFFBIG: Type = 240;
+    pub const _SC_SS_REPL_MAX: Type = 241;
+    pub const _SC_TRACE_EVENT_NAME_MAX: Type = 242;
+    pub const _SC_TRACE_NAME_MAX: Type = 243;
+    pub const _SC_TRACE_SYS_MAX: Type = 244;
+    pub const _SC_TRACE_USER_EVENT_MAX: Type = 245;
+    pub const _SC_XOPEN_STREAMS: Type = 246;
+    pub const _SC_THREAD_ROBUST_PRIO_INHERIT: Type = 247;
+    pub const _SC_THREAD_ROBUST_PRIO_PROTECT: Type = 248;
+    pub const _SC_MINSIGSTKSZ: Type = 249;
+    pub const _SC_SIGSTKSZ: Type = 250;
+}
+pub mod _bindgen_ty_5 {
+    pub type Type = ::core::ffi::c_uint;
+    pub const _CS_PATH: Type = 0;
+    pub const _CS_V6_WIDTH_RESTRICTED_ENVS: Type = 1;
+    pub const _CS_GNU_LIBC_VERSION: Type = 2;
+    pub const _CS_GNU_LIBPTHREAD_VERSION: Type = 3;
+    pub const _CS_V5_WIDTH_RESTRICTED_ENVS: Type = 4;
+    pub const _CS_V7_WIDTH_RESTRICTED_ENVS: Type = 5;
+    pub const _CS_LFS_CFLAGS: Type = 1000;
+    pub const _CS_LFS_LDFLAGS: Type = 1001;
+    pub const _CS_LFS_LIBS: Type = 1002;
+    pub const _CS_LFS_LINTFLAGS: Type = 1003;
+    pub const _CS_LFS64_CFLAGS: Type = 1004;
+    pub const _CS_LFS64_LDFLAGS: Type = 1005;
+    pub const _CS_LFS64_LIBS: Type = 1006;
+    pub const _CS_LFS64_LINTFLAGS: Type = 1007;
+    pub const _CS_XBS5_ILP32_OFF32_CFLAGS: Type = 1100;
+    pub const _CS_XBS5_ILP32_OFF32_LDFLAGS: Type = 1101;
+    pub const _CS_XBS5_ILP32_OFF32_LIBS: Type = 1102;
+    pub const _CS_XBS5_ILP32_OFF32_LINTFLAGS: Type = 1103;
+    pub const _CS_XBS5_ILP32_OFFBIG_CFLAGS: Type = 1104;
+    pub const _CS_XBS5_ILP32_OFFBIG_LDFLAGS: Type = 1105;
+    pub const _CS_XBS5_ILP32_OFFBIG_LIBS: Type = 1106;
+    pub const _CS_XBS5_ILP32_OFFBIG_LINTFLAGS: Type = 1107;
+    pub const _CS_XBS5_LP64_OFF64_CFLAGS: Type = 1108;
+    pub const _CS_XBS5_LP64_OFF64_LDFLAGS: Type = 1109;
+    pub const _CS_XBS5_LP64_OFF64_LIBS: Type = 1110;
+    pub const _CS_XBS5_LP64_OFF64_LINTFLAGS: Type = 1111;
+    pub const _CS_XBS5_LPBIG_OFFBIG_CFLAGS: Type = 1112;
+    pub const _CS_XBS5_LPBIG_OFFBIG_LDFLAGS: Type = 1113;
+    pub const _CS_XBS5_LPBIG_OFFBIG_LIBS: Type = 1114;
+    pub const _CS_XBS5_LPBIG_OFFBIG_LINTFLAGS: Type = 1115;
+    pub const _CS_POSIX_V6_ILP32_OFF32_CFLAGS: Type = 1116;
+    pub const _CS_POSIX_V6_ILP32_OFF32_LDFLAGS: Type = 1117;
+    pub const _CS_POSIX_V6_ILP32_OFF32_LIBS: Type = 1118;
+    pub const _CS_POSIX_V6_ILP32_OFF32_LINTFLAGS: Type = 1119;
+    pub const _CS_POSIX_V6_ILP32_OFFBIG_CFLAGS: Type = 1120;
+    pub const _CS_POSIX_V6_ILP32_OFFBIG_LDFLAGS: Type = 1121;
+    pub const _CS_POSIX_V6_ILP32_OFFBIG_LIBS: Type = 1122;
+    pub const _CS_POSIX_V6_ILP32_OFFBIG_LINTFLAGS: Type = 1123;
+    pub const _CS_POSIX_V6_LP64_OFF64_CFLAGS: Type = 1124;
+    pub const _CS_POSIX_V6_LP64_OFF64_LDFLAGS: Type = 1125;
+    pub const _CS_POSIX_V6_LP64_OFF64_LIBS: Type = 1126;
+    pub const _CS_POSIX_V6_LP64_OFF64_LINTFLAGS: Type = 1127;
+    pub const _CS_POSIX_V6_LPBIG_OFFBIG_CFLAGS: Type = 1128;
+    pub const _CS_POSIX_V6_LPBIG_OFFBIG_LDFLAGS: Type = 1129;
+    pub const _CS_POSIX_V6_LPBIG_OFFBIG_LIBS: Type = 1130;
+    pub const _CS_POSIX_V6_LPBIG_OFFBIG_LINTFLAGS: Type = 1131;
+    pub const _CS_POSIX_V7_ILP32_OFF32_CFLAGS: Type = 1132;
+    pub const _CS_POSIX_V7_ILP32_OFF32_LDFLAGS: Type = 1133;
+    pub const _CS_POSIX_V7_ILP32_OFF32_LIBS: Type = 1134;
+    pub const _CS_POSIX_V7_ILP32_OFF32_LINTFLAGS: Type = 1135;
+    pub const _CS_POSIX_V7_ILP32_OFFBIG_CFLAGS: Type = 1136;
+    pub const _CS_POSIX_V7_ILP32_OFFBIG_LDFLAGS: Type = 1137;
+    pub const _CS_POSIX_V7_ILP32_OFFBIG_LIBS: Type = 1138;
+    pub const _CS_POSIX_V7_ILP32_OFFBIG_LINTFLAGS: Type = 1139;
+    pub const _CS_POSIX_V7_LP64_OFF64_CFLAGS: Type = 1140;
+    pub const _CS_POSIX_V7_LP64_OFF64_LDFLAGS: Type = 1141;
+    pub const _CS_POSIX_V7_LP64_OFF64_LIBS: Type = 1142;
+    pub const _CS_POSIX_V7_LP64_OFF64_LINTFLAGS: Type = 1143;
+    pub const _CS_POSIX_V7_LPBIG_OFFBIG_CFLAGS: Type = 1144;
+    pub const _CS_POSIX_V7_LPBIG_OFFBIG_LDFLAGS: Type = 1145;
+    pub const _CS_POSIX_V7_LPBIG_OFFBIG_LIBS: Type = 1146;
+    pub const _CS_POSIX_V7_LPBIG_OFFBIG_LINTFLAGS: Type = 1147;
+    pub const _CS_V6_ENV: Type = 1148;
+    pub const _CS_V7_ENV: Type = 1149;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct dirent {
     pub d_ino: __ino_t,
     pub d_off: __off_t,
@@ -16362,7 +13120,7 @@ impl Default for dirent {
         }
     }
 }
-pub mod _bindgen_ty_3 {
+pub mod _bindgen_ty_6 {
     pub type Type = ::core::ffi::c_uint;
     pub const DT_UNKNOWN: Type = 0;
     pub const DT_FIFO: Type = 1;
@@ -16380,11 +13138,6 @@ pub struct __dirstream {
     _unused: [u8; 0],
 }
 pub type DIR = __dirstream;
-pub mod RecoveryInitSyncMethod {
-    pub type Type = ::core::ffi::c_uint;
-    pub const RECOVERY_INIT_SYNC_METHOD_FSYNC: Type = 0;
-    pub const RECOVERY_INIT_SYNC_METHOD_SYNCFS: Type = 1;
-}
 pub type File = ::core::ffi::c_int;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -16545,6 +13298,484 @@ impl Default for SortSupportData {
     }
 }
 #[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ScanKeyData {
+    pub sk_flags: ::core::ffi::c_int,
+    pub sk_attno: AttrNumber,
+    pub sk_strategy: StrategyNumber,
+    pub sk_subtype: Oid,
+    pub sk_collation: Oid,
+    pub sk_func: FmgrInfo,
+    pub sk_argument: Datum,
+}
+impl Default for ScanKeyData {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub type ScanKey = *mut ScanKeyData;
+pub type LOCKMASK = ::core::ffi::c_int;
+pub type LOCKMODE = ::core::ffi::c_int;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct xl_standby_lock {
+    pub xid: TransactionId,
+    pub dbOid: Oid,
+    pub relOid: Oid,
+}
+impl Default for xl_standby_lock {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct IndexBuildResult {
+    pub heap_tuples: f64,
+    pub index_tuples: f64,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct IndexVacuumInfo {
+    pub index: Relation,
+    pub heaprel: Relation,
+    pub analyze_only: bool,
+    pub report_progress: bool,
+    pub estimated_count: bool,
+    pub message_level: ::core::ffi::c_int,
+    pub num_heap_tuples: f64,
+    pub strategy: BufferAccessStrategy,
+}
+impl Default for IndexVacuumInfo {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct IndexBulkDeleteResult {
+    pub num_pages: BlockNumber,
+    pub estimated_count: bool,
+    pub num_index_tuples: f64,
+    pub tuples_removed: f64,
+    pub pages_newly_deleted: BlockNumber,
+    pub pages_deleted: BlockNumber,
+    pub pages_free: BlockNumber,
+}
+pub type IndexBulkDeleteCallback = ::core::option::Option<
+    unsafe extern "C" fn(itemptr: ItemPointer, state: *mut ::core::ffi::c_void) -> bool,
+>;
+pub type IndexScanDesc = *mut IndexScanDescData;
+pub type SysScanDesc = *mut SysScanDescData;
+pub type ParallelIndexScanDesc = *mut ParallelIndexScanDescData;
+pub mod IndexUniqueCheck {
+    pub type Type = ::core::ffi::c_uint;
+    pub const UNIQUE_CHECK_NO: Type = 0;
+    pub const UNIQUE_CHECK_YES: Type = 1;
+    pub const UNIQUE_CHECK_PARTIAL: Type = 2;
+    pub const UNIQUE_CHECK_EXISTING: Type = 3;
+}
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct IndexOrderByDistance {
+    pub value: f64,
+    pub isnull: bool,
+}
+pub mod IndexAMProperty {
+    pub type Type = ::core::ffi::c_uint;
+    pub const AMPROP_UNKNOWN: Type = 0;
+    pub const AMPROP_ASC: Type = 1;
+    pub const AMPROP_DESC: Type = 2;
+    pub const AMPROP_NULLS_FIRST: Type = 3;
+    pub const AMPROP_NULLS_LAST: Type = 4;
+    pub const AMPROP_ORDERABLE: Type = 5;
+    pub const AMPROP_DISTANCE_ORDERABLE: Type = 6;
+    pub const AMPROP_RETURNABLE: Type = 7;
+    pub const AMPROP_SEARCH_ARRAY: Type = 8;
+    pub const AMPROP_SEARCH_NULLS: Type = 9;
+    pub const AMPROP_CLUSTERABLE: Type = 10;
+    pub const AMPROP_INDEX_SCAN: Type = 11;
+    pub const AMPROP_BITMAP_SCAN: Type = 12;
+    pub const AMPROP_BACKWARD_SCAN: Type = 13;
+    pub const AMPROP_CAN_ORDER: Type = 14;
+    pub const AMPROP_CAN_UNIQUE: Type = 15;
+    pub const AMPROP_CAN_MULTI_COL: Type = 16;
+    pub const AMPROP_CAN_EXCLUDE: Type = 17;
+    pub const AMPROP_CAN_INCLUDE: Type = 18;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct OpFamilyMember {
+    pub is_func: bool,
+    pub object: Oid,
+    pub number: ::core::ffi::c_int,
+    pub lefttype: Oid,
+    pub righttype: Oid,
+    pub sortfamily: Oid,
+    pub ref_is_hard: bool,
+    pub ref_is_family: bool,
+    pub refobjid: Oid,
+}
+impl Default for OpFamilyMember {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub type ambuild_function = ::core::option::Option<
+    unsafe extern "C" fn(
+        heapRelation: Relation,
+        indexRelation: Relation,
+        indexInfo: *mut IndexInfo,
+    ) -> *mut IndexBuildResult,
+>;
+pub type ambuildempty_function =
+    ::core::option::Option<unsafe extern "C" fn(indexRelation: Relation)>;
+pub type aminsert_function = ::core::option::Option<
+    unsafe extern "C" fn(
+        indexRelation: Relation,
+        values: *mut Datum,
+        isnull: *mut bool,
+        heap_tid: ItemPointer,
+        heapRelation: Relation,
+        checkUnique: IndexUniqueCheck::Type,
+        indexUnchanged: bool,
+        indexInfo: *mut IndexInfo,
+    ) -> bool,
+>;
+pub type aminsertcleanup_function = ::core::option::Option<
+    unsafe extern "C" fn(indexRelation: Relation, indexInfo: *mut IndexInfo),
+>;
+pub type ambulkdelete_function = ::core::option::Option<
+    unsafe extern "C" fn(
+        info: *mut IndexVacuumInfo,
+        stats: *mut IndexBulkDeleteResult,
+        callback: IndexBulkDeleteCallback,
+        callback_state: *mut ::core::ffi::c_void,
+    ) -> *mut IndexBulkDeleteResult,
+>;
+pub type amvacuumcleanup_function = ::core::option::Option<
+    unsafe extern "C" fn(
+        info: *mut IndexVacuumInfo,
+        stats: *mut IndexBulkDeleteResult,
+    ) -> *mut IndexBulkDeleteResult,
+>;
+pub type amcanreturn_function = ::core::option::Option<
+    unsafe extern "C" fn(indexRelation: Relation, attno: ::core::ffi::c_int) -> bool,
+>;
+pub type amcostestimate_function = ::core::option::Option<
+    unsafe extern "C" fn(
+        root: *mut PlannerInfo,
+        path: *mut IndexPath,
+        loop_count: f64,
+        indexStartupCost: *mut Cost,
+        indexTotalCost: *mut Cost,
+        indexSelectivity: *mut Selectivity,
+        indexCorrelation: *mut f64,
+        indexPages: *mut f64,
+    ),
+>;
+pub type amoptions_function =
+    ::core::option::Option<unsafe extern "C" fn(reloptions: Datum, validate: bool) -> *mut bytea>;
+pub type amproperty_function = ::core::option::Option<
+    unsafe extern "C" fn(
+        index_oid: Oid,
+        attno: ::core::ffi::c_int,
+        prop: IndexAMProperty::Type,
+        propname: *const ::core::ffi::c_char,
+        res: *mut bool,
+        isnull: *mut bool,
+    ) -> bool,
+>;
+pub type ambuildphasename_function =
+    ::core::option::Option<unsafe extern "C" fn(phasenum: int64) -> *mut ::core::ffi::c_char>;
+pub type amvalidate_function =
+    ::core::option::Option<unsafe extern "C" fn(opclassoid: Oid) -> bool>;
+pub type amadjustmembers_function = ::core::option::Option<
+    unsafe extern "C" fn(
+        opfamilyoid: Oid,
+        opclassoid: Oid,
+        operators: *mut List,
+        functions: *mut List,
+    ),
+>;
+pub type ambeginscan_function = ::core::option::Option<
+    unsafe extern "C" fn(
+        indexRelation: Relation,
+        nkeys: ::core::ffi::c_int,
+        norderbys: ::core::ffi::c_int,
+    ) -> IndexScanDesc,
+>;
+pub type amrescan_function = ::core::option::Option<
+    unsafe extern "C" fn(
+        scan: IndexScanDesc,
+        keys: ScanKey,
+        nkeys: ::core::ffi::c_int,
+        orderbys: ScanKey,
+        norderbys: ::core::ffi::c_int,
+    ),
+>;
+pub type amgettuple_function = ::core::option::Option<
+    unsafe extern "C" fn(scan: IndexScanDesc, direction: ScanDirection::Type) -> bool,
+>;
+pub type amgetbitmap_function =
+    ::core::option::Option<unsafe extern "C" fn(scan: IndexScanDesc, tbm: *mut TIDBitmap) -> int64>;
+pub type amendscan_function = ::core::option::Option<unsafe extern "C" fn(scan: IndexScanDesc)>;
+pub type ammarkpos_function = ::core::option::Option<unsafe extern "C" fn(scan: IndexScanDesc)>;
+pub type amrestrpos_function = ::core::option::Option<unsafe extern "C" fn(scan: IndexScanDesc)>;
+pub type amestimateparallelscan_function = ::core::option::Option<
+    unsafe extern "C" fn(nkeys: ::core::ffi::c_int, norderbys: ::core::ffi::c_int) -> Size,
+>;
+pub type aminitparallelscan_function =
+    ::core::option::Option<unsafe extern "C" fn(target: *mut ::core::ffi::c_void)>;
+pub type amparallelrescan_function =
+    ::core::option::Option<unsafe extern "C" fn(scan: IndexScanDesc)>;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct IndexAmRoutine {
+    pub type_: NodeTag,
+    pub amstrategies: uint16,
+    pub amsupport: uint16,
+    pub amoptsprocnum: uint16,
+    pub amcanorder: bool,
+    pub amcanorderbyop: bool,
+    pub amcanbackward: bool,
+    pub amcanunique: bool,
+    pub amcanmulticol: bool,
+    pub amoptionalkey: bool,
+    pub amsearcharray: bool,
+    pub amsearchnulls: bool,
+    pub amstorage: bool,
+    pub amclusterable: bool,
+    pub ampredlocks: bool,
+    pub amcanparallel: bool,
+    pub amcanbuildparallel: bool,
+    pub amcaninclude: bool,
+    pub amusemaintenanceworkmem: bool,
+    pub amsummarizing: bool,
+    pub amparallelvacuumoptions: uint8,
+    pub amkeytype: Oid,
+    pub ambuild: ambuild_function,
+    pub ambuildempty: ambuildempty_function,
+    pub aminsert: aminsert_function,
+    pub aminsertcleanup: aminsertcleanup_function,
+    pub ambulkdelete: ambulkdelete_function,
+    pub amvacuumcleanup: amvacuumcleanup_function,
+    pub amcanreturn: amcanreturn_function,
+    pub amcostestimate: amcostestimate_function,
+    pub amoptions: amoptions_function,
+    pub amproperty: amproperty_function,
+    pub ambuildphasename: ambuildphasename_function,
+    pub amvalidate: amvalidate_function,
+    pub amadjustmembers: amadjustmembers_function,
+    pub ambeginscan: ambeginscan_function,
+    pub amrescan: amrescan_function,
+    pub amgettuple: amgettuple_function,
+    pub amgetbitmap: amgetbitmap_function,
+    pub amendscan: amendscan_function,
+    pub ammarkpos: ammarkpos_function,
+    pub amrestrpos: amrestrpos_function,
+    pub amestimateparallelscan: amestimateparallelscan_function,
+    pub aminitparallelscan: aminitparallelscan_function,
+    pub amparallelrescan: amparallelrescan_function,
+}
+impl Default for IndexAmRoutine {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DomainConstraintCache {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct TypeCacheEnumData {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct TypeCacheEntry {
+    pub type_id: Oid,
+    pub type_id_hash: uint32,
+    pub typlen: int16,
+    pub typbyval: bool,
+    pub typalign: ::core::ffi::c_char,
+    pub typstorage: ::core::ffi::c_char,
+    pub typtype: ::core::ffi::c_char,
+    pub typrelid: Oid,
+    pub typsubscript: Oid,
+    pub typelem: Oid,
+    pub typcollation: Oid,
+    pub btree_opf: Oid,
+    pub btree_opintype: Oid,
+    pub hash_opf: Oid,
+    pub hash_opintype: Oid,
+    pub eq_opr: Oid,
+    pub lt_opr: Oid,
+    pub gt_opr: Oid,
+    pub cmp_proc: Oid,
+    pub hash_proc: Oid,
+    pub hash_extended_proc: Oid,
+    pub eq_opr_finfo: FmgrInfo,
+    pub cmp_proc_finfo: FmgrInfo,
+    pub hash_proc_finfo: FmgrInfo,
+    pub hash_extended_proc_finfo: FmgrInfo,
+    pub tupDesc: TupleDesc,
+    pub tupDesc_identifier: uint64,
+    pub rngelemtype: *mut TypeCacheEntry,
+    pub rng_opfamily: Oid,
+    pub rng_collation: Oid,
+    pub rng_cmp_proc_finfo: FmgrInfo,
+    pub rng_canonical_finfo: FmgrInfo,
+    pub rng_subdiff_finfo: FmgrInfo,
+    pub rngtype: *mut TypeCacheEntry,
+    pub domainBaseType: Oid,
+    pub domainBaseTypmod: int32,
+    pub domainData: *mut DomainConstraintCache,
+    pub flags: ::core::ffi::c_int,
+    pub enumData: *mut TypeCacheEnumData,
+    pub nextDomain: *mut TypeCacheEntry,
+}
+impl Default for TypeCacheEntry {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DomainConstraintRef {
+    pub constraints: *mut List,
+    pub refctx: MemoryContext,
+    pub tcache: *mut TypeCacheEntry,
+    pub need_exprstate: bool,
+    pub dcc: *mut DomainConstraintCache,
+    pub callback: MemoryContextCallback,
+}
+impl Default for DomainConstraintRef {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct SharedRecordTypmodRegistry {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug)]
+pub struct BrinOpcInfo {
+    pub oi_nstored: uint16,
+    pub oi_regular_nulls: bool,
+    pub oi_opaque: *mut ::core::ffi::c_void,
+    pub oi_typcache: __IncompleteArrayField<*mut TypeCacheEntry>,
+}
+impl Default for BrinOpcInfo {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug)]
+pub struct BrinDesc {
+    pub bd_context: MemoryContext,
+    pub bd_index: Relation,
+    pub bd_tupdesc: TupleDesc,
+    pub bd_disktdesc: TupleDesc,
+    pub bd_totalstored: ::core::ffi::c_int,
+    pub bd_info: __IncompleteArrayField<*mut BrinOpcInfo>,
+}
+impl Default for BrinDesc {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub type brin_serialize_callback_type =
+    ::core::option::Option<unsafe extern "C" fn(bdesc: *mut BrinDesc, src: Datum, dst: *mut Datum)>;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct BrinValues {
+    pub bv_attno: AttrNumber,
+    pub bv_hasnulls: bool,
+    pub bv_allnulls: bool,
+    pub bv_values: *mut Datum,
+    pub bv_mem_value: Datum,
+    pub bv_context: MemoryContext,
+    pub bv_serialize: brin_serialize_callback_type,
+}
+impl Default for BrinValues {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug)]
+pub struct BrinMemTuple {
+    pub bt_placeholder: bool,
+    pub bt_empty_range: bool,
+    pub bt_blkno: BlockNumber,
+    pub bt_context: MemoryContext,
+    pub bt_values: *mut Datum,
+    pub bt_allnulls: *mut bool,
+    pub bt_hasnulls: *mut bool,
+    pub bt_columns: __IncompleteArrayField<BrinValues>,
+}
+impl Default for BrinMemTuple {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct BrinTuple {
+    pub bt_blkno: BlockNumber,
+    pub bt_info: uint8,
+}
+#[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub struct IndexTupleData {
     pub t_tid: ItemPointerData,
@@ -16570,7 +13801,7 @@ pub struct LogicalTape {
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub struct TapeShare {
-    pub firstblocknumber: ::core::ffi::c_long,
+    pub firstblocknumber: int64,
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -16656,6 +13887,7 @@ pub type SortTupleComparator = ::core::option::Option<
 #[derive(Debug, Copy, Clone)]
 pub struct TuplesortPublic {
     pub comparetup: SortTupleComparator,
+    pub comparetup_tiebreak: SortTupleComparator,
     pub removeabbrev: ::core::option::Option<
         unsafe extern "C" fn(
             state: *mut Tuplesortstate,
@@ -16741,6 +13973,7 @@ pub struct ExprState {
     pub innermost_casenull: *mut bool,
     pub innermost_domainval: *mut Datum,
     pub innermost_domainnull: *mut bool,
+    pub escontext: *mut ErrorSaveContext,
 }
 impl Default for ExprState {
     fn default() -> Self {
@@ -16768,7 +14001,6 @@ pub struct IndexInfo {
     pub ii_UniqueOps: *mut Oid,
     pub ii_UniqueProcs: *mut Oid,
     pub ii_UniqueStrats: *mut uint16,
-    pub ii_OpclassOptions: *mut Datum,
     pub ii_Unique: bool,
     pub ii_NullsNotDistinct: bool,
     pub ii_ReadyForInserts: bool,
@@ -16981,8 +14213,8 @@ pub struct ResultRelInfo {
     pub ri_projectReturning: *mut ProjectionInfo,
     pub ri_onConflictArbiterIndexes: *mut List,
     pub ri_onConflict: *mut OnConflictSetState,
-    pub ri_matchedMergeAction: *mut List,
-    pub ri_notMatchedMergeAction: *mut List,
+    pub ri_MergeActions: [*mut List; 3usize],
+    pub ri_MergeJoinCondition: *mut ExprState,
     pub ri_PartitionCheckExpr: *mut ExprState,
     pub ri_ChildToRootMap: *mut TupleConversionMap,
     pub ri_ChildToRootMapValid: bool,
@@ -17302,6 +14534,31 @@ impl Default for DomainConstraintState {
         }
     }
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonExprState {
+    pub jsexpr: *mut JsonExpr,
+    pub formatted_expr: NullableDatum,
+    pub pathspec: NullableDatum,
+    pub args: *mut List,
+    pub error: NullableDatum,
+    pub empty: NullableDatum,
+    pub jump_empty: ::core::ffi::c_int,
+    pub jump_error: ::core::ffi::c_int,
+    pub jump_eval_coercion: ::core::ffi::c_int,
+    pub jump_end: ::core::ffi::c_int,
+    pub input_fcinfo: FunctionCallInfo,
+    pub escontext: ErrorSaveContext,
+}
+impl Default for JsonExprState {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
 pub type ExecProcNodeMtd =
     ::core::option::Option<unsafe extern "C" fn(pstate: *mut PlanState) -> *mut TupleTableSlot>;
 #[repr(C)]
@@ -17432,6 +14689,8 @@ pub struct ModifyTableState {
     pub mt_transition_capture: *mut TransitionCaptureState,
     pub mt_oc_transition_capture: *mut TransitionCaptureState,
     pub mt_merge_subcommands: ::core::ffi::c_int,
+    pub mt_merge_action: *mut MergeActionState,
+    pub mt_merge_pending_not_matched: *mut TupleTableSlot,
     pub mt_merge_inserted: f64,
     pub mt_merge_updated: f64,
     pub mt_merge_deleted: f64,
@@ -17757,7 +15016,7 @@ pub mod SharedBitmapState {
     pub const BM_FINISHED: Type = 2;
 }
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct ParallelBitmapHeapState {
     pub tbmiterator: dsa_pointer,
     pub prefetch_iterator: dsa_pointer,
@@ -17766,7 +15025,6 @@ pub struct ParallelBitmapHeapState {
     pub prefetch_target: ::core::ffi::c_int,
     pub state: SharedBitmapState::Type,
     pub cv: ConditionVariable,
-    pub phs_snapshot_data: __IncompleteArrayField<::core::ffi::c_char>,
 }
 impl Default for ParallelBitmapHeapState {
     fn default() -> Self {
@@ -17785,9 +15043,6 @@ pub struct BitmapHeapScanState {
     pub tbm: *mut TIDBitmap,
     pub tbmiterator: *mut TBMIterator,
     pub tbmres: *mut TBMIterateResult,
-    pub can_skip_fetch: bool,
-    pub return_empty_tuples: ::core::ffi::c_int,
-    pub vmbuffer: Buffer,
     pub pvmbuffer: Buffer,
     pub exact_pages: ::core::ffi::c_long,
     pub lossy_pages: ::core::ffi::c_long,
@@ -17795,7 +15050,6 @@ pub struct BitmapHeapScanState {
     pub prefetch_pages: ::core::ffi::c_int,
     pub prefetch_target: ::core::ffi::c_int,
     pub prefetch_maximum: ::core::ffi::c_int,
-    pub pscan_len: Size,
     pub initialized: bool,
     pub shared_tbmiterator: *mut TBMSharedIterator,
     pub shared_prefetch_iterator: *mut TBMSharedIterator,
@@ -17819,7 +15073,6 @@ pub struct TidScanState {
     pub tss_NumTids: ::core::ffi::c_int,
     pub tss_TidPtr: ::core::ffi::c_int,
     pub tss_TidList: *mut ItemPointerData,
-    pub tss_htup: HeapTupleData,
 }
 impl Default for TidScanState {
     fn default() -> Self {
@@ -17916,6 +15169,8 @@ pub struct TableFuncScanState {
     pub rowexpr: *mut ExprState,
     pub colexprs: *mut List,
     pub coldefexprs: *mut List,
+    pub colvalexprs: *mut List,
+    pub passingvalexprs: *mut List,
     pub ns_names: *mut List,
     pub ns_uris: *mut List,
     pub notnulls: *mut Bitmapset,
@@ -18425,7 +15680,6 @@ pub struct AggState {
     pub perhash: AggStatePerHash,
     pub hash_pergroup: *mut AggStatePerGroup,
     pub all_pergroups: *mut AggStatePerGroup,
-    pub combinedproj: *mut ProjectionInfo,
     pub shared_info: *mut SharedAggInfo,
 }
 impl Default for AggState {
@@ -18876,37 +16130,37 @@ pub mod CommandTag {
     pub const CMDTAG_LISTEN: Type = 159;
     pub const CMDTAG_LOAD: Type = 160;
     pub const CMDTAG_LOCK_TABLE: Type = 161;
-    pub const CMDTAG_MERGE: Type = 162;
-    pub const CMDTAG_MOVE: Type = 163;
-    pub const CMDTAG_NOTIFY: Type = 164;
-    pub const CMDTAG_PREPARE: Type = 165;
-    pub const CMDTAG_PREPARE_TRANSACTION: Type = 166;
-    pub const CMDTAG_REASSIGN_OWNED: Type = 167;
-    pub const CMDTAG_REFRESH_MATERIALIZED_VIEW: Type = 168;
-    pub const CMDTAG_REINDEX: Type = 169;
-    pub const CMDTAG_RELEASE: Type = 170;
-    pub const CMDTAG_RESET: Type = 171;
-    pub const CMDTAG_REVOKE: Type = 172;
-    pub const CMDTAG_REVOKE_ROLE: Type = 173;
-    pub const CMDTAG_ROLLBACK: Type = 174;
-    pub const CMDTAG_ROLLBACK_PREPARED: Type = 175;
-    pub const CMDTAG_SAVEPOINT: Type = 176;
-    pub const CMDTAG_SECURITY_LABEL: Type = 177;
-    pub const CMDTAG_SELECT: Type = 178;
-    pub const CMDTAG_SELECT_FOR_KEY_SHARE: Type = 179;
-    pub const CMDTAG_SELECT_FOR_NO_KEY_UPDATE: Type = 180;
-    pub const CMDTAG_SELECT_FOR_SHARE: Type = 181;
-    pub const CMDTAG_SELECT_FOR_UPDATE: Type = 182;
-    pub const CMDTAG_SELECT_INTO: Type = 183;
-    pub const CMDTAG_SET: Type = 184;
-    pub const CMDTAG_SET_CONSTRAINTS: Type = 185;
-    pub const CMDTAG_SHOW: Type = 186;
-    pub const CMDTAG_START_TRANSACTION: Type = 187;
-    pub const CMDTAG_TRUNCATE_TABLE: Type = 188;
-    pub const CMDTAG_UNLISTEN: Type = 189;
-    pub const CMDTAG_UPDATE: Type = 190;
-    pub const CMDTAG_VACUUM: Type = 191;
-    pub const COMMAND_TAG_NEXTTAG: Type = 192;
+    pub const CMDTAG_LOGIN: Type = 162;
+    pub const CMDTAG_MERGE: Type = 163;
+    pub const CMDTAG_MOVE: Type = 164;
+    pub const CMDTAG_NOTIFY: Type = 165;
+    pub const CMDTAG_PREPARE: Type = 166;
+    pub const CMDTAG_PREPARE_TRANSACTION: Type = 167;
+    pub const CMDTAG_REASSIGN_OWNED: Type = 168;
+    pub const CMDTAG_REFRESH_MATERIALIZED_VIEW: Type = 169;
+    pub const CMDTAG_REINDEX: Type = 170;
+    pub const CMDTAG_RELEASE: Type = 171;
+    pub const CMDTAG_RESET: Type = 172;
+    pub const CMDTAG_REVOKE: Type = 173;
+    pub const CMDTAG_REVOKE_ROLE: Type = 174;
+    pub const CMDTAG_ROLLBACK: Type = 175;
+    pub const CMDTAG_ROLLBACK_PREPARED: Type = 176;
+    pub const CMDTAG_SAVEPOINT: Type = 177;
+    pub const CMDTAG_SECURITY_LABEL: Type = 178;
+    pub const CMDTAG_SELECT: Type = 179;
+    pub const CMDTAG_SELECT_FOR_KEY_SHARE: Type = 180;
+    pub const CMDTAG_SELECT_FOR_NO_KEY_UPDATE: Type = 181;
+    pub const CMDTAG_SELECT_FOR_SHARE: Type = 182;
+    pub const CMDTAG_SELECT_FOR_UPDATE: Type = 183;
+    pub const CMDTAG_SELECT_INTO: Type = 184;
+    pub const CMDTAG_SET: Type = 185;
+    pub const CMDTAG_SET_CONSTRAINTS: Type = 186;
+    pub const CMDTAG_SHOW: Type = 187;
+    pub const CMDTAG_START_TRANSACTION: Type = 188;
+    pub const CMDTAG_TRUNCATE_TABLE: Type = 189;
+    pub const CMDTAG_UNLISTEN: Type = 190;
+    pub const CMDTAG_UPDATE: Type = 191;
+    pub const CMDTAG_VACUUM: Type = 192;
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -18937,6 +16191,7 @@ pub mod CommandDest {
     pub const DestSQLFunction: Type = 9;
     pub const DestTransientRel: Type = 10;
     pub const DestTupleQueue: Type = 11;
+    pub const DestExplainSerialize: Type = 12;
 }
 pub type DestReceiver = _DestReceiver;
 #[repr(C)]
@@ -18993,6 +16248,4228 @@ impl Default for QueryDesc {
     }
 }
 #[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct Integer {
+    pub type_: NodeTag,
+    pub ival: ::core::ffi::c_int,
+}
+impl Default for Integer {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct Float {
+    pub type_: NodeTag,
+    pub fval: *mut ::core::ffi::c_char,
+}
+impl Default for Float {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct Boolean {
+    pub type_: NodeTag,
+    pub boolval: bool,
+}
+impl Default for Boolean {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct String {
+    pub type_: NodeTag,
+    pub sval: *mut ::core::ffi::c_char,
+}
+impl Default for String {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct BitString {
+    pub type_: NodeTag,
+    pub bsval: *mut ::core::ffi::c_char,
+}
+impl Default for BitString {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod QuerySource {
+    pub type Type = ::core::ffi::c_uint;
+    pub const QSRC_ORIGINAL: Type = 0;
+    pub const QSRC_PARSER: Type = 1;
+    pub const QSRC_INSTEAD_RULE: Type = 2;
+    pub const QSRC_QUAL_INSTEAD_RULE: Type = 3;
+    pub const QSRC_NON_INSTEAD_RULE: Type = 4;
+}
+pub mod SortByDir {
+    pub type Type = ::core::ffi::c_uint;
+    pub const SORTBY_DEFAULT: Type = 0;
+    pub const SORTBY_ASC: Type = 1;
+    pub const SORTBY_DESC: Type = 2;
+    pub const SORTBY_USING: Type = 3;
+}
+pub mod SortByNulls {
+    pub type Type = ::core::ffi::c_uint;
+    pub const SORTBY_NULLS_DEFAULT: Type = 0;
+    pub const SORTBY_NULLS_FIRST: Type = 1;
+    pub const SORTBY_NULLS_LAST: Type = 2;
+}
+pub mod SetQuantifier {
+    pub type Type = ::core::ffi::c_uint;
+    pub const SET_QUANTIFIER_DEFAULT: Type = 0;
+    pub const SET_QUANTIFIER_ALL: Type = 1;
+    pub const SET_QUANTIFIER_DISTINCT: Type = 2;
+}
+pub type AclMode = uint64;
+#[doc = "\tQuery Tree"]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct Query {
+    pub type_: NodeTag,
+    pub commandType: CmdType::Type,
+    pub querySource: QuerySource::Type,
+    pub queryId: uint64,
+    pub canSetTag: bool,
+    pub utilityStmt: *mut Node,
+    pub resultRelation: ::core::ffi::c_int,
+    pub hasAggs: bool,
+    pub hasWindowFuncs: bool,
+    pub hasTargetSRFs: bool,
+    pub hasSubLinks: bool,
+    pub hasDistinctOn: bool,
+    pub hasRecursive: bool,
+    pub hasModifyingCTE: bool,
+    pub hasForUpdate: bool,
+    pub hasRowSecurity: bool,
+    pub isReturn: bool,
+    pub cteList: *mut List,
+    pub rtable: *mut List,
+    pub rteperminfos: *mut List,
+    pub jointree: *mut FromExpr,
+    pub mergeActionList: *mut List,
+    pub mergeTargetRelation: ::core::ffi::c_int,
+    pub mergeJoinCondition: *mut Node,
+    pub targetList: *mut List,
+    pub override_: OverridingKind::Type,
+    pub onConflict: *mut OnConflictExpr,
+    pub returningList: *mut List,
+    pub groupClause: *mut List,
+    pub groupDistinct: bool,
+    pub groupingSets: *mut List,
+    pub havingQual: *mut Node,
+    pub windowClause: *mut List,
+    pub distinctClause: *mut List,
+    pub sortClause: *mut List,
+    pub limitOffset: *mut Node,
+    pub limitCount: *mut Node,
+    pub limitOption: LimitOption::Type,
+    pub rowMarks: *mut List,
+    pub setOperations: *mut Node,
+    pub constraintDeps: *mut List,
+    pub withCheckOptions: *mut List,
+    pub stmt_location: ParseLoc,
+    pub stmt_len: ParseLoc,
+}
+impl Default for Query {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[doc = "\tSupporting data structures for Parse Trees\n\n\tMost of these node types appear in raw parsetrees output by the grammar,\n\tand get transformed to something else by the analyzer.  A few of them\n\tare used as-is in transformed querytrees."]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct TypeName {
+    pub type_: NodeTag,
+    pub names: *mut List,
+    pub typeOid: Oid,
+    pub setof: bool,
+    pub pct_type: bool,
+    pub typmods: *mut List,
+    pub typemod: int32,
+    pub arrayBounds: *mut List,
+    pub location: ParseLoc,
+}
+impl Default for TypeName {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ColumnRef {
+    pub type_: NodeTag,
+    pub fields: *mut List,
+    pub location: ParseLoc,
+}
+impl Default for ColumnRef {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ParamRef {
+    pub type_: NodeTag,
+    pub number: ::core::ffi::c_int,
+    pub location: ParseLoc,
+}
+impl Default for ParamRef {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod A_Expr_Kind {
+    pub type Type = ::core::ffi::c_uint;
+    pub const AEXPR_OP: Type = 0;
+    pub const AEXPR_OP_ANY: Type = 1;
+    pub const AEXPR_OP_ALL: Type = 2;
+    pub const AEXPR_DISTINCT: Type = 3;
+    pub const AEXPR_NOT_DISTINCT: Type = 4;
+    pub const AEXPR_NULLIF: Type = 5;
+    pub const AEXPR_IN: Type = 6;
+    pub const AEXPR_LIKE: Type = 7;
+    pub const AEXPR_ILIKE: Type = 8;
+    pub const AEXPR_SIMILAR: Type = 9;
+    pub const AEXPR_BETWEEN: Type = 10;
+    pub const AEXPR_NOT_BETWEEN: Type = 11;
+    pub const AEXPR_BETWEEN_SYM: Type = 12;
+    pub const AEXPR_NOT_BETWEEN_SYM: Type = 13;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct A_Expr {
+    pub type_: NodeTag,
+    pub kind: A_Expr_Kind::Type,
+    pub name: *mut List,
+    pub lexpr: *mut Node,
+    pub rexpr: *mut Node,
+    pub location: ParseLoc,
+}
+impl Default for A_Expr {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union ValUnion {
+    pub node: Node,
+    pub ival: Integer,
+    pub fval: Float,
+    pub boolval: Boolean,
+    pub sval: String,
+    pub bsval: BitString,
+}
+impl Default for ValUnion {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct A_Const {
+    pub type_: NodeTag,
+    pub val: ValUnion,
+    pub isnull: bool,
+    pub location: ParseLoc,
+}
+impl Default for A_Const {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct TypeCast {
+    pub type_: NodeTag,
+    pub arg: *mut Node,
+    pub typeName: *mut TypeName,
+    pub location: ParseLoc,
+}
+impl Default for TypeCast {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CollateClause {
+    pub type_: NodeTag,
+    pub arg: *mut Node,
+    pub collname: *mut List,
+    pub location: ParseLoc,
+}
+impl Default for CollateClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod RoleSpecType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const ROLESPEC_CSTRING: Type = 0;
+    pub const ROLESPEC_CURRENT_ROLE: Type = 1;
+    pub const ROLESPEC_CURRENT_USER: Type = 2;
+    pub const ROLESPEC_SESSION_USER: Type = 3;
+    pub const ROLESPEC_PUBLIC: Type = 4;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RoleSpec {
+    pub type_: NodeTag,
+    pub roletype: RoleSpecType::Type,
+    pub rolename: *mut ::core::ffi::c_char,
+    pub location: ParseLoc,
+}
+impl Default for RoleSpec {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FuncCall {
+    pub type_: NodeTag,
+    pub funcname: *mut List,
+    pub args: *mut List,
+    pub agg_order: *mut List,
+    pub agg_filter: *mut Node,
+    pub over: *mut WindowDef,
+    pub agg_within_group: bool,
+    pub agg_star: bool,
+    pub agg_distinct: bool,
+    pub func_variadic: bool,
+    pub funcformat: CoercionForm::Type,
+    pub location: ParseLoc,
+}
+impl Default for FuncCall {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct A_Star {
+    pub type_: NodeTag,
+}
+impl Default for A_Star {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct A_Indices {
+    pub type_: NodeTag,
+    pub is_slice: bool,
+    pub lidx: *mut Node,
+    pub uidx: *mut Node,
+}
+impl Default for A_Indices {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct A_Indirection {
+    pub type_: NodeTag,
+    pub arg: *mut Node,
+    pub indirection: *mut List,
+}
+impl Default for A_Indirection {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct A_ArrayExpr {
+    pub type_: NodeTag,
+    pub elements: *mut List,
+    pub location: ParseLoc,
+}
+impl Default for A_ArrayExpr {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ResTarget {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+    pub indirection: *mut List,
+    pub val: *mut Node,
+    pub location: ParseLoc,
+}
+impl Default for ResTarget {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct MultiAssignRef {
+    pub type_: NodeTag,
+    pub source: *mut Node,
+    pub colno: ::core::ffi::c_int,
+    pub ncolumns: ::core::ffi::c_int,
+}
+impl Default for MultiAssignRef {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct SortBy {
+    pub type_: NodeTag,
+    pub node: *mut Node,
+    pub sortby_dir: SortByDir::Type,
+    pub sortby_nulls: SortByNulls::Type,
+    pub useOp: *mut List,
+    pub location: ParseLoc,
+}
+impl Default for SortBy {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WindowDef {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+    pub refname: *mut ::core::ffi::c_char,
+    pub partitionClause: *mut List,
+    pub orderClause: *mut List,
+    pub frameOptions: ::core::ffi::c_int,
+    pub startOffset: *mut Node,
+    pub endOffset: *mut Node,
+    pub location: ParseLoc,
+}
+impl Default for WindowDef {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RangeSubselect {
+    pub type_: NodeTag,
+    pub lateral: bool,
+    pub subquery: *mut Node,
+    pub alias: *mut Alias,
+}
+impl Default for RangeSubselect {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RangeFunction {
+    pub type_: NodeTag,
+    pub lateral: bool,
+    pub ordinality: bool,
+    pub is_rowsfrom: bool,
+    pub functions: *mut List,
+    pub alias: *mut Alias,
+    pub coldeflist: *mut List,
+}
+impl Default for RangeFunction {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RangeTableFunc {
+    pub type_: NodeTag,
+    pub lateral: bool,
+    pub docexpr: *mut Node,
+    pub rowexpr: *mut Node,
+    pub namespaces: *mut List,
+    pub columns: *mut List,
+    pub alias: *mut Alias,
+    pub location: ParseLoc,
+}
+impl Default for RangeTableFunc {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RangeTableFuncCol {
+    pub type_: NodeTag,
+    pub colname: *mut ::core::ffi::c_char,
+    pub typeName: *mut TypeName,
+    pub for_ordinality: bool,
+    pub is_not_null: bool,
+    pub colexpr: *mut Node,
+    pub coldefexpr: *mut Node,
+    pub location: ParseLoc,
+}
+impl Default for RangeTableFuncCol {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RangeTableSample {
+    pub type_: NodeTag,
+    pub relation: *mut Node,
+    pub method: *mut List,
+    pub args: *mut List,
+    pub repeatable: *mut Node,
+    pub location: ParseLoc,
+}
+impl Default for RangeTableSample {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ColumnDef {
+    pub type_: NodeTag,
+    pub colname: *mut ::core::ffi::c_char,
+    pub typeName: *mut TypeName,
+    pub compression: *mut ::core::ffi::c_char,
+    pub inhcount: ::core::ffi::c_int,
+    pub is_local: bool,
+    pub is_not_null: bool,
+    pub is_from_type: bool,
+    pub storage: ::core::ffi::c_char,
+    pub storage_name: *mut ::core::ffi::c_char,
+    pub raw_default: *mut Node,
+    pub cooked_default: *mut Node,
+    pub identity: ::core::ffi::c_char,
+    pub identitySequence: *mut RangeVar,
+    pub generated: ::core::ffi::c_char,
+    pub collClause: *mut CollateClause,
+    pub collOid: Oid,
+    pub constraints: *mut List,
+    pub fdwoptions: *mut List,
+    pub location: ParseLoc,
+}
+impl Default for ColumnDef {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct TableLikeClause {
+    pub type_: NodeTag,
+    pub relation: *mut RangeVar,
+    pub options: bits32,
+    pub relationOid: Oid,
+}
+impl Default for TableLikeClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod TableLikeOption {
+    pub type Type = ::core::ffi::c_uint;
+    pub const CREATE_TABLE_LIKE_COMMENTS: Type = 1;
+    pub const CREATE_TABLE_LIKE_COMPRESSION: Type = 2;
+    pub const CREATE_TABLE_LIKE_CONSTRAINTS: Type = 4;
+    pub const CREATE_TABLE_LIKE_DEFAULTS: Type = 8;
+    pub const CREATE_TABLE_LIKE_GENERATED: Type = 16;
+    pub const CREATE_TABLE_LIKE_IDENTITY: Type = 32;
+    pub const CREATE_TABLE_LIKE_INDEXES: Type = 64;
+    pub const CREATE_TABLE_LIKE_STATISTICS: Type = 128;
+    pub const CREATE_TABLE_LIKE_STORAGE: Type = 256;
+    pub const CREATE_TABLE_LIKE_ALL: Type = 2147483647;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct IndexElem {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+    pub expr: *mut Node,
+    pub indexcolname: *mut ::core::ffi::c_char,
+    pub collation: *mut List,
+    pub opclass: *mut List,
+    pub opclassopts: *mut List,
+    pub ordering: SortByDir::Type,
+    pub nulls_ordering: SortByNulls::Type,
+}
+impl Default for IndexElem {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod DefElemAction {
+    pub type Type = ::core::ffi::c_uint;
+    pub const DEFELEM_UNSPEC: Type = 0;
+    pub const DEFELEM_SET: Type = 1;
+    pub const DEFELEM_ADD: Type = 2;
+    pub const DEFELEM_DROP: Type = 3;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DefElem {
+    pub type_: NodeTag,
+    pub defnamespace: *mut ::core::ffi::c_char,
+    pub defname: *mut ::core::ffi::c_char,
+    pub arg: *mut Node,
+    pub defaction: DefElemAction::Type,
+    pub location: ParseLoc,
+}
+impl Default for DefElem {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct LockingClause {
+    pub type_: NodeTag,
+    pub lockedRels: *mut List,
+    pub strength: LockClauseStrength::Type,
+    pub waitPolicy: LockWaitPolicy::Type,
+}
+impl Default for LockingClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct XmlSerialize {
+    pub type_: NodeTag,
+    pub xmloption: XmlOptionType::Type,
+    pub expr: *mut Node,
+    pub typeName: *mut TypeName,
+    pub indent: bool,
+    pub location: ParseLoc,
+}
+impl Default for XmlSerialize {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PartitionElem {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+    pub expr: *mut Node,
+    pub collation: *mut List,
+    pub opclass: *mut List,
+    pub location: ParseLoc,
+}
+impl Default for PartitionElem {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod PartitionStrategy {
+    pub type Type = ::core::ffi::c_uint;
+    pub const PARTITION_STRATEGY_LIST: Type = 108;
+    pub const PARTITION_STRATEGY_RANGE: Type = 114;
+    pub const PARTITION_STRATEGY_HASH: Type = 104;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PartitionSpec {
+    pub type_: NodeTag,
+    pub strategy: PartitionStrategy::Type,
+    pub partParams: *mut List,
+    pub location: ParseLoc,
+}
+impl Default for PartitionSpec {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PartitionBoundSpec {
+    pub type_: NodeTag,
+    pub strategy: ::core::ffi::c_char,
+    pub is_default: bool,
+    pub modulus: ::core::ffi::c_int,
+    pub remainder: ::core::ffi::c_int,
+    pub listdatums: *mut List,
+    pub lowerdatums: *mut List,
+    pub upperdatums: *mut List,
+    pub location: ParseLoc,
+}
+impl Default for PartitionBoundSpec {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod PartitionRangeDatumKind {
+    pub type Type = ::core::ffi::c_int;
+    pub const PARTITION_RANGE_DATUM_MINVALUE: Type = -1;
+    pub const PARTITION_RANGE_DATUM_VALUE: Type = 0;
+    pub const PARTITION_RANGE_DATUM_MAXVALUE: Type = 1;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PartitionRangeDatum {
+    pub type_: NodeTag,
+    pub kind: PartitionRangeDatumKind::Type,
+    pub value: *mut Node,
+    pub location: ParseLoc,
+}
+impl Default for PartitionRangeDatum {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct SinglePartitionSpec {
+    pub type_: NodeTag,
+}
+impl Default for SinglePartitionSpec {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PartitionCmd {
+    pub type_: NodeTag,
+    pub name: *mut RangeVar,
+    pub bound: *mut PartitionBoundSpec,
+    pub concurrent: bool,
+}
+impl Default for PartitionCmd {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod RTEKind {
+    pub type Type = ::core::ffi::c_uint;
+    pub const RTE_RELATION: Type = 0;
+    pub const RTE_SUBQUERY: Type = 1;
+    pub const RTE_JOIN: Type = 2;
+    pub const RTE_FUNCTION: Type = 3;
+    pub const RTE_TABLEFUNC: Type = 4;
+    pub const RTE_VALUES: Type = 5;
+    pub const RTE_CTE: Type = 6;
+    pub const RTE_NAMEDTUPLESTORE: Type = 7;
+    pub const RTE_RESULT: Type = 8;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RangeTblEntry {
+    pub type_: NodeTag,
+    pub alias: *mut Alias,
+    pub eref: *mut Alias,
+    pub rtekind: RTEKind::Type,
+    pub relid: Oid,
+    pub inh: bool,
+    pub relkind: ::core::ffi::c_char,
+    pub rellockmode: ::core::ffi::c_int,
+    pub perminfoindex: Index,
+    pub tablesample: *mut TableSampleClause,
+    pub subquery: *mut Query,
+    pub security_barrier: bool,
+    pub jointype: JoinType::Type,
+    pub joinmergedcols: ::core::ffi::c_int,
+    pub joinaliasvars: *mut List,
+    pub joinleftcols: *mut List,
+    pub joinrightcols: *mut List,
+    pub join_using_alias: *mut Alias,
+    pub functions: *mut List,
+    pub funcordinality: bool,
+    pub tablefunc: *mut TableFunc,
+    pub values_lists: *mut List,
+    pub ctename: *mut ::core::ffi::c_char,
+    pub ctelevelsup: Index,
+    pub self_reference: bool,
+    pub coltypes: *mut List,
+    pub coltypmods: *mut List,
+    pub colcollations: *mut List,
+    pub enrname: *mut ::core::ffi::c_char,
+    pub enrtuples: Cardinality,
+    pub lateral: bool,
+    pub inFromCl: bool,
+    pub securityQuals: *mut List,
+}
+impl Default for RangeTblEntry {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RTEPermissionInfo {
+    pub type_: NodeTag,
+    pub relid: Oid,
+    pub inh: bool,
+    pub requiredPerms: AclMode,
+    pub checkAsUser: Oid,
+    pub selectedCols: *mut Bitmapset,
+    pub insertedCols: *mut Bitmapset,
+    pub updatedCols: *mut Bitmapset,
+}
+impl Default for RTEPermissionInfo {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RangeTblFunction {
+    pub type_: NodeTag,
+    pub funcexpr: *mut Node,
+    pub funccolcount: ::core::ffi::c_int,
+    pub funccolnames: *mut List,
+    pub funccoltypes: *mut List,
+    pub funccoltypmods: *mut List,
+    pub funccolcollations: *mut List,
+    pub funcparams: *mut Bitmapset,
+}
+impl Default for RangeTblFunction {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct TableSampleClause {
+    pub type_: NodeTag,
+    pub tsmhandler: Oid,
+    pub args: *mut List,
+    pub repeatable: *mut Expr,
+}
+impl Default for TableSampleClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod WCOKind {
+    pub type Type = ::core::ffi::c_uint;
+    pub const WCO_VIEW_CHECK: Type = 0;
+    pub const WCO_RLS_INSERT_CHECK: Type = 1;
+    pub const WCO_RLS_UPDATE_CHECK: Type = 2;
+    pub const WCO_RLS_CONFLICT_CHECK: Type = 3;
+    pub const WCO_RLS_MERGE_UPDATE_CHECK: Type = 4;
+    pub const WCO_RLS_MERGE_DELETE_CHECK: Type = 5;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WithCheckOption {
+    pub type_: NodeTag,
+    pub kind: WCOKind::Type,
+    pub relname: *mut ::core::ffi::c_char,
+    pub polname: *mut ::core::ffi::c_char,
+    pub qual: *mut Node,
+    pub cascaded: bool,
+}
+impl Default for WithCheckOption {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct SortGroupClause {
+    pub type_: NodeTag,
+    pub tleSortGroupRef: Index,
+    pub eqop: Oid,
+    pub sortop: Oid,
+    pub nulls_first: bool,
+    pub hashable: bool,
+}
+impl Default for SortGroupClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod GroupingSetKind {
+    pub type Type = ::core::ffi::c_uint;
+    pub const GROUPING_SET_EMPTY: Type = 0;
+    pub const GROUPING_SET_SIMPLE: Type = 1;
+    pub const GROUPING_SET_ROLLUP: Type = 2;
+    pub const GROUPING_SET_CUBE: Type = 3;
+    pub const GROUPING_SET_SETS: Type = 4;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct GroupingSet {
+    pub type_: NodeTag,
+    pub kind: GroupingSetKind::Type,
+    pub content: *mut List,
+    pub location: ParseLoc,
+}
+impl Default for GroupingSet {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WindowClause {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+    pub refname: *mut ::core::ffi::c_char,
+    pub partitionClause: *mut List,
+    pub orderClause: *mut List,
+    pub frameOptions: ::core::ffi::c_int,
+    pub startOffset: *mut Node,
+    pub endOffset: *mut Node,
+    pub startInRangeFunc: Oid,
+    pub endInRangeFunc: Oid,
+    pub inRangeColl: Oid,
+    pub inRangeAsc: bool,
+    pub inRangeNullsFirst: bool,
+    pub winref: Index,
+    pub copiedOrder: bool,
+}
+impl Default for WindowClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RowMarkClause {
+    pub type_: NodeTag,
+    pub rti: Index,
+    pub strength: LockClauseStrength::Type,
+    pub waitPolicy: LockWaitPolicy::Type,
+    pub pushedDown: bool,
+}
+impl Default for RowMarkClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WithClause {
+    pub type_: NodeTag,
+    pub ctes: *mut List,
+    pub recursive: bool,
+    pub location: ParseLoc,
+}
+impl Default for WithClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct InferClause {
+    pub type_: NodeTag,
+    pub indexElems: *mut List,
+    pub whereClause: *mut Node,
+    pub conname: *mut ::core::ffi::c_char,
+    pub location: ParseLoc,
+}
+impl Default for InferClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct OnConflictClause {
+    pub type_: NodeTag,
+    pub action: OnConflictAction::Type,
+    pub infer: *mut InferClause,
+    pub targetList: *mut List,
+    pub whereClause: *mut Node,
+    pub location: ParseLoc,
+}
+impl Default for OnConflictClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod CTEMaterialize {
+    pub type Type = ::core::ffi::c_uint;
+    pub const CTEMaterializeDefault: Type = 0;
+    pub const CTEMaterializeAlways: Type = 1;
+    pub const CTEMaterializeNever: Type = 2;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CTESearchClause {
+    pub type_: NodeTag,
+    pub search_col_list: *mut List,
+    pub search_breadth_first: bool,
+    pub search_seq_column: *mut ::core::ffi::c_char,
+    pub location: ParseLoc,
+}
+impl Default for CTESearchClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CTECycleClause {
+    pub type_: NodeTag,
+    pub cycle_col_list: *mut List,
+    pub cycle_mark_column: *mut ::core::ffi::c_char,
+    pub cycle_mark_value: *mut Node,
+    pub cycle_mark_default: *mut Node,
+    pub cycle_path_column: *mut ::core::ffi::c_char,
+    pub location: ParseLoc,
+    pub cycle_mark_type: Oid,
+    pub cycle_mark_typmod: ::core::ffi::c_int,
+    pub cycle_mark_collation: Oid,
+    pub cycle_mark_neop: Oid,
+}
+impl Default for CTECycleClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CommonTableExpr {
+    pub type_: NodeTag,
+    pub ctename: *mut ::core::ffi::c_char,
+    pub aliascolnames: *mut List,
+    pub ctematerialized: CTEMaterialize::Type,
+    pub ctequery: *mut Node,
+    pub search_clause: *mut CTESearchClause,
+    pub cycle_clause: *mut CTECycleClause,
+    pub location: ParseLoc,
+    pub cterecursive: bool,
+    pub cterefcount: ::core::ffi::c_int,
+    pub ctecolnames: *mut List,
+    pub ctecoltypes: *mut List,
+    pub ctecoltypmods: *mut List,
+    pub ctecolcollations: *mut List,
+}
+impl Default for CommonTableExpr {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct MergeWhenClause {
+    pub type_: NodeTag,
+    pub matchKind: MergeMatchKind::Type,
+    pub commandType: CmdType::Type,
+    pub override_: OverridingKind::Type,
+    pub condition: *mut Node,
+    pub targetList: *mut List,
+    pub values: *mut List,
+}
+impl Default for MergeWhenClause {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct TriggerTransition {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+    pub isNew: bool,
+    pub isTable: bool,
+}
+impl Default for TriggerTransition {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonOutput {
+    pub type_: NodeTag,
+    pub typeName: *mut TypeName,
+    pub returning: *mut JsonReturning,
+}
+impl Default for JsonOutput {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonArgument {
+    pub type_: NodeTag,
+    pub val: *mut JsonValueExpr,
+    pub name: *mut ::core::ffi::c_char,
+}
+impl Default for JsonArgument {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod JsonQuotes {
+    pub type Type = ::core::ffi::c_uint;
+    pub const JS_QUOTES_UNSPEC: Type = 0;
+    pub const JS_QUOTES_KEEP: Type = 1;
+    pub const JS_QUOTES_OMIT: Type = 2;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonFuncExpr {
+    pub type_: NodeTag,
+    pub op: JsonExprOp::Type,
+    pub column_name: *mut ::core::ffi::c_char,
+    pub context_item: *mut JsonValueExpr,
+    pub pathspec: *mut Node,
+    pub passing: *mut List,
+    pub output: *mut JsonOutput,
+    pub on_empty: *mut JsonBehavior,
+    pub on_error: *mut JsonBehavior,
+    pub wrapper: JsonWrapper::Type,
+    pub quotes: JsonQuotes::Type,
+    pub location: ParseLoc,
+}
+impl Default for JsonFuncExpr {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonTablePathSpec {
+    pub type_: NodeTag,
+    pub string: *mut Node,
+    pub name: *mut ::core::ffi::c_char,
+    pub name_location: ParseLoc,
+    pub location: ParseLoc,
+}
+impl Default for JsonTablePathSpec {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonTable {
+    pub type_: NodeTag,
+    pub context_item: *mut JsonValueExpr,
+    pub pathspec: *mut JsonTablePathSpec,
+    pub passing: *mut List,
+    pub columns: *mut List,
+    pub on_error: *mut JsonBehavior,
+    pub alias: *mut Alias,
+    pub lateral: bool,
+    pub location: ParseLoc,
+}
+impl Default for JsonTable {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod JsonTableColumnType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const JTC_FOR_ORDINALITY: Type = 0;
+    pub const JTC_REGULAR: Type = 1;
+    pub const JTC_EXISTS: Type = 2;
+    pub const JTC_FORMATTED: Type = 3;
+    pub const JTC_NESTED: Type = 4;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonTableColumn {
+    pub type_: NodeTag,
+    pub coltype: JsonTableColumnType::Type,
+    pub name: *mut ::core::ffi::c_char,
+    pub typeName: *mut TypeName,
+    pub pathspec: *mut JsonTablePathSpec,
+    pub format: *mut JsonFormat,
+    pub wrapper: JsonWrapper::Type,
+    pub quotes: JsonQuotes::Type,
+    pub columns: *mut List,
+    pub on_empty: *mut JsonBehavior,
+    pub on_error: *mut JsonBehavior,
+    pub location: ParseLoc,
+}
+impl Default for JsonTableColumn {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonKeyValue {
+    pub type_: NodeTag,
+    pub key: *mut Expr,
+    pub value: *mut JsonValueExpr,
+}
+impl Default for JsonKeyValue {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonParseExpr {
+    pub type_: NodeTag,
+    pub expr: *mut JsonValueExpr,
+    pub output: *mut JsonOutput,
+    pub unique_keys: bool,
+    pub location: ParseLoc,
+}
+impl Default for JsonParseExpr {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonScalarExpr {
+    pub type_: NodeTag,
+    pub expr: *mut Expr,
+    pub output: *mut JsonOutput,
+    pub location: ParseLoc,
+}
+impl Default for JsonScalarExpr {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonSerializeExpr {
+    pub type_: NodeTag,
+    pub expr: *mut JsonValueExpr,
+    pub output: *mut JsonOutput,
+    pub location: ParseLoc,
+}
+impl Default for JsonSerializeExpr {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonObjectConstructor {
+    pub type_: NodeTag,
+    pub exprs: *mut List,
+    pub output: *mut JsonOutput,
+    pub absent_on_null: bool,
+    pub unique: bool,
+    pub location: ParseLoc,
+}
+impl Default for JsonObjectConstructor {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonArrayConstructor {
+    pub type_: NodeTag,
+    pub exprs: *mut List,
+    pub output: *mut JsonOutput,
+    pub absent_on_null: bool,
+    pub location: ParseLoc,
+}
+impl Default for JsonArrayConstructor {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonArrayQueryConstructor {
+    pub type_: NodeTag,
+    pub query: *mut Node,
+    pub output: *mut JsonOutput,
+    pub format: *mut JsonFormat,
+    pub absent_on_null: bool,
+    pub location: ParseLoc,
+}
+impl Default for JsonArrayQueryConstructor {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonAggConstructor {
+    pub type_: NodeTag,
+    pub output: *mut JsonOutput,
+    pub agg_filter: *mut Node,
+    pub agg_order: *mut List,
+    pub over: *mut WindowDef,
+    pub location: ParseLoc,
+}
+impl Default for JsonAggConstructor {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonObjectAgg {
+    pub type_: NodeTag,
+    pub constructor: *mut JsonAggConstructor,
+    pub arg: *mut JsonKeyValue,
+    pub absent_on_null: bool,
+    pub unique: bool,
+}
+impl Default for JsonObjectAgg {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct JsonArrayAgg {
+    pub type_: NodeTag,
+    pub constructor: *mut JsonAggConstructor,
+    pub arg: *mut JsonValueExpr,
+    pub absent_on_null: bool,
+}
+impl Default for JsonArrayAgg {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[doc = "\t\tRaw Grammar Output Statements"]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RawStmt {
+    pub type_: NodeTag,
+    pub stmt: *mut Node,
+    pub stmt_location: ParseLoc,
+    pub stmt_len: ParseLoc,
+}
+impl Default for RawStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[doc = "\t\tOptimizable Statements"]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct InsertStmt {
+    pub type_: NodeTag,
+    pub relation: *mut RangeVar,
+    pub cols: *mut List,
+    pub selectStmt: *mut Node,
+    pub onConflictClause: *mut OnConflictClause,
+    pub returningList: *mut List,
+    pub withClause: *mut WithClause,
+    pub override_: OverridingKind::Type,
+}
+impl Default for InsertStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DeleteStmt {
+    pub type_: NodeTag,
+    pub relation: *mut RangeVar,
+    pub usingClause: *mut List,
+    pub whereClause: *mut Node,
+    pub returningList: *mut List,
+    pub withClause: *mut WithClause,
+}
+impl Default for DeleteStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct UpdateStmt {
+    pub type_: NodeTag,
+    pub relation: *mut RangeVar,
+    pub targetList: *mut List,
+    pub whereClause: *mut Node,
+    pub fromClause: *mut List,
+    pub returningList: *mut List,
+    pub withClause: *mut WithClause,
+}
+impl Default for UpdateStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct MergeStmt {
+    pub type_: NodeTag,
+    pub relation: *mut RangeVar,
+    pub sourceRelation: *mut Node,
+    pub joinCondition: *mut Node,
+    pub mergeWhenClauses: *mut List,
+    pub returningList: *mut List,
+    pub withClause: *mut WithClause,
+}
+impl Default for MergeStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod SetOperation {
+    pub type Type = ::core::ffi::c_uint;
+    pub const SETOP_NONE: Type = 0;
+    pub const SETOP_UNION: Type = 1;
+    pub const SETOP_INTERSECT: Type = 2;
+    pub const SETOP_EXCEPT: Type = 3;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct SelectStmt {
+    pub type_: NodeTag,
+    pub distinctClause: *mut List,
+    pub intoClause: *mut IntoClause,
+    pub targetList: *mut List,
+    pub fromClause: *mut List,
+    pub whereClause: *mut Node,
+    pub groupClause: *mut List,
+    pub groupDistinct: bool,
+    pub havingClause: *mut Node,
+    pub windowClause: *mut List,
+    pub valuesLists: *mut List,
+    pub sortClause: *mut List,
+    pub limitOffset: *mut Node,
+    pub limitCount: *mut Node,
+    pub limitOption: LimitOption::Type,
+    pub lockingClause: *mut List,
+    pub withClause: *mut WithClause,
+    pub op: SetOperation::Type,
+    pub all: bool,
+    pub larg: *mut SelectStmt,
+    pub rarg: *mut SelectStmt,
+}
+impl Default for SelectStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct SetOperationStmt {
+    pub type_: NodeTag,
+    pub op: SetOperation::Type,
+    pub all: bool,
+    pub larg: *mut Node,
+    pub rarg: *mut Node,
+    pub colTypes: *mut List,
+    pub colTypmods: *mut List,
+    pub colCollations: *mut List,
+    pub groupClauses: *mut List,
+}
+impl Default for SetOperationStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ReturnStmt {
+    pub type_: NodeTag,
+    pub returnval: *mut Node,
+}
+impl Default for ReturnStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PLAssignStmt {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+    pub indirection: *mut List,
+    pub nnames: ::core::ffi::c_int,
+    pub val: *mut SelectStmt,
+    pub location: ParseLoc,
+}
+impl Default for PLAssignStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod ObjectType {
+    #[doc = "\t\tOther Statements (no optimizations required)\n\n\t\tThese are not touched by parser/analyze.c except to put them into\n\t\tthe utilityStmt field of a Query.  This is eventually passed to\n\t\tProcessUtility (by-passing rewriting and planning).  Some of the\n\t\tstatements do need attention from parse analysis, and this is\n\t\tdone by routines in parser/parse_utilcmd.c after ProcessUtility\n\t\treceives the command for execution.\n\t\tDECLARE CURSOR, EXPLAIN, and CREATE TABLE AS are special cases:\n\t\tthey contain optimizable statements, which get processed normally\n\t\tby parser/analyze.c."]
+    pub type Type = ::core::ffi::c_uint;
+    pub const OBJECT_ACCESS_METHOD: Type = 0;
+    pub const OBJECT_AGGREGATE: Type = 1;
+    pub const OBJECT_AMOP: Type = 2;
+    pub const OBJECT_AMPROC: Type = 3;
+    pub const OBJECT_ATTRIBUTE: Type = 4;
+    pub const OBJECT_CAST: Type = 5;
+    pub const OBJECT_COLUMN: Type = 6;
+    pub const OBJECT_COLLATION: Type = 7;
+    pub const OBJECT_CONVERSION: Type = 8;
+    pub const OBJECT_DATABASE: Type = 9;
+    pub const OBJECT_DEFAULT: Type = 10;
+    pub const OBJECT_DEFACL: Type = 11;
+    pub const OBJECT_DOMAIN: Type = 12;
+    pub const OBJECT_DOMCONSTRAINT: Type = 13;
+    pub const OBJECT_EVENT_TRIGGER: Type = 14;
+    pub const OBJECT_EXTENSION: Type = 15;
+    pub const OBJECT_FDW: Type = 16;
+    pub const OBJECT_FOREIGN_SERVER: Type = 17;
+    pub const OBJECT_FOREIGN_TABLE: Type = 18;
+    pub const OBJECT_FUNCTION: Type = 19;
+    pub const OBJECT_INDEX: Type = 20;
+    pub const OBJECT_LANGUAGE: Type = 21;
+    pub const OBJECT_LARGEOBJECT: Type = 22;
+    pub const OBJECT_MATVIEW: Type = 23;
+    pub const OBJECT_OPCLASS: Type = 24;
+    pub const OBJECT_OPERATOR: Type = 25;
+    pub const OBJECT_OPFAMILY: Type = 26;
+    pub const OBJECT_PARAMETER_ACL: Type = 27;
+    pub const OBJECT_POLICY: Type = 28;
+    pub const OBJECT_PROCEDURE: Type = 29;
+    pub const OBJECT_PUBLICATION: Type = 30;
+    pub const OBJECT_PUBLICATION_NAMESPACE: Type = 31;
+    pub const OBJECT_PUBLICATION_REL: Type = 32;
+    pub const OBJECT_ROLE: Type = 33;
+    pub const OBJECT_ROUTINE: Type = 34;
+    pub const OBJECT_RULE: Type = 35;
+    pub const OBJECT_SCHEMA: Type = 36;
+    pub const OBJECT_SEQUENCE: Type = 37;
+    pub const OBJECT_SUBSCRIPTION: Type = 38;
+    pub const OBJECT_STATISTIC_EXT: Type = 39;
+    pub const OBJECT_TABCONSTRAINT: Type = 40;
+    pub const OBJECT_TABLE: Type = 41;
+    pub const OBJECT_TABLESPACE: Type = 42;
+    pub const OBJECT_TRANSFORM: Type = 43;
+    pub const OBJECT_TRIGGER: Type = 44;
+    pub const OBJECT_TSCONFIGURATION: Type = 45;
+    pub const OBJECT_TSDICTIONARY: Type = 46;
+    pub const OBJECT_TSPARSER: Type = 47;
+    pub const OBJECT_TSTEMPLATE: Type = 48;
+    pub const OBJECT_TYPE: Type = 49;
+    pub const OBJECT_USER_MAPPING: Type = 50;
+    pub const OBJECT_VIEW: Type = 51;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateSchemaStmt {
+    pub type_: NodeTag,
+    pub schemaname: *mut ::core::ffi::c_char,
+    pub authrole: *mut RoleSpec,
+    pub schemaElts: *mut List,
+    pub if_not_exists: bool,
+}
+impl Default for CreateSchemaStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod DropBehavior {
+    pub type Type = ::core::ffi::c_uint;
+    pub const DROP_RESTRICT: Type = 0;
+    pub const DROP_CASCADE: Type = 1;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterTableStmt {
+    pub type_: NodeTag,
+    pub relation: *mut RangeVar,
+    pub cmds: *mut List,
+    pub objtype: ObjectType::Type,
+    pub missing_ok: bool,
+}
+impl Default for AlterTableStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod AlterTableType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const AT_AddColumn: Type = 0;
+    pub const AT_AddColumnToView: Type = 1;
+    pub const AT_ColumnDefault: Type = 2;
+    pub const AT_CookedColumnDefault: Type = 3;
+    pub const AT_DropNotNull: Type = 4;
+    pub const AT_SetNotNull: Type = 5;
+    pub const AT_SetExpression: Type = 6;
+    pub const AT_DropExpression: Type = 7;
+    pub const AT_CheckNotNull: Type = 8;
+    pub const AT_SetStatistics: Type = 9;
+    pub const AT_SetOptions: Type = 10;
+    pub const AT_ResetOptions: Type = 11;
+    pub const AT_SetStorage: Type = 12;
+    pub const AT_SetCompression: Type = 13;
+    pub const AT_DropColumn: Type = 14;
+    pub const AT_AddIndex: Type = 15;
+    pub const AT_ReAddIndex: Type = 16;
+    pub const AT_AddConstraint: Type = 17;
+    pub const AT_ReAddConstraint: Type = 18;
+    pub const AT_ReAddDomainConstraint: Type = 19;
+    pub const AT_AlterConstraint: Type = 20;
+    pub const AT_ValidateConstraint: Type = 21;
+    pub const AT_AddIndexConstraint: Type = 22;
+    pub const AT_DropConstraint: Type = 23;
+    pub const AT_ReAddComment: Type = 24;
+    pub const AT_AlterColumnType: Type = 25;
+    pub const AT_AlterColumnGenericOptions: Type = 26;
+    pub const AT_ChangeOwner: Type = 27;
+    pub const AT_ClusterOn: Type = 28;
+    pub const AT_DropCluster: Type = 29;
+    pub const AT_SetLogged: Type = 30;
+    pub const AT_SetUnLogged: Type = 31;
+    pub const AT_DropOids: Type = 32;
+    pub const AT_SetAccessMethod: Type = 33;
+    pub const AT_SetTableSpace: Type = 34;
+    pub const AT_SetRelOptions: Type = 35;
+    pub const AT_ResetRelOptions: Type = 36;
+    pub const AT_ReplaceRelOptions: Type = 37;
+    pub const AT_EnableTrig: Type = 38;
+    pub const AT_EnableAlwaysTrig: Type = 39;
+    pub const AT_EnableReplicaTrig: Type = 40;
+    pub const AT_DisableTrig: Type = 41;
+    pub const AT_EnableTrigAll: Type = 42;
+    pub const AT_DisableTrigAll: Type = 43;
+    pub const AT_EnableTrigUser: Type = 44;
+    pub const AT_DisableTrigUser: Type = 45;
+    pub const AT_EnableRule: Type = 46;
+    pub const AT_EnableAlwaysRule: Type = 47;
+    pub const AT_EnableReplicaRule: Type = 48;
+    pub const AT_DisableRule: Type = 49;
+    pub const AT_AddInherit: Type = 50;
+    pub const AT_DropInherit: Type = 51;
+    pub const AT_AddOf: Type = 52;
+    pub const AT_DropOf: Type = 53;
+    pub const AT_ReplicaIdentity: Type = 54;
+    pub const AT_EnableRowSecurity: Type = 55;
+    pub const AT_DisableRowSecurity: Type = 56;
+    pub const AT_ForceRowSecurity: Type = 57;
+    pub const AT_NoForceRowSecurity: Type = 58;
+    pub const AT_GenericOptions: Type = 59;
+    pub const AT_AttachPartition: Type = 60;
+    pub const AT_DetachPartition: Type = 61;
+    pub const AT_DetachPartitionFinalize: Type = 62;
+    pub const AT_AddIdentity: Type = 63;
+    pub const AT_SetIdentity: Type = 64;
+    pub const AT_DropIdentity: Type = 65;
+    pub const AT_ReAddStatistics: Type = 66;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ReplicaIdentityStmt {
+    pub type_: NodeTag,
+    pub identity_type: ::core::ffi::c_char,
+    pub name: *mut ::core::ffi::c_char,
+}
+impl Default for ReplicaIdentityStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterTableCmd {
+    pub type_: NodeTag,
+    pub subtype: AlterTableType::Type,
+    pub name: *mut ::core::ffi::c_char,
+    pub num: int16,
+    pub newowner: *mut RoleSpec,
+    pub def: *mut Node,
+    pub behavior: DropBehavior::Type,
+    pub missing_ok: bool,
+    pub recurse: bool,
+}
+impl Default for AlterTableCmd {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterCollationStmt {
+    pub type_: NodeTag,
+    pub collname: *mut List,
+}
+impl Default for AlterCollationStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterDomainStmt {
+    pub type_: NodeTag,
+    pub subtype: ::core::ffi::c_char,
+    pub typeName: *mut List,
+    pub name: *mut ::core::ffi::c_char,
+    pub def: *mut Node,
+    pub behavior: DropBehavior::Type,
+    pub missing_ok: bool,
+}
+impl Default for AlterDomainStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod GrantTargetType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const ACL_TARGET_OBJECT: Type = 0;
+    pub const ACL_TARGET_ALL_IN_SCHEMA: Type = 1;
+    pub const ACL_TARGET_DEFAULTS: Type = 2;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct GrantStmt {
+    pub type_: NodeTag,
+    pub is_grant: bool,
+    pub targtype: GrantTargetType::Type,
+    pub objtype: ObjectType::Type,
+    pub objects: *mut List,
+    pub privileges: *mut List,
+    pub grantees: *mut List,
+    pub grant_option: bool,
+    pub grantor: *mut RoleSpec,
+    pub behavior: DropBehavior::Type,
+}
+impl Default for GrantStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ObjectWithArgs {
+    pub type_: NodeTag,
+    pub objname: *mut List,
+    pub objargs: *mut List,
+    pub objfuncargs: *mut List,
+    pub args_unspecified: bool,
+}
+impl Default for ObjectWithArgs {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AccessPriv {
+    pub type_: NodeTag,
+    pub priv_name: *mut ::core::ffi::c_char,
+    pub cols: *mut List,
+}
+impl Default for AccessPriv {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct GrantRoleStmt {
+    pub type_: NodeTag,
+    pub granted_roles: *mut List,
+    pub grantee_roles: *mut List,
+    pub is_grant: bool,
+    pub opt: *mut List,
+    pub grantor: *mut RoleSpec,
+    pub behavior: DropBehavior::Type,
+}
+impl Default for GrantRoleStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterDefaultPrivilegesStmt {
+    pub type_: NodeTag,
+    pub options: *mut List,
+    pub action: *mut GrantStmt,
+}
+impl Default for AlterDefaultPrivilegesStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CopyStmt {
+    pub type_: NodeTag,
+    pub relation: *mut RangeVar,
+    pub query: *mut Node,
+    pub attlist: *mut List,
+    pub is_from: bool,
+    pub is_program: bool,
+    pub filename: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+    pub whereClause: *mut Node,
+}
+impl Default for CopyStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod VariableSetKind {
+    pub type Type = ::core::ffi::c_uint;
+    pub const VAR_SET_VALUE: Type = 0;
+    pub const VAR_SET_DEFAULT: Type = 1;
+    pub const VAR_SET_CURRENT: Type = 2;
+    pub const VAR_SET_MULTI: Type = 3;
+    pub const VAR_RESET: Type = 4;
+    pub const VAR_RESET_ALL: Type = 5;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct VariableSetStmt {
+    pub type_: NodeTag,
+    pub kind: VariableSetKind::Type,
+    pub name: *mut ::core::ffi::c_char,
+    pub args: *mut List,
+    pub is_local: bool,
+}
+impl Default for VariableSetStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct VariableShowStmt {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+}
+impl Default for VariableShowStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateStmt {
+    pub type_: NodeTag,
+    pub relation: *mut RangeVar,
+    pub tableElts: *mut List,
+    pub inhRelations: *mut List,
+    pub partbound: *mut PartitionBoundSpec,
+    pub partspec: *mut PartitionSpec,
+    pub ofTypename: *mut TypeName,
+    pub constraints: *mut List,
+    pub options: *mut List,
+    pub oncommit: OnCommitAction::Type,
+    pub tablespacename: *mut ::core::ffi::c_char,
+    pub accessMethod: *mut ::core::ffi::c_char,
+    pub if_not_exists: bool,
+}
+impl Default for CreateStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod ConstrType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const CONSTR_NULL: Type = 0;
+    pub const CONSTR_NOTNULL: Type = 1;
+    pub const CONSTR_DEFAULT: Type = 2;
+    pub const CONSTR_IDENTITY: Type = 3;
+    pub const CONSTR_GENERATED: Type = 4;
+    pub const CONSTR_CHECK: Type = 5;
+    pub const CONSTR_PRIMARY: Type = 6;
+    pub const CONSTR_UNIQUE: Type = 7;
+    pub const CONSTR_EXCLUSION: Type = 8;
+    pub const CONSTR_FOREIGN: Type = 9;
+    pub const CONSTR_ATTR_DEFERRABLE: Type = 10;
+    pub const CONSTR_ATTR_NOT_DEFERRABLE: Type = 11;
+    pub const CONSTR_ATTR_DEFERRED: Type = 12;
+    pub const CONSTR_ATTR_IMMEDIATE: Type = 13;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct Constraint {
+    pub type_: NodeTag,
+    pub contype: ConstrType::Type,
+    pub conname: *mut ::core::ffi::c_char,
+    pub deferrable: bool,
+    pub initdeferred: bool,
+    pub skip_validation: bool,
+    pub initially_valid: bool,
+    pub is_no_inherit: bool,
+    pub raw_expr: *mut Node,
+    pub cooked_expr: *mut ::core::ffi::c_char,
+    pub generated_when: ::core::ffi::c_char,
+    pub inhcount: ::core::ffi::c_int,
+    pub nulls_not_distinct: bool,
+    pub keys: *mut List,
+    pub including: *mut List,
+    pub exclusions: *mut List,
+    pub options: *mut List,
+    pub indexname: *mut ::core::ffi::c_char,
+    pub indexspace: *mut ::core::ffi::c_char,
+    pub reset_default_tblspc: bool,
+    pub access_method: *mut ::core::ffi::c_char,
+    pub where_clause: *mut Node,
+    pub pktable: *mut RangeVar,
+    pub fk_attrs: *mut List,
+    pub pk_attrs: *mut List,
+    pub fk_matchtype: ::core::ffi::c_char,
+    pub fk_upd_action: ::core::ffi::c_char,
+    pub fk_del_action: ::core::ffi::c_char,
+    pub fk_del_set_cols: *mut List,
+    pub old_conpfeqop: *mut List,
+    pub old_pktable_oid: Oid,
+    pub location: ParseLoc,
+}
+impl Default for Constraint {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateTableSpaceStmt {
+    pub type_: NodeTag,
+    pub tablespacename: *mut ::core::ffi::c_char,
+    pub owner: *mut RoleSpec,
+    pub location: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+}
+impl Default for CreateTableSpaceStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DropTableSpaceStmt {
+    pub type_: NodeTag,
+    pub tablespacename: *mut ::core::ffi::c_char,
+    pub missing_ok: bool,
+}
+impl Default for DropTableSpaceStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterTableSpaceOptionsStmt {
+    pub type_: NodeTag,
+    pub tablespacename: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+    pub isReset: bool,
+}
+impl Default for AlterTableSpaceOptionsStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterTableMoveAllStmt {
+    pub type_: NodeTag,
+    pub orig_tablespacename: *mut ::core::ffi::c_char,
+    pub objtype: ObjectType::Type,
+    pub roles: *mut List,
+    pub new_tablespacename: *mut ::core::ffi::c_char,
+    pub nowait: bool,
+}
+impl Default for AlterTableMoveAllStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateExtensionStmt {
+    pub type_: NodeTag,
+    pub extname: *mut ::core::ffi::c_char,
+    pub if_not_exists: bool,
+    pub options: *mut List,
+}
+impl Default for CreateExtensionStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterExtensionStmt {
+    pub type_: NodeTag,
+    pub extname: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+}
+impl Default for AlterExtensionStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterExtensionContentsStmt {
+    pub type_: NodeTag,
+    pub extname: *mut ::core::ffi::c_char,
+    pub action: ::core::ffi::c_int,
+    pub objtype: ObjectType::Type,
+    pub object: *mut Node,
+}
+impl Default for AlterExtensionContentsStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateFdwStmt {
+    pub type_: NodeTag,
+    pub fdwname: *mut ::core::ffi::c_char,
+    pub func_options: *mut List,
+    pub options: *mut List,
+}
+impl Default for CreateFdwStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterFdwStmt {
+    pub type_: NodeTag,
+    pub fdwname: *mut ::core::ffi::c_char,
+    pub func_options: *mut List,
+    pub options: *mut List,
+}
+impl Default for AlterFdwStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateForeignServerStmt {
+    pub type_: NodeTag,
+    pub servername: *mut ::core::ffi::c_char,
+    pub servertype: *mut ::core::ffi::c_char,
+    pub version: *mut ::core::ffi::c_char,
+    pub fdwname: *mut ::core::ffi::c_char,
+    pub if_not_exists: bool,
+    pub options: *mut List,
+}
+impl Default for CreateForeignServerStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterForeignServerStmt {
+    pub type_: NodeTag,
+    pub servername: *mut ::core::ffi::c_char,
+    pub version: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+    pub has_version: bool,
+}
+impl Default for AlterForeignServerStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateForeignTableStmt {
+    pub base: CreateStmt,
+    pub servername: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+}
+impl Default for CreateForeignTableStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateUserMappingStmt {
+    pub type_: NodeTag,
+    pub user: *mut RoleSpec,
+    pub servername: *mut ::core::ffi::c_char,
+    pub if_not_exists: bool,
+    pub options: *mut List,
+}
+impl Default for CreateUserMappingStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterUserMappingStmt {
+    pub type_: NodeTag,
+    pub user: *mut RoleSpec,
+    pub servername: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+}
+impl Default for AlterUserMappingStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DropUserMappingStmt {
+    pub type_: NodeTag,
+    pub user: *mut RoleSpec,
+    pub servername: *mut ::core::ffi::c_char,
+    pub missing_ok: bool,
+}
+impl Default for DropUserMappingStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod ImportForeignSchemaType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const FDW_IMPORT_SCHEMA_ALL: Type = 0;
+    pub const FDW_IMPORT_SCHEMA_LIMIT_TO: Type = 1;
+    pub const FDW_IMPORT_SCHEMA_EXCEPT: Type = 2;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ImportForeignSchemaStmt {
+    pub type_: NodeTag,
+    pub server_name: *mut ::core::ffi::c_char,
+    pub remote_schema: *mut ::core::ffi::c_char,
+    pub local_schema: *mut ::core::ffi::c_char,
+    pub list_type: ImportForeignSchemaType::Type,
+    pub table_list: *mut List,
+    pub options: *mut List,
+}
+impl Default for ImportForeignSchemaStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreatePolicyStmt {
+    pub type_: NodeTag,
+    pub policy_name: *mut ::core::ffi::c_char,
+    pub table: *mut RangeVar,
+    pub cmd_name: *mut ::core::ffi::c_char,
+    pub permissive: bool,
+    pub roles: *mut List,
+    pub qual: *mut Node,
+    pub with_check: *mut Node,
+}
+impl Default for CreatePolicyStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterPolicyStmt {
+    pub type_: NodeTag,
+    pub policy_name: *mut ::core::ffi::c_char,
+    pub table: *mut RangeVar,
+    pub roles: *mut List,
+    pub qual: *mut Node,
+    pub with_check: *mut Node,
+}
+impl Default for AlterPolicyStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateAmStmt {
+    pub type_: NodeTag,
+    pub amname: *mut ::core::ffi::c_char,
+    pub handler_name: *mut List,
+    pub amtype: ::core::ffi::c_char,
+}
+impl Default for CreateAmStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateTrigStmt {
+    pub type_: NodeTag,
+    pub replace: bool,
+    pub isconstraint: bool,
+    pub trigname: *mut ::core::ffi::c_char,
+    pub relation: *mut RangeVar,
+    pub funcname: *mut List,
+    pub args: *mut List,
+    pub row: bool,
+    pub timing: int16,
+    pub events: int16,
+    pub columns: *mut List,
+    pub whenClause: *mut Node,
+    pub transitionRels: *mut List,
+    pub deferrable: bool,
+    pub initdeferred: bool,
+    pub constrrel: *mut RangeVar,
+}
+impl Default for CreateTrigStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateEventTrigStmt {
+    pub type_: NodeTag,
+    pub trigname: *mut ::core::ffi::c_char,
+    pub eventname: *mut ::core::ffi::c_char,
+    pub whenclause: *mut List,
+    pub funcname: *mut List,
+}
+impl Default for CreateEventTrigStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterEventTrigStmt {
+    pub type_: NodeTag,
+    pub trigname: *mut ::core::ffi::c_char,
+    pub tgenabled: ::core::ffi::c_char,
+}
+impl Default for AlterEventTrigStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreatePLangStmt {
+    pub type_: NodeTag,
+    pub replace: bool,
+    pub plname: *mut ::core::ffi::c_char,
+    pub plhandler: *mut List,
+    pub plinline: *mut List,
+    pub plvalidator: *mut List,
+    pub pltrusted: bool,
+}
+impl Default for CreatePLangStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod RoleStmtType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const ROLESTMT_ROLE: Type = 0;
+    pub const ROLESTMT_USER: Type = 1;
+    pub const ROLESTMT_GROUP: Type = 2;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateRoleStmt {
+    pub type_: NodeTag,
+    pub stmt_type: RoleStmtType::Type,
+    pub role: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+}
+impl Default for CreateRoleStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterRoleStmt {
+    pub type_: NodeTag,
+    pub role: *mut RoleSpec,
+    pub options: *mut List,
+    pub action: ::core::ffi::c_int,
+}
+impl Default for AlterRoleStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterRoleSetStmt {
+    pub type_: NodeTag,
+    pub role: *mut RoleSpec,
+    pub database: *mut ::core::ffi::c_char,
+    pub setstmt: *mut VariableSetStmt,
+}
+impl Default for AlterRoleSetStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DropRoleStmt {
+    pub type_: NodeTag,
+    pub roles: *mut List,
+    pub missing_ok: bool,
+}
+impl Default for DropRoleStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateSeqStmt {
+    pub type_: NodeTag,
+    pub sequence: *mut RangeVar,
+    pub options: *mut List,
+    pub ownerId: Oid,
+    pub for_identity: bool,
+    pub if_not_exists: bool,
+}
+impl Default for CreateSeqStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterSeqStmt {
+    pub type_: NodeTag,
+    pub sequence: *mut RangeVar,
+    pub options: *mut List,
+    pub for_identity: bool,
+    pub missing_ok: bool,
+}
+impl Default for AlterSeqStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DefineStmt {
+    pub type_: NodeTag,
+    pub kind: ObjectType::Type,
+    pub oldstyle: bool,
+    pub defnames: *mut List,
+    pub args: *mut List,
+    pub definition: *mut List,
+    pub if_not_exists: bool,
+    pub replace: bool,
+}
+impl Default for DefineStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateDomainStmt {
+    pub type_: NodeTag,
+    pub domainname: *mut List,
+    pub typeName: *mut TypeName,
+    pub collClause: *mut CollateClause,
+    pub constraints: *mut List,
+}
+impl Default for CreateDomainStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateOpClassStmt {
+    pub type_: NodeTag,
+    pub opclassname: *mut List,
+    pub opfamilyname: *mut List,
+    pub amname: *mut ::core::ffi::c_char,
+    pub datatype: *mut TypeName,
+    pub items: *mut List,
+    pub isDefault: bool,
+}
+impl Default for CreateOpClassStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateOpClassItem {
+    pub type_: NodeTag,
+    pub itemtype: ::core::ffi::c_int,
+    pub name: *mut ObjectWithArgs,
+    pub number: ::core::ffi::c_int,
+    pub order_family: *mut List,
+    pub class_args: *mut List,
+    pub storedtype: *mut TypeName,
+}
+impl Default for CreateOpClassItem {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateOpFamilyStmt {
+    pub type_: NodeTag,
+    pub opfamilyname: *mut List,
+    pub amname: *mut ::core::ffi::c_char,
+}
+impl Default for CreateOpFamilyStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterOpFamilyStmt {
+    pub type_: NodeTag,
+    pub opfamilyname: *mut List,
+    pub amname: *mut ::core::ffi::c_char,
+    pub isDrop: bool,
+    pub items: *mut List,
+}
+impl Default for AlterOpFamilyStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DropStmt {
+    pub type_: NodeTag,
+    pub objects: *mut List,
+    pub removeType: ObjectType::Type,
+    pub behavior: DropBehavior::Type,
+    pub missing_ok: bool,
+    pub concurrent: bool,
+}
+impl Default for DropStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct TruncateStmt {
+    pub type_: NodeTag,
+    pub relations: *mut List,
+    pub restart_seqs: bool,
+    pub behavior: DropBehavior::Type,
+}
+impl Default for TruncateStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CommentStmt {
+    pub type_: NodeTag,
+    pub objtype: ObjectType::Type,
+    pub object: *mut Node,
+    pub comment: *mut ::core::ffi::c_char,
+}
+impl Default for CommentStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct SecLabelStmt {
+    pub type_: NodeTag,
+    pub objtype: ObjectType::Type,
+    pub object: *mut Node,
+    pub provider: *mut ::core::ffi::c_char,
+    pub label: *mut ::core::ffi::c_char,
+}
+impl Default for SecLabelStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DeclareCursorStmt {
+    pub type_: NodeTag,
+    pub portalname: *mut ::core::ffi::c_char,
+    pub options: ::core::ffi::c_int,
+    pub query: *mut Node,
+}
+impl Default for DeclareCursorStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ClosePortalStmt {
+    pub type_: NodeTag,
+    pub portalname: *mut ::core::ffi::c_char,
+}
+impl Default for ClosePortalStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod FetchDirection {
+    pub type Type = ::core::ffi::c_uint;
+    pub const FETCH_FORWARD: Type = 0;
+    pub const FETCH_BACKWARD: Type = 1;
+    pub const FETCH_ABSOLUTE: Type = 2;
+    pub const FETCH_RELATIVE: Type = 3;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FetchStmt {
+    pub type_: NodeTag,
+    pub direction: FetchDirection::Type,
+    pub howMany: ::core::ffi::c_long,
+    pub portalname: *mut ::core::ffi::c_char,
+    pub ismove: bool,
+}
+impl Default for FetchStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct IndexStmt {
+    pub type_: NodeTag,
+    pub idxname: *mut ::core::ffi::c_char,
+    pub relation: *mut RangeVar,
+    pub accessMethod: *mut ::core::ffi::c_char,
+    pub tableSpace: *mut ::core::ffi::c_char,
+    pub indexParams: *mut List,
+    pub indexIncludingParams: *mut List,
+    pub options: *mut List,
+    pub whereClause: *mut Node,
+    pub excludeOpNames: *mut List,
+    pub idxcomment: *mut ::core::ffi::c_char,
+    pub indexOid: Oid,
+    pub oldNumber: RelFileNumber,
+    pub oldCreateSubid: SubTransactionId,
+    pub oldFirstRelfilelocatorSubid: SubTransactionId,
+    pub unique: bool,
+    pub nulls_not_distinct: bool,
+    pub primary: bool,
+    pub isconstraint: bool,
+    pub deferrable: bool,
+    pub initdeferred: bool,
+    pub transformed: bool,
+    pub concurrent: bool,
+    pub if_not_exists: bool,
+    pub reset_default_tblspc: bool,
+}
+impl Default for IndexStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateStatsStmt {
+    pub type_: NodeTag,
+    pub defnames: *mut List,
+    pub stat_types: *mut List,
+    pub exprs: *mut List,
+    pub relations: *mut List,
+    pub stxcomment: *mut ::core::ffi::c_char,
+    pub transformed: bool,
+    pub if_not_exists: bool,
+}
+impl Default for CreateStatsStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct StatsElem {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+    pub expr: *mut Node,
+}
+impl Default for StatsElem {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterStatsStmt {
+    pub type_: NodeTag,
+    pub defnames: *mut List,
+    pub stxstattarget: *mut Node,
+    pub missing_ok: bool,
+}
+impl Default for AlterStatsStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateFunctionStmt {
+    pub type_: NodeTag,
+    pub is_procedure: bool,
+    pub replace: bool,
+    pub funcname: *mut List,
+    pub parameters: *mut List,
+    pub returnType: *mut TypeName,
+    pub options: *mut List,
+    pub sql_body: *mut Node,
+}
+impl Default for CreateFunctionStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod FunctionParameterMode {
+    pub type Type = ::core::ffi::c_uint;
+    pub const FUNC_PARAM_IN: Type = 105;
+    pub const FUNC_PARAM_OUT: Type = 111;
+    pub const FUNC_PARAM_INOUT: Type = 98;
+    pub const FUNC_PARAM_VARIADIC: Type = 118;
+    pub const FUNC_PARAM_TABLE: Type = 116;
+    pub const FUNC_PARAM_DEFAULT: Type = 100;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FunctionParameter {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+    pub argType: *mut TypeName,
+    pub mode: FunctionParameterMode::Type,
+    pub defexpr: *mut Node,
+}
+impl Default for FunctionParameter {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterFunctionStmt {
+    pub type_: NodeTag,
+    pub objtype: ObjectType::Type,
+    pub func: *mut ObjectWithArgs,
+    pub actions: *mut List,
+}
+impl Default for AlterFunctionStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DoStmt {
+    pub type_: NodeTag,
+    pub args: *mut List,
+}
+impl Default for DoStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct InlineCodeBlock {
+    pub type_: NodeTag,
+    pub source_text: *mut ::core::ffi::c_char,
+    pub langOid: Oid,
+    pub langIsTrusted: bool,
+    pub atomic: bool,
+}
+impl Default for InlineCodeBlock {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CallStmt {
+    pub type_: NodeTag,
+    pub funccall: *mut FuncCall,
+    pub funcexpr: *mut FuncExpr,
+    pub outargs: *mut List,
+}
+impl Default for CallStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CallContext {
+    pub type_: NodeTag,
+    pub atomic: bool,
+}
+impl Default for CallContext {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RenameStmt {
+    pub type_: NodeTag,
+    pub renameType: ObjectType::Type,
+    pub relationType: ObjectType::Type,
+    pub relation: *mut RangeVar,
+    pub object: *mut Node,
+    pub subname: *mut ::core::ffi::c_char,
+    pub newname: *mut ::core::ffi::c_char,
+    pub behavior: DropBehavior::Type,
+    pub missing_ok: bool,
+}
+impl Default for RenameStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterObjectDependsStmt {
+    pub type_: NodeTag,
+    pub objectType: ObjectType::Type,
+    pub relation: *mut RangeVar,
+    pub object: *mut Node,
+    pub extname: *mut String,
+    pub remove: bool,
+}
+impl Default for AlterObjectDependsStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterObjectSchemaStmt {
+    pub type_: NodeTag,
+    pub objectType: ObjectType::Type,
+    pub relation: *mut RangeVar,
+    pub object: *mut Node,
+    pub newschema: *mut ::core::ffi::c_char,
+    pub missing_ok: bool,
+}
+impl Default for AlterObjectSchemaStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterOwnerStmt {
+    pub type_: NodeTag,
+    pub objectType: ObjectType::Type,
+    pub relation: *mut RangeVar,
+    pub object: *mut Node,
+    pub newowner: *mut RoleSpec,
+}
+impl Default for AlterOwnerStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterOperatorStmt {
+    pub type_: NodeTag,
+    pub opername: *mut ObjectWithArgs,
+    pub options: *mut List,
+}
+impl Default for AlterOperatorStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterTypeStmt {
+    pub type_: NodeTag,
+    pub typeName: *mut List,
+    pub options: *mut List,
+}
+impl Default for AlterTypeStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RuleStmt {
+    pub type_: NodeTag,
+    pub relation: *mut RangeVar,
+    pub rulename: *mut ::core::ffi::c_char,
+    pub whereClause: *mut Node,
+    pub event: CmdType::Type,
+    pub instead: bool,
+    pub actions: *mut List,
+    pub replace: bool,
+}
+impl Default for RuleStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct NotifyStmt {
+    pub type_: NodeTag,
+    pub conditionname: *mut ::core::ffi::c_char,
+    pub payload: *mut ::core::ffi::c_char,
+}
+impl Default for NotifyStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ListenStmt {
+    pub type_: NodeTag,
+    pub conditionname: *mut ::core::ffi::c_char,
+}
+impl Default for ListenStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct UnlistenStmt {
+    pub type_: NodeTag,
+    pub conditionname: *mut ::core::ffi::c_char,
+}
+impl Default for UnlistenStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod TransactionStmtKind {
+    pub type Type = ::core::ffi::c_uint;
+    pub const TRANS_STMT_BEGIN: Type = 0;
+    pub const TRANS_STMT_START: Type = 1;
+    pub const TRANS_STMT_COMMIT: Type = 2;
+    pub const TRANS_STMT_ROLLBACK: Type = 3;
+    pub const TRANS_STMT_SAVEPOINT: Type = 4;
+    pub const TRANS_STMT_RELEASE: Type = 5;
+    pub const TRANS_STMT_ROLLBACK_TO: Type = 6;
+    pub const TRANS_STMT_PREPARE: Type = 7;
+    pub const TRANS_STMT_COMMIT_PREPARED: Type = 8;
+    pub const TRANS_STMT_ROLLBACK_PREPARED: Type = 9;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct TransactionStmt {
+    pub type_: NodeTag,
+    pub kind: TransactionStmtKind::Type,
+    pub options: *mut List,
+    pub savepoint_name: *mut ::core::ffi::c_char,
+    pub gid: *mut ::core::ffi::c_char,
+    pub chain: bool,
+    pub location: ParseLoc,
+}
+impl Default for TransactionStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CompositeTypeStmt {
+    pub type_: NodeTag,
+    pub typevar: *mut RangeVar,
+    pub coldeflist: *mut List,
+}
+impl Default for CompositeTypeStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateEnumStmt {
+    pub type_: NodeTag,
+    pub typeName: *mut List,
+    pub vals: *mut List,
+}
+impl Default for CreateEnumStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateRangeStmt {
+    pub type_: NodeTag,
+    pub typeName: *mut List,
+    pub params: *mut List,
+}
+impl Default for CreateRangeStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterEnumStmt {
+    pub type_: NodeTag,
+    pub typeName: *mut List,
+    pub oldVal: *mut ::core::ffi::c_char,
+    pub newVal: *mut ::core::ffi::c_char,
+    pub newValNeighbor: *mut ::core::ffi::c_char,
+    pub newValIsAfter: bool,
+    pub skipIfNewValExists: bool,
+}
+impl Default for AlterEnumStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod ViewCheckOption {
+    pub type Type = ::core::ffi::c_uint;
+    pub const NO_CHECK_OPTION: Type = 0;
+    pub const LOCAL_CHECK_OPTION: Type = 1;
+    pub const CASCADED_CHECK_OPTION: Type = 2;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ViewStmt {
+    pub type_: NodeTag,
+    pub view: *mut RangeVar,
+    pub aliases: *mut List,
+    pub query: *mut Node,
+    pub replace: bool,
+    pub options: *mut List,
+    pub withCheckOption: ViewCheckOption::Type,
+}
+impl Default for ViewStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct LoadStmt {
+    pub type_: NodeTag,
+    pub filename: *mut ::core::ffi::c_char,
+}
+impl Default for LoadStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreatedbStmt {
+    pub type_: NodeTag,
+    pub dbname: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+}
+impl Default for CreatedbStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterDatabaseStmt {
+    pub type_: NodeTag,
+    pub dbname: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+}
+impl Default for AlterDatabaseStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterDatabaseRefreshCollStmt {
+    pub type_: NodeTag,
+    pub dbname: *mut ::core::ffi::c_char,
+}
+impl Default for AlterDatabaseRefreshCollStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterDatabaseSetStmt {
+    pub type_: NodeTag,
+    pub dbname: *mut ::core::ffi::c_char,
+    pub setstmt: *mut VariableSetStmt,
+}
+impl Default for AlterDatabaseSetStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DropdbStmt {
+    pub type_: NodeTag,
+    pub dbname: *mut ::core::ffi::c_char,
+    pub missing_ok: bool,
+    pub options: *mut List,
+}
+impl Default for DropdbStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterSystemStmt {
+    pub type_: NodeTag,
+    pub setstmt: *mut VariableSetStmt,
+}
+impl Default for AlterSystemStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ClusterStmt {
+    pub type_: NodeTag,
+    pub relation: *mut RangeVar,
+    pub indexname: *mut ::core::ffi::c_char,
+    pub params: *mut List,
+}
+impl Default for ClusterStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct VacuumStmt {
+    pub type_: NodeTag,
+    pub options: *mut List,
+    pub rels: *mut List,
+    pub is_vacuumcmd: bool,
+}
+impl Default for VacuumStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct VacuumRelation {
+    pub type_: NodeTag,
+    pub relation: *mut RangeVar,
+    pub oid: Oid,
+    pub va_cols: *mut List,
+}
+impl Default for VacuumRelation {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ExplainStmt {
+    pub type_: NodeTag,
+    pub query: *mut Node,
+    pub options: *mut List,
+}
+impl Default for ExplainStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateTableAsStmt {
+    pub type_: NodeTag,
+    pub query: *mut Node,
+    pub into: *mut IntoClause,
+    pub objtype: ObjectType::Type,
+    pub is_select_into: bool,
+    pub if_not_exists: bool,
+}
+impl Default for CreateTableAsStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RefreshMatViewStmt {
+    pub type_: NodeTag,
+    pub concurrent: bool,
+    pub skipData: bool,
+    pub relation: *mut RangeVar,
+}
+impl Default for RefreshMatViewStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CheckPointStmt {
+    pub type_: NodeTag,
+}
+impl Default for CheckPointStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod DiscardMode {
+    pub type Type = ::core::ffi::c_uint;
+    pub const DISCARD_ALL: Type = 0;
+    pub const DISCARD_PLANS: Type = 1;
+    pub const DISCARD_SEQUENCES: Type = 2;
+    pub const DISCARD_TEMP: Type = 3;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DiscardStmt {
+    pub type_: NodeTag,
+    pub target: DiscardMode::Type,
+}
+impl Default for DiscardStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct LockStmt {
+    pub type_: NodeTag,
+    pub relations: *mut List,
+    pub mode: ::core::ffi::c_int,
+    pub nowait: bool,
+}
+impl Default for LockStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ConstraintsSetStmt {
+    pub type_: NodeTag,
+    pub constraints: *mut List,
+    pub deferred: bool,
+}
+impl Default for ConstraintsSetStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod ReindexObjectType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const REINDEX_OBJECT_INDEX: Type = 0;
+    pub const REINDEX_OBJECT_TABLE: Type = 1;
+    pub const REINDEX_OBJECT_SCHEMA: Type = 2;
+    pub const REINDEX_OBJECT_SYSTEM: Type = 3;
+    pub const REINDEX_OBJECT_DATABASE: Type = 4;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ReindexStmt {
+    pub type_: NodeTag,
+    pub kind: ReindexObjectType::Type,
+    pub relation: *mut RangeVar,
+    pub name: *const ::core::ffi::c_char,
+    pub params: *mut List,
+}
+impl Default for ReindexStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateConversionStmt {
+    pub type_: NodeTag,
+    pub conversion_name: *mut List,
+    pub for_encoding_name: *mut ::core::ffi::c_char,
+    pub to_encoding_name: *mut ::core::ffi::c_char,
+    pub func_name: *mut List,
+    pub def: bool,
+}
+impl Default for CreateConversionStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateCastStmt {
+    pub type_: NodeTag,
+    pub sourcetype: *mut TypeName,
+    pub targettype: *mut TypeName,
+    pub func: *mut ObjectWithArgs,
+    pub context: CoercionContext::Type,
+    pub inout: bool,
+}
+impl Default for CreateCastStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateTransformStmt {
+    pub type_: NodeTag,
+    pub replace: bool,
+    pub type_name: *mut TypeName,
+    pub lang: *mut ::core::ffi::c_char,
+    pub fromsql: *mut ObjectWithArgs,
+    pub tosql: *mut ObjectWithArgs,
+}
+impl Default for CreateTransformStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PrepareStmt {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+    pub argtypes: *mut List,
+    pub query: *mut Node,
+}
+impl Default for PrepareStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ExecuteStmt {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+    pub params: *mut List,
+}
+impl Default for ExecuteStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DeallocateStmt {
+    pub type_: NodeTag,
+    pub name: *mut ::core::ffi::c_char,
+    pub isall: bool,
+    pub location: ParseLoc,
+}
+impl Default for DeallocateStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DropOwnedStmt {
+    pub type_: NodeTag,
+    pub roles: *mut List,
+    pub behavior: DropBehavior::Type,
+}
+impl Default for DropOwnedStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ReassignOwnedStmt {
+    pub type_: NodeTag,
+    pub roles: *mut List,
+    pub newrole: *mut RoleSpec,
+}
+impl Default for ReassignOwnedStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterTSDictionaryStmt {
+    pub type_: NodeTag,
+    pub dictname: *mut List,
+    pub options: *mut List,
+}
+impl Default for AlterTSDictionaryStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod AlterTSConfigType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const ALTER_TSCONFIG_ADD_MAPPING: Type = 0;
+    pub const ALTER_TSCONFIG_ALTER_MAPPING_FOR_TOKEN: Type = 1;
+    pub const ALTER_TSCONFIG_REPLACE_DICT: Type = 2;
+    pub const ALTER_TSCONFIG_REPLACE_DICT_FOR_TOKEN: Type = 3;
+    pub const ALTER_TSCONFIG_DROP_MAPPING: Type = 4;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterTSConfigurationStmt {
+    pub type_: NodeTag,
+    pub kind: AlterTSConfigType::Type,
+    pub cfgname: *mut List,
+    pub tokentype: *mut List,
+    pub dicts: *mut List,
+    pub override_: bool,
+    pub replace: bool,
+    pub missing_ok: bool,
+}
+impl Default for AlterTSConfigurationStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PublicationTable {
+    pub type_: NodeTag,
+    pub relation: *mut RangeVar,
+    pub whereClause: *mut Node,
+    pub columns: *mut List,
+}
+impl Default for PublicationTable {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod PublicationObjSpecType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const PUBLICATIONOBJ_TABLE: Type = 0;
+    pub const PUBLICATIONOBJ_TABLES_IN_SCHEMA: Type = 1;
+    pub const PUBLICATIONOBJ_TABLES_IN_CUR_SCHEMA: Type = 2;
+    pub const PUBLICATIONOBJ_CONTINUATION: Type = 3;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PublicationObjSpec {
+    pub type_: NodeTag,
+    pub pubobjtype: PublicationObjSpecType::Type,
+    pub name: *mut ::core::ffi::c_char,
+    pub pubtable: *mut PublicationTable,
+    pub location: ParseLoc,
+}
+impl Default for PublicationObjSpec {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreatePublicationStmt {
+    pub type_: NodeTag,
+    pub pubname: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+    pub pubobjects: *mut List,
+    pub for_all_tables: bool,
+}
+impl Default for CreatePublicationStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod AlterPublicationAction {
+    pub type Type = ::core::ffi::c_uint;
+    pub const AP_AddObjects: Type = 0;
+    pub const AP_DropObjects: Type = 1;
+    pub const AP_SetObjects: Type = 2;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterPublicationStmt {
+    pub type_: NodeTag,
+    pub pubname: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+    pub pubobjects: *mut List,
+    pub for_all_tables: bool,
+    pub action: AlterPublicationAction::Type,
+}
+impl Default for AlterPublicationStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CreateSubscriptionStmt {
+    pub type_: NodeTag,
+    pub subname: *mut ::core::ffi::c_char,
+    pub conninfo: *mut ::core::ffi::c_char,
+    pub publication: *mut List,
+    pub options: *mut List,
+}
+impl Default for CreateSubscriptionStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod AlterSubscriptionType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const ALTER_SUBSCRIPTION_OPTIONS: Type = 0;
+    pub const ALTER_SUBSCRIPTION_CONNECTION: Type = 1;
+    pub const ALTER_SUBSCRIPTION_SET_PUBLICATION: Type = 2;
+    pub const ALTER_SUBSCRIPTION_ADD_PUBLICATION: Type = 3;
+    pub const ALTER_SUBSCRIPTION_DROP_PUBLICATION: Type = 4;
+    pub const ALTER_SUBSCRIPTION_REFRESH: Type = 5;
+    pub const ALTER_SUBSCRIPTION_ENABLED: Type = 6;
+    pub const ALTER_SUBSCRIPTION_SKIP: Type = 7;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct AlterSubscriptionStmt {
+    pub type_: NodeTag,
+    pub kind: AlterSubscriptionType::Type,
+    pub subname: *mut ::core::ffi::c_char,
+    pub conninfo: *mut ::core::ffi::c_char,
+    pub publication: *mut List,
+    pub options: *mut List,
+}
+impl Default for AlterSubscriptionStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DropSubscriptionStmt {
+    pub type_: NodeTag,
+    pub subname: *mut ::core::ffi::c_char,
+    pub missing_ok: bool,
+    pub behavior: DropBehavior::Type,
+}
+impl Default for DropSubscriptionStmt {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub struct MemoryContextCounters {
     pub nblocks: Size,
@@ -19012,13 +20489,18 @@ pub type MemoryStatsPrintFunc = ::core::option::Option<
 #[derive(Debug, Default, Copy, Clone)]
 pub struct MemoryContextMethods {
     pub alloc: ::core::option::Option<
-        unsafe extern "C" fn(context: MemoryContext, size: Size) -> *mut ::core::ffi::c_void,
+        unsafe extern "C" fn(
+            context: MemoryContext,
+            size: Size,
+            flags: ::core::ffi::c_int,
+        ) -> *mut ::core::ffi::c_void,
     >,
     pub free_p: ::core::option::Option<unsafe extern "C" fn(pointer: *mut ::core::ffi::c_void)>,
     pub realloc: ::core::option::Option<
         unsafe extern "C" fn(
             pointer: *mut ::core::ffi::c_void,
             size: Size,
+            flags: ::core::ffi::c_int,
         ) -> *mut ::core::ffi::c_void,
     >,
     pub reset: ::core::option::Option<unsafe extern "C" fn(context: MemoryContext)>,
@@ -19321,7 +20803,7 @@ impl Default for siginfo_t {
         }
     }
 }
-pub mod _bindgen_ty_4 {
+pub mod _bindgen_ty_7 {
     pub type Type = ::core::ffi::c_int;
     pub const SI_ASYNCNL: Type = -60;
     pub const SI_DETHREAD: Type = -7;
@@ -19334,7 +20816,7 @@ pub mod _bindgen_ty_4 {
     pub const SI_USER: Type = 0;
     pub const SI_KERNEL: Type = 128;
 }
-pub mod _bindgen_ty_5 {
+pub mod _bindgen_ty_8 {
     pub type Type = ::core::ffi::c_uint;
     pub const ILL_ILLOPC: Type = 1;
     pub const ILL_ILLOPN: Type = 2;
@@ -19346,7 +20828,7 @@ pub mod _bindgen_ty_5 {
     pub const ILL_BADSTK: Type = 8;
     pub const ILL_BADIADDR: Type = 9;
 }
-pub mod _bindgen_ty_6 {
+pub mod _bindgen_ty_9 {
     pub type Type = ::core::ffi::c_uint;
     pub const FPE_INTDIV: Type = 1;
     pub const FPE_INTOVF: Type = 2;
@@ -19359,7 +20841,7 @@ pub mod _bindgen_ty_6 {
     pub const FPE_FLTUNK: Type = 14;
     pub const FPE_CONDTRAP: Type = 15;
 }
-pub mod _bindgen_ty_7 {
+pub mod _bindgen_ty_10 {
     pub type Type = ::core::ffi::c_uint;
     pub const SEGV_MAPERR: Type = 1;
     pub const SEGV_ACCERR: Type = 2;
@@ -19371,7 +20853,7 @@ pub mod _bindgen_ty_7 {
     pub const SEGV_MTEAERR: Type = 8;
     pub const SEGV_MTESERR: Type = 9;
 }
-pub mod _bindgen_ty_8 {
+pub mod _bindgen_ty_11 {
     pub type Type = ::core::ffi::c_uint;
     pub const BUS_ADRALN: Type = 1;
     pub const BUS_ADRERR: Type = 2;
@@ -19379,7 +20861,7 @@ pub mod _bindgen_ty_8 {
     pub const BUS_MCEERR_AR: Type = 4;
     pub const BUS_MCEERR_AO: Type = 5;
 }
-pub mod _bindgen_ty_9 {
+pub mod _bindgen_ty_12 {
     pub type Type = ::core::ffi::c_uint;
     pub const CLD_EXITED: Type = 1;
     pub const CLD_KILLED: Type = 2;
@@ -19388,7 +20870,7 @@ pub mod _bindgen_ty_9 {
     pub const CLD_STOPPED: Type = 5;
     pub const CLD_CONTINUED: Type = 6;
 }
-pub mod _bindgen_ty_10 {
+pub mod _bindgen_ty_13 {
     pub type Type = ::core::ffi::c_uint;
     pub const POLL_IN: Type = 1;
     pub const POLL_OUT: Type = 2;
@@ -19447,7 +20929,7 @@ impl Default for sigevent {
     }
 }
 pub type sigevent_t = sigevent;
-pub mod _bindgen_ty_11 {
+pub mod _bindgen_ty_14 {
     pub type Type = ::core::ffi::c_uint;
     pub const SIGEV_SIGNAL: Type = 0;
     pub const SIGEV_NONE: Type = 1;
@@ -19787,7 +21269,7 @@ impl Default for ucontext_t {
         }
     }
 }
-pub mod _bindgen_ty_12 {
+pub mod _bindgen_ty_15 {
     pub type Type = ::core::ffi::c_uint;
     pub const SS_ONSTACK: Type = 1;
     pub const SS_DISABLE: Type = 2;
@@ -19851,19 +21333,21 @@ pub type pg_stack_base_t = *mut ::core::ffi::c_char;
 pub mod BackendType {
     pub type Type = ::core::ffi::c_uint;
     pub const B_INVALID: Type = 0;
-    pub const B_ARCHIVER: Type = 1;
+    pub const B_BACKEND: Type = 1;
     pub const B_AUTOVAC_LAUNCHER: Type = 2;
     pub const B_AUTOVAC_WORKER: Type = 3;
-    pub const B_BACKEND: Type = 4;
-    pub const B_BG_WORKER: Type = 5;
-    pub const B_BG_WRITER: Type = 6;
-    pub const B_CHECKPOINTER: Type = 7;
-    pub const B_LOGGER: Type = 8;
-    pub const B_STANDALONE_BACKEND: Type = 9;
-    pub const B_STARTUP: Type = 10;
-    pub const B_WAL_RECEIVER: Type = 11;
-    pub const B_WAL_SENDER: Type = 12;
-    pub const B_WAL_WRITER: Type = 13;
+    pub const B_BG_WORKER: Type = 4;
+    pub const B_WAL_SENDER: Type = 5;
+    pub const B_SLOTSYNC_WORKER: Type = 6;
+    pub const B_STANDALONE_BACKEND: Type = 7;
+    pub const B_ARCHIVER: Type = 8;
+    pub const B_BG_WRITER: Type = 9;
+    pub const B_CHECKPOINTER: Type = 10;
+    pub const B_STARTUP: Type = 11;
+    pub const B_WAL_RECEIVER: Type = 12;
+    pub const B_WAL_SUMMARIZER: Type = 13;
+    pub const B_WAL_WRITER: Type = 14;
+    pub const B_LOGGER: Type = 15;
 }
 pub mod ProcessingMode {
     #[doc = "\t  pmod.h --\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t *\n\t\t\tPOSTGRES processing mode definitions.                            *"]
@@ -19871,17 +21355,6 @@ pub mod ProcessingMode {
     pub const BootstrapProcessing: Type = 0;
     pub const InitProcessing: Type = 1;
     pub const NormalProcessing: Type = 2;
-}
-pub mod AuxProcType {
-    pub type Type = ::core::ffi::c_int;
-    pub const NotAnAuxProcess: Type = -1;
-    pub const StartupProcess: Type = 0;
-    pub const BgWriterProcess: Type = 1;
-    pub const ArchiverProcess: Type = 2;
-    pub const CheckpointerProcess: Type = 3;
-    pub const WalWriterProcess: Type = 4;
-    pub const WalReceiverProcess: Type = 5;
-    pub const NUM_AUXPROCTYPES: Type = 6;
 }
 pub type shmem_request_hook_type = ::core::option::Option<unsafe extern "C" fn()>;
 pub mod ProgressCommandType {
@@ -19894,22 +21367,6 @@ pub mod ProgressCommandType {
     pub const PROGRESS_COMMAND_BASEBACKUP: Type = 5;
     pub const PROGRESS_COMMAND_COPY: Type = 6;
 }
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct iovec {
-    pub iov_base: *mut ::core::ffi::c_void,
-    pub iov_len: usize,
-}
-impl Default for iovec {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub type socklen_t = __socklen_t;
 pub mod __socket_type {
     pub type Type = ::core::ffi::c_uint;
     pub const SOCK_STREAM: Type = 1;
@@ -19945,7 +21402,7 @@ impl Default for sockaddr_storage {
         }
     }
 }
-pub mod _bindgen_ty_13 {
+pub mod _bindgen_ty_16 {
     pub type Type = ::core::ffi::c_uint;
     pub const MSG_OOB: Type = 1;
     pub const MSG_PEEK: Type = 2;
@@ -19997,7 +21454,7 @@ pub struct cmsghdr {
     pub cmsg_type: ::core::ffi::c_int,
     pub __cmsg_data: __IncompleteArrayField<::core::ffi::c_uchar>,
 }
-pub mod _bindgen_ty_14 {
+pub mod _bindgen_ty_17 {
     pub type Type = ::core::ffi::c_uint;
     pub const SCM_RIGHTS: Type = 1;
 }
@@ -20013,7 +21470,7 @@ pub struct osockaddr {
     pub sa_family: ::core::ffi::c_ushort,
     pub sa_data: [::core::ffi::c_uchar; 14usize],
 }
-pub mod _bindgen_ty_15 {
+pub mod _bindgen_ty_18 {
     pub type Type = ::core::ffi::c_uint;
     pub const SHUT_RD: Type = 0;
     pub const SHUT_WR: Type = 1;
@@ -20062,7 +21519,7 @@ pub struct in_pktinfo {
     pub ipi_spec_dst: in_addr,
     pub ipi_addr: in_addr,
 }
-pub mod _bindgen_ty_16 {
+pub mod _bindgen_ty_19 {
     pub type Type = ::core::ffi::c_uint;
     pub const IPPROTO_IP: Type = 0;
     pub const IPPROTO_ICMP: Type = 1;
@@ -20093,7 +21550,7 @@ pub mod _bindgen_ty_16 {
     pub const IPPROTO_MPTCP: Type = 262;
     pub const IPPROTO_MAX: Type = 263;
 }
-pub mod _bindgen_ty_17 {
+pub mod _bindgen_ty_20 {
     pub type Type = ::core::ffi::c_uint;
     pub const IPPROTO_HOPOPTS: Type = 0;
     pub const IPPROTO_ROUTING: Type = 43;
@@ -20104,7 +21561,7 @@ pub mod _bindgen_ty_17 {
     pub const IPPROTO_MH: Type = 135;
 }
 pub type in_port_t = u16;
-pub mod _bindgen_ty_18 {
+pub mod _bindgen_ty_21 {
     pub type Type = ::core::ffi::c_uint;
     pub const IPPORT_ECHO: Type = 7;
     pub const IPPORT_DISCARD: Type = 9;
@@ -20428,7 +21885,6 @@ pub struct CancelRequestPacket {
     pub backendPID: uint32,
     pub cancelAuthCode: uint32,
 }
-pub type BackendId = ::core::ffi::c_int;
 pub mod BackendState {
     pub type Type = ::core::ffi::c_uint;
     pub const STATE_UNDEFINED: Type = 0;
@@ -20514,7 +21970,7 @@ impl Default for PgBackendStatus {
 #[derive(Debug, Copy, Clone)]
 pub struct LocalPgBackendStatus {
     pub backendStatus: PgBackendStatus,
-    pub backend_id: BackendId,
+    pub proc_number: ProcNumber,
     pub backend_xid: TransactionId,
     pub backend_xmin: TransactionId,
     pub backend_subxact_count: ::core::ffi::c_int,
@@ -20540,10 +21996,17 @@ pub mod WaitEventActivity {
     pub const WAIT_EVENT_LOGICAL_LAUNCHER_MAIN: Type = 83886086;
     pub const WAIT_EVENT_LOGICAL_PARALLEL_APPLY_MAIN: Type = 83886087;
     pub const WAIT_EVENT_RECOVERY_WAL_STREAM: Type = 83886088;
-    pub const WAIT_EVENT_SYSLOGGER_MAIN: Type = 83886089;
-    pub const WAIT_EVENT_WAL_RECEIVER_MAIN: Type = 83886090;
-    pub const WAIT_EVENT_WAL_SENDER_MAIN: Type = 83886091;
-    pub const WAIT_EVENT_WAL_WRITER_MAIN: Type = 83886092;
+    pub const WAIT_EVENT_REPLICATION_SLOTSYNC_MAIN: Type = 83886089;
+    pub const WAIT_EVENT_REPLICATION_SLOTSYNC_SHUTDOWN: Type = 83886090;
+    pub const WAIT_EVENT_SYSLOGGER_MAIN: Type = 83886091;
+    pub const WAIT_EVENT_WAL_RECEIVER_MAIN: Type = 83886092;
+    pub const WAIT_EVENT_WAL_SENDER_MAIN: Type = 83886093;
+    pub const WAIT_EVENT_WAL_SUMMARIZER_WAL: Type = 83886094;
+    pub const WAIT_EVENT_WAL_WRITER_MAIN: Type = 83886095;
+}
+pub mod WaitEventBufferPin {
+    pub type Type = ::core::ffi::c_uint;
+    pub const WAIT_EVENT_BUFFER_PIN: Type = 67108864;
 }
 pub mod WaitEventClient {
     pub type Type = ::core::ffi::c_uint;
@@ -20553,76 +22016,9 @@ pub mod WaitEventClient {
     pub const WAIT_EVENT_LIBPQWALRECEIVER_CONNECT: Type = 100663299;
     pub const WAIT_EVENT_LIBPQWALRECEIVER_RECEIVE: Type = 100663300;
     pub const WAIT_EVENT_SSL_OPEN_SERVER: Type = 100663301;
-    pub const WAIT_EVENT_WAL_SENDER_WAIT_WAL: Type = 100663302;
-    pub const WAIT_EVENT_WAL_SENDER_WRITE_DATA: Type = 100663303;
-}
-pub mod WaitEventIPC {
-    pub type Type = ::core::ffi::c_uint;
-    pub const WAIT_EVENT_APPEND_READY: Type = 134217728;
-    pub const WAIT_EVENT_ARCHIVE_CLEANUP_COMMAND: Type = 134217729;
-    pub const WAIT_EVENT_ARCHIVE_COMMAND: Type = 134217730;
-    pub const WAIT_EVENT_BACKEND_TERMINATION: Type = 134217731;
-    pub const WAIT_EVENT_BACKUP_WAIT_WAL_ARCHIVE: Type = 134217732;
-    pub const WAIT_EVENT_BGWORKER_SHUTDOWN: Type = 134217733;
-    pub const WAIT_EVENT_BGWORKER_STARTUP: Type = 134217734;
-    pub const WAIT_EVENT_BTREE_PAGE: Type = 134217735;
-    pub const WAIT_EVENT_BUFFER_IO: Type = 134217736;
-    pub const WAIT_EVENT_CHECKPOINT_DONE: Type = 134217737;
-    pub const WAIT_EVENT_CHECKPOINT_START: Type = 134217738;
-    pub const WAIT_EVENT_EXECUTE_GATHER: Type = 134217739;
-    pub const WAIT_EVENT_HASH_BATCH_ALLOCATE: Type = 134217740;
-    pub const WAIT_EVENT_HASH_BATCH_ELECT: Type = 134217741;
-    pub const WAIT_EVENT_HASH_BATCH_LOAD: Type = 134217742;
-    pub const WAIT_EVENT_HASH_BUILD_ALLOCATE: Type = 134217743;
-    pub const WAIT_EVENT_HASH_BUILD_ELECT: Type = 134217744;
-    pub const WAIT_EVENT_HASH_BUILD_HASH_INNER: Type = 134217745;
-    pub const WAIT_EVENT_HASH_BUILD_HASH_OUTER: Type = 134217746;
-    pub const WAIT_EVENT_HASH_GROW_BATCHES_DECIDE: Type = 134217747;
-    pub const WAIT_EVENT_HASH_GROW_BATCHES_ELECT: Type = 134217748;
-    pub const WAIT_EVENT_HASH_GROW_BATCHES_FINISH: Type = 134217749;
-    pub const WAIT_EVENT_HASH_GROW_BATCHES_REALLOCATE: Type = 134217750;
-    pub const WAIT_EVENT_HASH_GROW_BATCHES_REPARTITION: Type = 134217751;
-    pub const WAIT_EVENT_HASH_GROW_BUCKETS_ELECT: Type = 134217752;
-    pub const WAIT_EVENT_HASH_GROW_BUCKETS_REALLOCATE: Type = 134217753;
-    pub const WAIT_EVENT_HASH_GROW_BUCKETS_REINSERT: Type = 134217754;
-    pub const WAIT_EVENT_LOGICAL_APPLY_SEND_DATA: Type = 134217755;
-    pub const WAIT_EVENT_LOGICAL_PARALLEL_APPLY_STATE_CHANGE: Type = 134217756;
-    pub const WAIT_EVENT_LOGICAL_SYNC_DATA: Type = 134217757;
-    pub const WAIT_EVENT_LOGICAL_SYNC_STATE_CHANGE: Type = 134217758;
-    pub const WAIT_EVENT_MQ_INTERNAL: Type = 134217759;
-    pub const WAIT_EVENT_MQ_PUT_MESSAGE: Type = 134217760;
-    pub const WAIT_EVENT_MQ_RECEIVE: Type = 134217761;
-    pub const WAIT_EVENT_MQ_SEND: Type = 134217762;
-    pub const WAIT_EVENT_PARALLEL_BITMAP_SCAN: Type = 134217763;
-    pub const WAIT_EVENT_PARALLEL_CREATE_INDEX_SCAN: Type = 134217764;
-    pub const WAIT_EVENT_PARALLEL_FINISH: Type = 134217765;
-    pub const WAIT_EVENT_PROCARRAY_GROUP_UPDATE: Type = 134217766;
-    pub const WAIT_EVENT_PROC_SIGNAL_BARRIER: Type = 134217767;
-    pub const WAIT_EVENT_PROMOTE: Type = 134217768;
-    pub const WAIT_EVENT_RECOVERY_CONFLICT_SNAPSHOT: Type = 134217769;
-    pub const WAIT_EVENT_RECOVERY_CONFLICT_TABLESPACE: Type = 134217770;
-    pub const WAIT_EVENT_RECOVERY_END_COMMAND: Type = 134217771;
-    pub const WAIT_EVENT_RECOVERY_PAUSE: Type = 134217772;
-    pub const WAIT_EVENT_REPLICATION_ORIGIN_DROP: Type = 134217773;
-    pub const WAIT_EVENT_REPLICATION_SLOT_DROP: Type = 134217774;
-    pub const WAIT_EVENT_RESTORE_COMMAND: Type = 134217775;
-    pub const WAIT_EVENT_SAFE_SNAPSHOT: Type = 134217776;
-    pub const WAIT_EVENT_SYNC_REP: Type = 134217777;
-    pub const WAIT_EVENT_WAL_RECEIVER_EXIT: Type = 134217778;
-    pub const WAIT_EVENT_WAL_RECEIVER_WAIT_START: Type = 134217779;
-    pub const WAIT_EVENT_XACT_GROUP_UPDATE: Type = 134217780;
-}
-pub mod WaitEventTimeout {
-    pub type Type = ::core::ffi::c_uint;
-    pub const WAIT_EVENT_BASE_BACKUP_THROTTLE: Type = 150994944;
-    pub const WAIT_EVENT_CHECKPOINT_WRITE_DELAY: Type = 150994945;
-    pub const WAIT_EVENT_PG_SLEEP: Type = 150994946;
-    pub const WAIT_EVENT_RECOVERY_APPLY_DELAY: Type = 150994947;
-    pub const WAIT_EVENT_RECOVERY_RETRIEVE_RETRY_INTERVAL: Type = 150994948;
-    pub const WAIT_EVENT_REGISTER_SYNC_REQUEST: Type = 150994949;
-    pub const WAIT_EVENT_SPIN_DELAY: Type = 150994950;
-    pub const WAIT_EVENT_VACUUM_DELAY: Type = 150994951;
-    pub const WAIT_EVENT_VACUUM_TRUNCATE: Type = 150994952;
+    pub const WAIT_EVENT_WAIT_FOR_STANDBY_CONFIRMATION: Type = 100663302;
+    pub const WAIT_EVENT_WAL_SENDER_WAIT_FOR_WAL: Type = 100663303;
+    pub const WAIT_EVENT_WAL_SENDER_WRITE_DATA: Type = 100663304;
 }
 pub mod WaitEventIO {
     pub type Type = ::core::ffi::c_uint;
@@ -20630,8 +22026,8 @@ pub mod WaitEventIO {
     pub const WAIT_EVENT_BASEBACKUP_SYNC: Type = 167772161;
     pub const WAIT_EVENT_BASEBACKUP_WRITE: Type = 167772162;
     pub const WAIT_EVENT_BUFFILE_READ: Type = 167772163;
-    pub const WAIT_EVENT_BUFFILE_WRITE: Type = 167772164;
-    pub const WAIT_EVENT_BUFFILE_TRUNCATE: Type = 167772165;
+    pub const WAIT_EVENT_BUFFILE_TRUNCATE: Type = 167772164;
+    pub const WAIT_EVENT_BUFFILE_WRITE: Type = 167772165;
     pub const WAIT_EVENT_CONTROL_FILE_READ: Type = 167772166;
     pub const WAIT_EVENT_CONTROL_FILE_SYNC: Type = 167772167;
     pub const WAIT_EVENT_CONTROL_FILE_SYNC_UPDATE: Type = 167772168;
@@ -20687,20 +22083,95 @@ pub mod WaitEventIO {
     pub const WAIT_EVENT_TWOPHASE_FILE_READ: Type = 167772218;
     pub const WAIT_EVENT_TWOPHASE_FILE_SYNC: Type = 167772219;
     pub const WAIT_EVENT_TWOPHASE_FILE_WRITE: Type = 167772220;
-    pub const WAIT_EVENT_VERSION_FILE_WRITE: Type = 167772221;
-    pub const WAIT_EVENT_WALSENDER_TIMELINE_HISTORY_READ: Type = 167772222;
-    pub const WAIT_EVENT_WAL_BOOTSTRAP_SYNC: Type = 167772223;
-    pub const WAIT_EVENT_WAL_BOOTSTRAP_WRITE: Type = 167772224;
-    pub const WAIT_EVENT_WAL_COPY_READ: Type = 167772225;
-    pub const WAIT_EVENT_WAL_COPY_SYNC: Type = 167772226;
-    pub const WAIT_EVENT_WAL_COPY_WRITE: Type = 167772227;
-    pub const WAIT_EVENT_WAL_INIT_SYNC: Type = 167772228;
-    pub const WAIT_EVENT_WAL_INIT_WRITE: Type = 167772229;
-    pub const WAIT_EVENT_WAL_READ: Type = 167772230;
-    pub const WAIT_EVENT_WAL_SYNC: Type = 167772231;
-    pub const WAIT_EVENT_WAL_SYNC_METHOD_ASSIGN: Type = 167772232;
-    pub const WAIT_EVENT_WAL_WRITE: Type = 167772233;
-    pub const WAIT_EVENT_VERSION_FILE_SYNC: Type = 167772234;
+    pub const WAIT_EVENT_VERSION_FILE_SYNC: Type = 167772221;
+    pub const WAIT_EVENT_VERSION_FILE_WRITE: Type = 167772222;
+    pub const WAIT_EVENT_WALSENDER_TIMELINE_HISTORY_READ: Type = 167772223;
+    pub const WAIT_EVENT_WAL_BOOTSTRAP_SYNC: Type = 167772224;
+    pub const WAIT_EVENT_WAL_BOOTSTRAP_WRITE: Type = 167772225;
+    pub const WAIT_EVENT_WAL_COPY_READ: Type = 167772226;
+    pub const WAIT_EVENT_WAL_COPY_SYNC: Type = 167772227;
+    pub const WAIT_EVENT_WAL_COPY_WRITE: Type = 167772228;
+    pub const WAIT_EVENT_WAL_INIT_SYNC: Type = 167772229;
+    pub const WAIT_EVENT_WAL_INIT_WRITE: Type = 167772230;
+    pub const WAIT_EVENT_WAL_READ: Type = 167772231;
+    pub const WAIT_EVENT_WAL_SUMMARY_READ: Type = 167772232;
+    pub const WAIT_EVENT_WAL_SUMMARY_WRITE: Type = 167772233;
+    pub const WAIT_EVENT_WAL_SYNC: Type = 167772234;
+    pub const WAIT_EVENT_WAL_SYNC_METHOD_ASSIGN: Type = 167772235;
+    pub const WAIT_EVENT_WAL_WRITE: Type = 167772236;
+}
+pub mod WaitEventIPC {
+    pub type Type = ::core::ffi::c_uint;
+    pub const WAIT_EVENT_APPEND_READY: Type = 134217728;
+    pub const WAIT_EVENT_ARCHIVE_CLEANUP_COMMAND: Type = 134217729;
+    pub const WAIT_EVENT_ARCHIVE_COMMAND: Type = 134217730;
+    pub const WAIT_EVENT_BACKEND_TERMINATION: Type = 134217731;
+    pub const WAIT_EVENT_BACKUP_WAIT_WAL_ARCHIVE: Type = 134217732;
+    pub const WAIT_EVENT_BGWORKER_SHUTDOWN: Type = 134217733;
+    pub const WAIT_EVENT_BGWORKER_STARTUP: Type = 134217734;
+    pub const WAIT_EVENT_BTREE_PAGE: Type = 134217735;
+    pub const WAIT_EVENT_BUFFER_IO: Type = 134217736;
+    pub const WAIT_EVENT_CHECKPOINT_DELAY_COMPLETE: Type = 134217737;
+    pub const WAIT_EVENT_CHECKPOINT_DELAY_START: Type = 134217738;
+    pub const WAIT_EVENT_CHECKPOINT_DONE: Type = 134217739;
+    pub const WAIT_EVENT_CHECKPOINT_START: Type = 134217740;
+    pub const WAIT_EVENT_EXECUTE_GATHER: Type = 134217741;
+    pub const WAIT_EVENT_HASH_BATCH_ALLOCATE: Type = 134217742;
+    pub const WAIT_EVENT_HASH_BATCH_ELECT: Type = 134217743;
+    pub const WAIT_EVENT_HASH_BATCH_LOAD: Type = 134217744;
+    pub const WAIT_EVENT_HASH_BUILD_ALLOCATE: Type = 134217745;
+    pub const WAIT_EVENT_HASH_BUILD_ELECT: Type = 134217746;
+    pub const WAIT_EVENT_HASH_BUILD_HASH_INNER: Type = 134217747;
+    pub const WAIT_EVENT_HASH_BUILD_HASH_OUTER: Type = 134217748;
+    pub const WAIT_EVENT_HASH_GROW_BATCHES_DECIDE: Type = 134217749;
+    pub const WAIT_EVENT_HASH_GROW_BATCHES_ELECT: Type = 134217750;
+    pub const WAIT_EVENT_HASH_GROW_BATCHES_FINISH: Type = 134217751;
+    pub const WAIT_EVENT_HASH_GROW_BATCHES_REALLOCATE: Type = 134217752;
+    pub const WAIT_EVENT_HASH_GROW_BATCHES_REPARTITION: Type = 134217753;
+    pub const WAIT_EVENT_HASH_GROW_BUCKETS_ELECT: Type = 134217754;
+    pub const WAIT_EVENT_HASH_GROW_BUCKETS_REALLOCATE: Type = 134217755;
+    pub const WAIT_EVENT_HASH_GROW_BUCKETS_REINSERT: Type = 134217756;
+    pub const WAIT_EVENT_LOGICAL_APPLY_SEND_DATA: Type = 134217757;
+    pub const WAIT_EVENT_LOGICAL_PARALLEL_APPLY_STATE_CHANGE: Type = 134217758;
+    pub const WAIT_EVENT_LOGICAL_SYNC_DATA: Type = 134217759;
+    pub const WAIT_EVENT_LOGICAL_SYNC_STATE_CHANGE: Type = 134217760;
+    pub const WAIT_EVENT_MESSAGE_QUEUE_INTERNAL: Type = 134217761;
+    pub const WAIT_EVENT_MESSAGE_QUEUE_PUT_MESSAGE: Type = 134217762;
+    pub const WAIT_EVENT_MESSAGE_QUEUE_RECEIVE: Type = 134217763;
+    pub const WAIT_EVENT_MESSAGE_QUEUE_SEND: Type = 134217764;
+    pub const WAIT_EVENT_MULTIXACT_CREATION: Type = 134217765;
+    pub const WAIT_EVENT_PARALLEL_BITMAP_SCAN: Type = 134217766;
+    pub const WAIT_EVENT_PARALLEL_CREATE_INDEX_SCAN: Type = 134217767;
+    pub const WAIT_EVENT_PARALLEL_FINISH: Type = 134217768;
+    pub const WAIT_EVENT_PROCARRAY_GROUP_UPDATE: Type = 134217769;
+    pub const WAIT_EVENT_PROC_SIGNAL_BARRIER: Type = 134217770;
+    pub const WAIT_EVENT_PROMOTE: Type = 134217771;
+    pub const WAIT_EVENT_RECOVERY_CONFLICT_SNAPSHOT: Type = 134217772;
+    pub const WAIT_EVENT_RECOVERY_CONFLICT_TABLESPACE: Type = 134217773;
+    pub const WAIT_EVENT_RECOVERY_END_COMMAND: Type = 134217774;
+    pub const WAIT_EVENT_RECOVERY_PAUSE: Type = 134217775;
+    pub const WAIT_EVENT_REPLICATION_ORIGIN_DROP: Type = 134217776;
+    pub const WAIT_EVENT_REPLICATION_SLOT_DROP: Type = 134217777;
+    pub const WAIT_EVENT_RESTORE_COMMAND: Type = 134217778;
+    pub const WAIT_EVENT_SAFE_SNAPSHOT: Type = 134217779;
+    pub const WAIT_EVENT_SYNC_REP: Type = 134217780;
+    pub const WAIT_EVENT_WAL_RECEIVER_EXIT: Type = 134217781;
+    pub const WAIT_EVENT_WAL_RECEIVER_WAIT_START: Type = 134217782;
+    pub const WAIT_EVENT_WAL_SUMMARY_READY: Type = 134217783;
+    pub const WAIT_EVENT_XACT_GROUP_UPDATE: Type = 134217784;
+}
+pub mod WaitEventTimeout {
+    pub type Type = ::core::ffi::c_uint;
+    pub const WAIT_EVENT_BASE_BACKUP_THROTTLE: Type = 150994944;
+    pub const WAIT_EVENT_CHECKPOINT_WRITE_DELAY: Type = 150994945;
+    pub const WAIT_EVENT_PG_SLEEP: Type = 150994946;
+    pub const WAIT_EVENT_RECOVERY_APPLY_DELAY: Type = 150994947;
+    pub const WAIT_EVENT_RECOVERY_RETRIEVE_RETRY_INTERVAL: Type = 150994948;
+    pub const WAIT_EVENT_REGISTER_SYNC_REQUEST: Type = 150994949;
+    pub const WAIT_EVENT_SPIN_DELAY: Type = 150994950;
+    pub const WAIT_EVENT_VACUUM_DELAY: Type = 150994951;
+    pub const WAIT_EVENT_VACUUM_TRUNCATE: Type = 150994952;
+    pub const WAIT_EVENT_WAL_SUMMARIZER_ERROR: Type = 150994953;
 }
 pub mod PgStat_Kind {
     pub type Type = ::core::ffi::c_uint;
@@ -20859,13 +22330,15 @@ pub struct PgStat_BgWriterStats {
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub struct PgStat_CheckpointerStats {
-    pub timed_checkpoints: PgStat_Counter,
-    pub requested_checkpoints: PgStat_Counter,
-    pub checkpoint_write_time: PgStat_Counter,
-    pub checkpoint_sync_time: PgStat_Counter,
-    pub buf_written_checkpoints: PgStat_Counter,
-    pub buf_written_backend: PgStat_Counter,
-    pub buf_fsync_backend: PgStat_Counter,
+    pub num_timed: PgStat_Counter,
+    pub num_requested: PgStat_Counter,
+    pub restartpoints_timed: PgStat_Counter,
+    pub restartpoints_requested: PgStat_Counter,
+    pub restartpoints_performed: PgStat_Counter,
+    pub write_time: PgStat_Counter,
+    pub sync_time: PgStat_Counter,
+    pub buffers_written: PgStat_Counter,
+    pub stat_reset_timestamp: TimestampTz,
 }
 pub mod IOObject {
     pub type Type = ::core::ffi::c_uint;
@@ -20900,7 +22373,7 @@ pub struct PgStat_BktypeIO {
 #[derive(Debug, Default, Copy, Clone)]
 pub struct PgStat_IO {
     pub stat_reset_timestamp: TimestampTz,
-    pub stats: [PgStat_BktypeIO; 14usize],
+    pub stats: [PgStat_BktypeIO; 16usize],
 }
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
@@ -21027,305 +22500,6 @@ pub struct PgStat_PendingWalStats {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct ScanKeyData {
-    pub sk_flags: ::core::ffi::c_int,
-    pub sk_attno: AttrNumber,
-    pub sk_strategy: StrategyNumber,
-    pub sk_subtype: Oid,
-    pub sk_collation: Oid,
-    pub sk_func: FmgrInfo,
-    pub sk_argument: Datum,
-}
-impl Default for ScanKeyData {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub type ScanKey = *mut ScanKeyData;
-pub type LOCKMASK = ::core::ffi::c_int;
-pub type LOCKMODE = ::core::ffi::c_int;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct xl_standby_lock {
-    pub xid: TransactionId,
-    pub dbOid: Oid,
-    pub relOid: Oid,
-}
-impl Default for xl_standby_lock {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct IndexBuildResult {
-    pub heap_tuples: f64,
-    pub index_tuples: f64,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct IndexVacuumInfo {
-    pub index: Relation,
-    pub heaprel: Relation,
-    pub analyze_only: bool,
-    pub report_progress: bool,
-    pub estimated_count: bool,
-    pub message_level: ::core::ffi::c_int,
-    pub num_heap_tuples: f64,
-    pub strategy: BufferAccessStrategy,
-}
-impl Default for IndexVacuumInfo {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct IndexBulkDeleteResult {
-    pub num_pages: BlockNumber,
-    pub estimated_count: bool,
-    pub num_index_tuples: f64,
-    pub tuples_removed: f64,
-    pub pages_newly_deleted: BlockNumber,
-    pub pages_deleted: BlockNumber,
-    pub pages_free: BlockNumber,
-}
-pub type IndexBulkDeleteCallback = ::core::option::Option<
-    unsafe extern "C" fn(itemptr: ItemPointer, state: *mut ::core::ffi::c_void) -> bool,
->;
-pub type IndexScanDesc = *mut IndexScanDescData;
-pub type SysScanDesc = *mut SysScanDescData;
-pub type ParallelIndexScanDesc = *mut ParallelIndexScanDescData;
-pub mod IndexUniqueCheck {
-    pub type Type = ::core::ffi::c_uint;
-    pub const UNIQUE_CHECK_NO: Type = 0;
-    pub const UNIQUE_CHECK_YES: Type = 1;
-    pub const UNIQUE_CHECK_PARTIAL: Type = 2;
-    pub const UNIQUE_CHECK_EXISTING: Type = 3;
-}
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct IndexOrderByDistance {
-    pub value: f64,
-    pub isnull: bool,
-}
-pub mod IndexAMProperty {
-    pub type Type = ::core::ffi::c_uint;
-    pub const AMPROP_UNKNOWN: Type = 0;
-    pub const AMPROP_ASC: Type = 1;
-    pub const AMPROP_DESC: Type = 2;
-    pub const AMPROP_NULLS_FIRST: Type = 3;
-    pub const AMPROP_NULLS_LAST: Type = 4;
-    pub const AMPROP_ORDERABLE: Type = 5;
-    pub const AMPROP_DISTANCE_ORDERABLE: Type = 6;
-    pub const AMPROP_RETURNABLE: Type = 7;
-    pub const AMPROP_SEARCH_ARRAY: Type = 8;
-    pub const AMPROP_SEARCH_NULLS: Type = 9;
-    pub const AMPROP_CLUSTERABLE: Type = 10;
-    pub const AMPROP_INDEX_SCAN: Type = 11;
-    pub const AMPROP_BITMAP_SCAN: Type = 12;
-    pub const AMPROP_BACKWARD_SCAN: Type = 13;
-    pub const AMPROP_CAN_ORDER: Type = 14;
-    pub const AMPROP_CAN_UNIQUE: Type = 15;
-    pub const AMPROP_CAN_MULTI_COL: Type = 16;
-    pub const AMPROP_CAN_EXCLUDE: Type = 17;
-    pub const AMPROP_CAN_INCLUDE: Type = 18;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct OpFamilyMember {
-    pub is_func: bool,
-    pub object: Oid,
-    pub number: ::core::ffi::c_int,
-    pub lefttype: Oid,
-    pub righttype: Oid,
-    pub sortfamily: Oid,
-    pub ref_is_hard: bool,
-    pub ref_is_family: bool,
-    pub refobjid: Oid,
-}
-impl Default for OpFamilyMember {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub type ambuild_function = ::core::option::Option<
-    unsafe extern "C" fn(
-        heapRelation: Relation,
-        indexRelation: Relation,
-        indexInfo: *mut IndexInfo,
-    ) -> *mut IndexBuildResult,
->;
-pub type ambuildempty_function =
-    ::core::option::Option<unsafe extern "C" fn(indexRelation: Relation)>;
-pub type aminsert_function = ::core::option::Option<
-    unsafe extern "C" fn(
-        indexRelation: Relation,
-        values: *mut Datum,
-        isnull: *mut bool,
-        heap_tid: ItemPointer,
-        heapRelation: Relation,
-        checkUnique: IndexUniqueCheck::Type,
-        indexUnchanged: bool,
-        indexInfo: *mut IndexInfo,
-    ) -> bool,
->;
-pub type ambulkdelete_function = ::core::option::Option<
-    unsafe extern "C" fn(
-        info: *mut IndexVacuumInfo,
-        stats: *mut IndexBulkDeleteResult,
-        callback: IndexBulkDeleteCallback,
-        callback_state: *mut ::core::ffi::c_void,
-    ) -> *mut IndexBulkDeleteResult,
->;
-pub type amvacuumcleanup_function = ::core::option::Option<
-    unsafe extern "C" fn(
-        info: *mut IndexVacuumInfo,
-        stats: *mut IndexBulkDeleteResult,
-    ) -> *mut IndexBulkDeleteResult,
->;
-pub type amcanreturn_function = ::core::option::Option<
-    unsafe extern "C" fn(indexRelation: Relation, attno: ::core::ffi::c_int) -> bool,
->;
-pub type amcostestimate_function = ::core::option::Option<
-    unsafe extern "C" fn(
-        root: *mut PlannerInfo,
-        path: *mut IndexPath,
-        loop_count: f64,
-        indexStartupCost: *mut Cost,
-        indexTotalCost: *mut Cost,
-        indexSelectivity: *mut Selectivity,
-        indexCorrelation: *mut f64,
-        indexPages: *mut f64,
-    ),
->;
-pub type amoptions_function =
-    ::core::option::Option<unsafe extern "C" fn(reloptions: Datum, validate: bool) -> *mut bytea>;
-pub type amproperty_function = ::core::option::Option<
-    unsafe extern "C" fn(
-        index_oid: Oid,
-        attno: ::core::ffi::c_int,
-        prop: IndexAMProperty::Type,
-        propname: *const ::core::ffi::c_char,
-        res: *mut bool,
-        isnull: *mut bool,
-    ) -> bool,
->;
-pub type ambuildphasename_function =
-    ::core::option::Option<unsafe extern "C" fn(phasenum: int64) -> *mut ::core::ffi::c_char>;
-pub type amvalidate_function =
-    ::core::option::Option<unsafe extern "C" fn(opclassoid: Oid) -> bool>;
-pub type amadjustmembers_function = ::core::option::Option<
-    unsafe extern "C" fn(
-        opfamilyoid: Oid,
-        opclassoid: Oid,
-        operators: *mut List,
-        functions: *mut List,
-    ),
->;
-pub type ambeginscan_function = ::core::option::Option<
-    unsafe extern "C" fn(
-        indexRelation: Relation,
-        nkeys: ::core::ffi::c_int,
-        norderbys: ::core::ffi::c_int,
-    ) -> IndexScanDesc,
->;
-pub type amrescan_function = ::core::option::Option<
-    unsafe extern "C" fn(
-        scan: IndexScanDesc,
-        keys: ScanKey,
-        nkeys: ::core::ffi::c_int,
-        orderbys: ScanKey,
-        norderbys: ::core::ffi::c_int,
-    ),
->;
-pub type amgettuple_function = ::core::option::Option<
-    unsafe extern "C" fn(scan: IndexScanDesc, direction: ScanDirection::Type) -> bool,
->;
-pub type amgetbitmap_function =
-    ::core::option::Option<unsafe extern "C" fn(scan: IndexScanDesc, tbm: *mut TIDBitmap) -> int64>;
-pub type amendscan_function = ::core::option::Option<unsafe extern "C" fn(scan: IndexScanDesc)>;
-pub type ammarkpos_function = ::core::option::Option<unsafe extern "C" fn(scan: IndexScanDesc)>;
-pub type amrestrpos_function = ::core::option::Option<unsafe extern "C" fn(scan: IndexScanDesc)>;
-pub type amestimateparallelscan_function = ::core::option::Option<unsafe extern "C" fn() -> Size>;
-pub type aminitparallelscan_function =
-    ::core::option::Option<unsafe extern "C" fn(target: *mut ::core::ffi::c_void)>;
-pub type amparallelrescan_function =
-    ::core::option::Option<unsafe extern "C" fn(scan: IndexScanDesc)>;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct IndexAmRoutine {
-    pub type_: NodeTag,
-    pub amstrategies: uint16,
-    pub amsupport: uint16,
-    pub amoptsprocnum: uint16,
-    pub amcanorder: bool,
-    pub amcanorderbyop: bool,
-    pub amcanbackward: bool,
-    pub amcanunique: bool,
-    pub amcanmulticol: bool,
-    pub amoptionalkey: bool,
-    pub amsearcharray: bool,
-    pub amsearchnulls: bool,
-    pub amstorage: bool,
-    pub amclusterable: bool,
-    pub ampredlocks: bool,
-    pub amcanparallel: bool,
-    pub amcaninclude: bool,
-    pub amusemaintenanceworkmem: bool,
-    pub amsummarizing: bool,
-    pub amparallelvacuumoptions: uint8,
-    pub amkeytype: Oid,
-    pub ambuild: ambuild_function,
-    pub ambuildempty: ambuildempty_function,
-    pub aminsert: aminsert_function,
-    pub ambulkdelete: ambulkdelete_function,
-    pub amvacuumcleanup: amvacuumcleanup_function,
-    pub amcanreturn: amcanreturn_function,
-    pub amcostestimate: amcostestimate_function,
-    pub amoptions: amoptions_function,
-    pub amproperty: amproperty_function,
-    pub ambuildphasename: ambuildphasename_function,
-    pub amvalidate: amvalidate_function,
-    pub amadjustmembers: amadjustmembers_function,
-    pub ambeginscan: ambeginscan_function,
-    pub amrescan: amrescan_function,
-    pub amgettuple: amgettuple_function,
-    pub amgetbitmap: amgetbitmap_function,
-    pub amendscan: amendscan_function,
-    pub ammarkpos: ammarkpos_function,
-    pub amrestrpos: amrestrpos_function,
-    pub amestimateparallelscan: amestimateparallelscan_function,
-    pub aminitparallelscan: aminitparallelscan_function,
-    pub amparallelrescan: amparallelrescan_function,
-}
-impl Default for IndexAmRoutine {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
 pub struct BackupState {
     pub name: [::core::ffi::c_char; 1025usize],
     pub startpoint: XLogRecPtr,
@@ -21333,6 +22507,8 @@ pub struct BackupState {
     pub checkpointloc: XLogRecPtr,
     pub starttime: pg_time_t,
     pub started_in_recovery: bool,
+    pub istartpoint: XLogRecPtr,
+    pub istarttli: TimeLineID,
     pub stoppoint: XLogRecPtr,
     pub stoptli: TimeLineID,
     pub stoptime: pg_time_t,
@@ -21345,6 +22521,14 @@ impl Default for BackupState {
             s.assume_init()
         }
     }
+}
+pub mod WalSyncMethod {
+    pub type Type = ::core::ffi::c_uint;
+    pub const WAL_SYNC_METHOD_FSYNC: Type = 0;
+    pub const WAL_SYNC_METHOD_FDATASYNC: Type = 1;
+    pub const WAL_SYNC_METHOD_OPEN: Type = 2;
+    pub const WAL_SYNC_METHOD_FSYNC_WRITETHROUGH: Type = 3;
+    pub const WAL_SYNC_METHOD_OPEN_DSYNC: Type = 4;
 }
 pub mod ArchiveMode {
     pub type Type = ::core::ffi::c_uint;
@@ -21448,7 +22632,7 @@ impl Default for RelFileLocator {
 #[derive(Debug, Copy, Clone)]
 pub struct RelFileLocatorBackend {
     pub locator: RelFileLocator,
-    pub backend: BackendId,
+    pub backend: ProcNumber,
 }
 impl Default for RelFileLocatorBackend {
     fn default() -> Self {
@@ -21665,119 +22849,6 @@ pub struct WALReadError {
     pub wre_seg: WALOpenSegment,
 }
 #[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct XLogPageHeaderData {
-    pub xlp_magic: uint16,
-    pub xlp_info: uint16,
-    pub xlp_tli: TimeLineID,
-    pub xlp_pageaddr: XLogRecPtr,
-    pub xlp_rem_len: uint32,
-}
-pub type XLogPageHeader = *mut XLogPageHeaderData;
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct XLogLongPageHeaderData {
-    pub std: XLogPageHeaderData,
-    pub xlp_sysid: uint64,
-    pub xlp_seg_size: uint32,
-    pub xlp_xlog_blcksz: uint32,
-}
-pub type XLogLongPageHeader = *mut XLogLongPageHeaderData;
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct xl_parameter_change {
-    pub MaxConnections: ::core::ffi::c_int,
-    pub max_worker_processes: ::core::ffi::c_int,
-    pub max_wal_senders: ::core::ffi::c_int,
-    pub max_prepared_xacts: ::core::ffi::c_int,
-    pub max_locks_per_xact: ::core::ffi::c_int,
-    pub wal_level: ::core::ffi::c_int,
-    pub wal_log_hints: bool,
-    pub track_commit_timestamp: bool,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct xl_restore_point {
-    pub rp_time: TimestampTz,
-    pub rp_name: [::core::ffi::c_char; 64usize],
-}
-impl Default for xl_restore_point {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct xl_overwrite_contrecord {
-    pub overwritten_lsn: XLogRecPtr,
-    pub overwrite_time: TimestampTz,
-}
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct xl_end_of_recovery {
-    pub end_time: TimestampTz,
-    pub ThisTimeLineID: TimeLineID,
-    pub PrevTimeLineID: TimeLineID,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct XLogRecData {
-    pub next: *mut XLogRecData,
-    pub data: *mut ::core::ffi::c_char,
-    pub len: uint32,
-}
-impl Default for XLogRecData {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-pub mod RecoveryTargetAction {
-    pub type Type = ::core::ffi::c_uint;
-    pub const RECOVERY_TARGET_ACTION_PAUSE: Type = 0;
-    pub const RECOVERY_TARGET_ACTION_PROMOTE: Type = 1;
-    pub const RECOVERY_TARGET_ACTION_SHUTDOWN: Type = 2;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct XLogRecordBuffer {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct RmgrData {
-    pub rm_name: *const ::core::ffi::c_char,
-    pub rm_redo: ::core::option::Option<unsafe extern "C" fn(record: *mut XLogReaderState)>,
-    pub rm_desc:
-        ::core::option::Option<unsafe extern "C" fn(buf: StringInfo, record: *mut XLogReaderState)>,
-    pub rm_identify:
-        ::core::option::Option<unsafe extern "C" fn(info: uint8) -> *const ::core::ffi::c_char>,
-    pub rm_startup: ::core::option::Option<unsafe extern "C" fn()>,
-    pub rm_cleanup: ::core::option::Option<unsafe extern "C" fn()>,
-    pub rm_mask: ::core::option::Option<
-        unsafe extern "C" fn(pagedata: *mut ::core::ffi::c_char, blkno: BlockNumber),
-    >,
-    pub rm_decode: ::core::option::Option<
-        unsafe extern "C" fn(ctx: *mut LogicalDecodingContext, buf: *mut XLogRecordBuffer),
-    >,
-}
-impl Default for RmgrData {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FormData_pg_class {
     pub oid: Oid,
@@ -21985,12 +23056,12 @@ impl Default for RuleLock {
 #[derive(Debug, Copy, Clone)]
 pub struct SMgrRelationData {
     pub smgr_rlocator: RelFileLocatorBackend,
-    pub smgr_owner: *mut *mut SMgrRelationData,
     pub smgr_targblock: BlockNumber,
     pub smgr_cached_nblocks: [BlockNumber; 4usize],
     pub smgr_which: ::core::ffi::c_int,
     pub md_num_open_segs: [::core::ffi::c_int; 4usize],
     pub md_seg_fds: [*mut _MdfdVec; 4usize],
+    pub pincount: ::core::ffi::c_int,
     pub node: dlist_node,
 }
 impl Default for SMgrRelationData {
@@ -22039,7 +23110,7 @@ pub struct RelationData {
     pub rd_locator: RelFileLocator,
     pub rd_smgr: SMgrRelation,
     pub rd_refcnt: ::core::ffi::c_int,
-    pub rd_backend: BackendId,
+    pub rd_backend: ProcNumber,
     pub rd_islocaltemp: bool,
     pub rd_isnailed: bool,
     pub rd_isvalid: bool,
@@ -22071,6 +23142,7 @@ pub struct RelationData {
     pub rd_partcheckcxt: MemoryContext,
     pub rd_indexlist: *mut List,
     pub rd_pkindex: Oid,
+    pub rd_ispkdeferrable: bool,
     pub rd_replidindex: Oid,
     pub rd_statlist: *mut List,
     pub rd_attrsvalid: bool,
@@ -22812,6 +23884,133 @@ impl Default for xl_xact_parsed_abort {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct ResourceOwnerData {
+    _unused: [u8; 0],
+}
+pub type ResourceOwner = *mut ResourceOwnerData;
+pub mod ResourceReleasePhase {
+    pub type Type = ::core::ffi::c_uint;
+    pub const RESOURCE_RELEASE_BEFORE_LOCKS: Type = 1;
+    pub const RESOURCE_RELEASE_LOCKS: Type = 2;
+    pub const RESOURCE_RELEASE_AFTER_LOCKS: Type = 3;
+}
+pub type ResourceReleasePriority = uint32;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ResourceOwnerDesc {
+    pub name: *const ::core::ffi::c_char,
+    pub release_phase: ResourceReleasePhase::Type,
+    pub release_priority: ResourceReleasePriority,
+    pub ReleaseResource: ::core::option::Option<unsafe extern "C" fn(res: Datum)>,
+    pub DebugPrint:
+        ::core::option::Option<unsafe extern "C" fn(res: Datum) -> *mut ::core::ffi::c_char>,
+}
+impl Default for ResourceOwnerDesc {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub type ResourceReleaseCallback = ::core::option::Option<
+    unsafe extern "C" fn(
+        phase: ResourceReleasePhase::Type,
+        isCommit: bool,
+        isTopLevel: bool,
+        arg: *mut ::core::ffi::c_void,
+    ),
+>;
+pub type Block = *mut ::core::ffi::c_void;
+pub mod BufferAccessStrategyType {
+    pub type Type = ::core::ffi::c_uint;
+    pub const BAS_NORMAL: Type = 0;
+    pub const BAS_BULKREAD: Type = 1;
+    pub const BAS_BULKWRITE: Type = 2;
+    pub const BAS_VACUUM: Type = 3;
+}
+pub mod ReadBufferMode {
+    pub type Type = ::core::ffi::c_uint;
+    pub const RBM_NORMAL: Type = 0;
+    pub const RBM_ZERO_AND_LOCK: Type = 1;
+    pub const RBM_ZERO_AND_CLEANUP_LOCK: Type = 2;
+    pub const RBM_ZERO_ON_ERROR: Type = 3;
+    pub const RBM_NORMAL_NO_LOG: Type = 4;
+}
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct PrefetchBufferResult {
+    pub recent_buffer: Buffer,
+    pub initiated_io: bool,
+}
+pub mod ExtendBufferedFlags {
+    pub type Type = ::core::ffi::c_uint;
+    pub const EB_SKIP_EXTENSION_LOCK: Type = 1;
+    pub const EB_PERFORMING_RECOVERY: Type = 2;
+    pub const EB_CREATE_FORK_IF_NEEDED: Type = 4;
+    pub const EB_LOCK_FIRST: Type = 8;
+    pub const EB_CLEAR_SIZE_CACHE: Type = 16;
+    pub const EB_LOCK_TARGET: Type = 32;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct BufferManagerRelation {
+    pub rel: Relation,
+    pub smgr: *mut SMgrRelationData,
+    pub relpersistence: ::core::ffi::c_char,
+}
+impl Default for BufferManagerRelation {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ReadBuffersOperation {
+    pub rel: Relation,
+    pub smgr: *mut SMgrRelationData,
+    pub smgr_persistence: ::core::ffi::c_char,
+    pub forknum: ForkNumber::Type,
+    pub strategy: BufferAccessStrategy,
+    pub buffers: *mut Buffer,
+    pub blocknum: BlockNumber,
+    pub flags: ::core::ffi::c_int,
+    pub nblocks: int16,
+    pub io_buffers_len: int16,
+}
+impl Default for ReadBuffersOperation {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WritebackContext {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ReadStream {
+    _unused: [u8; 0],
+}
+pub type ReadStreamBlockNumberCB = ::core::option::Option<
+    unsafe extern "C" fn(
+        stream: *mut ReadStream,
+        callback_private_data: *mut ::core::ffi::c_void,
+        per_buffer_data: *mut ::core::ffi::c_void,
+    ) -> BlockNumber,
+>;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct BulkInsertStateData {
     _unused: [u8; 0],
 }
@@ -22827,6 +24026,7 @@ pub mod ScanOptions {
     pub const SO_ALLOW_SYNC: Type = 128;
     pub const SO_ALLOW_PAGEMODE: Type = 256;
     pub const SO_TEMP_SNAPSHOT: Type = 512;
+    pub const SO_NEED_TUPLES: Type = 1024;
 }
 pub mod TM_Result {
     pub type Type = ::core::ffi::c_uint;
@@ -23094,11 +24294,7 @@ pub struct TableAmRoutine {
         ),
     >,
     pub scan_analyze_next_block: ::core::option::Option<
-        unsafe extern "C" fn(
-            scan: TableScanDesc,
-            blockno: BlockNumber,
-            bstrategy: BufferAccessStrategy,
-        ) -> bool,
+        unsafe extern "C" fn(scan: TableScanDesc, stream: *mut ReadStream) -> bool,
     >,
     pub scan_analyze_next_tuple: ::core::option::Option<
         unsafe extern "C" fn(
@@ -23230,7 +24426,12 @@ pub struct HeapScanDescData {
     pub rs_cbuf: Buffer,
     pub rs_strategy: BufferAccessStrategy,
     pub rs_ctup: HeapTupleData,
+    pub rs_read_stream: *mut ReadStream,
+    pub rs_dir: ScanDirection::Type,
+    pub rs_prefetch_block: BlockNumber,
     pub rs_parallelworkerdata: *mut ParallelBlockTableScanWorkerData,
+    pub rs_vmbuffer: Buffer,
+    pub rs_empty_tuples_pending: ::core::ffi::c_int,
     pub rs_cindex: ::core::ffi::c_int,
     pub rs_ntuples: ::core::ffi::c_int,
     pub rs_vistuples: [OffsetNumber; 291usize],
@@ -23289,6 +24490,36 @@ pub struct HeapPageFreeze {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct PruneFreezeResult {
+    pub ndeleted: ::core::ffi::c_int,
+    pub nnewlpdead: ::core::ffi::c_int,
+    pub nfrozen: ::core::ffi::c_int,
+    pub live_tuples: ::core::ffi::c_int,
+    pub recently_dead_tuples: ::core::ffi::c_int,
+    pub all_visible: bool,
+    pub all_frozen: bool,
+    pub vm_conflict_horizon: TransactionId,
+    pub hastup: bool,
+    pub lpdead_items: ::core::ffi::c_int,
+    pub deadoffsets: [OffsetNumber; 291usize],
+}
+impl Default for PruneFreezeResult {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod PruneReason {
+    pub type Type = ::core::ffi::c_uint;
+    pub const PRUNE_ON_ACCESS: Type = 0;
+    pub const PRUNE_VACUUM_SCAN: Type = 1;
+    pub const PRUNE_VACUUM_CLEANUP: Type = 2;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct GlobalVisState {
     _unused: [u8; 0],
 }
@@ -23314,7 +24545,7 @@ pub struct FileTag {
     pub handler: int16,
     pub forknum: int16,
     pub rlocator: RelFileLocator,
-    pub segno: uint32,
+    pub segno: uint64,
 }
 impl Default for FileTag {
     fn default() -> Self {
@@ -23435,42 +24666,52 @@ pub mod LWLockMode {
 }
 pub mod BuiltinTrancheIds {
     pub type Type = ::core::ffi::c_uint;
-    pub const LWTRANCHE_XACT_BUFFER: Type = 48;
-    pub const LWTRANCHE_COMMITTS_BUFFER: Type = 49;
-    pub const LWTRANCHE_SUBTRANS_BUFFER: Type = 50;
-    pub const LWTRANCHE_MULTIXACTOFFSET_BUFFER: Type = 51;
-    pub const LWTRANCHE_MULTIXACTMEMBER_BUFFER: Type = 52;
-    pub const LWTRANCHE_NOTIFY_BUFFER: Type = 53;
-    pub const LWTRANCHE_SERIAL_BUFFER: Type = 54;
-    pub const LWTRANCHE_WAL_INSERT: Type = 55;
-    pub const LWTRANCHE_BUFFER_CONTENT: Type = 56;
-    pub const LWTRANCHE_REPLICATION_ORIGIN_STATE: Type = 57;
-    pub const LWTRANCHE_REPLICATION_SLOT_IO: Type = 58;
-    pub const LWTRANCHE_LOCK_FASTPATH: Type = 59;
-    pub const LWTRANCHE_BUFFER_MAPPING: Type = 60;
-    pub const LWTRANCHE_LOCK_MANAGER: Type = 61;
-    pub const LWTRANCHE_PREDICATE_LOCK_MANAGER: Type = 62;
-    pub const LWTRANCHE_PARALLEL_HASH_JOIN: Type = 63;
-    pub const LWTRANCHE_PARALLEL_QUERY_DSA: Type = 64;
-    pub const LWTRANCHE_PER_SESSION_DSA: Type = 65;
-    pub const LWTRANCHE_PER_SESSION_RECORD_TYPE: Type = 66;
-    pub const LWTRANCHE_PER_SESSION_RECORD_TYPMOD: Type = 67;
-    pub const LWTRANCHE_SHARED_TUPLESTORE: Type = 68;
-    pub const LWTRANCHE_SHARED_TIDBITMAP: Type = 69;
-    pub const LWTRANCHE_PARALLEL_APPEND: Type = 70;
-    pub const LWTRANCHE_PER_XACT_PREDICATE_LIST: Type = 71;
-    pub const LWTRANCHE_PGSTATS_DSA: Type = 72;
-    pub const LWTRANCHE_PGSTATS_HASH: Type = 73;
-    pub const LWTRANCHE_PGSTATS_DATA: Type = 74;
-    pub const LWTRANCHE_LAUNCHER_DSA: Type = 75;
-    pub const LWTRANCHE_LAUNCHER_HASH: Type = 76;
-    pub const LWTRANCHE_FIRST_USER_DEFINED: Type = 77;
+    pub const LWTRANCHE_XACT_BUFFER: Type = 53;
+    pub const LWTRANCHE_COMMITTS_BUFFER: Type = 54;
+    pub const LWTRANCHE_SUBTRANS_BUFFER: Type = 55;
+    pub const LWTRANCHE_MULTIXACTOFFSET_BUFFER: Type = 56;
+    pub const LWTRANCHE_MULTIXACTMEMBER_BUFFER: Type = 57;
+    pub const LWTRANCHE_NOTIFY_BUFFER: Type = 58;
+    pub const LWTRANCHE_SERIAL_BUFFER: Type = 59;
+    pub const LWTRANCHE_WAL_INSERT: Type = 60;
+    pub const LWTRANCHE_BUFFER_CONTENT: Type = 61;
+    pub const LWTRANCHE_REPLICATION_ORIGIN_STATE: Type = 62;
+    pub const LWTRANCHE_REPLICATION_SLOT_IO: Type = 63;
+    pub const LWTRANCHE_LOCK_FASTPATH: Type = 64;
+    pub const LWTRANCHE_BUFFER_MAPPING: Type = 65;
+    pub const LWTRANCHE_LOCK_MANAGER: Type = 66;
+    pub const LWTRANCHE_PREDICATE_LOCK_MANAGER: Type = 67;
+    pub const LWTRANCHE_PARALLEL_HASH_JOIN: Type = 68;
+    pub const LWTRANCHE_PARALLEL_QUERY_DSA: Type = 69;
+    pub const LWTRANCHE_PER_SESSION_DSA: Type = 70;
+    pub const LWTRANCHE_PER_SESSION_RECORD_TYPE: Type = 71;
+    pub const LWTRANCHE_PER_SESSION_RECORD_TYPMOD: Type = 72;
+    pub const LWTRANCHE_SHARED_TUPLESTORE: Type = 73;
+    pub const LWTRANCHE_SHARED_TIDBITMAP: Type = 74;
+    pub const LWTRANCHE_PARALLEL_APPEND: Type = 75;
+    pub const LWTRANCHE_PER_XACT_PREDICATE_LIST: Type = 76;
+    pub const LWTRANCHE_PGSTATS_DSA: Type = 77;
+    pub const LWTRANCHE_PGSTATS_HASH: Type = 78;
+    pub const LWTRANCHE_PGSTATS_DATA: Type = 79;
+    pub const LWTRANCHE_LAUNCHER_DSA: Type = 80;
+    pub const LWTRANCHE_LAUNCHER_HASH: Type = 81;
+    pub const LWTRANCHE_DSM_REGISTRY_DSA: Type = 82;
+    pub const LWTRANCHE_DSM_REGISTRY_HASH: Type = 83;
+    pub const LWTRANCHE_COMMITTS_SLRU: Type = 84;
+    pub const LWTRANCHE_MULTIXACTMEMBER_SLRU: Type = 85;
+    pub const LWTRANCHE_MULTIXACTOFFSET_SLRU: Type = 86;
+    pub const LWTRANCHE_NOTIFY_SLRU: Type = 87;
+    pub const LWTRANCHE_SERIAL_SLRU: Type = 88;
+    pub const LWTRANCHE_SUBTRANS_SLRU: Type = 89;
+    pub const LWTRANCHE_XACT_SLRU: Type = 90;
+    pub const LWTRANCHE_PARALLEL_VACUUM_DSA: Type = 91;
+    pub const LWTRANCHE_FIRST_USER_DEFINED: Type = 92;
 }
 pub type LWLockId = *mut LWLock;
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub struct VirtualTransactionId {
-    pub backendId: BackendId,
+    pub procNumber: ProcNumber,
     pub localTransactionId: LocalTransactionId,
 }
 #[repr(C)]
@@ -23623,8 +24864,7 @@ pub struct LockInstanceData {
     pub locktag: LOCKTAG,
     pub holdMask: LOCKMASK,
     pub waitLockMode: LOCKMODE,
-    pub backend: BackendId,
-    pub lxid: LocalTransactionId,
+    pub vxid: VirtualTransactionId,
     pub waitStart: TimestampTz,
     pub pid: ::core::ffi::c_int,
     pub leaderPid: ::core::ffi::c_int,
@@ -23930,12 +25170,127 @@ impl Default for local_relopts {
     }
 }
 #[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct XLogPageHeaderData {
+    pub xlp_magic: uint16,
+    pub xlp_info: uint16,
+    pub xlp_tli: TimeLineID,
+    pub xlp_pageaddr: XLogRecPtr,
+    pub xlp_rem_len: uint32,
+}
+pub type XLogPageHeader = *mut XLogPageHeaderData;
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct XLogLongPageHeaderData {
+    pub std: XLogPageHeaderData,
+    pub xlp_sysid: uint64,
+    pub xlp_seg_size: uint32,
+    pub xlp_xlog_blcksz: uint32,
+}
+pub type XLogLongPageHeader = *mut XLogLongPageHeaderData;
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct xl_parameter_change {
+    pub MaxConnections: ::core::ffi::c_int,
+    pub max_worker_processes: ::core::ffi::c_int,
+    pub max_wal_senders: ::core::ffi::c_int,
+    pub max_prepared_xacts: ::core::ffi::c_int,
+    pub max_locks_per_xact: ::core::ffi::c_int,
+    pub wal_level: ::core::ffi::c_int,
+    pub wal_log_hints: bool,
+    pub track_commit_timestamp: bool,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct xl_restore_point {
+    pub rp_time: TimestampTz,
+    pub rp_name: [::core::ffi::c_char; 64usize],
+}
+impl Default for xl_restore_point {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct xl_overwrite_contrecord {
+    pub overwritten_lsn: XLogRecPtr,
+    pub overwrite_time: TimestampTz,
+}
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct xl_end_of_recovery {
+    pub end_time: TimestampTz,
+    pub ThisTimeLineID: TimeLineID,
+    pub PrevTimeLineID: TimeLineID,
+    pub wal_level: ::core::ffi::c_int,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct XLogRecData {
+    pub next: *mut XLogRecData,
+    pub data: *mut ::core::ffi::c_char,
+    pub len: uint32,
+}
+impl Default for XLogRecData {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub mod RecoveryTargetAction {
+    pub type Type = ::core::ffi::c_uint;
+    pub const RECOVERY_TARGET_ACTION_PAUSE: Type = 0;
+    pub const RECOVERY_TARGET_ACTION_PROMOTE: Type = 1;
+    pub const RECOVERY_TARGET_ACTION_SHUTDOWN: Type = 2;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct XLogRecordBuffer {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct RmgrData {
+    pub rm_name: *const ::core::ffi::c_char,
+    pub rm_redo: ::core::option::Option<unsafe extern "C" fn(record: *mut XLogReaderState)>,
+    pub rm_desc:
+        ::core::option::Option<unsafe extern "C" fn(buf: StringInfo, record: *mut XLogReaderState)>,
+    pub rm_identify:
+        ::core::option::Option<unsafe extern "C" fn(info: uint8) -> *const ::core::ffi::c_char>,
+    pub rm_startup: ::core::option::Option<unsafe extern "C" fn()>,
+    pub rm_cleanup: ::core::option::Option<unsafe extern "C" fn()>,
+    pub rm_mask: ::core::option::Option<
+        unsafe extern "C" fn(pagedata: *mut ::core::ffi::c_char, blkno: BlockNumber),
+    >,
+    pub rm_decode: ::core::option::Option<
+        unsafe extern "C" fn(ctx: *mut LogicalDecodingContext, buf: *mut XLogRecordBuffer),
+    >,
+}
+impl Default for RmgrData {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct CheckPoint {
     pub redo: XLogRecPtr,
     pub ThisTimeLineID: TimeLineID,
     pub PrevTimeLineID: TimeLineID,
     pub fullPageWrites: bool,
+    pub wal_level: ::core::ffi::c_int,
     pub nextXid: FullTransactionId,
     pub nextOid: Oid,
     pub nextMulti: MultiXactId,
@@ -24061,73 +25416,6 @@ impl Default for EndOfWalRecoveryInfo {
         }
     }
 }
-pub type ResourceOwner = *mut ResourceOwnerData;
-pub mod ResourceReleasePhase {
-    pub type Type = ::core::ffi::c_uint;
-    pub const RESOURCE_RELEASE_BEFORE_LOCKS: Type = 0;
-    pub const RESOURCE_RELEASE_LOCKS: Type = 1;
-    pub const RESOURCE_RELEASE_AFTER_LOCKS: Type = 2;
-}
-pub type ResourceReleaseCallback = ::core::option::Option<
-    unsafe extern "C" fn(
-        phase: ResourceReleasePhase::Type,
-        isCommit: bool,
-        isTopLevel: bool,
-        arg: *mut ::core::ffi::c_void,
-    ),
->;
-pub type Block = *mut ::core::ffi::c_void;
-pub mod BufferAccessStrategyType {
-    pub type Type = ::core::ffi::c_uint;
-    pub const BAS_NORMAL: Type = 0;
-    pub const BAS_BULKREAD: Type = 1;
-    pub const BAS_BULKWRITE: Type = 2;
-    pub const BAS_VACUUM: Type = 3;
-}
-pub mod ReadBufferMode {
-    pub type Type = ::core::ffi::c_uint;
-    pub const RBM_NORMAL: Type = 0;
-    pub const RBM_ZERO_AND_LOCK: Type = 1;
-    pub const RBM_ZERO_AND_CLEANUP_LOCK: Type = 2;
-    pub const RBM_ZERO_ON_ERROR: Type = 3;
-    pub const RBM_NORMAL_NO_LOG: Type = 4;
-}
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct PrefetchBufferResult {
-    pub recent_buffer: Buffer,
-    pub initiated_io: bool,
-}
-pub mod ExtendBufferedFlags {
-    pub type Type = ::core::ffi::c_uint;
-    pub const EB_SKIP_EXTENSION_LOCK: Type = 1;
-    pub const EB_PERFORMING_RECOVERY: Type = 2;
-    pub const EB_CREATE_FORK_IF_NEEDED: Type = 4;
-    pub const EB_LOCK_FIRST: Type = 8;
-    pub const EB_CLEAR_SIZE_CACHE: Type = 16;
-    pub const EB_LOCK_TARGET: Type = 32;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct BufferManagerRelation {
-    pub rel: Relation,
-    pub smgr: *mut SMgrRelationData,
-    pub relpersistence: ::core::ffi::c_char,
-}
-impl Default for BufferManagerRelation {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct WritebackContext {
-    _unused: [u8; 0],
-}
 pub mod HotStandbyState {
     pub type Type = ::core::ffi::c_uint;
     pub const STANDBY_DISABLED: Type = 0;
@@ -24161,6 +25449,7 @@ pub mod SharedDependencyType {
     pub type Type = ::core::ffi::c_uint;
     pub const SHARED_DEPENDENCY_OWNER: Type = 111;
     pub const SHARED_DEPENDENCY_ACL: Type = 97;
+    pub const SHARED_DEPENDENCY_INITACL: Type = 105;
     pub const SHARED_DEPENDENCY_POLICY: Type = 114;
     pub const SHARED_DEPENDENCY_TABLESPACE: Type = 116;
     pub const SHARED_DEPENDENCY_INVALID: Type = 0;
@@ -24169,50 +25458,6 @@ pub mod SharedDependencyType {
 #[derive(Debug, Copy, Clone)]
 pub struct ObjectAddresses {
     _unused: [u8; 0],
-}
-pub mod ObjectClass {
-    pub type Type = ::core::ffi::c_uint;
-    pub const OCLASS_CLASS: Type = 0;
-    pub const OCLASS_PROC: Type = 1;
-    pub const OCLASS_TYPE: Type = 2;
-    pub const OCLASS_CAST: Type = 3;
-    pub const OCLASS_COLLATION: Type = 4;
-    pub const OCLASS_CONSTRAINT: Type = 5;
-    pub const OCLASS_CONVERSION: Type = 6;
-    pub const OCLASS_DEFAULT: Type = 7;
-    pub const OCLASS_LANGUAGE: Type = 8;
-    pub const OCLASS_LARGEOBJECT: Type = 9;
-    pub const OCLASS_OPERATOR: Type = 10;
-    pub const OCLASS_OPCLASS: Type = 11;
-    pub const OCLASS_OPFAMILY: Type = 12;
-    pub const OCLASS_AM: Type = 13;
-    pub const OCLASS_AMOP: Type = 14;
-    pub const OCLASS_AMPROC: Type = 15;
-    pub const OCLASS_REWRITE: Type = 16;
-    pub const OCLASS_TRIGGER: Type = 17;
-    pub const OCLASS_SCHEMA: Type = 18;
-    pub const OCLASS_STATISTIC_EXT: Type = 19;
-    pub const OCLASS_TSPARSER: Type = 20;
-    pub const OCLASS_TSDICT: Type = 21;
-    pub const OCLASS_TSTEMPLATE: Type = 22;
-    pub const OCLASS_TSCONFIG: Type = 23;
-    pub const OCLASS_ROLE: Type = 24;
-    pub const OCLASS_ROLE_MEMBERSHIP: Type = 25;
-    pub const OCLASS_DATABASE: Type = 26;
-    pub const OCLASS_TBLSPACE: Type = 27;
-    pub const OCLASS_FDW: Type = 28;
-    pub const OCLASS_FOREIGN_SERVER: Type = 29;
-    pub const OCLASS_USER_MAPPING: Type = 30;
-    pub const OCLASS_DEFACL: Type = 31;
-    pub const OCLASS_EXTENSION: Type = 32;
-    pub const OCLASS_EVENT_TRIGGER: Type = 33;
-    pub const OCLASS_PARAMETER_ACL: Type = 34;
-    pub const OCLASS_POLICY: Type = 35;
-    pub const OCLASS_PUBLICATION: Type = 36;
-    pub const OCLASS_PUBLICATION_NAMESPACE: Type = 37;
-    pub const OCLASS_PUBLICATION_REL: Type = 38;
-    pub const OCLASS_SUBSCRIPTION: Type = 39;
-    pub const OCLASS_TRANSFORM: Type = 40;
 }
 pub mod IndexStateFlagsAction {
     pub type Type = ::core::ffi::c_uint;
@@ -24285,13 +25530,13 @@ pub mod TempNamespaceStatus {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct OverrideSearchPath {
+pub struct SearchPathMatcher {
     pub schemas: *mut List,
     pub addCatalog: bool,
     pub addTemp: bool,
     pub generation: uint64,
 }
-impl Default for OverrideSearchPath {
+impl Default for SearchPathMatcher {
     fn default() -> Self {
         let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -24488,6 +25733,7 @@ pub struct FormData_pg_database {
     pub datlocprovider: ::core::ffi::c_char,
     pub datistemplate: bool,
     pub datallowconn: bool,
+    pub dathasloginevt: bool,
     pub datconnlimit: int32,
     pub datfrozenxid: TransactionId,
     pub datminmxid: TransactionId,
@@ -24725,25 +25971,26 @@ pub mod ParseExprKind {
     pub const EXPR_KIND_LIMIT: Type = 22;
     pub const EXPR_KIND_OFFSET: Type = 23;
     pub const EXPR_KIND_RETURNING: Type = 24;
-    pub const EXPR_KIND_VALUES: Type = 25;
-    pub const EXPR_KIND_VALUES_SINGLE: Type = 26;
-    pub const EXPR_KIND_CHECK_CONSTRAINT: Type = 27;
-    pub const EXPR_KIND_DOMAIN_CHECK: Type = 28;
-    pub const EXPR_KIND_COLUMN_DEFAULT: Type = 29;
-    pub const EXPR_KIND_FUNCTION_DEFAULT: Type = 30;
-    pub const EXPR_KIND_INDEX_EXPRESSION: Type = 31;
-    pub const EXPR_KIND_INDEX_PREDICATE: Type = 32;
-    pub const EXPR_KIND_STATS_EXPRESSION: Type = 33;
-    pub const EXPR_KIND_ALTER_COL_TRANSFORM: Type = 34;
-    pub const EXPR_KIND_EXECUTE_PARAMETER: Type = 35;
-    pub const EXPR_KIND_TRIGGER_WHEN: Type = 36;
-    pub const EXPR_KIND_POLICY: Type = 37;
-    pub const EXPR_KIND_PARTITION_BOUND: Type = 38;
-    pub const EXPR_KIND_PARTITION_EXPRESSION: Type = 39;
-    pub const EXPR_KIND_CALL_ARGUMENT: Type = 40;
-    pub const EXPR_KIND_COPY_WHERE: Type = 41;
-    pub const EXPR_KIND_GENERATED_COLUMN: Type = 42;
-    pub const EXPR_KIND_CYCLE_MARK: Type = 43;
+    pub const EXPR_KIND_MERGE_RETURNING: Type = 25;
+    pub const EXPR_KIND_VALUES: Type = 26;
+    pub const EXPR_KIND_VALUES_SINGLE: Type = 27;
+    pub const EXPR_KIND_CHECK_CONSTRAINT: Type = 28;
+    pub const EXPR_KIND_DOMAIN_CHECK: Type = 29;
+    pub const EXPR_KIND_COLUMN_DEFAULT: Type = 30;
+    pub const EXPR_KIND_FUNCTION_DEFAULT: Type = 31;
+    pub const EXPR_KIND_INDEX_EXPRESSION: Type = 32;
+    pub const EXPR_KIND_INDEX_PREDICATE: Type = 33;
+    pub const EXPR_KIND_STATS_EXPRESSION: Type = 34;
+    pub const EXPR_KIND_ALTER_COL_TRANSFORM: Type = 35;
+    pub const EXPR_KIND_EXECUTE_PARAMETER: Type = 36;
+    pub const EXPR_KIND_TRIGGER_WHEN: Type = 37;
+    pub const EXPR_KIND_POLICY: Type = 38;
+    pub const EXPR_KIND_PARTITION_BOUND: Type = 39;
+    pub const EXPR_KIND_PARTITION_EXPRESSION: Type = 40;
+    pub const EXPR_KIND_CALL_ARGUMENT: Type = 41;
+    pub const EXPR_KIND_COPY_WHERE: Type = 42;
+    pub const EXPR_KIND_GENERATED_COLUMN: Type = 43;
+    pub const EXPR_KIND_CYCLE_MARK: Type = 44;
 }
 pub type PreParseColumnRefHook = ::core::option::Option<
     unsafe extern "C" fn(pstate: *mut ParseState, cref: *mut ColumnRef) -> *mut Node,
@@ -25046,6 +26293,16 @@ pub mod CopyHeaderChoice {
     pub const COPY_HEADER_TRUE: Type = 1;
     pub const COPY_HEADER_MATCH: Type = 2;
 }
+pub mod CopyOnErrorChoice {
+    pub type Type = ::core::ffi::c_uint;
+    pub const COPY_ON_ERROR_STOP: Type = 0;
+    pub const COPY_ON_ERROR_IGNORE: Type = 1;
+}
+pub mod CopyLogVerbosityChoice {
+    pub type Type = ::core::ffi::c_uint;
+    pub const COPY_LOG_VERBOSITY_DEFAULT: Type = 0;
+    pub const COPY_LOG_VERBOSITY_VERBOSE: Type = 1;
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct CopyFormatOptions {
@@ -25066,10 +26323,14 @@ pub struct CopyFormatOptions {
     pub force_quote_all: bool,
     pub force_quote_flags: *mut bool,
     pub force_notnull: *mut List,
+    pub force_notnull_all: bool,
     pub force_notnull_flags: *mut bool,
     pub force_null: *mut List,
+    pub force_null_all: bool,
     pub force_null_flags: *mut bool,
     pub convert_selectively: bool,
+    pub on_error: CopyOnErrorChoice::Type,
+    pub log_verbosity: CopyLogVerbosityChoice::Type,
     pub convert_select: *mut List,
 }
 impl Default for CopyFormatOptions {
@@ -25533,6 +26794,12 @@ impl Default for EventTriggerData {
         }
     }
 }
+pub mod ExplainSerializeOption {
+    pub type Type = ::core::ffi::c_uint;
+    pub const EXPLAIN_SERIALIZE_NONE: Type = 0;
+    pub const EXPLAIN_SERIALIZE_TEXT: Type = 1;
+    pub const EXPLAIN_SERIALIZE_BINARY: Type = 2;
+}
 pub mod ExplainFormat {
     pub type Type = ::core::ffi::c_uint;
     pub const EXPLAIN_FORMAT_TEXT: Type = 0;
@@ -25569,8 +26836,10 @@ pub struct ExplainState {
     pub wal: bool,
     pub timing: bool,
     pub summary: bool,
+    pub memory: bool,
     pub settings: bool,
     pub generic: bool,
+    pub serialize: ExplainSerializeOption::Type,
     pub format: ExplainFormat::Type,
     pub indent: ::core::ffi::c_int,
     pub grouping_stack: *mut List,
@@ -25628,7 +26897,7 @@ pub struct CachedPlanSource {
     pub query_list: *mut List,
     pub relationOids: *mut List,
     pub invalItems: *mut List,
-    pub search_path: *mut OverrideSearchPath,
+    pub search_path: *mut SearchPathMatcher,
     pub query_context: MemoryContext,
     pub rewriteRoleId: Oid,
     pub rewriteRowSecurity: bool,
@@ -25861,6 +27130,12 @@ impl Default for ConfigVariable {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct config_generic {
+    _unused: [u8; 0],
+}
+pub type config_handle = config_generic;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct config_enum_entry {
     pub name: *const ::core::ffi::c_char,
     pub val: ::core::ffi::c_int,
@@ -25954,7 +27229,7 @@ pub struct BackgroundWorker {
     pub bgw_flags: ::core::ffi::c_int,
     pub bgw_start_time: BgWorkerStartTime::Type,
     pub bgw_restart_time: ::core::ffi::c_int,
-    pub bgw_library_name: [::core::ffi::c_char; 96usize],
+    pub bgw_library_name: [::core::ffi::c_char; 1024usize],
     pub bgw_function_name: [::core::ffi::c_char; 96usize],
     pub bgw_main_arg: Datum,
     pub bgw_extra: [::core::ffi::c_char; 128usize],
@@ -25985,7 +27260,7 @@ pub type XidStatus = ::core::ffi::c_int;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct xl_clog_truncate {
-    pub pageno: ::core::ffi::c_int,
+    pub pageno: int64,
     pub oldestXact: TransactionId,
     pub oldestXactDb: Oid,
 }
@@ -26065,11 +27340,9 @@ pub struct PGPROC {
     pub procLatch: Latch,
     pub xid: TransactionId,
     pub xmin: TransactionId,
-    pub lxid: LocalTransactionId,
     pub pid: ::core::ffi::c_int,
     pub pgxactoff: ::core::ffi::c_int,
-    pub pgprocno: ::core::ffi::c_int,
-    pub backendId: BackendId,
+    pub vxid: PGPROC__bindgen_ty_1,
     pub databaseId: Oid,
     pub roleId: Oid,
     pub tempNamespaceId: Oid,
@@ -26100,7 +27373,7 @@ pub struct PGPROC {
     pub clogGroupNext: pg_atomic_uint32,
     pub clogGroupMemberXid: TransactionId,
     pub clogGroupMemberXidStatus: XidStatus,
-    pub clogGroupMemberPage: ::core::ffi::c_int,
+    pub clogGroupMemberPage: int64,
     pub clogGroupMemberLsn: XLogRecPtr,
     pub fpInfoLock: LWLock,
     pub fpLockBits: uint64,
@@ -26110,6 +27383,12 @@ pub struct PGPROC {
     pub lockGroupLeader: *mut PGPROC,
     pub lockGroupMembers: dlist_head,
     pub lockGroupLink: dlist_node,
+}
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct PGPROC__bindgen_ty_1 {
+    pub procNumber: ProcNumber,
+    pub lxid: LocalTransactionId,
 }
 impl Default for PGPROC {
     fn default() -> Self {
@@ -26186,7 +27465,6 @@ pub type parallel_worker_main_type =
 pub struct ParallelWorkerInfo {
     pub bgwhandle: *mut BackgroundWorkerHandle,
     pub error_mqh: *mut shm_mq_handle,
-    pub pid: int32,
 }
 impl Default for ParallelWorkerInfo {
     fn default() -> Self {
@@ -26232,6 +27510,33 @@ pub struct ParallelWorkerContext {
     pub toc: *mut shm_toc,
 }
 impl Default for ParallelWorkerContext {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct TidStore {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct TidStoreIter {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct TidStoreIterResult {
+    pub blkno: BlockNumber,
+    pub max_offset: ::core::ffi::c_int,
+    pub num_offsets: ::core::ffi::c_int,
+    pub offsets: *mut OffsetNumber,
+}
+impl Default for TidStoreIterResult {
     fn default() -> Self {
         let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -26299,7 +27604,7 @@ pub type AnalyzeAttrComputeStatsFunc = ::core::option::Option<
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct VacAttrStats {
-    pub attr: Form_pg_attribute,
+    pub attstattarget: ::core::ffi::c_int,
     pub attrtypid: Oid,
     pub attrtypmod: int32,
     pub attrtype: Form_pg_type,
@@ -26358,6 +27663,7 @@ pub struct VacuumParams {
     pub log_min_duration: ::core::ffi::c_int,
     pub index_cleanup: VacOptValue::Type,
     pub truncate: VacOptValue::Type,
+    pub toast_parent: Oid,
     pub nworkers: ::core::ffi::c_int,
 }
 impl Default for VacuumParams {
@@ -26380,11 +27686,10 @@ pub struct VacuumCutoffs {
     pub MultiXactCutoff: MultiXactId,
 }
 #[repr(C)]
-#[derive(Debug, Default)]
-pub struct VacDeadItems {
-    pub max_items: ::core::ffi::c_int,
-    pub num_items: ::core::ffi::c_int,
-    pub items: __IncompleteArrayField<ItemPointerData>,
+#[derive(Debug, Default, Copy, Clone)]
+pub struct VacDeadItemsInfo {
+    pub max_bytes: usize,
+    pub num_items: int64,
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -26614,54 +27919,59 @@ pub mod ExprEvalOp {
     pub const EEOP_CASE_TESTVAL: Type = 44;
     pub const EEOP_MAKE_READONLY: Type = 45;
     pub const EEOP_IOCOERCE: Type = 46;
-    pub const EEOP_DISTINCT: Type = 47;
-    pub const EEOP_NOT_DISTINCT: Type = 48;
-    pub const EEOP_NULLIF: Type = 49;
-    pub const EEOP_SQLVALUEFUNCTION: Type = 50;
-    pub const EEOP_CURRENTOFEXPR: Type = 51;
-    pub const EEOP_NEXTVALUEEXPR: Type = 52;
-    pub const EEOP_ARRAYEXPR: Type = 53;
-    pub const EEOP_ARRAYCOERCE: Type = 54;
-    pub const EEOP_ROW: Type = 55;
-    pub const EEOP_ROWCOMPARE_STEP: Type = 56;
-    pub const EEOP_ROWCOMPARE_FINAL: Type = 57;
-    pub const EEOP_MINMAX: Type = 58;
-    pub const EEOP_FIELDSELECT: Type = 59;
-    pub const EEOP_FIELDSTORE_DEFORM: Type = 60;
-    pub const EEOP_FIELDSTORE_FORM: Type = 61;
-    pub const EEOP_SBSREF_SUBSCRIPTS: Type = 62;
-    pub const EEOP_SBSREF_OLD: Type = 63;
-    pub const EEOP_SBSREF_ASSIGN: Type = 64;
-    pub const EEOP_SBSREF_FETCH: Type = 65;
-    pub const EEOP_DOMAIN_TESTVAL: Type = 66;
-    pub const EEOP_DOMAIN_NOTNULL: Type = 67;
-    pub const EEOP_DOMAIN_CHECK: Type = 68;
-    pub const EEOP_CONVERT_ROWTYPE: Type = 69;
-    pub const EEOP_SCALARARRAYOP: Type = 70;
-    pub const EEOP_HASHED_SCALARARRAYOP: Type = 71;
-    pub const EEOP_XMLEXPR: Type = 72;
-    pub const EEOP_JSON_CONSTRUCTOR: Type = 73;
-    pub const EEOP_IS_JSON: Type = 74;
-    pub const EEOP_AGGREF: Type = 75;
-    pub const EEOP_GROUPING_FUNC: Type = 76;
-    pub const EEOP_WINDOW_FUNC: Type = 77;
-    pub const EEOP_SUBPLAN: Type = 78;
-    pub const EEOP_AGG_STRICT_DESERIALIZE: Type = 79;
-    pub const EEOP_AGG_DESERIALIZE: Type = 80;
-    pub const EEOP_AGG_STRICT_INPUT_CHECK_ARGS: Type = 81;
-    pub const EEOP_AGG_STRICT_INPUT_CHECK_NULLS: Type = 82;
-    pub const EEOP_AGG_PLAIN_PERGROUP_NULLCHECK: Type = 83;
-    pub const EEOP_AGG_PLAIN_TRANS_INIT_STRICT_BYVAL: Type = 84;
-    pub const EEOP_AGG_PLAIN_TRANS_STRICT_BYVAL: Type = 85;
-    pub const EEOP_AGG_PLAIN_TRANS_BYVAL: Type = 86;
-    pub const EEOP_AGG_PLAIN_TRANS_INIT_STRICT_BYREF: Type = 87;
-    pub const EEOP_AGG_PLAIN_TRANS_STRICT_BYREF: Type = 88;
-    pub const EEOP_AGG_PLAIN_TRANS_BYREF: Type = 89;
-    pub const EEOP_AGG_PRESORTED_DISTINCT_SINGLE: Type = 90;
-    pub const EEOP_AGG_PRESORTED_DISTINCT_MULTI: Type = 91;
-    pub const EEOP_AGG_ORDERED_TRANS_DATUM: Type = 92;
-    pub const EEOP_AGG_ORDERED_TRANS_TUPLE: Type = 93;
-    pub const EEOP_LAST: Type = 94;
+    pub const EEOP_IOCOERCE_SAFE: Type = 47;
+    pub const EEOP_DISTINCT: Type = 48;
+    pub const EEOP_NOT_DISTINCT: Type = 49;
+    pub const EEOP_NULLIF: Type = 50;
+    pub const EEOP_SQLVALUEFUNCTION: Type = 51;
+    pub const EEOP_CURRENTOFEXPR: Type = 52;
+    pub const EEOP_NEXTVALUEEXPR: Type = 53;
+    pub const EEOP_ARRAYEXPR: Type = 54;
+    pub const EEOP_ARRAYCOERCE: Type = 55;
+    pub const EEOP_ROW: Type = 56;
+    pub const EEOP_ROWCOMPARE_STEP: Type = 57;
+    pub const EEOP_ROWCOMPARE_FINAL: Type = 58;
+    pub const EEOP_MINMAX: Type = 59;
+    pub const EEOP_FIELDSELECT: Type = 60;
+    pub const EEOP_FIELDSTORE_DEFORM: Type = 61;
+    pub const EEOP_FIELDSTORE_FORM: Type = 62;
+    pub const EEOP_SBSREF_SUBSCRIPTS: Type = 63;
+    pub const EEOP_SBSREF_OLD: Type = 64;
+    pub const EEOP_SBSREF_ASSIGN: Type = 65;
+    pub const EEOP_SBSREF_FETCH: Type = 66;
+    pub const EEOP_DOMAIN_TESTVAL: Type = 67;
+    pub const EEOP_DOMAIN_NOTNULL: Type = 68;
+    pub const EEOP_DOMAIN_CHECK: Type = 69;
+    pub const EEOP_CONVERT_ROWTYPE: Type = 70;
+    pub const EEOP_SCALARARRAYOP: Type = 71;
+    pub const EEOP_HASHED_SCALARARRAYOP: Type = 72;
+    pub const EEOP_XMLEXPR: Type = 73;
+    pub const EEOP_JSON_CONSTRUCTOR: Type = 74;
+    pub const EEOP_IS_JSON: Type = 75;
+    pub const EEOP_JSONEXPR_PATH: Type = 76;
+    pub const EEOP_JSONEXPR_COERCION: Type = 77;
+    pub const EEOP_JSONEXPR_COERCION_FINISH: Type = 78;
+    pub const EEOP_AGGREF: Type = 79;
+    pub const EEOP_GROUPING_FUNC: Type = 80;
+    pub const EEOP_WINDOW_FUNC: Type = 81;
+    pub const EEOP_MERGE_SUPPORT_FUNC: Type = 82;
+    pub const EEOP_SUBPLAN: Type = 83;
+    pub const EEOP_AGG_STRICT_DESERIALIZE: Type = 84;
+    pub const EEOP_AGG_DESERIALIZE: Type = 85;
+    pub const EEOP_AGG_STRICT_INPUT_CHECK_ARGS: Type = 86;
+    pub const EEOP_AGG_STRICT_INPUT_CHECK_NULLS: Type = 87;
+    pub const EEOP_AGG_PLAIN_PERGROUP_NULLCHECK: Type = 88;
+    pub const EEOP_AGG_PLAIN_TRANS_INIT_STRICT_BYVAL: Type = 89;
+    pub const EEOP_AGG_PLAIN_TRANS_STRICT_BYVAL: Type = 90;
+    pub const EEOP_AGG_PLAIN_TRANS_BYVAL: Type = 91;
+    pub const EEOP_AGG_PLAIN_TRANS_INIT_STRICT_BYREF: Type = 92;
+    pub const EEOP_AGG_PLAIN_TRANS_STRICT_BYREF: Type = 93;
+    pub const EEOP_AGG_PLAIN_TRANS_BYREF: Type = 94;
+    pub const EEOP_AGG_PRESORTED_DISTINCT_SINGLE: Type = 95;
+    pub const EEOP_AGG_PRESORTED_DISTINCT_MULTI: Type = 96;
+    pub const EEOP_AGG_ORDERED_TRANS_DATUM: Type = 97;
+    pub const EEOP_AGG_ORDERED_TRANS_TUPLE: Type = 98;
+    pub const EEOP_LAST: Type = 99;
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -26718,6 +28028,8 @@ pub union ExprEvalStep__bindgen_ty_1 {
     pub agg_presorted_distinctcheck: ExprEvalStep__bindgen_ty_1__bindgen_ty_42,
     pub agg_trans: ExprEvalStep__bindgen_ty_1__bindgen_ty_43,
     pub is_json: ExprEvalStep__bindgen_ty_1__bindgen_ty_44,
+    pub jsonexpr: ExprEvalStep__bindgen_ty_1__bindgen_ty_45,
+    pub jsonexpr_coercion: ExprEvalStep__bindgen_ty_1__bindgen_ty_46,
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -27135,6 +28447,7 @@ pub struct ExprEvalStep__bindgen_ty_1__bindgen_ty_29 {
     pub checkvalue: *mut Datum,
     pub checknull: *mut bool,
     pub resulttype: Oid,
+    pub escontext: *mut ErrorSaveContext,
 }
 impl Default for ExprEvalStep__bindgen_ty_1__bindgen_ty_29 {
     fn default() -> Self {
@@ -27360,6 +28673,41 @@ pub struct ExprEvalStep__bindgen_ty_1__bindgen_ty_44 {
     pub pred: *mut JsonIsPredicate,
 }
 impl Default for ExprEvalStep__bindgen_ty_1__bindgen_ty_44 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ExprEvalStep__bindgen_ty_1__bindgen_ty_45 {
+    pub jsestate: *mut JsonExprState,
+}
+impl Default for ExprEvalStep__bindgen_ty_1__bindgen_ty_45 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ExprEvalStep__bindgen_ty_1__bindgen_ty_46 {
+    pub targettype: Oid,
+    pub targettypmod: int32,
+    pub omit_quotes: bool,
+    pub exists_coerce: bool,
+    pub exists_cast_to_int: bool,
+    pub exists_check_domain: bool,
+    pub json_coercion_cache: *mut ::core::ffi::c_void,
+    pub escontext: *mut ErrorSaveContext,
+}
+impl Default for ExprEvalStep__bindgen_ty_1__bindgen_ty_46 {
     fn default() -> Self {
         let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -27649,6 +28997,7 @@ pub struct PlannerGlobal {
     pub type_: NodeTag,
     pub boundParams: ParamListInfo,
     pub subplans: *mut List,
+    pub subpaths: *mut List,
     pub subroots: *mut List,
     pub rewindPlanIDs: *mut Bitmapset,
     pub finalrtable: *mut List,
@@ -27726,6 +29075,7 @@ pub struct PlannerInfo {
     pub window_pathkeys: *mut List,
     pub distinct_pathkeys: *mut List,
     pub sort_pathkeys: *mut List,
+    pub setop_pathkeys: *mut List,
     pub part_schemes: *mut List,
     pub initial_rels: *mut List,
     pub upper_rels: [*mut List; 8usize],
@@ -27829,6 +29179,7 @@ pub struct RelOptInfo {
     pub max_attr: AttrNumber,
     pub attr_needed: *mut Relids,
     pub attr_widths: *mut int32,
+    pub notnullattnums: *mut Bitmapset,
     pub nulling_relids: Relids,
     pub lateral_vars: *mut List,
     pub lateral_referencers: Relids,
@@ -28055,6 +29406,22 @@ impl Default for PathKey {
         }
     }
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct GroupByOrdering {
+    pub type_: NodeTag,
+    pub pathkeys: *mut List,
+    pub clauses: *mut List,
+}
+impl Default for GroupByOrdering {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
 pub mod VolatileFunctionStatus {
     pub type Type = ::core::ffi::c_uint;
     pub const VOLATILITY_UNKNOWN: Type = 0;
@@ -28260,6 +29627,7 @@ impl Default for SubqueryScanPath {
 pub struct ForeignPath {
     pub path: Path,
     pub fdw_outerpath: *mut Path,
+    pub fdw_restrictinfo: *mut List,
     pub fdw_private: *mut List,
 }
 impl Default for ForeignPath {
@@ -28277,6 +29645,7 @@ pub struct CustomPath {
     pub path: Path,
     pub flags: uint32,
     pub custom_paths: *mut List,
+    pub custom_restrictinfo: *mut List,
     pub custom_private: *mut List,
     pub methods: *const CustomPathMethods,
 }
@@ -28692,6 +30061,7 @@ pub struct WindowAggPath {
     pub subpath: *mut Path,
     pub winclause: *mut WindowClause,
     pub qual: *mut List,
+    pub runCondition: *mut List,
     pub topwindow: bool,
 }
 impl Default for WindowAggPath {
@@ -28778,6 +30148,7 @@ pub struct ModifyTablePath {
     pub onconflict: *mut OnConflictExpr,
     pub epqParam: ::core::ffi::c_int,
     pub mergeActionLists: *mut List,
+    pub mergeJoinConditions: *mut List,
 }
 impl Default for ModifyTablePath {
     fn default() -> Self {
@@ -29530,6 +30901,7 @@ impl Default for ForeignTable {
 pub struct JitInstrumentation {
     pub created_functions: usize,
     pub generation_counter: instr_time,
+    pub deform_counter: instr_time,
     pub inlining_counter: instr_time,
     pub optimization_counter: instr_time,
     pub emission_counter: instr_time,
@@ -29541,20 +30913,10 @@ pub struct SharedJitInstrumentation {
     pub jit_instr: __IncompleteArrayField<JitInstrumentation>,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct JitContext {
     pub flags: ::core::ffi::c_int,
-    pub resowner: ResourceOwner,
     pub instr: JitInstrumentation,
-}
-impl Default for JitContext {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
 }
 pub type JitProviderInit =
     ::core::option::Option<unsafe extern "C" fn(cb: *mut JitProviderCallbacks)>;
@@ -29624,21 +30986,6 @@ pub struct pg_enc2name {
     pub encoding: pg_enc::Type,
 }
 impl Default for pg_enc2name {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct pg_enc2gettext {
-    pub encoding: pg_enc::Type,
-    pub name: *const ::core::ffi::c_char,
-}
-impl Default for pg_enc2gettext {
     fn default() -> Self {
         let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -29897,23 +31244,6 @@ impl Default for CustomExecMethods {
         }
     }
 }
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ErrorSaveContext {
-    pub type_: NodeTag,
-    pub error_occurred: bool,
-    pub details_wanted: bool,
-    pub error_data: *mut ErrorData,
-}
-impl Default for ErrorSaveContext {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
 pub type check_function_callback = ::core::option::Option<
     unsafe extern "C" fn(func_id: Oid, context: *mut ::core::ffi::c_void) -> bool,
 >;
@@ -29997,6 +31327,22 @@ impl Default for DropReplicationSlotCmd {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct AlterReplicationSlotCmd {
+    pub type_: NodeTag,
+    pub slotname: *mut ::core::ffi::c_char,
+    pub options: *mut List,
+}
+impl Default for AlterReplicationSlotCmd {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct StartReplicationCmd {
     pub type_: NodeTag,
     pub kind: ReplicationKind::Type,
@@ -30036,6 +31382,20 @@ pub struct TimeLineHistoryCmd {
     pub timeline: TimeLineID,
 }
 impl Default for TimeLineHistoryCmd {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct UploadManifestCmd {
+    pub type_: NodeTag,
+}
+impl Default for UploadManifestCmd {
     fn default() -> Self {
         let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -30407,92 +31767,6 @@ impl Default for ExpandedRecordFieldInfo {
         }
     }
 }
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DomainConstraintCache {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct TypeCacheEnumData {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct TypeCacheEntry {
-    pub type_id: Oid,
-    pub type_id_hash: uint32,
-    pub typlen: int16,
-    pub typbyval: bool,
-    pub typalign: ::core::ffi::c_char,
-    pub typstorage: ::core::ffi::c_char,
-    pub typtype: ::core::ffi::c_char,
-    pub typrelid: Oid,
-    pub typsubscript: Oid,
-    pub typelem: Oid,
-    pub typcollation: Oid,
-    pub btree_opf: Oid,
-    pub btree_opintype: Oid,
-    pub hash_opf: Oid,
-    pub hash_opintype: Oid,
-    pub eq_opr: Oid,
-    pub lt_opr: Oid,
-    pub gt_opr: Oid,
-    pub cmp_proc: Oid,
-    pub hash_proc: Oid,
-    pub hash_extended_proc: Oid,
-    pub eq_opr_finfo: FmgrInfo,
-    pub cmp_proc_finfo: FmgrInfo,
-    pub hash_proc_finfo: FmgrInfo,
-    pub hash_extended_proc_finfo: FmgrInfo,
-    pub tupDesc: TupleDesc,
-    pub tupDesc_identifier: uint64,
-    pub rngelemtype: *mut TypeCacheEntry,
-    pub rng_collation: Oid,
-    pub rng_cmp_proc_finfo: FmgrInfo,
-    pub rng_canonical_finfo: FmgrInfo,
-    pub rng_subdiff_finfo: FmgrInfo,
-    pub rngtype: *mut TypeCacheEntry,
-    pub domainBaseType: Oid,
-    pub domainBaseTypmod: int32,
-    pub domainData: *mut DomainConstraintCache,
-    pub flags: ::core::ffi::c_int,
-    pub enumData: *mut TypeCacheEnumData,
-    pub nextDomain: *mut TypeCacheEntry,
-}
-impl Default for TypeCacheEntry {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DomainConstraintRef {
-    pub constraints: *mut List,
-    pub refctx: MemoryContext,
-    pub tcache: *mut TypeCacheEntry,
-    pub need_exprstate: bool,
-    pub dcc: *mut DomainConstraintCache,
-    pub callback: MemoryContextCallback,
-}
-impl Default for DomainConstraintRef {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct SharedRecordTypmodRegistry {
-    _unused: [u8; 0],
-}
 pub mod PLpgSQL_nsitem_type {
     pub type Type = ::core::ffi::c_uint;
     pub const PLPGSQL_NSTYPE_LABEL: Type = 0;
@@ -30564,7 +31838,7 @@ pub mod PLpgSQL_stmt_type {
     pub const PLPGSQL_STMT_COMMIT: Type = 25;
     pub const PLPGSQL_STMT_ROLLBACK: Type = 26;
 }
-pub mod _bindgen_ty_19 {
+pub mod _bindgen_ty_22 {
     pub type Type = ::core::ffi::c_uint;
     pub const PLPGSQL_RC_OK: Type = 0;
     pub const PLPGSQL_RC_EXIT: Type = 1;
@@ -31717,6 +32991,11 @@ pub mod IdentifierLookup {
     pub const IDENTIFIER_LOOKUP_EXPR: Type = 2;
 }
 #[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ClientSocket {
+    _unused: [u8; 0],
+}
+#[repr(C)]
 #[derive(Debug, Default)]
 pub struct PipeProtoHeader {
     pub nuls: [::core::ffi::c_char; 2usize],
@@ -31743,22 +33022,6 @@ pub mod DebugLogicalRepStreamingMode {
     pub type Type = ::core::ffi::c_uint;
     pub const DEBUG_LOGICAL_REP_STREAMING_BUFFERED: Type = 0;
     pub const DEBUG_LOGICAL_REP_STREAMING_IMMEDIATE: Type = 1;
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ReorderBufferTupleBuf {
-    pub node: slist_node,
-    pub tuple: HeapTupleData,
-    pub alloc_tuple_size: Size,
-}
-impl Default for ReorderBufferTupleBuf {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
 }
 pub mod ReorderBufferChangeType {
     pub type Type = ::core::ffi::c_uint;
@@ -31801,8 +33064,8 @@ pub union ReorderBufferChange__bindgen_ty_1 {
 pub struct ReorderBufferChange__bindgen_ty_1__bindgen_ty_1 {
     pub rlocator: RelFileLocator,
     pub clear_toast_afterwards: bool,
-    pub oldtuple: *mut ReorderBufferTupleBuf,
-    pub newtuple: *mut ReorderBufferTupleBuf,
+    pub oldtuple: HeapTuple,
+    pub newtuple: HeapTuple,
 }
 impl Default for ReorderBufferChange__bindgen_ty_1__bindgen_ty_1 {
     fn default() -> Self {
@@ -31930,6 +33193,7 @@ pub struct ReorderBufferTXN {
     pub invalidations: *mut SharedInvalidationMessage,
     pub node: dlist_node,
     pub catchange_node: dlist_node,
+    pub txn_node: pairingheap_node,
     pub size: Size,
     pub total_size: Size,
     pub concurrent_abort: bool,
@@ -32114,6 +33378,7 @@ pub struct ReorderBuffer {
     pub outbuf: *mut ::core::ffi::c_char,
     pub outbufsize: Size,
     pub size: Size,
+    pub txn_heap: *mut pairingheap,
     pub spillTxns: int64,
     pub spillCount: int64,
     pub spillBytes: int64,
@@ -32612,6 +33877,7 @@ impl Default for WalRcvExecResult {
 pub type walrcv_connect_fn = ::core::option::Option<
     unsafe extern "C" fn(
         conninfo: *const ::core::ffi::c_char,
+        replication: bool,
         logical: bool,
         must_use_password: bool,
         appname: *const ::core::ffi::c_char,
@@ -32636,6 +33902,9 @@ pub type walrcv_identify_system_fn = ::core::option::Option<
         conn: *mut WalReceiverConn,
         primary_tli: *mut TimeLineID,
     ) -> *mut ::core::ffi::c_char,
+>;
+pub type walrcv_get_dbname_from_conninfo_fn = ::core::option::Option<
+    unsafe extern "C" fn(conninfo: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char,
 >;
 pub type walrcv_server_version_fn =
     ::core::option::Option<unsafe extern "C" fn(conn: *mut WalReceiverConn) -> ::core::ffi::c_int>;
@@ -32674,9 +33943,17 @@ pub type walrcv_create_slot_fn = ::core::option::Option<
         slotname: *const ::core::ffi::c_char,
         temporary: bool,
         two_phase: bool,
+        failover: bool,
         snapshot_action: CRSSnapshotAction::Type,
         lsn: *mut XLogRecPtr,
     ) -> *mut ::core::ffi::c_char,
+>;
+pub type walrcv_alter_slot_fn = ::core::option::Option<
+    unsafe extern "C" fn(
+        conn: *mut WalReceiverConn,
+        slotname: *const ::core::ffi::c_char,
+        failover: bool,
+    ),
 >;
 pub type walrcv_get_backend_pid_fn =
     ::core::option::Option<unsafe extern "C" fn(conn: *mut WalReceiverConn) -> pid_t>;
@@ -32698,6 +33975,7 @@ pub struct WalReceiverFunctionsType {
     pub walrcv_get_conninfo: walrcv_get_conninfo_fn,
     pub walrcv_get_senderinfo: walrcv_get_senderinfo_fn,
     pub walrcv_identify_system: walrcv_identify_system_fn,
+    pub walrcv_get_dbname_from_conninfo: walrcv_get_dbname_from_conninfo_fn,
     pub walrcv_server_version: walrcv_server_version_fn,
     pub walrcv_readtimelinehistoryfile: walrcv_readtimelinehistoryfile_fn,
     pub walrcv_startstreaming: walrcv_startstreaming_fn,
@@ -32705,6 +33983,7 @@ pub struct WalReceiverFunctionsType {
     pub walrcv_receive: walrcv_receive_fn,
     pub walrcv_send: walrcv_send_fn,
     pub walrcv_create_slot: walrcv_create_slot_fn,
+    pub walrcv_alter_slot: walrcv_alter_slot_fn,
     pub walrcv_get_backend_pid: walrcv_get_backend_pid_fn,
     pub walrcv_exec: walrcv_exec_fn,
     pub walrcv_disconnect: walrcv_disconnect_fn,
@@ -32736,6 +34015,8 @@ pub struct ReplicationSlotPersistentData {
     pub two_phase_at: XLogRecPtr,
     pub two_phase: bool,
     pub plugin: NameData,
+    pub synced: ::core::ffi::c_char,
+    pub failover: bool,
 }
 impl Default for ReplicationSlotPersistentData {
     fn default() -> Self {
@@ -32763,6 +34044,8 @@ pub struct ReplicationSlot {
     pub candidate_xmin_lsn: XLogRecPtr,
     pub candidate_restart_valid: XLogRecPtr,
     pub candidate_restart_lsn: XLogRecPtr,
+    pub last_saved_confirmed_flush: XLogRecPtr,
+    pub inactive_since: TimestampTz,
 }
 impl Default for ReplicationSlot {
     fn default() -> Self {
@@ -32830,7 +34113,7 @@ pub struct LogicalDecodingContext {
     pub write_location: XLogRecPtr,
     pub write_xid: TransactionId,
     pub end_xact: bool,
-    pub in_create: bool,
+    pub processing_required: bool,
 }
 impl Default for LogicalDecodingContext {
     fn default() -> Self {
@@ -32980,6 +34263,7 @@ pub struct RunningTransactionsData {
     pub subxid_status: subxids_array_status::Type,
     pub nextXid: TransactionId,
     pub oldestRunningXid: TransactionId,
+    pub oldestDatabaseRunningXid: TransactionId,
     pub latestCompletedXid: TransactionId,
     pub xids: *mut TransactionId,
 }
@@ -33465,12 +34749,12 @@ pub type PushFunction = ::core::option::Option<
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct ParsedWord {
+    pub flags: uint16,
     pub len: uint16,
     pub nvariant: uint16,
+    pub alen: uint16,
     pub pos: ParsedWord__bindgen_ty_1,
-    pub flags: uint16,
     pub word: *mut ::core::ffi::c_char,
-    pub alen: uint32,
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -33667,6 +34951,12 @@ pub struct POLYGON {
 pub struct CIRCLE {
     pub center: Point,
     pub radius: float8,
+}
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct pg_prng_state {
+    pub s0: uint64,
+    pub s1: uint64,
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -33935,6 +35225,78 @@ impl Default for AttStatsSlot {
 }
 pub type get_attavgwidth_hook_type =
     ::core::option::Option<unsafe extern "C" fn(relid: Oid, attnum: AttrNumber) -> int32>;
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct BlockSamplerData {
+    pub N: BlockNumber,
+    pub n: ::core::ffi::c_int,
+    pub t: BlockNumber,
+    pub m: ::core::ffi::c_int,
+    pub randstate: pg_prng_state,
+}
+pub type BlockSampler = *mut BlockSamplerData;
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct ReservoirStateData {
+    pub W: f64,
+    pub randstate: pg_prng_state,
+}
+pub type ReservoirState = *mut ReservoirStateData;
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct EstimationInfo {
+    pub flags: uint32,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct VariableStatData {
+    pub var: *mut Node,
+    pub rel: *mut RelOptInfo,
+    pub statsTuple: HeapTuple,
+    pub freefunc: ::core::option::Option<unsafe extern "C" fn(tuple: HeapTuple)>,
+    pub vartype: Oid,
+    pub atttype: Oid,
+    pub atttypmod: int32,
+    pub isunique: bool,
+    pub acl_ok: bool,
+}
+impl Default for VariableStatData {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct GenericCosts {
+    pub indexStartupCost: Cost,
+    pub indexTotalCost: Cost,
+    pub indexSelectivity: Selectivity,
+    pub indexCorrelation: f64,
+    pub numIndexPages: f64,
+    pub numIndexTuples: f64,
+    pub spc_random_page_cost: f64,
+    pub num_sa_scans: f64,
+}
+pub type get_relation_stats_hook_type = ::core::option::Option<
+    unsafe extern "C" fn(
+        root: *mut PlannerInfo,
+        rte: *mut RangeTblEntry,
+        attnum: AttrNumber,
+        vardata: *mut VariableStatData,
+    ) -> bool,
+>;
+pub type get_index_stats_hook_type = ::core::option::Option<
+    unsafe extern "C" fn(
+        root: *mut PlannerInfo,
+        indexOid: Oid,
+        indexattnum: AttrNumber,
+        vardata: *mut VariableStatData,
+    ) -> bool,
+>;
 pub type CCHashFN = ::core::option::Option<unsafe extern "C" fn(datum: Datum) -> uint32>;
 pub type CCFastEqualFN = ::core::option::Option<unsafe extern "C" fn(a: Datum, b: Datum) -> bool>;
 #[repr(C)]
@@ -33947,18 +35309,17 @@ pub struct catcache {
     pub cc_hashfunc: [CCHashFN; 4usize],
     pub cc_fastequal: [CCFastEqualFN; 4usize],
     pub cc_keyno: [::core::ffi::c_int; 4usize],
-    pub cc_lists: dlist_head,
-    pub cc_ntup: ::core::ffi::c_int,
     pub cc_nkeys: ::core::ffi::c_int,
+    pub cc_ntup: ::core::ffi::c_int,
+    pub cc_nlist: ::core::ffi::c_int,
+    pub cc_nlbuckets: ::core::ffi::c_int,
+    pub cc_lbucket: *mut dlist_head,
     pub cc_relname: *const ::core::ffi::c_char,
     pub cc_reloid: Oid,
     pub cc_indexoid: Oid,
     pub cc_relisshared: bool,
     pub cc_next: slist_node,
     pub cc_skey: [ScanKeyData; 4usize],
-    pub cc_nlist: ::core::ffi::c_int,
-    pub cc_nlbuckets: ::core::ffi::c_int,
-    pub cc_lbucket: *mut dlist_head,
 }
 impl Default for catcache {
     fn default() -> Self {
@@ -34035,84 +35396,6 @@ impl Default for catcacheheader {
     }
 }
 pub type CatCacheHeader = catcacheheader;
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct pg_prng_state {
-    pub s0: uint64,
-    pub s1: uint64,
-}
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct BlockSamplerData {
-    pub N: BlockNumber,
-    pub n: ::core::ffi::c_int,
-    pub t: BlockNumber,
-    pub m: ::core::ffi::c_int,
-    pub randstate: pg_prng_state,
-}
-pub type BlockSampler = *mut BlockSamplerData;
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct ReservoirStateData {
-    pub W: f64,
-    pub randstate: pg_prng_state,
-}
-pub type ReservoirState = *mut ReservoirStateData;
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct EstimationInfo {
-    pub flags: uint32,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct VariableStatData {
-    pub var: *mut Node,
-    pub rel: *mut RelOptInfo,
-    pub statsTuple: HeapTuple,
-    pub freefunc: ::core::option::Option<unsafe extern "C" fn(tuple: HeapTuple)>,
-    pub vartype: Oid,
-    pub atttype: Oid,
-    pub atttypmod: int32,
-    pub isunique: bool,
-    pub acl_ok: bool,
-}
-impl Default for VariableStatData {
-    fn default() -> Self {
-        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct GenericCosts {
-    pub indexStartupCost: Cost,
-    pub indexTotalCost: Cost,
-    pub indexSelectivity: Selectivity,
-    pub indexCorrelation: f64,
-    pub numIndexPages: f64,
-    pub numIndexTuples: f64,
-    pub spc_random_page_cost: f64,
-    pub num_sa_scans: f64,
-}
-pub type get_relation_stats_hook_type = ::core::option::Option<
-    unsafe extern "C" fn(
-        root: *mut PlannerInfo,
-        rte: *mut RangeTblEntry,
-        attnum: AttrNumber,
-        vardata: *mut VariableStatData,
-    ) -> bool,
->;
-pub type get_index_stats_hook_type = ::core::option::Option<
-    unsafe extern "C" fn(
-        root: *mut PlannerInfo,
-        indexOid: Oid,
-        indexattnum: AttrNumber,
-        vardata: *mut VariableStatData,
-    ) -> bool,
->;
 pub mod SysCacheIdentifier {
     pub type Type = ::core::ffi::c_uint;
     pub const AGGFNOID: Type = 0;
@@ -34312,11 +35595,6 @@ pub type __uint128_t = u128;
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub struct _MdfdVec {
-    pub _address: u8,
-}
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct ResourceOwnerData {
     pub _address: u8,
 }
 #[repr(C)]
@@ -35253,11 +36531,7 @@ extern "C" {
         versionstr: *const ::core::ffi::c_char,
         retpath: *mut ::core::ffi::c_char,
     ) -> ::core::ffi::c_int;
-    pub fn pipe_read_line(
-        cmd: *mut ::core::ffi::c_char,
-        line: *mut ::core::ffi::c_char,
-        maxsize: ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_char;
+    pub fn pipe_read_line(cmd: *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     pub fn pg_usleep(microsec: ::core::ffi::c_long);
     pub fn pg_strcasecmp(
         s1: *const ::core::ffi::c_char,
@@ -35858,6 +37132,7 @@ extern "C" {
         datalen: ::core::ffi::c_int,
     );
     pub fn enlargeStringInfo(str_: StringInfo, needed: ::core::ffi::c_int);
+    pub fn destroyStringInfo(str_: StringInfo);
     pub fn message_level_is_interesting(elevel: ::core::ffi::c_int) -> bool;
     pub fn errstart_cold(elevel: ::core::ffi::c_int, domain: *const ::core::ffi::c_char) -> bool;
     pub fn errcode_for_file_access() -> ::core::ffi::c_int;
@@ -35901,6 +37176,7 @@ extern "C" {
         str_: *const ::core::ffi::c_char,
     ) -> ::core::ffi::c_int;
     pub fn geterrcode() -> ::core::ffi::c_int;
+    pub fn geterrlevel() -> ::core::ffi::c_int;
     pub fn geterrposition() -> ::core::ffi::c_int;
     pub fn getinternalerrposition() -> ::core::ffi::c_int;
     pub fn errsave_start(context: *mut Node, domain: *const ::core::ffi::c_char) -> bool;
@@ -35953,14 +37229,9 @@ extern "C" {
     pub fn write_csvlog(edata: *mut ErrorData);
     pub fn write_jsonlog(edata: *mut ErrorData);
     pub fn write_stderr(fmt: *const ::core::ffi::c_char, ...);
-    pub fn write_stderr_signal_safe(fmt: *const ::core::ffi::c_char);
     pub static mut CurrentMemoryContext: MemoryContext;
     pub fn MemoryContextAlloc(context: MemoryContext, size: Size) -> *mut ::core::ffi::c_void;
     pub fn MemoryContextAllocZero(context: MemoryContext, size: Size) -> *mut ::core::ffi::c_void;
-    pub fn MemoryContextAllocZeroAligned(
-        context: MemoryContext,
-        size: Size,
-    ) -> *mut ::core::ffi::c_void;
     pub fn MemoryContextAllocExtended(
         context: MemoryContext,
         size: Size,
@@ -36018,6 +37289,7 @@ extern "C" {
         typbyval: bool,
     );
     pub fn nodeToString(obj: *const ::core::ffi::c_void) -> *mut ::core::ffi::c_char;
+    pub fn nodeToStringWithLocations(obj: *const ::core::ffi::c_void) -> *mut ::core::ffi::c_char;
     pub fn bmsToString(bms: *const Bitmapset) -> *mut ::core::ffi::c_char;
     pub fn stringToNode(str_: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_void;
     pub fn readBitmapset() -> *mut Bitmapset;
@@ -36129,7 +37401,8 @@ extern "C" {
     pub fn IncrTupleDescRefCount(tupdesc: TupleDesc);
     pub fn DecrTupleDescRefCount(tupdesc: TupleDesc);
     pub fn equalTupleDescs(tupdesc1: TupleDesc, tupdesc2: TupleDesc) -> bool;
-    pub fn hashTupleDesc(desc: TupleDesc) -> uint32;
+    pub fn equalRowTypes(tupdesc1: TupleDesc, tupdesc2: TupleDesc) -> bool;
+    pub fn hashRowType(desc: TupleDesc) -> uint32;
     pub fn TupleDescInitEntry(
         desc: TupleDesc,
         attributeNumber: AttrNumber,
@@ -36151,13 +37424,13 @@ extern "C" {
         attributeNumber: AttrNumber,
         collationid: Oid,
     );
-    pub fn BuildDescForRelation(schema: *mut List) -> TupleDesc;
     pub fn BuildDescFromLists(
-        names: *mut List,
-        types: *mut List,
-        typmods: *mut List,
-        collations: *mut List,
+        names: *const List,
+        types: *const List,
+        typmods: *const List,
+        collations: *const List,
     ) -> TupleDesc;
+    pub fn TupleDescGetDefault(tupdesc: TupleDesc, attnum: AttrNumber) -> *mut Node;
     pub fn make_attrmap(maplen: ::core::ffi::c_int) -> *mut AttrMap;
     pub fn free_attrmap(map: *mut AttrMap);
     pub fn build_attrmap_by_name(
@@ -36217,7 +37490,7 @@ extern "C" {
         __len: off_t,
     ) -> ::core::ffi::c_int;
     pub fn TransactionStartedDuringRecovery() -> bool;
-    pub static mut ShmemVariableCache: VariableCache;
+    pub static mut TransamVariables: *mut TransamVariablesData;
     pub fn TransactionIdDidCommit(transactionId: TransactionId) -> bool;
     pub fn TransactionIdDidAbort(transactionId: TransactionId) -> bool;
     pub fn TransactionIdCommitTree(
@@ -36246,6 +37519,8 @@ extern "C" {
         xids: *const TransactionId,
     ) -> TransactionId;
     pub fn TransactionIdGetCommitLSN(xid: TransactionId) -> XLogRecPtr;
+    pub fn VarsupShmemSize() -> Size;
+    pub fn VarsupShmemInit();
     pub fn GetNewTransactionId(isSubXact: bool) -> FullTransactionId;
     pub fn AdvanceNextFullTransactionIdPastXid(xid: TransactionId);
     pub fn ReadNextFullTransactionId() -> FullTransactionId;
@@ -36290,13 +37565,13 @@ extern "C" {
     pub fn PageSetChecksumInplace(page: Page, blkno: BlockNumber);
     pub fn heap_compute_data_size(
         tupleDesc: TupleDesc,
-        values: *mut Datum,
-        isnull: *mut bool,
+        values: *const Datum,
+        isnull: *const bool,
     ) -> Size;
     pub fn heap_fill_tuple(
         tupleDesc: TupleDesc,
-        values: *mut Datum,
-        isnull: *mut bool,
+        values: *const Datum,
+        isnull: *const bool,
         data: *mut ::core::ffi::c_char,
         data_size: Size,
         infomask: *mut uint16,
@@ -36325,23 +37600,23 @@ extern "C" {
     pub fn heap_copy_tuple_as_datum(tuple: HeapTuple, tupleDesc: TupleDesc) -> Datum;
     pub fn heap_form_tuple(
         tupleDescriptor: TupleDesc,
-        values: *mut Datum,
-        isnull: *mut bool,
+        values: *const Datum,
+        isnull: *const bool,
     ) -> HeapTuple;
     pub fn heap_modify_tuple(
         tuple: HeapTuple,
         tupleDesc: TupleDesc,
-        replValues: *mut Datum,
-        replIsnull: *mut bool,
-        doReplace: *mut bool,
+        replValues: *const Datum,
+        replIsnull: *const bool,
+        doReplace: *const bool,
     ) -> HeapTuple;
     pub fn heap_modify_tuple_by_cols(
         tuple: HeapTuple,
         tupleDesc: TupleDesc,
         nCols: ::core::ffi::c_int,
-        replCols: *mut ::core::ffi::c_int,
-        replValues: *mut Datum,
-        replIsnull: *mut bool,
+        replCols: *const ::core::ffi::c_int,
+        replValues: *const Datum,
+        replIsnull: *const bool,
     ) -> HeapTuple;
     pub fn heap_deform_tuple(
         tuple: HeapTuple,
@@ -36352,8 +37627,8 @@ extern "C" {
     pub fn heap_freetuple(htup: HeapTuple);
     pub fn heap_form_minimal_tuple(
         tupleDescriptor: TupleDesc,
-        values: *mut Datum,
-        isnull: *mut bool,
+        values: *const Datum,
+        isnull: *const bool,
     ) -> MinimalTuple;
     pub fn heap_free_minimal_tuple(mtup: MinimalTuple);
     pub fn heap_copy_minimal_tuple(mtup: MinimalTuple) -> MinimalTuple;
@@ -36448,6 +37723,7 @@ extern "C" {
     pub fn bms_add_member(a: *mut Bitmapset, x: ::core::ffi::c_int) -> *mut Bitmapset;
     pub fn bms_del_member(a: *mut Bitmapset, x: ::core::ffi::c_int) -> *mut Bitmapset;
     pub fn bms_add_members(a: *mut Bitmapset, b: *const Bitmapset) -> *mut Bitmapset;
+    pub fn bms_replace_members(a: *mut Bitmapset, b: *const Bitmapset) -> *mut Bitmapset;
     pub fn bms_add_range(
         a: *mut Bitmapset,
         lower: ::core::ffi::c_int,
@@ -36953,14 +38229,9 @@ extern "C" {
         dbOid: Oid,
         spcOid: Oid,
         relNumber: RelFileNumber,
-        backendId: ::core::ffi::c_int,
+        procNumber: ::core::ffi::c_int,
         forkNumber: ForkNumber::Type,
     ) -> *mut ::core::ffi::c_char;
-    pub fn makeInteger(i: ::core::ffi::c_int) -> *mut Integer;
-    pub fn makeFloat(numericStr: *mut ::core::ffi::c_char) -> *mut Float;
-    pub fn makeBoolean(val: bool) -> *mut Boolean;
-    pub fn makeString(str_: *mut ::core::ffi::c_char) -> *mut String;
-    pub fn makeBitString(str_: *mut ::core::ffi::c_char) -> *mut BitString;
     pub static mut dynamic_shared_memory_type: ::core::ffi::c_int;
     pub static mut min_dynamic_shared_memory: ::core::ffi::c_int;
     pub fn dsm_impl_op(
@@ -37002,12 +38273,18 @@ extern "C" {
         arg: Datum,
     );
     pub fn reset_on_dsm_detach();
-    pub fn dsa_create(tranche_id: ::core::ffi::c_int) -> *mut dsa_area;
-    pub fn dsa_create_in_place(
+    pub fn dsa_create_ext(
+        tranche_id: ::core::ffi::c_int,
+        init_segment_size: usize,
+        max_segment_size: usize,
+    ) -> *mut dsa_area;
+    pub fn dsa_create_in_place_ext(
         place: *mut ::core::ffi::c_void,
         size: usize,
         tranche_id: ::core::ffi::c_int,
         segment: *mut dsm_segment,
+        init_segment_size: usize,
+        max_segment_size: usize,
     ) -> *mut dsa_area;
     pub fn dsa_attach(handle: dsa_handle) -> *mut dsa_area;
     pub fn dsa_attach_in_place(
@@ -37031,6 +38308,7 @@ extern "C" {
     ) -> dsa_pointer;
     pub fn dsa_free(area: *mut dsa_area, dp: dsa_pointer);
     pub fn dsa_get_address(area: *mut dsa_area, dp: dsa_pointer) -> *mut ::core::ffi::c_void;
+    pub fn dsa_get_total_size(area: *mut dsa_area) -> usize;
     pub fn dsa_trim(area: *mut dsa_area);
     pub fn dsa_dump(area: *mut dsa_area);
     pub fn tbm_create(maxbytes: ::core::ffi::c_long, dsa: *mut dsa_area) -> *mut TIDBitmap;
@@ -37055,7 +38333,8 @@ extern "C" {
     pub fn tbm_attach_shared_iterate(dsa: *mut dsa_area, dp: dsa_pointer)
         -> *mut TBMSharedIterator;
     pub fn tbm_calculate_entries(maxbytes: f64) -> ::core::ffi::c_long;
-    pub static mut dummy_spinlock: slock_t;
+    pub static mut MyProcNumber: ProcNumber;
+    pub static mut ParallelLeaderProcNumber: ProcNumber;
     pub fn s_lock(
         lock: *mut slock_t,
         file: *const ::core::ffi::c_char,
@@ -37129,6 +38408,264 @@ extern "C" {
         name: *const ::core::ffi::c_char,
     ) -> EphemeralNamedRelation;
     pub fn ENRMetadataGetTupDesc(enrmd: EphemeralNamedRelationMetadata) -> TupleDesc;
+    pub fn readv(
+        __fd: ::core::ffi::c_int,
+        __iovec: *const iovec,
+        __count: ::core::ffi::c_int,
+    ) -> isize;
+    pub fn writev(
+        __fd: ::core::ffi::c_int,
+        __iovec: *const iovec,
+        __count: ::core::ffi::c_int,
+    ) -> isize;
+    pub fn preadv(
+        __fd: ::core::ffi::c_int,
+        __iovec: *const iovec,
+        __count: ::core::ffi::c_int,
+        __offset: __off_t,
+    ) -> isize;
+    pub fn pwritev(
+        __fd: ::core::ffi::c_int,
+        __iovec: *const iovec,
+        __count: ::core::ffi::c_int,
+        __offset: __off_t,
+    ) -> isize;
+    pub fn access(
+        __name: *const ::core::ffi::c_char,
+        __type: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+    pub fn faccessat(
+        __fd: ::core::ffi::c_int,
+        __file: *const ::core::ffi::c_char,
+        __type: ::core::ffi::c_int,
+        __flag: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+    pub fn lseek(
+        __fd: ::core::ffi::c_int,
+        __offset: __off_t,
+        __whence: ::core::ffi::c_int,
+    ) -> __off_t;
+    pub fn close(__fd: ::core::ffi::c_int) -> ::core::ffi::c_int;
+    pub fn closefrom(__lowfd: ::core::ffi::c_int);
+    pub fn read(
+        __fd: ::core::ffi::c_int,
+        __buf: *mut ::core::ffi::c_void,
+        __nbytes: usize,
+    ) -> isize;
+    pub fn write(__fd: ::core::ffi::c_int, __buf: *const ::core::ffi::c_void, __n: usize) -> isize;
+    pub fn pread(
+        __fd: ::core::ffi::c_int,
+        __buf: *mut ::core::ffi::c_void,
+        __nbytes: usize,
+        __offset: __off_t,
+    ) -> isize;
+    pub fn pwrite(
+        __fd: ::core::ffi::c_int,
+        __buf: *const ::core::ffi::c_void,
+        __n: usize,
+        __offset: __off_t,
+    ) -> isize;
+    pub fn pipe(__pipedes: *mut ::core::ffi::c_int) -> ::core::ffi::c_int;
+    pub fn alarm(__seconds: ::core::ffi::c_uint) -> ::core::ffi::c_uint;
+    pub fn sleep(__seconds: ::core::ffi::c_uint) -> ::core::ffi::c_uint;
+    pub fn ualarm(__value: __useconds_t, __interval: __useconds_t) -> __useconds_t;
+    pub fn usleep(__useconds: __useconds_t) -> ::core::ffi::c_int;
+    pub fn pause() -> ::core::ffi::c_int;
+    pub fn chown(
+        __file: *const ::core::ffi::c_char,
+        __owner: __uid_t,
+        __group: __gid_t,
+    ) -> ::core::ffi::c_int;
+    pub fn fchown(
+        __fd: ::core::ffi::c_int,
+        __owner: __uid_t,
+        __group: __gid_t,
+    ) -> ::core::ffi::c_int;
+    pub fn lchown(
+        __file: *const ::core::ffi::c_char,
+        __owner: __uid_t,
+        __group: __gid_t,
+    ) -> ::core::ffi::c_int;
+    pub fn fchownat(
+        __fd: ::core::ffi::c_int,
+        __file: *const ::core::ffi::c_char,
+        __owner: __uid_t,
+        __group: __gid_t,
+        __flag: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+    pub fn chdir(__path: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    pub fn fchdir(__fd: ::core::ffi::c_int) -> ::core::ffi::c_int;
+    pub fn getcwd(__buf: *mut ::core::ffi::c_char, __size: usize) -> *mut ::core::ffi::c_char;
+    pub fn getwd(__buf: *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    pub fn dup(__fd: ::core::ffi::c_int) -> ::core::ffi::c_int;
+    pub fn dup2(__fd: ::core::ffi::c_int, __fd2: ::core::ffi::c_int) -> ::core::ffi::c_int;
+    pub static mut __environ: *mut *mut ::core::ffi::c_char;
+    pub fn execve(
+        __path: *const ::core::ffi::c_char,
+        __argv: *const *mut ::core::ffi::c_char,
+        __envp: *const *mut ::core::ffi::c_char,
+    ) -> ::core::ffi::c_int;
+    pub fn fexecve(
+        __fd: ::core::ffi::c_int,
+        __argv: *const *mut ::core::ffi::c_char,
+        __envp: *const *mut ::core::ffi::c_char,
+    ) -> ::core::ffi::c_int;
+    pub fn execv(
+        __path: *const ::core::ffi::c_char,
+        __argv: *const *mut ::core::ffi::c_char,
+    ) -> ::core::ffi::c_int;
+    pub fn execle(
+        __path: *const ::core::ffi::c_char,
+        __arg: *const ::core::ffi::c_char,
+        ...
+    ) -> ::core::ffi::c_int;
+    pub fn execl(
+        __path: *const ::core::ffi::c_char,
+        __arg: *const ::core::ffi::c_char,
+        ...
+    ) -> ::core::ffi::c_int;
+    pub fn execvp(
+        __file: *const ::core::ffi::c_char,
+        __argv: *const *mut ::core::ffi::c_char,
+    ) -> ::core::ffi::c_int;
+    pub fn execlp(
+        __file: *const ::core::ffi::c_char,
+        __arg: *const ::core::ffi::c_char,
+        ...
+    ) -> ::core::ffi::c_int;
+    pub fn nice(__inc: ::core::ffi::c_int) -> ::core::ffi::c_int;
+    pub fn _exit(__status: ::core::ffi::c_int) -> !;
+    pub fn pathconf(
+        __path: *const ::core::ffi::c_char,
+        __name: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_long;
+    pub fn fpathconf(__fd: ::core::ffi::c_int, __name: ::core::ffi::c_int) -> ::core::ffi::c_long;
+    pub fn sysconf(__name: ::core::ffi::c_int) -> ::core::ffi::c_long;
+    pub fn confstr(
+        __name: ::core::ffi::c_int,
+        __buf: *mut ::core::ffi::c_char,
+        __len: usize,
+    ) -> usize;
+    pub fn getpid() -> __pid_t;
+    pub fn getppid() -> __pid_t;
+    pub fn getpgrp() -> __pid_t;
+    pub fn __getpgid(__pid: __pid_t) -> __pid_t;
+    pub fn getpgid(__pid: __pid_t) -> __pid_t;
+    pub fn setpgid(__pid: __pid_t, __pgid: __pid_t) -> ::core::ffi::c_int;
+    pub fn setpgrp() -> ::core::ffi::c_int;
+    pub fn setsid() -> __pid_t;
+    pub fn getsid(__pid: __pid_t) -> __pid_t;
+    pub fn getuid() -> __uid_t;
+    pub fn geteuid() -> __uid_t;
+    pub fn getgid() -> __gid_t;
+    pub fn getegid() -> __gid_t;
+    pub fn getgroups(__size: ::core::ffi::c_int, __list: *mut __gid_t) -> ::core::ffi::c_int;
+    pub fn setuid(__uid: __uid_t) -> ::core::ffi::c_int;
+    pub fn setreuid(__ruid: __uid_t, __euid: __uid_t) -> ::core::ffi::c_int;
+    pub fn seteuid(__uid: __uid_t) -> ::core::ffi::c_int;
+    pub fn setgid(__gid: __gid_t) -> ::core::ffi::c_int;
+    pub fn setregid(__rgid: __gid_t, __egid: __gid_t) -> ::core::ffi::c_int;
+    pub fn setegid(__gid: __gid_t) -> ::core::ffi::c_int;
+    pub fn fork() -> __pid_t;
+    pub fn ttyname(__fd: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
+    pub fn ttyname_r(
+        __fd: ::core::ffi::c_int,
+        __buf: *mut ::core::ffi::c_char,
+        __buflen: usize,
+    ) -> ::core::ffi::c_int;
+    pub fn isatty(__fd: ::core::ffi::c_int) -> ::core::ffi::c_int;
+    pub fn ttyslot() -> ::core::ffi::c_int;
+    pub fn link(
+        __from: *const ::core::ffi::c_char,
+        __to: *const ::core::ffi::c_char,
+    ) -> ::core::ffi::c_int;
+    pub fn linkat(
+        __fromfd: ::core::ffi::c_int,
+        __from: *const ::core::ffi::c_char,
+        __tofd: ::core::ffi::c_int,
+        __to: *const ::core::ffi::c_char,
+        __flags: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+    pub fn symlink(
+        __from: *const ::core::ffi::c_char,
+        __to: *const ::core::ffi::c_char,
+    ) -> ::core::ffi::c_int;
+    pub fn readlink(
+        __path: *const ::core::ffi::c_char,
+        __buf: *mut ::core::ffi::c_char,
+        __len: usize,
+    ) -> isize;
+    pub fn symlinkat(
+        __from: *const ::core::ffi::c_char,
+        __tofd: ::core::ffi::c_int,
+        __to: *const ::core::ffi::c_char,
+    ) -> ::core::ffi::c_int;
+    pub fn readlinkat(
+        __fd: ::core::ffi::c_int,
+        __path: *const ::core::ffi::c_char,
+        __buf: *mut ::core::ffi::c_char,
+        __len: usize,
+    ) -> isize;
+    pub fn unlink(__name: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    pub fn unlinkat(
+        __fd: ::core::ffi::c_int,
+        __name: *const ::core::ffi::c_char,
+        __flag: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+    pub fn rmdir(__path: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    pub fn tcgetpgrp(__fd: ::core::ffi::c_int) -> __pid_t;
+    pub fn tcsetpgrp(__fd: ::core::ffi::c_int, __pgrp_id: __pid_t) -> ::core::ffi::c_int;
+    pub fn getlogin() -> *mut ::core::ffi::c_char;
+    pub fn getlogin_r(__name: *mut ::core::ffi::c_char, __name_len: usize) -> ::core::ffi::c_int;
+    pub fn setlogin(__name: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    pub static mut optarg: *mut ::core::ffi::c_char;
+    pub static mut optind: ::core::ffi::c_int;
+    pub static mut opterr: ::core::ffi::c_int;
+    pub static mut optopt: ::core::ffi::c_int;
+    pub fn getopt(
+        ___argc: ::core::ffi::c_int,
+        ___argv: *const *mut ::core::ffi::c_char,
+        __shortopts: *const ::core::ffi::c_char,
+    ) -> ::core::ffi::c_int;
+    pub fn gethostname(__name: *mut ::core::ffi::c_char, __len: usize) -> ::core::ffi::c_int;
+    pub fn sethostname(__name: *const ::core::ffi::c_char, __len: usize) -> ::core::ffi::c_int;
+    pub fn sethostid(__id: ::core::ffi::c_long) -> ::core::ffi::c_int;
+    pub fn getdomainname(__name: *mut ::core::ffi::c_char, __len: usize) -> ::core::ffi::c_int;
+    pub fn setdomainname(__name: *const ::core::ffi::c_char, __len: usize) -> ::core::ffi::c_int;
+    pub fn vhangup() -> ::core::ffi::c_int;
+    pub fn revoke(__file: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    pub fn profil(
+        __sample_buffer: *mut ::core::ffi::c_ushort,
+        __size: usize,
+        __offset: usize,
+        __scale: ::core::ffi::c_uint,
+    ) -> ::core::ffi::c_int;
+    pub fn acct(__name: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    pub fn getusershell() -> *mut ::core::ffi::c_char;
+    pub fn endusershell();
+    pub fn setusershell();
+    pub fn daemon(
+        __nochdir: ::core::ffi::c_int,
+        __noclose: ::core::ffi::c_int,
+    ) -> ::core::ffi::c_int;
+    pub fn chroot(__path: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    pub fn getpass(__prompt: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    pub fn fsync(__fd: ::core::ffi::c_int) -> ::core::ffi::c_int;
+    pub fn gethostid() -> ::core::ffi::c_long;
+    pub fn sync();
+    pub fn getpagesize() -> ::core::ffi::c_int;
+    pub fn getdtablesize() -> ::core::ffi::c_int;
+    pub fn truncate(__file: *const ::core::ffi::c_char, __length: __off_t) -> ::core::ffi::c_int;
+    pub fn ftruncate(__fd: ::core::ffi::c_int, __length: __off_t) -> ::core::ffi::c_int;
+    pub fn brk(__addr: *mut ::core::ffi::c_void) -> ::core::ffi::c_int;
+    pub fn sbrk(__delta: isize) -> *mut ::core::ffi::c_void;
+    pub fn syscall(__sysno: ::core::ffi::c_long, ...) -> ::core::ffi::c_long;
+    pub fn fdatasync(__fildes: ::core::ffi::c_int) -> ::core::ffi::c_int;
+    pub fn crypt(
+        __key: *const ::core::ffi::c_char,
+        __salt: *const ::core::ffi::c_char,
+    ) -> *mut ::core::ffi::c_char;
+    pub fn getentropy(__buffer: *mut ::core::ffi::c_void, __length: usize) -> ::core::ffi::c_int;
     pub fn closedir(__dirp: *mut DIR) -> ::core::ffi::c_int;
     pub fn opendir(__name: *const ::core::ffi::c_char) -> *mut DIR;
     pub fn fdopendir(__fd: ::core::ffi::c_int) -> *mut DIR;
@@ -37184,20 +38721,20 @@ extern "C" {
         amount: off_t,
         wait_event_info: uint32,
     ) -> ::core::ffi::c_int;
-    pub fn FileRead(
+    pub fn FileReadV(
         file: File,
-        buffer: *mut ::core::ffi::c_void,
-        amount: usize,
+        iov: *const iovec,
+        iovcnt: ::core::ffi::c_int,
         offset: off_t,
         wait_event_info: uint32,
-    ) -> ::core::ffi::c_int;
-    pub fn FileWrite(
+    ) -> isize;
+    pub fn FileWriteV(
         file: File,
-        buffer: *const ::core::ffi::c_void,
-        amount: usize,
+        iov: *const iovec,
+        iovcnt: ::core::ffi::c_int,
         offset: off_t,
         wait_event_info: uint32,
-    ) -> ::core::ffi::c_int;
+    ) -> isize;
     pub fn FileSync(file: File, wait_event_info: uint32) -> ::core::ffi::c_int;
     pub fn FileZero(
         file: File,
@@ -37305,6 +38842,7 @@ extern "C" {
     pub fn pg_fsync_no_writethrough(fd: ::core::ffi::c_int) -> ::core::ffi::c_int;
     pub fn pg_fsync_writethrough(fd: ::core::ffi::c_int) -> ::core::ffi::c_int;
     pub fn pg_fdatasync(fd: ::core::ffi::c_int) -> ::core::ffi::c_int;
+    pub fn pg_file_exists(name: *const ::core::ffi::c_char) -> bool;
     pub fn pg_flush_data(fd: ::core::ffi::c_int, offset: off_t, nbytes: off_t);
     pub fn pg_truncate(path: *const ::core::ffi::c_char, length: off_t) -> ::core::ffi::c_int;
     pub fn fsync_fname(fname: *const ::core::ffi::c_char, isdir: bool);
@@ -37379,7 +38917,6 @@ extern "C" {
     pub fn RelationGetIndexExpressions(relation: Relation) -> *mut List;
     pub fn RelationGetDummyIndexExpressions(relation: Relation) -> *mut List;
     pub fn RelationGetIndexPredicate(relation: Relation) -> *mut List;
-    pub fn RelationGetIndexRawAttOptions(indexrel: Relation) -> *mut Datum;
     pub fn RelationGetIndexAttOptions(relation: Relation, copy: bool) -> *mut *mut bytea;
     pub fn RelationGetIndexAttrBitmap(
         relation: Relation,
@@ -37426,7 +38963,6 @@ extern "C" {
     pub fn RelationForgetRelation(rid: Oid);
     pub fn RelationCacheInvalidateEntry(relationId: Oid);
     pub fn RelationCacheInvalidate(debug_discard: bool);
-    pub fn RelationCloseSmgrByOid(relationId: Oid);
     pub fn AtEOXact_RelationCache(isCommit: bool);
     pub fn AtEOSubXact_RelationCache(
         isCommit: bool,
@@ -37446,15 +38982,280 @@ extern "C" {
     pub fn PrepareSortSupportFromOrderingOp(orderingOp: Oid, ssup: SortSupport);
     pub fn PrepareSortSupportFromIndexRel(indexRel: Relation, strategy: int16, ssup: SortSupport);
     pub fn PrepareSortSupportFromGistIndexRel(indexRel: Relation, ssup: SortSupport);
-    pub fn index_form_tuple(
-        tupleDescriptor: TupleDesc,
+    pub fn ScanKeyInit(
+        entry: ScanKey,
+        attributeNumber: AttrNumber,
+        strategy: StrategyNumber,
+        procedure: RegProcedure,
+        argument: Datum,
+    );
+    pub fn ScanKeyEntryInitialize(
+        entry: ScanKey,
+        flags: ::core::ffi::c_int,
+        attributeNumber: AttrNumber,
+        strategy: StrategyNumber,
+        subtype: Oid,
+        collation: Oid,
+        procedure: RegProcedure,
+        argument: Datum,
+    );
+    pub fn ScanKeyEntryInitializeWithInfo(
+        entry: ScanKey,
+        flags: ::core::ffi::c_int,
+        attributeNumber: AttrNumber,
+        strategy: StrategyNumber,
+        subtype: Oid,
+        collation: Oid,
+        finfo: *mut FmgrInfo,
+        argument: Datum,
+    );
+    pub fn index_open(relationId: Oid, lockmode: LOCKMODE) -> Relation;
+    pub fn try_index_open(relationId: Oid, lockmode: LOCKMODE) -> Relation;
+    pub fn index_close(relation: Relation, lockmode: LOCKMODE);
+    pub fn index_insert(
+        indexRelation: Relation,
         values: *mut Datum,
         isnull: *mut bool,
+        heap_t_ctid: ItemPointer,
+        heapRelation: Relation,
+        checkUnique: IndexUniqueCheck::Type,
+        indexUnchanged: bool,
+        indexInfo: *mut IndexInfo,
+    ) -> bool;
+    pub fn index_insert_cleanup(indexRelation: Relation, indexInfo: *mut IndexInfo);
+    pub fn index_beginscan(
+        heapRelation: Relation,
+        indexRelation: Relation,
+        snapshot: Snapshot,
+        nkeys: ::core::ffi::c_int,
+        norderbys: ::core::ffi::c_int,
+    ) -> IndexScanDesc;
+    pub fn index_beginscan_bitmap(
+        indexRelation: Relation,
+        snapshot: Snapshot,
+        nkeys: ::core::ffi::c_int,
+    ) -> IndexScanDesc;
+    pub fn index_rescan(
+        scan: IndexScanDesc,
+        keys: ScanKey,
+        nkeys: ::core::ffi::c_int,
+        orderbys: ScanKey,
+        norderbys: ::core::ffi::c_int,
+    );
+    pub fn index_endscan(scan: IndexScanDesc);
+    pub fn index_markpos(scan: IndexScanDesc);
+    pub fn index_restrpos(scan: IndexScanDesc);
+    pub fn index_parallelscan_estimate(
+        indexRelation: Relation,
+        nkeys: ::core::ffi::c_int,
+        norderbys: ::core::ffi::c_int,
+        snapshot: Snapshot,
+    ) -> Size;
+    pub fn index_parallelscan_initialize(
+        heapRelation: Relation,
+        indexRelation: Relation,
+        snapshot: Snapshot,
+        target: ParallelIndexScanDesc,
+    );
+    pub fn index_parallelrescan(scan: IndexScanDesc);
+    pub fn index_beginscan_parallel(
+        heaprel: Relation,
+        indexrel: Relation,
+        nkeys: ::core::ffi::c_int,
+        norderbys: ::core::ffi::c_int,
+        pscan: ParallelIndexScanDesc,
+    ) -> IndexScanDesc;
+    pub fn index_getnext_tid(scan: IndexScanDesc, direction: ScanDirection::Type) -> ItemPointer;
+    pub fn index_fetch_heap(scan: IndexScanDesc, slot: *mut TupleTableSlot) -> bool;
+    pub fn index_getnext_slot(
+        scan: IndexScanDesc,
+        direction: ScanDirection::Type,
+        slot: *mut TupleTableSlot,
+    ) -> bool;
+    pub fn index_getbitmap(scan: IndexScanDesc, bitmap: *mut TIDBitmap) -> int64;
+    pub fn index_bulk_delete(
+        info: *mut IndexVacuumInfo,
+        istat: *mut IndexBulkDeleteResult,
+        callback: IndexBulkDeleteCallback,
+        callback_state: *mut ::core::ffi::c_void,
+    ) -> *mut IndexBulkDeleteResult;
+    pub fn index_vacuum_cleanup(
+        info: *mut IndexVacuumInfo,
+        istat: *mut IndexBulkDeleteResult,
+    ) -> *mut IndexBulkDeleteResult;
+    pub fn index_can_return(indexRelation: Relation, attno: ::core::ffi::c_int) -> bool;
+    pub fn index_getprocid(irel: Relation, attnum: AttrNumber, procnum: uint16) -> RegProcedure;
+    pub fn index_getprocinfo(irel: Relation, attnum: AttrNumber, procnum: uint16) -> *mut FmgrInfo;
+    pub fn index_store_float8_orderby_distances(
+        scan: IndexScanDesc,
+        orderByTypes: *mut Oid,
+        distances: *mut IndexOrderByDistance,
+        recheckOrderBy: bool,
+    );
+    pub fn index_opclass_options(
+        indrel: Relation,
+        attnum: AttrNumber,
+        attoptions: Datum,
+        validate: bool,
+    ) -> *mut bytea;
+    pub fn RelationGetIndexScan(
+        indexRelation: Relation,
+        nkeys: ::core::ffi::c_int,
+        norderbys: ::core::ffi::c_int,
+    ) -> IndexScanDesc;
+    pub fn IndexScanEnd(scan: IndexScanDesc);
+    pub fn BuildIndexValueDescription(
+        indexRelation: Relation,
+        values: *const Datum,
+        isnull: *const bool,
+    ) -> *mut ::core::ffi::c_char;
+    pub fn index_compute_xid_horizon_for_tuples(
+        irel: Relation,
+        hrel: Relation,
+        ibuf: Buffer,
+        itemnos: *mut OffsetNumber,
+        nitems: ::core::ffi::c_int,
+    ) -> TransactionId;
+    pub fn systable_beginscan(
+        heapRelation: Relation,
+        indexId: Oid,
+        indexOK: bool,
+        snapshot: Snapshot,
+        nkeys: ::core::ffi::c_int,
+        key: ScanKey,
+    ) -> SysScanDesc;
+    pub fn systable_getnext(sysscan: SysScanDesc) -> HeapTuple;
+    pub fn systable_recheck_tuple(sysscan: SysScanDesc, tup: HeapTuple) -> bool;
+    pub fn systable_endscan(sysscan: SysScanDesc);
+    pub fn systable_beginscan_ordered(
+        heapRelation: Relation,
+        indexRelation: Relation,
+        snapshot: Snapshot,
+        nkeys: ::core::ffi::c_int,
+        key: ScanKey,
+    ) -> SysScanDesc;
+    pub fn systable_getnext_ordered(
+        sysscan: SysScanDesc,
+        direction: ScanDirection::Type,
+    ) -> HeapTuple;
+    pub fn systable_endscan_ordered(sysscan: SysScanDesc);
+    pub fn GetIndexAmRoutine(amhandler: Oid) -> *mut IndexAmRoutine;
+    pub fn GetIndexAmRoutineByAmId(amoid: Oid, noerror: bool) -> *mut IndexAmRoutine;
+    pub fn lookup_type_cache(type_id: Oid, flags: ::core::ffi::c_int) -> *mut TypeCacheEntry;
+    pub fn InitDomainConstraintRef(
+        type_id: Oid,
+        ref_: *mut DomainConstraintRef,
+        refctx: MemoryContext,
+        need_exprstate: bool,
+    );
+    pub fn UpdateDomainConstraintRef(ref_: *mut DomainConstraintRef);
+    pub fn DomainHasConstraints(type_id: Oid) -> bool;
+    pub fn lookup_rowtype_tupdesc(type_id: Oid, typmod: int32) -> TupleDesc;
+    pub fn lookup_rowtype_tupdesc_noerror(type_id: Oid, typmod: int32, noError: bool) -> TupleDesc;
+    pub fn lookup_rowtype_tupdesc_copy(type_id: Oid, typmod: int32) -> TupleDesc;
+    pub fn lookup_rowtype_tupdesc_domain(type_id: Oid, typmod: int32, noError: bool) -> TupleDesc;
+    pub fn assign_record_type_typmod(tupDesc: TupleDesc);
+    pub fn assign_record_type_identifier(type_id: Oid, typmod: int32) -> uint64;
+    pub fn compare_values_of_enum(
+        tcache: *mut TypeCacheEntry,
+        arg1: Oid,
+        arg2: Oid,
+    ) -> ::core::ffi::c_int;
+    pub fn SharedRecordTypmodRegistryEstimate() -> usize;
+    pub fn SharedRecordTypmodRegistryInit(
+        arg1: *mut SharedRecordTypmodRegistry,
+        segment: *mut dsm_segment,
+        area: *mut dsa_area,
+    );
+    pub fn SharedRecordTypmodRegistryAttach(arg1: *mut SharedRecordTypmodRegistry);
+    pub fn brin_build_desc(rel: Relation) -> *mut BrinDesc;
+    pub fn brin_free_desc(bdesc: *mut BrinDesc);
+    pub fn brinbuild(
+        heap: Relation,
+        index: Relation,
+        indexInfo: *mut IndexInfo,
+    ) -> *mut IndexBuildResult;
+    pub fn brinbuildempty(index: Relation);
+    pub fn brininsert(
+        idxRel: Relation,
+        values: *mut Datum,
+        nulls: *mut bool,
+        heaptid: ItemPointer,
+        heapRel: Relation,
+        checkUnique: IndexUniqueCheck::Type,
+        indexUnchanged: bool,
+        indexInfo: *mut IndexInfo,
+    ) -> bool;
+    pub fn brininsertcleanup(index: Relation, indexInfo: *mut IndexInfo);
+    pub fn brinbeginscan(
+        r: Relation,
+        nkeys: ::core::ffi::c_int,
+        norderbys: ::core::ffi::c_int,
+    ) -> IndexScanDesc;
+    pub fn bringetbitmap(scan: IndexScanDesc, tbm: *mut TIDBitmap) -> int64;
+    pub fn brinrescan(
+        scan: IndexScanDesc,
+        scankey: ScanKey,
+        nscankeys: ::core::ffi::c_int,
+        orderbys: ScanKey,
+        norderbys: ::core::ffi::c_int,
+    );
+    pub fn brinendscan(scan: IndexScanDesc);
+    pub fn brinbulkdelete(
+        info: *mut IndexVacuumInfo,
+        stats: *mut IndexBulkDeleteResult,
+        callback: IndexBulkDeleteCallback,
+        callback_state: *mut ::core::ffi::c_void,
+    ) -> *mut IndexBulkDeleteResult;
+    pub fn brinvacuumcleanup(
+        info: *mut IndexVacuumInfo,
+        stats: *mut IndexBulkDeleteResult,
+    ) -> *mut IndexBulkDeleteResult;
+    pub fn brinoptions(reloptions: Datum, validate: bool) -> *mut bytea;
+    pub fn brinvalidate(opclassoid: Oid) -> bool;
+    pub fn brin_form_tuple(
+        brdesc: *mut BrinDesc,
+        blkno: BlockNumber,
+        tuple: *mut BrinMemTuple,
+        size: *mut Size,
+    ) -> *mut BrinTuple;
+    pub fn brin_form_placeholder_tuple(
+        brdesc: *mut BrinDesc,
+        blkno: BlockNumber,
+        size: *mut Size,
+    ) -> *mut BrinTuple;
+    pub fn brin_free_tuple(tuple: *mut BrinTuple);
+    pub fn brin_copy_tuple(
+        tuple: *mut BrinTuple,
+        len: Size,
+        dest: *mut BrinTuple,
+        destsz: *mut Size,
+    ) -> *mut BrinTuple;
+    pub fn brin_tuples_equal(
+        a: *const BrinTuple,
+        alen: Size,
+        b: *const BrinTuple,
+        blen: Size,
+    ) -> bool;
+    pub fn brin_new_memtuple(brdesc: *mut BrinDesc) -> *mut BrinMemTuple;
+    pub fn brin_memtuple_initialize(
+        dtuple: *mut BrinMemTuple,
+        brdesc: *mut BrinDesc,
+    ) -> *mut BrinMemTuple;
+    pub fn brin_deform_tuple(
+        brdesc: *mut BrinDesc,
+        tuple: *mut BrinTuple,
+        dMemtuple: *mut BrinMemTuple,
+    ) -> *mut BrinMemTuple;
+    pub fn index_form_tuple(
+        tupleDescriptor: TupleDesc,
+        values: *const Datum,
+        isnull: *const bool,
     ) -> IndexTuple;
     pub fn index_form_tuple_context(
         tupleDescriptor: TupleDesc,
-        values: *mut Datum,
-        isnull: *mut bool,
+        values: *const Datum,
+        isnull: *const bool,
         context: MemoryContext,
     ) -> IndexTuple;
     pub fn nocache_index_getattr(
@@ -37505,17 +39306,13 @@ extern "C" {
     pub fn LogicalTapeRewindForRead(lt: *mut LogicalTape, buffer_size: usize);
     pub fn LogicalTapeFreeze(lt: *mut LogicalTape, share: *mut TapeShare);
     pub fn LogicalTapeBackspace(lt: *mut LogicalTape, size: usize) -> usize;
-    pub fn LogicalTapeSeek(
-        lt: *mut LogicalTape,
-        blocknum: ::core::ffi::c_long,
-        offset: ::core::ffi::c_int,
-    );
+    pub fn LogicalTapeSeek(lt: *mut LogicalTape, blocknum: int64, offset: ::core::ffi::c_int);
     pub fn LogicalTapeTell(
         lt: *mut LogicalTape,
-        blocknum: *mut ::core::ffi::c_long,
+        blocknum: *mut int64,
         offset: *mut ::core::ffi::c_int,
     );
-    pub fn LogicalTapeSetBlocks(lts: *mut LogicalTapeSet) -> ::core::ffi::c_long;
+    pub fn LogicalTapeSetBlocks(lts: *mut LogicalTapeSet) -> int64;
     pub fn tuplesort_begin_common(
         workMem: ::core::ffi::c_int,
         coordinate: SortCoordinate,
@@ -37527,6 +39324,7 @@ extern "C" {
         state: *mut Tuplesortstate,
         tuple: *mut SortTuple,
         useAbbrev: bool,
+        tuplen: Size,
     );
     pub fn tuplesort_performsort(state: *mut Tuplesortstate);
     pub fn tuplesort_gettuple_common(
@@ -37599,6 +39397,11 @@ extern "C" {
         coordinate: SortCoordinate,
         sortopt: ::core::ffi::c_int,
     ) -> *mut Tuplesortstate;
+    pub fn tuplesort_begin_index_brin(
+        workMem: ::core::ffi::c_int,
+        coordinate: SortCoordinate,
+        sortopt: ::core::ffi::c_int,
+    ) -> *mut Tuplesortstate;
     pub fn tuplesort_begin_datum(
         datumType: Oid,
         sortOperator: Oid,
@@ -37614,9 +39417,10 @@ extern "C" {
         state: *mut Tuplesortstate,
         rel: Relation,
         self_: ItemPointer,
-        values: *mut Datum,
-        isnull: *mut bool,
+        values: *const Datum,
+        isnull: *const bool,
     );
+    pub fn tuplesort_putbrintuple(state: *mut Tuplesortstate, tuple: *mut BrinTuple, size: Size);
     pub fn tuplesort_putdatum(state: *mut Tuplesortstate, val: Datum, isNull: bool);
     pub fn tuplesort_gettupleslot(
         state: *mut Tuplesortstate,
@@ -37627,6 +39431,11 @@ extern "C" {
     ) -> bool;
     pub fn tuplesort_getheaptuple(state: *mut Tuplesortstate, forward: bool) -> HeapTuple;
     pub fn tuplesort_getindextuple(state: *mut Tuplesortstate, forward: bool) -> IndexTuple;
+    pub fn tuplesort_getbrintuple(
+        state: *mut Tuplesortstate,
+        len: *mut Size,
+        forward: bool,
+    ) -> *mut BrinTuple;
     pub fn tuplesort_getdatum(
         state: *mut Tuplesortstate,
         forward: bool,
@@ -37646,8 +39455,8 @@ extern "C" {
     pub fn tuplestore_putvalues(
         state: *mut Tuplestorestate,
         tdesc: TupleDesc,
-        values: *mut Datum,
-        isnull: *mut bool,
+        values: *const Datum,
+        isnull: *const bool,
     );
     pub fn tuplestore_alloc_read_pointer(
         state: *mut Tuplestorestate,
@@ -37683,7 +39492,15 @@ extern "C" {
     pub static pg_number_of_ones: [uint8; 256usize];
     pub fn pg_popcount32(word: uint32) -> ::core::ffi::c_int;
     pub fn pg_popcount64(word: uint64) -> ::core::ffi::c_int;
-    pub fn pg_popcount(buf: *const ::core::ffi::c_char, bytes: ::core::ffi::c_int) -> uint64;
+    pub fn pg_popcount_optimized(
+        buf: *const ::core::ffi::c_char,
+        bytes: ::core::ffi::c_int,
+    ) -> uint64;
+    pub fn pg_popcount_masked_optimized(
+        buf: *const ::core::ffi::c_char,
+        bytes: ::core::ffi::c_int,
+        mask: bits8,
+    ) -> uint64;
     pub fn tuplehash_create(
         ctx: MemoryContext,
         nelements: uint32,
@@ -37759,6 +39576,11 @@ extern "C" {
         instrument_options: ::core::ffi::c_int,
     ) -> *mut QueryDesc;
     pub fn FreeQueryDesc(qdesc: *mut QueryDesc);
+    pub fn makeInteger(i: ::core::ffi::c_int) -> *mut Integer;
+    pub fn makeFloat(numericStr: *mut ::core::ffi::c_char) -> *mut Float;
+    pub fn makeBoolean(val: bool) -> *mut Boolean;
+    pub fn makeString(str_: *mut ::core::ffi::c_char) -> *mut String;
+    pub fn makeBitString(str_: *mut ::core::ffi::c_char) -> *mut BitString;
     pub static mut TopMemoryContext: MemoryContext;
     pub static mut ErrorContext: MemoryContext;
     pub static mut PostmasterContext: MemoryContext;
@@ -37779,9 +39601,11 @@ extern "C" {
     pub fn MemoryContextGetParent(context: MemoryContext) -> MemoryContext;
     pub fn MemoryContextIsEmpty(context: MemoryContext) -> bool;
     pub fn MemoryContextMemAllocated(context: MemoryContext, recurse: bool) -> Size;
+    pub fn MemoryContextMemConsumed(context: MemoryContext, consumed: *mut MemoryContextCounters);
     pub fn MemoryContextStats(context: MemoryContext);
     pub fn MemoryContextStatsDetail(
         context: MemoryContext,
+        max_level: ::core::ffi::c_int,
         max_children: ::core::ffi::c_int,
         print_to_stderr: bool,
     );
@@ -37802,6 +39626,13 @@ extern "C" {
         chunkSize: Size,
     ) -> MemoryContext;
     pub fn GenerationContextCreate(
+        parent: MemoryContext,
+        name: *const ::core::ffi::c_char,
+        minContextSize: Size,
+        initBlockSize: Size,
+        maxBlockSize: Size,
+    ) -> MemoryContext;
+    pub fn BumpContextCreate(
         parent: MemoryContext,
         name: *const ::core::ffi::c_char,
         minContextSize: Size,
@@ -37930,7 +39761,11 @@ extern "C" {
         rteperminfos: *mut List,
         ereport_on_violation: bool,
     ) -> bool;
-    pub fn CheckValidResultRel(resultRelInfo: *mut ResultRelInfo, operation: CmdType::Type);
+    pub fn CheckValidResultRel(
+        resultRelInfo: *mut ResultRelInfo,
+        operation: CmdType::Type,
+        mergeActions: *mut List,
+    );
     pub fn InitResultRelInfo(
         resultRelInfo: *mut ResultRelInfo,
         resultRelationDesc: Relation,
@@ -38128,7 +39963,7 @@ extern "C" {
         tupdesc: TupleDesc,
         tts_ops: *const TupleTableSlotOps,
     ) -> *mut TupOutputState;
-    pub fn do_tup_output(tstate: *mut TupOutputState, values: *mut Datum, isnull: *mut bool);
+    pub fn do_tup_output(tstate: *mut TupOutputState, values: *const Datum, isnull: *const bool);
     pub fn do_text_output_multiline(tstate: *mut TupOutputState, txt: *const ::core::ffi::c_char);
     pub fn end_tup_output(tstate: *mut TupOutputState);
     pub fn CreateExecutorState() -> *mut EState;
@@ -38151,7 +39986,6 @@ extern "C" {
         inputDesc: TupleDesc,
         varno: ::core::ffi::c_int,
     );
-    pub fn ExecFreeExprContext(planstate: *mut PlanState);
     pub fn ExecAssignScanType(scanstate: *mut ScanState, tupDesc: TupleDesc);
     pub fn ExecCreateScanSlotFromOuterPlan(
         estate: *mut EState,
@@ -38251,11 +40085,12 @@ extern "C" {
         index: Relation,
         indexInfo: *mut IndexInfo,
         tupleid: ItemPointer,
-        values: *mut Datum,
-        isnull: *mut bool,
+        values: *const Datum,
+        isnull: *const bool,
         estate: *mut EState,
         newIndex: bool,
     );
+    pub fn get_equal_strategy_number_for_am(am: Oid) -> StrategyNumber;
     pub fn RelationFindReplTupleByIndex(
         rel: Relation,
         idxoid: Oid,
@@ -38470,6 +40305,7 @@ extern "C" {
     pub static mut QueryCancelPending: sig_atomic_t;
     pub static mut ProcDiePending: sig_atomic_t;
     pub static mut IdleInTransactionSessionTimeoutPending: sig_atomic_t;
+    pub static mut TransactionTimeoutPending: sig_atomic_t;
     pub static mut IdleSessionTimeoutPending: sig_atomic_t;
     pub static mut ProcSignalBarrierPending: sig_atomic_t;
     pub static mut LogMemoryContextPending: sig_atomic_t;
@@ -38484,7 +40320,6 @@ extern "C" {
     pub static mut PostmasterPid: pid_t;
     pub static mut IsPostmasterEnvironment: bool;
     pub static mut IsUnderPostmaster: bool;
-    pub static mut IsBackgroundWorker: bool;
     pub static mut IsBinaryUpgrade: bool;
     pub static mut ExitOnAnyError: bool;
     pub static mut DataDir: *mut ::core::ffi::c_char;
@@ -38494,6 +40329,13 @@ extern "C" {
     pub static mut MaxConnections: ::core::ffi::c_int;
     pub static mut max_worker_processes: ::core::ffi::c_int;
     pub static mut max_parallel_workers: ::core::ffi::c_int;
+    pub static mut commit_timestamp_buffers: ::core::ffi::c_int;
+    pub static mut multixact_member_buffers: ::core::ffi::c_int;
+    pub static mut multixact_offset_buffers: ::core::ffi::c_int;
+    pub static mut notify_buffers: ::core::ffi::c_int;
+    pub static mut serializable_buffers: ::core::ffi::c_int;
+    pub static mut subtransaction_buffers: ::core::ffi::c_int;
+    pub static mut transaction_buffers: ::core::ffi::c_int;
     pub static mut MyProcPid: ::core::ffi::c_int;
     pub static mut MyStartTime: pg_time_t;
     pub static mut MyStartTimestamp: TimestampTz;
@@ -38506,6 +40348,7 @@ extern "C" {
     pub static mut pkglib_path: [::core::ffi::c_char; 0usize];
     pub static mut MyDatabaseId: Oid;
     pub static mut MyDatabaseTableSpace: Oid;
+    pub static mut MyDatabaseHasLoginEventTriggers: bool;
     pub static mut DateStyle: ::core::ffi::c_int;
     pub static mut DateOrder: ::core::ffi::c_int;
     pub static mut IntervalStyle: ::core::ffi::c_int;
@@ -38533,8 +40376,6 @@ extern "C" {
     pub fn PreventCommandIfReadOnly(cmdname: *const ::core::ffi::c_char);
     pub fn PreventCommandIfParallelMode(cmdname: *const ::core::ffi::c_char);
     pub fn PreventCommandDuringRecovery(cmdname: *const ::core::ffi::c_char);
-    pub static mut trace_recovery_messages: ::core::ffi::c_int;
-    pub fn trace_recovery(trace_level: ::core::ffi::c_int) -> ::core::ffi::c_int;
     pub static mut DatabasePath: *mut ::core::ffi::c_char;
     pub fn InitPostmasterChild();
     pub fn InitStandaloneProcess(argv0: *const ::core::ffi::c_char);
@@ -38559,7 +40400,11 @@ extern "C" {
     pub fn InNoForceRLSOperation() -> bool;
     pub fn GetUserIdAndContext(userid: *mut Oid, sec_def_context: *mut bool);
     pub fn SetUserIdAndContext(userid: Oid, sec_def_context: bool);
-    pub fn InitializeSessionUserId(rolename: *const ::core::ffi::c_char, roleid: Oid);
+    pub fn InitializeSessionUserId(
+        rolename: *const ::core::ffi::c_char,
+        roleid: Oid,
+        bypass_login_check: bool,
+    );
     pub fn InitializeSessionUserIdStandalone();
     pub fn SetSessionAuthorization(userid: Oid, is_superuser: bool);
     pub fn GetCurrentRoleId() -> Oid;
@@ -38572,8 +40417,6 @@ extern "C" {
     pub fn superuser() -> bool;
     pub fn superuser_arg(roleid: Oid) -> bool;
     pub static mut Mode: ProcessingMode::Type;
-    pub static mut MyAuxProcType: AuxProcType::Type;
-    #[doc = "\t  pinit.h --\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t *\n\t\t\tPOSTGRES initialization and cleanup definitions.                 *"]
     pub fn pg_split_opts(
         argv: *mut *mut ::core::ffi::c_char,
         argcp: *mut ::core::ffi::c_int,
@@ -38585,8 +40428,7 @@ extern "C" {
         dboid: Oid,
         username: *const ::core::ffi::c_char,
         useroid: Oid,
-        load_session_libraries: bool,
-        override_allow_connections: bool,
+        flags: bits32,
         out_dbname: *mut ::core::ffi::c_char,
     );
     pub fn BaseInit();
@@ -38620,12 +40462,13 @@ extern "C" {
     pub fn PgArchShmemSize() -> Size;
     pub fn PgArchShmemInit();
     pub fn PgArchCanRestart() -> bool;
-    pub fn PgArchiverMain() -> !;
+    pub fn PgArchiverMain(startup_data: *mut ::core::ffi::c_char, startup_data_len: usize) -> !;
     pub fn PgArchWakeup();
     pub fn PgArchForceDirScan();
     pub fn pgstat_progress_start_command(cmdtype: ProgressCommandType::Type, relid: Oid);
     pub fn pgstat_progress_update_param(index: ::core::ffi::c_int, val: int64);
     pub fn pgstat_progress_incr_param(index: ::core::ffi::c_int, incr: int64);
+    pub fn pgstat_progress_parallel_incr_param(index: ::core::ffi::c_int, incr: int64);
     pub fn pgstat_progress_update_multi_param(
         nparam: ::core::ffi::c_int,
         index: *const ::core::ffi::c_int,
@@ -39001,9 +40844,6 @@ extern "C" {
         __servlen: socklen_t,
         __flags: ::core::ffi::c_int,
     ) -> ::core::ffi::c_int;
-    pub static mut Db_user_namespace: bool;
-    pub static mut MyBackendId: BackendId;
-    pub static mut ParallelLeaderBackendId: BackendId;
     pub static mut pgstat_track_activities: bool;
     pub static mut pgstat_track_activity_query_size: ::core::ffi::c_int;
     pub static mut MyBEEntry: *mut PgBackendStatus;
@@ -39028,8 +40868,10 @@ extern "C" {
     ) -> *const ::core::ffi::c_char;
     pub fn pgstat_get_my_query_id() -> uint64;
     pub fn pgstat_fetch_stat_numbackends() -> ::core::ffi::c_int;
-    pub fn pgstat_get_beentry_by_backend_id(beid: BackendId) -> *mut PgBackendStatus;
-    pub fn pgstat_get_local_beentry_by_backend_id(beid: BackendId) -> *mut LocalPgBackendStatus;
+    pub fn pgstat_get_beentry_by_proc_number(procNumber: ProcNumber) -> *mut PgBackendStatus;
+    pub fn pgstat_get_local_beentry_by_proc_number(
+        procNumber: ProcNumber,
+    ) -> *mut LocalPgBackendStatus;
     pub fn pgstat_get_local_beentry_by_index(idx: ::core::ffi::c_int) -> *mut LocalPgBackendStatus;
     pub fn pgstat_clip_activity(
         raw_activity: *const ::core::ffi::c_char,
@@ -39039,6 +40881,14 @@ extern "C" {
     pub fn pgstat_set_wait_event_storage(wait_event_info: *mut uint32);
     pub fn pgstat_reset_wait_event_storage();
     pub static mut my_wait_event_info: *mut uint32;
+    pub fn WaitEventExtensionNew(wait_event_name: *const ::core::ffi::c_char) -> uint32;
+    pub fn WaitEventInjectionPointNew(wait_event_name: *const ::core::ffi::c_char) -> uint32;
+    pub fn WaitEventCustomShmemInit();
+    pub fn WaitEventCustomShmemSize() -> Size;
+    pub fn GetWaitEventCustomNames(
+        classId: uint32,
+        nwaitevents: *mut ::core::ffi::c_int,
+    ) -> *mut *mut ::core::ffi::c_char;
     pub fn StatsShmemSize() -> Size;
     pub fn StatsShmemInit();
     pub fn pgstat_restore_stats();
@@ -39075,7 +40925,7 @@ extern "C" {
         io_op: IOOp::Type,
         cnt: uint32,
     );
-    pub fn pgstat_prepare_io_time() -> instr_time;
+    pub fn pgstat_prepare_io_time(track_io_guc: bool) -> instr_time;
     pub fn pgstat_count_io_op_time(
         io_object: IOObject::Type,
         io_context: IOContext::Type,
@@ -39203,164 +41053,11 @@ extern "C" {
     pub static mut pgStatTransactionIdleTime: PgStat_Counter;
     pub static mut pgStatSessionEndCause: SessionEndType::Type;
     pub static mut PendingWalStats: PgStat_PendingWalStats;
-    pub fn ScanKeyInit(
-        entry: ScanKey,
-        attributeNumber: AttrNumber,
-        strategy: StrategyNumber,
-        procedure: RegProcedure,
-        argument: Datum,
-    );
-    pub fn ScanKeyEntryInitialize(
-        entry: ScanKey,
-        flags: ::core::ffi::c_int,
-        attributeNumber: AttrNumber,
-        strategy: StrategyNumber,
-        subtype: Oid,
-        collation: Oid,
-        procedure: RegProcedure,
-        argument: Datum,
-    );
-    pub fn ScanKeyEntryInitializeWithInfo(
-        entry: ScanKey,
-        flags: ::core::ffi::c_int,
-        attributeNumber: AttrNumber,
-        strategy: StrategyNumber,
-        subtype: Oid,
-        collation: Oid,
-        finfo: *mut FmgrInfo,
-        argument: Datum,
-    );
-    pub fn index_open(relationId: Oid, lockmode: LOCKMODE) -> Relation;
-    pub fn try_index_open(relationId: Oid, lockmode: LOCKMODE) -> Relation;
-    pub fn index_close(relation: Relation, lockmode: LOCKMODE);
-    pub fn index_insert(
-        indexRelation: Relation,
-        values: *mut Datum,
-        isnull: *mut bool,
-        heap_t_ctid: ItemPointer,
-        heapRelation: Relation,
-        checkUnique: IndexUniqueCheck::Type,
-        indexUnchanged: bool,
-        indexInfo: *mut IndexInfo,
-    ) -> bool;
-    pub fn index_beginscan(
-        heapRelation: Relation,
-        indexRelation: Relation,
-        snapshot: Snapshot,
-        nkeys: ::core::ffi::c_int,
-        norderbys: ::core::ffi::c_int,
-    ) -> IndexScanDesc;
-    pub fn index_beginscan_bitmap(
-        indexRelation: Relation,
-        snapshot: Snapshot,
-        nkeys: ::core::ffi::c_int,
-    ) -> IndexScanDesc;
-    pub fn index_rescan(
-        scan: IndexScanDesc,
-        keys: ScanKey,
-        nkeys: ::core::ffi::c_int,
-        orderbys: ScanKey,
-        norderbys: ::core::ffi::c_int,
-    );
-    pub fn index_endscan(scan: IndexScanDesc);
-    pub fn index_markpos(scan: IndexScanDesc);
-    pub fn index_restrpos(scan: IndexScanDesc);
-    pub fn index_parallelscan_estimate(indexRelation: Relation, snapshot: Snapshot) -> Size;
-    pub fn index_parallelscan_initialize(
-        heapRelation: Relation,
-        indexRelation: Relation,
-        snapshot: Snapshot,
-        target: ParallelIndexScanDesc,
-    );
-    pub fn index_parallelrescan(scan: IndexScanDesc);
-    pub fn index_beginscan_parallel(
-        heaprel: Relation,
-        indexrel: Relation,
-        nkeys: ::core::ffi::c_int,
-        norderbys: ::core::ffi::c_int,
-        pscan: ParallelIndexScanDesc,
-    ) -> IndexScanDesc;
-    pub fn index_getnext_tid(scan: IndexScanDesc, direction: ScanDirection::Type) -> ItemPointer;
-    pub fn index_fetch_heap(scan: IndexScanDesc, slot: *mut TupleTableSlot) -> bool;
-    pub fn index_getnext_slot(
-        scan: IndexScanDesc,
-        direction: ScanDirection::Type,
-        slot: *mut TupleTableSlot,
-    ) -> bool;
-    pub fn index_getbitmap(scan: IndexScanDesc, bitmap: *mut TIDBitmap) -> int64;
-    pub fn index_bulk_delete(
-        info: *mut IndexVacuumInfo,
-        istat: *mut IndexBulkDeleteResult,
-        callback: IndexBulkDeleteCallback,
-        callback_state: *mut ::core::ffi::c_void,
-    ) -> *mut IndexBulkDeleteResult;
-    pub fn index_vacuum_cleanup(
-        info: *mut IndexVacuumInfo,
-        istat: *mut IndexBulkDeleteResult,
-    ) -> *mut IndexBulkDeleteResult;
-    pub fn index_can_return(indexRelation: Relation, attno: ::core::ffi::c_int) -> bool;
-    pub fn index_getprocid(irel: Relation, attnum: AttrNumber, procnum: uint16) -> RegProcedure;
-    pub fn index_getprocinfo(irel: Relation, attnum: AttrNumber, procnum: uint16) -> *mut FmgrInfo;
-    pub fn index_store_float8_orderby_distances(
-        scan: IndexScanDesc,
-        orderByTypes: *mut Oid,
-        distances: *mut IndexOrderByDistance,
-        recheckOrderBy: bool,
-    );
-    pub fn index_opclass_options(
-        indrel: Relation,
-        attnum: AttrNumber,
-        attoptions: Datum,
-        validate: bool,
-    ) -> *mut bytea;
-    pub fn RelationGetIndexScan(
-        indexRelation: Relation,
-        nkeys: ::core::ffi::c_int,
-        norderbys: ::core::ffi::c_int,
-    ) -> IndexScanDesc;
-    pub fn IndexScanEnd(scan: IndexScanDesc);
-    pub fn BuildIndexValueDescription(
-        indexRelation: Relation,
-        values: *mut Datum,
-        isnull: *mut bool,
-    ) -> *mut ::core::ffi::c_char;
-    pub fn index_compute_xid_horizon_for_tuples(
-        irel: Relation,
-        hrel: Relation,
-        ibuf: Buffer,
-        itemnos: *mut OffsetNumber,
-        nitems: ::core::ffi::c_int,
-    ) -> TransactionId;
-    pub fn systable_beginscan(
-        heapRelation: Relation,
-        indexId: Oid,
-        indexOK: bool,
-        snapshot: Snapshot,
-        nkeys: ::core::ffi::c_int,
-        key: ScanKey,
-    ) -> SysScanDesc;
-    pub fn systable_getnext(sysscan: SysScanDesc) -> HeapTuple;
-    pub fn systable_recheck_tuple(sysscan: SysScanDesc, tup: HeapTuple) -> bool;
-    pub fn systable_endscan(sysscan: SysScanDesc);
-    pub fn systable_beginscan_ordered(
-        heapRelation: Relation,
-        indexRelation: Relation,
-        snapshot: Snapshot,
-        nkeys: ::core::ffi::c_int,
-        key: ScanKey,
-    ) -> SysScanDesc;
-    pub fn systable_getnext_ordered(
-        sysscan: SysScanDesc,
-        direction: ScanDirection::Type,
-    ) -> HeapTuple;
-    pub fn systable_endscan_ordered(sysscan: SysScanDesc);
-    pub fn GetIndexAmRoutine(amhandler: Oid) -> *mut IndexAmRoutine;
-    pub fn GetIndexAmRoutineByAmId(amoid: Oid, noerror: bool) -> *mut IndexAmRoutine;
     pub fn build_backup_content(
         state: *mut BackupState,
         ishistoryfile: bool,
     ) -> *mut ::core::ffi::c_char;
-    pub static mut sync_method: ::core::ffi::c_int;
+    pub static mut wal_sync_method: ::core::ffi::c_int;
     pub static mut ProcLastRecPtr: XLogRecPtr;
     pub static mut XactLastRecEnd: XLogRecPtr;
     pub static mut XactLastCommitEnd: XLogRecPtr;
@@ -39402,6 +41099,7 @@ extern "C" {
     pub fn XLogFileOpen(segno: XLogSegNo, tli: TimeLineID) -> ::core::ffi::c_int;
     pub fn CheckXLogRemoved(segno: XLogSegNo, tli: TimeLineID);
     pub fn XLogGetLastRemovedSegno() -> XLogSegNo;
+    pub fn XLogGetOldestSegno(tli: TimeLineID) -> XLogSegNo;
     pub fn XLogSetAsyncXactLSN(asyncXactLSN: XLogRecPtr);
     pub fn XLogSetReplicationSlotMinimumLSN(lsn: XLogRecPtr);
     pub fn xlog_redo(record: *mut XLogReaderState);
@@ -39436,8 +41134,15 @@ extern "C" {
     pub fn GetInsertRecPtr() -> XLogRecPtr;
     pub fn GetFlushRecPtr(insertTLI: *mut TimeLineID) -> XLogRecPtr;
     pub fn GetWALInsertionTimeLine() -> TimeLineID;
+    pub fn GetWALInsertionTimeLineIfSet() -> TimeLineID;
     pub fn GetLastImportantRecPtr() -> XLogRecPtr;
     pub fn SetWalWriterSleeping(sleeping: bool);
+    pub fn WALReadFromBuffers(
+        dstbuf: *mut ::core::ffi::c_char,
+        startptr: XLogRecPtr,
+        count: Size,
+        tli: TimeLineID,
+    ) -> Size;
     pub fn RemoveNonParentXlogFiles(switchpoint: XLogRecPtr, newTLI: TimeLineID);
     pub fn XLogCheckpointNeeded(new_segno: XLogSegNo) -> bool;
     pub fn SwitchIntoArchiveRecovery(EndRecPtr: XLogRecPtr, replayTLI: TimeLineID);
@@ -39545,25 +41250,6 @@ extern "C" {
         blknum: *mut BlockNumber,
         prefetch_buffer: *mut Buffer,
     ) -> bool;
-    pub static mut RmgrTable: [RmgrData; 0usize];
-    pub fn RmgrStartup();
-    pub fn RmgrCleanup();
-    pub fn RmgrNotFound(rmid: RmgrId);
-    pub fn RegisterCustomRmgr(rmid: RmgrId, rmgr: *const RmgrData);
-    pub fn GetLastSegSwitchData(lastSwitchLSN: *mut XLogRecPtr) -> pg_time_t;
-    pub fn RequestXLogSwitch(mark_unimportant: bool) -> XLogRecPtr;
-    pub fn GetOldestRestartPoint(oldrecptr: *mut XLogRecPtr, oldtli: *mut TimeLineID);
-    pub fn XLogRecGetBlockRefInfo(
-        record: *mut XLogReaderState,
-        pretty: bool,
-        detailed_format: bool,
-        buf: StringInfo,
-        fpi_len: *mut uint32,
-    );
-    pub static mut ArchiveRecoveryRequested: bool;
-    pub static mut InArchiveRecovery: bool;
-    pub static mut StandbyMode: bool;
-    pub static mut recoveryRestoreCommand: *mut ::core::ffi::c_char;
     pub fn XLogBeginInsert();
     pub fn XLogSetRecordFlags(flags: uint8);
     pub fn XLogInsert(rmid: RmgrId, info: uint8) -> XLogRecPtr;
@@ -39732,15 +41418,15 @@ extern "C" {
         mcxt: MemoryContext,
     ) -> *mut Bitmapset;
     pub fn smgrinit();
-    pub fn smgropen(rlocator: RelFileLocator, backend: BackendId) -> SMgrRelation;
+    pub fn smgropen(rlocator: RelFileLocator, backend: ProcNumber) -> SMgrRelation;
     pub fn smgrexists(reln: SMgrRelation, forknum: ForkNumber::Type) -> bool;
-    pub fn smgrsetowner(owner: *mut SMgrRelation, reln: SMgrRelation);
-    pub fn smgrclearowner(owner: *mut SMgrRelation, reln: SMgrRelation);
+    pub fn smgrpin(reln: SMgrRelation);
+    pub fn smgrunpin(reln: SMgrRelation);
     pub fn smgrclose(reln: SMgrRelation);
-    pub fn smgrcloseall();
-    pub fn smgrcloserellocator(rlocator: RelFileLocatorBackend);
+    pub fn smgrdestroyall();
     pub fn smgrrelease(reln: SMgrRelation);
     pub fn smgrreleaseall();
+    pub fn smgrreleaserellocator(rlocator: RelFileLocatorBackend);
     pub fn smgrcreate(reln: SMgrRelation, forknum: ForkNumber::Type, isRedo: bool);
     pub fn smgrdosyncall(rels: *mut SMgrRelation, nrels: ::core::ffi::c_int);
     pub fn smgrdounlinkall(rels: *mut SMgrRelation, nrels: ::core::ffi::c_int, isRedo: bool);
@@ -39762,18 +41448,21 @@ extern "C" {
         reln: SMgrRelation,
         forknum: ForkNumber::Type,
         blocknum: BlockNumber,
+        nblocks: ::core::ffi::c_int,
     ) -> bool;
-    pub fn smgrread(
+    pub fn smgrreadv(
         reln: SMgrRelation,
         forknum: ForkNumber::Type,
         blocknum: BlockNumber,
-        buffer: *mut ::core::ffi::c_void,
+        buffers: *mut *mut ::core::ffi::c_void,
+        nblocks: BlockNumber,
     );
-    pub fn smgrwrite(
+    pub fn smgrwritev(
         reln: SMgrRelation,
         forknum: ForkNumber::Type,
         blocknum: BlockNumber,
-        buffer: *const ::core::ffi::c_void,
+        buffers: *mut *const ::core::ffi::c_void,
+        nblocks: BlockNumber,
         skipFsync: bool,
     );
     pub fn smgrwriteback(
@@ -39791,6 +41480,7 @@ extern "C" {
         nblocks: *mut BlockNumber,
     );
     pub fn smgrimmedsync(reln: SMgrRelation, forknum: ForkNumber::Type);
+    pub fn smgrregistersync(reln: SMgrRelation, forknum: ForkNumber::Type);
     pub fn AtEOXact_SMgr();
     pub fn ProcessBarrierSmgrRelease() -> bool;
     pub fn RelationIncrementReferenceCount(rel: Relation);
@@ -39972,6 +41662,269 @@ extern "C" {
     pub fn EnterParallelMode();
     pub fn ExitParallelMode();
     pub fn IsInParallelMode() -> bool;
+    pub static mut CurrentResourceOwner: ResourceOwner;
+    pub static mut CurTransactionResourceOwner: ResourceOwner;
+    pub static mut TopTransactionResourceOwner: ResourceOwner;
+    pub static mut AuxProcessResourceOwner: ResourceOwner;
+    pub fn ResourceOwnerCreate(
+        parent: ResourceOwner,
+        name: *const ::core::ffi::c_char,
+    ) -> ResourceOwner;
+    pub fn ResourceOwnerRelease(
+        owner: ResourceOwner,
+        phase: ResourceReleasePhase::Type,
+        isCommit: bool,
+        isTopLevel: bool,
+    );
+    pub fn ResourceOwnerDelete(owner: ResourceOwner);
+    pub fn ResourceOwnerGetParent(owner: ResourceOwner) -> ResourceOwner;
+    pub fn ResourceOwnerNewParent(owner: ResourceOwner, newparent: ResourceOwner);
+    pub fn ResourceOwnerEnlarge(owner: ResourceOwner);
+    pub fn ResourceOwnerRemember(
+        owner: ResourceOwner,
+        value: Datum,
+        kind: *const ResourceOwnerDesc,
+    );
+    pub fn ResourceOwnerForget(owner: ResourceOwner, value: Datum, kind: *const ResourceOwnerDesc);
+    pub fn ResourceOwnerReleaseAllOfKind(owner: ResourceOwner, kind: *const ResourceOwnerDesc);
+    pub fn RegisterResourceReleaseCallback(
+        callback: ResourceReleaseCallback,
+        arg: *mut ::core::ffi::c_void,
+    );
+    pub fn UnregisterResourceReleaseCallback(
+        callback: ResourceReleaseCallback,
+        arg: *mut ::core::ffi::c_void,
+    );
+    pub fn CreateAuxProcessResourceOwner();
+    pub fn ReleaseAuxProcessResources(isCommit: bool);
+    pub fn ResourceOwnerRememberLock(owner: ResourceOwner, locallock: *mut LOCALLOCK);
+    pub fn ResourceOwnerForgetLock(owner: ResourceOwner, locallock: *mut LOCALLOCK);
+    pub static mut FirstSnapshotSet: bool;
+    pub static mut TransactionXmin: TransactionId;
+    pub static mut RecentXmin: TransactionId;
+    pub static mut SnapshotSelfData: SnapshotData;
+    pub static mut SnapshotAnyData: SnapshotData;
+    pub static mut CatalogSnapshotData: SnapshotData;
+    pub fn GetTransactionSnapshot() -> Snapshot;
+    pub fn GetLatestSnapshot() -> Snapshot;
+    pub fn SnapshotSetCommandId(curcid: CommandId);
+    pub fn GetOldestSnapshot() -> Snapshot;
+    pub fn GetCatalogSnapshot(relid: Oid) -> Snapshot;
+    pub fn GetNonHistoricCatalogSnapshot(relid: Oid) -> Snapshot;
+    pub fn InvalidateCatalogSnapshot();
+    pub fn InvalidateCatalogSnapshotConditionally();
+    pub fn PushActiveSnapshot(snapshot: Snapshot);
+    pub fn PushActiveSnapshotWithLevel(snapshot: Snapshot, snap_level: ::core::ffi::c_int);
+    pub fn PushCopiedSnapshot(snapshot: Snapshot);
+    pub fn UpdateActiveSnapshotCommandId();
+    pub fn PopActiveSnapshot();
+    pub fn GetActiveSnapshot() -> Snapshot;
+    pub fn ActiveSnapshotSet() -> bool;
+    pub fn RegisterSnapshot(snapshot: Snapshot) -> Snapshot;
+    pub fn UnregisterSnapshot(snapshot: Snapshot);
+    pub fn RegisterSnapshotOnOwner(snapshot: Snapshot, owner: ResourceOwner) -> Snapshot;
+    pub fn UnregisterSnapshotFromOwner(snapshot: Snapshot, owner: ResourceOwner);
+    pub fn AtSubCommit_Snapshot(level: ::core::ffi::c_int);
+    pub fn AtSubAbort_Snapshot(level: ::core::ffi::c_int);
+    pub fn AtEOXact_Snapshot(isCommit: bool, resetXmin: bool);
+    pub fn ImportSnapshot(idstr: *const ::core::ffi::c_char);
+    pub fn XactHasExportedSnapshots() -> bool;
+    pub fn DeleteAllExportedSnapshotFiles();
+    pub fn WaitForOlderSnapshots(limitXmin: TransactionId, progress: bool);
+    pub fn ThereAreNoPriorRegisteredSnapshots() -> bool;
+    pub fn HaveRegisteredOrActiveSnapshot() -> bool;
+    pub fn ExportSnapshot(snapshot: Snapshot) -> *mut ::core::ffi::c_char;
+    pub fn GlobalVisTestFor(rel: Relation) -> *mut GlobalVisState;
+    pub fn GlobalVisTestIsRemovableXid(state: *mut GlobalVisState, xid: TransactionId) -> bool;
+    pub fn GlobalVisTestIsRemovableFullXid(
+        state: *mut GlobalVisState,
+        fxid: FullTransactionId,
+    ) -> bool;
+    pub fn GlobalVisCheckRemovableXid(rel: Relation, xid: TransactionId) -> bool;
+    pub fn GlobalVisCheckRemovableFullXid(rel: Relation, fxid: FullTransactionId) -> bool;
+    pub fn XidInMVCCSnapshot(xid: TransactionId, snapshot: Snapshot) -> bool;
+    pub fn HistoricSnapshotGetTupleCids() -> *mut HTAB;
+    pub fn SetupHistoricSnapshot(historic_snapshot: Snapshot, tuplecids: *mut HTAB);
+    pub fn TeardownHistoricSnapshot(is_error: bool);
+    pub fn HistoricSnapshotActive() -> bool;
+    pub fn EstimateSnapshotSpace(snapshot: Snapshot) -> Size;
+    pub fn SerializeSnapshot(snapshot: Snapshot, start_address: *mut ::core::ffi::c_char);
+    pub fn RestoreSnapshot(start_address: *mut ::core::ffi::c_char) -> Snapshot;
+    pub fn RestoreTransactionSnapshot(snapshot: Snapshot, source_pgproc: *mut ::core::ffi::c_void);
+    pub static mut zero_damaged_pages: bool;
+    pub static mut bgwriter_lru_maxpages: ::core::ffi::c_int;
+    pub static mut bgwriter_lru_multiplier: f64;
+    pub static mut track_io_timing: bool;
+    pub static mut effective_io_concurrency: ::core::ffi::c_int;
+    pub static mut maintenance_io_concurrency: ::core::ffi::c_int;
+    pub static mut io_combine_limit: ::core::ffi::c_int;
+    pub static mut checkpoint_flush_after: ::core::ffi::c_int;
+    pub static mut backend_flush_after: ::core::ffi::c_int;
+    pub static mut bgwriter_flush_after: ::core::ffi::c_int;
+    pub static mut BufferBlocks: *mut ::core::ffi::c_char;
+    pub static mut NLocBuffer: ::core::ffi::c_int;
+    pub static mut LocalBufferBlockPointers: *mut Block;
+    pub static mut LocalRefCount: *mut int32;
+    pub fn PrefetchSharedBuffer(
+        smgr_reln: *mut SMgrRelationData,
+        forkNum: ForkNumber::Type,
+        blockNum: BlockNumber,
+    ) -> PrefetchBufferResult;
+    pub fn PrefetchBuffer(
+        reln: Relation,
+        forkNum: ForkNumber::Type,
+        blockNum: BlockNumber,
+    ) -> PrefetchBufferResult;
+    pub fn ReadRecentBuffer(
+        rlocator: RelFileLocator,
+        forkNum: ForkNumber::Type,
+        blockNum: BlockNumber,
+        recent_buffer: Buffer,
+    ) -> bool;
+    pub fn ReadBuffer(reln: Relation, blockNum: BlockNumber) -> Buffer;
+    pub fn ReadBufferExtended(
+        reln: Relation,
+        forkNum: ForkNumber::Type,
+        blockNum: BlockNumber,
+        mode: ReadBufferMode::Type,
+        strategy: BufferAccessStrategy,
+    ) -> Buffer;
+    pub fn ReadBufferWithoutRelcache(
+        rlocator: RelFileLocator,
+        forkNum: ForkNumber::Type,
+        blockNum: BlockNumber,
+        mode: ReadBufferMode::Type,
+        strategy: BufferAccessStrategy,
+        permanent: bool,
+    ) -> Buffer;
+    pub fn StartReadBuffer(
+        operation: *mut ReadBuffersOperation,
+        buffer: *mut Buffer,
+        blocknum: BlockNumber,
+        flags: ::core::ffi::c_int,
+    ) -> bool;
+    pub fn StartReadBuffers(
+        operation: *mut ReadBuffersOperation,
+        buffers: *mut Buffer,
+        blockNum: BlockNumber,
+        nblocks: *mut ::core::ffi::c_int,
+        flags: ::core::ffi::c_int,
+    ) -> bool;
+    pub fn WaitReadBuffers(operation: *mut ReadBuffersOperation);
+    pub fn ReleaseBuffer(buffer: Buffer);
+    pub fn UnlockReleaseBuffer(buffer: Buffer);
+    pub fn BufferIsExclusiveLocked(buffer: Buffer) -> bool;
+    pub fn BufferIsDirty(buffer: Buffer) -> bool;
+    pub fn MarkBufferDirty(buffer: Buffer);
+    pub fn IncrBufferRefCount(buffer: Buffer);
+    pub fn CheckBufferIsPinnedOnce(buffer: Buffer);
+    pub fn ReleaseAndReadBuffer(
+        buffer: Buffer,
+        relation: Relation,
+        blockNum: BlockNumber,
+    ) -> Buffer;
+    pub fn ExtendBufferedRel(
+        bmr: BufferManagerRelation,
+        forkNum: ForkNumber::Type,
+        strategy: BufferAccessStrategy,
+        flags: uint32,
+    ) -> Buffer;
+    pub fn ExtendBufferedRelBy(
+        bmr: BufferManagerRelation,
+        fork: ForkNumber::Type,
+        strategy: BufferAccessStrategy,
+        flags: uint32,
+        extend_by: uint32,
+        buffers: *mut Buffer,
+        extended_by: *mut uint32,
+    ) -> BlockNumber;
+    pub fn ExtendBufferedRelTo(
+        bmr: BufferManagerRelation,
+        fork: ForkNumber::Type,
+        strategy: BufferAccessStrategy,
+        flags: uint32,
+        extend_to: BlockNumber,
+        mode: ReadBufferMode::Type,
+    ) -> Buffer;
+    pub fn InitBufferPoolAccess();
+    pub fn AtEOXact_Buffers(isCommit: bool);
+    pub fn DebugPrintBufferRefcount(buffer: Buffer) -> *mut ::core::ffi::c_char;
+    pub fn CheckPointBuffers(flags: ::core::ffi::c_int);
+    pub fn BufferGetBlockNumber(buffer: Buffer) -> BlockNumber;
+    pub fn RelationGetNumberOfBlocksInFork(
+        relation: Relation,
+        forkNum: ForkNumber::Type,
+    ) -> BlockNumber;
+    pub fn FlushOneBuffer(buffer: Buffer);
+    pub fn FlushRelationBuffers(rel: Relation);
+    pub fn FlushRelationsAllBuffers(smgrs: *mut *mut SMgrRelationData, nrels: ::core::ffi::c_int);
+    pub fn CreateAndCopyRelationData(
+        src_rlocator: RelFileLocator,
+        dst_rlocator: RelFileLocator,
+        permanent: bool,
+    );
+    pub fn FlushDatabaseBuffers(dbid: Oid);
+    pub fn DropRelationBuffers(
+        smgr_reln: *mut SMgrRelationData,
+        forkNum: *mut ForkNumber::Type,
+        nforks: ::core::ffi::c_int,
+        firstDelBlock: *mut BlockNumber,
+    );
+    pub fn DropRelationsAllBuffers(
+        smgr_reln: *mut *mut SMgrRelationData,
+        nlocators: ::core::ffi::c_int,
+    );
+    pub fn DropDatabaseBuffers(dbid: Oid);
+    pub fn BufferIsPermanent(buffer: Buffer) -> bool;
+    pub fn BufferGetLSNAtomic(buffer: Buffer) -> XLogRecPtr;
+    pub fn BufferGetTag(
+        buffer: Buffer,
+        rlocator: *mut RelFileLocator,
+        forknum: *mut ForkNumber::Type,
+        blknum: *mut BlockNumber,
+    );
+    pub fn MarkBufferDirtyHint(buffer: Buffer, buffer_std: bool);
+    pub fn UnlockBuffers();
+    pub fn LockBuffer(buffer: Buffer, mode: ::core::ffi::c_int);
+    pub fn ConditionalLockBuffer(buffer: Buffer) -> bool;
+    pub fn LockBufferForCleanup(buffer: Buffer);
+    pub fn ConditionalLockBufferForCleanup(buffer: Buffer) -> bool;
+    pub fn IsBufferCleanupOK(buffer: Buffer) -> bool;
+    pub fn HoldingBufferPinThatDelaysRecovery() -> bool;
+    pub fn BgBufferSync(wb_context: *mut WritebackContext) -> bool;
+    pub fn LimitAdditionalPins(additional_pins: *mut uint32);
+    pub fn LimitAdditionalLocalPins(additional_pins: *mut uint32);
+    pub fn EvictUnpinnedBuffer(buf: Buffer) -> bool;
+    pub fn InitBufferPool();
+    pub fn BufferShmemSize() -> Size;
+    pub fn AtProcExit_LocalBuffers();
+    pub fn GetAccessStrategy(btype: BufferAccessStrategyType::Type) -> BufferAccessStrategy;
+    pub fn GetAccessStrategyWithSize(
+        btype: BufferAccessStrategyType::Type,
+        ring_size_kb: ::core::ffi::c_int,
+    ) -> BufferAccessStrategy;
+    pub fn GetAccessStrategyBufferCount(strategy: BufferAccessStrategy) -> ::core::ffi::c_int;
+    pub fn GetAccessStrategyPinLimit(strategy: BufferAccessStrategy) -> ::core::ffi::c_int;
+    pub fn FreeAccessStrategy(strategy: BufferAccessStrategy);
+    pub fn read_stream_begin_relation(
+        flags: ::core::ffi::c_int,
+        strategy: BufferAccessStrategy,
+        rel: Relation,
+        forknum: ForkNumber::Type,
+        callback: ReadStreamBlockNumberCB,
+        callback_private_data: *mut ::core::ffi::c_void,
+        per_buffer_data_size: usize,
+    ) -> *mut ReadStream;
+    pub fn read_stream_next_buffer(
+        stream: *mut ReadStream,
+        per_buffer_data: *mut *mut ::core::ffi::c_void,
+    ) -> Buffer;
+    pub fn read_stream_next_block(
+        stream: *mut ReadStream,
+        strategy: *mut BufferAccessStrategy,
+    ) -> BlockNumber;
+    pub fn read_stream_reset(stream: *mut ReadStream);
+    pub fn read_stream_end(stream: *mut ReadStream);
     pub static mut default_table_access_method: *mut ::core::ffi::c_char;
     pub static mut synchronize_seqscans: bool;
     pub fn table_slot_callbacks(relation: Relation) -> *const TupleTableSlotOps;
@@ -39981,7 +41934,6 @@ extern "C" {
         nkeys: ::core::ffi::c_int,
         key: *mut ScanKeyData,
     ) -> TableScanDesc;
-    pub fn table_scan_update_snapshot(scan: TableScanDesc, snapshot: Snapshot);
     pub fn table_parallelscan_estimate(rel: Relation, snapshot: Snapshot) -> Size;
     pub fn table_parallelscan_initialize(
         rel: Relation,
@@ -40080,7 +42032,7 @@ extern "C" {
         flags: uint32,
     ) -> TableScanDesc;
     pub fn heap_setscanlimits(sscan: TableScanDesc, startBlk: BlockNumber, numBlks: BlockNumber);
-    pub fn heapgetpage(sscan: TableScanDesc, block: BlockNumber);
+    pub fn heap_prepare_pagescan(sscan: TableScanDesc);
     pub fn heap_rescan(
         sscan: TableScanDesc,
         key: ScanKey,
@@ -40177,10 +42129,13 @@ extern "C" {
         frz: *mut HeapTupleFreeze,
         totally_frozen: *mut bool,
     ) -> bool;
-    pub fn heap_freeze_execute_prepared(
-        rel: Relation,
+    pub fn heap_pre_freeze_checks(
         buffer: Buffer,
-        snapshotConflictHorizon: TransactionId,
+        tuples: *mut HeapTupleFreeze,
+        ntuples: ::core::ffi::c_int,
+    );
+    pub fn heap_freeze_prepared_tuples(
+        buffer: Buffer,
         tuples: *mut HeapTupleFreeze,
         ntuples: ::core::ffi::c_int,
     );
@@ -40211,18 +42166,21 @@ extern "C" {
         delstate: *mut TM_IndexDeleteOp,
     ) -> TransactionId;
     pub fn heap_page_prune_opt(relation: Relation, buffer: Buffer);
-    pub fn heap_page_prune(
+    pub fn heap_page_prune_and_freeze(
         relation: Relation,
         buffer: Buffer,
-        oldest_xmin: TransactionId,
         vistest: *mut GlobalVisState,
-        old_snap_xmin: TransactionId,
-        old_snap_ts: TimestampTz,
-        nnewlpdead: *mut ::core::ffi::c_int,
+        options: ::core::ffi::c_int,
+        cutoffs: *mut VacuumCutoffs,
+        presult: *mut PruneFreezeResult,
+        reason: PruneReason::Type,
         off_loc: *mut OffsetNumber,
-    ) -> ::core::ffi::c_int;
+        new_relfrozen_xid: *mut TransactionId,
+        new_relmin_mxid: *mut MultiXactId,
+    );
     pub fn heap_page_prune_execute(
         buffer: Buffer,
+        lp_truncate_only: bool,
         redirected: *mut OffsetNumber,
         nredirected: ::core::ffi::c_int,
         nowdead: *mut OffsetNumber,
@@ -40231,6 +42189,21 @@ extern "C" {
         nunused: ::core::ffi::c_int,
     );
     pub fn heap_get_root_tuples(page: Page, root_offsets: *mut OffsetNumber);
+    pub fn log_heap_prune_and_freeze(
+        relation: Relation,
+        buffer: Buffer,
+        conflict_xid: TransactionId,
+        cleanup_lock: bool,
+        reason: PruneReason::Type,
+        frozen: *mut HeapTupleFreeze,
+        nfrozen: ::core::ffi::c_int,
+        redirected: *mut OffsetNumber,
+        nredirected: ::core::ffi::c_int,
+        dead: *mut OffsetNumber,
+        ndead: ::core::ffi::c_int,
+        unused: *mut OffsetNumber,
+        nunused: ::core::ffi::c_int,
+    );
     pub fn heap_vacuum_rel(
         rel: Relation,
         params: *mut VacuumParams,
@@ -40384,18 +42357,18 @@ extern "C" {
     pub fn LWLockConditionalAcquire(lock: *mut LWLock, mode: LWLockMode::Type) -> bool;
     pub fn LWLockAcquireOrWait(lock: *mut LWLock, mode: LWLockMode::Type) -> bool;
     pub fn LWLockRelease(lock: *mut LWLock);
-    pub fn LWLockReleaseClearVar(lock: *mut LWLock, valptr: *mut uint64, val: uint64);
+    pub fn LWLockReleaseClearVar(lock: *mut LWLock, valptr: *mut pg_atomic_uint64, val: uint64);
     pub fn LWLockReleaseAll();
     pub fn LWLockHeldByMe(lock: *mut LWLock) -> bool;
     pub fn LWLockAnyHeldByMe(lock: *mut LWLock, nlocks: ::core::ffi::c_int, stride: usize) -> bool;
     pub fn LWLockHeldByMeInMode(lock: *mut LWLock, mode: LWLockMode::Type) -> bool;
     pub fn LWLockWaitForVar(
         lock: *mut LWLock,
-        valptr: *mut uint64,
+        valptr: *mut pg_atomic_uint64,
         oldval: uint64,
         newval: *mut uint64,
     ) -> bool;
-    pub fn LWLockUpdateVar(lock: *mut LWLock, valptr: *mut uint64, val: uint64);
+    pub fn LWLockUpdateVar(lock: *mut LWLock, valptr: *mut pg_atomic_uint64, val: uint64);
     pub fn LWLockShmemSize() -> Size;
     pub fn CreateLWLocks();
     pub fn InitLWLockAccess();
@@ -40525,8 +42498,7 @@ extern "C" {
     pub fn LockReleaseSession(lockmethodid: LOCKMETHODID);
     pub fn LockReleaseCurrentOwner(locallocks: *mut *mut LOCALLOCK, nlocks: ::core::ffi::c_int);
     pub fn LockReassignCurrentOwner(locallocks: *mut *mut LOCALLOCK, nlocks: ::core::ffi::c_int);
-    pub fn LockHeldByMe(locktag: *const LOCKTAG, lockmode: LOCKMODE) -> bool;
-    pub fn LockOrStrongerHeldByMe(locktag: *const LOCKTAG, lockmode: LOCKMODE) -> bool;
+    pub fn LockHeldByMe(locktag: *const LOCKTAG, lockmode: LOCKMODE, orstronger: bool) -> bool;
     pub fn LockHasWaiters(locktag: *const LOCKTAG, lockmode: LOCKMODE, sessionLock: bool) -> bool;
     pub fn GetLockConflicts(
         locktag: *const LOCKTAG,
@@ -40753,6 +42725,25 @@ extern "C" {
         all_frozen: *mut BlockNumber,
     );
     pub fn visibilitymap_prepare_truncate(rel: Relation, nheapblocks: BlockNumber) -> BlockNumber;
+    pub static mut RmgrTable: [RmgrData; 0usize];
+    pub fn RmgrStartup();
+    pub fn RmgrCleanup();
+    pub fn RmgrNotFound(rmid: RmgrId);
+    pub fn RegisterCustomRmgr(rmid: RmgrId, rmgr: *const RmgrData);
+    pub fn GetLastSegSwitchData(lastSwitchLSN: *mut XLogRecPtr) -> pg_time_t;
+    pub fn RequestXLogSwitch(mark_unimportant: bool) -> XLogRecPtr;
+    pub fn GetOldestRestartPoint(oldrecptr: *mut XLogRecPtr, oldtli: *mut TimeLineID);
+    pub fn XLogRecGetBlockRefInfo(
+        record: *mut XLogReaderState,
+        pretty: bool,
+        detailed_format: bool,
+        buf: StringInfo,
+        fpi_len: *mut uint32,
+    );
+    pub static mut ArchiveRecoveryRequested: bool;
+    pub static mut InArchiveRecovery: bool;
+    pub static mut StandbyMode: bool;
+    pub static mut recoveryRestoreCommand: *mut ::core::ffi::c_char;
     pub static mut recoveryTargetInclusive: bool;
     pub static mut recoveryTargetAction: ::core::ffi::c_int;
     pub static mut recovery_min_apply_delay: ::core::ffi::c_int;
@@ -40802,238 +42793,6 @@ extern "C" {
         minValue: ::core::ffi::c_int,
     );
     pub fn xlog_outdesc(buf: StringInfo, record: *mut XLogReaderState);
-    pub static mut CurrentResourceOwner: ResourceOwner;
-    pub static mut CurTransactionResourceOwner: ResourceOwner;
-    pub static mut TopTransactionResourceOwner: ResourceOwner;
-    pub static mut AuxProcessResourceOwner: ResourceOwner;
-    pub fn ResourceOwnerCreate(
-        parent: ResourceOwner,
-        name: *const ::core::ffi::c_char,
-    ) -> ResourceOwner;
-    pub fn ResourceOwnerRelease(
-        owner: ResourceOwner,
-        phase: ResourceReleasePhase::Type,
-        isCommit: bool,
-        isTopLevel: bool,
-    );
-    pub fn ResourceOwnerReleaseAllPlanCacheRefs(owner: ResourceOwner);
-    pub fn ResourceOwnerDelete(owner: ResourceOwner);
-    pub fn ResourceOwnerGetParent(owner: ResourceOwner) -> ResourceOwner;
-    pub fn ResourceOwnerNewParent(owner: ResourceOwner, newparent: ResourceOwner);
-    pub fn RegisterResourceReleaseCallback(
-        callback: ResourceReleaseCallback,
-        arg: *mut ::core::ffi::c_void,
-    );
-    pub fn UnregisterResourceReleaseCallback(
-        callback: ResourceReleaseCallback,
-        arg: *mut ::core::ffi::c_void,
-    );
-    pub fn CreateAuxProcessResourceOwner();
-    pub fn ReleaseAuxProcessResources(isCommit: bool);
-    pub static mut old_snapshot_threshold: ::core::ffi::c_int;
-    pub fn SnapMgrShmemSize() -> Size;
-    pub fn SnapMgrInit();
-    pub fn GetSnapshotCurrentTimestamp() -> TimestampTz;
-    pub fn GetOldSnapshotThresholdTimestamp() -> TimestampTz;
-    pub fn SnapshotTooOldMagicForTest();
-    pub static mut FirstSnapshotSet: bool;
-    pub static mut TransactionXmin: TransactionId;
-    pub static mut RecentXmin: TransactionId;
-    pub static mut SnapshotSelfData: SnapshotData;
-    pub static mut SnapshotAnyData: SnapshotData;
-    pub static mut CatalogSnapshotData: SnapshotData;
-    pub fn GetTransactionSnapshot() -> Snapshot;
-    pub fn GetLatestSnapshot() -> Snapshot;
-    pub fn SnapshotSetCommandId(curcid: CommandId);
-    pub fn GetOldestSnapshot() -> Snapshot;
-    pub fn GetCatalogSnapshot(relid: Oid) -> Snapshot;
-    pub fn GetNonHistoricCatalogSnapshot(relid: Oid) -> Snapshot;
-    pub fn InvalidateCatalogSnapshot();
-    pub fn InvalidateCatalogSnapshotConditionally();
-    pub fn PushActiveSnapshot(snapshot: Snapshot);
-    pub fn PushActiveSnapshotWithLevel(snapshot: Snapshot, snap_level: ::core::ffi::c_int);
-    pub fn PushCopiedSnapshot(snapshot: Snapshot);
-    pub fn UpdateActiveSnapshotCommandId();
-    pub fn PopActiveSnapshot();
-    pub fn GetActiveSnapshot() -> Snapshot;
-    pub fn ActiveSnapshotSet() -> bool;
-    pub fn RegisterSnapshot(snapshot: Snapshot) -> Snapshot;
-    pub fn UnregisterSnapshot(snapshot: Snapshot);
-    pub fn RegisterSnapshotOnOwner(snapshot: Snapshot, owner: ResourceOwner) -> Snapshot;
-    pub fn UnregisterSnapshotFromOwner(snapshot: Snapshot, owner: ResourceOwner);
-    pub fn AtSubCommit_Snapshot(level: ::core::ffi::c_int);
-    pub fn AtSubAbort_Snapshot(level: ::core::ffi::c_int);
-    pub fn AtEOXact_Snapshot(isCommit: bool, resetXmin: bool);
-    pub fn ImportSnapshot(idstr: *const ::core::ffi::c_char);
-    pub fn XactHasExportedSnapshots() -> bool;
-    pub fn DeleteAllExportedSnapshotFiles();
-    pub fn WaitForOlderSnapshots(limitXmin: TransactionId, progress: bool);
-    pub fn ThereAreNoPriorRegisteredSnapshots() -> bool;
-    pub fn HaveRegisteredOrActiveSnapshot() -> bool;
-    pub fn TransactionIdLimitedForOldSnapshots(
-        recentXmin: TransactionId,
-        relation: Relation,
-        limit_xid: *mut TransactionId,
-        limit_ts: *mut TimestampTz,
-    ) -> bool;
-    pub fn SetOldSnapshotThresholdTimestamp(ts: TimestampTz, xlimit: TransactionId);
-    pub fn MaintainOldSnapshotTimeMapping(whenTaken: TimestampTz, xmin: TransactionId);
-    pub fn ExportSnapshot(snapshot: Snapshot) -> *mut ::core::ffi::c_char;
-    pub fn GlobalVisTestFor(rel: Relation) -> *mut GlobalVisState;
-    pub fn GlobalVisTestIsRemovableXid(state: *mut GlobalVisState, xid: TransactionId) -> bool;
-    pub fn GlobalVisTestIsRemovableFullXid(
-        state: *mut GlobalVisState,
-        fxid: FullTransactionId,
-    ) -> bool;
-    pub fn GlobalVisTestNonRemovableFullHorizon(state: *mut GlobalVisState) -> FullTransactionId;
-    pub fn GlobalVisTestNonRemovableHorizon(state: *mut GlobalVisState) -> TransactionId;
-    pub fn GlobalVisCheckRemovableXid(rel: Relation, xid: TransactionId) -> bool;
-    pub fn GlobalVisCheckRemovableFullXid(rel: Relation, fxid: FullTransactionId) -> bool;
-    pub fn XidInMVCCSnapshot(xid: TransactionId, snapshot: Snapshot) -> bool;
-    pub fn HistoricSnapshotGetTupleCids() -> *mut HTAB;
-    pub fn SetupHistoricSnapshot(historic_snapshot: Snapshot, tuplecids: *mut HTAB);
-    pub fn TeardownHistoricSnapshot(is_error: bool);
-    pub fn HistoricSnapshotActive() -> bool;
-    pub fn EstimateSnapshotSpace(snapshot: Snapshot) -> Size;
-    pub fn SerializeSnapshot(snapshot: Snapshot, start_address: *mut ::core::ffi::c_char);
-    pub fn RestoreSnapshot(start_address: *mut ::core::ffi::c_char) -> Snapshot;
-    pub fn RestoreTransactionSnapshot(snapshot: Snapshot, source_pgproc: *mut ::core::ffi::c_void);
-    pub static mut zero_damaged_pages: bool;
-    pub static mut bgwriter_lru_maxpages: ::core::ffi::c_int;
-    pub static mut bgwriter_lru_multiplier: f64;
-    pub static mut track_io_timing: bool;
-    pub static mut effective_io_concurrency: ::core::ffi::c_int;
-    pub static mut maintenance_io_concurrency: ::core::ffi::c_int;
-    pub static mut checkpoint_flush_after: ::core::ffi::c_int;
-    pub static mut backend_flush_after: ::core::ffi::c_int;
-    pub static mut bgwriter_flush_after: ::core::ffi::c_int;
-    pub static mut BufferBlocks: *mut ::core::ffi::c_char;
-    pub static mut NLocBuffer: ::core::ffi::c_int;
-    pub static mut LocalBufferBlockPointers: *mut Block;
-    pub static mut LocalRefCount: *mut int32;
-    pub fn PrefetchSharedBuffer(
-        smgr_reln: *mut SMgrRelationData,
-        forkNum: ForkNumber::Type,
-        blockNum: BlockNumber,
-    ) -> PrefetchBufferResult;
-    pub fn PrefetchBuffer(
-        reln: Relation,
-        forkNum: ForkNumber::Type,
-        blockNum: BlockNumber,
-    ) -> PrefetchBufferResult;
-    pub fn ReadRecentBuffer(
-        rlocator: RelFileLocator,
-        forkNum: ForkNumber::Type,
-        blockNum: BlockNumber,
-        recent_buffer: Buffer,
-    ) -> bool;
-    pub fn ReadBuffer(reln: Relation, blockNum: BlockNumber) -> Buffer;
-    pub fn ReadBufferExtended(
-        reln: Relation,
-        forkNum: ForkNumber::Type,
-        blockNum: BlockNumber,
-        mode: ReadBufferMode::Type,
-        strategy: BufferAccessStrategy,
-    ) -> Buffer;
-    pub fn ReadBufferWithoutRelcache(
-        rlocator: RelFileLocator,
-        forkNum: ForkNumber::Type,
-        blockNum: BlockNumber,
-        mode: ReadBufferMode::Type,
-        strategy: BufferAccessStrategy,
-        permanent: bool,
-    ) -> Buffer;
-    pub fn ReleaseBuffer(buffer: Buffer);
-    pub fn UnlockReleaseBuffer(buffer: Buffer);
-    pub fn MarkBufferDirty(buffer: Buffer);
-    pub fn IncrBufferRefCount(buffer: Buffer);
-    pub fn CheckBufferIsPinnedOnce(buffer: Buffer);
-    pub fn ReleaseAndReadBuffer(
-        buffer: Buffer,
-        relation: Relation,
-        blockNum: BlockNumber,
-    ) -> Buffer;
-    pub fn ExtendBufferedRel(
-        bmr: BufferManagerRelation,
-        forkNum: ForkNumber::Type,
-        strategy: BufferAccessStrategy,
-        flags: uint32,
-    ) -> Buffer;
-    pub fn ExtendBufferedRelBy(
-        bmr: BufferManagerRelation,
-        fork: ForkNumber::Type,
-        strategy: BufferAccessStrategy,
-        flags: uint32,
-        extend_by: uint32,
-        buffers: *mut Buffer,
-        extended_by: *mut uint32,
-    ) -> BlockNumber;
-    pub fn ExtendBufferedRelTo(
-        bmr: BufferManagerRelation,
-        fork: ForkNumber::Type,
-        strategy: BufferAccessStrategy,
-        flags: uint32,
-        extend_to: BlockNumber,
-        mode: ReadBufferMode::Type,
-    ) -> Buffer;
-    pub fn InitBufferPoolAccess();
-    pub fn AtEOXact_Buffers(isCommit: bool);
-    pub fn PrintBufferLeakWarning(buffer: Buffer);
-    pub fn CheckPointBuffers(flags: ::core::ffi::c_int);
-    pub fn BufferGetBlockNumber(buffer: Buffer) -> BlockNumber;
-    pub fn RelationGetNumberOfBlocksInFork(
-        relation: Relation,
-        forkNum: ForkNumber::Type,
-    ) -> BlockNumber;
-    pub fn FlushOneBuffer(buffer: Buffer);
-    pub fn FlushRelationBuffers(rel: Relation);
-    pub fn FlushRelationsAllBuffers(smgrs: *mut *mut SMgrRelationData, nrels: ::core::ffi::c_int);
-    pub fn CreateAndCopyRelationData(
-        src_rlocator: RelFileLocator,
-        dst_rlocator: RelFileLocator,
-        permanent: bool,
-    );
-    pub fn FlushDatabaseBuffers(dbid: Oid);
-    pub fn DropRelationBuffers(
-        smgr_reln: *mut SMgrRelationData,
-        forkNum: *mut ForkNumber::Type,
-        nforks: ::core::ffi::c_int,
-        firstDelBlock: *mut BlockNumber,
-    );
-    pub fn DropRelationsAllBuffers(
-        smgr_reln: *mut *mut SMgrRelationData,
-        nlocators: ::core::ffi::c_int,
-    );
-    pub fn DropDatabaseBuffers(dbid: Oid);
-    pub fn BufferIsPermanent(buffer: Buffer) -> bool;
-    pub fn BufferGetLSNAtomic(buffer: Buffer) -> XLogRecPtr;
-    pub fn BufferGetTag(
-        buffer: Buffer,
-        rlocator: *mut RelFileLocator,
-        forknum: *mut ForkNumber::Type,
-        blknum: *mut BlockNumber,
-    );
-    pub fn MarkBufferDirtyHint(buffer: Buffer, buffer_std: bool);
-    pub fn UnlockBuffers();
-    pub fn LockBuffer(buffer: Buffer, mode: ::core::ffi::c_int);
-    pub fn ConditionalLockBuffer(buffer: Buffer) -> bool;
-    pub fn LockBufferForCleanup(buffer: Buffer);
-    pub fn ConditionalLockBufferForCleanup(buffer: Buffer) -> bool;
-    pub fn IsBufferCleanupOK(buffer: Buffer) -> bool;
-    pub fn HoldingBufferPinThatDelaysRecovery() -> bool;
-    pub fn AbortBufferIO(buffer: Buffer);
-    pub fn BgBufferSync(wb_context: *mut WritebackContext) -> bool;
-    pub fn TestForOldSnapshot_impl(snapshot: Snapshot, relation: Relation);
-    pub fn InitBufferPool();
-    pub fn BufferShmemSize() -> Size;
-    pub fn AtProcExit_LocalBuffers();
-    pub fn GetAccessStrategy(btype: BufferAccessStrategyType::Type) -> BufferAccessStrategy;
-    pub fn GetAccessStrategyWithSize(
-        btype: BufferAccessStrategyType::Type,
-        ring_size_kb: ::core::ffi::c_int,
-    ) -> BufferAccessStrategy;
-    pub fn GetAccessStrategyBufferCount(strategy: BufferAccessStrategy) -> ::core::ffi::c_int;
-    pub fn FreeAccessStrategy(strategy: BufferAccessStrategy);
     pub static mut InRecovery: bool;
     pub static mut standbyState: HotStandbyState::Type;
     pub fn XLogHaveInvalidPages() -> bool;
@@ -41120,7 +42879,6 @@ extern "C" {
         self_behavior: DependencyType::Type,
         reverse_self: bool,
     );
-    pub fn getObjectClass(object: *const ObjectAddress) -> ObjectClass::Type;
     pub fn new_object_addresses() -> *mut ObjectAddresses;
     pub fn add_exact_object_address(object: *const ObjectAddress, addrs: *mut ObjectAddresses);
     pub fn object_address_present(
@@ -41191,7 +42949,7 @@ extern "C" {
         colId: *mut int32,
     ) -> bool;
     pub fn getOwnedSequences(relid: Oid) -> *mut List;
-    pub fn getIdentitySequence(relid: Oid, attnum: AttrNumber, missing_ok: bool) -> Oid;
+    pub fn getIdentitySequence(rel: Relation, attnum: AttrNumber, missing_ok: bool) -> Oid;
     pub fn get_index_constraint(indexId: Oid) -> Oid;
     pub fn get_index_ref_constraints(indexId: Oid) -> *mut List;
     pub fn recordSharedDependencyOn(
@@ -41214,6 +42972,15 @@ extern "C" {
         nnewmembers: ::core::ffi::c_int,
         newmembers: *mut Oid,
     );
+    pub fn updateInitAclDependencies(
+        classId: Oid,
+        objectId: Oid,
+        objsubId: int32,
+        noldmembers: ::core::ffi::c_int,
+        oldmembers: *mut Oid,
+        nnewmembers: ::core::ffi::c_int,
+        newmembers: *mut Oid,
+    );
     pub fn checkSharedDependencies(
         classId: Oid,
         objectId: Oid,
@@ -41227,9 +42994,9 @@ extern "C" {
     pub fn shdepReassignOwned(roleids: *mut List, newrole: Oid);
     pub fn index_check_primary_key(
         heapRel: Relation,
-        indexInfo: *mut IndexInfo,
+        indexInfo: *const IndexInfo,
         is_alter_table: bool,
-        stmt: *mut IndexStmt,
+        stmt: *const IndexStmt,
     );
     pub fn index_create(
         heapRelation: Relation,
@@ -41239,12 +43006,14 @@ extern "C" {
         parentConstraintId: Oid,
         relFileNumber: RelFileNumber,
         indexInfo: *mut IndexInfo,
-        indexColNames: *mut List,
-        accessMethodObjectId: Oid,
+        indexColNames: *const List,
+        accessMethodId: Oid,
         tableSpaceId: Oid,
-        collationObjectId: *mut Oid,
-        classObjectId: *mut Oid,
-        coloptions: *mut int16,
+        collationIds: *const Oid,
+        opclassIds: *const Oid,
+        opclassOptions: *const Datum,
+        coloptions: *const int16,
+        stattargets: *const NullableDatum,
         reloptions: Datum,
         flags: bits16,
         constr_flags: bits16,
@@ -41269,7 +43038,7 @@ extern "C" {
         heapRelation: Relation,
         indexRelationId: Oid,
         parentConstraintId: Oid,
-        indexInfo: *mut IndexInfo,
+        indexInfo: *const IndexInfo,
         constraintName: *const ::core::ffi::c_char,
         constraintType: ::core::ffi::c_char,
         constr_flags: bits16,
@@ -41280,13 +43049,13 @@ extern "C" {
     pub fn BuildIndexInfo(index: Relation) -> *mut IndexInfo;
     pub fn BuildDummyIndexInfo(index: Relation) -> *mut IndexInfo;
     pub fn CompareIndexInfo(
-        info1: *mut IndexInfo,
-        info2: *mut IndexInfo,
-        collations1: *mut Oid,
-        collations2: *mut Oid,
-        opfamilies1: *mut Oid,
-        opfamilies2: *mut Oid,
-        attmap: *mut AttrMap,
+        info1: *const IndexInfo,
+        info2: *const IndexInfo,
+        collations1: *const Oid,
+        collations2: *const Oid,
+        opfamilies1: *const Oid,
+        opfamilies2: *const Oid,
+        attmap: *const AttrMap,
     ) -> bool;
     pub fn BuildSpeculativeIndexInfo(index: Relation, ii: *mut IndexInfo);
     pub fn FormIndexDatum(
@@ -41307,22 +43076,24 @@ extern "C" {
     pub fn index_set_state_flags(indexId: Oid, action: IndexStateFlagsAction::Type);
     pub fn IndexGetRelation(indexId: Oid, missing_ok: bool) -> Oid;
     pub fn reindex_index(
+        stmt: *const ReindexStmt,
         indexId: Oid,
         skip_constraint_checks: bool,
         persistence: ::core::ffi::c_char,
-        params: *mut ReindexParams,
+        params: *const ReindexParams,
     );
     pub fn reindex_relation(
+        stmt: *const ReindexStmt,
         relid: Oid,
         flags: ::core::ffi::c_int,
-        params: *mut ReindexParams,
+        params: *const ReindexParams,
     ) -> bool;
     pub fn ReindexIsProcessingHeap(heapOid: Oid) -> bool;
     pub fn ReindexIsProcessingIndex(indexOid: Oid) -> bool;
     pub fn ResetReindexState(nestLevel: ::core::ffi::c_int);
     pub fn EstimateReindexStateSpace() -> Size;
     pub fn SerializeReindexState(maxsize: Size, start_address: *mut ::core::ffi::c_char);
-    pub fn RestoreReindexState(reindexstate: *mut ::core::ffi::c_void);
+    pub fn RestoreReindexState(reindexstate: *const ::core::ffi::c_void);
     pub fn IndexSetParentIndex(partitionIdx: Relation, parentOid: Oid);
     pub fn CatalogOpenIndexes(heapRel: Relation) -> CatalogIndexState;
     pub fn CatalogCloseIndexes(indstate: CatalogIndexState);
@@ -41391,7 +43162,7 @@ extern "C" {
     pub fn ConversionGetConid(conname: *const ::core::ffi::c_char) -> Oid;
     pub fn ConversionIsVisible(conid: Oid) -> bool;
     pub fn get_statistics_object_oid(names: *mut List, missing_ok: bool) -> Oid;
-    pub fn StatisticsObjIsVisible(relid: Oid) -> bool;
+    pub fn StatisticsObjIsVisible(stxid: Oid) -> bool;
     pub fn get_ts_parser_oid(names: *mut List, missing_ok: bool) -> Oid;
     pub fn TSParserIsVisible(prsId: Oid) -> bool;
     pub fn get_ts_dict_oid(names: *mut List, missing_ok: bool) -> Oid;
@@ -41401,7 +43172,7 @@ extern "C" {
     pub fn get_ts_config_oid(names: *mut List, missing_ok: bool) -> Oid;
     pub fn TSConfigIsVisible(cfgid: Oid) -> bool;
     pub fn DeconstructQualifiedName(
-        names: *mut List,
+        names: *const List,
         nspname_p: *mut *mut ::core::ffi::c_char,
         objname_p: *mut *mut ::core::ffi::c_char,
     );
@@ -41411,28 +43182,26 @@ extern "C" {
     pub fn LookupCreationNamespace(nspname: *const ::core::ffi::c_char) -> Oid;
     pub fn CheckSetNamespace(oldNspOid: Oid, nspOid: Oid);
     pub fn QualifiedNameGetCreationNamespace(
-        names: *mut List,
+        names: *const List,
         objname_p: *mut *mut ::core::ffi::c_char,
     ) -> Oid;
-    pub fn makeRangeVarFromNameList(names: *mut List) -> *mut RangeVar;
-    pub fn NameListToString(names: *mut List) -> *mut ::core::ffi::c_char;
-    pub fn NameListToQuotedString(names: *mut List) -> *mut ::core::ffi::c_char;
+    pub fn makeRangeVarFromNameList(names: *const List) -> *mut RangeVar;
+    pub fn NameListToString(names: *const List) -> *mut ::core::ffi::c_char;
+    pub fn NameListToQuotedString(names: *const List) -> *mut ::core::ffi::c_char;
     pub fn isTempNamespace(namespaceId: Oid) -> bool;
     pub fn isTempToastNamespace(namespaceId: Oid) -> bool;
     pub fn isTempOrTempToastNamespace(namespaceId: Oid) -> bool;
     pub fn isAnyTempNamespace(namespaceId: Oid) -> bool;
     pub fn isOtherTempNamespace(namespaceId: Oid) -> bool;
     pub fn checkTempNamespaceStatus(namespaceId: Oid) -> TempNamespaceStatus::Type;
-    pub fn GetTempNamespaceBackendId(namespaceId: Oid) -> ::core::ffi::c_int;
+    pub fn GetTempNamespaceProcNumber(namespaceId: Oid) -> ProcNumber;
     pub fn GetTempToastNamespace() -> Oid;
     pub fn GetTempNamespaceState(tempNamespaceId: *mut Oid, tempToastNamespaceId: *mut Oid);
     pub fn SetTempNamespaceState(tempNamespaceId: Oid, tempToastNamespaceId: Oid);
     pub fn ResetTempTableNamespace();
-    pub fn GetOverrideSearchPath(context: MemoryContext) -> *mut OverrideSearchPath;
-    pub fn CopyOverrideSearchPath(path: *mut OverrideSearchPath) -> *mut OverrideSearchPath;
-    pub fn OverrideSearchPathMatchesCurrent(path: *mut OverrideSearchPath) -> bool;
-    pub fn PushOverrideSearchPath(newpath: *mut OverrideSearchPath);
-    pub fn PopOverrideSearchPath();
+    pub fn GetSearchPathMatcher(context: MemoryContext) -> *mut SearchPathMatcher;
+    pub fn CopySearchPathMatcher(path: *mut SearchPathMatcher) -> *mut SearchPathMatcher;
+    pub fn SearchPathMatchesCurrentEnvironment(path: *mut SearchPathMatcher) -> bool;
     pub fn get_collation_oid(collname: *mut List, missing_ok: bool) -> Oid;
     pub fn get_conversion_oid(conname: *mut List, missing_ok: bool) -> Oid;
     pub fn FindDefaultConversionProc(for_encoding: int32, to_encoding: int32) -> Oid;
@@ -41507,7 +43276,7 @@ extern "C" {
         collencoding: int32,
         collcollate: *const ::core::ffi::c_char,
         collctype: *const ::core::ffi::c_char,
-        colliculocale: *const ::core::ffi::c_char,
+        colllocale: *const ::core::ffi::c_char,
         collicurules: *const ::core::ffi::c_char,
         collversion: *const ::core::ffi::c_char,
         if_not_exists: bool,
@@ -41534,6 +43303,12 @@ extern "C" {
     pub fn SerializeUncommittedEnums(space: *mut ::core::ffi::c_void, size: Size);
     pub fn RestoreUncommittedEnums(space: *mut ::core::ffi::c_void);
     pub fn AtEOXact_Enum();
+    pub fn OperatorLookup(
+        operatorName: *mut List,
+        leftObjectId: Oid,
+        rightObjectId: Oid,
+        defined: *mut bool,
+    ) -> Oid;
     pub fn OperatorCreate(
         operatorName: *const ::core::ffi::c_char,
         operatorNamespace: Oid,
@@ -41552,6 +43327,17 @@ extern "C" {
         makeExtensionDep: bool,
         isUpdate: bool,
     ) -> ObjectAddress;
+    pub fn OperatorValidateParams(
+        leftTypeId: Oid,
+        rightTypeId: Oid,
+        operResultType: Oid,
+        hasCommutator: bool,
+        hasNegator: bool,
+        hasRestrictionSelectivity: bool,
+        hasJoinSelectivity: bool,
+        canMerge: bool,
+        canHash: bool,
+    );
     pub fn OperatorUpd(baseId: Oid, commId: Oid, negId: Oid, isDelete: bool);
     pub fn ProcedureCreate(
         procedureName: *const ::core::ffi::c_char,
@@ -41677,6 +43463,13 @@ extern "C" {
         roleid: Oid,
         mode: AclMode,
     ) -> AclResult::Type;
+    pub fn object_aclcheck_ext(
+        classid: Oid,
+        objectid: Oid,
+        roleid: Oid,
+        mode: AclMode,
+        is_missing: *mut bool,
+    ) -> AclResult::Type;
     pub fn pg_attribute_aclcheck(
         table_oid: Oid,
         attnum: AttrNumber,
@@ -41695,6 +43488,13 @@ extern "C" {
         roleid: Oid,
         mode: AclMode,
         how: AclMaskHow::Type,
+    ) -> AclResult::Type;
+    pub fn pg_attribute_aclcheck_all_ext(
+        table_oid: Oid,
+        roleid: Oid,
+        mode: AclMode,
+        how: AclMaskHow::Type,
+        is_missing: *mut bool,
     ) -> AclResult::Type;
     pub fn pg_class_aclcheck(table_oid: Oid, roleid: Oid, mode: AclMode) -> AclResult::Type;
     pub fn pg_class_aclcheck_ext(
@@ -41728,6 +43528,14 @@ extern "C" {
     pub fn aclcheck_error_type(aclerr: AclResult::Type, typeOid: Oid);
     pub fn recordExtObjInitPriv(objoid: Oid, classoid: Oid);
     pub fn removeExtObjInitPriv(objoid: Oid, classoid: Oid);
+    pub fn ReplaceRoleInInitPriv(
+        oldroleid: Oid,
+        newroleid: Oid,
+        classid: Oid,
+        objid: Oid,
+        objsubid: int32,
+    );
+    pub fn RemoveRoleFromInitPriv(roleid: Oid, classid: Oid, objid: Oid, objsubid: int32);
     pub fn object_ownercheck(classid: Oid, objectid: Oid, roleid: Oid) -> bool;
     pub fn has_createrole_privilege(roleid: Oid) -> bool;
     pub fn has_bypassrls_privilege(roleid: Oid) -> bool;
@@ -41876,6 +43684,7 @@ extern "C" {
         nfields: *mut ::core::ffi::c_int,
     ) -> bool;
     pub fn CopyFromErrorCallback(arg: *mut ::core::ffi::c_void);
+    pub fn CopyLimitPrintoutLength(str_: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     pub fn CopyFrom(cstate: CopyFromState) -> uint64;
     pub fn CreateCopyDestReceiver() -> *mut DestReceiver;
     pub fn BeginCopyTo(
@@ -42147,11 +43956,6 @@ extern "C" {
         lb: *const ::core::ffi::c_int,
         indx: *const ::core::ffi::c_int,
     ) -> ::core::ffi::c_int;
-    pub fn ArrayGetOffset0(
-        n: ::core::ffi::c_int,
-        tup: *const ::core::ffi::c_int,
-        scale: *const ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
     pub fn ArrayGetNItems(
         ndim: ::core::ffi::c_int,
         dims: *const ::core::ffi::c_int,
@@ -42209,7 +44013,7 @@ extern "C" {
     pub fn deconstruct_expanded_array(eah: *mut ExpandedArrayHeader);
     pub fn RemoveObjects(stmt: *mut DropStmt);
     pub fn DefineIndex(
-        relationId: Oid,
+        tableId: Oid,
         stmt: *mut IndexStmt,
         indexRelationId: Oid,
         parentIndexId: Oid,
@@ -42221,7 +44025,7 @@ extern "C" {
         skip_build: bool,
         quiet: bool,
     ) -> ObjectAddress;
-    pub fn ExecReindex(pstate: *mut ParseState, stmt: *mut ReindexStmt, isTopLevel: bool);
+    pub fn ExecReindex(pstate: *mut ParseState, stmt: *const ReindexStmt, isTopLevel: bool);
     pub fn makeObjectName(
         name1: *const ::core::ffi::c_char,
         name2: *const ::core::ffi::c_char,
@@ -42237,12 +44041,12 @@ extern "C" {
     pub fn CheckIndexCompatible(
         oldId: Oid,
         accessMethodName: *const ::core::ffi::c_char,
-        attributeList: *mut List,
-        exclusionOpNames: *mut List,
+        attributeList: *const List,
+        exclusionOpNames: *const List,
     ) -> bool;
     pub fn GetDefaultOpClass(type_id: Oid, am_id: Oid) -> Oid;
     pub fn ResolveOpClass(
-        opclass: *mut List,
+        opclass: *const List,
         attrType: Oid,
         accessMethodName: *const ::core::ffi::c_char,
         accessMethodId: Oid,
@@ -42373,6 +44177,7 @@ extern "C" {
     pub fn defGetTypeLength(def: *mut DefElem) -> ::core::ffi::c_int;
     pub fn defGetStringList(def: *mut DefElem) -> *mut List;
     pub fn errorConflictingDefElem(defel: *mut DefElem, pstate: *mut ParseState) -> !;
+    pub static mut event_triggers: bool;
     pub fn CreateEventTrigger(stmt: *mut CreateEventTrigStmt) -> Oid;
     pub fn get_event_trigger_oid(trigname: *const ::core::ffi::c_char, missing_ok: bool) -> Oid;
     pub fn AlterEventTrigger(stmt: *mut AlterEventTrigStmt) -> Oid;
@@ -42382,7 +44187,7 @@ extern "C" {
     ) -> ObjectAddress;
     pub fn AlterEventTriggerOwner_oid(arg1: Oid, newOwnerId: Oid);
     pub fn EventTriggerSupportsObjectType(obtype: ObjectType::Type) -> bool;
-    pub fn EventTriggerSupportsObjectClass(objclass: ObjectClass::Type) -> bool;
+    pub fn EventTriggerSupportsObject(object: *const ObjectAddress) -> bool;
     pub fn EventTriggerDDLCommandStart(parsetree: *mut Node);
     pub fn EventTriggerDDLCommandEnd(parsetree: *mut Node);
     pub fn EventTriggerSQLDrop(parsetree: *mut Node);
@@ -42391,6 +44196,7 @@ extern "C" {
         tableOid: Oid,
         reason: ::core::ffi::c_int,
     );
+    pub fn EventTriggerOnLogin();
     pub fn EventTriggerBeginCompleteQuery() -> bool;
     pub fn EventTriggerEndCompleteQuery();
     pub fn trackDroppedObjectsNeeded() -> bool;
@@ -42434,6 +44240,15 @@ extern "C" {
         params: ParamListInfo,
         dest: *mut DestReceiver,
     );
+    pub fn standard_ExplainOneQuery(
+        query: *mut Query,
+        cursorOptions: ::core::ffi::c_int,
+        into: *mut IntoClause,
+        es: *mut ExplainState,
+        queryString: *const ::core::ffi::c_char,
+        params: ParamListInfo,
+        queryEnv: *mut QueryEnvironment,
+    );
     pub fn NewExplainState() -> *mut ExplainState;
     pub fn ExplainResultDesc(stmt: *mut ExplainStmt) -> TupleDesc;
     pub fn ExplainOneUtility(
@@ -42453,6 +44268,7 @@ extern "C" {
         queryEnv: *mut QueryEnvironment,
         planduration: *const instr_time,
         bufusage: *const BufferUsage,
+        mem_counters: *const MemoryContextCounters,
     );
     pub fn ExplainPrintPlan(es: *mut ExplainState, queryDesc: *mut QueryDesc);
     pub fn ExplainPrintTriggers(es: *mut ExplainState, queryDesc: *mut QueryDesc);
@@ -42517,6 +44333,7 @@ extern "C" {
         labeled: bool,
         es: *mut ExplainState,
     );
+    pub fn CreateExplainSerializeDestReceiver(es: *mut ExplainState) -> *mut DestReceiver;
     pub static mut creating_extension: bool;
     pub static mut CurrentExtensionObject: Oid;
     pub fn CreateExtension(
@@ -42554,6 +44371,7 @@ extern "C" {
     pub static mut plan_cache_mode: ::core::ffi::c_int;
     pub fn InitPlanCache();
     pub fn ResetPlanCache();
+    pub fn ReleaseAllPlanCacheRefsInOwner(owner: ResourceOwner);
     pub fn CreateCachedPlan(
         raw_parse_tree: *mut RawStmt,
         query_string: *const ::core::ffi::c_char,
@@ -42682,6 +44500,7 @@ extern "C" {
         typaddress: *mut ObjectAddress,
         queryString: *const ::core::ffi::c_char,
     ) -> ObjectAddress;
+    pub fn BuildDescForRelation(columns: *const List) -> TupleDesc;
     pub fn RemoveRelations(drop: *mut DropStmt);
     pub fn AlterTableLookupRelation(stmt: *mut AlterTableStmt, lockmode: LOCKMODE) -> Oid;
     pub fn AlterTable(
@@ -42758,7 +44577,7 @@ extern "C" {
         mySubid: SubTransactionId,
         parentSubid: SubTransactionId,
     );
-    pub fn RangeVarCallbackOwnsTable(
+    pub fn RangeVarCallbackMaintainsTable(
         relation: *const RangeVar,
         relId: Oid,
         oldRelId: Oid,
@@ -43010,7 +44829,8 @@ extern "C" {
     pub static mut log_statement_stats: bool;
     pub static mut log_btree_build_stats: bool;
     pub static mut check_function_bodies: bool;
-    pub static mut session_auth_is_superuser: bool;
+    pub static mut current_role_is_superuser: bool;
+    pub static mut AllowAlterSystem: bool;
     pub static mut log_duration: bool;
     pub static mut log_parameter_max_length: ::core::ffi::c_int;
     pub static mut log_parameter_max_length_on_error: ::core::ffi::c_int;
@@ -43125,7 +44945,7 @@ extern "C" {
     pub fn convert_GUC_name_for_parameter_acl(
         name: *const ::core::ffi::c_char,
     ) -> *mut ::core::ffi::c_char;
-    pub fn check_GUC_name_for_parameter_acl(name: *const ::core::ffi::c_char) -> bool;
+    pub fn check_GUC_name_for_parameter_acl(name: *const ::core::ffi::c_char);
     pub fn InitializeGUCOptions();
     pub fn SelectConfigFiles(
         userDoption: *const ::core::ffi::c_char,
@@ -43134,6 +44954,7 @@ extern "C" {
     pub fn ResetAllOptions();
     pub fn AtStart_GUC();
     pub fn NewGUCNestLevel() -> ::core::ffi::c_int;
+    pub fn RestrictSearchPath();
     pub fn AtEOXact_GUC(isCommit: bool, nestLevel: ::core::ffi::c_int);
     pub fn BeginReportingGUCOptions();
     pub fn ReportChangedGUCOptions();
@@ -43176,12 +44997,26 @@ extern "C" {
         elevel: ::core::ffi::c_int,
         is_reload: bool,
     ) -> ::core::ffi::c_int;
+    pub fn set_config_with_handle(
+        name: *const ::core::ffi::c_char,
+        handle: *mut config_handle,
+        value: *const ::core::ffi::c_char,
+        context: GucContext::Type,
+        source: GucSource::Type,
+        srole: Oid,
+        action: GucAction::Type,
+        changeVal: bool,
+        elevel: ::core::ffi::c_int,
+        is_reload: bool,
+    ) -> ::core::ffi::c_int;
+    pub fn get_config_handle(name: *const ::core::ffi::c_char) -> *mut config_handle;
     pub fn AlterSystemSetConfigFile(altersysstmt: *mut AlterSystemStmt);
     pub fn GetConfigOptionByName(
         name: *const ::core::ffi::c_char,
         varname: *mut *const ::core::ffi::c_char,
         missing_ok: bool,
     ) -> *mut ::core::ffi::c_char;
+    pub fn TransformGUCArray(array: *mut ArrayType, names: *mut *mut List, values: *mut *mut List);
     pub fn ProcessGUCArray(
         array: *mut ArrayType,
         context: GucContext::Type,
@@ -43280,7 +45115,6 @@ extern "C" {
         lsn: XLogRecPtr,
     );
     pub fn TransactionIdGetStatus(xid: TransactionId, lsn: *mut XLogRecPtr) -> XidStatus;
-    pub fn CLOGShmemBuffers() -> Size;
     pub fn CLOGShmemSize() -> Size;
     pub fn CLOGShmemInit();
     pub fn BootStrapCLOG();
@@ -43305,7 +45139,7 @@ extern "C" {
     pub fn ResetLatch(latch: *mut Latch);
     pub fn ShutdownLatchSupport();
     pub fn CreateWaitEventSet(
-        context: MemoryContext,
+        resowner: ResourceOwner,
         nevents: ::core::ffi::c_int,
     ) -> *mut WaitEventSet;
     pub fn FreeWaitEventSet(set: *mut WaitEventSet);
@@ -43360,6 +45194,7 @@ extern "C" {
     pub static mut StatementTimeout: ::core::ffi::c_int;
     pub static mut LockTimeout: ::core::ffi::c_int;
     pub static mut IdleInTransactionSessionTimeout: ::core::ffi::c_int;
+    pub static mut TransactionTimeout: ::core::ffi::c_int;
     pub static mut IdleSessionTimeout: ::core::ffi::c_int;
     pub static mut log_lock_waits: bool;
     pub fn ProcGlobalSemas() -> ::core::ffi::c_int;
@@ -43375,6 +45210,7 @@ extern "C" {
     pub fn ProcSleep(
         locallock: *mut LOCALLOCK,
         lockMethodTable: LockMethod,
+        dontWait: bool,
     ) -> ProcWaitStatus::Type;
     pub fn ProcWakeup(proc_: *mut PGPROC, waitStatus: ProcWaitStatus::Type);
     pub fn ProcLockWakeup(lockMethodTable: LockMethod, lock: *mut LOCK);
@@ -43382,7 +45218,7 @@ extern "C" {
     pub fn IsWaitingForLock() -> bool;
     pub fn LockErrorCleanup();
     pub fn ProcWaitForSignal(wait_event_info: uint32);
-    pub fn ProcSendSignal(pgprocno: ::core::ffi::c_int);
+    pub fn ProcSendSignal(procNumber: ProcNumber);
     pub fn AuxiliaryPidGetProc(pid: ::core::ffi::c_int) -> *mut PGPROC;
     pub fn BecomeLockGroupLeader();
     pub fn BecomeLockGroupMember(leader: *mut PGPROC, pid: ::core::ffi::c_int) -> bool;
@@ -43446,6 +45282,27 @@ extern "C" {
     pub fn AtEOSubXact_Parallel(isCommit: bool, mySubId: SubTransactionId);
     pub fn ParallelWorkerReportLastRecEnd(last_xlog_end: XLogRecPtr);
     pub fn ParallelWorkerMain(main_arg: Datum);
+    pub fn TidStoreCreateLocal(max_bytes: usize, insert_only: bool) -> *mut TidStore;
+    pub fn TidStoreCreateShared(max_bytes: usize, tranche_id: ::core::ffi::c_int) -> *mut TidStore;
+    pub fn TidStoreAttach(area_handle: dsa_handle, handle: dsa_pointer) -> *mut TidStore;
+    pub fn TidStoreDetach(ts: *mut TidStore);
+    pub fn TidStoreLockExclusive(ts: *mut TidStore);
+    pub fn TidStoreLockShare(ts: *mut TidStore);
+    pub fn TidStoreUnlock(ts: *mut TidStore);
+    pub fn TidStoreDestroy(ts: *mut TidStore);
+    pub fn TidStoreSetBlockOffsets(
+        ts: *mut TidStore,
+        blkno: BlockNumber,
+        offsets: *mut OffsetNumber,
+        num_offsets: ::core::ffi::c_int,
+    );
+    pub fn TidStoreIsMember(ts: *mut TidStore, tid: ItemPointer) -> bool;
+    pub fn TidStoreBeginIterate(ts: *mut TidStore) -> *mut TidStoreIter;
+    pub fn TidStoreIterateNext(iter: *mut TidStoreIter) -> *mut TidStoreIterResult;
+    pub fn TidStoreEndIterate(iter: *mut TidStoreIter);
+    pub fn TidStoreMemoryUsage(ts: *mut TidStore) -> usize;
+    pub fn TidStoreGetHandle(ts: *mut TidStore) -> dsa_pointer;
+    pub fn TidStoreGetDSA(ts: *mut TidStore) -> *mut dsa_area;
     pub static mut default_statistics_target: ::core::ffi::c_int;
     pub static mut vacuum_freeze_min_age: ::core::ffi::c_int;
     pub static mut vacuum_freeze_table_age: ::core::ffi::c_int;
@@ -43500,7 +45357,11 @@ extern "C" {
     pub fn vacuum_xid_failsafe_check(cutoffs: *const VacuumCutoffs) -> bool;
     pub fn vac_update_datfrozenxid();
     pub fn vacuum_delay_point();
-    pub fn vacuum_is_relation_owner(relid: Oid, reltuple: Form_pg_class, options: bits32) -> bool;
+    pub fn vacuum_is_permitted_for_relation(
+        relid: Oid,
+        reltuple: Form_pg_class,
+        options: bits32,
+    ) -> bool;
     pub fn vacuum_open_relation(
         relid: Oid,
         relation: *mut RangeVar,
@@ -43511,13 +45372,13 @@ extern "C" {
     pub fn vac_bulkdel_one_index(
         ivinfo: *mut IndexVacuumInfo,
         istat: *mut IndexBulkDeleteResult,
-        dead_items: *mut VacDeadItems,
+        dead_items: *mut TidStore,
+        dead_items_info: *mut VacDeadItemsInfo,
     ) -> *mut IndexBulkDeleteResult;
     pub fn vac_cleanup_one_index(
         ivinfo: *mut IndexVacuumInfo,
         istat: *mut IndexBulkDeleteResult,
     ) -> *mut IndexBulkDeleteResult;
-    pub fn vac_max_items_to_alloc_size(max_items: ::core::ffi::c_int) -> Size;
     pub fn AutoVacuumUpdateCostLimit();
     pub fn VacuumUpdateCosts();
     pub fn parallel_vacuum_init(
@@ -43525,7 +45386,7 @@ extern "C" {
         indrels: *mut Relation,
         nindexes: ::core::ffi::c_int,
         nrequested_workers: ::core::ffi::c_int,
-        max_items: ::core::ffi::c_int,
+        vac_work_mem: ::core::ffi::c_int,
         elevel: ::core::ffi::c_int,
         bstrategy: BufferAccessStrategy,
     ) -> *mut ParallelVacuumState;
@@ -43533,7 +45394,11 @@ extern "C" {
         pvs: *mut ParallelVacuumState,
         istats: *mut *mut IndexBulkDeleteResult,
     );
-    pub fn parallel_vacuum_get_dead_items(pvs: *mut ParallelVacuumState) -> *mut VacDeadItems;
+    pub fn parallel_vacuum_get_dead_items(
+        pvs: *mut ParallelVacuumState,
+        dead_items_info_p: *mut *mut VacDeadItemsInfo,
+    ) -> *mut TidStore;
+    pub fn parallel_vacuum_reset_dead_items(pvs: *mut ParallelVacuumState);
     pub fn parallel_vacuum_bulkdel_all_indexes(
         pvs: *mut ParallelVacuumState,
         num_table_tuples: ::core::ffi::c_long,
@@ -43564,6 +45429,10 @@ extern "C" {
     ) -> *mut ConfigData;
     pub fn get_controlfile(
         DataDir: *const ::core::ffi::c_char,
+        crc_ok_p: *mut bool,
+    ) -> *mut ControlFileData;
+    pub fn get_controlfile_by_exact_path(
+        ControlFilePath: *const ::core::ffi::c_char,
         crc_ok_p: *mut bool,
     ) -> *mut ControlFileData;
     pub fn update_controlfile(
@@ -43624,6 +45493,7 @@ extern "C" {
         op: *mut ExprEvalStep,
         econtext: *mut ExprContext,
     );
+    pub fn ExecEvalCoerceViaIOSafe(state: *mut ExprState, op: *mut ExprEvalStep);
     pub fn ExecEvalSQLValueFunction(state: *mut ExprState, op: *mut ExprEvalStep);
     pub fn ExecEvalCurrentOfExpr(state: *mut ExprState, op: *mut ExprEvalStep);
     pub fn ExecEvalNextValueExpr(state: *mut ExprState, op: *mut ExprEvalStep);
@@ -43680,7 +45550,23 @@ extern "C" {
         econtext: *mut ExprContext,
     );
     pub fn ExecEvalJsonIsPredicate(state: *mut ExprState, op: *mut ExprEvalStep);
+    pub fn ExecEvalJsonExprPath(
+        state: *mut ExprState,
+        op: *mut ExprEvalStep,
+        econtext: *mut ExprContext,
+    ) -> ::core::ffi::c_int;
+    pub fn ExecEvalJsonCoercion(
+        state: *mut ExprState,
+        op: *mut ExprEvalStep,
+        econtext: *mut ExprContext,
+    );
+    pub fn ExecEvalJsonCoercionFinish(state: *mut ExprState, op: *mut ExprEvalStep);
     pub fn ExecEvalGroupingFunc(state: *mut ExprState, op: *mut ExprEvalStep);
+    pub fn ExecEvalMergeSupportFunc(
+        state: *mut ExprState,
+        op: *mut ExprEvalStep,
+        econtext: *mut ExprContext,
+    );
     pub fn ExecEvalSubPlan(
         state: *mut ExprState,
         op: *mut ExprEvalStep,
@@ -44007,11 +45893,11 @@ extern "C" {
     pub fn jit_compile_expr(state: *mut ExprState) -> bool;
     pub fn InstrJitAgg(dst: *mut JitInstrumentation, add: *mut JitInstrumentation);
     pub static pg_enc2name_tbl: [pg_enc2name; 0usize];
-    pub static pg_enc2gettext_tbl: [pg_enc2gettext; 0usize];
+    pub static mut pg_enc2gettext_tbl: [*const ::core::ffi::c_char; 0usize];
     pub static pg_wchar_table: [pg_wchar_tbl; 0usize];
-    pub fn pg_char_to_encoding(name: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-    pub fn pg_encoding_to_char(encoding: ::core::ffi::c_int) -> *const ::core::ffi::c_char;
-    pub fn pg_valid_server_encoding_id(encoding: ::core::ffi::c_int) -> ::core::ffi::c_int;
+    pub fn pg_char_to_encoding_private(name: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    pub fn pg_encoding_to_char_private(encoding: ::core::ffi::c_int) -> *const ::core::ffi::c_char;
+    pub fn pg_valid_server_encoding_id_private(encoding: ::core::ffi::c_int) -> ::core::ffi::c_int;
     pub fn pg_encoding_mblen(
         encoding: ::core::ffi::c_int,
         mbstr: *const ::core::ffi::c_char,
@@ -44036,17 +45922,13 @@ extern "C" {
     ) -> ::core::ffi::c_int;
     pub fn pg_encoding_max_length(encoding: ::core::ffi::c_int) -> ::core::ffi::c_int;
     pub fn pg_valid_client_encoding(name: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-    pub fn pg_valid_server_encoding(name: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    pub fn pg_valid_server_encoding_private(name: *const ::core::ffi::c_char)
+        -> ::core::ffi::c_int;
     pub fn is_encoding_supported_by_icu(encoding: ::core::ffi::c_int) -> bool;
     pub fn get_encoding_name_for_icu(encoding: ::core::ffi::c_int) -> *const ::core::ffi::c_char;
-    pub fn unicode_to_utf8(
-        c: pg_wchar,
-        utf8string: *mut ::core::ffi::c_uchar,
-    ) -> *mut ::core::ffi::c_uchar;
-    pub fn utf8_to_unicode(c: *const ::core::ffi::c_uchar) -> pg_wchar;
     pub fn pg_utf8_islegal(source: *const ::core::ffi::c_uchar, length: ::core::ffi::c_int)
         -> bool;
-    pub fn pg_utf_mblen(s: *const ::core::ffi::c_uchar) -> ::core::ffi::c_int;
+    pub fn pg_utf_mblen_private(s: *const ::core::ffi::c_uchar) -> ::core::ffi::c_int;
     pub fn pg_mule_mblen(s: *const ::core::ffi::c_uchar) -> ::core::ffi::c_int;
     pub fn pg_mb2wchar(from: *const ::core::ffi::c_char, to: *mut pg_wchar) -> ::core::ffi::c_int;
     pub fn pg_mb2wchar_with_len(
@@ -44279,7 +46161,6 @@ extern "C" {
         buf: StringInfo,
         str_: *const ::core::ffi::c_char,
         slen: ::core::ffi::c_int,
-        countincludesself: bool,
     );
     pub fn pq_sendtext(buf: StringInfo, str_: *const ::core::ffi::c_char, slen: ::core::ffi::c_int);
     pub fn pq_sendstring(buf: StringInfo, str_: *const ::core::ffi::c_char);
@@ -44438,6 +46319,10 @@ extern "C" {
         concurrent: bool,
         summarizing: bool,
     ) -> *mut IndexInfo;
+    pub fn makeStringConst(
+        str_: *mut ::core::ffi::c_char,
+        location: ::core::ffi::c_int,
+    ) -> *mut Node;
     pub fn makeDefElem(
         name: *mut ::core::ffi::c_char,
         arg: *mut Node,
@@ -44478,7 +46363,21 @@ extern "C" {
         unique_keys: bool,
         location: ::core::ffi::c_int,
     ) -> *mut Node;
-    pub fn makeJsonEncoding(name: *mut ::core::ffi::c_char) -> JsonEncoding::Type;
+    pub fn makeJsonBehavior(
+        btype: JsonBehaviorType::Type,
+        expr: *mut Node,
+        location: ::core::ffi::c_int,
+    ) -> *mut JsonBehavior;
+    pub fn makeJsonTablePath(
+        pathvalue: *mut Const,
+        pathname: *mut ::core::ffi::c_char,
+    ) -> *mut JsonTablePath;
+    pub fn makeJsonTablePathSpec(
+        string: *mut ::core::ffi::c_char,
+        name: *mut ::core::ffi::c_char,
+        string_location: ::core::ffi::c_int,
+        name_location: ::core::ffi::c_int,
+    ) -> *mut JsonTablePathSpec;
     pub fn exprType(expr: *const Node) -> Oid;
     pub fn exprTypmod(expr: *const Node) -> int32;
     pub fn exprIsLengthCoercion(expr: *const Node, coercedTypmod: *mut int32) -> bool;
@@ -44842,8 +46741,7 @@ extern "C" {
         path: *mut Path,
         root: *mut PlannerInfo,
         windowFuncs: *mut List,
-        numPartCols: ::core::ffi::c_int,
-        numOrderCols: ::core::ffi::c_int,
+        winclause: *mut WindowClause,
         input_startup_cost: Cost,
         input_total_cost: Cost,
         input_tuples: f64,
@@ -44972,9 +46870,9 @@ extern "C" {
         root: *mut PlannerInfo,
         baserel: *mut RelOptInfo,
         bitmapqual: *mut Path,
-        loop_count: ::core::ffi::c_int,
-        cost: *mut Cost,
-        tuple: *mut f64,
+        loop_count: f64,
+        cost_p: *mut Cost,
+        tuples_p: *mut f64,
     ) -> f64;
     pub fn clause_selectivity(
         root: *mut PlannerInfo,
@@ -45016,6 +46914,7 @@ extern "C" {
     pub static mut recursive_worktable_factor: f64;
     pub static mut effective_cache_size: ::core::ffi::c_int;
     pub fn clamp_row_est(nrows: f64) -> f64;
+    pub fn clamp_width_est(tuple_width: int64) -> int32;
     pub fn clamp_cardinality_to_long(x: Cardinality) -> ::core::ffi::c_long;
     pub fn is_pseudo_constant_for_index(
         root: *mut PlannerInfo,
@@ -45274,6 +47173,7 @@ extern "C" {
     pub fn create_ctescan_path(
         root: *mut PlannerInfo,
         rel: *mut RelOptInfo,
+        pathkeys: *mut List,
         required_outer: Relids,
     ) -> *mut Path;
     pub fn create_namedtuplestorescan_path(
@@ -45301,6 +47201,7 @@ extern "C" {
         pathkeys: *mut List,
         required_outer: Relids,
         fdw_outerpath: *mut Path,
+        fdw_restrictinfo: *mut List,
         fdw_private: *mut List,
     ) -> *mut ForeignPath;
     pub fn create_foreign_join_path(
@@ -45313,6 +47214,7 @@ extern "C" {
         pathkeys: *mut List,
         required_outer: Relids,
         fdw_outerpath: *mut Path,
+        fdw_restrictinfo: *mut List,
         fdw_private: *mut List,
     ) -> *mut ForeignPath;
     pub fn create_foreign_upper_path(
@@ -45324,6 +47226,7 @@ extern "C" {
         total_cost: Cost,
         pathkeys: *mut List,
         fdw_outerpath: *mut Path,
+        fdw_restrictinfo: *mut List,
         fdw_private: *mut List,
     ) -> *mut ForeignPath;
     pub fn calc_nestloop_required_outer(
@@ -45456,6 +47359,7 @@ extern "C" {
         subpath: *mut Path,
         target: *mut PathTarget,
         windowFuncs: *mut List,
+        runCondition: *mut List,
         winclause: *mut WindowClause,
         qual: *mut List,
         topwindow: bool,
@@ -45505,6 +47409,7 @@ extern "C" {
         rowMarks: *mut List,
         onconflict: *mut OnConflictExpr,
         mergeActionLists: *mut List,
+        mergeJoinConditions: *mut List,
         epqParam: ::core::ffi::c_int,
     ) -> *mut ModifyTablePath;
     pub fn create_limit_path(
@@ -45535,6 +47440,7 @@ extern "C" {
         path: *mut Path,
         child_rel: *mut RelOptInfo,
     ) -> *mut Path;
+    pub fn path_is_reparameterizable_by_child(path: *mut Path, child_rel: *mut RelOptInfo) -> bool;
     pub fn setup_simple_rel_arrays(root: *mut PlannerInfo);
     pub fn expand_planner_arrays(root: *mut PlannerInfo, add_size: ::core::ffi::c_int);
     pub fn build_simple_rel(
@@ -45543,6 +47449,10 @@ extern "C" {
         parent: *mut RelOptInfo,
     ) -> *mut RelOptInfo;
     pub fn find_base_rel(root: *mut PlannerInfo, relid: ::core::ffi::c_int) -> *mut RelOptInfo;
+    pub fn find_base_rel_noerr(
+        root: *mut PlannerInfo,
+        relid: ::core::ffi::c_int,
+    ) -> *mut RelOptInfo;
     pub fn find_base_rel_ignore_join(
         root: *mut PlannerInfo,
         relid: ::core::ffi::c_int,
@@ -45602,6 +47512,7 @@ extern "C" {
     pub static mut geqo_threshold: ::core::ffi::c_int;
     pub static mut min_parallel_table_scan_size: ::core::ffi::c_int;
     pub static mut min_parallel_index_scan_size: ::core::ffi::c_int;
+    pub static mut enable_group_by_reordering: bool;
     pub static mut set_rel_pathlist_hook: set_rel_pathlist_hook_type;
     pub static mut set_join_pathlist_hook: set_join_pathlist_hook_type;
     pub static mut join_search_hook: join_search_hook_type;
@@ -45681,6 +47592,11 @@ extern "C" {
         inner_params: Relids,
     ) -> bool;
     pub fn mark_dummy_rel(rel: *mut RelOptInfo);
+    pub fn init_dummy_sjinfo(
+        sjinfo: *mut SpecialJoinInfo,
+        left_relids: Relids,
+        right_relids: Relids,
+    );
     pub fn process_equivalence(
         root: *mut PlannerInfo,
         p_restrictinfo: *mut *mut RestrictInfo,
@@ -45758,6 +47674,12 @@ extern "C" {
         parent_joinrel: *mut RelOptInfo,
         child_joinrel: *mut RelOptInfo,
     );
+    pub fn add_setop_child_rel_equivalences(
+        root: *mut PlannerInfo,
+        child_rel: *mut RelOptInfo,
+        child_tlist: *mut List,
+        setop_pathkeys: *mut List,
+    );
     pub fn generate_implied_equalities_for_column(
         root: *mut PlannerInfo,
         rel: *mut RelOptInfo,
@@ -45788,6 +47710,7 @@ extern "C" {
         keys2: *mut List,
         n_common: *mut ::core::ffi::c_int,
     ) -> bool;
+    pub fn get_useful_group_keys_orderings(root: *mut PlannerInfo, path: *mut Path) -> *mut List;
     pub fn get_cheapest_path_for_pathkeys(
         paths: *mut List,
         pathkeys: *mut List,
@@ -45843,6 +47766,7 @@ extern "C" {
         tlist: *mut List,
         remove_redundant: bool,
         sortable: *mut bool,
+        set_ec_sortref: bool,
     ) -> *mut List;
     pub fn initialize_mergeclause_eclasses(root: *mut PlannerInfo, restrictinfo: *mut RestrictInfo);
     pub fn update_mergeclause_eclasses(root: *mut PlannerInfo, restrictinfo: *mut RestrictInfo);
@@ -46009,6 +47933,14 @@ extern "C" {
     pub fn find_lateral_references(root: *mut PlannerInfo);
     pub fn create_lateral_join_info(root: *mut PlannerInfo);
     pub fn deconstruct_jointree(root: *mut PlannerInfo) -> *mut List;
+    pub fn restriction_is_always_true(
+        root: *mut PlannerInfo,
+        restrictinfo: *mut RestrictInfo,
+    ) -> bool;
+    pub fn restriction_is_always_false(
+        root: *mut PlannerInfo,
+        restrictinfo: *mut RestrictInfo,
+    ) -> bool;
     pub fn distribute_restrictinfo_to_rels(root: *mut PlannerInfo, restrictinfo: *mut RestrictInfo);
     pub fn process_implied_equality(
         root: *mut PlannerInfo,
@@ -46066,6 +47998,7 @@ extern "C" {
         parent_root: *mut PlannerInfo,
         hasRecursion: bool,
         tuple_fraction: f64,
+        setops: *mut SetOperationStmt,
     ) -> *mut PlannerInfo;
     pub fn select_rowmark_type(
         rte: *mut RangeTblEntry,
@@ -46101,8 +48034,6 @@ extern "C" {
         joinquals: *mut *mut List,
         otherquals: *mut *mut List,
     );
-    pub fn has_pseudoconstant_clauses(root: *mut PlannerInfo, restrictinfo_list: *mut List)
-        -> bool;
     pub fn join_clause_is_movable_to(rinfo: *mut RestrictInfo, baserel: *mut RelOptInfo) -> bool;
     pub fn join_clause_is_movable_into(
         rinfo: *mut RestrictInfo,
@@ -46183,6 +48114,11 @@ extern "C" {
         strip_indirection: bool,
     ) -> *mut List;
     pub fn transformUpdateTargetList(pstate: *mut ParseState, origTlist: *mut List) -> *mut List;
+    pub fn transformReturningList(
+        pstate: *mut ParseState,
+        returningList: *mut List,
+        exprKind: ParseExprKind::Type,
+    ) -> *mut List;
     pub fn transformTopLevelStmt(pstate: *mut ParseState, parseTree: *mut RawStmt) -> *mut Query;
     pub fn transformStmt(pstate: *mut ParseState, parseTree: *mut Node) -> *mut Query;
     pub fn stmt_requires_parse_analysis(parseTree: *mut RawStmt) -> bool;
@@ -46315,6 +48251,7 @@ extern "C" {
         noError: bool,
         location: ::core::ffi::c_int,
     ) -> Operator;
+    pub fn op_signature_string(op: *mut List, arg1: Oid, arg2: Oid) -> *const ::core::ffi::c_char;
     pub fn get_sort_group_operators(
         argtype: Oid,
         needLT: bool,
@@ -46567,7 +48504,7 @@ extern "C" {
     ) -> Oid;
     pub fn GetColumnDefCollation(
         pstate: *mut ParseState,
-        coldef: *mut ColumnDef,
+        coldef: *const ColumnDef,
         typeOid: Oid,
     ) -> Oid;
     pub fn typeidType(id: Oid) -> Type;
@@ -46775,33 +48712,6 @@ extern "C" {
         isnulls: *const bool,
         expand_external: bool,
     );
-    pub fn lookup_type_cache(type_id: Oid, flags: ::core::ffi::c_int) -> *mut TypeCacheEntry;
-    pub fn InitDomainConstraintRef(
-        type_id: Oid,
-        ref_: *mut DomainConstraintRef,
-        refctx: MemoryContext,
-        need_exprstate: bool,
-    );
-    pub fn UpdateDomainConstraintRef(ref_: *mut DomainConstraintRef);
-    pub fn DomainHasConstraints(type_id: Oid) -> bool;
-    pub fn lookup_rowtype_tupdesc(type_id: Oid, typmod: int32) -> TupleDesc;
-    pub fn lookup_rowtype_tupdesc_noerror(type_id: Oid, typmod: int32, noError: bool) -> TupleDesc;
-    pub fn lookup_rowtype_tupdesc_copy(type_id: Oid, typmod: int32) -> TupleDesc;
-    pub fn lookup_rowtype_tupdesc_domain(type_id: Oid, typmod: int32, noError: bool) -> TupleDesc;
-    pub fn assign_record_type_typmod(tupDesc: TupleDesc);
-    pub fn assign_record_type_identifier(type_id: Oid, typmod: int32) -> uint64;
-    pub fn compare_values_of_enum(
-        tcache: *mut TypeCacheEntry,
-        arg1: Oid,
-        arg2: Oid,
-    ) -> ::core::ffi::c_int;
-    pub fn SharedRecordTypmodRegistryEstimate() -> usize;
-    pub fn SharedRecordTypmodRegistryInit(
-        arg1: *mut SharedRecordTypmodRegistry,
-        segment: *mut dsm_segment,
-        area: *mut dsa_area,
-    );
-    pub fn SharedRecordTypmodRegistryAttach(arg1: *mut SharedRecordTypmodRegistry);
     pub static mut plpgsql_IdentifierLookup: IdentifierLookup::Type;
     pub static mut plpgsql_variable_conflict: ::core::ffi::c_int;
     pub static mut plpgsql_print_strict_params: bool;
@@ -46851,6 +48761,7 @@ extern "C" {
         collation: Oid,
         origtypname: *mut TypeName,
     ) -> *mut PLpgSQL_type;
+    pub fn plpgsql_build_datatype_arrayof(dtype: *mut PLpgSQL_type) -> *mut PLpgSQL_type;
     pub fn plpgsql_build_variable(
         refname: *const ::core::ffi::c_char,
         lineno: ::core::ffi::c_int,
@@ -46981,11 +48892,21 @@ extern "C" {
     pub static mut send_abort_for_kill: bool;
     pub static mut postmaster_alive_fds: [::core::ffi::c_int; 2usize];
     pub static mut progname: *const ::core::ffi::c_char;
+    pub static mut LoadedSSL: bool;
     pub fn PostmasterMain(argc: ::core::ffi::c_int, argv: *mut *mut ::core::ffi::c_char) -> !;
     pub fn ClosePostmasterPorts(am_syslogger: bool);
     pub fn InitProcessGlobals();
     pub fn MaxLivePostmasterChildren() -> ::core::ffi::c_int;
     pub fn PostmasterMarkPIDForWorkerNotify(arg1: ::core::ffi::c_int) -> bool;
+    pub fn processCancelRequest(backendPID: ::core::ffi::c_int, cancelAuthCode: int32);
+    pub static mut MyClientSocket: *mut ClientSocket;
+    pub fn postmaster_child_launch(
+        child_type: BackendType::Type,
+        startup_data: *mut ::core::ffi::c_char,
+        startup_data_len: usize,
+        client_sock: *mut ClientSocket,
+    ) -> pid_t;
+    pub fn PostmasterChildName(child_type: BackendType::Type) -> *const ::core::ffi::c_char;
     pub static mut Logging_collector: bool;
     pub static mut Log_RotationAge: ::core::ffi::c_int;
     pub static mut Log_RotationSize: ::core::ffi::c_int;
@@ -47000,17 +48921,15 @@ extern "C" {
         count: ::core::ffi::c_int,
         destination: ::core::ffi::c_int,
     );
+    pub fn SysLoggerMain(startup_data: *mut ::core::ffi::c_char, startup_data_len: usize) -> !;
     pub fn CheckLogrotateSignal() -> bool;
     pub fn RemoveLogrotateSignalFiles();
     pub static mut logical_decoding_work_mem: ::core::ffi::c_int;
     pub static mut debug_logical_replication_streaming: ::core::ffi::c_int;
     pub fn ReorderBufferAllocate() -> *mut ReorderBuffer;
     pub fn ReorderBufferFree(rb: *mut ReorderBuffer);
-    pub fn ReorderBufferGetTupleBuf(
-        rb: *mut ReorderBuffer,
-        tuple_len: Size,
-    ) -> *mut ReorderBufferTupleBuf;
-    pub fn ReorderBufferReturnTupleBuf(rb: *mut ReorderBuffer, tuple: *mut ReorderBufferTupleBuf);
+    pub fn ReorderBufferGetTupleBuf(rb: *mut ReorderBuffer, tuple_len: Size) -> HeapTuple;
+    pub fn ReorderBufferReturnTupleBuf(tuple: HeapTuple);
     pub fn ReorderBufferGetChange(rb: *mut ReorderBuffer) -> *mut ReorderBufferChange;
     pub fn ReorderBufferReturnChange(
         rb: *mut ReorderBuffer,
@@ -47315,6 +49234,8 @@ extern "C" {
     pub fn exec_replication_command(cmd_string: *const ::core::ffi::c_char) -> bool;
     pub fn WalSndErrorCleanup();
     pub fn WalSndResourceCleanup(isCommit: bool);
+    pub fn PhysicalWakeupLogicalWalSnd();
+    pub fn GetStandbyFlushRecPtr(tli: *mut TimeLineID) -> XLogRecPtr;
     pub fn WalSndSignals();
     pub fn WalSndShmemSize() -> Size;
     pub fn WalSndShmemInit();
@@ -47328,7 +49249,7 @@ extern "C" {
     pub static mut hot_standby_feedback: bool;
     pub static mut WalRcv: *mut WalRcvData;
     pub static mut WalReceiverFunctions: *mut WalReceiverFunctionsType;
-    pub fn WalReceiverMain() -> !;
+    pub fn WalReceiverMain(startup_data: *mut ::core::ffi::c_char, startup_data_len: usize) -> !;
     pub fn ProcessWalRcvInterrupts();
     pub fn WalRcvForceReply();
     pub fn WalRcvShmemSize() -> Size;
@@ -47350,9 +49271,11 @@ extern "C" {
     pub fn GetWalRcvWriteRecPtr() -> XLogRecPtr;
     pub fn GetReplicationApplyDelay() -> ::core::ffi::c_int;
     pub fn GetReplicationTransferLatency() -> ::core::ffi::c_int;
+    pub static SlotInvalidationCauses: [*const ::core::ffi::c_char; 0usize];
     pub static mut ReplicationSlotCtl: *mut ReplicationSlotCtlData;
     pub static mut MyReplicationSlot: *mut ReplicationSlot;
     pub static mut max_replication_slots: ::core::ffi::c_int;
+    pub static mut synchronized_standby_slots: *mut ::core::ffi::c_char;
     pub fn ReplicationSlotsShmemSize() -> Size;
     pub fn ReplicationSlotsShmemInit();
     pub fn ReplicationSlotCreate(
@@ -47360,12 +49283,16 @@ extern "C" {
         db_specific: bool,
         persistency: ReplicationSlotPersistency::Type,
         two_phase: bool,
+        failover: bool,
+        synced: bool,
     );
     pub fn ReplicationSlotPersist();
     pub fn ReplicationSlotDrop(name: *const ::core::ffi::c_char, nowait: bool);
+    pub fn ReplicationSlotDropAcquired();
+    pub fn ReplicationSlotAlter(name: *const ::core::ffi::c_char, failover: bool);
     pub fn ReplicationSlotAcquire(name: *const ::core::ffi::c_char, nowait: bool);
     pub fn ReplicationSlotRelease();
-    pub fn ReplicationSlotCleanup();
+    pub fn ReplicationSlotCleanup(synced_only: bool);
     pub fn ReplicationSlotSave();
     pub fn ReplicationSlotMarkDirty();
     pub fn ReplicationSlotInitialize();
@@ -47407,9 +49334,15 @@ extern "C" {
         missing_ok: bool,
     );
     pub fn StartupReplicationSlots();
-    pub fn CheckPointReplicationSlots();
+    pub fn CheckPointReplicationSlots(is_shutdown: bool);
     pub fn CheckSlotRequirements();
     pub fn CheckSlotPermissions();
+    pub fn GetSlotInvalidationCause(
+        invalidation_reason: *const ::core::ffi::c_char,
+    ) -> ReplicationSlotInvalidationCause::Type;
+    pub fn SlotExistsInSyncStandbySlots(slot_name: *const ::core::ffi::c_char) -> bool;
+    pub fn StandbySlotsHaveCaughtup(wait_for_lsn: XLogRecPtr, elevel: ::core::ffi::c_int) -> bool;
+    pub fn WaitForStandbyConfirmation(wait_for_lsn: XLogRecPtr);
     pub fn CheckLogicalDecodingRequirements();
     pub fn CreateInitDecodingContext(
         plugin: *const ::core::ffi::c_char,
@@ -47447,10 +49380,20 @@ extern "C" {
     ) -> bool;
     pub fn ResetLogicalStreamingState();
     pub fn UpdateDecodingStats(ctx: *mut LogicalDecodingContext);
+    pub fn LogicalReplicationSlotHasPendingWal(end_of_wal: XLogRecPtr) -> bool;
+    pub fn LogicalSlotAdvanceAndCheckSnapState(
+        moveto: XLogRecPtr,
+        found_consistent_snapshot: *mut bool,
+    ) -> XLogRecPtr;
     pub fn QueryRewrite(parsetree: *mut Query) -> *mut List;
     pub fn AcquireRewriteLocks(parsetree: *mut Query, forExecute: bool, forUpdatePushedDown: bool);
     pub fn build_column_default(rel: Relation, attrno: ::core::ffi::c_int) -> *mut Node;
     pub fn get_view_query(view: Relation) -> *mut Query;
+    pub fn view_has_instead_trigger(
+        view: Relation,
+        event: CmdType::Type,
+        mergeActionList: *mut List,
+    ) -> bool;
     pub fn view_query_is_auto_updatable(
         viewquery: *mut Query,
         check_cols: bool,
@@ -47461,6 +49404,12 @@ extern "C" {
         include_triggers: bool,
         include_cols: *mut Bitmapset,
     ) -> ::core::ffi::c_int;
+    pub fn error_view_not_updatable(
+        view: Relation,
+        command: CmdType::Type,
+        mergeActionList: *mut List,
+        detail: *const ::core::ffi::c_char,
+    );
     pub static mut row_security_policy_hook_permissive: row_security_policy_hook_type;
     pub static mut row_security_policy_hook_restrictive: row_security_policy_hook_type;
     pub fn get_row_security_policies(
@@ -47490,9 +49439,9 @@ extern "C" {
         whence: ::core::ffi::c_int,
     ) -> ::core::ffi::c_int;
     pub fn BufFileTell(file: *mut BufFile, fileno: *mut ::core::ffi::c_int, offset: *mut off_t);
-    pub fn BufFileSeekBlock(file: *mut BufFile, blknum: ::core::ffi::c_long) -> ::core::ffi::c_int;
+    pub fn BufFileSeekBlock(file: *mut BufFile, blknum: int64) -> ::core::ffi::c_int;
     pub fn BufFileSize(file: *mut BufFile) -> int64;
-    pub fn BufFileAppend(target: *mut BufFile, source: *mut BufFile) -> ::core::ffi::c_long;
+    pub fn BufFileAppend(target: *mut BufFile, source: *mut BufFile) -> int64;
     pub fn BufFileCreateFileSet(
         fileset: *mut FileSet,
         name: *const ::core::ffi::c_char,
@@ -47576,6 +49525,12 @@ extern "C" {
     ) -> bool;
     pub fn UnlockDatabaseObject(classid: Oid, objid: Oid, objsubid: uint16, lockmode: LOCKMODE);
     pub fn LockSharedObject(classid: Oid, objid: Oid, objsubid: uint16, lockmode: LOCKMODE);
+    pub fn ConditionalLockSharedObject(
+        classid: Oid,
+        objid: Oid,
+        objsubid: uint16,
+        lockmode: LOCKMODE,
+    ) -> bool;
     pub fn UnlockSharedObject(classid: Oid, objid: Oid, objsubid: uint16, lockmode: LOCKMODE);
     pub fn LockSharedObjectForSession(
         classid: Oid,
@@ -47605,11 +49560,11 @@ extern "C" {
     pub fn GetLockNameFromTagType(locktag_type: uint16) -> *const ::core::ffi::c_char;
     pub fn ProcSignalShmemSize() -> Size;
     pub fn ProcSignalShmemInit();
-    pub fn ProcSignalInit(pss_idx: ::core::ffi::c_int);
+    pub fn ProcSignalInit();
     pub fn SendProcSignal(
         pid: pid_t,
         reason: ProcSignalReason::Type,
-        backendId: BackendId,
+        procNumber: ProcNumber,
     ) -> ::core::ffi::c_int;
     pub fn EmitProcSignalBarrier(type_: ProcSignalBarrierType::Type) -> uint64;
     pub fn WaitForProcSignalBarrier(generation: uint64);
@@ -47720,6 +49675,14 @@ extern "C" {
         nvxids: ::core::ffi::c_int,
         type_: ::core::ffi::c_int,
     ) -> bool;
+    pub fn ProcNumberGetProc(procNumber: ::core::ffi::c_int) -> *mut PGPROC;
+    pub fn ProcNumberGetTransactionIds(
+        procNumber: ::core::ffi::c_int,
+        xid: *mut TransactionId,
+        xmin: *mut TransactionId,
+        nsubxid: *mut ::core::ffi::c_int,
+        overflowed: *mut bool,
+    );
     pub fn BackendPidGetProc(pid: ::core::ffi::c_int) -> *mut PGPROC;
     pub fn BackendPidGetProcWithLock(pid: ::core::ffi::c_int) -> *mut PGPROC;
     pub fn BackendXidGetPid(xid: TransactionId) -> ::core::ffi::c_int;
@@ -49054,7 +51017,7 @@ extern "C" {
     pub fn int2_sum(fcinfo: FunctionCallInfo) -> Datum;
     pub fn int4_sum(fcinfo: FunctionCallInfo) -> Datum;
     pub fn int8_sum(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn interval_accum(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn interval_avg_accum(fcinfo: FunctionCallInfo) -> Datum;
     pub fn interval_avg(fcinfo: FunctionCallInfo) -> Datum;
     pub fn to_ascii_default(fcinfo: FunctionCallInfo) -> Datum;
     pub fn to_ascii_enc(fcinfo: FunctionCallInfo) -> Datum;
@@ -49514,7 +51477,7 @@ extern "C" {
     pub fn pg_timezone_abbrevs(fcinfo: FunctionCallInfo) -> Datum;
     pub fn xmlexists(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_reload_conf(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn pg_rotate_logfile_v2(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_rotate_logfile(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_stat_file_1arg(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_read_file_off_len(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_ls_dir_1arg(fcinfo: FunctionCallInfo) -> Datum;
@@ -49564,13 +51527,12 @@ extern "C" {
     pub fn regexp_split_to_table(fcinfo: FunctionCallInfo) -> Datum;
     pub fn regexp_split_to_array_no_flags(fcinfo: FunctionCallInfo) -> Datum;
     pub fn regexp_split_to_array(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn pg_stat_get_bgwriter_timed_checkpoints(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn pg_stat_get_bgwriter_requested_checkpoints(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn pg_stat_get_bgwriter_buf_written_checkpoints(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_stat_get_checkpointer_num_timed(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_stat_get_checkpointer_num_requested(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_stat_get_checkpointer_buffers_written(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_stat_get_bgwriter_buf_written_clean(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_stat_get_bgwriter_maxwritten_clean(fcinfo: FunctionCallInfo) -> Datum;
     pub fn ginqueryarrayextract(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn pg_stat_get_buf_written_backend(fcinfo: FunctionCallInfo) -> Datum;
     pub fn anynonarray_in(fcinfo: FunctionCallInfo) -> Datum;
     pub fn anynonarray_out(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_stat_get_last_vacuum_time(fcinfo: FunctionCallInfo) -> Datum;
@@ -49773,7 +51735,6 @@ extern "C" {
     pub fn text_left(fcinfo: FunctionCallInfo) -> Datum;
     pub fn text_right(fcinfo: FunctionCallInfo) -> Datum;
     pub fn text_reverse(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn pg_stat_get_buf_fsync_backend(fcinfo: FunctionCallInfo) -> Datum;
     pub fn gist_point_distance(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_stat_get_db_conflict_tablespace(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_stat_get_db_conflict_lock(fcinfo: FunctionCallInfo) -> Datum;
@@ -49853,8 +51814,8 @@ extern "C" {
     pub fn numeric_support(fcinfo: FunctionCallInfo) -> Datum;
     pub fn varbit_support(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_get_viewdef_wrap(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn pg_stat_get_checkpoint_write_time(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn pg_stat_get_checkpoint_sync_time(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_stat_get_checkpointer_write_time(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_stat_get_checkpointer_sync_time(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_collation_for(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_trigger_depth(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_wal_lsn_diff(fcinfo: FunctionCallInfo) -> Datum;
@@ -49966,7 +51927,7 @@ extern "C" {
     pub fn tsvector_unnest(fcinfo: FunctionCallInfo) -> Datum;
     pub fn tsvector_delete_arr(fcinfo: FunctionCallInfo) -> Datum;
     pub fn int4_avg_combine(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn interval_combine(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn interval_avg_combine(fcinfo: FunctionCallInfo) -> Datum;
     pub fn tsvector_to_array(fcinfo: FunctionCallInfo) -> Datum;
     pub fn array_to_tsvector(fcinfo: FunctionCallInfo) -> Datum;
     pub fn bpchar_sortsupport(fcinfo: FunctionCallInfo) -> Datum;
@@ -50129,7 +52090,7 @@ extern "C" {
     pub fn int8dec(fcinfo: FunctionCallInfo) -> Datum;
     pub fn int8dec_any(fcinfo: FunctionCallInfo) -> Datum;
     pub fn numeric_accum_inv(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn interval_accum_inv(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn interval_avg_accum_inv(fcinfo: FunctionCallInfo) -> Datum;
     pub fn network_overlap(fcinfo: FunctionCallInfo) -> Datum;
     pub fn inet_gist_consistent(fcinfo: FunctionCallInfo) -> Datum;
     pub fn inet_gist_union(fcinfo: FunctionCallInfo) -> Datum;
@@ -50315,6 +52276,7 @@ extern "C" {
     pub fn pg_is_in_recovery(fcinfo: FunctionCallInfo) -> Datum;
     pub fn int4_cash(fcinfo: FunctionCallInfo) -> Datum;
     pub fn int8_cash(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn xmltext(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_collation_is_visible(fcinfo: FunctionCallInfo) -> Datum;
     pub fn array_typanalyze(fcinfo: FunctionCallInfo) -> Datum;
     pub fn arraycontsel(fcinfo: FunctionCallInfo) -> Datum;
@@ -50490,8 +52452,6 @@ extern "C" {
     pub fn regrolerecv(fcinfo: FunctionCallInfo) -> Datum;
     pub fn regrolesend(fcinfo: FunctionCallInfo) -> Datum;
     pub fn regrolein(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn pg_rotate_logfile(fcinfo: FunctionCallInfo) -> Datum;
-    pub fn pg_read_file(fcinfo: FunctionCallInfo) -> Datum;
     pub fn binary_upgrade_set_missing_value(fcinfo: FunctionCallInfo) -> Datum;
     pub fn brin_inclusion_opcinfo(fcinfo: FunctionCallInfo) -> Datum;
     pub fn brin_inclusion_add_value(fcinfo: FunctionCallInfo) -> Datum;
@@ -50629,6 +52589,7 @@ extern "C" {
     pub fn binary_upgrade_set_next_index_relfilenode(fcinfo: FunctionCallInfo) -> Datum;
     pub fn binary_upgrade_set_next_toast_relfilenode(fcinfo: FunctionCallInfo) -> Datum;
     pub fn binary_upgrade_set_next_pg_tablespace_oid(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn unicode_version(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_event_trigger_table_rewrite_oid(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_event_trigger_table_rewrite_reason(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_event_trigger_ddl_commands(fcinfo: FunctionCallInfo) -> Datum;
@@ -50743,7 +52704,9 @@ extern "C" {
     pub fn pg_replication_origin_progress(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_show_replication_origin_status(fcinfo: FunctionCallInfo) -> Datum;
     pub fn jsonb_subscript_handler(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn icu_unicode_version(fcinfo: FunctionCallInfo) -> Datum;
     pub fn numeric_pg_lsn(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn unicode_assigned(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_stat_get_backend_subxact(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_stat_get_subscription(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_get_publication_tables(fcinfo: FunctionCallInfo) -> Datum;
@@ -50866,6 +52829,39 @@ extern "C" {
     pub fn pg_stat_get_db_conflict_logicalslot(fcinfo: FunctionCallInfo) -> Datum;
     pub fn pg_stat_get_lastscan(fcinfo: FunctionCallInfo) -> Datum;
     pub fn system_user(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn binary_upgrade_logical_slot_has_caught_up(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_stat_get_checkpointer_stat_reset_time(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_basetype(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_column_toast_chunk_id(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn to_regtypemod(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_get_wait_events(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn binary_upgrade_add_sub_rel_state(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn binary_upgrade_replorigin_advance(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_available_wal_summaries(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_wal_summary_contents(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_get_wal_summarizer_state(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn interval_avg_serialize(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn interval_avg_deserialize(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn interval_sum(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_stat_get_checkpointer_restartpoints_timed(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_stat_get_checkpointer_restartpoints_requested(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_stat_get_checkpointer_restartpoints_performed(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn to_bin32(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn to_bin64(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn to_oct32(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn to_oct64(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn timestamptz_at_local(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn timestamp_at_local(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn timetz_at_local(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn jsonb_populate_record_valid(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn int4random(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn int8random(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn numeric_random(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn uuid_extract_timestamp(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn uuid_extract_version(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn pg_sync_replication_slots(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn range_contains_elem_support(fcinfo: FunctionCallInfo) -> Datum;
+    pub fn elem_contained_by_range_support(fcinfo: FunctionCallInfo) -> Datum;
     pub fn parse_bool(value: *const ::core::ffi::c_char, result: *mut bool) -> bool;
     pub fn parse_bool_with_len(
         value: *const ::core::ffi::c_char,
@@ -50879,6 +52875,14 @@ extern "C" {
         extra: *mut *mut ::core::ffi::c_void,
         mcxt: MemoryContext,
     );
+    pub fn domain_check_safe(
+        value: Datum,
+        isnull: bool,
+        domainType: Oid,
+        extra: *mut *mut ::core::ffi::c_void,
+        mcxt: MemoryContext,
+        escontext: *mut Node,
+    ) -> bool;
     pub fn errdatatype(datatypeOid: Oid) -> ::core::ffi::c_int;
     pub fn errdomainconstraint(
         datatypeOid: Oid,
@@ -51187,6 +53191,11 @@ extern "C" {
         tz: *mut *mut pg_tz,
     ) -> ::core::ffi::c_int;
     pub fn DecodeTimezoneNameToTz(tzname: *const ::core::ffi::c_char) -> *mut pg_tz;
+    pub fn DecodeTimezoneAbbrevPrefix(
+        str_: *const ::core::ffi::c_char,
+        offset: *mut ::core::ffi::c_int,
+        tz: *mut *mut pg_tz,
+    ) -> ::core::ffi::c_int;
     pub fn j2day(date: ::core::ffi::c_int) -> ::core::ffi::c_int;
     pub fn TemporalSimplify(max_precis: int32, node: *mut Node) -> *mut Node;
     pub fn CheckDateTokenTables() -> bool;
@@ -51233,20 +53242,35 @@ extern "C" {
     pub fn to_json_is_immutable(typoid: Oid) -> bool;
     pub fn json_build_object_worker(
         nargs: ::core::ffi::c_int,
-        args: *mut Datum,
-        nulls: *mut bool,
-        types: *mut Oid,
+        args: *const Datum,
+        nulls: *const bool,
+        types: *const Oid,
         absent_on_null: bool,
         unique_keys: bool,
     ) -> Datum;
     pub fn json_build_array_worker(
         nargs: ::core::ffi::c_int,
-        args: *mut Datum,
-        nulls: *mut bool,
-        types: *mut Oid,
+        args: *const Datum,
+        nulls: *const bool,
+        types: *const Oid,
         absent_on_null: bool,
     ) -> Datum;
     pub fn json_validate(json: *mut text, check_unique_keys: bool, throw_error: bool) -> bool;
+    pub static mut pg_global_prng_state: pg_prng_state;
+    pub fn pg_prng_seed(state: *mut pg_prng_state, seed: uint64);
+    pub fn pg_prng_fseed(state: *mut pg_prng_state, fseed: f64);
+    pub fn pg_prng_seed_check(state: *mut pg_prng_state) -> bool;
+    pub fn pg_prng_uint64(state: *mut pg_prng_state) -> uint64;
+    pub fn pg_prng_uint64_range(state: *mut pg_prng_state, rmin: uint64, rmax: uint64) -> uint64;
+    pub fn pg_prng_int64(state: *mut pg_prng_state) -> int64;
+    pub fn pg_prng_int64p(state: *mut pg_prng_state) -> int64;
+    pub fn pg_prng_int64_range(state: *mut pg_prng_state, rmin: int64, rmax: int64) -> int64;
+    pub fn pg_prng_uint32(state: *mut pg_prng_state) -> uint32;
+    pub fn pg_prng_int32(state: *mut pg_prng_state) -> int32;
+    pub fn pg_prng_int32p(state: *mut pg_prng_state) -> int32;
+    pub fn pg_prng_double(state: *mut pg_prng_state) -> f64;
+    pub fn pg_prng_double_normal(state: *mut pg_prng_state) -> f64;
+    pub fn pg_prng_bool(state: *mut pg_prng_state) -> bool;
     pub fn numeric_is_nan(num: Numeric) -> bool;
     pub fn numeric_is_inf(num: Numeric) -> bool;
     pub fn numeric_maximum_size(typmod: int32) -> int32;
@@ -51260,6 +53284,8 @@ extern "C" {
     pub fn numeric_div_opt_error(num1: Numeric, num2: Numeric, have_error: *mut bool) -> Numeric;
     pub fn numeric_mod_opt_error(num1: Numeric, num2: Numeric, have_error: *mut bool) -> Numeric;
     pub fn numeric_int4_opt_error(num: Numeric, have_error: *mut bool) -> int32;
+    pub fn numeric_int8_opt_error(num: Numeric, have_error: *mut bool) -> int64;
+    pub fn random_numeric(state: *mut pg_prng_state, rmin: Numeric, rmax: Numeric) -> Numeric;
     pub fn getJsonbOffset(jc: *const JsonbContainer, index: ::core::ffi::c_int) -> uint32;
     pub fn getJsonbLength(jc: *const JsonbContainer, index: ::core::ffi::c_int) -> uint32;
     pub fn compareJsonbContainers(
@@ -51314,6 +53340,7 @@ extern "C" {
         in_: *mut JsonbContainer,
         estimated_len: ::core::ffi::c_int,
     ) -> *mut ::core::ffi::c_char;
+    pub fn JsonbUnquote(jb: *mut Jsonb) -> *mut ::core::ffi::c_char;
     pub fn JsonbExtractScalar(jbc: *mut JsonbContainer, res: *mut JsonbValue) -> bool;
     pub fn JsonbTypeName(val: *mut JsonbValue) -> *const ::core::ffi::c_char;
     pub fn jsonb_set_element(
@@ -51332,17 +53359,17 @@ extern "C" {
     pub fn to_jsonb_is_immutable(typoid: Oid) -> bool;
     pub fn jsonb_build_object_worker(
         nargs: ::core::ffi::c_int,
-        args: *mut Datum,
-        nulls: *mut bool,
-        types: *mut Oid,
+        args: *const Datum,
+        nulls: *const bool,
+        types: *const Oid,
         absent_on_null: bool,
         unique_keys: bool,
     ) -> Datum;
     pub fn jsonb_build_array_worker(
         nargs: ::core::ffi::c_int,
-        args: *mut Datum,
-        nulls: *mut bool,
-        types: *mut Oid,
+        args: *const Datum,
+        nulls: *const bool,
+        types: *const Oid,
         absent_on_null: bool,
     ) -> Datum;
     pub static mut get_attavgwidth_hook: get_attavgwidth_hook_type;
@@ -51389,7 +53416,6 @@ extern "C" {
         missing_ok: bool,
     ) -> *mut ::core::ffi::c_char;
     pub fn get_attnum(relid: Oid, attname: *const ::core::ffi::c_char) -> AttrNumber;
-    pub fn get_attstattarget(relid: Oid, attnum: AttrNumber) -> ::core::ffi::c_int;
     pub fn get_attgenerated(relid: Oid, attnum: AttrNumber) -> ::core::ffi::c_char;
     pub fn get_atttype(relid: Oid, attnum: AttrNumber) -> Oid;
     pub fn get_atttypetypmodcoll(
@@ -51405,6 +53431,7 @@ extern "C" {
     pub fn get_collation_isdeterministic(colloid: Oid) -> bool;
     pub fn get_constraint_name(conoid: Oid) -> *mut ::core::ffi::c_char;
     pub fn get_constraint_index(conoid: Oid) -> Oid;
+    pub fn get_constraint_type(conoid: Oid) -> ::core::ffi::c_char;
     pub fn get_language_name(langoid: Oid, missing_ok: bool) -> *mut ::core::ffi::c_char;
     pub fn get_opclass_family(opclass: Oid) -> Oid;
     pub fn get_opclass_input_type(opclass: Oid) -> Oid;
@@ -51413,6 +53440,7 @@ extern "C" {
         opfamily: *mut Oid,
         opcintype: *mut Oid,
     ) -> bool;
+    pub fn get_opclass_method(opclass: Oid) -> Oid;
     pub fn get_opcode(opno: Oid) -> RegProcedure;
     pub fn get_opname(opno: Oid) -> *mut ::core::ffi::c_char;
     pub fn get_op_rettype(opno: Oid) -> Oid;
@@ -51450,6 +53478,7 @@ extern "C" {
     pub fn get_rel_relispartition(relid: Oid) -> bool;
     pub fn get_rel_tablespace(relid: Oid) -> Oid;
     pub fn get_rel_persistence(relid: Oid) -> ::core::ffi::c_char;
+    pub fn get_rel_relam(relid: Oid) -> Oid;
     pub fn get_transform_fromsql(typid: Oid, langid: Oid, trftypes: *mut List) -> Oid;
     pub fn get_transform_tosql(typid: Oid, langid: Oid, trftypes: *mut List) -> Oid;
     pub fn get_typisdefined(typid: Oid) -> bool;
@@ -51548,103 +53577,6 @@ extern "C" {
         objargs: *mut *mut List,
         missing_ok: bool,
     );
-    pub fn CreateCacheMemoryContext();
-    pub fn InitCatCache(
-        id: ::core::ffi::c_int,
-        reloid: Oid,
-        indexoid: Oid,
-        nkeys: ::core::ffi::c_int,
-        key: *const ::core::ffi::c_int,
-        nbuckets: ::core::ffi::c_int,
-    ) -> *mut CatCache;
-    pub fn InitCatCachePhase2(cache: *mut CatCache, touch_index: bool);
-    pub fn SearchCatCache(
-        cache: *mut CatCache,
-        v1: Datum,
-        v2: Datum,
-        v3: Datum,
-        v4: Datum,
-    ) -> HeapTuple;
-    pub fn SearchCatCache1(cache: *mut CatCache, v1: Datum) -> HeapTuple;
-    pub fn SearchCatCache2(cache: *mut CatCache, v1: Datum, v2: Datum) -> HeapTuple;
-    pub fn SearchCatCache3(cache: *mut CatCache, v1: Datum, v2: Datum, v3: Datum) -> HeapTuple;
-    pub fn SearchCatCache4(
-        cache: *mut CatCache,
-        v1: Datum,
-        v2: Datum,
-        v3: Datum,
-        v4: Datum,
-    ) -> HeapTuple;
-    pub fn ReleaseCatCache(tuple: HeapTuple);
-    pub fn GetCatCacheHashValue(
-        cache: *mut CatCache,
-        v1: Datum,
-        v2: Datum,
-        v3: Datum,
-        v4: Datum,
-    ) -> uint32;
-    pub fn SearchCatCacheList(
-        cache: *mut CatCache,
-        nkeys: ::core::ffi::c_int,
-        v1: Datum,
-        v2: Datum,
-        v3: Datum,
-    ) -> *mut CatCList;
-    pub fn ReleaseCatCacheList(list: *mut CatCList);
-    pub fn ResetCatalogCaches();
-    pub fn CatalogCacheFlushCatalog(catId: Oid);
-    pub fn CatCacheInvalidate(cache: *mut CatCache, hashValue: uint32);
-    pub fn PrepareToInvalidateCacheTuple(
-        relation: Relation,
-        tuple: HeapTuple,
-        newtuple: HeapTuple,
-        function: ::core::option::Option<
-            unsafe extern "C" fn(arg1: ::core::ffi::c_int, arg2: uint32, arg3: Oid),
-        >,
-    );
-    pub fn PrintCatCacheLeakWarning(tuple: HeapTuple);
-    pub fn PrintCatCacheListLeakWarning(list: *mut CatCList);
-    pub fn ResourceOwnerEnlargeBuffers(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberBuffer(owner: ResourceOwner, buffer: Buffer);
-    pub fn ResourceOwnerForgetBuffer(owner: ResourceOwner, buffer: Buffer);
-    pub fn ResourceOwnerEnlargeBufferIOs(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberBufferIO(owner: ResourceOwner, buffer: Buffer);
-    pub fn ResourceOwnerForgetBufferIO(owner: ResourceOwner, buffer: Buffer);
-    pub fn ResourceOwnerRememberLock(owner: ResourceOwner, locallock: *mut LOCALLOCK);
-    pub fn ResourceOwnerForgetLock(owner: ResourceOwner, locallock: *mut LOCALLOCK);
-    pub fn ResourceOwnerEnlargeCatCacheRefs(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberCatCacheRef(owner: ResourceOwner, tuple: HeapTuple);
-    pub fn ResourceOwnerForgetCatCacheRef(owner: ResourceOwner, tuple: HeapTuple);
-    pub fn ResourceOwnerEnlargeCatCacheListRefs(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberCatCacheListRef(owner: ResourceOwner, list: *mut CatCList);
-    pub fn ResourceOwnerForgetCatCacheListRef(owner: ResourceOwner, list: *mut CatCList);
-    pub fn ResourceOwnerEnlargeRelationRefs(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberRelationRef(owner: ResourceOwner, rel: Relation);
-    pub fn ResourceOwnerForgetRelationRef(owner: ResourceOwner, rel: Relation);
-    pub fn ResourceOwnerEnlargePlanCacheRefs(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberPlanCacheRef(owner: ResourceOwner, plan: *mut CachedPlan);
-    pub fn ResourceOwnerForgetPlanCacheRef(owner: ResourceOwner, plan: *mut CachedPlan);
-    pub fn ResourceOwnerEnlargeTupleDescs(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberTupleDesc(owner: ResourceOwner, tupdesc: TupleDesc);
-    pub fn ResourceOwnerForgetTupleDesc(owner: ResourceOwner, tupdesc: TupleDesc);
-    pub fn ResourceOwnerEnlargeSnapshots(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberSnapshot(owner: ResourceOwner, snapshot: Snapshot);
-    pub fn ResourceOwnerForgetSnapshot(owner: ResourceOwner, snapshot: Snapshot);
-    pub fn ResourceOwnerEnlargeFiles(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberFile(owner: ResourceOwner, file: File);
-    pub fn ResourceOwnerForgetFile(owner: ResourceOwner, file: File);
-    pub fn ResourceOwnerEnlargeDSMs(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberDSM(owner: ResourceOwner, arg1: *mut dsm_segment);
-    pub fn ResourceOwnerForgetDSM(owner: ResourceOwner, arg1: *mut dsm_segment);
-    pub fn ResourceOwnerEnlargeJIT(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberJIT(owner: ResourceOwner, handle: Datum);
-    pub fn ResourceOwnerForgetJIT(owner: ResourceOwner, handle: Datum);
-    pub fn ResourceOwnerEnlargeCryptoHash(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberCryptoHash(owner: ResourceOwner, handle: Datum);
-    pub fn ResourceOwnerForgetCryptoHash(owner: ResourceOwner, handle: Datum);
-    pub fn ResourceOwnerEnlargeHMAC(owner: ResourceOwner);
-    pub fn ResourceOwnerRememberHMAC(owner: ResourceOwner, handle: Datum);
-    pub fn ResourceOwnerForgetHMAC(owner: ResourceOwner, handle: Datum);
     pub fn pg_get_indexdef_string(indexrelid: Oid) -> *mut ::core::ffi::c_char;
     pub fn pg_get_indexdef_columns(indexrelid: Oid, pretty: bool) -> *mut ::core::ffi::c_char;
     pub fn pg_get_indexdef_columns_extended(
@@ -51682,20 +53614,6 @@ extern "C" {
     pub fn generate_opclass_name(opclass: Oid) -> *mut ::core::ffi::c_char;
     pub fn get_range_partbound_string(bound_datums: *mut List) -> *mut ::core::ffi::c_char;
     pub fn pg_get_statisticsobjdef_string(statextid: Oid) -> *mut ::core::ffi::c_char;
-    pub static mut pg_global_prng_state: pg_prng_state;
-    pub fn pg_prng_seed(state: *mut pg_prng_state, seed: uint64);
-    pub fn pg_prng_fseed(state: *mut pg_prng_state, fseed: f64);
-    pub fn pg_prng_seed_check(state: *mut pg_prng_state) -> bool;
-    pub fn pg_prng_uint64(state: *mut pg_prng_state) -> uint64;
-    pub fn pg_prng_uint64_range(state: *mut pg_prng_state, rmin: uint64, rmax: uint64) -> uint64;
-    pub fn pg_prng_int64(state: *mut pg_prng_state) -> int64;
-    pub fn pg_prng_int64p(state: *mut pg_prng_state) -> int64;
-    pub fn pg_prng_uint32(state: *mut pg_prng_state) -> uint32;
-    pub fn pg_prng_int32(state: *mut pg_prng_state) -> int32;
-    pub fn pg_prng_int32p(state: *mut pg_prng_state) -> int32;
-    pub fn pg_prng_double(state: *mut pg_prng_state) -> f64;
-    pub fn pg_prng_double_normal(state: *mut pg_prng_state) -> f64;
-    pub fn pg_prng_bool(state: *mut pg_prng_state) -> bool;
     pub fn sampler_random_init_state(seed: uint32, randstate: *mut pg_prng_state);
     pub fn sampler_random_fract(randstate: *mut pg_prng_state) -> f64;
     pub fn BlockSampler_Init(
@@ -51817,7 +53735,7 @@ extern "C" {
         jointype: JoinType::Type,
         sjinfo: *mut SpecialJoinInfo,
     ) -> Selectivity;
-    pub fn estimate_array_length(arrayexpr: *mut Node) -> ::core::ffi::c_int;
+    pub fn estimate_array_length(root: *mut PlannerInfo, arrayexpr: *mut Node) -> f64;
     pub fn rowcomparesel(
         root: *mut PlannerInfo,
         clause: *mut RowCompareExpr,
@@ -51877,6 +53795,60 @@ extern "C" {
         useOr: bool,
         varRelid: ::core::ffi::c_int,
     ) -> Selectivity;
+    pub fn CreateCacheMemoryContext();
+    pub fn InitCatCache(
+        id: ::core::ffi::c_int,
+        reloid: Oid,
+        indexoid: Oid,
+        nkeys: ::core::ffi::c_int,
+        key: *const ::core::ffi::c_int,
+        nbuckets: ::core::ffi::c_int,
+    ) -> *mut CatCache;
+    pub fn InitCatCachePhase2(cache: *mut CatCache, touch_index: bool);
+    pub fn SearchCatCache(
+        cache: *mut CatCache,
+        v1: Datum,
+        v2: Datum,
+        v3: Datum,
+        v4: Datum,
+    ) -> HeapTuple;
+    pub fn SearchCatCache1(cache: *mut CatCache, v1: Datum) -> HeapTuple;
+    pub fn SearchCatCache2(cache: *mut CatCache, v1: Datum, v2: Datum) -> HeapTuple;
+    pub fn SearchCatCache3(cache: *mut CatCache, v1: Datum, v2: Datum, v3: Datum) -> HeapTuple;
+    pub fn SearchCatCache4(
+        cache: *mut CatCache,
+        v1: Datum,
+        v2: Datum,
+        v3: Datum,
+        v4: Datum,
+    ) -> HeapTuple;
+    pub fn ReleaseCatCache(tuple: HeapTuple);
+    pub fn GetCatCacheHashValue(
+        cache: *mut CatCache,
+        v1: Datum,
+        v2: Datum,
+        v3: Datum,
+        v4: Datum,
+    ) -> uint32;
+    pub fn SearchCatCacheList(
+        cache: *mut CatCache,
+        nkeys: ::core::ffi::c_int,
+        v1: Datum,
+        v2: Datum,
+        v3: Datum,
+    ) -> *mut CatCList;
+    pub fn ReleaseCatCacheList(list: *mut CatCList);
+    pub fn ResetCatalogCaches();
+    pub fn CatalogCacheFlushCatalog(catId: Oid);
+    pub fn CatCacheInvalidate(cache: *mut CatCache, hashValue: uint32);
+    pub fn PrepareToInvalidateCacheTuple(
+        relation: Relation,
+        tuple: HeapTuple,
+        newtuple: HeapTuple,
+        function: ::core::option::Option<
+            unsafe extern "C" fn(arg1: ::core::ffi::c_int, arg2: uint32, arg3: Oid),
+        >,
+    );
     pub fn InitCatalogCache();
     pub fn InitCatalogCachePhase2();
     pub fn SearchSysCache(
@@ -52334,298 +54306,303 @@ pub const AlterTableType_AT_DropNotNull: u32 = 4;
 pub const AlterTableType_AT_SetNotNull: u32 = 5;
 #[deprecated(
     since = "0.12.0",
+    note = "you want pg_sys::AlterTableType::AT_SetExpression"
+)]
+pub const AlterTableType_AT_SetExpression: u32 = 6;
+#[deprecated(
+    since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DropExpression"
 )]
-pub const AlterTableType_AT_DropExpression: u32 = 6;
+pub const AlterTableType_AT_DropExpression: u32 = 7;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_CheckNotNull"
 )]
-pub const AlterTableType_AT_CheckNotNull: u32 = 7;
+pub const AlterTableType_AT_CheckNotNull: u32 = 8;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_SetStatistics"
 )]
-pub const AlterTableType_AT_SetStatistics: u32 = 8;
+pub const AlterTableType_AT_SetStatistics: u32 = 9;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_SetOptions"
 )]
-pub const AlterTableType_AT_SetOptions: u32 = 9;
+pub const AlterTableType_AT_SetOptions: u32 = 10;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ResetOptions"
 )]
-pub const AlterTableType_AT_ResetOptions: u32 = 10;
+pub const AlterTableType_AT_ResetOptions: u32 = 11;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_SetStorage"
 )]
-pub const AlterTableType_AT_SetStorage: u32 = 11;
+pub const AlterTableType_AT_SetStorage: u32 = 12;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_SetCompression"
 )]
-pub const AlterTableType_AT_SetCompression: u32 = 12;
+pub const AlterTableType_AT_SetCompression: u32 = 13;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DropColumn"
 )]
-pub const AlterTableType_AT_DropColumn: u32 = 13;
+pub const AlterTableType_AT_DropColumn: u32 = 14;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_AddIndex"
 )]
-pub const AlterTableType_AT_AddIndex: u32 = 14;
+pub const AlterTableType_AT_AddIndex: u32 = 15;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ReAddIndex"
 )]
-pub const AlterTableType_AT_ReAddIndex: u32 = 15;
+pub const AlterTableType_AT_ReAddIndex: u32 = 16;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_AddConstraint"
 )]
-pub const AlterTableType_AT_AddConstraint: u32 = 16;
+pub const AlterTableType_AT_AddConstraint: u32 = 17;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ReAddConstraint"
 )]
-pub const AlterTableType_AT_ReAddConstraint: u32 = 17;
+pub const AlterTableType_AT_ReAddConstraint: u32 = 18;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ReAddDomainConstraint"
 )]
-pub const AlterTableType_AT_ReAddDomainConstraint: u32 = 18;
+pub const AlterTableType_AT_ReAddDomainConstraint: u32 = 19;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_AlterConstraint"
 )]
-pub const AlterTableType_AT_AlterConstraint: u32 = 19;
+pub const AlterTableType_AT_AlterConstraint: u32 = 20;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ValidateConstraint"
 )]
-pub const AlterTableType_AT_ValidateConstraint: u32 = 20;
+pub const AlterTableType_AT_ValidateConstraint: u32 = 21;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_AddIndexConstraint"
 )]
-pub const AlterTableType_AT_AddIndexConstraint: u32 = 21;
+pub const AlterTableType_AT_AddIndexConstraint: u32 = 22;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DropConstraint"
 )]
-pub const AlterTableType_AT_DropConstraint: u32 = 22;
+pub const AlterTableType_AT_DropConstraint: u32 = 23;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ReAddComment"
 )]
-pub const AlterTableType_AT_ReAddComment: u32 = 23;
+pub const AlterTableType_AT_ReAddComment: u32 = 24;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_AlterColumnType"
 )]
-pub const AlterTableType_AT_AlterColumnType: u32 = 24;
+pub const AlterTableType_AT_AlterColumnType: u32 = 25;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_AlterColumnGenericOptions"
 )]
-pub const AlterTableType_AT_AlterColumnGenericOptions: u32 = 25;
+pub const AlterTableType_AT_AlterColumnGenericOptions: u32 = 26;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ChangeOwner"
 )]
-pub const AlterTableType_AT_ChangeOwner: u32 = 26;
+pub const AlterTableType_AT_ChangeOwner: u32 = 27;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ClusterOn"
 )]
-pub const AlterTableType_AT_ClusterOn: u32 = 27;
+pub const AlterTableType_AT_ClusterOn: u32 = 28;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DropCluster"
 )]
-pub const AlterTableType_AT_DropCluster: u32 = 28;
+pub const AlterTableType_AT_DropCluster: u32 = 29;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_SetLogged"
 )]
-pub const AlterTableType_AT_SetLogged: u32 = 29;
+pub const AlterTableType_AT_SetLogged: u32 = 30;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_SetUnLogged"
 )]
-pub const AlterTableType_AT_SetUnLogged: u32 = 30;
+pub const AlterTableType_AT_SetUnLogged: u32 = 31;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DropOids"
 )]
-pub const AlterTableType_AT_DropOids: u32 = 31;
+pub const AlterTableType_AT_DropOids: u32 = 32;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_SetAccessMethod"
 )]
-pub const AlterTableType_AT_SetAccessMethod: u32 = 32;
+pub const AlterTableType_AT_SetAccessMethod: u32 = 33;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_SetTableSpace"
 )]
-pub const AlterTableType_AT_SetTableSpace: u32 = 33;
+pub const AlterTableType_AT_SetTableSpace: u32 = 34;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_SetRelOptions"
 )]
-pub const AlterTableType_AT_SetRelOptions: u32 = 34;
+pub const AlterTableType_AT_SetRelOptions: u32 = 35;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ResetRelOptions"
 )]
-pub const AlterTableType_AT_ResetRelOptions: u32 = 35;
+pub const AlterTableType_AT_ResetRelOptions: u32 = 36;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ReplaceRelOptions"
 )]
-pub const AlterTableType_AT_ReplaceRelOptions: u32 = 36;
+pub const AlterTableType_AT_ReplaceRelOptions: u32 = 37;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_EnableTrig"
 )]
-pub const AlterTableType_AT_EnableTrig: u32 = 37;
+pub const AlterTableType_AT_EnableTrig: u32 = 38;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_EnableAlwaysTrig"
 )]
-pub const AlterTableType_AT_EnableAlwaysTrig: u32 = 38;
+pub const AlterTableType_AT_EnableAlwaysTrig: u32 = 39;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_EnableReplicaTrig"
 )]
-pub const AlterTableType_AT_EnableReplicaTrig: u32 = 39;
+pub const AlterTableType_AT_EnableReplicaTrig: u32 = 40;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DisableTrig"
 )]
-pub const AlterTableType_AT_DisableTrig: u32 = 40;
+pub const AlterTableType_AT_DisableTrig: u32 = 41;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_EnableTrigAll"
 )]
-pub const AlterTableType_AT_EnableTrigAll: u32 = 41;
+pub const AlterTableType_AT_EnableTrigAll: u32 = 42;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DisableTrigAll"
 )]
-pub const AlterTableType_AT_DisableTrigAll: u32 = 42;
+pub const AlterTableType_AT_DisableTrigAll: u32 = 43;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_EnableTrigUser"
 )]
-pub const AlterTableType_AT_EnableTrigUser: u32 = 43;
+pub const AlterTableType_AT_EnableTrigUser: u32 = 44;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DisableTrigUser"
 )]
-pub const AlterTableType_AT_DisableTrigUser: u32 = 44;
+pub const AlterTableType_AT_DisableTrigUser: u32 = 45;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_EnableRule"
 )]
-pub const AlterTableType_AT_EnableRule: u32 = 45;
+pub const AlterTableType_AT_EnableRule: u32 = 46;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_EnableAlwaysRule"
 )]
-pub const AlterTableType_AT_EnableAlwaysRule: u32 = 46;
+pub const AlterTableType_AT_EnableAlwaysRule: u32 = 47;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_EnableReplicaRule"
 )]
-pub const AlterTableType_AT_EnableReplicaRule: u32 = 47;
+pub const AlterTableType_AT_EnableReplicaRule: u32 = 48;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DisableRule"
 )]
-pub const AlterTableType_AT_DisableRule: u32 = 48;
+pub const AlterTableType_AT_DisableRule: u32 = 49;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_AddInherit"
 )]
-pub const AlterTableType_AT_AddInherit: u32 = 49;
+pub const AlterTableType_AT_AddInherit: u32 = 50;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DropInherit"
 )]
-pub const AlterTableType_AT_DropInherit: u32 = 50;
+pub const AlterTableType_AT_DropInherit: u32 = 51;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::AlterTableType::AT_AddOf")]
-pub const AlterTableType_AT_AddOf: u32 = 51;
+pub const AlterTableType_AT_AddOf: u32 = 52;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::AlterTableType::AT_DropOf")]
-pub const AlterTableType_AT_DropOf: u32 = 52;
+pub const AlterTableType_AT_DropOf: u32 = 53;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ReplicaIdentity"
 )]
-pub const AlterTableType_AT_ReplicaIdentity: u32 = 53;
+pub const AlterTableType_AT_ReplicaIdentity: u32 = 54;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_EnableRowSecurity"
 )]
-pub const AlterTableType_AT_EnableRowSecurity: u32 = 54;
+pub const AlterTableType_AT_EnableRowSecurity: u32 = 55;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DisableRowSecurity"
 )]
-pub const AlterTableType_AT_DisableRowSecurity: u32 = 55;
+pub const AlterTableType_AT_DisableRowSecurity: u32 = 56;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ForceRowSecurity"
 )]
-pub const AlterTableType_AT_ForceRowSecurity: u32 = 56;
+pub const AlterTableType_AT_ForceRowSecurity: u32 = 57;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_NoForceRowSecurity"
 )]
-pub const AlterTableType_AT_NoForceRowSecurity: u32 = 57;
+pub const AlterTableType_AT_NoForceRowSecurity: u32 = 58;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_GenericOptions"
 )]
-pub const AlterTableType_AT_GenericOptions: u32 = 58;
+pub const AlterTableType_AT_GenericOptions: u32 = 59;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_AttachPartition"
 )]
-pub const AlterTableType_AT_AttachPartition: u32 = 59;
+pub const AlterTableType_AT_AttachPartition: u32 = 60;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DetachPartition"
 )]
-pub const AlterTableType_AT_DetachPartition: u32 = 60;
+pub const AlterTableType_AT_DetachPartition: u32 = 61;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DetachPartitionFinalize"
 )]
-pub const AlterTableType_AT_DetachPartitionFinalize: u32 = 61;
+pub const AlterTableType_AT_DetachPartitionFinalize: u32 = 62;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_AddIdentity"
 )]
-pub const AlterTableType_AT_AddIdentity: u32 = 62;
+pub const AlterTableType_AT_AddIdentity: u32 = 63;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_SetIdentity"
 )]
-pub const AlterTableType_AT_SetIdentity: u32 = 63;
+pub const AlterTableType_AT_SetIdentity: u32 = 64;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_DropIdentity"
 )]
-pub const AlterTableType_AT_DropIdentity: u32 = 64;
+pub const AlterTableType_AT_DropIdentity: u32 = 65;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::AlterTableType::AT_ReAddStatistics"
 )]
-pub const AlterTableType_AT_ReAddStatistics: u32 = 65;
+pub const AlterTableType_AT_ReAddStatistics: u32 = 66;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ArchiveMode::ARCHIVE_MODE_OFF"
@@ -52641,46 +54618,6 @@ pub const ArchiveMode_ARCHIVE_MODE_ON: u32 = 1;
     note = "you want pg_sys::ArchiveMode::ARCHIVE_MODE_ALWAYS"
 )]
 pub const ArchiveMode_ARCHIVE_MODE_ALWAYS: u32 = 2;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::AuxProcType::NotAnAuxProcess"
-)]
-pub const AuxProcType_NotAnAuxProcess: i32 = -1;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::AuxProcType::StartupProcess"
-)]
-pub const AuxProcType_StartupProcess: i32 = 0;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::AuxProcType::BgWriterProcess"
-)]
-pub const AuxProcType_BgWriterProcess: i32 = 1;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::AuxProcType::ArchiverProcess"
-)]
-pub const AuxProcType_ArchiverProcess: i32 = 2;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::AuxProcType::CheckpointerProcess"
-)]
-pub const AuxProcType_CheckpointerProcess: i32 = 3;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::AuxProcType::WalWriterProcess"
-)]
-pub const AuxProcType_WalWriterProcess: i32 = 4;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::AuxProcType::WalReceiverProcess"
-)]
-pub const AuxProcType_WalReceiverProcess: i32 = 5;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::AuxProcType::NUM_AUXPROCTYPES"
-)]
-pub const AuxProcType_NUM_AUXPROCTYPES: i32 = 6;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::BMS_Comparison::BMS_EQUAL")]
 pub const BMS_Comparison_BMS_EQUAL: u32 = 0;
 #[deprecated(
@@ -52747,8 +54684,8 @@ pub const BackendState_STATE_IDLEINTRANSACTION_ABORTED: u32 = 5;
 pub const BackendState_STATE_DISABLED: u32 = 6;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_INVALID")]
 pub const BackendType_B_INVALID: u32 = 0;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_ARCHIVER")]
-pub const BackendType_B_ARCHIVER: u32 = 1;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_BACKEND")]
+pub const BackendType_B_BACKEND: u32 = 1;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BackendType::B_AUTOVAC_LAUNCHER"
@@ -52759,35 +54696,45 @@ pub const BackendType_B_AUTOVAC_LAUNCHER: u32 = 2;
     note = "you want pg_sys::BackendType::B_AUTOVAC_WORKER"
 )]
 pub const BackendType_B_AUTOVAC_WORKER: u32 = 3;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_BACKEND")]
-pub const BackendType_B_BACKEND: u32 = 4;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_BG_WORKER")]
-pub const BackendType_B_BG_WORKER: u32 = 5;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_BG_WRITER")]
-pub const BackendType_B_BG_WRITER: u32 = 6;
+pub const BackendType_B_BG_WORKER: u32 = 4;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_WAL_SENDER")]
+pub const BackendType_B_WAL_SENDER: u32 = 5;
 #[deprecated(
     since = "0.12.0",
-    note = "you want pg_sys::BackendType::B_CHECKPOINTER"
+    note = "you want pg_sys::BackendType::B_SLOTSYNC_WORKER"
 )]
-pub const BackendType_B_CHECKPOINTER: u32 = 7;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_LOGGER")]
-pub const BackendType_B_LOGGER: u32 = 8;
+pub const BackendType_B_SLOTSYNC_WORKER: u32 = 6;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BackendType::B_STANDALONE_BACKEND"
 )]
-pub const BackendType_B_STANDALONE_BACKEND: u32 = 9;
+pub const BackendType_B_STANDALONE_BACKEND: u32 = 7;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_ARCHIVER")]
+pub const BackendType_B_ARCHIVER: u32 = 8;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_BG_WRITER")]
+pub const BackendType_B_BG_WRITER: u32 = 9;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::BackendType::B_CHECKPOINTER"
+)]
+pub const BackendType_B_CHECKPOINTER: u32 = 10;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_STARTUP")]
-pub const BackendType_B_STARTUP: u32 = 10;
+pub const BackendType_B_STARTUP: u32 = 11;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BackendType::B_WAL_RECEIVER"
 )]
-pub const BackendType_B_WAL_RECEIVER: u32 = 11;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_WAL_SENDER")]
-pub const BackendType_B_WAL_SENDER: u32 = 12;
+pub const BackendType_B_WAL_RECEIVER: u32 = 12;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::BackendType::B_WAL_SUMMARIZER"
+)]
+pub const BackendType_B_WAL_SUMMARIZER: u32 = 13;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_WAL_WRITER")]
-pub const BackendType_B_WAL_WRITER: u32 = 13;
+pub const BackendType_B_WAL_WRITER: u32 = 14;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::BackendType::B_LOGGER")]
+pub const BackendType_B_LOGGER: u32 = 15;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BackslashQuoteType::BACKSLASH_QUOTE_OFF"
@@ -52883,152 +54830,202 @@ pub const BufferAccessStrategyType_BAS_VACUUM: u32 = 3;
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_XACT_BUFFER"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_XACT_BUFFER: u32 = 48;
+pub const BuiltinTrancheIds_LWTRANCHE_XACT_BUFFER: u32 = 53;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_COMMITTS_BUFFER"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_COMMITTS_BUFFER: u32 = 49;
+pub const BuiltinTrancheIds_LWTRANCHE_COMMITTS_BUFFER: u32 = 54;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_SUBTRANS_BUFFER"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_SUBTRANS_BUFFER: u32 = 50;
+pub const BuiltinTrancheIds_LWTRANCHE_SUBTRANS_BUFFER: u32 = 55;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_MULTIXACTOFFSET_BUFFER"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_MULTIXACTOFFSET_BUFFER: u32 = 51;
+pub const BuiltinTrancheIds_LWTRANCHE_MULTIXACTOFFSET_BUFFER: u32 = 56;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_MULTIXACTMEMBER_BUFFER"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_MULTIXACTMEMBER_BUFFER: u32 = 52;
+pub const BuiltinTrancheIds_LWTRANCHE_MULTIXACTMEMBER_BUFFER: u32 = 57;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_NOTIFY_BUFFER"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_NOTIFY_BUFFER: u32 = 53;
+pub const BuiltinTrancheIds_LWTRANCHE_NOTIFY_BUFFER: u32 = 58;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_SERIAL_BUFFER"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_SERIAL_BUFFER: u32 = 54;
+pub const BuiltinTrancheIds_LWTRANCHE_SERIAL_BUFFER: u32 = 59;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_WAL_INSERT"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_WAL_INSERT: u32 = 55;
+pub const BuiltinTrancheIds_LWTRANCHE_WAL_INSERT: u32 = 60;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_BUFFER_CONTENT"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_BUFFER_CONTENT: u32 = 56;
+pub const BuiltinTrancheIds_LWTRANCHE_BUFFER_CONTENT: u32 = 61;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_REPLICATION_ORIGIN_STATE"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_REPLICATION_ORIGIN_STATE: u32 = 57;
+pub const BuiltinTrancheIds_LWTRANCHE_REPLICATION_ORIGIN_STATE: u32 = 62;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_REPLICATION_SLOT_IO"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_REPLICATION_SLOT_IO: u32 = 58;
+pub const BuiltinTrancheIds_LWTRANCHE_REPLICATION_SLOT_IO: u32 = 63;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_LOCK_FASTPATH"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_LOCK_FASTPATH: u32 = 59;
+pub const BuiltinTrancheIds_LWTRANCHE_LOCK_FASTPATH: u32 = 64;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_BUFFER_MAPPING"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_BUFFER_MAPPING: u32 = 60;
+pub const BuiltinTrancheIds_LWTRANCHE_BUFFER_MAPPING: u32 = 65;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_LOCK_MANAGER"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_LOCK_MANAGER: u32 = 61;
+pub const BuiltinTrancheIds_LWTRANCHE_LOCK_MANAGER: u32 = 66;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_PREDICATE_LOCK_MANAGER"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_PREDICATE_LOCK_MANAGER: u32 = 62;
+pub const BuiltinTrancheIds_LWTRANCHE_PREDICATE_LOCK_MANAGER: u32 = 67;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_PARALLEL_HASH_JOIN"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_PARALLEL_HASH_JOIN: u32 = 63;
+pub const BuiltinTrancheIds_LWTRANCHE_PARALLEL_HASH_JOIN: u32 = 68;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_PARALLEL_QUERY_DSA"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_PARALLEL_QUERY_DSA: u32 = 64;
+pub const BuiltinTrancheIds_LWTRANCHE_PARALLEL_QUERY_DSA: u32 = 69;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_PER_SESSION_DSA"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_PER_SESSION_DSA: u32 = 65;
+pub const BuiltinTrancheIds_LWTRANCHE_PER_SESSION_DSA: u32 = 70;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_PER_SESSION_RECORD_TYPE"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_PER_SESSION_RECORD_TYPE: u32 = 66;
+pub const BuiltinTrancheIds_LWTRANCHE_PER_SESSION_RECORD_TYPE: u32 = 71;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_PER_SESSION_RECORD_TYPMOD"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_PER_SESSION_RECORD_TYPMOD: u32 = 67;
+pub const BuiltinTrancheIds_LWTRANCHE_PER_SESSION_RECORD_TYPMOD: u32 = 72;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_SHARED_TUPLESTORE"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_SHARED_TUPLESTORE: u32 = 68;
+pub const BuiltinTrancheIds_LWTRANCHE_SHARED_TUPLESTORE: u32 = 73;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_SHARED_TIDBITMAP"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_SHARED_TIDBITMAP: u32 = 69;
+pub const BuiltinTrancheIds_LWTRANCHE_SHARED_TIDBITMAP: u32 = 74;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_PARALLEL_APPEND"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_PARALLEL_APPEND: u32 = 70;
+pub const BuiltinTrancheIds_LWTRANCHE_PARALLEL_APPEND: u32 = 75;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_PER_XACT_PREDICATE_LIST"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_PER_XACT_PREDICATE_LIST: u32 = 71;
+pub const BuiltinTrancheIds_LWTRANCHE_PER_XACT_PREDICATE_LIST: u32 = 76;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_PGSTATS_DSA"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_PGSTATS_DSA: u32 = 72;
+pub const BuiltinTrancheIds_LWTRANCHE_PGSTATS_DSA: u32 = 77;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_PGSTATS_HASH"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_PGSTATS_HASH: u32 = 73;
+pub const BuiltinTrancheIds_LWTRANCHE_PGSTATS_HASH: u32 = 78;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_PGSTATS_DATA"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_PGSTATS_DATA: u32 = 74;
+pub const BuiltinTrancheIds_LWTRANCHE_PGSTATS_DATA: u32 = 79;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_LAUNCHER_DSA"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_LAUNCHER_DSA: u32 = 75;
+pub const BuiltinTrancheIds_LWTRANCHE_LAUNCHER_DSA: u32 = 80;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_LAUNCHER_HASH"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_LAUNCHER_HASH: u32 = 76;
+pub const BuiltinTrancheIds_LWTRANCHE_LAUNCHER_HASH: u32 = 81;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_DSM_REGISTRY_DSA"
+)]
+pub const BuiltinTrancheIds_LWTRANCHE_DSM_REGISTRY_DSA: u32 = 82;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_DSM_REGISTRY_HASH"
+)]
+pub const BuiltinTrancheIds_LWTRANCHE_DSM_REGISTRY_HASH: u32 = 83;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_COMMITTS_SLRU"
+)]
+pub const BuiltinTrancheIds_LWTRANCHE_COMMITTS_SLRU: u32 = 84;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_MULTIXACTMEMBER_SLRU"
+)]
+pub const BuiltinTrancheIds_LWTRANCHE_MULTIXACTMEMBER_SLRU: u32 = 85;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_MULTIXACTOFFSET_SLRU"
+)]
+pub const BuiltinTrancheIds_LWTRANCHE_MULTIXACTOFFSET_SLRU: u32 = 86;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_NOTIFY_SLRU"
+)]
+pub const BuiltinTrancheIds_LWTRANCHE_NOTIFY_SLRU: u32 = 87;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_SERIAL_SLRU"
+)]
+pub const BuiltinTrancheIds_LWTRANCHE_SERIAL_SLRU: u32 = 88;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_SUBTRANS_SLRU"
+)]
+pub const BuiltinTrancheIds_LWTRANCHE_SUBTRANS_SLRU: u32 = 89;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_XACT_SLRU"
+)]
+pub const BuiltinTrancheIds_LWTRANCHE_XACT_SLRU: u32 = 90;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_PARALLEL_VACUUM_DSA"
+)]
+pub const BuiltinTrancheIds_LWTRANCHE_PARALLEL_VACUUM_DSA: u32 = 91;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::BuiltinTrancheIds::LWTRANCHE_FIRST_USER_DEFINED"
 )]
-pub const BuiltinTrancheIds_LWTRANCHE_FIRST_USER_DEFINED: u32 = 77;
+pub const BuiltinTrancheIds_LWTRANCHE_FIRST_USER_DEFINED: u32 = 92;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CRSSnapshotAction::CRS_EXPORT_SNAPSHOT"
@@ -53217,6 +55214,11 @@ pub const CommandDest_DestTransientRel: u32 = 10;
     note = "you want pg_sys::CommandDest::DestTupleQueue"
 )]
 pub const CommandDest_DestTupleQueue: u32 = 11;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::CommandDest::DestExplainSerialize"
+)]
+pub const CommandDest_DestExplainSerialize: u32 = 12;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_UNKNOWN")]
 pub const CommandTag_CMDTAG_UNKNOWN: u32 = 0;
 #[deprecated(
@@ -53970,122 +55972,119 @@ pub const CommandTag_CMDTAG_LOAD: u32 = 160;
     note = "you want pg_sys::CommandTag::CMDTAG_LOCK_TABLE"
 )]
 pub const CommandTag_CMDTAG_LOCK_TABLE: u32 = 161;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_LOGIN")]
+pub const CommandTag_CMDTAG_LOGIN: u32 = 162;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_MERGE")]
-pub const CommandTag_CMDTAG_MERGE: u32 = 162;
+pub const CommandTag_CMDTAG_MERGE: u32 = 163;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_MOVE")]
-pub const CommandTag_CMDTAG_MOVE: u32 = 163;
+pub const CommandTag_CMDTAG_MOVE: u32 = 164;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_NOTIFY")]
-pub const CommandTag_CMDTAG_NOTIFY: u32 = 164;
+pub const CommandTag_CMDTAG_NOTIFY: u32 = 165;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_PREPARE")]
-pub const CommandTag_CMDTAG_PREPARE: u32 = 165;
+pub const CommandTag_CMDTAG_PREPARE: u32 = 166;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_PREPARE_TRANSACTION"
 )]
-pub const CommandTag_CMDTAG_PREPARE_TRANSACTION: u32 = 166;
+pub const CommandTag_CMDTAG_PREPARE_TRANSACTION: u32 = 167;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_REASSIGN_OWNED"
 )]
-pub const CommandTag_CMDTAG_REASSIGN_OWNED: u32 = 167;
+pub const CommandTag_CMDTAG_REASSIGN_OWNED: u32 = 168;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_REFRESH_MATERIALIZED_VIEW"
 )]
-pub const CommandTag_CMDTAG_REFRESH_MATERIALIZED_VIEW: u32 = 168;
+pub const CommandTag_CMDTAG_REFRESH_MATERIALIZED_VIEW: u32 = 169;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_REINDEX")]
-pub const CommandTag_CMDTAG_REINDEX: u32 = 169;
+pub const CommandTag_CMDTAG_REINDEX: u32 = 170;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_RELEASE")]
-pub const CommandTag_CMDTAG_RELEASE: u32 = 170;
+pub const CommandTag_CMDTAG_RELEASE: u32 = 171;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_RESET")]
-pub const CommandTag_CMDTAG_RESET: u32 = 171;
+pub const CommandTag_CMDTAG_RESET: u32 = 172;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_REVOKE")]
-pub const CommandTag_CMDTAG_REVOKE: u32 = 172;
+pub const CommandTag_CMDTAG_REVOKE: u32 = 173;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_REVOKE_ROLE"
 )]
-pub const CommandTag_CMDTAG_REVOKE_ROLE: u32 = 173;
+pub const CommandTag_CMDTAG_REVOKE_ROLE: u32 = 174;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_ROLLBACK"
 )]
-pub const CommandTag_CMDTAG_ROLLBACK: u32 = 174;
+pub const CommandTag_CMDTAG_ROLLBACK: u32 = 175;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_ROLLBACK_PREPARED"
 )]
-pub const CommandTag_CMDTAG_ROLLBACK_PREPARED: u32 = 175;
+pub const CommandTag_CMDTAG_ROLLBACK_PREPARED: u32 = 176;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_SAVEPOINT"
 )]
-pub const CommandTag_CMDTAG_SAVEPOINT: u32 = 176;
+pub const CommandTag_CMDTAG_SAVEPOINT: u32 = 177;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_SECURITY_LABEL"
 )]
-pub const CommandTag_CMDTAG_SECURITY_LABEL: u32 = 177;
+pub const CommandTag_CMDTAG_SECURITY_LABEL: u32 = 178;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_SELECT")]
-pub const CommandTag_CMDTAG_SELECT: u32 = 178;
+pub const CommandTag_CMDTAG_SELECT: u32 = 179;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_SELECT_FOR_KEY_SHARE"
 )]
-pub const CommandTag_CMDTAG_SELECT_FOR_KEY_SHARE: u32 = 179;
+pub const CommandTag_CMDTAG_SELECT_FOR_KEY_SHARE: u32 = 180;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_SELECT_FOR_NO_KEY_UPDATE"
 )]
-pub const CommandTag_CMDTAG_SELECT_FOR_NO_KEY_UPDATE: u32 = 180;
+pub const CommandTag_CMDTAG_SELECT_FOR_NO_KEY_UPDATE: u32 = 181;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_SELECT_FOR_SHARE"
 )]
-pub const CommandTag_CMDTAG_SELECT_FOR_SHARE: u32 = 181;
+pub const CommandTag_CMDTAG_SELECT_FOR_SHARE: u32 = 182;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_SELECT_FOR_UPDATE"
 )]
-pub const CommandTag_CMDTAG_SELECT_FOR_UPDATE: u32 = 182;
+pub const CommandTag_CMDTAG_SELECT_FOR_UPDATE: u32 = 183;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_SELECT_INTO"
 )]
-pub const CommandTag_CMDTAG_SELECT_INTO: u32 = 183;
+pub const CommandTag_CMDTAG_SELECT_INTO: u32 = 184;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_SET")]
-pub const CommandTag_CMDTAG_SET: u32 = 184;
+pub const CommandTag_CMDTAG_SET: u32 = 185;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_SET_CONSTRAINTS"
 )]
-pub const CommandTag_CMDTAG_SET_CONSTRAINTS: u32 = 185;
+pub const CommandTag_CMDTAG_SET_CONSTRAINTS: u32 = 186;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_SHOW")]
-pub const CommandTag_CMDTAG_SHOW: u32 = 186;
+pub const CommandTag_CMDTAG_SHOW: u32 = 187;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_START_TRANSACTION"
 )]
-pub const CommandTag_CMDTAG_START_TRANSACTION: u32 = 187;
+pub const CommandTag_CMDTAG_START_TRANSACTION: u32 = 188;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_TRUNCATE_TABLE"
 )]
-pub const CommandTag_CMDTAG_TRUNCATE_TABLE: u32 = 188;
+pub const CommandTag_CMDTAG_TRUNCATE_TABLE: u32 = 189;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::CommandTag::CMDTAG_UNLISTEN"
 )]
-pub const CommandTag_CMDTAG_UNLISTEN: u32 = 189;
+pub const CommandTag_CMDTAG_UNLISTEN: u32 = 190;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_UPDATE")]
-pub const CommandTag_CMDTAG_UPDATE: u32 = 190;
+pub const CommandTag_CMDTAG_UPDATE: u32 = 191;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CommandTag::CMDTAG_VACUUM")]
-pub const CommandTag_CMDTAG_VACUUM: u32 = 191;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::CommandTag::COMMAND_TAG_NEXTTAG"
-)]
-pub const CommandTag_COMMAND_TAG_NEXTTAG: u32 = 192;
+pub const CommandTag_CMDTAG_VACUUM: u32 = 192;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ComputeQueryIdType::COMPUTE_QUERY_ID_OFF"
@@ -54185,6 +56184,26 @@ pub const CopyHeaderChoice_COPY_HEADER_TRUE: u32 = 1;
     note = "you want pg_sys::CopyHeaderChoice::COPY_HEADER_MATCH"
 )]
 pub const CopyHeaderChoice_COPY_HEADER_MATCH: u32 = 2;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::CopyLogVerbosityChoice::COPY_LOG_VERBOSITY_DEFAULT"
+)]
+pub const CopyLogVerbosityChoice_COPY_LOG_VERBOSITY_DEFAULT: u32 = 0;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::CopyLogVerbosityChoice::COPY_LOG_VERBOSITY_VERBOSE"
+)]
+pub const CopyLogVerbosityChoice_COPY_LOG_VERBOSITY_VERBOSE: u32 = 1;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::CopyOnErrorChoice::COPY_ON_ERROR_STOP"
+)]
+pub const CopyOnErrorChoice_COPY_ON_ERROR_STOP: u32 = 0;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::CopyOnErrorChoice::COPY_ON_ERROR_IGNORE"
+)]
+pub const CopyOnErrorChoice_COPY_ON_ERROR_IGNORE: u32 = 1;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CostSelector::STARTUP_COST")]
 pub const CostSelector_STARTUP_COST: u32 = 0;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::CostSelector::TOTAL_COST")]
@@ -54364,6 +56383,21 @@ pub const ExplainFormat_EXPLAIN_FORMAT_JSON: u32 = 2;
     note = "you want pg_sys::ExplainFormat::EXPLAIN_FORMAT_YAML"
 )]
 pub const ExplainFormat_EXPLAIN_FORMAT_YAML: u32 = 3;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::ExplainSerializeOption::EXPLAIN_SERIALIZE_NONE"
+)]
+pub const ExplainSerializeOption_EXPLAIN_SERIALIZE_NONE: u32 = 0;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::ExplainSerializeOption::EXPLAIN_SERIALIZE_TEXT"
+)]
+pub const ExplainSerializeOption_EXPLAIN_SERIALIZE_TEXT: u32 = 1;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::ExplainSerializeOption::EXPLAIN_SERIALIZE_BINARY"
+)]
+pub const ExplainSerializeOption_EXPLAIN_SERIALIZE_BINARY: u32 = 2;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprDoneCond::ExprSingleResult"
@@ -54584,216 +56618,241 @@ pub const ExprEvalOp_EEOP_CASE_TESTVAL: u32 = 44;
 pub const ExprEvalOp_EEOP_MAKE_READONLY: u32 = 45;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::ExprEvalOp::EEOP_IOCOERCE")]
 pub const ExprEvalOp_EEOP_IOCOERCE: u32 = 46;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::ExprEvalOp::EEOP_IOCOERCE_SAFE"
+)]
+pub const ExprEvalOp_EEOP_IOCOERCE_SAFE: u32 = 47;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::ExprEvalOp::EEOP_DISTINCT")]
-pub const ExprEvalOp_EEOP_DISTINCT: u32 = 47;
+pub const ExprEvalOp_EEOP_DISTINCT: u32 = 48;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_NOT_DISTINCT"
 )]
-pub const ExprEvalOp_EEOP_NOT_DISTINCT: u32 = 48;
+pub const ExprEvalOp_EEOP_NOT_DISTINCT: u32 = 49;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::ExprEvalOp::EEOP_NULLIF")]
-pub const ExprEvalOp_EEOP_NULLIF: u32 = 49;
+pub const ExprEvalOp_EEOP_NULLIF: u32 = 50;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_SQLVALUEFUNCTION"
 )]
-pub const ExprEvalOp_EEOP_SQLVALUEFUNCTION: u32 = 50;
+pub const ExprEvalOp_EEOP_SQLVALUEFUNCTION: u32 = 51;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_CURRENTOFEXPR"
 )]
-pub const ExprEvalOp_EEOP_CURRENTOFEXPR: u32 = 51;
+pub const ExprEvalOp_EEOP_CURRENTOFEXPR: u32 = 52;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_NEXTVALUEEXPR"
 )]
-pub const ExprEvalOp_EEOP_NEXTVALUEEXPR: u32 = 52;
+pub const ExprEvalOp_EEOP_NEXTVALUEEXPR: u32 = 53;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::ExprEvalOp::EEOP_ARRAYEXPR")]
-pub const ExprEvalOp_EEOP_ARRAYEXPR: u32 = 53;
+pub const ExprEvalOp_EEOP_ARRAYEXPR: u32 = 54;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_ARRAYCOERCE"
 )]
-pub const ExprEvalOp_EEOP_ARRAYCOERCE: u32 = 54;
+pub const ExprEvalOp_EEOP_ARRAYCOERCE: u32 = 55;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::ExprEvalOp::EEOP_ROW")]
-pub const ExprEvalOp_EEOP_ROW: u32 = 55;
+pub const ExprEvalOp_EEOP_ROW: u32 = 56;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_ROWCOMPARE_STEP"
 )]
-pub const ExprEvalOp_EEOP_ROWCOMPARE_STEP: u32 = 56;
+pub const ExprEvalOp_EEOP_ROWCOMPARE_STEP: u32 = 57;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_ROWCOMPARE_FINAL"
 )]
-pub const ExprEvalOp_EEOP_ROWCOMPARE_FINAL: u32 = 57;
+pub const ExprEvalOp_EEOP_ROWCOMPARE_FINAL: u32 = 58;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::ExprEvalOp::EEOP_MINMAX")]
-pub const ExprEvalOp_EEOP_MINMAX: u32 = 58;
+pub const ExprEvalOp_EEOP_MINMAX: u32 = 59;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_FIELDSELECT"
 )]
-pub const ExprEvalOp_EEOP_FIELDSELECT: u32 = 59;
+pub const ExprEvalOp_EEOP_FIELDSELECT: u32 = 60;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_FIELDSTORE_DEFORM"
 )]
-pub const ExprEvalOp_EEOP_FIELDSTORE_DEFORM: u32 = 60;
+pub const ExprEvalOp_EEOP_FIELDSTORE_DEFORM: u32 = 61;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_FIELDSTORE_FORM"
 )]
-pub const ExprEvalOp_EEOP_FIELDSTORE_FORM: u32 = 61;
+pub const ExprEvalOp_EEOP_FIELDSTORE_FORM: u32 = 62;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_SBSREF_SUBSCRIPTS"
 )]
-pub const ExprEvalOp_EEOP_SBSREF_SUBSCRIPTS: u32 = 62;
+pub const ExprEvalOp_EEOP_SBSREF_SUBSCRIPTS: u32 = 63;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_SBSREF_OLD"
 )]
-pub const ExprEvalOp_EEOP_SBSREF_OLD: u32 = 63;
+pub const ExprEvalOp_EEOP_SBSREF_OLD: u32 = 64;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_SBSREF_ASSIGN"
 )]
-pub const ExprEvalOp_EEOP_SBSREF_ASSIGN: u32 = 64;
+pub const ExprEvalOp_EEOP_SBSREF_ASSIGN: u32 = 65;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_SBSREF_FETCH"
 )]
-pub const ExprEvalOp_EEOP_SBSREF_FETCH: u32 = 65;
+pub const ExprEvalOp_EEOP_SBSREF_FETCH: u32 = 66;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_DOMAIN_TESTVAL"
 )]
-pub const ExprEvalOp_EEOP_DOMAIN_TESTVAL: u32 = 66;
+pub const ExprEvalOp_EEOP_DOMAIN_TESTVAL: u32 = 67;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_DOMAIN_NOTNULL"
 )]
-pub const ExprEvalOp_EEOP_DOMAIN_NOTNULL: u32 = 67;
+pub const ExprEvalOp_EEOP_DOMAIN_NOTNULL: u32 = 68;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_DOMAIN_CHECK"
 )]
-pub const ExprEvalOp_EEOP_DOMAIN_CHECK: u32 = 68;
+pub const ExprEvalOp_EEOP_DOMAIN_CHECK: u32 = 69;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_CONVERT_ROWTYPE"
 )]
-pub const ExprEvalOp_EEOP_CONVERT_ROWTYPE: u32 = 69;
+pub const ExprEvalOp_EEOP_CONVERT_ROWTYPE: u32 = 70;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_SCALARARRAYOP"
 )]
-pub const ExprEvalOp_EEOP_SCALARARRAYOP: u32 = 70;
+pub const ExprEvalOp_EEOP_SCALARARRAYOP: u32 = 71;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_HASHED_SCALARARRAYOP"
 )]
-pub const ExprEvalOp_EEOP_HASHED_SCALARARRAYOP: u32 = 71;
+pub const ExprEvalOp_EEOP_HASHED_SCALARARRAYOP: u32 = 72;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::ExprEvalOp::EEOP_XMLEXPR")]
-pub const ExprEvalOp_EEOP_XMLEXPR: u32 = 72;
+pub const ExprEvalOp_EEOP_XMLEXPR: u32 = 73;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_JSON_CONSTRUCTOR"
 )]
-pub const ExprEvalOp_EEOP_JSON_CONSTRUCTOR: u32 = 73;
+pub const ExprEvalOp_EEOP_JSON_CONSTRUCTOR: u32 = 74;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::ExprEvalOp::EEOP_IS_JSON")]
-pub const ExprEvalOp_EEOP_IS_JSON: u32 = 74;
+pub const ExprEvalOp_EEOP_IS_JSON: u32 = 75;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::ExprEvalOp::EEOP_JSONEXPR_PATH"
+)]
+pub const ExprEvalOp_EEOP_JSONEXPR_PATH: u32 = 76;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::ExprEvalOp::EEOP_JSONEXPR_COERCION"
+)]
+pub const ExprEvalOp_EEOP_JSONEXPR_COERCION: u32 = 77;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::ExprEvalOp::EEOP_JSONEXPR_COERCION_FINISH"
+)]
+pub const ExprEvalOp_EEOP_JSONEXPR_COERCION_FINISH: u32 = 78;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::ExprEvalOp::EEOP_AGGREF")]
-pub const ExprEvalOp_EEOP_AGGREF: u32 = 75;
+pub const ExprEvalOp_EEOP_AGGREF: u32 = 79;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_GROUPING_FUNC"
 )]
-pub const ExprEvalOp_EEOP_GROUPING_FUNC: u32 = 76;
+pub const ExprEvalOp_EEOP_GROUPING_FUNC: u32 = 80;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_WINDOW_FUNC"
 )]
-pub const ExprEvalOp_EEOP_WINDOW_FUNC: u32 = 77;
+pub const ExprEvalOp_EEOP_WINDOW_FUNC: u32 = 81;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::ExprEvalOp::EEOP_MERGE_SUPPORT_FUNC"
+)]
+pub const ExprEvalOp_EEOP_MERGE_SUPPORT_FUNC: u32 = 82;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::ExprEvalOp::EEOP_SUBPLAN")]
-pub const ExprEvalOp_EEOP_SUBPLAN: u32 = 78;
+pub const ExprEvalOp_EEOP_SUBPLAN: u32 = 83;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_STRICT_DESERIALIZE"
 )]
-pub const ExprEvalOp_EEOP_AGG_STRICT_DESERIALIZE: u32 = 79;
+pub const ExprEvalOp_EEOP_AGG_STRICT_DESERIALIZE: u32 = 84;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_DESERIALIZE"
 )]
-pub const ExprEvalOp_EEOP_AGG_DESERIALIZE: u32 = 80;
+pub const ExprEvalOp_EEOP_AGG_DESERIALIZE: u32 = 85;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_STRICT_INPUT_CHECK_ARGS"
 )]
-pub const ExprEvalOp_EEOP_AGG_STRICT_INPUT_CHECK_ARGS: u32 = 81;
+pub const ExprEvalOp_EEOP_AGG_STRICT_INPUT_CHECK_ARGS: u32 = 86;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_STRICT_INPUT_CHECK_NULLS"
 )]
-pub const ExprEvalOp_EEOP_AGG_STRICT_INPUT_CHECK_NULLS: u32 = 82;
+pub const ExprEvalOp_EEOP_AGG_STRICT_INPUT_CHECK_NULLS: u32 = 87;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_PLAIN_PERGROUP_NULLCHECK"
 )]
-pub const ExprEvalOp_EEOP_AGG_PLAIN_PERGROUP_NULLCHECK: u32 = 83;
+pub const ExprEvalOp_EEOP_AGG_PLAIN_PERGROUP_NULLCHECK: u32 = 88;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_PLAIN_TRANS_INIT_STRICT_BYVAL"
 )]
-pub const ExprEvalOp_EEOP_AGG_PLAIN_TRANS_INIT_STRICT_BYVAL: u32 = 84;
+pub const ExprEvalOp_EEOP_AGG_PLAIN_TRANS_INIT_STRICT_BYVAL: u32 = 89;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_PLAIN_TRANS_STRICT_BYVAL"
 )]
-pub const ExprEvalOp_EEOP_AGG_PLAIN_TRANS_STRICT_BYVAL: u32 = 85;
+pub const ExprEvalOp_EEOP_AGG_PLAIN_TRANS_STRICT_BYVAL: u32 = 90;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_PLAIN_TRANS_BYVAL"
 )]
-pub const ExprEvalOp_EEOP_AGG_PLAIN_TRANS_BYVAL: u32 = 86;
+pub const ExprEvalOp_EEOP_AGG_PLAIN_TRANS_BYVAL: u32 = 91;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_PLAIN_TRANS_INIT_STRICT_BYREF"
 )]
-pub const ExprEvalOp_EEOP_AGG_PLAIN_TRANS_INIT_STRICT_BYREF: u32 = 87;
+pub const ExprEvalOp_EEOP_AGG_PLAIN_TRANS_INIT_STRICT_BYREF: u32 = 92;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_PLAIN_TRANS_STRICT_BYREF"
 )]
-pub const ExprEvalOp_EEOP_AGG_PLAIN_TRANS_STRICT_BYREF: u32 = 88;
+pub const ExprEvalOp_EEOP_AGG_PLAIN_TRANS_STRICT_BYREF: u32 = 93;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_PLAIN_TRANS_BYREF"
 )]
-pub const ExprEvalOp_EEOP_AGG_PLAIN_TRANS_BYREF: u32 = 89;
+pub const ExprEvalOp_EEOP_AGG_PLAIN_TRANS_BYREF: u32 = 94;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_PRESORTED_DISTINCT_SINGLE"
 )]
-pub const ExprEvalOp_EEOP_AGG_PRESORTED_DISTINCT_SINGLE: u32 = 90;
+pub const ExprEvalOp_EEOP_AGG_PRESORTED_DISTINCT_SINGLE: u32 = 95;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_PRESORTED_DISTINCT_MULTI"
 )]
-pub const ExprEvalOp_EEOP_AGG_PRESORTED_DISTINCT_MULTI: u32 = 91;
+pub const ExprEvalOp_EEOP_AGG_PRESORTED_DISTINCT_MULTI: u32 = 96;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_ORDERED_TRANS_DATUM"
 )]
-pub const ExprEvalOp_EEOP_AGG_ORDERED_TRANS_DATUM: u32 = 92;
+pub const ExprEvalOp_EEOP_AGG_ORDERED_TRANS_DATUM: u32 = 97;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExprEvalOp::EEOP_AGG_ORDERED_TRANS_TUPLE"
 )]
-pub const ExprEvalOp_EEOP_AGG_ORDERED_TRANS_TUPLE: u32 = 93;
+pub const ExprEvalOp_EEOP_AGG_ORDERED_TRANS_TUPLE: u32 = 98;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::ExprEvalOp::EEOP_LAST")]
-pub const ExprEvalOp_EEOP_LAST: u32 = 94;
+pub const ExprEvalOp_EEOP_LAST: u32 = 99;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ExtendBufferedFlags::EB_SKIP_EXTENSION_LOCK"
@@ -55423,6 +57482,51 @@ pub const JoinType_JOIN_UNIQUE_OUTER: u32 = 7;
 pub const JoinType_JOIN_UNIQUE_INNER: u32 = 8;
 #[deprecated(
     since = "0.12.0",
+    note = "you want pg_sys::JsonBehaviorType::JSON_BEHAVIOR_NULL"
+)]
+pub const JsonBehaviorType_JSON_BEHAVIOR_NULL: u32 = 0;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonBehaviorType::JSON_BEHAVIOR_ERROR"
+)]
+pub const JsonBehaviorType_JSON_BEHAVIOR_ERROR: u32 = 1;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonBehaviorType::JSON_BEHAVIOR_EMPTY"
+)]
+pub const JsonBehaviorType_JSON_BEHAVIOR_EMPTY: u32 = 2;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonBehaviorType::JSON_BEHAVIOR_TRUE"
+)]
+pub const JsonBehaviorType_JSON_BEHAVIOR_TRUE: u32 = 3;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonBehaviorType::JSON_BEHAVIOR_FALSE"
+)]
+pub const JsonBehaviorType_JSON_BEHAVIOR_FALSE: u32 = 4;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonBehaviorType::JSON_BEHAVIOR_UNKNOWN"
+)]
+pub const JsonBehaviorType_JSON_BEHAVIOR_UNKNOWN: u32 = 5;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonBehaviorType::JSON_BEHAVIOR_EMPTY_ARRAY"
+)]
+pub const JsonBehaviorType_JSON_BEHAVIOR_EMPTY_ARRAY: u32 = 6;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonBehaviorType::JSON_BEHAVIOR_EMPTY_OBJECT"
+)]
+pub const JsonBehaviorType_JSON_BEHAVIOR_EMPTY_OBJECT: u32 = 7;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonBehaviorType::JSON_BEHAVIOR_DEFAULT"
+)]
+pub const JsonBehaviorType_JSON_BEHAVIOR_DEFAULT: u32 = 8;
+#[deprecated(
+    since = "0.12.0",
     note = "you want pg_sys::JsonConstructorType::JSCTOR_JSON_OBJECT"
 )]
 pub const JsonConstructorType_JSCTOR_JSON_OBJECT: u32 = 1;
@@ -55443,6 +57547,21 @@ pub const JsonConstructorType_JSCTOR_JSON_OBJECTAGG: u32 = 3;
 pub const JsonConstructorType_JSCTOR_JSON_ARRAYAGG: u32 = 4;
 #[deprecated(
     since = "0.12.0",
+    note = "you want pg_sys::JsonConstructorType::JSCTOR_JSON_PARSE"
+)]
+pub const JsonConstructorType_JSCTOR_JSON_PARSE: u32 = 5;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonConstructorType::JSCTOR_JSON_SCALAR"
+)]
+pub const JsonConstructorType_JSCTOR_JSON_SCALAR: u32 = 6;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonConstructorType::JSCTOR_JSON_SERIALIZE"
+)]
+pub const JsonConstructorType_JSCTOR_JSON_SERIALIZE: u32 = 7;
+#[deprecated(
+    since = "0.12.0",
     note = "you want pg_sys::JsonEncoding::JS_ENC_DEFAULT"
 )]
 pub const JsonEncoding_JS_ENC_DEFAULT: u32 = 0;
@@ -55452,6 +57571,14 @@ pub const JsonEncoding_JS_ENC_UTF8: u32 = 1;
 pub const JsonEncoding_JS_ENC_UTF16: u32 = 2;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::JsonEncoding::JS_ENC_UTF32")]
 pub const JsonEncoding_JS_ENC_UTF32: u32 = 3;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::JsonExprOp::JSON_EXISTS_OP")]
+pub const JsonExprOp_JSON_EXISTS_OP: u32 = 0;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::JsonExprOp::JSON_QUERY_OP")]
+pub const JsonExprOp_JSON_QUERY_OP: u32 = 1;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::JsonExprOp::JSON_VALUE_OP")]
+pub const JsonExprOp_JSON_VALUE_OP: u32 = 2;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::JsonExprOp::JSON_TABLE_OP")]
+pub const JsonExprOp_JSON_TABLE_OP: u32 = 3;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::JsonFormatType::JS_FORMAT_DEFAULT"
@@ -55467,6 +57594,40 @@ pub const JsonFormatType_JS_FORMAT_JSON: u32 = 1;
     note = "you want pg_sys::JsonFormatType::JS_FORMAT_JSONB"
 )]
 pub const JsonFormatType_JS_FORMAT_JSONB: u32 = 2;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonQuotes::JS_QUOTES_UNSPEC"
+)]
+pub const JsonQuotes_JS_QUOTES_UNSPEC: u32 = 0;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::JsonQuotes::JS_QUOTES_KEEP")]
+pub const JsonQuotes_JS_QUOTES_KEEP: u32 = 1;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::JsonQuotes::JS_QUOTES_OMIT")]
+pub const JsonQuotes_JS_QUOTES_OMIT: u32 = 2;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonTableColumnType::JTC_FOR_ORDINALITY"
+)]
+pub const JsonTableColumnType_JTC_FOR_ORDINALITY: u32 = 0;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonTableColumnType::JTC_REGULAR"
+)]
+pub const JsonTableColumnType_JTC_REGULAR: u32 = 1;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonTableColumnType::JTC_EXISTS"
+)]
+pub const JsonTableColumnType_JTC_EXISTS: u32 = 2;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonTableColumnType::JTC_FORMATTED"
+)]
+pub const JsonTableColumnType_JTC_FORMATTED: u32 = 3;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonTableColumnType::JTC_NESTED"
+)]
+pub const JsonTableColumnType_JTC_NESTED: u32 = 4;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::JsonValueType::JS_TYPE_ANY")]
 pub const JsonValueType_JS_TYPE_ANY: u32 = 0;
 #[deprecated(
@@ -55484,6 +57645,20 @@ pub const JsonValueType_JS_TYPE_ARRAY: u32 = 2;
     note = "you want pg_sys::JsonValueType::JS_TYPE_SCALAR"
 )]
 pub const JsonValueType_JS_TYPE_SCALAR: u32 = 3;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::JsonWrapper::JSW_UNSPEC")]
+pub const JsonWrapper_JSW_UNSPEC: u32 = 0;
+#[deprecated(since = "0.12.0", note = "you want pg_sys::JsonWrapper::JSW_NONE")]
+pub const JsonWrapper_JSW_NONE: u32 = 1;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonWrapper::JSW_CONDITIONAL"
+)]
+pub const JsonWrapper_JSW_CONDITIONAL: u32 = 2;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::JsonWrapper::JSW_UNCONDITIONAL"
+)]
+pub const JsonWrapper_JSW_UNCONDITIONAL: u32 = 3;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::JsonbIterState::JBI_ARRAY_START"
@@ -55583,11 +57758,6 @@ pub const LimitOption_LIMIT_OPTION_COUNT: u32 = 0;
     note = "you want pg_sys::LimitOption::LIMIT_OPTION_WITH_TIES"
 )]
 pub const LimitOption_LIMIT_OPTION_WITH_TIES: u32 = 1;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::LimitOption::LIMIT_OPTION_DEFAULT"
-)]
-pub const LimitOption_LIMIT_OPTION_DEFAULT: u32 = 2;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::LimitStateCond::LIMIT_INITIAL"
@@ -55865,6 +58035,21 @@ pub const LogicalRepMsgType_LOGICAL_REP_MSG_STREAM_ABORT: u32 = 65;
     note = "you want pg_sys::LogicalRepMsgType::LOGICAL_REP_MSG_STREAM_PREPARE"
 )]
 pub const LogicalRepMsgType_LOGICAL_REP_MSG_STREAM_PREPARE: u32 = 112;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::MergeMatchKind::MERGE_WHEN_MATCHED"
+)]
+pub const MergeMatchKind_MERGE_WHEN_MATCHED: u32 = 0;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::MergeMatchKind::MERGE_WHEN_NOT_MATCHED_BY_SOURCE"
+)]
+pub const MergeMatchKind_MERGE_WHEN_NOT_MATCHED_BY_SOURCE: u32 = 1;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::MergeMatchKind::MERGE_WHEN_NOT_MATCHED_BY_TARGET"
+)]
+pub const MergeMatchKind_MERGE_WHEN_NOT_MATCHED_BY_TARGET: u32 = 2;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::MinMaxOp::IS_GREATEST")]
 pub const MinMaxOp_IS_GREATEST: u32 = 0;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::MinMaxOp::IS_LEAST")]
@@ -55950,172 +58135,6 @@ pub const ObjectAccessType_OAT_FUNCTION_EXECUTE: u32 = 4;
     note = "you want pg_sys::ObjectAccessType::OAT_TRUNCATE"
 )]
 pub const ObjectAccessType_OAT_TRUNCATE: u32 = 5;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_CLASS")]
-pub const ObjectClass_OCLASS_CLASS: u32 = 0;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_PROC")]
-pub const ObjectClass_OCLASS_PROC: u32 = 1;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_TYPE")]
-pub const ObjectClass_OCLASS_TYPE: u32 = 2;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_CAST")]
-pub const ObjectClass_OCLASS_CAST: u32 = 3;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_COLLATION"
-)]
-pub const ObjectClass_OCLASS_COLLATION: u32 = 4;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_CONSTRAINT"
-)]
-pub const ObjectClass_OCLASS_CONSTRAINT: u32 = 5;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_CONVERSION"
-)]
-pub const ObjectClass_OCLASS_CONVERSION: u32 = 6;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_DEFAULT"
-)]
-pub const ObjectClass_OCLASS_DEFAULT: u32 = 7;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_LANGUAGE"
-)]
-pub const ObjectClass_OCLASS_LANGUAGE: u32 = 8;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_LARGEOBJECT"
-)]
-pub const ObjectClass_OCLASS_LARGEOBJECT: u32 = 9;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_OPERATOR"
-)]
-pub const ObjectClass_OCLASS_OPERATOR: u32 = 10;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_OPCLASS"
-)]
-pub const ObjectClass_OCLASS_OPCLASS: u32 = 11;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_OPFAMILY"
-)]
-pub const ObjectClass_OCLASS_OPFAMILY: u32 = 12;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_AM")]
-pub const ObjectClass_OCLASS_AM: u32 = 13;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_AMOP")]
-pub const ObjectClass_OCLASS_AMOP: u32 = 14;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_AMPROC")]
-pub const ObjectClass_OCLASS_AMPROC: u32 = 15;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_REWRITE"
-)]
-pub const ObjectClass_OCLASS_REWRITE: u32 = 16;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_TRIGGER"
-)]
-pub const ObjectClass_OCLASS_TRIGGER: u32 = 17;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_SCHEMA")]
-pub const ObjectClass_OCLASS_SCHEMA: u32 = 18;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_STATISTIC_EXT"
-)]
-pub const ObjectClass_OCLASS_STATISTIC_EXT: u32 = 19;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_TSPARSER"
-)]
-pub const ObjectClass_OCLASS_TSPARSER: u32 = 20;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_TSDICT")]
-pub const ObjectClass_OCLASS_TSDICT: u32 = 21;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_TSTEMPLATE"
-)]
-pub const ObjectClass_OCLASS_TSTEMPLATE: u32 = 22;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_TSCONFIG"
-)]
-pub const ObjectClass_OCLASS_TSCONFIG: u32 = 23;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_ROLE")]
-pub const ObjectClass_OCLASS_ROLE: u32 = 24;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_ROLE_MEMBERSHIP"
-)]
-pub const ObjectClass_OCLASS_ROLE_MEMBERSHIP: u32 = 25;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_DATABASE"
-)]
-pub const ObjectClass_OCLASS_DATABASE: u32 = 26;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_TBLSPACE"
-)]
-pub const ObjectClass_OCLASS_TBLSPACE: u32 = 27;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_FDW")]
-pub const ObjectClass_OCLASS_FDW: u32 = 28;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_FOREIGN_SERVER"
-)]
-pub const ObjectClass_OCLASS_FOREIGN_SERVER: u32 = 29;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_USER_MAPPING"
-)]
-pub const ObjectClass_OCLASS_USER_MAPPING: u32 = 30;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_DEFACL")]
-pub const ObjectClass_OCLASS_DEFACL: u32 = 31;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_EXTENSION"
-)]
-pub const ObjectClass_OCLASS_EXTENSION: u32 = 32;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_EVENT_TRIGGER"
-)]
-pub const ObjectClass_OCLASS_EVENT_TRIGGER: u32 = 33;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_PARAMETER_ACL"
-)]
-pub const ObjectClass_OCLASS_PARAMETER_ACL: u32 = 34;
-#[deprecated(since = "0.12.0", note = "you want pg_sys::ObjectClass::OCLASS_POLICY")]
-pub const ObjectClass_OCLASS_POLICY: u32 = 35;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_PUBLICATION"
-)]
-pub const ObjectClass_OCLASS_PUBLICATION: u32 = 36;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_PUBLICATION_NAMESPACE"
-)]
-pub const ObjectClass_OCLASS_PUBLICATION_NAMESPACE: u32 = 37;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_PUBLICATION_REL"
-)]
-pub const ObjectClass_OCLASS_PUBLICATION_REL: u32 = 38;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_SUBSCRIPTION"
-)]
-pub const ObjectClass_OCLASS_SUBSCRIPTION: u32 = 39;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::ObjectClass::OCLASS_TRANSFORM"
-)]
-pub const ObjectClass_OCLASS_TRANSFORM: u32 = 40;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ObjectType::OBJECT_ACCESS_METHOD"
@@ -56926,99 +58945,104 @@ pub const ParseExprKind_EXPR_KIND_OFFSET: u32 = 23;
 pub const ParseExprKind_EXPR_KIND_RETURNING: u32 = 24;
 #[deprecated(
     since = "0.12.0",
+    note = "you want pg_sys::ParseExprKind::EXPR_KIND_MERGE_RETURNING"
+)]
+pub const ParseExprKind_EXPR_KIND_MERGE_RETURNING: u32 = 25;
+#[deprecated(
+    since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_VALUES"
 )]
-pub const ParseExprKind_EXPR_KIND_VALUES: u32 = 25;
+pub const ParseExprKind_EXPR_KIND_VALUES: u32 = 26;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_VALUES_SINGLE"
 )]
-pub const ParseExprKind_EXPR_KIND_VALUES_SINGLE: u32 = 26;
+pub const ParseExprKind_EXPR_KIND_VALUES_SINGLE: u32 = 27;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_CHECK_CONSTRAINT"
 )]
-pub const ParseExprKind_EXPR_KIND_CHECK_CONSTRAINT: u32 = 27;
+pub const ParseExprKind_EXPR_KIND_CHECK_CONSTRAINT: u32 = 28;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_DOMAIN_CHECK"
 )]
-pub const ParseExprKind_EXPR_KIND_DOMAIN_CHECK: u32 = 28;
+pub const ParseExprKind_EXPR_KIND_DOMAIN_CHECK: u32 = 29;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_COLUMN_DEFAULT"
 )]
-pub const ParseExprKind_EXPR_KIND_COLUMN_DEFAULT: u32 = 29;
+pub const ParseExprKind_EXPR_KIND_COLUMN_DEFAULT: u32 = 30;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_FUNCTION_DEFAULT"
 )]
-pub const ParseExprKind_EXPR_KIND_FUNCTION_DEFAULT: u32 = 30;
+pub const ParseExprKind_EXPR_KIND_FUNCTION_DEFAULT: u32 = 31;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_INDEX_EXPRESSION"
 )]
-pub const ParseExprKind_EXPR_KIND_INDEX_EXPRESSION: u32 = 31;
+pub const ParseExprKind_EXPR_KIND_INDEX_EXPRESSION: u32 = 32;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_INDEX_PREDICATE"
 )]
-pub const ParseExprKind_EXPR_KIND_INDEX_PREDICATE: u32 = 32;
+pub const ParseExprKind_EXPR_KIND_INDEX_PREDICATE: u32 = 33;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_STATS_EXPRESSION"
 )]
-pub const ParseExprKind_EXPR_KIND_STATS_EXPRESSION: u32 = 33;
+pub const ParseExprKind_EXPR_KIND_STATS_EXPRESSION: u32 = 34;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_ALTER_COL_TRANSFORM"
 )]
-pub const ParseExprKind_EXPR_KIND_ALTER_COL_TRANSFORM: u32 = 34;
+pub const ParseExprKind_EXPR_KIND_ALTER_COL_TRANSFORM: u32 = 35;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_EXECUTE_PARAMETER"
 )]
-pub const ParseExprKind_EXPR_KIND_EXECUTE_PARAMETER: u32 = 35;
+pub const ParseExprKind_EXPR_KIND_EXECUTE_PARAMETER: u32 = 36;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_TRIGGER_WHEN"
 )]
-pub const ParseExprKind_EXPR_KIND_TRIGGER_WHEN: u32 = 36;
+pub const ParseExprKind_EXPR_KIND_TRIGGER_WHEN: u32 = 37;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_POLICY"
 )]
-pub const ParseExprKind_EXPR_KIND_POLICY: u32 = 37;
+pub const ParseExprKind_EXPR_KIND_POLICY: u32 = 38;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_PARTITION_BOUND"
 )]
-pub const ParseExprKind_EXPR_KIND_PARTITION_BOUND: u32 = 38;
+pub const ParseExprKind_EXPR_KIND_PARTITION_BOUND: u32 = 39;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_PARTITION_EXPRESSION"
 )]
-pub const ParseExprKind_EXPR_KIND_PARTITION_EXPRESSION: u32 = 39;
+pub const ParseExprKind_EXPR_KIND_PARTITION_EXPRESSION: u32 = 40;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_CALL_ARGUMENT"
 )]
-pub const ParseExprKind_EXPR_KIND_CALL_ARGUMENT: u32 = 40;
+pub const ParseExprKind_EXPR_KIND_CALL_ARGUMENT: u32 = 41;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_COPY_WHERE"
 )]
-pub const ParseExprKind_EXPR_KIND_COPY_WHERE: u32 = 41;
+pub const ParseExprKind_EXPR_KIND_COPY_WHERE: u32 = 42;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_GENERATED_COLUMN"
 )]
-pub const ParseExprKind_EXPR_KIND_GENERATED_COLUMN: u32 = 42;
+pub const ParseExprKind_EXPR_KIND_GENERATED_COLUMN: u32 = 43;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ParseExprKind::EXPR_KIND_CYCLE_MARK"
 )]
-pub const ParseExprKind_EXPR_KIND_CYCLE_MARK: u32 = 43;
+pub const ParseExprKind_EXPR_KIND_CYCLE_MARK: u32 = 44;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::PartitionPruneCombineOp::PARTPRUNE_COMBINE_UNION"
@@ -57422,6 +59446,21 @@ pub const ProgressCommandType_PROGRESS_COMMAND_BASEBACKUP: u32 = 5;
 pub const ProgressCommandType_PROGRESS_COMMAND_COPY: u32 = 6;
 #[deprecated(
     since = "0.12.0",
+    note = "you want pg_sys::PruneReason::PRUNE_ON_ACCESS"
+)]
+pub const PruneReason_PRUNE_ON_ACCESS: u32 = 0;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::PruneReason::PRUNE_VACUUM_SCAN"
+)]
+pub const PruneReason_PRUNE_VACUUM_SCAN: u32 = 1;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::PruneReason::PRUNE_VACUUM_CLEANUP"
+)]
+pub const PruneReason_PRUNE_VACUUM_CLEANUP: u32 = 2;
+#[deprecated(
+    since = "0.12.0",
     note = "you want pg_sys::PublicationObjSpecType::PUBLICATIONOBJ_TABLE"
 )]
 pub const PublicationObjSpecType_PUBLICATIONOBJ_TABLE: u32 = 0;
@@ -57553,16 +59592,6 @@ pub const ReadBufferMode_RBM_ZERO_ON_ERROR: u32 = 3;
     note = "you want pg_sys::ReadBufferMode::RBM_NORMAL_NO_LOG"
 )]
 pub const ReadBufferMode_RBM_NORMAL_NO_LOG: u32 = 4;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::RecoveryInitSyncMethod::RECOVERY_INIT_SYNC_METHOD_FSYNC"
-)]
-pub const RecoveryInitSyncMethod_RECOVERY_INIT_SYNC_METHOD_FSYNC: u32 = 0;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::RecoveryInitSyncMethod::RECOVERY_INIT_SYNC_METHOD_SYNCFS"
-)]
-pub const RecoveryInitSyncMethod_RECOVERY_INIT_SYNC_METHOD_SYNCFS: u32 = 1;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::RecoveryPauseState::RECOVERY_NOT_PAUSED"
@@ -57811,17 +59840,17 @@ pub const ReplicationSlotPersistency_RS_TEMPORARY: u32 = 2;
     since = "0.12.0",
     note = "you want pg_sys::ResourceReleasePhase::RESOURCE_RELEASE_BEFORE_LOCKS"
 )]
-pub const ResourceReleasePhase_RESOURCE_RELEASE_BEFORE_LOCKS: u32 = 0;
+pub const ResourceReleasePhase_RESOURCE_RELEASE_BEFORE_LOCKS: u32 = 1;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ResourceReleasePhase::RESOURCE_RELEASE_LOCKS"
 )]
-pub const ResourceReleasePhase_RESOURCE_RELEASE_LOCKS: u32 = 1;
+pub const ResourceReleasePhase_RESOURCE_RELEASE_LOCKS: u32 = 2;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::ResourceReleasePhase::RESOURCE_RELEASE_AFTER_LOCKS"
 )]
-pub const ResourceReleasePhase_RESOURCE_RELEASE_AFTER_LOCKS: u32 = 2;
+pub const ResourceReleasePhase_RESOURCE_RELEASE_AFTER_LOCKS: u32 = 3;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::RmgrIds::RM_XLOG_ID")]
 pub const RmgrIds_RM_XLOG_ID: u32 = 0;
 #[deprecated(since = "0.12.0", note = "you want pg_sys::RmgrIds::RM_XACT_ID")]
@@ -58104,6 +60133,11 @@ pub const ScanOptions_SO_ALLOW_PAGEMODE: u32 = 256;
 pub const ScanOptions_SO_TEMP_SNAPSHOT: u32 = 512;
 #[deprecated(
     since = "0.12.0",
+    note = "you want pg_sys::ScanOptions::SO_NEED_TUPLES"
+)]
+pub const ScanOptions_SO_NEED_TUPLES: u32 = 1024;
+#[deprecated(
+    since = "0.12.0",
     note = "you want pg_sys::SessionBackupState::SESSION_BACKUP_NONE"
 )]
 pub const SessionBackupState_SESSION_BACKUP_NONE: u32 = 0;
@@ -58235,6 +60269,11 @@ pub const SharedDependencyType_SHARED_DEPENDENCY_OWNER: u32 = 111;
     note = "you want pg_sys::SharedDependencyType::SHARED_DEPENDENCY_ACL"
 )]
 pub const SharedDependencyType_SHARED_DEPENDENCY_ACL: u32 = 97;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::SharedDependencyType::SHARED_DEPENDENCY_INITACL"
+)]
+pub const SharedDependencyType_SHARED_DEPENDENCY_INITACL: u32 = 105;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::SharedDependencyType::SHARED_DEPENDENCY_POLICY"
@@ -58738,6 +60777,16 @@ pub const TU_UpdateIndexes_TU_All: u32 = 1;
 pub const TU_UpdateIndexes_TU_Summarizing: u32 = 2;
 #[deprecated(
     since = "0.12.0",
+    note = "you want pg_sys::TableFuncType::TFT_XMLTABLE"
+)]
+pub const TableFuncType_TFT_XMLTABLE: u32 = 0;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::TableFuncType::TFT_JSON_TABLE"
+)]
+pub const TableFuncType_TFT_JSON_TABLE: u32 = 1;
+#[deprecated(
+    since = "0.12.0",
     note = "you want pg_sys::TableLikeOption::CREATE_TABLE_LIKE_COMMENTS"
 )]
 pub const TableLikeOption_CREATE_TABLE_LIKE_COMMENTS: u32 = 1;
@@ -59172,24 +61221,44 @@ pub const WaitEventActivity_WAIT_EVENT_LOGICAL_PARALLEL_APPLY_MAIN: u32 = 838860
 pub const WaitEventActivity_WAIT_EVENT_RECOVERY_WAL_STREAM: u32 = 83886088;
 #[deprecated(
     since = "0.12.0",
+    note = "you want pg_sys::WaitEventActivity::WAIT_EVENT_REPLICATION_SLOTSYNC_MAIN"
+)]
+pub const WaitEventActivity_WAIT_EVENT_REPLICATION_SLOTSYNC_MAIN: u32 = 83886089;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WaitEventActivity::WAIT_EVENT_REPLICATION_SLOTSYNC_SHUTDOWN"
+)]
+pub const WaitEventActivity_WAIT_EVENT_REPLICATION_SLOTSYNC_SHUTDOWN: u32 = 83886090;
+#[deprecated(
+    since = "0.12.0",
     note = "you want pg_sys::WaitEventActivity::WAIT_EVENT_SYSLOGGER_MAIN"
 )]
-pub const WaitEventActivity_WAIT_EVENT_SYSLOGGER_MAIN: u32 = 83886089;
+pub const WaitEventActivity_WAIT_EVENT_SYSLOGGER_MAIN: u32 = 83886091;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventActivity::WAIT_EVENT_WAL_RECEIVER_MAIN"
 )]
-pub const WaitEventActivity_WAIT_EVENT_WAL_RECEIVER_MAIN: u32 = 83886090;
+pub const WaitEventActivity_WAIT_EVENT_WAL_RECEIVER_MAIN: u32 = 83886092;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventActivity::WAIT_EVENT_WAL_SENDER_MAIN"
 )]
-pub const WaitEventActivity_WAIT_EVENT_WAL_SENDER_MAIN: u32 = 83886091;
+pub const WaitEventActivity_WAIT_EVENT_WAL_SENDER_MAIN: u32 = 83886093;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WaitEventActivity::WAIT_EVENT_WAL_SUMMARIZER_WAL"
+)]
+pub const WaitEventActivity_WAIT_EVENT_WAL_SUMMARIZER_WAL: u32 = 83886094;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventActivity::WAIT_EVENT_WAL_WRITER_MAIN"
 )]
-pub const WaitEventActivity_WAIT_EVENT_WAL_WRITER_MAIN: u32 = 83886092;
+pub const WaitEventActivity_WAIT_EVENT_WAL_WRITER_MAIN: u32 = 83886095;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WaitEventBufferPin::WAIT_EVENT_BUFFER_PIN"
+)]
+pub const WaitEventBufferPin_WAIT_EVENT_BUFFER_PIN: u32 = 67108864;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventClient::WAIT_EVENT_CLIENT_READ"
@@ -59222,14 +61291,19 @@ pub const WaitEventClient_WAIT_EVENT_LIBPQWALRECEIVER_RECEIVE: u32 = 100663300;
 pub const WaitEventClient_WAIT_EVENT_SSL_OPEN_SERVER: u32 = 100663301;
 #[deprecated(
     since = "0.12.0",
-    note = "you want pg_sys::WaitEventClient::WAIT_EVENT_WAL_SENDER_WAIT_WAL"
+    note = "you want pg_sys::WaitEventClient::WAIT_EVENT_WAIT_FOR_STANDBY_CONFIRMATION"
 )]
-pub const WaitEventClient_WAIT_EVENT_WAL_SENDER_WAIT_WAL: u32 = 100663302;
+pub const WaitEventClient_WAIT_EVENT_WAIT_FOR_STANDBY_CONFIRMATION: u32 = 100663302;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WaitEventClient::WAIT_EVENT_WAL_SENDER_WAIT_FOR_WAL"
+)]
+pub const WaitEventClient_WAIT_EVENT_WAL_SENDER_WAIT_FOR_WAL: u32 = 100663303;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventClient::WAIT_EVENT_WAL_SENDER_WRITE_DATA"
 )]
-pub const WaitEventClient_WAIT_EVENT_WAL_SENDER_WRITE_DATA: u32 = 100663303;
+pub const WaitEventClient_WAIT_EVENT_WAL_SENDER_WRITE_DATA: u32 = 100663304;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_BASEBACKUP_READ"
@@ -59252,14 +61326,14 @@ pub const WaitEventIO_WAIT_EVENT_BASEBACKUP_WRITE: u32 = 167772162;
 pub const WaitEventIO_WAIT_EVENT_BUFFILE_READ: u32 = 167772163;
 #[deprecated(
     since = "0.12.0",
-    note = "you want pg_sys::WaitEventIO::WAIT_EVENT_BUFFILE_WRITE"
-)]
-pub const WaitEventIO_WAIT_EVENT_BUFFILE_WRITE: u32 = 167772164;
-#[deprecated(
-    since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_BUFFILE_TRUNCATE"
 )]
-pub const WaitEventIO_WAIT_EVENT_BUFFILE_TRUNCATE: u32 = 167772165;
+pub const WaitEventIO_WAIT_EVENT_BUFFILE_TRUNCATE: u32 = 167772164;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WaitEventIO::WAIT_EVENT_BUFFILE_WRITE"
+)]
+pub const WaitEventIO_WAIT_EVENT_BUFFILE_WRITE: u32 = 167772165;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_CONTROL_FILE_READ"
@@ -59537,74 +61611,84 @@ pub const WaitEventIO_WAIT_EVENT_TWOPHASE_FILE_SYNC: u32 = 167772219;
 pub const WaitEventIO_WAIT_EVENT_TWOPHASE_FILE_WRITE: u32 = 167772220;
 #[deprecated(
     since = "0.12.0",
+    note = "you want pg_sys::WaitEventIO::WAIT_EVENT_VERSION_FILE_SYNC"
+)]
+pub const WaitEventIO_WAIT_EVENT_VERSION_FILE_SYNC: u32 = 167772221;
+#[deprecated(
+    since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_VERSION_FILE_WRITE"
 )]
-pub const WaitEventIO_WAIT_EVENT_VERSION_FILE_WRITE: u32 = 167772221;
+pub const WaitEventIO_WAIT_EVENT_VERSION_FILE_WRITE: u32 = 167772222;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WALSENDER_TIMELINE_HISTORY_READ"
 )]
-pub const WaitEventIO_WAIT_EVENT_WALSENDER_TIMELINE_HISTORY_READ: u32 = 167772222;
+pub const WaitEventIO_WAIT_EVENT_WALSENDER_TIMELINE_HISTORY_READ: u32 = 167772223;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_BOOTSTRAP_SYNC"
 )]
-pub const WaitEventIO_WAIT_EVENT_WAL_BOOTSTRAP_SYNC: u32 = 167772223;
+pub const WaitEventIO_WAIT_EVENT_WAL_BOOTSTRAP_SYNC: u32 = 167772224;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_BOOTSTRAP_WRITE"
 )]
-pub const WaitEventIO_WAIT_EVENT_WAL_BOOTSTRAP_WRITE: u32 = 167772224;
+pub const WaitEventIO_WAIT_EVENT_WAL_BOOTSTRAP_WRITE: u32 = 167772225;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_COPY_READ"
 )]
-pub const WaitEventIO_WAIT_EVENT_WAL_COPY_READ: u32 = 167772225;
+pub const WaitEventIO_WAIT_EVENT_WAL_COPY_READ: u32 = 167772226;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_COPY_SYNC"
 )]
-pub const WaitEventIO_WAIT_EVENT_WAL_COPY_SYNC: u32 = 167772226;
+pub const WaitEventIO_WAIT_EVENT_WAL_COPY_SYNC: u32 = 167772227;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_COPY_WRITE"
 )]
-pub const WaitEventIO_WAIT_EVENT_WAL_COPY_WRITE: u32 = 167772227;
+pub const WaitEventIO_WAIT_EVENT_WAL_COPY_WRITE: u32 = 167772228;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_INIT_SYNC"
 )]
-pub const WaitEventIO_WAIT_EVENT_WAL_INIT_SYNC: u32 = 167772228;
+pub const WaitEventIO_WAIT_EVENT_WAL_INIT_SYNC: u32 = 167772229;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_INIT_WRITE"
 )]
-pub const WaitEventIO_WAIT_EVENT_WAL_INIT_WRITE: u32 = 167772229;
+pub const WaitEventIO_WAIT_EVENT_WAL_INIT_WRITE: u32 = 167772230;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_READ"
 )]
-pub const WaitEventIO_WAIT_EVENT_WAL_READ: u32 = 167772230;
+pub const WaitEventIO_WAIT_EVENT_WAL_READ: u32 = 167772231;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_SUMMARY_READ"
+)]
+pub const WaitEventIO_WAIT_EVENT_WAL_SUMMARY_READ: u32 = 167772232;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_SUMMARY_WRITE"
+)]
+pub const WaitEventIO_WAIT_EVENT_WAL_SUMMARY_WRITE: u32 = 167772233;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_SYNC"
 )]
-pub const WaitEventIO_WAIT_EVENT_WAL_SYNC: u32 = 167772231;
+pub const WaitEventIO_WAIT_EVENT_WAL_SYNC: u32 = 167772234;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_SYNC_METHOD_ASSIGN"
 )]
-pub const WaitEventIO_WAIT_EVENT_WAL_SYNC_METHOD_ASSIGN: u32 = 167772232;
+pub const WaitEventIO_WAIT_EVENT_WAL_SYNC_METHOD_ASSIGN: u32 = 167772235;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIO::WAIT_EVENT_WAL_WRITE"
 )]
-pub const WaitEventIO_WAIT_EVENT_WAL_WRITE: u32 = 167772233;
-#[deprecated(
-    since = "0.12.0",
-    note = "you want pg_sys::WaitEventIO::WAIT_EVENT_VERSION_FILE_SYNC"
-)]
-pub const WaitEventIO_WAIT_EVENT_VERSION_FILE_SYNC: u32 = 167772234;
+pub const WaitEventIO_WAIT_EVENT_WAL_WRITE: u32 = 167772236;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_APPEND_READY"
@@ -59652,224 +61736,244 @@ pub const WaitEventIPC_WAIT_EVENT_BTREE_PAGE: u32 = 134217735;
 pub const WaitEventIPC_WAIT_EVENT_BUFFER_IO: u32 = 134217736;
 #[deprecated(
     since = "0.12.0",
+    note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_CHECKPOINT_DELAY_COMPLETE"
+)]
+pub const WaitEventIPC_WAIT_EVENT_CHECKPOINT_DELAY_COMPLETE: u32 = 134217737;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_CHECKPOINT_DELAY_START"
+)]
+pub const WaitEventIPC_WAIT_EVENT_CHECKPOINT_DELAY_START: u32 = 134217738;
+#[deprecated(
+    since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_CHECKPOINT_DONE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_CHECKPOINT_DONE: u32 = 134217737;
+pub const WaitEventIPC_WAIT_EVENT_CHECKPOINT_DONE: u32 = 134217739;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_CHECKPOINT_START"
 )]
-pub const WaitEventIPC_WAIT_EVENT_CHECKPOINT_START: u32 = 134217738;
+pub const WaitEventIPC_WAIT_EVENT_CHECKPOINT_START: u32 = 134217740;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_EXECUTE_GATHER"
 )]
-pub const WaitEventIPC_WAIT_EVENT_EXECUTE_GATHER: u32 = 134217739;
+pub const WaitEventIPC_WAIT_EVENT_EXECUTE_GATHER: u32 = 134217741;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_BATCH_ALLOCATE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_BATCH_ALLOCATE: u32 = 134217740;
+pub const WaitEventIPC_WAIT_EVENT_HASH_BATCH_ALLOCATE: u32 = 134217742;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_BATCH_ELECT"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_BATCH_ELECT: u32 = 134217741;
+pub const WaitEventIPC_WAIT_EVENT_HASH_BATCH_ELECT: u32 = 134217743;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_BATCH_LOAD"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_BATCH_LOAD: u32 = 134217742;
+pub const WaitEventIPC_WAIT_EVENT_HASH_BATCH_LOAD: u32 = 134217744;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_BUILD_ALLOCATE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_BUILD_ALLOCATE: u32 = 134217743;
+pub const WaitEventIPC_WAIT_EVENT_HASH_BUILD_ALLOCATE: u32 = 134217745;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_BUILD_ELECT"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_BUILD_ELECT: u32 = 134217744;
+pub const WaitEventIPC_WAIT_EVENT_HASH_BUILD_ELECT: u32 = 134217746;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_BUILD_HASH_INNER"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_BUILD_HASH_INNER: u32 = 134217745;
+pub const WaitEventIPC_WAIT_EVENT_HASH_BUILD_HASH_INNER: u32 = 134217747;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_BUILD_HASH_OUTER"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_BUILD_HASH_OUTER: u32 = 134217746;
+pub const WaitEventIPC_WAIT_EVENT_HASH_BUILD_HASH_OUTER: u32 = 134217748;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_GROW_BATCHES_DECIDE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BATCHES_DECIDE: u32 = 134217747;
+pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BATCHES_DECIDE: u32 = 134217749;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_GROW_BATCHES_ELECT"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BATCHES_ELECT: u32 = 134217748;
+pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BATCHES_ELECT: u32 = 134217750;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_GROW_BATCHES_FINISH"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BATCHES_FINISH: u32 = 134217749;
+pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BATCHES_FINISH: u32 = 134217751;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_GROW_BATCHES_REALLOCATE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BATCHES_REALLOCATE: u32 = 134217750;
+pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BATCHES_REALLOCATE: u32 = 134217752;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_GROW_BATCHES_REPARTITION"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BATCHES_REPARTITION: u32 = 134217751;
+pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BATCHES_REPARTITION: u32 = 134217753;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_GROW_BUCKETS_ELECT"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BUCKETS_ELECT: u32 = 134217752;
+pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BUCKETS_ELECT: u32 = 134217754;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_GROW_BUCKETS_REALLOCATE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BUCKETS_REALLOCATE: u32 = 134217753;
+pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BUCKETS_REALLOCATE: u32 = 134217755;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_HASH_GROW_BUCKETS_REINSERT"
 )]
-pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BUCKETS_REINSERT: u32 = 134217754;
+pub const WaitEventIPC_WAIT_EVENT_HASH_GROW_BUCKETS_REINSERT: u32 = 134217756;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_LOGICAL_APPLY_SEND_DATA"
 )]
-pub const WaitEventIPC_WAIT_EVENT_LOGICAL_APPLY_SEND_DATA: u32 = 134217755;
+pub const WaitEventIPC_WAIT_EVENT_LOGICAL_APPLY_SEND_DATA: u32 = 134217757;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_LOGICAL_PARALLEL_APPLY_STATE_CHANGE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_LOGICAL_PARALLEL_APPLY_STATE_CHANGE: u32 = 134217756;
+pub const WaitEventIPC_WAIT_EVENT_LOGICAL_PARALLEL_APPLY_STATE_CHANGE: u32 = 134217758;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_LOGICAL_SYNC_DATA"
 )]
-pub const WaitEventIPC_WAIT_EVENT_LOGICAL_SYNC_DATA: u32 = 134217757;
+pub const WaitEventIPC_WAIT_EVENT_LOGICAL_SYNC_DATA: u32 = 134217759;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_LOGICAL_SYNC_STATE_CHANGE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_LOGICAL_SYNC_STATE_CHANGE: u32 = 134217758;
+pub const WaitEventIPC_WAIT_EVENT_LOGICAL_SYNC_STATE_CHANGE: u32 = 134217760;
 #[deprecated(
     since = "0.12.0",
-    note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_MQ_INTERNAL"
+    note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_MESSAGE_QUEUE_INTERNAL"
 )]
-pub const WaitEventIPC_WAIT_EVENT_MQ_INTERNAL: u32 = 134217759;
+pub const WaitEventIPC_WAIT_EVENT_MESSAGE_QUEUE_INTERNAL: u32 = 134217761;
 #[deprecated(
     since = "0.12.0",
-    note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_MQ_PUT_MESSAGE"
+    note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_MESSAGE_QUEUE_PUT_MESSAGE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_MQ_PUT_MESSAGE: u32 = 134217760;
+pub const WaitEventIPC_WAIT_EVENT_MESSAGE_QUEUE_PUT_MESSAGE: u32 = 134217762;
 #[deprecated(
     since = "0.12.0",
-    note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_MQ_RECEIVE"
+    note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_MESSAGE_QUEUE_RECEIVE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_MQ_RECEIVE: u32 = 134217761;
+pub const WaitEventIPC_WAIT_EVENT_MESSAGE_QUEUE_RECEIVE: u32 = 134217763;
 #[deprecated(
     since = "0.12.0",
-    note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_MQ_SEND"
+    note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_MESSAGE_QUEUE_SEND"
 )]
-pub const WaitEventIPC_WAIT_EVENT_MQ_SEND: u32 = 134217762;
+pub const WaitEventIPC_WAIT_EVENT_MESSAGE_QUEUE_SEND: u32 = 134217764;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_MULTIXACT_CREATION"
+)]
+pub const WaitEventIPC_WAIT_EVENT_MULTIXACT_CREATION: u32 = 134217765;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_PARALLEL_BITMAP_SCAN"
 )]
-pub const WaitEventIPC_WAIT_EVENT_PARALLEL_BITMAP_SCAN: u32 = 134217763;
+pub const WaitEventIPC_WAIT_EVENT_PARALLEL_BITMAP_SCAN: u32 = 134217766;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_PARALLEL_CREATE_INDEX_SCAN"
 )]
-pub const WaitEventIPC_WAIT_EVENT_PARALLEL_CREATE_INDEX_SCAN: u32 = 134217764;
+pub const WaitEventIPC_WAIT_EVENT_PARALLEL_CREATE_INDEX_SCAN: u32 = 134217767;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_PARALLEL_FINISH"
 )]
-pub const WaitEventIPC_WAIT_EVENT_PARALLEL_FINISH: u32 = 134217765;
+pub const WaitEventIPC_WAIT_EVENT_PARALLEL_FINISH: u32 = 134217768;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_PROCARRAY_GROUP_UPDATE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_PROCARRAY_GROUP_UPDATE: u32 = 134217766;
+pub const WaitEventIPC_WAIT_EVENT_PROCARRAY_GROUP_UPDATE: u32 = 134217769;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_PROC_SIGNAL_BARRIER"
 )]
-pub const WaitEventIPC_WAIT_EVENT_PROC_SIGNAL_BARRIER: u32 = 134217767;
+pub const WaitEventIPC_WAIT_EVENT_PROC_SIGNAL_BARRIER: u32 = 134217770;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_PROMOTE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_PROMOTE: u32 = 134217768;
+pub const WaitEventIPC_WAIT_EVENT_PROMOTE: u32 = 134217771;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_RECOVERY_CONFLICT_SNAPSHOT"
 )]
-pub const WaitEventIPC_WAIT_EVENT_RECOVERY_CONFLICT_SNAPSHOT: u32 = 134217769;
+pub const WaitEventIPC_WAIT_EVENT_RECOVERY_CONFLICT_SNAPSHOT: u32 = 134217772;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_RECOVERY_CONFLICT_TABLESPACE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_RECOVERY_CONFLICT_TABLESPACE: u32 = 134217770;
+pub const WaitEventIPC_WAIT_EVENT_RECOVERY_CONFLICT_TABLESPACE: u32 = 134217773;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_RECOVERY_END_COMMAND"
 )]
-pub const WaitEventIPC_WAIT_EVENT_RECOVERY_END_COMMAND: u32 = 134217771;
+pub const WaitEventIPC_WAIT_EVENT_RECOVERY_END_COMMAND: u32 = 134217774;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_RECOVERY_PAUSE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_RECOVERY_PAUSE: u32 = 134217772;
+pub const WaitEventIPC_WAIT_EVENT_RECOVERY_PAUSE: u32 = 134217775;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_REPLICATION_ORIGIN_DROP"
 )]
-pub const WaitEventIPC_WAIT_EVENT_REPLICATION_ORIGIN_DROP: u32 = 134217773;
+pub const WaitEventIPC_WAIT_EVENT_REPLICATION_ORIGIN_DROP: u32 = 134217776;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_REPLICATION_SLOT_DROP"
 )]
-pub const WaitEventIPC_WAIT_EVENT_REPLICATION_SLOT_DROP: u32 = 134217774;
+pub const WaitEventIPC_WAIT_EVENT_REPLICATION_SLOT_DROP: u32 = 134217777;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_RESTORE_COMMAND"
 )]
-pub const WaitEventIPC_WAIT_EVENT_RESTORE_COMMAND: u32 = 134217775;
+pub const WaitEventIPC_WAIT_EVENT_RESTORE_COMMAND: u32 = 134217778;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_SAFE_SNAPSHOT"
 )]
-pub const WaitEventIPC_WAIT_EVENT_SAFE_SNAPSHOT: u32 = 134217776;
+pub const WaitEventIPC_WAIT_EVENT_SAFE_SNAPSHOT: u32 = 134217779;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_SYNC_REP"
 )]
-pub const WaitEventIPC_WAIT_EVENT_SYNC_REP: u32 = 134217777;
+pub const WaitEventIPC_WAIT_EVENT_SYNC_REP: u32 = 134217780;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_WAL_RECEIVER_EXIT"
 )]
-pub const WaitEventIPC_WAIT_EVENT_WAL_RECEIVER_EXIT: u32 = 134217778;
+pub const WaitEventIPC_WAIT_EVENT_WAL_RECEIVER_EXIT: u32 = 134217781;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_WAL_RECEIVER_WAIT_START"
 )]
-pub const WaitEventIPC_WAIT_EVENT_WAL_RECEIVER_WAIT_START: u32 = 134217779;
+pub const WaitEventIPC_WAIT_EVENT_WAL_RECEIVER_WAIT_START: u32 = 134217782;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_WAL_SUMMARY_READY"
+)]
+pub const WaitEventIPC_WAIT_EVENT_WAL_SUMMARY_READY: u32 = 134217783;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventIPC::WAIT_EVENT_XACT_GROUP_UPDATE"
 )]
-pub const WaitEventIPC_WAIT_EVENT_XACT_GROUP_UPDATE: u32 = 134217780;
+pub const WaitEventIPC_WAIT_EVENT_XACT_GROUP_UPDATE: u32 = 134217784;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WaitEventTimeout::WAIT_EVENT_BASE_BACKUP_THROTTLE"
@@ -59915,6 +62019,11 @@ pub const WaitEventTimeout_WAIT_EVENT_VACUUM_DELAY: u32 = 150994951;
     note = "you want pg_sys::WaitEventTimeout::WAIT_EVENT_VACUUM_TRUNCATE"
 )]
 pub const WaitEventTimeout_WAIT_EVENT_VACUUM_TRUNCATE: u32 = 150994952;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WaitEventTimeout::WAIT_EVENT_WAL_SUMMARIZER_ERROR"
+)]
+pub const WaitEventTimeout_WAIT_EVENT_WAL_SUMMARIZER_ERROR: u32 = 150994953;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WalCompression::WAL_COMPRESSION_NONE"
@@ -60010,6 +62119,31 @@ pub const WalRcvState_WALRCV_RESTARTING: u32 = 4;
     note = "you want pg_sys::WalRcvState::WALRCV_STOPPING"
 )]
 pub const WalRcvState_WALRCV_STOPPING: u32 = 5;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WalSyncMethod::WAL_SYNC_METHOD_FSYNC"
+)]
+pub const WalSyncMethod_WAL_SYNC_METHOD_FSYNC: u32 = 0;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WalSyncMethod::WAL_SYNC_METHOD_FDATASYNC"
+)]
+pub const WalSyncMethod_WAL_SYNC_METHOD_FDATASYNC: u32 = 1;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WalSyncMethod::WAL_SYNC_METHOD_OPEN"
+)]
+pub const WalSyncMethod_WAL_SYNC_METHOD_OPEN: u32 = 2;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WalSyncMethod::WAL_SYNC_METHOD_FSYNC_WRITETHROUGH"
+)]
+pub const WalSyncMethod_WAL_SYNC_METHOD_FSYNC_WRITETHROUGH: u32 = 3;
+#[deprecated(
+    since = "0.12.0",
+    note = "you want pg_sys::WalSyncMethod::WAL_SYNC_METHOD_OPEN_DSYNC"
+)]
+pub const WalSyncMethod_WAL_SYNC_METHOD_OPEN_DSYNC: u32 = 4;
 #[deprecated(
     since = "0.12.0",
     note = "you want pg_sys::WindowAggStatus::WINDOWAGG_DONE"
