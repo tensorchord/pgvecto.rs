@@ -88,7 +88,7 @@ rust.unused_lifetimes = "warn"
 rust.unused_qualifications = "warn"
 
 [patch.crates-io]
-pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.1-patch" }
+pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.5-patch" }
 
 [profile.opt]
 inherits = "dev"

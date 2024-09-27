@@ -48,7 +48,7 @@ jobs:
   test:
     strategy:
       matrix:
-        version: [14, 15, 16]
+        version: [14, 15, 16, 17]
         arch: ["x86_64"]
     runs-on: ubuntu-latest
     env:

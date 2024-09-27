@@ -41,7 +41,7 @@ jobs:
   binary:
     strategy:
       matrix:
-        version: [14, 15, 16]
+        version: [14, 15, 16, 17]
         arch: ["x86_64", "aarch64"]
         schema: ["vectors", "extensions", "public"]
     runs-on: ubuntu-22.04
@@ -117,7 +117,7 @@ jobs:
     needs: ["binary", "semver"]
     strategy:
       matrix:
-        version: [14, 15, 16]
+        version: [14, 15, 16, 17]
         platform: ["amd64", "arm64"]
         schema: ["vectors", "extensions", "public"]
     runs-on: ubuntu-latest
@@ -151,7 +151,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: [14, 15, 16]
+        version: [14, 15, 16, 17]
         schema: ["vectors", "extensions", "public"]
     steps:
       - name: Checkout
