@@ -410,7 +410,7 @@ mod reduce_sum_of_xy {
                 a = a.add(1);
                 b = b.add(1);
                 n -= 1;
-                xy = x.mul_add(y, xy);
+                xy += x * y;
             }
             xy
         }
@@ -615,7 +615,7 @@ mod reduce_sum_of_d2 {
                 b = b.add(1);
                 n -= 1;
                 let d = x - y;
-                d2 = d.mul_add(d, d2);
+                d2 += d * d;
             }
             d2
         }
