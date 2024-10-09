@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+$(dirname "$0")/../../../tools/pg_config.sh "$@" < $(dirname "$0")/pg_config.txt

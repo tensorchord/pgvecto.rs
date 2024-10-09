@@ -122,7 +122,7 @@ fn write_pipe_chunks(pid: u32, mut msg: &[u8], dest: LogDestination) {
         chunk.extend((len as u16).to_le_bytes());
         chunk.extend((pid as i32).to_le_bytes());
         #[cfg(feature = "pg14")]
-        chunk.extend((is_last as u8).to_le_bytes());
+        chunk.extend(is_last.to_le_bytes());
         #[cfg(any(feature = "pg15", feature = "pg16", feature = "pg17"))]
         chunk.extend((flags as u8).to_le_bytes());
         chunk.extend_from_slice(&msg[..len]);

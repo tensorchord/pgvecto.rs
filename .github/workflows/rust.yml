@@ -65,6 +65,8 @@ jobs:
           touch ~/.cargo/config.toml
           echo 'target.aarch64-unknown-linux-gnu.linker = "aarch64-linux-gnu-gcc"' >> ~/.cargo/config.toml
           echo 'target.aarch64-unknown-linux-gnu.runner = ["qemu-aarch64-static", "-L", "/usr/aarch64-linux-gnu"]' >> ~/.cargo/config.toml
+          rustup target add x86_64-unknown-linux-gnu
+          rustup target add aarch64-unknown-linux-gnu
       - name: Set up Sccache
         uses: mozilla-actions/sccache-action@v0.0.4
       - name: Set up Cache
@@ -95,6 +97,9 @@ jobs:
           export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg16_${ARCH}_debian/pg_config/pg_config
           export PGRX_TARGET_INFO_PATH_PG16=$(pwd)/vendor/pg16_${ARCH}_debian/pgrx_binding
           cargo clippy --package pgvectors --features pg16 --no-deps --target $ARCH-unknown-linux-gnu
+          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg17_${ARCH}_debian/pg_config/pg_config
+          export PGRX_TARGET_INFO_PATH_PG17=$(pwd)/vendor/pg17_${ARCH}_debian/pgrx_binding
+          cargo clippy --package pgvectors --features pg17 --no-deps --target $ARCH-unknown-linux-gnu
       - name: Build
         run: |
           cargo build --workspace --exclude pgvectors --exclude pyvectors --target $ARCH-unknown-linux-gnu
@@ -107,6 +112,9 @@ jobs:
           export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg16_${ARCH}_debian/pg_config/pg_config
           export PGRX_TARGET_INFO_PATH_PG16=$(pwd)/vendor/pg16_${ARCH}_debian/pgrx_binding
           cargo build --package pgvectors --lib --features pg16 --target $ARCH-unknown-linux-gnu
+          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg17_${ARCH}_debian/pg_config/pg_config
+          export PGRX_TARGET_INFO_PATH_PG17=$(pwd)/vendor/pg17_${ARCH}_debian/pgrx_binding
+          cargo build --package pgvectors --lib --features pg17 --target $ARCH-unknown-linux-gnu
       - name: Test
         run: |
           cargo test --workspace --exclude pgvectors --exclude pyvectors --no-fail-fast --target $ARCH-unknown-linux-gnu

@@ -547,7 +547,7 @@ mod reduce_sum_of_x2 {
                 let x = a.read();
                 a = a.add(1);
                 n -= 1;
-                x2 = x.mul_add(x, x2);
+                x2 += x * x;
             }
             x2
         }
@@ -586,7 +586,7 @@ mod reduce_sum_of_x2 {
         let n = this.len();
         let mut x2 = 0.0f32;
         for i in 0..n {
-            x2 = this[i].mul_add(this[i], x2);
+            x2 += this[i] * this[i];
         }
         x2
     }
@@ -815,7 +815,7 @@ mod reduce_sum_of_xy {
                 a = a.add(1);
                 b = b.add(1);
                 n -= 1;
-                xy = x.mul_add(y, xy);
+                xy += x * y;
             }
             xy
         }
@@ -966,7 +966,7 @@ mod reduce_sum_of_d2 {
                 b = b.add(1);
                 n -= 1;
                 let d = x - y;
-                d2 = d.mul_add(d, d2);
+                d2 += d * d;
             }
             d2
         }
