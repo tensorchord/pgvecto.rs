@@ -22,7 +22,7 @@ SELECT
 FROM generate_series(1, 1000);
 
 statement ok
-CREATE INDEX ON items USING vectors (val vector_l2_ops)
+CREATE INDEX ON items USING vectors (val vectors.vector_l2_ops)
 WITH (options = "[indexing.hnsw]");
 
 query I
@@ -31,7 +31,7 @@ SELECT COUNT(1) FROM (SELECT 1 FROM items ORDER BY val <-> '[0.5,0.5,0.5]' limit
 10
 
 statement ok
-CREATE INDEX ON id_123 USING vectors (val vector_cos_ops)
+CREATE INDEX ON id_123 USING vectors (val vectors.vector_cos_ops)
 WITH (options = "[indexing.hnsw]");
 
 query I
@@ -41,7 +41,7 @@ SELECT COUNT(1) FROM (SELECT 1 FROM items ORDER BY val <=> '[0.5,0.5,0.5]' limit
 
 # partial index
 statement ok
-CREATE INDEX ON items USING vectors (val vector_dot_ops)
+CREATE INDEX ON items USING vectors (val vectors.vector_dot_ops)
 WITH (options = "[indexing.hnsw]") WHERE (category_id = 1);
 
 query I
