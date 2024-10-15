@@ -96,7 +96,7 @@ mod mul_add_round {
             // this hint is used to disable loop unrolling
             while std::hint::black_box(n) > 0 {
                 let x = a.read();
-                let v = (k * x + b).round_ties_even() as u8;
+                let v = x.mul_add(k, b).round_ties_even() as u8;
                 r.write(v);
                 n -= 1;
                 a = a.add(1);
