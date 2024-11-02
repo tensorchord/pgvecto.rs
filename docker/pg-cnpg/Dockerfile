@@ -126,6 +126,9 @@ RUN trunk install pg_stat_statements
 # Install auto_explain
 RUN trunk install auto_explain
 
+# Install plpython3u
+RUN trunk install plpython3u
+
 # cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
 RUN set -eux; \
 	  mkdir /tmp/pg_pkglibdir; \
