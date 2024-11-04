@@ -10,8 +10,7 @@ ARG TRUNK_VER=0.12.25
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL sparse 
 RUN cargo install --version $TRUNK_VER pg-trunk
 
-# FROM modelzai/pg-slim:${PG_MAJOR}
-FROM xieydd/pg-slim:${PG_MAJOR}
+FROM modelzai/pg-slim:${PG_MAJOR}
 ARG PG_MAJOR
 
 USER root
