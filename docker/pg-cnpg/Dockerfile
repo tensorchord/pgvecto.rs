@@ -116,9 +116,6 @@ RUN wget https://github.com/duckdb/duckdb/releases/download/v0.8.1/libduckdb-lin
     cp libduckdb.so /usr/lib/x86_64-linux-gnu/ && \
     rm -rf libduckdb-linux-amd64.zip libduckdb.so
 
-# Test trunk
-COPY trunk-install.sh /usr/local/bin/
-
 # Install pg_stat_statements
 RUN trunk install pg_stat_statements
 
@@ -173,7 +170,9 @@ RUN git clone https://github.com/EnterpriseDB/pg_failover_slots.git && \
 # cache all extensions
 ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
+# Test trunk
 COPY ./trunk-install.sh /usr/local/bin/
+
 # Change the uid of postgres to 26
 RUN usermod -u 26 postgres
 RUN chown -R postgres:postgres /usr/lib/postgresql/${PG_MAJOR}
