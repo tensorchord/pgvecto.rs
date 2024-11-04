@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         version: [14, 15, 16, 17]
-        platforms: "amd64,arm64"
+        platform: ["amd64", "arm64"]
     runs-on: ubuntu-latest
     env:
       PG_MAJOR: ${{ matrix.version }}
