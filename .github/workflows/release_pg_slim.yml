@@ -33,4 +33,4 @@ jobs:
           file: ./docker/pg-slim/Dockerfile
           build-args: |
             PG_MAJOR=${{ matrix.version }}
-          tags: modelzai/pg-slim:${{ matrix.version }}
+          tags: modelzai/pg-slim:${{ matrix.version }}-${{ matrix.platform }}
