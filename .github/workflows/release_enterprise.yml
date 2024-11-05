@@ -61,7 +61,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential crossbuild-essential-arm64
           sudo apt-get install -y qemu-user-static
-          echo 'target.aarch64-unknown-linux-gnu.linker = "aarch64-linux-gnu-gcc"' | tee ~/.cargo/config.toml
+          touch ~/.cargo/config.toml
+          echo 'target.aarch64-unknown-linux-gnu.linker = "aarch64-linux-gnu-gcc"' >> ~/.cargo/config.toml
+          echo 'target.aarch64-unknown-linux-gnu.runner = ["qemu-aarch64-static", "-L", "/usr/aarch64-linux-gnu"]' >> ~/.cargo/config.toml
+          rustup target add x86_64-unknown-linux-gnu
+          rustup target add aarch64-unknown-linux-gnu
       - name: Set up Sccache
         uses: mozilla-actions/sccache-action@v0.0.4
       - name: Set up Cache
