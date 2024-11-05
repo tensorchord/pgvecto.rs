@@ -27,7 +27,7 @@ jobs:
       - name: Push binary release to Docker Registry
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./docker/pg-slim
           push: true
           platforms: "linux/${{ matrix.platform }}"
           file: ./docker/pg-slim/Dockerfile

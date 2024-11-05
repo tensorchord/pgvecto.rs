@@ -126,7 +126,7 @@ RUN install --verbose --directory --owner postgres --group postgres --mode 3777 
 RUN install --verbose --directory --owner postgres --group postgres --mode 1777 ${PGDATA}
 
 ENV PATH $PATH:/usr/lib/postgresql/$PG_MAJOR/bin:/usr/local/bin
-COPY ./docker-entrypoint.sh ./docker-ensure-initdb.sh /usr/local/bin/
+COPY docker-entrypoint.sh docker-ensure-initdb.sh /usr/local/bin/
 RUN ln -sT docker-ensure-initdb.sh /usr/local/bin/docker-enforce-initdb.sh
 ENTRYPOINT ["docker-entrypoint.sh"]
 
