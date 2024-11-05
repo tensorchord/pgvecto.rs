@@ -148,7 +148,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: [14, 15, 16, 17]
+        version: [14, 15, 16] # https://github.com/tembo-io/trunk/issues/797, 17 not support yet
         schema: ["vectors", "extensions", "public"]
         platform: ["amd64", "arm64"]
     steps:
