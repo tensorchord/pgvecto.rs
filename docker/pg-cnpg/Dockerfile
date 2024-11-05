@@ -23,7 +23,7 @@ RUN if [ -z "${PGDATA}" ]; then echo "PGDATA is not set"; exit 1; fi
 
 # Install trunk
 COPY --from=builder /usr/local/cargo/bin/trunk /usr/bin/trunk
-COPY ./requirements.txt .
+COPY requirements.txt .
 
 # Install barman-cloud
 RUN set -xe; \
@@ -171,7 +171,7 @@ RUN git clone https://github.com/EnterpriseDB/pg_failover_slots.git && \
 ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 # Test trunk
-COPY ./trunk-install.sh /usr/local/bin/
+COPY trunk-install.sh /usr/local/bin/
 
 # Change the uid of postgres to 26
 RUN usermod -u 26 postgres
