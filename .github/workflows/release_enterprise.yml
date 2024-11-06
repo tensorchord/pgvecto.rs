@@ -115,7 +115,7 @@ jobs:
     strategy:
       matrix:
         version: [14, 15, 16]
-        platform: ["amd64", "arm64"]
+        platform: ["amd64"]
         schema: ["vectors", "extensions", "public"]
     runs-on: ubuntu-latest
     steps:
@@ -150,7 +150,7 @@ jobs:
       matrix:
         version: [14, 15, 16] # https://github.com/tembo-io/trunk/issues/797, 17 not support yet
         schema: ["vectors", "extensions", "public"]
-        platform: ["amd64", "arm64"]
+        platform: ["amd64"] # Only support x86-64 architecture, aarch64 not support yet
     steps:
       - name: Checkout
         uses: actions/checkout@v4

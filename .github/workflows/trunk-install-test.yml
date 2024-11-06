@@ -17,7 +17,7 @@ jobs:
       matrix:
         version: [14, 15, 16]
         schema: ["vectors", "extensions", "public"]
-        platform: ["amd64", "arm64"]
+        platform: ["amd64"]
     container:
       image: modelzai/pgvecto-rs:${{ matrix.version }}-v${{ github.event.inputs.version }}-${{ matrix.schema }}
       options: --user root
