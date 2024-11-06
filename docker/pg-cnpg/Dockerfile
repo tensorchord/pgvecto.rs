@@ -13,6 +13,7 @@ RUN cargo install --version $TRUNK_VER pg-trunk
 
 FROM modelzai/pg-slim:${PG_MAJOR}-${TARGETARCH}
 ARG PG_MAJOR
+ARG LIB_DIR
 
 USER root
 
