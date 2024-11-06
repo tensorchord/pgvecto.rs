@@ -169,6 +169,15 @@ jobs:
         with:
           username: ${{ secrets.DOCKERIO_MODELZ_USERNAME }}
           password: ${{ secrets.DOCKERIO_MODELZ_TOKEN }}
+      - name: Set Lib Dir
+        run: |
+          if [ "${{ matrix.platform }}" == "amd64" ]; then
+            echo "LIB_DIR=/usr/lib/x86_64-linux-gnu" >> $GITHUB_ENV
+          elif [ "${{ matrix.platform }}" == "arm64" ]; then
+            echo "LIB_DIR=/usr/lib/aarch64-linux-gnu" >> $GITHUB_ENV
+          else
+            echo "LIB_DIR=/usr/lib/unknown" >> $GITHUB_ENV
+          fi
       - name: Push postgres with pgvecto.rs enterprise to Docker Registry
         uses: docker/build-push-action@v4
         with:
@@ -181,4 +190,5 @@ jobs:
             FROM_TAG=pg${{ matrix.version }}-v${{ github.event.inputs.version }}
             SCHEMA=${{ matrix.schema }}
             TARGETARCH=${{ matrix.platform }}
+            LIB_DIR=$LIB_DIR
           tags: ${{ steps.variables.outputs.tags }}
