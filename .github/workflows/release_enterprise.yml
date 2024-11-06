@@ -190,5 +190,5 @@ jobs:
             FROM_TAG=pg${{ matrix.version }}-v${{ github.event.inputs.version }}
             SCHEMA=${{ matrix.schema }}
             TARGETARCH=${{ matrix.platform }}
-            LIB_DIR=$LIB_DIR
+            LIB_DIR=${{ env.LIB_DIR }}
           tags: ${{ steps.variables.outputs.tags }}
