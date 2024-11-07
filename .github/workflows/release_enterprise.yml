@@ -42,7 +42,7 @@ jobs:
     strategy:
       matrix:
         version: [14, 15, 16]
-        arch: ["x86_64", "aarch64"]
+        arch: ["x86_64"]
         schema: ["vectors", "extensions", "public"]
     runs-on: ubuntu-22.04
     env:
