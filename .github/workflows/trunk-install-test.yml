@@ -1,0 +1,41 @@
+name: Trunk install test workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: Version
+        required: true
+
+jobs:
+  test:
+    name: Run tests
+    runs-on:
+      - ubuntu-latest
+    strategy:
+      matrix:
+        version: [14, 15, 16, 17]
+        schema: ["vectors", "extensions", "public"]
+        platform: ["amd64", "arm64"]
+    container:
+      image: modelzai/pgvecto-rs:${{ matrix.version }}-v${{ github.event.inputs.version }}-${{ matrix.schema }}
+      options: --user root
+    env:
+      PGHOST: "localhost"
+      PGPORT: "5432"
+      PGDATABASE: "postgres"
+      PGUSER: "postgres"
+      PGPASSWORD: "postgres"
+      POSTGRES_PASSWORD: "password"
+
+    steps:
+      - name: Install all extensions in registry
+        # Entrypoint is overwritten by GitHub Action. We need to execute it manually in order to start Postgres.
+        # More information here https://github.com/actions/runner/issues/1964
+        run: |
+          bash /usr/local/bin/docker-entrypoint.sh postgres &
+          sleep 5
+          curl https://registry.pgtrunk.io/extensions/all | jq -r ".[] | .name" > /tmp/extensions.txt
+          trunk-install.sh | tee /tmp/output.txt
+          cat /tmp/output.txt 

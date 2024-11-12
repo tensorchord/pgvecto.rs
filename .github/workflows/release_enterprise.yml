@@ -146,6 +146,7 @@ jobs:
       matrix:
         version: [14, 15, 16, 17]
         schema: ["vectors", "extensions", "public"]
+        platform: ["amd64", "arm64"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -167,12 +168,13 @@ jobs:
       - name: Push postgres with pgvecto.rs enterprise to Docker Registry
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./docker/pg-cnpg
           push: true
-          platforms: "linux/amd64,linux/arm64"
-          file: ./docker/enterprise.Dockerfile
+          platforms: "linux/${{ matrix.platform }}"
+          file: ./docker/pg-cnpg/Dockerfile
           build-args: |
+            PG_MAJOR=${{ matrix.version }}
             FROM_TAG=pg${{ matrix.version }}-v${{ github.event.inputs.version }}
-            CNPG_TAG=${{ matrix.version }}
             SCHEMA=${{ matrix.schema }}
+            TARGETARCH=${{ matrix.platform }}
           tags: ${{ steps.variables.outputs.tags }}
