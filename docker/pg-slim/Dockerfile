@@ -118,16 +118,16 @@ COPY --from=tianon/gosu /gosu /usr/local/bin/
 
 # make the sample config easier to munge (and "correct by default")
 RUN set -eux; \
-    echo "unix_socket_directories = '/var/run/postgresql'" >> /usr/lib/postgresql/${PG_MAJOR}/share/postgresql.conf.sample; \
-	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" /usr/lib/postgresql/${PG_MAJOR}/share/postgresql.conf.sample; \
-	grep -F "listen_addresses = '*'" /usr/lib/postgresql/${PG_MAJOR}/share/postgresql.conf.sample
+    echo "unix_socket_directories = '/var/run/postgresql'" >> ${ALTDIR}/postgresql.conf.sample; \
+	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" ${ALTDIR}/postgresql.conf.sample; \
+	grep -F "listen_addresses = '*'" ${ALTDIR}/postgresql.conf.sample
 
 RUN install --verbose --directory --owner postgres --group postgres --mode 3777 /var/run/postgresql
 
 # this 1777 will be replaced by 0700 at runtime (allows semi-arbitrary "--user" values)
 RUN install --verbose --directory --owner postgres --group postgres --mode 1777 ${PGDATA}
 
-ENV PATH $PATH:${ALTDIR}/$PG_MAJOR/bin:/usr/local/bin
+ENV PATH $PATH:/usr/lib/postgresql/$PG_MAJOR/bin:/usr/local/bin
 COPY docker-entrypoint.sh docker-ensure-initdb.sh /usr/local/bin/
 RUN ln -sT docker-ensure-initdb.sh /usr/local/bin/docker-enforce-initdb.sh
 ENTRYPOINT ["docker-entrypoint.sh"]
