@@ -2,7 +2,6 @@ ARG PG_MAJOR
 ARG FROM_TAG
 ARG SCHEMA
 ARG TARGETARCH
-ARG LIB_DIR
 
 FROM modelzai/pgvecto-rs-binary:${FROM_TAG}-${TARGETARCH}-${SCHEMA} as binary
 
@@ -14,6 +13,7 @@ RUN cargo install --version $TRUNK_VER pg-trunk
 FROM modelzai/pg-slim:${PG_MAJOR}-${TARGETARCH}
 ARG PG_MAJOR
 ARG LIB_DIR
+ARG ALTDIR=/var/lib/postgresql/data/tensorchord
 
 USER root
 
@@ -42,8 +42,8 @@ RUN set -xe; \
   apt-get clean; \
 	rm -rf /var/lib/apt/lists/*;
 
-RUN chown -R postgres:postgres /usr/lib/postgresql/${PG_MAJOR} && \
-    chmod -R 0700 /usr/lib/postgresql/${PG_MAJOR}
+RUN chown -R postgres:postgres ${ALTDIR}/${PG_MAJOR} && \
+    chmod -R 0700 ${ALTDIR}/${PG_MAJOR}
 RUN chown postgres /usr/share/postgresql/${PG_MAJOR}/extension
 
 RUN apt-get update && apt-get install -y \
@@ -160,13 +160,13 @@ RUN git clone https://github.com/apache/arrow.git && \
 RUN git clone https://github.com/pgaudit/pgaudit.git && \
     cd pgaudit && \
     git checkout REL_${PG_MAJOR}_STABLE && \
-    make install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config && \
+    make install USE_PGXS=1 PG_CONFIG=${ALTDIR}/${PG_MAJOR}/bin/pg_config && \
     cd ../ && rm -rf pgaudit
 
 # Clone and build pg_failover_slots
 RUN git clone https://github.com/EnterpriseDB/pg_failover_slots.git && \
     cd pg_failover_slots && \
-    make install PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config && \
+    make install PG_CONFIG=${ALTDIR}/${PG_MAJOR}/bin/pg_config && \
     cd ../ && rm -rf pg_failover_slots 
 
 # cache all extensions
@@ -175,9 +175,15 @@ ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 # Test trunk
 COPY trunk-install.sh /usr/local/bin/
 
+RUN set -eux; \
+	    mkdir /tmp/pg_pkglibdir; \
+	    mkdir /tmp/pg_sharedir; \
+      cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
+      cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
+
 # Change the uid of postgres to 26
 RUN usermod -u 26 postgres
-RUN chown -R postgres:postgres /usr/lib/postgresql/${PG_MAJOR}
-RUN cp /usr/share/postgresql/${PG_MAJOR}/extension/* /usr/lib/postgresql/${PG_MAJOR}/share/extension/
+RUN chown -R postgres:postgres ${ALTDIR}/${PG_MAJOR}
+RUN cp /usr/share/postgresql/${PG_MAJOR}/extension/* ${ALTDIR}/${PG_MAJOR}/share/extension/
 USER 26
-ENV PATH $PATH:/usr/lib/postgresql/${PG_MAJOR}/bin
+ENV PATH $PATH:${ALTDIR}/${PG_MAJOR}/bin
