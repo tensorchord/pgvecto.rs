@@ -160,13 +160,13 @@ RUN git clone https://github.com/apache/arrow.git && \
 RUN git clone https://github.com/pgaudit/pgaudit.git && \
     cd pgaudit && \
     git checkout REL_${PG_MAJOR}_STABLE && \
-    make install USE_PGXS=1 PG_CONFIG=${ALTDIR}/${PG_MAJOR}/bin/pg_config && \
+    make install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config && \
     cd ../ && rm -rf pgaudit
 
 # Clone and build pg_failover_slots
 RUN git clone https://github.com/EnterpriseDB/pg_failover_slots.git && \
     cd pg_failover_slots && \
-    make install PG_CONFIG=${ALTDIR}/${PG_MAJOR}/bin/pg_config && \
+    make install PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config && \
     cd ../ && rm -rf pg_failover_slots 
 
 # cache all extensions
