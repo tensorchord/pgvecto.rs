@@ -8,7 +8,6 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG ALTDIR=/var/lib/postgresql/data/tensorchord
 ENV TZ=Etc/UTC
 ENV PGDATA /var/lib/postgresql/data
-ENV PATH $PATH:/usr/lib/postgresql/$PG_MAJOR/bin
 
 # Get latest package updates
 RUN set -eux; \
@@ -112,29 +111,29 @@ WORKDIR /
 RUN rm -rf /postgres
 
 RUN mkdir -p /var/run/postgresql && chmod 775 /var/run/postgresql
-# RUN mkdir -p /usr/share/postgresql/${PG_MAJOR}/extension && chmod 775 /usr/share/postgresql/${PG_MAJOR}/extension
+RUN mkdir -p /usr/share/postgresql/${PG_MAJOR}/extension && chmod 775 /usr/share/postgresql/${PG_MAJOR}/extension
 
-# COPY --from=tianon/gosu /gosu /usr/local/bin/
+COPY --from=tianon/gosu /gosu /usr/local/bin/
 
-# # make the sample config easier to munge (and "correct by default")
-# RUN set -eux; \
-#     echo "unix_socket_directories = '/var/run/postgresql'" >> ${ALTDIR}/postgresql.conf.sample; \
-# 	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" ${ALTDIR}/postgresql.conf.sample; \
-# 	grep -F "listen_addresses = '*'" ${ALTDIR}/postgresql.conf.sample
+# make the sample config easier to munge (and "correct by default")
+RUN set -eux; \
+    echo "unix_socket_directories = '/var/run/postgresql'" >> ${ALTDIR}/postgresql.conf.sample; \
+	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" ${ALTDIR}/postgresql.conf.sample; \
+	grep -F "listen_addresses = '*'" ${ALTDIR}/postgresql.conf.sample
 
-# RUN install --verbose --directory --owner postgres --group postgres --mode 3777 /var/run/postgresql
+RUN install --verbose --directory --owner postgres --group postgres --mode 3777 /var/run/postgresql
 
-# # this 1777 will be replaced by 0700 at runtime (allows semi-arbitrary "--user" values)
-# RUN install --verbose --directory --owner postgres --group postgres --mode 1777 ${PGDATA}
+# this 1777 will be replaced by 0700 at runtime (allows semi-arbitrary "--user" values)
+RUN install --verbose --directory --owner postgres --group postgres --mode 1777 ${PGDATA}
 
-# ENV PATH $PATH:/usr/lib/postgresql/$PG_MAJOR/bin:/usr/local/bin
-# COPY docker-entrypoint.sh docker-ensure-initdb.sh /usr/local/bin/
-# RUN ln -sT docker-ensure-initdb.sh /usr/local/bin/docker-enforce-initdb.sh
-# ENTRYPOINT ["docker-entrypoint.sh"]
+ENV PATH $PATH:/usr/lib/postgresql/$PG_MAJOR/bin:/usr/local/bin
+COPY docker-entrypoint.sh docker-ensure-initdb.sh /usr/local/bin/
+RUN ln -sT docker-ensure-initdb.sh /usr/local/bin/docker-enforce-initdb.sh
+ENTRYPOINT ["docker-entrypoint.sh"]
 
-# # Remove pre-installed pg_config
-# RUN rm /usr/bin/pg_config
+# Remove pre-installed pg_config
+RUN rm /usr/bin/pg_config
 
-# STOPSIGNAL SIGINT
-# EXPOSE 5432
-# CMD ["postgres"]
+STOPSIGNAL SIGINT
+EXPOSE 5432
+CMD ["postgres"]

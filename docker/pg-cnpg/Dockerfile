@@ -175,15 +175,9 @@ ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 # Test trunk
 COPY trunk-install.sh /usr/local/bin/
 
-RUN set -eux; \
-	    mkdir /tmp/pg_pkglibdir; \
-	    mkdir /tmp/pg_sharedir; \
-      cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
-      cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
-
 # Change the uid of postgres to 26
 RUN usermod -u 26 postgres
 RUN chown -R postgres:postgres ${ALTDIR}/${PG_MAJOR}
-RUN cp /usr/share/postgresql/${PG_MAJOR}/extension/* ${ALTDIR}/${PG_MAJOR}/share/extension/
+RUN cp /usr/share/postgresql/${PG_MAJOR}/extension/* ${ALTDIR}/extension/
 USER 26
-ENV PATH $PATH:${ALTDIR}/${PG_MAJOR}/bin
+ENV PATH $PATH:/usr/lib/postgresql/${PG_MAJOR}/bin
