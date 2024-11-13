@@ -118,9 +118,9 @@ COPY --from=tianon/gosu /gosu /usr/local/bin/
 
 # make the sample config easier to munge (and "correct by default")
 RUN set -eux; \
-    echo "unix_socket_directories = '/var/run/postgresql'" >> ${ALTDIR}/${PG_MAJOR}/share/postgresql.conf.sample; \
-	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" ${ALTDIR}/${PG_MAJOR}/share/postgresql.conf.sample; \
-	grep -F "listen_addresses = '*'" ${ALTDIR}/${PG_MAJOR}/share/postgresql.conf.sample
+    echo "unix_socket_directories = '/var/run/postgresql'" >> /usr/lib/postgresql/${PG_MAJOR}/share/postgresql.conf.sample; \
+	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" /usr/lib/postgresql/${PG_MAJOR}/share/postgresql.conf.sample; \
+	grep -F "listen_addresses = '*'" /usr/lib/postgresql/${PG_MAJOR}/share/postgresql.conf.sample
 
 RUN install --verbose --directory --owner postgres --group postgres --mode 3777 /var/run/postgresql
 
