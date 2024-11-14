@@ -28,6 +28,7 @@ jobs:
       PGUSER: "postgres"
       PGPASSWORD: "postgres"
       POSTGRES_PASSWORD: "password"
+      PGDATA: "/var/lib/postgresql/data2"
 
     steps:
       - name: Install all extensions in registry
