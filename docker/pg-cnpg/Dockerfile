@@ -170,7 +170,7 @@ COPY trunk-install.sh /usr/local/bin/
 
 # Change the uid of postgres to 26
 RUN usermod -u 26 postgres
-RUN chown -R postgres:postgres ${ALTDIR}/${PG_MAJOR}
+RUN chown -R postgres:postgres ${ALTDIR}
 RUN cp /usr/share/postgresql/${PG_MAJOR}/extension/* ${ALTDIR}/extension/
 
 RUN set -eux; \
