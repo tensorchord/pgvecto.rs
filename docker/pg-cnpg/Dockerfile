@@ -172,6 +172,7 @@ COPY trunk-install.sh /usr/local/bin/
 RUN usermod -u 26 postgres
 RUN chown -R postgres:postgres ${ALTDIR}
 RUN cp /usr/share/postgresql/${PG_MAJOR}/extension/* ${ALTDIR}/extension/
+RUN cp /usr/lib/postgresql/${PG_MAJOR}/lib/* ${ALTDIR}/${PG_MAJOR}/lib/
 
 RUN set -eux; \
     mkdir /tmp/pg_pkglibdir; \
