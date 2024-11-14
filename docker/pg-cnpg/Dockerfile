@@ -127,13 +127,6 @@ RUN trunk install auto_explain
 # Install plpython3u
 RUN trunk install plpython3u
 
-# cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
-RUN set -eux; \
-	  mkdir /tmp/pg_pkglibdir; \
-	  mkdir /tmp/pg_sharedir; \
-      cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
-      cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
-
 # Clone and build AWS SDK for C++
 RUN git clone https://github.com/aws/aws-sdk-cpp.git && \
     cd aws-sdk-cpp && \
@@ -179,5 +172,13 @@ COPY trunk-install.sh /usr/local/bin/
 RUN usermod -u 26 postgres
 RUN chown -R postgres:postgres ${ALTDIR}/${PG_MAJOR}
 RUN cp /usr/share/postgresql/${PG_MAJOR}/extension/* ${ALTDIR}/extension/
+
+RUN set -eux; \
+    mkdir /tmp/pg_pkglibdir; \
+    mkdir /tmp/pg_sharedir; \
+    cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
+    cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
+
+RUN chown -R postgres:postgres /tmp
 USER 26
 ENV PATH $PATH:/usr/lib/postgresql/${PG_MAJOR}/bin
