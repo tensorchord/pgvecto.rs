@@ -159,7 +159,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            core.setOutput('tags', "modelzai/pgvecto-rs:${{ matrix.version }}-v${{ github.event.inputs.version }}-${{ matrix.schema }}");
+            core.setOutput('tags', "modelzai/pgvecto-rs:${{ matrix.version }}-v${{ github.event.inputs.version }}-${{ matrix.schema }}-exts");
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
