@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         version: [14, 15, 16, 17]
-        platform: ["amd64", "arm64"]
+        platform: ["amd64"]
     runs-on: ubuntu-latest
     env:
       PG_MAJOR: ${{ matrix.version }}
@@ -33,4 +33,4 @@ jobs:
           file: ./docker/pg-slim/Dockerfile
           build-args: |
             PG_MAJOR=${{ matrix.version }}
-          tags: modelzai/pg-slim:${{ matrix.version }}
+          tags: modelzai/pg-slim:${{ matrix.version }}-${{ matrix.platform }}
