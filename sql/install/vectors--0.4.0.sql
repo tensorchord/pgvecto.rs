@@ -32,8 +32,8 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf32
 -- src/datatype/operators_vecf32.rs:109
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_sphere_l2_in
 CREATE  FUNCTION "_vectors_vecf32_sphere_l2_in"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" sphere_vector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" sphere_vector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -42,8 +42,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_sphere_l2_in_wrapper';
 -- src/datatype/operators_vecf32.rs:90
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_sphere_dot_in
 CREATE  FUNCTION "_vectors_vecf32_sphere_dot_in"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" sphere_vector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" sphere_vector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -52,8 +52,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_sphere_dot_in_wrapper';
 -- src/datatype/operators_vecf32.rs:128
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_sphere_cos_in
 CREATE  FUNCTION "_vectors_vecf32_sphere_cos_in"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" sphere_vector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" sphere_vector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -62,7 +62,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_sphere_cos_in_wrapper';
 -- src/datatype/binary_vecf32.rs:9
 -- vectors::datatype::binary_vecf32::_vectors_vecf32_send
 CREATE  FUNCTION "_vectors_vecf32_send"(
-	"vector" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "vector" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS bytea /* vectors::datatype::binary::Bytea */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -71,9 +71,9 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_send_wrapper';
 -- src/datatype/binary_vecf32.rs:24
 -- vectors::datatype::binary_vecf32::_vectors_vecf32_recv
 CREATE  FUNCTION "_vectors_vecf32_recv"(
-	"internal" internal, /* pgrx::datum::internal::Internal */
-	"oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
-	"typmod" INT /* i32 */
+    "internal" internal, /* pgrx::datum::internal::Internal */
+    "oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
+    "typmod" INT /* i32 */
 ) RETURNS vector /* vectors::datatype::memory_vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -82,7 +82,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_recv_wrapper';
 -- src/datatype/text_vecf32.rs:30
 -- vectors::datatype::text_vecf32::_vectors_vecf32_out
 CREATE  FUNCTION "_vectors_vecf32_out"(
-	"vector" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "vector" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS cstring /* alloc::ffi::c_str::CString */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -91,8 +91,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_out_wrapper';
 -- src/datatype/operators_vecf32.rs:16
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_operator_sub
 CREATE  FUNCTION "_vectors_vecf32_operator_sub"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS vector /* vectors::datatype::memory_vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -101,8 +101,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_sub_wrapper';
 -- src/datatype/operators_vecf32.rs:66
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_operator_neq
 CREATE  FUNCTION "_vectors_vecf32_operator_neq"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -111,8 +111,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_neq_wrapper';
 -- src/datatype/operators_vecf32.rs:26
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_operator_mul
 CREATE  FUNCTION "_vectors_vecf32_operator_mul"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS vector /* vectors::datatype::memory_vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -121,8 +121,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_mul_wrapper';
 -- src/datatype/operators_vecf32.rs:42
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_operator_lte
 CREATE  FUNCTION "_vectors_vecf32_operator_lte"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -131,8 +131,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_lte_wrapper';
 -- src/datatype/operators_vecf32.rs:36
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_operator_lt
 CREATE  FUNCTION "_vectors_vecf32_operator_lt"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -141,8 +141,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_lt_wrapper';
 -- src/datatype/operators_vecf32.rs:78
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_operator_l2
 CREATE  FUNCTION "_vectors_vecf32_operator_l2"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -151,8 +151,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_l2_wrapper';
 -- src/datatype/operators_vecf32.rs:54
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_operator_gte
 CREATE  FUNCTION "_vectors_vecf32_operator_gte"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -161,8 +161,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_gte_wrapper';
 -- src/datatype/operators_vecf32.rs:48
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_operator_gt
 CREATE  FUNCTION "_vectors_vecf32_operator_gt"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -171,8 +171,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_gt_wrapper';
 -- src/datatype/operators_vecf32.rs:60
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_operator_eq
 CREATE  FUNCTION "_vectors_vecf32_operator_eq"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -181,8 +181,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_eq_wrapper';
 -- src/datatype/operators_vecf32.rs:72
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_operator_dot
 CREATE  FUNCTION "_vectors_vecf32_operator_dot"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -191,8 +191,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_dot_wrapper';
 -- src/datatype/operators_vecf32.rs:84
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_operator_cos
 CREATE  FUNCTION "_vectors_vecf32_operator_cos"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -201,8 +201,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_cos_wrapper';
 -- src/datatype/operators_vecf32.rs:6
 -- vectors::datatype::operators_vecf32::_vectors_vecf32_operator_add
 CREATE  FUNCTION "_vectors_vecf32_operator_add"(
-	"lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "lhs" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "rhs" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS vector /* vectors::datatype::memory_vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -211,7 +211,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_operator_add_wrapper';
 -- src/datatype/functions_vecf32.rs:15
 -- vectors::datatype::functions_vecf32::_vectors_vecf32_normalize
 CREATE  FUNCTION "_vectors_vecf32_normalize"(
-	"vector" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "vector" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS vector /* vectors::datatype::memory_vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -220,7 +220,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_normalize_wrapper';
 -- src/datatype/functions_vecf32.rs:10
 -- vectors::datatype::functions_vecf32::_vectors_vecf32_norm
 CREATE  FUNCTION "_vectors_vecf32_norm"(
-	"vector" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "vector" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -229,9 +229,9 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_norm_wrapper';
 -- src/datatype/text_vecf32.rs:9
 -- vectors::datatype::text_vecf32::_vectors_vecf32_in
 CREATE  FUNCTION "_vectors_vecf32_in"(
-	"input" cstring, /* &core::ffi::c_str::CStr */
-	"_oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
-	"typmod" INT /* i32 */
+    "input" cstring, /* &core::ffi::c_str::CStr */
+    "_oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
+    "typmod" INT /* i32 */
 ) RETURNS vector /* vectors::datatype::memory_vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -240,7 +240,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_in_wrapper';
 -- src/datatype/functions_vecf32.rs:5
 -- vectors::datatype::functions_vecf32::_vectors_vecf32_dims
 CREATE  FUNCTION "_vectors_vecf32_dims"(
-	"vector" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "vector" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS INT /* i32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -249,7 +249,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf32_dims_wrapper';
 -- src/datatype/aggregate_vecf32.rs:142
 -- vectors::datatype::aggregate_vecf32::_vectors_vecf32_aggregate_sum_finalfunc
 CREATE  FUNCTION "_vectors_vecf32_aggregate_sum_finalfunc"(
-	"state" internal /* pgrx::datum::internal::Internal */
+    "state" internal /* pgrx::datum::internal::Internal */
 ) RETURNS vector /* core::option::Option<vectors::datatype::memory_vecf32::Vecf32Output> */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -266,7 +266,7 @@ CREATE FUNCTION _vectors_vecf32_aggregate_avg_sum_combinefunc(internal, internal
 -- src/datatype/aggregate_vecf32.rs:124
 -- vectors::datatype::aggregate_vecf32::_vectors_vecf32_aggregate_avg_finalfunc
 CREATE  FUNCTION "_vectors_vecf32_aggregate_avg_finalfunc"(
-	"state" internal /* pgrx::datum::internal::Internal */
+    "state" internal /* pgrx::datum::internal::Internal */
 ) RETURNS vector /* core::option::Option<vectors::datatype::memory_vecf32::Vecf32Output> */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -280,8 +280,8 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_vecf16
 -- src/datatype/operators_vecf16.rs:109
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_sphere_l2_in
 CREATE  FUNCTION "_vectors_vecf16_sphere_l2_in"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" sphere_vecf16 /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" sphere_vecf16 /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -290,8 +290,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_sphere_l2_in_wrapper';
 -- src/datatype/operators_vecf16.rs:90
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_sphere_dot_in
 CREATE  FUNCTION "_vectors_vecf16_sphere_dot_in"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" sphere_vecf16 /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" sphere_vecf16 /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -300,8 +300,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_sphere_dot_in_wrapper';
 -- src/datatype/operators_vecf16.rs:128
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_sphere_cos_in
 CREATE  FUNCTION "_vectors_vecf16_sphere_cos_in"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" sphere_vecf16 /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" sphere_vecf16 /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -310,7 +310,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_sphere_cos_in_wrapper';
 -- src/datatype/binary_vecf16.rs:10
 -- vectors::datatype::binary_vecf16::_vectors_vecf16_send
 CREATE  FUNCTION "_vectors_vecf16_send"(
-	"vector" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "vector" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS bytea /* vectors::datatype::binary::Bytea */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -319,9 +319,9 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_send_wrapper';
 -- src/datatype/binary_vecf16.rs:25
 -- vectors::datatype::binary_vecf16::_vectors_vecf16_recv
 CREATE  FUNCTION "_vectors_vecf16_recv"(
-	"internal" internal, /* pgrx::datum::internal::Internal */
-	"oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
-	"typmod" INT /* i32 */
+    "internal" internal, /* pgrx::datum::internal::Internal */
+    "oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
+    "typmod" INT /* i32 */
 ) RETURNS vecf16 /* vectors::datatype::memory_vecf16::Vecf16Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -330,7 +330,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_recv_wrapper';
 -- src/datatype/text_vecf16.rs:30
 -- vectors::datatype::text_vecf16::_vectors_vecf16_out
 CREATE  FUNCTION "_vectors_vecf16_out"(
-	"vector" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "vector" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS cstring /* alloc::ffi::c_str::CString */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -339,8 +339,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_out_wrapper';
 -- src/datatype/operators_vecf16.rs:16
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_operator_sub
 CREATE  FUNCTION "_vectors_vecf16_operator_sub"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS vecf16 /* vectors::datatype::memory_vecf16::Vecf16Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -349,8 +349,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_sub_wrapper';
 -- src/datatype/operators_vecf16.rs:66
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_operator_neq
 CREATE  FUNCTION "_vectors_vecf16_operator_neq"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -359,8 +359,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_neq_wrapper';
 -- src/datatype/operators_vecf16.rs:26
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_operator_mul
 CREATE  FUNCTION "_vectors_vecf16_operator_mul"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS vecf16 /* vectors::datatype::memory_vecf16::Vecf16Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -369,8 +369,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_mul_wrapper';
 -- src/datatype/operators_vecf16.rs:42
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_operator_lte
 CREATE  FUNCTION "_vectors_vecf16_operator_lte"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -379,8 +379,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_lte_wrapper';
 -- src/datatype/operators_vecf16.rs:36
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_operator_lt
 CREATE  FUNCTION "_vectors_vecf16_operator_lt"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -389,8 +389,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_lt_wrapper';
 -- src/datatype/operators_vecf16.rs:78
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_operator_l2
 CREATE  FUNCTION "_vectors_vecf16_operator_l2"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -399,8 +399,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_l2_wrapper';
 -- src/datatype/operators_vecf16.rs:54
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_operator_gte
 CREATE  FUNCTION "_vectors_vecf16_operator_gte"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -409,8 +409,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_gte_wrapper';
 -- src/datatype/operators_vecf16.rs:48
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_operator_gt
 CREATE  FUNCTION "_vectors_vecf16_operator_gt"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -419,8 +419,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_gt_wrapper';
 -- src/datatype/operators_vecf16.rs:60
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_operator_eq
 CREATE  FUNCTION "_vectors_vecf16_operator_eq"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -429,8 +429,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_eq_wrapper';
 -- src/datatype/operators_vecf16.rs:72
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_operator_dot
 CREATE  FUNCTION "_vectors_vecf16_operator_dot"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -439,8 +439,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_dot_wrapper';
 -- src/datatype/operators_vecf16.rs:84
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_operator_cos
 CREATE  FUNCTION "_vectors_vecf16_operator_cos"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -449,8 +449,8 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_cos_wrapper';
 -- src/datatype/operators_vecf16.rs:6
 -- vectors::datatype::operators_vecf16::_vectors_vecf16_operator_add
 CREATE  FUNCTION "_vectors_vecf16_operator_add"(
-	"lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "lhs" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "rhs" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS vecf16 /* vectors::datatype::memory_vecf16::Vecf16Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -459,7 +459,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_operator_add_wrapper';
 -- src/datatype/functions_vecf16.rs:15
 -- vectors::datatype::functions_vecf16::_vectors_vecf16_normalize
 CREATE  FUNCTION "_vectors_vecf16_normalize"(
-	"vector" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "vector" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS vecf16 /* vectors::datatype::memory_vecf16::Vecf16Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -468,7 +468,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_normalize_wrapper';
 -- src/datatype/functions_vecf16.rs:10
 -- vectors::datatype::functions_vecf16::_vectors_vecf16_norm
 CREATE  FUNCTION "_vectors_vecf16_norm"(
-	"vector" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "vector" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -477,9 +477,9 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_norm_wrapper';
 -- src/datatype/text_vecf16.rs:9
 -- vectors::datatype::text_vecf16::_vectors_vecf16_in
 CREATE  FUNCTION "_vectors_vecf16_in"(
-	"input" cstring, /* &core::ffi::c_str::CStr */
-	"_oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
-	"typmod" INT /* i32 */
+    "input" cstring, /* &core::ffi::c_str::CStr */
+    "_oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
+    "typmod" INT /* i32 */
 ) RETURNS vecf16 /* vectors::datatype::memory_vecf16::Vecf16Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -488,7 +488,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_in_wrapper';
 -- src/datatype/functions_vecf16.rs:5
 -- vectors::datatype::functions_vecf16::_vectors_vecf16_dims
 CREATE  FUNCTION "_vectors_vecf16_dims"(
-	"vector" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "vector" vecf16 /* vectors::datatype::memory_vecf16::Vecf16Input */
 ) RETURNS INT /* i32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -497,7 +497,7 @@ AS 'MODULE_PATHNAME', '_vectors_vecf16_dims_wrapper';
 -- src/datatype/typmod.rs:82
 -- vectors::datatype::typmod::_vectors_typmod_out
 CREATE  FUNCTION "_vectors_typmod_out"(
-	"typmod" INT /* i32 */
+    "typmod" INT /* i32 */
 ) RETURNS cstring /* alloc::ffi::c_str::CString */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -506,7 +506,7 @@ AS 'MODULE_PATHNAME', '_vectors_typmod_out_wrapper';
 -- src/datatype/typmod.rs:46
 -- vectors::datatype::typmod::_vectors_typmod_in_65535
 CREATE  FUNCTION "_vectors_typmod_in_65535"(
-	"list" cstring[] /* pgrx::datum::array::Array<&core::ffi::c_str::CStr> */
+    "list" cstring[] /* pgrx::datum::array::Array<&core::ffi::c_str::CStr> */
 ) RETURNS INT /* i32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -515,7 +515,7 @@ AS 'MODULE_PATHNAME', '_vectors_typmod_in_65535_wrapper';
 -- src/datatype/typmod.rs:64
 -- vectors::datatype::typmod::_vectors_typmod_in_1048575
 CREATE  FUNCTION "_vectors_typmod_in_1048575"(
-	"list" cstring[] /* pgrx::datum::array::Array<&core::ffi::c_str::CStr> */
+    "list" cstring[] /* pgrx::datum::array::Array<&core::ffi::c_str::CStr> */
 ) RETURNS INT /* i32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -524,9 +524,9 @@ AS 'MODULE_PATHNAME', '_vectors_typmod_in_1048575_wrapper';
 -- src/datatype/functions_svecf32.rs:21
 -- vectors::datatype::functions_svecf32::_vectors_to_svector
 CREATE  FUNCTION "_vectors_to_svector"(
-	"dims" INT, /* i32 */
-	"index" INT[], /* pgrx::datum::array::Array<i32> */
-	"value" real[] /* pgrx::datum::array::Array<f32> */
+    "dims" INT, /* i32 */
+    "index" INT[], /* pgrx::datum::array::Array<i32> */
+    "value" real[] /* pgrx::datum::array::Array<f32> */
 ) RETURNS svector /* vectors::datatype::memory_svecf32::SVecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -535,8 +535,8 @@ AS 'MODULE_PATHNAME', '_vectors_to_svector_wrapper';
 -- src/embedding/mod.rs:7
 -- vectors::embedding::_vectors_text2vec_openai
 CREATE  FUNCTION "_vectors_text2vec_openai"(
-	"input" TEXT, /* alloc::string::String */
-	"model" TEXT /* alloc::string::String */
+    "input" TEXT, /* alloc::string::String */
+    "model" TEXT /* alloc::string::String */
 ) RETURNS vector /* vectors::datatype::memory_vecf32::Vecf32Output */
 STRICT VOLATILE PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -550,8 +550,8 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_svecf3
 -- src/datatype/operators_svecf32.rs:109
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_sphere_l2_in
 CREATE  FUNCTION "_vectors_svecf32_sphere_l2_in"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" sphere_svector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" sphere_svector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -560,8 +560,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_sphere_l2_in_wrapper';
 -- src/datatype/operators_svecf32.rs:90
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_sphere_dot_in
 CREATE  FUNCTION "_vectors_svecf32_sphere_dot_in"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" sphere_svector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" sphere_svector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -570,8 +570,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_sphere_dot_in_wrapper';
 -- src/datatype/operators_svecf32.rs:128
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_sphere_cos_in
 CREATE  FUNCTION "_vectors_svecf32_sphere_cos_in"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" sphere_svector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" sphere_svector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -580,7 +580,7 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_sphere_cos_in_wrapper';
 -- src/datatype/binary_svecf32.rs:10
 -- vectors::datatype::binary_svecf32::_vectors_svecf32_send
 CREATE  FUNCTION "_vectors_svecf32_send"(
-	"vector" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "vector" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS bytea /* vectors::datatype::binary::Bytea */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -589,9 +589,9 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_send_wrapper';
 -- src/datatype/binary_svecf32.rs:29
 -- vectors::datatype::binary_svecf32::_vectors_svecf32_recv
 CREATE  FUNCTION "_vectors_svecf32_recv"(
-	"internal" internal, /* pgrx::datum::internal::Internal */
-	"oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
-	"typmod" INT /* i32 */
+    "internal" internal, /* pgrx::datum::internal::Internal */
+    "oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
+    "typmod" INT /* i32 */
 ) RETURNS svector /* vectors::datatype::memory_svecf32::SVecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -600,7 +600,7 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_recv_wrapper';
 -- src/datatype/text_svecf32.rs:78
 -- vectors::datatype::text_svecf32::_vectors_svecf32_out
 CREATE  FUNCTION "_vectors_svecf32_out"(
-	"vector" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "vector" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS cstring /* alloc::ffi::c_str::CString */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -609,8 +609,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_out_wrapper';
 -- src/datatype/operators_svecf32.rs:16
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_operator_sub
 CREATE  FUNCTION "_vectors_svecf32_operator_sub"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS svector /* vectors::datatype::memory_svecf32::SVecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -619,8 +619,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_sub_wrapper';
 -- src/datatype/operators_svecf32.rs:66
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_operator_neq
 CREATE  FUNCTION "_vectors_svecf32_operator_neq"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -629,8 +629,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_neq_wrapper';
 -- src/datatype/operators_svecf32.rs:26
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_operator_mul
 CREATE  FUNCTION "_vectors_svecf32_operator_mul"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS svector /* vectors::datatype::memory_svecf32::SVecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -639,8 +639,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_mul_wrapper';
 -- src/datatype/operators_svecf32.rs:42
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_operator_lte
 CREATE  FUNCTION "_vectors_svecf32_operator_lte"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -649,8 +649,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_lte_wrapper';
 -- src/datatype/operators_svecf32.rs:36
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_operator_lt
 CREATE  FUNCTION "_vectors_svecf32_operator_lt"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -659,8 +659,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_lt_wrapper';
 -- src/datatype/operators_svecf32.rs:78
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_operator_l2
 CREATE  FUNCTION "_vectors_svecf32_operator_l2"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -669,8 +669,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_l2_wrapper';
 -- src/datatype/operators_svecf32.rs:54
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_operator_gte
 CREATE  FUNCTION "_vectors_svecf32_operator_gte"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -679,8 +679,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_gte_wrapper';
 -- src/datatype/operators_svecf32.rs:48
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_operator_gt
 CREATE  FUNCTION "_vectors_svecf32_operator_gt"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -689,8 +689,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_gt_wrapper';
 -- src/datatype/operators_svecf32.rs:60
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_operator_eq
 CREATE  FUNCTION "_vectors_svecf32_operator_eq"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -699,8 +699,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_eq_wrapper';
 -- src/datatype/operators_svecf32.rs:72
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_operator_dot
 CREATE  FUNCTION "_vectors_svecf32_operator_dot"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -709,8 +709,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_dot_wrapper';
 -- src/datatype/operators_svecf32.rs:84
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_operator_cos
 CREATE  FUNCTION "_vectors_svecf32_operator_cos"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -719,8 +719,8 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_cos_wrapper';
 -- src/datatype/operators_svecf32.rs:6
 -- vectors::datatype::operators_svecf32::_vectors_svecf32_operator_add
 CREATE  FUNCTION "_vectors_svecf32_operator_add"(
-	"lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "lhs" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "rhs" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS svector /* vectors::datatype::memory_svecf32::SVecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -729,7 +729,7 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_operator_add_wrapper';
 -- src/datatype/functions_svecf32.rs:16
 -- vectors::datatype::functions_svecf32::_vectors_svecf32_normalize
 CREATE  FUNCTION "_vectors_svecf32_normalize"(
-	"vector" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "vector" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS svector /* vectors::datatype::memory_svecf32::SVecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -738,7 +738,7 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_normalize_wrapper';
 -- src/datatype/functions_svecf32.rs:11
 -- vectors::datatype::functions_svecf32::_vectors_svecf32_norm
 CREATE  FUNCTION "_vectors_svecf32_norm"(
-	"vector" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "vector" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -747,9 +747,9 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_norm_wrapper';
 -- src/datatype/text_svecf32.rs:10
 -- vectors::datatype::text_svecf32::_vectors_svecf32_in
 CREATE  FUNCTION "_vectors_svecf32_in"(
-	"input" cstring, /* &core::ffi::c_str::CStr */
-	"_oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
-	"typmod" INT /* i32 */
+    "input" cstring, /* &core::ffi::c_str::CStr */
+    "_oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
+    "typmod" INT /* i32 */
 ) RETURNS svector /* vectors::datatype::memory_svecf32::SVecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -758,7 +758,7 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_in_wrapper';
 -- src/datatype/functions_svecf32.rs:6
 -- vectors::datatype::functions_svecf32::_vectors_svecf32_dims
 CREATE  FUNCTION "_vectors_svecf32_dims"(
-	"vector" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "vector" svector /* vectors::datatype::memory_svecf32::SVecf32Input */
 ) RETURNS INT /* i32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -767,7 +767,7 @@ AS 'MODULE_PATHNAME', '_vectors_svecf32_dims_wrapper';
 -- src/datatype/aggregate_svecf32.rs:276
 -- vectors::datatype::aggregate_svecf32::_vectors_svecf32_aggregate_sum_finalfunc
 CREATE  FUNCTION "_vectors_svecf32_aggregate_sum_finalfunc"(
-	"state" internal /* pgrx::datum::internal::Internal */
+    "state" internal /* pgrx::datum::internal::Internal */
 ) RETURNS svector /* core::option::Option<vectors::datatype::memory_svecf32::SVecf32Output> */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -784,7 +784,7 @@ CREATE FUNCTION _vectors_svecf32_aggregate_avg_sum_combinefunc(internal, interna
 -- src/datatype/aggregate_svecf32.rs:253
 -- vectors::datatype::aggregate_svecf32::_vectors_svecf32_aggregate_avg_finalfunc
 CREATE  FUNCTION "_vectors_svecf32_aggregate_avg_finalfunc"(
-	"state" internal /* pgrx::datum::internal::Internal */
+    "state" internal /* pgrx::datum::internal::Internal */
 ) RETURNS svector /* core::option::Option<vectors::datatype::memory_svecf32::SVecf32Output> */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -800,7 +800,7 @@ AS 'MODULE_PATHNAME', '_vectors_pgvectors_upgrade_wrapper';
 -- src/index/views.rs:17
 -- vectors::index::views::_vectors_index_stat
 CREATE  FUNCTION "_vectors_index_stat"(
-	"oid" oid /* pgrx_pg_sys::submodules::oids::Oid */
+    "oid" oid /* pgrx_pg_sys::submodules::oids::Oid */
 ) RETURNS vector_index_stat /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 STRICT VOLATILE PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -809,7 +809,7 @@ AS 'MODULE_PATHNAME', '_vectors_index_stat_wrapper';
 -- src/index/functions.rs:15
 -- vectors::index::functions::_vectors_fence_vector_index
 CREATE  FUNCTION "_vectors_fence_vector_index"(
-	"oid" oid /* pgrx_pg_sys::submodules::oids::Oid */
+    "oid" oid /* pgrx_pg_sys::submodules::oids::Oid */
 ) RETURNS void
 STRICT VOLATILE PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -818,9 +818,9 @@ AS 'MODULE_PATHNAME', '_vectors_fence_vector_index_wrapper';
 -- src/datatype/casts.rs:35
 -- vectors::datatype::casts::_vectors_cast_vecf32_to_vecf16
 CREATE  FUNCTION "_vectors_cast_vecf32_to_vecf16"(
-	"vector" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"_typmod" INT, /* i32 */
-	"_explicit" bool /* bool */
+    "vector" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "_typmod" INT, /* i32 */
+    "_explicit" bool /* bool */
 ) RETURNS vecf16 /* vectors::datatype::memory_vecf16::Vecf16Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -829,9 +829,9 @@ AS 'MODULE_PATHNAME', '_vectors_cast_vecf32_to_vecf16_wrapper';
 -- src/datatype/casts.rs:55
 -- vectors::datatype::casts::_vectors_cast_vecf32_to_svecf32
 CREATE  FUNCTION "_vectors_cast_vecf32_to_svecf32"(
-	"vector" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"_typmod" INT, /* i32 */
-	"_explicit" bool /* bool */
+    "vector" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "_typmod" INT, /* i32 */
+    "_explicit" bool /* bool */
 ) RETURNS svector /* vectors::datatype::memory_svecf32::SVecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -840,9 +840,9 @@ AS 'MODULE_PATHNAME', '_vectors_cast_vecf32_to_svecf32_wrapper';
 -- src/datatype/casts.rs:89
 -- vectors::datatype::casts::_vectors_cast_vecf32_to_bvector
 CREATE  FUNCTION "_vectors_cast_vecf32_to_bvector"(
-	"vector" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"_typmod" INT, /* i32 */
-	"_explicit" bool /* bool */
+    "vector" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "_typmod" INT, /* i32 */
+    "_explicit" bool /* bool */
 ) RETURNS bvector /* vectors::datatype::memory_bvector::BVectorOutput */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -851,9 +851,9 @@ AS 'MODULE_PATHNAME', '_vectors_cast_vecf32_to_bvector_wrapper';
 -- src/datatype/casts.rs:26
 -- vectors::datatype::casts::_vectors_cast_vecf32_to_array
 CREATE  FUNCTION "_vectors_cast_vecf32_to_array"(
-	"vector" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
-	"_typmod" INT, /* i32 */
-	"_explicit" bool /* bool */
+    "vector" vector, /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "_typmod" INT, /* i32 */
+    "_explicit" bool /* bool */
 ) RETURNS real[] /* alloc::vec::Vec<f32> */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -862,9 +862,9 @@ AS 'MODULE_PATHNAME', '_vectors_cast_vecf32_to_array_wrapper';
 -- src/datatype/casts.rs:45
 -- vectors::datatype::casts::_vectors_cast_vecf16_to_vecf32
 CREATE  FUNCTION "_vectors_cast_vecf16_to_vecf32"(
-	"vector" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
-	"_typmod" INT, /* i32 */
-	"_explicit" bool /* bool */
+    "vector" vecf16, /* vectors::datatype::memory_vecf16::Vecf16Input */
+    "_typmod" INT, /* i32 */
+    "_explicit" bool /* bool */
 ) RETURNS vector /* vectors::datatype::memory_vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -873,9 +873,9 @@ AS 'MODULE_PATHNAME', '_vectors_cast_vecf16_to_vecf32_wrapper';
 -- src/datatype/casts.rs:73
 -- vectors::datatype::casts::_vectors_cast_svecf32_to_vecf32
 CREATE  FUNCTION "_vectors_cast_svecf32_to_vecf32"(
-	"vector" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
-	"_typmod" INT, /* i32 */
-	"_explicit" bool /* bool */
+    "vector" svector, /* vectors::datatype::memory_svecf32::SVecf32Input */
+    "_typmod" INT, /* i32 */
+    "_explicit" bool /* bool */
 ) RETURNS vector /* vectors::datatype::memory_vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -884,9 +884,9 @@ AS 'MODULE_PATHNAME', '_vectors_cast_svecf32_to_vecf32_wrapper';
 -- src/datatype/casts.rs:108
 -- vectors::datatype::casts::_vectors_cast_bvector_to_vecf32
 CREATE  FUNCTION "_vectors_cast_bvector_to_vecf32"(
-	"vector" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"_typmod" INT, /* i32 */
-	"_explicit" bool /* bool */
+    "vector" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "_typmod" INT, /* i32 */
+    "_explicit" bool /* bool */
 ) RETURNS vector /* vectors::datatype::memory_vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -895,9 +895,9 @@ AS 'MODULE_PATHNAME', '_vectors_cast_bvector_to_vecf32_wrapper';
 -- src/datatype/casts.rs:10
 -- vectors::datatype::casts::_vectors_cast_array_to_vecf32
 CREATE  FUNCTION "_vectors_cast_array_to_vecf32"(
-	"array" real[], /* pgrx::datum::array::Array<f32> */
-	"typmod" INT, /* i32 */
-	"_explicit" bool /* bool */
+    "array" real[], /* pgrx::datum::array::Array<f32> */
+    "typmod" INT, /* i32 */
+    "_explicit" bool /* bool */
 ) RETURNS vector /* vectors::datatype::memory_vecf32::Vecf32Output */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -911,8 +911,8 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_bvecto
 -- src/datatype/operators_bvector.rs:128
 -- vectors::datatype::operators_bvector::_vectors_bvector_sphere_jaccard_in
 CREATE  FUNCTION "_vectors_bvector_sphere_jaccard_in"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" sphere_bvector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" sphere_bvector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -921,8 +921,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_sphere_jaccard_in_wrapper';
 -- src/datatype/operators_bvector.rs:109
 -- vectors::datatype::operators_bvector::_vectors_bvector_sphere_hamming_in
 CREATE  FUNCTION "_vectors_bvector_sphere_hamming_in"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" sphere_bvector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" sphere_bvector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -931,8 +931,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_sphere_hamming_in_wrapper';
 -- src/datatype/operators_bvector.rs:90
 -- vectors::datatype::operators_bvector::_vectors_bvector_sphere_dot_in
 CREATE  FUNCTION "_vectors_bvector_sphere_dot_in"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" sphere_bvector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" sphere_bvector /* pgrx::heap_tuple::PgHeapTuple<pgrx::pgbox::AllocatedByRust> */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -941,7 +941,7 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_sphere_dot_in_wrapper';
 -- src/datatype/binary_bvector.rs:10
 -- vectors::datatype::binary_bvector::_vectors_bvector_send
 CREATE  FUNCTION "_vectors_bvector_send"(
-	"vector" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "vector" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS bytea /* vectors::datatype::binary::Bytea */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -950,9 +950,9 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_send_wrapper';
 -- src/datatype/binary_bvector.rs:25
 -- vectors::datatype::binary_bvector::_vectors_bvector_recv
 CREATE  FUNCTION "_vectors_bvector_recv"(
-	"internal" internal, /* pgrx::datum::internal::Internal */
-	"oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
-	"typmod" INT /* i32 */
+    "internal" internal, /* pgrx::datum::internal::Internal */
+    "oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
+    "typmod" INT /* i32 */
 ) RETURNS bvector /* vectors::datatype::memory_bvector::BVectorOutput */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -961,7 +961,7 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_recv_wrapper';
 -- src/datatype/text_bvector.rs:42
 -- vectors::datatype::text_bvector::_vectors_bvector_out
 CREATE  FUNCTION "_vectors_bvector_out"(
-	"vector" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "vector" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS cstring /* alloc::ffi::c_str::CString */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -970,8 +970,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_out_wrapper';
 -- src/datatype/operators_bvector.rs:26
 -- vectors::datatype::operators_bvector::_vectors_bvector_operator_xor
 CREATE  FUNCTION "_vectors_bvector_operator_xor"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS bvector /* vectors::datatype::memory_bvector::BVectorOutput */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -980,8 +980,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_operator_xor_wrapper';
 -- src/datatype/operators_bvector.rs:16
 -- vectors::datatype::operators_bvector::_vectors_bvector_operator_or
 CREATE  FUNCTION "_vectors_bvector_operator_or"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS bvector /* vectors::datatype::memory_bvector::BVectorOutput */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -990,8 +990,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_operator_or_wrapper';
 -- src/datatype/operators_bvector.rs:66
 -- vectors::datatype::operators_bvector::_vectors_bvector_operator_neq
 CREATE  FUNCTION "_vectors_bvector_operator_neq"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1000,8 +1000,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_operator_neq_wrapper';
 -- src/datatype/operators_bvector.rs:42
 -- vectors::datatype::operators_bvector::_vectors_bvector_operator_lte
 CREATE  FUNCTION "_vectors_bvector_operator_lte"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1010,8 +1010,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_operator_lte_wrapper';
 -- src/datatype/operators_bvector.rs:36
 -- vectors::datatype::operators_bvector::_vectors_bvector_operator_lt
 CREATE  FUNCTION "_vectors_bvector_operator_lt"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1020,8 +1020,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_operator_lt_wrapper';
 -- src/datatype/operators_bvector.rs:84
 -- vectors::datatype::operators_bvector::_vectors_bvector_operator_jaccard
 CREATE  FUNCTION "_vectors_bvector_operator_jaccard"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1030,8 +1030,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_operator_jaccard_wrapper';
 -- src/datatype/operators_bvector.rs:78
 -- vectors::datatype::operators_bvector::_vectors_bvector_operator_hamming
 CREATE  FUNCTION "_vectors_bvector_operator_hamming"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1040,8 +1040,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_operator_hamming_wrapper';
 -- src/datatype/operators_bvector.rs:54
 -- vectors::datatype::operators_bvector::_vectors_bvector_operator_gte
 CREATE  FUNCTION "_vectors_bvector_operator_gte"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1050,8 +1050,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_operator_gte_wrapper';
 -- src/datatype/operators_bvector.rs:48
 -- vectors::datatype::operators_bvector::_vectors_bvector_operator_gt
 CREATE  FUNCTION "_vectors_bvector_operator_gt"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1060,8 +1060,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_operator_gt_wrapper';
 -- src/datatype/operators_bvector.rs:60
 -- vectors::datatype::operators_bvector::_vectors_bvector_operator_eq
 CREATE  FUNCTION "_vectors_bvector_operator_eq"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS bool /* bool */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1070,8 +1070,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_operator_eq_wrapper';
 -- src/datatype/operators_bvector.rs:72
 -- vectors::datatype::operators_bvector::_vectors_bvector_operator_dot
 CREATE  FUNCTION "_vectors_bvector_operator_dot"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1080,8 +1080,8 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_operator_dot_wrapper';
 -- src/datatype/operators_bvector.rs:6
 -- vectors::datatype::operators_bvector::_vectors_bvector_operator_and
 CREATE  FUNCTION "_vectors_bvector_operator_and"(
-	"lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
-	"rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "lhs" bvector, /* vectors::datatype::memory_bvector::BVectorInput */
+    "rhs" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS bvector /* vectors::datatype::memory_bvector::BVectorOutput */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1090,7 +1090,7 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_operator_and_wrapper';
 -- src/datatype/functions_bvector.rs:11
 -- vectors::datatype::functions_bvector::_vectors_bvector_norm
 CREATE  FUNCTION "_vectors_bvector_norm"(
-	"vector" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "vector" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS real /* f32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1099,9 +1099,9 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_norm_wrapper';
 -- src/datatype/text_bvector.rs:9
 -- vectors::datatype::text_bvector::_vectors_bvector_in
 CREATE  FUNCTION "_vectors_bvector_in"(
-	"input" cstring, /* &core::ffi::c_str::CStr */
-	"_oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
-	"typmod" INT /* i32 */
+    "input" cstring, /* &core::ffi::c_str::CStr */
+    "_oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
+    "typmod" INT /* i32 */
 ) RETURNS bvector /* vectors::datatype::memory_bvector::BVectorOutput */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1110,7 +1110,7 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_in_wrapper';
 -- src/datatype/functions_bvector.rs:6
 -- vectors::datatype::functions_bvector::_vectors_bvector_dims
 CREATE  FUNCTION "_vectors_bvector_dims"(
-	"vector" bvector /* vectors::datatype::memory_bvector::BVectorInput */
+    "vector" bvector /* vectors::datatype::memory_bvector::BVectorInput */
 ) RETURNS INT /* i32 */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1119,7 +1119,7 @@ AS 'MODULE_PATHNAME', '_vectors_bvector_dims_wrapper';
 -- src/datatype/functions_bvector.rs:16
 -- vectors::datatype::functions_bvector::_vectors_binarize
 CREATE  FUNCTION "_vectors_binarize"(
-	"vector" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
+    "vector" vector /* vectors::datatype::memory_vecf32::Vecf32Input */
 ) RETURNS bvector /* vectors::datatype::memory_bvector::BVectorOutput */
 IMMUTABLE STRICT PARALLEL SAFE
 LANGUAGE c /* Rust */
@@ -1133,9 +1133,9 @@ IMMUTABLE STRICT PARALLEL SAFE LANGUAGE c AS 'MODULE_PATHNAME', '_vectors_amhand
 -- src/index/views.rs:7
 -- vectors::index::views::_vectors_alter_vector_index
 CREATE  FUNCTION "_vectors_alter_vector_index"(
-	"oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
-	"key" TEXT, /* alloc::string::String */
-	"value" TEXT /* alloc::string::String */
+    "oid" oid, /* pgrx_pg_sys::submodules::oids::Oid */
+    "key" TEXT, /* alloc::string::String */
+    "value" TEXT /* alloc::string::String */
 ) RETURNS void
 STRICT VOLATILE
 LANGUAGE c /* Rust */
