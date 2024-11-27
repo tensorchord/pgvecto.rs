@@ -161,9 +161,9 @@ impl IntoDatum for SVecf32Output {
 
     fn type_oid() -> Oid {
         let namespace =
-            pgrx::pg_catalog::PgNamespace::search_namespacename(crate::SCHEMA_C_STR).unwrap();
+            pgrx_catalog::PgNamespace::search_namespacename(crate::SCHEMA_C_STR).unwrap();
         let namespace = namespace.get().expect("pgvecto.rs is not installed.");
-        let t = pgrx::pg_catalog::PgType::search_typenamensp(c"svector", namespace.oid()).unwrap();
+        let t = pgrx_catalog::PgType::search_typenamensp(c"svector", namespace.oid()).unwrap();
         let t = t.get().expect("pg_catalog is broken.");
         t.oid()
     }

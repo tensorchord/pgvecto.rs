@@ -65,10 +65,9 @@ impl PgDistanceKind {
 pub fn convert_opclass_to_vd(
     opclass_oid: pgrx::pg_sys::Oid,
 ) -> Option<(VectorKind, PgDistanceKind)> {
-    let namespace =
-        pgrx::pg_catalog::PgNamespace::search_namespacename(crate::SCHEMA_C_STR).unwrap();
+    let namespace = pgrx_catalog::PgNamespace::search_namespacename(crate::SCHEMA_C_STR).unwrap();
     let namespace = namespace.get().expect("pgvecto.rs is not installed.");
-    let opclass = pgrx::pg_catalog::PgOpclass::search_claoid(opclass_oid).unwrap();
+    let opclass = pgrx_catalog::PgOpclass::search_claoid(opclass_oid).unwrap();
     let opclass = opclass.get().expect("pg_catalog is broken.");
     if opclass.opcnamespace() == namespace.oid() {
         if let Ok(name) = opclass.opcname().to_str() {
@@ -83,10 +82,9 @@ pub fn convert_opclass_to_vd(
 pub fn convert_opfamily_to_vd(
     opfamily_oid: pgrx::pg_sys::Oid,
 ) -> Option<(VectorKind, PgDistanceKind)> {
-    let namespace =
-        pgrx::pg_catalog::PgNamespace::search_namespacename(crate::SCHEMA_C_STR).unwrap();
+    let namespace = pgrx_catalog::PgNamespace::search_namespacename(crate::SCHEMA_C_STR).unwrap();
     let namespace = namespace.get().expect("pgvecto.rs is not installed.");
-    let opfamily = pgrx::pg_catalog::PgOpfamily::search_opfamilyoid(opfamily_oid).unwrap();
+    let opfamily = pgrx_catalog::PgOpfamily::search_opfamilyoid(opfamily_oid).unwrap();
     let opfamily = opfamily.get().expect("pg_catalog is broken.");
     if opfamily.opfnamespace() == namespace.oid() {
         if let Ok(name) = opfamily.opfname().to_str() {

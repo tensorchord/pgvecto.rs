@@ -77,7 +77,7 @@ pub unsafe fn on_object_access(
         return;
     }
     if access == pgrx::pg_sys::ObjectAccessType::OAT_DROP {
-        let search = pgrx::pg_catalog::PgClass::search_reloid(object_id).unwrap();
+        let search = pgrx_catalog::PgClass::search_reloid(object_id).unwrap();
         if let Some(pg_class) = search.get() {
             if let Some(()) = check_vector_index(pg_class) {
                 let handle = from_oid_to_handle(object_id);
@@ -107,15 +107,15 @@ pub unsafe fn on_object_access(
     }
 }
 
-fn check_vector_index(pg_class: pgrx::pg_catalog::PgClass<'_>) -> Option<()> {
-    if pg_class.relkind() != pgrx::pg_catalog::PgClassRelkind::Index {
+fn check_vector_index(pg_class: pgrx_catalog::PgClass<'_>) -> Option<()> {
+    if pg_class.relkind() != pgrx_catalog::PgClassRelkind::Index {
         return None;
     }
     let relam = pg_class.relam();
     if relam.as_u32() == 0 {
         return None;
     }
-    let search = pgrx::pg_catalog::PgAm::search_amoid(relam)?;
+    let search = pgrx_catalog::PgAm::search_amoid(relam)?;
     let pg_am = search.get()?;
     if pg_am.amname() != crate::SCHEMA_C_STR {
         return None;
@@ -124,7 +124,7 @@ fn check_vector_index(pg_class: pgrx::pg_catalog::PgClass<'_>) -> Option<()> {
     check_vector_index_slow_path(pg_am)
 }
 
-fn check_vector_index_slow_path(pg_am: pgrx::pg_catalog::PgAm<'_>) -> Option<()> {
+fn check_vector_index_slow_path(pg_am: pgrx_catalog::PgAm<'_>) -> Option<()> {
     let amhandler = pg_am.amhandler();
     let mut flinfo = unsafe {
         let mut flinfo = pgrx::pg_sys::FmgrInfo::default();

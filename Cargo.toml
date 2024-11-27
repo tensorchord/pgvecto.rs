@@ -28,7 +28,8 @@ libc.workspace = true
 log.workspace = true
 memmap2.workspace = true
 paste.workspace = true
-pgrx = { version = "=0.12.5", default-features = false, features = [] }
+pgrx = { version = "=0.12.9", default-features = false, features = [] }
+pgrx-catalog = "0.1.0"
 rand.workspace = true
 rustix.workspace = true
 serde.workspace = true
@@ -86,9 +87,6 @@ validator = { version = "0.18.0", features = ["derive"] }
 rust.unsafe_op_in_unsafe_fn = "deny"
 rust.unused_lifetimes = "warn"
 rust.unused_qualifications = "warn"
-
-[patch.crates-io]
-pgrx = { git = "https://github.com/tensorchord/pgrx.git", branch = "v0.12.5-patch" }
 
 [profile.opt]
 inherits = "dev"
