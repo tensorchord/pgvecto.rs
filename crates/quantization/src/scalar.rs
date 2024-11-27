@@ -415,7 +415,7 @@ impl<S: ScalarLike> OperatorScalarQuantization for VectDot<S> {
         max: &[f32],
         vector: Borrowed<'_, Self>,
     ) -> (u32, f32, f32, Vec<u8>) {
-        let (k, b, t) = quantize::<255>(&Self::preprocess(dims, bits, min, max, vector));
+        let (k, b, t) = quantize(&Self::preprocess(dims, bits, min, max, vector), 255.0);
         (dims, k, b, t)
     }
     fn fscan_process(flut: &(u32, f32, f32, Vec<u8>), codes: &[u8]) -> [Distance; 32] {
@@ -514,7 +514,7 @@ impl<S: ScalarLike> OperatorScalarQuantization for VectL2<S> {
         max: &[f32],
         vector: Borrowed<'_, Self>,
     ) -> (u32, f32, f32, Vec<u8>) {
-        let (k, b, t) = quantize::<255>(&Self::preprocess(dims, bits, min, max, vector));
+        let (k, b, t) = quantize(&Self::preprocess(dims, bits, min, max, vector), 255.0);
         (dims, k, b, t)
     }
     fn fscan_process(flut: &(u32, f32, f32, Vec<u8>), codes: &[u8]) -> [Distance; 32] {

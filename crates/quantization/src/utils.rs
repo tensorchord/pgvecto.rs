@@ -1,3 +1,5 @@
+use base::scalar::ScalarLike;
+
 #[derive(Debug, Clone)]
 pub struct InfiniteByteChunks<I, const N: usize> {
     iter: I,
@@ -29,4 +31,49 @@ pub fn merge_4([b0, b1, b2, b3]: [u8; 4]) -> u8 {
 
 pub fn merge_2([b0, b1]: [u8; 2]) -> u8 {
     b0 | (b1 << 4)
+}
+
+pub fn find_scale<S: ScalarLike>(bits: usize, o: &[S]) -> f64 {
+    assert!((1..=8).contains(&bits));
+
+    let mask = (1_u32 << (bits - 1)) - 1;
+    let dims = o.len();
+
+    let mut code = Vec::<u8>::with_capacity(dims);
+    let mut numerator = 0.0f64;
+    let mut sqr_denominator = 0.0f64;
+
+    let (mut y_m, mut x_m);
+
+    for i in 0..dims {
+        code.push(0);
+        numerator += 0.5 * o[i].to_f32() as f64;
+        sqr_denominator += 0.5 * 0.5;
+    }
+    {
+        let x = 0.0;
+        let y = numerator / sqr_denominator.sqrt();
+        (y_m, x_m) = (y, x);
+    }
+
+    let mut events = Vec::<(f64, usize)>::new();
+    for i in 0..dims {
+        for c in 1..=mask {
+            let x = (c as f64) / o[i].to_f32() as f64;
+            events.push((x, i));
+        }
+    }
+    events.sort_unstable_by(|(x, _), (y, _)| f64::total_cmp(x, y));
+    for (x, i) in events.into_iter() {
+        code[i] += 1;
+        numerator += o[i].to_f32() as f64;
+        sqr_denominator += 2.0 * code[i] as f64;
+
+        let y = numerator / sqr_denominator.sqrt();
+        if y > y_m {
+            (y_m, x_m) = (y, x);
+        }
+    }
+
+    x_m
 }

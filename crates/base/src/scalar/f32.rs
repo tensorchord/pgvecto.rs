@@ -188,6 +188,14 @@ impl ScalarLike for f32 {
     }
 
     #[detect::multiversion(v4, v3, v2, neon, fallback)]
+    fn vector_abs_inplace(this: &mut [f32]) {
+        let n = this.len();
+        for i in 0..n {
+            this[i] = this[i].abs();
+        }
+    }
+
+    #[detect::multiversion(v4, v3, v2, neon, fallback)]
     fn vector_from_f32(this: &[f32]) -> Vec<f32> {
         this.to_vec()
     }

@@ -11,6 +11,7 @@ use base::operator::*;
 use base::scalar::impossible::Impossible;
 use base::scalar::ScalarLike;
 use base::search::*;
+use base::vector::VectBorrowed;
 use base::vector::VectOwned;
 use base::vector::VectorBorrowed;
 use base::vector::VectorOwned;
@@ -293,31 +294,7 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectL2<S> {
     type Scalar = S;
 
     fn code(vector: Borrowed<'_, Self>) -> (f32, f32, f32, f32, Vec<u8>) {
-        let dims = vector.dims();
-        let vector = vector.slice();
-        let sum_of_abs_x = S::reduce_sum_of_abs_x(vector);
-        let sum_of_x2 = S::reduce_sum_of_x2(vector);
-        let dis_u = sum_of_x2.sqrt();
-        let x0 = sum_of_abs_x / (sum_of_x2 * (dims as f32)).sqrt();
-        let x_x0 = dis_u / x0;
-        let fac_norm = (dims as f32).sqrt();
-        let max_x1 = 1.0f32 / (dims as f32 - 1.0).sqrt();
-        let factor_err = 2.0f32 * max_x1 * (x_x0 * x_x0 - dis_u * dis_u).sqrt();
-        let factor_ip = -2.0f32 / fac_norm * x_x0;
-        let cnt_pos = vector
-            .iter()
-            .map(|x| x.scalar_is_sign_positive() as i32)
-            .sum::<i32>();
-        let cnt_neg = vector
-            .iter()
-            .map(|x| x.scalar_is_sign_negative() as i32)
-            .sum::<i32>();
-        let factor_ppc = factor_ip * (cnt_pos - cnt_neg) as f32;
-        let mut code = Vec::new();
-        for i in 0..dims {
-            code.push(vector[i as usize].scalar_is_sign_positive() as u8);
-        }
-        (sum_of_x2, factor_ppc, factor_ip, factor_err, code)
+        make_code(vector)
     }
 
     fn project(projection: &[Vec<Self::Scalar>], vector: Borrowed<'_, Self>) -> Self::Vector {
@@ -333,7 +310,7 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectL2<S> {
         use crate::quantize;
         let vector = vector.slice();
         let dis_v_2 = S::reduce_sum_of_x2(vector);
-        let (k, b, qvector) = quantize::quantize::<15>(S::vector_to_f32_borrowed(vector).as_ref());
+        let (k, b, qvector) = quantize::quantize(S::vector_to_f32_borrowed(vector).as_ref(), 15.0);
         let qvector_sum = if vector.len() <= 4369 {
             quantize::reduce_sum_of_x_as_u16(&qvector) as f32
         } else {
@@ -348,7 +325,7 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectL2<S> {
         (dis_u_2, factor_ppc, factor_ip, _, t): (f32, f32, f32, f32, &[u64]),
     ) -> Distance {
         let &(dis_v_2, b, k, qvector_sum, ref s) = lut;
-        let value = asymmetric_binary_dot_product(t, s) as u16;
+        let value = asymmetric_binary_dot_product(t, s);
         let rough = dis_u_2
             + dis_v_2
             + b * factor_ppc
@@ -362,7 +339,7 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectL2<S> {
         epsilon: f32,
     ) -> Distance {
         let &(dis_v_2, b, k, qvector_sum, ref s) = lut;
-        let value = asymmetric_binary_dot_product(t, s) as u16;
+        let value = asymmetric_binary_dot_product(t, s);
         let rough = dis_u_2
             + dis_v_2
             + b * factor_ppc
@@ -377,13 +354,13 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectL2<S> {
         use crate::quantize;
         let vector = vector.slice();
         let dis_v_2 = S::reduce_sum_of_x2(vector);
-        let (k, b, qvector) = quantize::quantize::<15>(S::vector_to_f32_borrowed(vector).as_ref());
+        let (k, b, qvector) = quantize::quantize(S::vector_to_f32_borrowed(vector).as_ref(), 15.0);
         let qvector_sum = if vector.len() <= 4369 {
             quantize::reduce_sum_of_x_as_u16(&qvector) as f32
         } else {
             quantize::reduce_sum_of_x_as_u32(&qvector) as f32
         };
-        let lut = gen(qvector);
+        let lut = generate_bytes(qvector);
         (dis_v_2, b, k, qvector_sum, lut)
     }
 
@@ -438,31 +415,7 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectDot<S> {
     type Scalar = S;
 
     fn code(vector: Borrowed<'_, Self>) -> (f32, f32, f32, f32, Vec<u8>) {
-        let dims = vector.dims();
-        let vector = vector.slice();
-        let sum_of_abs_x = S::reduce_sum_of_abs_x(vector);
-        let sum_of_x2 = S::reduce_sum_of_x2(vector);
-        let dis_u = sum_of_x2.sqrt();
-        let x0 = sum_of_abs_x / (sum_of_x2 * (dims as f32)).sqrt();
-        let x_x0 = dis_u / x0;
-        let fac_norm = (dims as f32).sqrt();
-        let max_x1 = 1.0f32 / (dims as f32 - 1.0).sqrt();
-        let factor_err = 2.0f32 * max_x1 * (x_x0 * x_x0 - dis_u * dis_u).sqrt();
-        let factor_ip = -2.0f32 / fac_norm * x_x0;
-        let cnt_pos = vector
-            .iter()
-            .map(|x| x.scalar_is_sign_positive() as i32)
-            .sum::<i32>();
-        let cnt_neg = vector
-            .iter()
-            .map(|x| x.scalar_is_sign_negative() as i32)
-            .sum::<i32>();
-        let factor_ppc = factor_ip * (cnt_pos - cnt_neg) as f32;
-        let mut code = Vec::new();
-        for i in 0..dims {
-            code.push(vector[i as usize].scalar_is_sign_positive() as u8);
-        }
-        (sum_of_x2, factor_ppc, factor_ip, factor_err, code)
+        make_code(vector)
     }
 
     fn project(projection: &[Vec<Self::Scalar>], vector: Borrowed<'_, Self>) -> Self::Vector {
@@ -478,7 +431,7 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectDot<S> {
         use crate::quantize;
         let vector = vector.slice();
         let dis_v_2 = S::reduce_sum_of_x2(vector);
-        let (k, b, qvector) = quantize::quantize::<15>(S::vector_to_f32_borrowed(vector).as_ref());
+        let (k, b, qvector) = quantize::quantize(S::vector_to_f32_borrowed(vector).as_ref(), 15.0);
         let qvector_sum = if vector.len() <= 4369 {
             quantize::reduce_sum_of_x_as_u16(&qvector) as f32
         } else {
@@ -493,7 +446,7 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectDot<S> {
         (_, factor_ppc, factor_ip, _, t): (f32, f32, f32, f32, &[u64]),
     ) -> Distance {
         let &(_, b, k, qvector_sum, ref s) = lut;
-        let value = asymmetric_binary_dot_product(t, s) as u16;
+        let value = asymmetric_binary_dot_product(t, s);
         let rough =
             0.5 * b * factor_ppc + 0.5 * ((2.0 * value as f32) - qvector_sum) * factor_ip * k;
         Distance::from_f32(rough)
@@ -505,7 +458,7 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectDot<S> {
         epsilon: f32,
     ) -> Distance {
         let &(dis_v_2, b, k, qvector_sum, ref s) = lut;
-        let value = asymmetric_binary_dot_product(t, s) as u16;
+        let value = asymmetric_binary_dot_product(t, s);
         let rough =
             0.5 * b * factor_ppc + 0.5 * ((2.0 * value as f32) - qvector_sum) * factor_ip * k;
         let err = 0.5 * factor_err * dis_v_2.sqrt();
@@ -518,13 +471,13 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectDot<S> {
         use crate::quantize;
         let vector = vector.slice();
         let dis_v_2 = S::reduce_sum_of_x2(vector);
-        let (k, b, qvector) = quantize::quantize::<15>(S::vector_to_f32_borrowed(vector).as_ref());
+        let (k, b, qvector) = quantize::quantize(S::vector_to_f32_borrowed(vector).as_ref(), 15.0);
         let qvector_sum = if vector.len() <= 4369 {
             quantize::reduce_sum_of_x_as_u16(&qvector) as f32
         } else {
             quantize::reduce_sum_of_x_as_u32(&qvector) as f32
         };
-        let lut = gen(qvector);
+        let lut = generate_bytes(qvector);
         (dis_v_2, b, k, qvector_sum, lut)
     }
 
@@ -623,6 +576,34 @@ unimpl_operator_rabitq_quantization!(BVectorJaccard);
 unimpl_operator_rabitq_quantization!(SVectDot<f32>);
 unimpl_operator_rabitq_quantization!(SVectL2<f32>);
 
+pub fn make_code<S: ScalarLike>(vector: VectBorrowed<'_, S>) -> (f32, f32, f32, f32, Vec<u8>) {
+    let dims = vector.dims();
+    let vector = vector.slice();
+    let sum_of_abs_x = S::reduce_sum_of_abs_x(vector);
+    let sum_of_x2 = S::reduce_sum_of_x2(vector);
+    let dis_u = sum_of_x2.sqrt();
+    let x0 = sum_of_abs_x / (sum_of_x2 * (dims as f32)).sqrt();
+    let x_x0 = dis_u / x0;
+    let fac_norm = (dims as f32).sqrt();
+    let max_x1 = 1.0f32 / (dims as f32 - 1.0).sqrt();
+    let factor_err = 2.0f32 * max_x1 * (x_x0 * x_x0 - dis_u * dis_u).sqrt();
+    let factor_ip = -2.0f32 / fac_norm * x_x0;
+    let cnt_pos = vector
+        .iter()
+        .map(|x| x.scalar_is_sign_positive() as i32)
+        .sum::<i32>();
+    let cnt_neg = vector
+        .iter()
+        .map(|x| x.scalar_is_sign_negative() as i32)
+        .sum::<i32>();
+    let factor_ppc = factor_ip * (cnt_pos - cnt_neg) as f32;
+    let mut code = Vec::new();
+    for i in 0..dims {
+        code.push(vector[i as usize].scalar_is_sign_positive() as u8);
+    }
+    (sum_of_x2, factor_ppc, factor_ip, factor_err, code)
+}
+
 fn parse_code(code: &[u8]) -> (f32, f32, f32, f32, &[u64]) {
     assert!(code.len() > size_of::<f32>() * 4, "length is incorrect");
     assert!(code.len() % size_of::<u64>() == 0, "length is incorrect");
@@ -650,7 +631,7 @@ fn parses_codes(code: &[u8]) -> (&[f32; 32], &[f32; 32], &[f32; 32], &[f32; 32],
     }
 }
 
-fn gen(mut qvector: Vec<u8>) -> Vec<u8> {
+fn generate_bytes(mut qvector: Vec<u8>) -> Vec<u8> {
     let dims = qvector.len() as u32;
     let t = dims.div_ceil(4);
     qvector.resize(qvector.len().next_multiple_of(4), 0);

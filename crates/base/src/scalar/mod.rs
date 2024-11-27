@@ -51,6 +51,7 @@ pub trait ScalarLike:
     fn vector_mul(lhs: &[Self], rhs: &[Self]) -> Vec<Self>;
     fn vector_mul_scalar(lhs: &[Self], rhs: f32) -> Vec<Self>;
     fn vector_mul_scalar_inplace(lhs: &mut [Self], rhs: f32);
+    fn vector_abs_inplace(this: &mut [Self]);
 
     fn kmeans_helper(this: &mut [Self], x: f32, y: f32);
 }

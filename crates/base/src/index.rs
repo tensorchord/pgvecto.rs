@@ -429,6 +429,10 @@ pub enum QuantizationOptions {
     Scalar(ScalarQuantizationOptions),
     Product(ProductQuantizationOptions),
     Rabitq(RabitqQuantizationOptions),
+    Rabitq4(Rabitq4QuantizationOptions),
+    Rabitq8(Rabitq8QuantizationOptions),
+    Scalar4(Scalar4QuantizationOptions),
+    Scalar8(Scalar8QuantizationOptions),
 }
 
 impl Validate for QuantizationOptions {
@@ -437,6 +441,10 @@ impl Validate for QuantizationOptions {
             Self::Scalar(x) => x.validate(),
             Self::Product(x) => x.validate(),
             Self::Rabitq(x) => x.validate(),
+            Self::Rabitq4(x) => x.validate(),
+            Self::Rabitq8(x) => x.validate(),
+            Self::Scalar4(x) => x.validate(),
+            Self::Scalar8(x) => x.validate(),
         }
     }
 }
@@ -511,6 +519,54 @@ pub struct RabitqQuantizationOptions {}
 impl RabitqQuantizationOptions {}
 
 impl Default for RabitqQuantizationOptions {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct Rabitq4QuantizationOptions {}
+
+impl Rabitq4QuantizationOptions {}
+
+impl Default for Rabitq4QuantizationOptions {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct Rabitq8QuantizationOptions {}
+
+impl Rabitq8QuantizationOptions {}
+
+impl Default for Rabitq8QuantizationOptions {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct Scalar4QuantizationOptions {}
+
+impl Scalar4QuantizationOptions {}
+
+impl Default for Scalar4QuantizationOptions {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct Scalar8QuantizationOptions {}
+
+impl Scalar8QuantizationOptions {}
+
+impl Default for Scalar8QuantizationOptions {
     fn default() -> Self {
         Self {}
     }

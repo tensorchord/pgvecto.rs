@@ -10,8 +10,12 @@ pub mod product;
 pub mod quantize;
 pub mod quantizer;
 pub mod rabitq;
+pub mod rabitq4;
+pub mod rabitq8;
 pub mod reranker;
 pub mod scalar;
+pub mod scalar4;
+pub mod scalar8;
 pub mod trivial;
 pub mod utils;
 

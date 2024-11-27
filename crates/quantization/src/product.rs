@@ -501,7 +501,10 @@ impl<S: ScalarLike> OperatorProductQuantization for VectDot<S> {
         centroids: &Vec2<S>,
         vector: Borrowed<'_, Self>,
     ) -> (u32, f32, f32, Vec<u8>) {
-        let (k, b, t) = quantize::<255>(&Self::preprocess(dims, ratio, bits, centroids, vector));
+        let (k, b, t) = quantize(
+            &Self::preprocess(dims, ratio, bits, centroids, vector),
+            255.0,
+        );
         (dims.div_ceil(ratio), k, b, t)
     }
     fn fscan_process(flut: &(u32, f32, f32, Vec<u8>), codes: &[u8]) -> [Distance; 32] {
@@ -701,7 +704,10 @@ impl<S: ScalarLike> OperatorProductQuantization for VectL2<S> {
         centroids: &Vec2<S>,
         vector: Borrowed<'_, Self>,
     ) -> (u32, f32, f32, Vec<u8>) {
-        let (k, b, t) = quantize::<255>(&Self::preprocess(dims, ratio, bits, centroids, vector));
+        let (k, b, t) = quantize(
+            &Self::preprocess(dims, ratio, bits, centroids, vector),
+            255.0,
+        );
         (dims.div_ceil(ratio), k, b, t)
     }
     fn fscan_process(flut: &(u32, f32, f32, Vec<u8>), codes: &[u8]) -> [Distance; 32] {

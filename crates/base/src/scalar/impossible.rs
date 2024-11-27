@@ -138,6 +138,10 @@ impl ScalarLike for Impossible {
         unimplemented!()
     }
 
+    fn vector_abs_inplace(_this: &mut [Self]) {
+        unimplemented!()
+    }
+
     fn kmeans_helper(_this: &mut [Self], _x: f32, _y: f32) {
         unimplemented!()
     }
