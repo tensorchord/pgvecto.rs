@@ -1,4 +1,4 @@
-use crate::scalar::{f32, ScalarLike};
+use crate::simd::{f32, ScalarLike};
 use half::f16;
 
 impl ScalarLike for f16 {
@@ -395,7 +395,7 @@ mod reduce_sum_of_xy {
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v3")]
     pub unsafe fn reduce_sum_of_xy_v3(lhs: &[f16], rhs: &[f16]) -> f32 {
-        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        use crate::simd::emulate::emulate_mm256_reduce_add_ps;
         assert!(lhs.len() == rhs.len());
         unsafe {
             use std::arch::x86_64::*;
@@ -598,7 +598,7 @@ mod reduce_sum_of_d2 {
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v3")]
     pub unsafe fn reduce_sum_of_d2_v3(lhs: &[f16], rhs: &[f16]) -> f32 {
-        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        use crate::simd::emulate::emulate_mm256_reduce_add_ps;
         assert!(lhs.len() == rhs.len());
         unsafe {
             use std::arch::x86_64::*;

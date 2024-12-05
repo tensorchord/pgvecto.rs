@@ -1,13 +1,9 @@
-#![feature(avx512_target_feature)]
-#![cfg_attr(target_arch = "x86_64", feature(stdarch_x86_avx512))]
 #![allow(clippy::identity_op)]
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
-pub mod fast_scan;
 pub mod product;
-pub mod quantize;
 pub mod quantizer;
 pub mod rabitq;
 pub mod rabitq4;

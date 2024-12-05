@@ -1,5 +1,5 @@
 use crate::vec2::Vec2;
-use base::scalar::ScalarLike;
+use base::simd::ScalarLike;
 
 pub fn sample<S: ScalarLike, R: AsRef<[S]>>(
     n: u32,

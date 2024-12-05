@@ -27,7 +27,7 @@ unsafe extern "C" fn _PG_init() {
         bad_init();
     }
     unsafe {
-        detect::init();
+        base::simd::enable();
         gucs::init();
         index::init();
         ipc::init();

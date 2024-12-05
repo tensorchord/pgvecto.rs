@@ -1,6 +1,3 @@
-use crate::fast_scan::b4::fast_scan_b4;
-use crate::fast_scan::b4::pack;
-use crate::quantize::quantize;
 use crate::quantizer::Quantizer;
 use crate::reranker::flat::WindowFlatReranker;
 use crate::reranker::graph_2::Graph2Reranker;
@@ -12,11 +9,14 @@ use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
-use base::scalar::impossible::Impossible;
-use base::scalar::ScalarLike;
 use base::search::RerankerPop;
 use base::search::RerankerPush;
 use base::search::Vectors;
+use base::simd::fast_scan::b4::fast_scan_b4;
+use base::simd::fast_scan::b4::pack;
+use base::simd::impossible::Impossible;
+use base::simd::quantize;
+use base::simd::ScalarLike;
 use base::vector::*;
 use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
@@ -415,7 +415,7 @@ impl<S: ScalarLike> OperatorScalarQuantization for VectDot<S> {
         max: &[f32],
         vector: Borrowed<'_, Self>,
     ) -> (u32, f32, f32, Vec<u8>) {
-        let (k, b, t) = quantize(&Self::preprocess(dims, bits, min, max, vector), 255.0);
+        let (k, b, t) = quantize::quantize(&Self::preprocess(dims, bits, min, max, vector), 255.0);
         (dims, k, b, t)
     }
     fn fscan_process(flut: &(u32, f32, f32, Vec<u8>), codes: &[u8]) -> [Distance; 32] {
@@ -514,7 +514,7 @@ impl<S: ScalarLike> OperatorScalarQuantization for VectL2<S> {
         max: &[f32],
         vector: Borrowed<'_, Self>,
     ) -> (u32, f32, f32, Vec<u8>) {
-        let (k, b, t) = quantize(&Self::preprocess(dims, bits, min, max, vector), 255.0);
+        let (k, b, t) = quantize::quantize(&Self::preprocess(dims, bits, min, max, vector), 255.0);
         (dims, k, b, t)
     }
     fn fscan_process(flut: &(u32, f32, f32, Vec<u8>), codes: &[u8]) -> [Distance; 32] {

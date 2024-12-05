@@ -4,7 +4,7 @@ pub mod kmeans1d;
 pub mod lloyd;
 pub mod quick_centers;
 
-use base::scalar::*;
+use base::simd::*;
 use common::vec2::Vec2;
 use kmeans1d::kmeans1d;
 use lloyd::LloydKMeans;

@@ -1,8 +1,8 @@
 // This module is a workaround for orphan rules
 
 use crate::distance::Distance;
-use crate::scalar::impossible::Impossible;
 use crate::search::Payload;
+use crate::simd::impossible::Impossible;
 
 /// # Safety
 ///

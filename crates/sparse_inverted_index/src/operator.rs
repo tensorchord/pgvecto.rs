@@ -1,5 +1,5 @@
 use base::operator::*;
-use base::scalar::ScalarLike;
+use base::simd::ScalarLike;
 use std::iter::{zip, Empty};
 use storage::OperatorStorage;
 

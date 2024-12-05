@@ -1,6 +1,6 @@
 use crate::distance::*;
 use crate::operator::*;
-use crate::scalar::ScalarLike;
+use crate::simd::ScalarLike;
 use crate::vector::*;
 use std::marker::PhantomData;
 

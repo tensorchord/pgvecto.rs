@@ -5,9 +5,10 @@ use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
-use base::scalar::impossible::Impossible;
-use base::scalar::ScalarLike;
 use base::search::*;
+use base::simd::impossible::Impossible;
+use base::simd::quantize;
+use base::simd::ScalarLike;
 use base::vector::VectBorrowed;
 use base::vector::VectorBorrowed;
 use serde::{Deserialize, Serialize};
@@ -186,7 +187,7 @@ impl<S: ScalarLike> OperatorScalar4Quantization for VectL2<S> {
         (sum_of_x2_u, sum_of_code_u, k_u, b_u, t): (f32, f32, f32, f32, &[u8]),
     ) -> Distance {
         let &(sum_of_x2_v, sum_of_code_v, k_v, b_v, ref s) = lut;
-        let value = asymmetric_binary_dot_product(s, t);
+        let value = base::simd::packed_u4::reduce_sum_of_xy(s, t);
         let ip = k_u * k_v * value as f32
             + k_u * b_v * sum_of_code_u
             + k_v * b_u * sum_of_code_v
@@ -216,7 +217,7 @@ impl<S: ScalarLike> OperatorScalar4Quantization for VectDot<S> {
         (_, sum_of_code_u, k_u, b_u, t): (f32, f32, f32, f32, &[u8]),
     ) -> Distance {
         let &(_, sum_of_code_v, k_v, b_v, ref s) = lut;
-        let value = asymmetric_binary_dot_product(s, t);
+        let value = base::simd::packed_u4::reduce_sum_of_xy(s, t);
         let ip = k_u * k_v * value as f32
             + k_u * b_v * sum_of_code_u
             + k_v * b_u * sum_of_code_v
@@ -257,7 +258,7 @@ pub fn make_code<S: ScalarLike>(vector: VectBorrowed<'_, S>) -> (f32, f32, f32, 
     let dims = vector.dims();
     let vector = vector.slice();
     let sum_of_x2 = S::reduce_sum_of_x2(vector);
-    let (k, b, code) = crate::quantize::quantize(
+    let (k, b, code) = quantize::quantize(
         S::vector_to_f32_borrowed(vector).as_ref(),
         ((1 << B) - 1) as _,
     );
@@ -278,19 +279,6 @@ fn parse_code(code: &[u8], dims: u32) -> (f32, f32, f32, f32, &[u8]) {
     let c = f32::from_ne_bytes([code[8], code[9], code[10], code[11]]);
     let d = f32::from_ne_bytes([code[12], code[13], code[14], code[15]]);
     (a, b, c, d, &code[16..][..(dims as usize).div_ceil(8 / B)])
-}
-
-#[detect::multiversion(v3, v2, fallback)]
-fn asymmetric_binary_dot_product(s: &[u8], t: &[u8]) -> u32 {
-    assert_eq!(s.len(), t.len());
-    let n = s.len();
-    let mut result = 0;
-    for i in 0..n {
-        let (s, t) = (s[i], t[i]);
-        result += ((s & 15) as u32) * ((t & 15) as u32);
-        result += ((s >> 4) as u32) * ((t >> 4) as u32);
-    }
-    result
 }
 
 fn pack(x: Vec<u8>) -> Vec<u8> {

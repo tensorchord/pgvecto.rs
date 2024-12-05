@@ -1,7 +1,7 @@
 use base::operator::*;
-use base::scalar::impossible::Impossible;
-use base::scalar::ScalarLike;
 use base::search::Vectors;
+use base::simd::impossible::Impossible;
+use base::simd::ScalarLike;
 use base::vector::*;
 use common::vec2::Vec2;
 use quantization::quantizer::Quantizer;

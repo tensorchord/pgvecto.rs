@@ -1,5 +1,3 @@
-use crate::fast_scan::b4::fast_scan_b4;
-use crate::fast_scan::b4::pack;
 use crate::quantizer::Quantizer;
 use crate::reranker::error::ErrorFlatReranker;
 use crate::reranker::graph_2::Graph2Reranker;
@@ -8,9 +6,11 @@ use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
-use base::scalar::impossible::Impossible;
-use base::scalar::ScalarLike;
 use base::search::*;
+use base::simd::fast_scan::b4::fast_scan_b4;
+use base::simd::fast_scan::b4::pack;
+use base::simd::impossible::Impossible;
+use base::simd::ScalarLike;
 use base::vector::VectBorrowed;
 use base::vector::VectOwned;
 use base::vector::VectorBorrowed;
@@ -307,14 +307,14 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectL2<S> {
     type Lut = (f32, f32, f32, f32, (Vec<u64>, Vec<u64>, Vec<u64>, Vec<u64>));
 
     fn preprocess(vector: Borrowed<'_, Self>) -> Self::Lut {
-        use crate::quantize;
+        use base::simd::quantize;
         let vector = vector.slice();
         let dis_v_2 = S::reduce_sum_of_x2(vector);
         let (k, b, qvector) = quantize::quantize(S::vector_to_f32_borrowed(vector).as_ref(), 15.0);
         let qvector_sum = if vector.len() <= 4369 {
-            quantize::reduce_sum_of_x_as_u16(&qvector) as f32
+            base::simd::u8::reduce_sum_of_x_as_u16(&qvector) as f32
         } else {
-            quantize::reduce_sum_of_x_as_u32(&qvector) as f32
+            base::simd::u8::reduce_sum_of_x_as_u32(&qvector) as f32
         };
         let lut = binarize(&qvector);
         (dis_v_2, b, k, qvector_sum, lut)
@@ -351,14 +351,14 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectL2<S> {
     type FLut = (f32, f32, f32, f32, Vec<u8>);
 
     fn fscan_preprocess(vector: Borrowed<'_, Self>) -> Self::FLut {
-        use crate::quantize;
+        use base::simd::quantize;
         let vector = vector.slice();
         let dis_v_2 = S::reduce_sum_of_x2(vector);
         let (k, b, qvector) = quantize::quantize(S::vector_to_f32_borrowed(vector).as_ref(), 15.0);
         let qvector_sum = if vector.len() <= 4369 {
-            quantize::reduce_sum_of_x_as_u16(&qvector) as f32
+            base::simd::u8::reduce_sum_of_x_as_u16(&qvector) as f32
         } else {
-            quantize::reduce_sum_of_x_as_u32(&qvector) as f32
+            base::simd::u8::reduce_sum_of_x_as_u32(&qvector) as f32
         };
         let lut = generate_bytes(qvector);
         (dis_v_2, b, k, qvector_sum, lut)
@@ -428,14 +428,14 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectDot<S> {
     type Lut = (f32, f32, f32, f32, (Vec<u64>, Vec<u64>, Vec<u64>, Vec<u64>));
 
     fn preprocess(vector: Borrowed<'_, Self>) -> Self::Lut {
-        use crate::quantize;
+        use base::simd::quantize;
         let vector = vector.slice();
         let dis_v_2 = S::reduce_sum_of_x2(vector);
         let (k, b, qvector) = quantize::quantize(S::vector_to_f32_borrowed(vector).as_ref(), 15.0);
         let qvector_sum = if vector.len() <= 4369 {
-            quantize::reduce_sum_of_x_as_u16(&qvector) as f32
+            base::simd::u8::reduce_sum_of_x_as_u16(&qvector) as f32
         } else {
-            quantize::reduce_sum_of_x_as_u32(&qvector) as f32
+            base::simd::u8::reduce_sum_of_x_as_u32(&qvector) as f32
         };
         let lut = binarize(&qvector);
         (dis_v_2, b, k, qvector_sum, lut)
@@ -468,14 +468,14 @@ impl<S: ScalarLike> OperatorRabitqQuantization for VectDot<S> {
     type FLut = (f32, f32, f32, f32, Vec<u8>);
 
     fn fscan_preprocess(vector: Borrowed<'_, Self>) -> Self::FLut {
-        use crate::quantize;
+        use base::simd::quantize;
         let vector = vector.slice();
         let dis_v_2 = S::reduce_sum_of_x2(vector);
         let (k, b, qvector) = quantize::quantize(S::vector_to_f32_borrowed(vector).as_ref(), 15.0);
         let qvector_sum = if vector.len() <= 4369 {
-            quantize::reduce_sum_of_x_as_u16(&qvector) as f32
+            base::simd::u8::reduce_sum_of_x_as_u16(&qvector) as f32
         } else {
-            quantize::reduce_sum_of_x_as_u32(&qvector) as f32
+            base::simd::u8::reduce_sum_of_x_as_u32(&qvector) as f32
         };
         let lut = generate_bytes(qvector);
         (dis_v_2, b, k, qvector_sum, lut)
@@ -681,25 +681,10 @@ fn binarize(vector: &[u8]) -> (Vec<u64>, Vec<u64>, Vec<u64>, Vec<u64>) {
     (t0, t1, t2, t3)
 }
 
-#[detect::multiversion(v2, fallback)]
 fn asymmetric_binary_dot_product(x: &[u64], y: &(Vec<u64>, Vec<u64>, Vec<u64>, Vec<u64>)) -> u32 {
-    assert_eq!(x.len(), y.0.len());
-    assert_eq!(x.len(), y.1.len());
-    assert_eq!(x.len(), y.2.len());
-    assert_eq!(x.len(), y.3.len());
-    let n = x.len();
-    let (mut t0, mut t1, mut t2, mut t3) = (0, 0, 0, 0);
-    for i in 0..n {
-        t0 += (x[i] & y.0[i]).count_ones();
-    }
-    for i in 0..n {
-        t1 += (x[i] & y.1[i]).count_ones();
-    }
-    for i in 0..n {
-        t2 += (x[i] & y.2[i]).count_ones();
-    }
-    for i in 0..n {
-        t3 += (x[i] & y.3[i]).count_ones();
-    }
+    let t0 = base::simd::bit::sum_of_and(x, &y.0);
+    let t1 = base::simd::bit::sum_of_and(x, &y.1);
+    let t2 = base::simd::bit::sum_of_and(x, &y.2);
+    let t3 = base::simd::bit::sum_of_and(x, &y.3);
     (t0 << 0) + (t1 << 1) + (t2 << 2) + (t3 << 3)
 }

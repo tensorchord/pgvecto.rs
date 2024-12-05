@@ -1,4 +1,4 @@
-use crate::scalar::ScalarLike;
+use crate::simd::ScalarLike;
 
 impl ScalarLike for f32 {
     #[inline(always)]
@@ -277,7 +277,7 @@ mod reduce_sum_of_x {
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v3")]
     unsafe fn reduce_sum_of_x_v3(this: &[f32]) -> f32 {
-        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        use crate::simd::emulate::emulate_mm256_reduce_add_ps;
         unsafe {
             use std::arch::x86_64::*;
             let mut n = this.len();
@@ -403,7 +403,7 @@ mod reduce_sum_of_abs_x {
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v3")]
     unsafe fn reduce_sum_of_abs_x_v3(this: &[f32]) -> f32 {
-        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        use crate::simd::emulate::emulate_mm256_reduce_add_ps;
         unsafe {
             use std::arch::x86_64::*;
             let abs = _mm256_castsi256_ps(_mm256_srli_epi32(_mm256_set1_epi32(-1), 1));
@@ -531,7 +531,7 @@ mod reduce_sum_of_x2 {
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v3")]
     unsafe fn reduce_sum_of_x2_v3(this: &[f32]) -> f32 {
-        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        use crate::simd::emulate::emulate_mm256_reduce_add_ps;
         unsafe {
             use std::arch::x86_64::*;
             let mut n = this.len();
@@ -660,8 +660,8 @@ mod reduce_min_max_of_x {
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v3")]
     unsafe fn reduce_min_max_of_x_v3(this: &[f32]) -> (f32, f32) {
-        use crate::scalar::emulate::emulate_mm256_reduce_max_ps;
-        use crate::scalar::emulate::emulate_mm256_reduce_min_ps;
+        use crate::simd::emulate::emulate_mm256_reduce_max_ps;
+        use crate::simd::emulate::emulate_mm256_reduce_min_ps;
         unsafe {
             use std::arch::x86_64::*;
             let mut n = this.len();
@@ -791,7 +791,7 @@ mod reduce_sum_of_xy {
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v3")]
     unsafe fn reduce_sum_of_xy_v3(lhs: &[f32], rhs: &[f32]) -> f32 {
-        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        use crate::simd::emulate::emulate_mm256_reduce_add_ps;
         assert!(lhs.len() == rhs.len());
         unsafe {
             use std::arch::x86_64::*;
@@ -939,7 +939,7 @@ mod reduce_sum_of_d2 {
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v3")]
     unsafe fn reduce_sum_of_d2_v3(lhs: &[f32], rhs: &[f32]) -> f32 {
-        use crate::scalar::emulate::emulate_mm256_reduce_add_ps;
+        use crate::simd::emulate::emulate_mm256_reduce_add_ps;
         assert!(lhs.len() == rhs.len());
         unsafe {
             use std::arch::x86_64::*;
@@ -1030,7 +1030,7 @@ mod reduce_sum_of_sparse_xy {
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v4")]
     unsafe fn reduce_sum_of_sparse_xy_v4(li: &[u32], lv: &[f32], ri: &[u32], rv: &[f32]) -> f32 {
-        use crate::scalar::emulate::emulate_mm512_2intersect_epi32;
+        use crate::simd::emulate::emulate_mm512_2intersect_epi32;
         assert_eq!(li.len(), lv.len());
         assert_eq!(ri.len(), rv.len());
         let (mut lp, ln) = (0, li.len());
@@ -1135,7 +1135,7 @@ mod reduce_sum_of_sparse_d2 {
     #[cfg(target_arch = "x86_64")]
     #[detect::target_cpu(enable = "v4")]
     unsafe fn reduce_sum_of_sparse_d2_v4(li: &[u32], lv: &[f32], ri: &[u32], rv: &[f32]) -> f32 {
-        use crate::scalar::emulate::emulate_mm512_2intersect_epi32;
+        use crate::simd::emulate::emulate_mm512_2intersect_epi32;
         assert_eq!(li.len(), lv.len());
         assert_eq!(ri.len(), rv.len());
         let (mut lp, ln) = (0, li.len());

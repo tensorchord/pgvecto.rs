@@ -17,7 +17,7 @@ use with_labels::WithLabels;
 
 #[pymodule]
 fn vectors(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    detect::init();
+    base::simd::enable();
     m.add_class::<Indexing>()?;
     Ok(())
 }

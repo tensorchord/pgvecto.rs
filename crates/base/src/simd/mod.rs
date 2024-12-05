@@ -2,7 +2,11 @@ pub mod bit;
 pub mod emulate;
 mod f16;
 mod f32;
+pub mod fast_scan;
 pub mod impossible;
+pub mod packed_u4;
+pub mod quantize;
+pub mod u8;
 
 pub trait ScalarLike:
     Copy
@@ -54,4 +58,8 @@ pub trait ScalarLike:
     fn vector_abs_inplace(this: &mut [Self]);
 
     fn kmeans_helper(this: &mut [Self], x: f32, y: f32);
+}
+
+pub fn enable() {
+    detect::init();
 }

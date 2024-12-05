@@ -5,9 +5,9 @@ use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
-use base::scalar::impossible::Impossible;
-use base::scalar::ScalarLike;
 use base::search::*;
+use base::simd::impossible::Impossible;
+use base::simd::ScalarLike;
 use base::vector::VectBorrowed;
 use base::vector::VectOwned;
 use base::vector::VectorBorrowed;
@@ -218,7 +218,7 @@ impl<S: ScalarLike> OperatorRabitq4Quantization for VectL2<S> {
         (sum_of_x2_u, norm_of_lattice_u, sum_of_code_u, _, t): (f32, f32, f32, f32, &[u8]),
     ) -> Distance {
         let &(sum_of_x2_v, norm_of_lattice_v, sum_of_code_v, ref s) = lut;
-        let value = asymmetric_binary_dot_product(s, t);
+        let value = base::simd::packed_u4::reduce_sum_of_xy(s, t);
         const C: f32 = ((1 << B) - 1) as f32 * 0.5;
         let ip = value as f32 - C * (sum_of_code_u + sum_of_code_v) + dims as f32 * C * C;
         let rough = sum_of_x2_u + sum_of_x2_v
@@ -258,7 +258,7 @@ impl<S: ScalarLike> OperatorRabitq4Quantization for VectDot<S> {
         (sum_of_x2_u, norm_of_lattice_u, sum_of_code_u, _, t): (f32, f32, f32, f32, &[u8]),
     ) -> Distance {
         let &(sum_of_x2_v, norm_of_lattice_v, sum_of_code_v, ref s) = lut;
-        let value = asymmetric_binary_dot_product(s, t);
+        let value = base::simd::packed_u4::reduce_sum_of_xy(s, t);
         const C: f32 = ((1 << B) - 1) as f32 * 0.5;
         let ip = value as f32 - C * (sum_of_code_u + sum_of_code_v) + dims as f32 * C * C;
         let rough = -ip
@@ -351,19 +351,6 @@ fn parse_code(code: &[u8], dims: u32) -> (f32, f32, f32, f32, &[u8]) {
     let c = f32::from_ne_bytes([code[8], code[9], code[10], code[11]]);
     let d = f32::from_ne_bytes([code[12], code[13], code[14], code[15]]);
     (a, b, c, d, &code[16..][..(dims as usize).div_ceil(8 / B)])
-}
-
-#[detect::multiversion(v3, v2, fallback)]
-fn asymmetric_binary_dot_product(s: &[u8], t: &[u8]) -> u32 {
-    assert_eq!(s.len(), t.len());
-    let n = s.len();
-    let mut result = 0;
-    for i in 0..n {
-        let (s, t) = (s[i], t[i]);
-        result += ((s & 15) as u32) * ((t & 15) as u32);
-        result += ((s >> 4) as u32) * ((t >> 4) as u32);
-    }
-    result
 }
 
 fn pack(x: Vec<u8>) -> Vec<u8> {

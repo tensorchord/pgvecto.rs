@@ -1,6 +1,6 @@
 use crate::datatype::memory_bvector::*;
 use crate::datatype::memory_vecf32::*;
-use base::scalar::*;
+use base::simd::*;
 use base::vector::*;
 
 #[pgrx::pg_extern(immutable, strict, parallel_safe)]

@@ -1,7 +1,7 @@
 use std::ops::{Bound, RangeBounds};
 
 use crate::distance::Distance;
-use crate::scalar::bit;
+use crate::simd::bit;
 use crate::vector::{VectorBorrowed, VectorOwned};
 use serde::{Deserialize, Serialize};
 

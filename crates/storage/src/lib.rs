@@ -3,8 +3,8 @@ mod svec;
 mod vec;
 
 use base::operator::*;
-use base::scalar::ScalarLike;
 use base::search::*;
+use base::simd::ScalarLike;
 use base::vector::VectorOwned;
 use std::path::Path;
 

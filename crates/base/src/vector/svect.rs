@@ -1,5 +1,5 @@
 use crate::distance::Distance;
-use crate::scalar::ScalarLike;
+use crate::simd::ScalarLike;
 use crate::vector::{VectorBorrowed, VectorOwned};
 use serde::{Deserialize, Serialize};
 use std::ops::{Bound, RangeBounds};

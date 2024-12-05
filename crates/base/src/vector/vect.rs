@@ -1,5 +1,5 @@
 use super::{VectorBorrowed, VectorOwned};
-use crate::{distance::Distance, scalar::ScalarLike};
+use crate::{distance::Distance, simd::ScalarLike};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::ops::RangeBounds;

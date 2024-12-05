@@ -1,4 +1,4 @@
-use base::scalar::*;
+use base::simd::*;
 use common::vec2::Vec2;
 use half::f16;
 use rand::rngs::StdRng;

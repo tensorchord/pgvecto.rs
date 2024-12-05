@@ -1,4 +1,4 @@
-use crate::scalar::ScalarLike;
+use crate::simd::ScalarLike;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]

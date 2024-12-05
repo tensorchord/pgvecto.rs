@@ -3,7 +3,7 @@ use crate::datatype::memory_svecf32::{SVecf32Input, SVecf32Output};
 use crate::datatype::memory_vecf16::{Vecf16Input, Vecf16Output};
 use crate::datatype::memory_vecf32::{Vecf32Input, Vecf32Output};
 use crate::error::*;
-use base::scalar::*;
+use base::simd::*;
 use base::vector::*;
 use half::f16;
 

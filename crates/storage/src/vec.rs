@@ -1,6 +1,6 @@
 use crate::Storage;
-use base::scalar::ScalarLike;
 use base::search::*;
+use base::simd::ScalarLike;
 use base::vector::*;
 use common::json::Json;
 use common::mmap_array::MmapArray;

@@ -1,6 +1,3 @@
-use crate::fast_scan::b4::fast_scan_b4;
-use crate::fast_scan::b4::pack;
-use crate::quantize::quantize;
 use crate::quantizer::Quantizer;
 use crate::reranker::flat::WindowFlatReranker;
 use crate::reranker::graph_2::Graph2Reranker;
@@ -12,9 +9,12 @@ use base::always_equal::AlwaysEqual;
 use base::distance::Distance;
 use base::index::*;
 use base::operator::*;
-use base::scalar::impossible::Impossible;
-use base::scalar::ScalarLike;
 use base::search::*;
+use base::simd::fast_scan::b4::fast_scan_b4;
+use base::simd::fast_scan::b4::pack;
+use base::simd::impossible::Impossible;
+use base::simd::quantize;
+use base::simd::ScalarLike;
 use base::vector::VectorBorrowed;
 use base::vector::VectorOwned;
 use common::sample::sample;
@@ -501,7 +501,7 @@ impl<S: ScalarLike> OperatorProductQuantization for VectDot<S> {
         centroids: &Vec2<S>,
         vector: Borrowed<'_, Self>,
     ) -> (u32, f32, f32, Vec<u8>) {
-        let (k, b, t) = quantize(
+        let (k, b, t) = quantize::quantize(
             &Self::preprocess(dims, ratio, bits, centroids, vector),
             255.0,
         );
@@ -704,7 +704,7 @@ impl<S: ScalarLike> OperatorProductQuantization for VectL2<S> {
         centroids: &Vec2<S>,
         vector: Borrowed<'_, Self>,
     ) -> (u32, f32, f32, Vec<u8>) {
-        let (k, b, t) = quantize(
+        let (k, b, t) = quantize::quantize(
             &Self::preprocess(dims, ratio, bits, centroids, vector),
             255.0,
         );

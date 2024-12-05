@@ -1,4 +1,4 @@
-use base::scalar::ScalarLike;
+use base::simd::ScalarLike;
 
 #[derive(Debug, Clone)]
 pub struct InfiniteByteChunks<I, const N: usize> {

@@ -646,7 +646,6 @@ version = "0.0.0"
 dependencies = [
  "argh",
  "base",
- "detect",
  "env_logger",
  "index",
  "log",
@@ -1982,15 +1981,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
 
 [[package]]
-name = "ordered-float"
-version = "4.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c65ee1f9701bf938026630b455d5315f490640234259037edb259798b3bcf85e"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
 name = "owo-colors"
 version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2193,7 +2183,6 @@ dependencies = [
  "bincode",
  "byteorder",
  "chrono",
- "detect",
  "embedding",
  "half 2.4.1",
  "interprocess_atomic_wait",
@@ -2438,7 +2427,6 @@ name = "pyvectors"
 version = "0.0.0"
 dependencies = [
  "base",
- "detect",
  "half 2.4.1",
  "indexing",
  "ndarray",
@@ -2457,11 +2445,9 @@ version = "0.0.0"
 dependencies = [
  "base",
  "common",
- "detect",
  "k_means",
  "log",
  "nalgebra",
- "ordered-float",
  "rand",
  "rand_chacha",
  "rand_distr",

@@ -1,4 +1,4 @@
-use base::scalar::ScalarLike;
+use base::simd::ScalarLike;
 use common::vec2::Vec2;
 
 pub fn kmeans1d(c: usize, a: &[f32]) -> Vec<f32> {
