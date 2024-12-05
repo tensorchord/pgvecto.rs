@@ -126,7 +126,7 @@ impl<'a> BVectBorrowed<'a> {
     }
 }
 
-impl<'a> VectorBorrowed for BVectBorrowed<'a> {
+impl VectorBorrowed for BVectBorrowed<'_> {
     type Owned = BVectOwned;
 
     #[inline(always)]
@@ -241,7 +241,7 @@ impl<'a> VectorBorrowed for BVectBorrowed<'a> {
     }
 }
 
-impl<'a> PartialEq for BVectBorrowed<'a> {
+impl PartialEq for BVectBorrowed<'_> {
     fn eq(&self, other: &Self) -> bool {
         if self.dims != other.dims {
             return false;
@@ -257,7 +257,7 @@ impl<'a> PartialEq for BVectBorrowed<'a> {
     }
 }
 
-impl<'a> PartialOrd for BVectBorrowed<'a> {
+impl PartialOrd for BVectBorrowed<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         use std::cmp::Ordering;
         if self.dims != other.dims {

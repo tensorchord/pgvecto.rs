@@ -34,7 +34,7 @@ pub fn scan_build(
     for orderby_vector in orderbys {
         if pair.is_none() {
             pair = orderby_vector;
-        } else if orderby_vector.is_some() && pair != orderby_vector {
+        } else if orderby_vector.is_some() {
             pgrx::error!("vector search with multiple vectors is not supported");
         }
     }
@@ -42,10 +42,6 @@ pub fn scan_build(
         if pair.is_none() {
             pair = sphere_vector;
             threshold = sphere_threshold;
-        } else if pair == sphere_vector {
-            if threshold.is_none() || sphere_threshold < threshold {
-                threshold = sphere_threshold;
-            }
         } else {
             recheck = true;
             break;

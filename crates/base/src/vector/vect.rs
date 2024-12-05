@@ -92,7 +92,7 @@ impl<'a, S: ScalarLike> VectBorrowed<'a, S> {
     }
 }
 
-impl<'a, S: ScalarLike> VectorBorrowed for VectBorrowed<'a, S> {
+impl<S: ScalarLike> VectorBorrowed for VectBorrowed<'_, S> {
     type Owned = VectOwned<S>;
 
     #[inline(always)]
@@ -182,7 +182,7 @@ impl<'a, S: ScalarLike> VectorBorrowed for VectBorrowed<'a, S> {
     }
 }
 
-impl<'a, S: ScalarLike> PartialEq for VectBorrowed<'a, S> {
+impl<S: ScalarLike> PartialEq for VectBorrowed<'_, S> {
     fn eq(&self, other: &Self) -> bool {
         if self.0.len() != other.0.len() {
             return false;
@@ -197,7 +197,7 @@ impl<'a, S: ScalarLike> PartialEq for VectBorrowed<'a, S> {
     }
 }
 
-impl<'a, S: ScalarLike> PartialOrd for VectBorrowed<'a, S> {
+impl<S: ScalarLike> PartialOrd for VectBorrowed<'_, S> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.0.len() != other.0.len() {
             return None;

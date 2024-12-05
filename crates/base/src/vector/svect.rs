@@ -153,7 +153,7 @@ impl<'a, S: ScalarLike> SVectBorrowed<'a, S> {
     }
 }
 
-impl<'a, S: ScalarLike> VectorBorrowed for SVectBorrowed<'a, S> {
+impl<S: ScalarLike> VectorBorrowed for SVectBorrowed<'_, S> {
     type Owned = SVectOwned<S>;
 
     #[inline(always)]
@@ -379,7 +379,7 @@ impl<'a, S: ScalarLike> VectorBorrowed for SVectBorrowed<'a, S> {
     }
 }
 
-impl<'a, S: ScalarLike> PartialEq for SVectBorrowed<'a, S> {
+impl<S: ScalarLike> PartialEq for SVectBorrowed<'_, S> {
     fn eq(&self, other: &Self) -> bool {
         if self.dims != other.dims {
             return false;
@@ -401,7 +401,7 @@ impl<'a, S: ScalarLike> PartialEq for SVectBorrowed<'a, S> {
     }
 }
 
-impl<'a, S: ScalarLike> PartialOrd for SVectBorrowed<'a, S> {
+impl<S: ScalarLike> PartialOrd for SVectBorrowed<'_, S> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         use std::cmp::Ordering;
         if self.dims != other.dims {

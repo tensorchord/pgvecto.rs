@@ -28,7 +28,7 @@ pub trait VectorOwned: Clone + Serialize + for<'a> Deserialize<'a> + 'static {
     fn zero(dims: u32) -> Self;
 }
 
-pub trait VectorBorrowed: Copy + PartialEq + PartialOrd {
+pub trait VectorBorrowed: Copy {
     type Owned: VectorOwned;
 
     fn own(&self) -> Self::Owned;
@@ -83,48 +83,10 @@ impl OwnedVector {
     }
 }
 
-impl PartialEq for OwnedVector {
-    fn eq(&self, other: &Self) -> bool {
-        self.as_borrowed().eq(&other.as_borrowed())
-    }
-}
-
-impl PartialOrd for OwnedVector {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.as_borrowed().partial_cmp(&other.as_borrowed())
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
 pub enum BorrowedVector<'a> {
     Vecf32(VectBorrowed<'a, f32>),
     Vecf16(VectBorrowed<'a, f16>),
     SVecf32(SVectBorrowed<'a, f32>),
     BVector(BVectBorrowed<'a>),
-}
-
-impl PartialEq for BorrowedVector<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        use BorrowedVector::*;
-        match (self, other) {
-            (Vecf32(lhs), Vecf32(rhs)) => lhs == rhs,
-            (Vecf16(lhs), Vecf16(rhs)) => lhs == rhs,
-            (SVecf32(lhs), SVecf32(rhs)) => lhs == rhs,
-            (BVector(lhs), BVector(rhs)) => lhs == rhs,
-            _ => false,
-        }
-    }
-}
-
-impl PartialOrd for BorrowedVector<'_> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        use BorrowedVector::*;
-        match (self, other) {
-            (Vecf32(lhs), Vecf32(rhs)) => lhs.partial_cmp(rhs),
-            (Vecf16(lhs), Vecf16(rhs)) => lhs.partial_cmp(rhs),
-            (SVecf32(lhs), SVecf32(rhs)) => lhs.partial_cmp(rhs),
-            (BVector(lhs), BVector(rhs)) => lhs.partial_cmp(rhs),
-            _ => None,
-        }
-    }
 }

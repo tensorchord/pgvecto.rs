@@ -13,7 +13,7 @@ impl<'a, T: Vectors<VectOwned<f32>>> WithLabels<'a, T> {
     }
 }
 
-impl<'a, V: VectorOwned, T: Vectors<V>> Vectors<V> for WithLabels<'a, T> {
+impl<V: VectorOwned, T: Vectors<V>> Vectors<V> for WithLabels<'_, T> {
     fn dims(&self) -> u32 {
         self.dataset.dims()
     }

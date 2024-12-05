@@ -17,7 +17,7 @@ impl<'a> Dataset<'a> {
     }
 }
 
-impl<'a> Vectors<VectOwned<f32>> for Dataset<'a> {
+impl Vectors<VectOwned<f32>> for Dataset<'_> {
     fn dims(&self) -> u32 {
         self.underlying.dim().1 as _
     }

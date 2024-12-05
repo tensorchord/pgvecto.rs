@@ -42,7 +42,7 @@ pub struct VisitedGuard<'a> {
     pool: &'a VisitedPool,
 }
 
-impl<'a> VisitedGuard<'a> {
+impl VisitedGuard<'_> {
     pub fn fetch_checker(&mut self) -> VisitedChecker<'_> {
         self.buffer.version = self.buffer.version.wrapping_add(1);
         if self.buffer.version == 0 {
@@ -54,7 +54,7 @@ impl<'a> VisitedGuard<'a> {
     }
 }
 
-impl<'a> Drop for VisitedGuard<'a> {
+impl Drop for VisitedGuard<'_> {
     fn drop(&mut self) {
         let src = VisitedBuffer {
             version: 0,
@@ -69,7 +69,7 @@ pub struct VisitedChecker<'a> {
     buffer: &'a mut VisitedBuffer,
 }
 
-impl<'a> VisitedChecker<'a> {
+impl VisitedChecker<'_> {
     pub fn check(&mut self, i: u32) -> bool {
         self.buffer.data[i as usize] != self.buffer.version
     }
@@ -83,7 +83,7 @@ pub struct VisitedGuardChecker<'a> {
     pool: &'a VisitedPool,
 }
 
-impl<'a> VisitedGuardChecker<'a> {
+impl VisitedGuardChecker<'_> {
     pub fn check(&mut self, i: u32) -> bool {
         self.buffer.data[i as usize] != self.buffer.version
     }
@@ -92,7 +92,7 @@ impl<'a> VisitedGuardChecker<'a> {
     }
 }
 
-impl<'a> Drop for VisitedGuardChecker<'a> {
+impl Drop for VisitedGuardChecker<'_> {
     fn drop(&mut self) {
         let src = VisitedBuffer {
             version: 0,
