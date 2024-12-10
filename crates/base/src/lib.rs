@@ -1,3 +1,4 @@
+#![feature(target_feature_11)]
 #![feature(avx512_target_feature)]
 #![cfg_attr(target_arch = "x86_64", feature(stdarch_x86_avx512))]
 #![cfg_attr(target_arch = "x86_64", feature(stdarch_x86_avx512_f16))]

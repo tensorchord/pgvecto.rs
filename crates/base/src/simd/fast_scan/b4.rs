@@ -59,9 +59,10 @@ pub fn pack(width: u32, r: [Vec<u8>; 32]) -> impl Iterator<Item = u8> {
 }
 
 mod fast_scan_b4 {
+    #[inline]
     #[cfg(target_arch = "x86_64")]
-    #[detect::target_cpu(enable = "v4")]
-    unsafe fn fast_scan_b4_v4(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
+    #[crate::simd::target_cpu(enable = "v4")]
+    fn fast_scan_b4_v4(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
         // bounds checking is not enforced by compiler, so check it manually
         assert_eq!(codes.len(), width as usize * 16);
         assert_eq!(lut.len(), width as usize * 16);
@@ -70,8 +71,8 @@ mod fast_scan_b4 {
             use std::arch::x86_64::*;
 
             #[inline]
-            #[detect::target_cpu(enable = "v4")]
-            unsafe fn combine2x2(x0x1: __m256i, y0y1: __m256i) -> __m256i {
+            #[crate::simd::target_cpu(enable = "v4")]
+            fn combine2x2(x0x1: __m256i, y0y1: __m256i) -> __m256i {
                 unsafe {
                     let x1y0 = _mm256_permute2f128_si256(x0x1, y0y1, 0x21);
                     let x0y1 = _mm256_blend_epi32(x0x1, y0y1, 0xf0);
@@ -80,8 +81,8 @@ mod fast_scan_b4 {
             }
 
             #[inline]
-            #[detect::target_cpu(enable = "v4")]
-            unsafe fn combine4x2(x0x1x2x3: __m512i, y0y1y2y3: __m512i) -> __m256i {
+            #[crate::simd::target_cpu(enable = "v4")]
+            fn combine4x2(x0x1x2x3: __m512i, y0y1y2y3: __m512i) -> __m256i {
                 unsafe {
                     let x0x1 = _mm512_castsi512_si256(x0x1x2x3);
                     let x2x3 = _mm512_extracti64x4_epi64(x0x1x2x3, 1);
@@ -170,15 +171,14 @@ mod fast_scan_b4 {
         }
     }
 
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", test, not(miri)))]
     #[test]
     fn fast_scan_b4_v4_test() {
-        detect::init();
-        if !detect::v4::detect() {
+        if !crate::simd::is_cpu_detected!("v4") {
             println!("test {} ... skipped (v4)", module_path!());
             return;
         }
-        for _ in 0..200 {
+        for _ in 0..if cfg!(not(miri)) { 256 } else { 1 } {
             for width in 90..110 {
                 let codes = (0..16 * width).map(|_| rand::random()).collect::<Vec<u8>>();
                 let lut = (0..16 * width).map(|_| rand::random()).collect::<Vec<u8>>();
@@ -192,9 +192,10 @@ mod fast_scan_b4 {
         }
     }
 
+    #[inline]
     #[cfg(target_arch = "x86_64")]
-    #[detect::target_cpu(enable = "v3")]
-    unsafe fn fast_scan_b4_v3(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
+    #[crate::simd::target_cpu(enable = "v3")]
+    fn fast_scan_b4_v3(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
         // bounds checking is not enforced by compiler, so check it manually
         assert_eq!(codes.len(), width as usize * 16);
         assert_eq!(lut.len(), width as usize * 16);
@@ -203,8 +204,8 @@ mod fast_scan_b4 {
             use std::arch::x86_64::*;
 
             #[inline]
-            #[detect::target_cpu(enable = "v3")]
-            unsafe fn combine2x2(x0x1: __m256i, y0y1: __m256i) -> __m256i {
+            #[crate::simd::target_cpu(enable = "v3")]
+            fn combine2x2(x0x1: __m256i, y0y1: __m256i) -> __m256i {
                 unsafe {
                     let x1y0 = _mm256_permute2f128_si256(x0x1, y0y1, 0x21);
                     let x0y1 = _mm256_blend_epi32(x0x1, y0y1, 0xf0);
@@ -272,15 +273,14 @@ mod fast_scan_b4 {
         }
     }
 
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", test, not(miri)))]
     #[test]
     fn fast_scan_b4_v3_test() {
-        detect::init();
-        if !detect::v3::detect() {
+        if !crate::simd::is_cpu_detected!("v3") {
             println!("test {} ... skipped (v3)", module_path!());
             return;
         }
-        for _ in 0..200 {
+        for _ in 0..if cfg!(not(miri)) { 256 } else { 1 } {
             for width in 90..110 {
                 let codes = (0..16 * width).map(|_| rand::random()).collect::<Vec<u8>>();
                 let lut = (0..16 * width).map(|_| rand::random()).collect::<Vec<u8>>();
@@ -295,8 +295,8 @@ mod fast_scan_b4 {
     }
 
     #[cfg(target_arch = "x86_64")]
-    #[detect::target_cpu(enable = "v2")]
-    unsafe fn fast_scan_b4_v2(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
+    #[crate::simd::target_cpu(enable = "v2")]
+    fn fast_scan_b4_v2(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
         // bounds checking is not enforced by compiler, so check it manually
         assert_eq!(codes.len(), width as usize * 16);
         assert_eq!(lut.len(), width as usize * 16);
@@ -343,15 +343,14 @@ mod fast_scan_b4 {
         }
     }
 
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", test, not(miri)))]
     #[test]
     fn fast_scan_b4_v2_test() {
-        detect::init();
-        if !detect::v2::detect() {
+        if !crate::simd::is_cpu_detected!("v2") {
             println!("test {} ... skipped (v2)", module_path!());
             return;
         }
-        for _ in 0..200 {
+        for _ in 0..if cfg!(not(miri)) { 256 } else { 1 } {
             for width in 90..110 {
                 let codes = (0..16 * width).map(|_| rand::random()).collect::<Vec<u8>>();
                 let lut = (0..16 * width).map(|_| rand::random()).collect::<Vec<u8>>();
@@ -365,7 +364,77 @@ mod fast_scan_b4 {
         }
     }
 
-    #[detect::multiversion(v4 = import, v3 = import, v2 = import, neon, fallback = export)]
+    #[cfg(target_arch = "aarch64")]
+    #[crate::simd::target_cpu(enable = "v8.3a")]
+    fn fast_scan_b4_v8_3a(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
+        // bounds checking is not enforced by compiler, so check it manually
+        assert_eq!(codes.len(), width as usize * 16);
+        assert_eq!(lut.len(), width as usize * 16);
+
+        unsafe {
+            use std::arch::aarch64::*;
+
+            let mut accu_0 = vdupq_n_u16(0);
+            let mut accu_1 = vdupq_n_u16(0);
+            let mut accu_2 = vdupq_n_u16(0);
+            let mut accu_3 = vdupq_n_u16(0);
+
+            let mut i = 0_usize;
+            while i < width as usize {
+                let c = vld1q_u8(codes.as_ptr().add(i * 16).cast());
+
+                let mask = vdupq_n_u8(0xf);
+                let clo = vandq_u8(c, mask);
+                let chi = vandq_u8(vshrq_n_u8(c, 4), mask);
+
+                let lut = vld1q_u8(lut.as_ptr().add(i * 16).cast());
+                let res_lo = vreinterpretq_u16_u8(vqtbl1q_u8(lut, clo));
+                accu_0 = vaddq_u16(accu_0, res_lo);
+                accu_1 = vaddq_u16(accu_1, vshrq_n_u16(res_lo, 8));
+                let res_hi = vreinterpretq_u16_u8(vqtbl1q_u8(lut, chi));
+                accu_2 = vaddq_u16(accu_2, res_hi);
+                accu_3 = vaddq_u16(accu_3, vshrq_n_u16(res_hi, 8));
+
+                i += 1;
+            }
+            debug_assert_eq!(i, width as usize);
+
+            let mut result = [0_u16; 32];
+
+            accu_0 = vsubq_u16(accu_0, vshlq_n_u16(accu_1, 8));
+            vst1q_u16(result.as_mut_ptr().add(0).cast(), accu_0);
+            vst1q_u16(result.as_mut_ptr().add(8).cast(), accu_1);
+
+            accu_2 = vsubq_u16(accu_2, vshlq_n_u16(accu_3, 8));
+            vst1q_u16(result.as_mut_ptr().add(16).cast(), accu_2);
+            vst1q_u16(result.as_mut_ptr().add(24).cast(), accu_3);
+
+            result
+        }
+    }
+
+    #[cfg(all(target_arch = "aarch64", test, not(miri)))]
+    #[test]
+    fn fast_scan_b4_v8_3a_test() {
+        if !crate::simd::is_cpu_detected!("v8.3a") {
+            println!("test {} ... skipped (v8.3a)", module_path!());
+            return;
+        }
+        for _ in 0..if cfg!(not(miri)) { 256 } else { 1 } {
+            for width in 90..110 {
+                let codes = (0..16 * width).map(|_| rand::random()).collect::<Vec<u8>>();
+                let lut = (0..16 * width).map(|_| rand::random()).collect::<Vec<u8>>();
+                unsafe {
+                    assert_eq!(
+                        fast_scan_b4_v8_3a(width, &codes, &lut),
+                        fast_scan_b4_fallback(width, &codes, &lut)
+                    );
+                }
+            }
+        }
+    }
+
+    #[crate::simd::multiversion(@"v4", @"v3", @"v2", @"v8.3a")]
     pub fn fast_scan_b4(width: u32, codes: &[u8], lut: &[u8]) -> [u16; 32] {
         let width = width as usize;
 

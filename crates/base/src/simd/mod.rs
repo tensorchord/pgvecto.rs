@@ -60,6 +60,53 @@ pub trait ScalarLike:
     fn kmeans_helper(this: &mut [Self], x: f32, y: f32);
 }
 
-pub fn enable() {
-    detect::init();
+#[allow(clippy::crate_in_macro_def)]
+mod internal {
+    #[cfg(target_arch = "x86_64")]
+    base_macros::define_is_cpu_detected!("x86_64");
+
+    #[cfg(target_arch = "aarch64")]
+    base_macros::define_is_cpu_detected!("aarch64");
+
+    #[cfg(target_arch = "riscv64")]
+    base_macros::define_is_cpu_detected!("riscv64");
+
+    #[cfg(target_arch = "x86_64")]
+    #[allow(unused_imports)]
+    pub use is_x86_64_cpu_detected;
+
+    #[cfg(target_arch = "aarch64")]
+    #[allow(unused_imports)]
+    pub use is_aarch64_cpu_detected;
+
+    #[cfg(target_arch = "riscv64")]
+    #[allow(unused_imports)]
+    pub use is_riscv64_cpu_detected;
 }
+
+pub use base_macros::multiversion;
+pub use base_macros::target_cpu;
+
+#[cfg(target_arch = "x86_64")]
+#[allow(unused_imports)]
+pub use std::arch::is_x86_feature_detected as is_feature_detected;
+
+#[cfg(target_arch = "aarch64")]
+#[allow(unused_imports)]
+pub use std::arch::is_aarch64_feature_detected as is_feature_detected;
+
+#[cfg(target_arch = "riscv64")]
+#[allow(unused_imports)]
+pub use std::arch::is_riscv_feature_detected as is_feature_detected;
+
+#[cfg(target_arch = "x86_64")]
+#[allow(unused_imports)]
+pub use internal::is_x86_64_cpu_detected as is_cpu_detected;
+
+#[cfg(target_arch = "aarch64")]
+#[allow(unused_imports)]
+pub use internal::is_aarch64_cpu_detected as is_cpu_detected;
+
+#[cfg(target_arch = "riscv64")]
+#[allow(unused_imports)]
+pub use internal::is_riscv64_cpu_detected as is_cpu_detected;
