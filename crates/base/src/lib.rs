@@ -6,6 +6,7 @@
 #![allow(clippy::len_zero)]
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::nonminimal_bool)]
+#![allow(clippy::identity_op)]
 
 pub mod aligned;
 pub mod always_equal;

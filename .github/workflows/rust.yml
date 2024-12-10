@@ -2,7 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "vchord"]
     paths:
       - ".cargo/**"
       - ".github/**"
@@ -16,7 +16,7 @@ on:
       - "vectors.control"
       - "vendor/**"
   pull_request:
-    branches: ["main"]
+    branches: ["main", "vchord"]
     paths:
       - ".cargo/**"
       - ".github/**"

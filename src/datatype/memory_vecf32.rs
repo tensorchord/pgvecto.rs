@@ -57,7 +57,7 @@ pub enum Vecf32Input<'a> {
     Borrowed(&'a Vecf32Header),
 }
 
-impl<'a> Vecf32Input<'a> {
+impl Vecf32Input<'_> {
     unsafe fn new(p: NonNull<Vecf32Header>) -> Self {
         let q = unsafe {
             NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.cast().as_ptr()).cast()).unwrap()
@@ -122,7 +122,7 @@ impl Drop for Vecf32Output {
     }
 }
 
-impl<'a> FromDatum for Vecf32Input<'a> {
+impl FromDatum for Vecf32Input<'_> {
     unsafe fn from_polymorphic_datum(datum: Datum, is_null: bool, _typoid: Oid) -> Option<Self> {
         if is_null {
             None

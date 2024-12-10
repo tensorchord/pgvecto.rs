@@ -65,7 +65,7 @@ pub enum SVecf32Input<'a> {
     Borrowed(&'a SVecf32Header),
 }
 
-impl<'a> SVecf32Input<'a> {
+impl SVecf32Input<'_> {
     unsafe fn new(p: NonNull<SVecf32Header>) -> Self {
         let q = unsafe {
             NonNull::new(pgrx::pg_sys::pg_detoast_datum(p.cast().as_ptr()).cast()).unwrap()
@@ -143,7 +143,7 @@ impl Drop for SVecf32Output {
     }
 }
 
-impl<'a> FromDatum for SVecf32Input<'a> {
+impl FromDatum for SVecf32Input<'_> {
     unsafe fn from_polymorphic_datum(datum: Datum, is_null: bool, _typoid: Oid) -> Option<Self> {
         if is_null {
             None
