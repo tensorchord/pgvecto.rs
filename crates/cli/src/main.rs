@@ -32,7 +32,6 @@ fn calculate_precision(truth: &[i32], res: &[i32], top: usize) -> f32 {
 }
 
 fn main() {
-    base::simd::enable();
     let args: Arguments = argh::from_env();
     let path = PathBuf::from_str(&args.path).expect("failed to parse the path");
     let mut log_builder = env_logger::builder();

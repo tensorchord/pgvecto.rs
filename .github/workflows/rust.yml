@@ -2,7 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: ["main", "vchord"]
+    branches: ["vchord"]
     paths:
       - ".cargo/**"
       - ".github/**"
@@ -16,7 +16,7 @@ on:
       - "vectors.control"
       - "vendor/**"
   pull_request:
-    branches: ["main", "vchord"]
+    branches: ["vchord"]
     paths:
       - ".cargo/**"
       - ".github/**"
@@ -60,6 +60,8 @@ jobs:
           sudo apt-get remove -y '^postgres.*' '^libpq.*' '^clang.*' '^llvm.*' '^libclang.*' '^libllvm.*' '^mono-llvm.*'
           sudo apt-get purge -y '^postgres.*' '^libpq.*' '^clang.*' '^llvm.*' '^libclang.*' '^libllvm.*' '^mono-llvm.*'
           sudo apt-get update
+          curl --proto '=https' --tlsv1.2 -sSf https://apt.llvm.org/llvm.sh | sudo bash -s -- 18
+          sudo update-alternatives --install /usr/bin/clang clang $(which clang-18) 255
           sudo apt-get install -y build-essential crossbuild-essential-arm64
           sudo apt-get install -y qemu-user-static
           touch ~/.cargo/config.toml
@@ -81,33 +83,9 @@ jobs:
       - name: Clippy
         run: |
           cargo clippy --workspace --exclude pgvectors --exclude pyvectors --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg14_${ARCH}_debian/pg_config/pg_config
-          export PGRX_TARGET_INFO_PATH_PG14=$(pwd)/vendor/pg14_${ARCH}_debian/pgrx_binding
-          cargo clippy --package pgvectors --features pg14 --no-deps --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg15_${ARCH}_debian/pg_config/pg_config
-          export PGRX_TARGET_INFO_PATH_PG15=$(pwd)/vendor/pg15_${ARCH}_debian/pgrx_binding
-          cargo clippy --package pgvectors --features pg15 --no-deps --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg16_${ARCH}_debian/pg_config/pg_config
-          export PGRX_TARGET_INFO_PATH_PG16=$(pwd)/vendor/pg16_${ARCH}_debian/pgrx_binding
-          cargo clippy --package pgvectors --features pg16 --no-deps --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg17_${ARCH}_debian/pg_config/pg_config
-          export PGRX_TARGET_INFO_PATH_PG17=$(pwd)/vendor/pg17_${ARCH}_debian/pgrx_binding
-          cargo clippy --package pgvectors --features pg17 --no-deps --target $ARCH-unknown-linux-gnu
       - name: Build
         run: |
           cargo build --workspace --exclude pgvectors --exclude pyvectors --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg14_${ARCH}_debian/pg_config/pg_config
-          export PGRX_TARGET_INFO_PATH_PG14=$(pwd)/vendor/pg14_${ARCH}_debian/pgrx_binding
-          cargo build --package pgvectors --lib --features pg14 --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg15_${ARCH}_debian/pg_config/pg_config
-          export PGRX_TARGET_INFO_PATH_PG15=$(pwd)/vendor/pg15_${ARCH}_debian/pgrx_binding
-          cargo build --package pgvectors --lib --features pg15 --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg16_${ARCH}_debian/pg_config/pg_config
-          export PGRX_TARGET_INFO_PATH_PG16=$(pwd)/vendor/pg16_${ARCH}_debian/pgrx_binding
-          cargo build --package pgvectors --lib --features pg16 --target $ARCH-unknown-linux-gnu
-          export PGRX_PG_CONFIG_PATH=$(pwd)/vendor/pg17_${ARCH}_debian/pg_config/pg_config
-          export PGRX_TARGET_INFO_PATH_PG17=$(pwd)/vendor/pg17_${ARCH}_debian/pgrx_binding
-          cargo build --package pgvectors --lib --features pg17 --target $ARCH-unknown-linux-gnu
       - name: Test
         run: |
           cargo test --workspace --exclude pgvectors --exclude pyvectors --no-fail-fast --target $ARCH-unknown-linux-gnu

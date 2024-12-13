@@ -13,7 +13,9 @@ toml.workspace = true
 validator.workspace = true
 
 base_macros = { path = "../base_macros" }
-detect = { path = "../detect" }
+
+[build-dependencies]
+cc = "1.2.3"
 
 [lints]
 workspace = true

@@ -8,8 +8,9 @@ mod sum_of_and {
 
     #[inline]
     #[cfg(target_arch = "x86_64")]
-    #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-    unsafe fn sum_of_and_v4_avx512vpopcntdq(lhs: &[u64], rhs: &[u64]) -> u32 {
+    #[crate::simd::target_cpu(enable = "v4")]
+    #[target_feature(enable = "avx512vpopcntdq")]
+    fn sum_of_and_v4_avx512vpopcntdq(lhs: &[u64], rhs: &[u64]) -> u32 {
         assert!(lhs.len() == rhs.len());
         unsafe {
             use std::arch::x86_64::*;
@@ -35,24 +36,25 @@ mod sum_of_and {
         }
     }
 
-    #[cfg(all(target_arch = "x86_64", test))]
+    #[cfg(all(target_arch = "x86_64", test, not(miri)))]
     #[test]
     fn sum_of_and_v4_avx512vpopcntdq_test() {
-        detect::init();
-        if !detect::v4_avx512vpopcntdq::detect() {
-            println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
+        if !crate::simd::is_cpu_detected!("v4")
+            || !crate::simd::is_feature_detected!("avx512vpopcntdq")
+        {
+            println!("test {} ... skipped (v4:avx512vpopcntdq)", module_path!());
             return;
         }
-        for _ in 0..300 {
+        for _ in 0..if cfg!(not(miri)) { 256 } else { 1 } {
             let lhs = (0..126).map(|_| rand::random::<u64>()).collect::<Vec<_>>();
             let rhs = (0..126).map(|_| rand::random::<u64>()).collect::<Vec<_>>();
             let specialized = unsafe { sum_of_and_v4_avx512vpopcntdq(&lhs, &rhs) };
-            let fallback = unsafe { sum_of_and_fallback(&lhs, &rhs) };
+            let fallback = sum_of_and_fallback(&lhs, &rhs);
             assert_eq!(specialized, fallback);
         }
     }
 
-    #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
+    #[crate::simd::multiversion(@"v4:avx512vpopcntdq", "v4", "v3", "v2", "v8.3a:sve", "v8.3a")]
     pub fn sum_of_and(lhs: &[u64], rhs: &[u64]) -> u32 {
         assert_eq!(lhs.len(), rhs.len());
         let n = lhs.len();
@@ -74,8 +76,9 @@ mod sum_of_or {
 
     #[inline]
     #[cfg(target_arch = "x86_64")]
-    #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-    unsafe fn sum_of_or_v4_avx512vpopcntdq(lhs: &[u64], rhs: &[u64]) -> u32 {
+    #[crate::simd::target_cpu(enable = "v4")]
+    #[target_feature(enable = "avx512vpopcntdq")]
+    fn sum_of_or_v4_avx512vpopcntdq(lhs: &[u64], rhs: &[u64]) -> u32 {
         assert!(lhs.len() == rhs.len());
         unsafe {
             use std::arch::x86_64::*;
@@ -101,24 +104,25 @@ mod sum_of_or {
         }
     }
 
-    #[cfg(all(target_arch = "x86_64", test))]
+    #[cfg(all(target_arch = "x86_64", test, not(miri)))]
     #[test]
     fn sum_of_or_v4_avx512vpopcntdq_test() {
-        detect::init();
-        if !detect::v4_avx512vpopcntdq::detect() {
-            println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
+        if !crate::simd::is_cpu_detected!("v4")
+            || !crate::simd::is_feature_detected!("avx512vpopcntdq")
+        {
+            println!("test {} ... skipped (v4:avx512vpopcntdq)", module_path!());
             return;
         }
-        for _ in 0..300 {
+        for _ in 0..if cfg!(not(miri)) { 256 } else { 1 } {
             let lhs = (0..126).map(|_| rand::random::<u64>()).collect::<Vec<_>>();
             let rhs = (0..126).map(|_| rand::random::<u64>()).collect::<Vec<_>>();
             let specialized = unsafe { sum_of_or_v4_avx512vpopcntdq(&lhs, &rhs) };
-            let fallback = unsafe { sum_of_or_fallback(&lhs, &rhs) };
+            let fallback = sum_of_or_fallback(&lhs, &rhs);
             assert_eq!(specialized, fallback);
         }
     }
 
-    #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
+    #[crate::simd::multiversion(@"v4:avx512vpopcntdq", "v4", "v3", "v2", "v8.3a:sve", "v8.3a")]
     pub fn sum_of_or(lhs: &[u64], rhs: &[u64]) -> u32 {
         assert_eq!(lhs.len(), rhs.len());
         let n = lhs.len();
@@ -140,8 +144,9 @@ mod sum_of_xor {
 
     #[inline]
     #[cfg(target_arch = "x86_64")]
-    #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-    unsafe fn sum_of_xor_v4_avx512vpopcntdq(lhs: &[u64], rhs: &[u64]) -> u32 {
+    #[crate::simd::target_cpu(enable = "v4")]
+    #[target_feature(enable = "avx512vpopcntdq")]
+    fn sum_of_xor_v4_avx512vpopcntdq(lhs: &[u64], rhs: &[u64]) -> u32 {
         assert!(lhs.len() == rhs.len());
         unsafe {
             use std::arch::x86_64::*;
@@ -167,24 +172,25 @@ mod sum_of_xor {
         }
     }
 
-    #[cfg(all(target_arch = "x86_64", test))]
+    #[cfg(all(target_arch = "x86_64", test, not(miri)))]
     #[test]
     fn sum_of_xor_v4_avx512vpopcntdq_test() {
-        detect::init();
-        if !detect::v4_avx512vpopcntdq::detect() {
-            println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
+        if !crate::simd::is_cpu_detected!("v4")
+            || !crate::simd::is_feature_detected!("avx512vpopcntdq")
+        {
+            println!("test {} ... skipped (v4:avx512vpopcntdq)", module_path!());
             return;
         }
-        for _ in 0..300 {
+        for _ in 0..if cfg!(not(miri)) { 256 } else { 1 } {
             let lhs = (0..126).map(|_| rand::random::<u64>()).collect::<Vec<_>>();
             let rhs = (0..126).map(|_| rand::random::<u64>()).collect::<Vec<_>>();
             let specialized = unsafe { sum_of_xor_v4_avx512vpopcntdq(&lhs, &rhs) };
-            let fallback = unsafe { sum_of_xor_fallback(&lhs, &rhs) };
+            let fallback = sum_of_xor_fallback(&lhs, &rhs);
             assert_eq!(specialized, fallback);
         }
     }
 
-    #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
+    #[crate::simd::multiversion(@"v4:avx512vpopcntdq", "v4", "v3", "v2", "v8.3a:sve", "v8.3a")]
     pub fn sum_of_xor(lhs: &[u64], rhs: &[u64]) -> u32 {
         assert_eq!(lhs.len(), rhs.len());
         let n = lhs.len();
@@ -206,8 +212,9 @@ mod sum_of_and_or {
 
     #[inline]
     #[cfg(target_arch = "x86_64")]
-    #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-    unsafe fn sum_of_and_or_v4_avx512vpopcntdq(lhs: &[u64], rhs: &[u64]) -> (u32, u32) {
+    #[crate::simd::target_cpu(enable = "v4")]
+    #[target_feature(enable = "avx512vpopcntdq")]
+    fn sum_of_and_or_v4_avx512vpopcntdq(lhs: &[u64], rhs: &[u64]) -> (u32, u32) {
         assert!(lhs.len() == rhs.len());
         unsafe {
             use std::arch::x86_64::*;
@@ -239,24 +246,25 @@ mod sum_of_and_or {
         }
     }
 
-    #[cfg(all(target_arch = "x86_64", test))]
+    #[cfg(all(target_arch = "x86_64", test, not(miri)))]
     #[test]
     fn sum_of_xor_v4_avx512vpopcntdq_test() {
-        detect::init();
-        if !detect::v4_avx512vpopcntdq::detect() {
-            println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
+        if !crate::simd::is_cpu_detected!("v4")
+            || !crate::simd::is_feature_detected!("avx512vpopcntdq")
+        {
+            println!("test {} ... skipped (v4:avx512vpopcntdq)", module_path!());
             return;
         }
-        for _ in 0..300 {
+        for _ in 0..if cfg!(not(miri)) { 256 } else { 1 } {
             let lhs = (0..126).map(|_| rand::random::<u64>()).collect::<Vec<_>>();
             let rhs = (0..126).map(|_| rand::random::<u64>()).collect::<Vec<_>>();
             let specialized = unsafe { sum_of_and_or_v4_avx512vpopcntdq(&lhs, &rhs) };
-            let fallback = unsafe { sum_of_and_or_fallback(&lhs, &rhs) };
+            let fallback = sum_of_and_or_fallback(&lhs, &rhs);
             assert_eq!(specialized, fallback);
         }
     }
 
-    #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
+    #[crate::simd::multiversion(@"v4:avx512vpopcntdq", "v4", "v3", "v2", "v8.3a:sve", "v8.3a")]
     pub fn sum_of_and_or(lhs: &[u64], rhs: &[u64]) -> (u32, u32) {
         assert_eq!(lhs.len(), rhs.len());
         let n = lhs.len();
@@ -280,8 +288,9 @@ mod sum_of_x {
 
     #[inline]
     #[cfg(target_arch = "x86_64")]
-    #[detect::target_cpu(enable = "v4_avx512vpopcntdq")]
-    unsafe fn sum_of_x_v4_avx512vpopcntdq(this: &[u64]) -> u32 {
+    #[crate::simd::target_cpu(enable = "v4")]
+    #[target_feature(enable = "avx512vpopcntdq")]
+    fn sum_of_x_v4_avx512vpopcntdq(this: &[u64]) -> u32 {
         unsafe {
             use std::arch::x86_64::*;
             let mut and = _mm512_setzero_si512();
@@ -302,23 +311,24 @@ mod sum_of_x {
         }
     }
 
-    #[cfg(all(target_arch = "x86_64", test))]
+    #[cfg(all(target_arch = "x86_64", test, not(miri)))]
     #[test]
     fn sum_of_x_v4_avx512vpopcntdq_test() {
-        detect::init();
-        if !detect::v4_avx512vpopcntdq::detect() {
-            println!("test {} ... skipped (v4_avx512vpopcntdq)", module_path!());
+        if !crate::simd::is_cpu_detected!("v4")
+            || !crate::simd::is_feature_detected!("avx512vpopcntdq")
+        {
+            println!("test {} ... skipped (v4:avx512vpopcntdq)", module_path!());
             return;
         }
-        for _ in 0..300 {
+        for _ in 0..if cfg!(not(miri)) { 256 } else { 1 } {
             let this = (0..126).map(|_| rand::random::<u64>()).collect::<Vec<_>>();
             let specialized = unsafe { sum_of_x_v4_avx512vpopcntdq(&this) };
-            let fallback = unsafe { sum_of_x_fallback(&this) };
+            let fallback = sum_of_x_fallback(&this);
             assert_eq!(specialized, fallback);
         }
     }
 
-    #[detect::multiversion(v4_avx512vpopcntdq = import, v4, v3, v2, neon, fallback = export)]
+    #[crate::simd::multiversion(@"v4:avx512vpopcntdq", "v4", "v3", "v2", "v8.3a:sve", "v8.3a")]
     pub fn sum_of_x(this: &[u64]) -> u32 {
         let n = this.len();
         let mut and = 0;
@@ -329,50 +339,71 @@ mod sum_of_x {
     }
 }
 
-#[detect::multiversion(v4, v3, v2, neon, fallback)]
+#[inline(always)]
 pub fn vector_and(lhs: &[u64], rhs: &[u64]) -> Vec<u64> {
-    assert_eq!(lhs.len(), rhs.len());
-    let n = lhs.len();
-    let mut r = Vec::<u64>::with_capacity(n);
-    for i in 0..n {
-        unsafe {
-            r.as_mut_ptr().add(i).write(lhs[i] & rhs[i]);
-        }
-    }
-    unsafe {
-        r.set_len(n);
-    }
-    r
+    vector_and::vector_and(lhs, rhs)
 }
 
-#[detect::multiversion(v4, v3, v2, neon, fallback)]
+mod vector_and {
+    #[crate::simd::multiversion("v4", "v3", "v2", "v8.3a:sve", "v8.3a")]
+    pub fn vector_and(lhs: &[u64], rhs: &[u64]) -> Vec<u64> {
+        assert_eq!(lhs.len(), rhs.len());
+        let n = lhs.len();
+        let mut r = Vec::<u64>::with_capacity(n);
+        for i in 0..n {
+            unsafe {
+                r.as_mut_ptr().add(i).write(lhs[i] & rhs[i]);
+            }
+        }
+        unsafe {
+            r.set_len(n);
+        }
+        r
+    }
+}
+
+#[inline(always)]
 pub fn vector_or(lhs: &[u64], rhs: &[u64]) -> Vec<u64> {
-    assert_eq!(lhs.len(), rhs.len());
-    let n = lhs.len();
-    let mut r = Vec::<u64>::with_capacity(n);
-    for i in 0..n {
-        unsafe {
-            r.as_mut_ptr().add(i).write(lhs[i] | rhs[i]);
-        }
-    }
-    unsafe {
-        r.set_len(n);
-    }
-    r
+    vector_or::vector_or(lhs, rhs)
 }
 
-#[detect::multiversion(v4, v3, v2, neon, fallback)]
-pub fn vector_xor(lhs: &[u64], rhs: &[u64]) -> Vec<u64> {
-    assert_eq!(lhs.len(), rhs.len());
-    let n = lhs.len();
-    let mut r = Vec::<u64>::with_capacity(n);
-    for i in 0..n {
-        unsafe {
-            r.as_mut_ptr().add(i).write(lhs[i] ^ rhs[i]);
+mod vector_or {
+    #[crate::simd::multiversion("v4", "v3", "v2", "v8.3a:sve", "v8.3a")]
+    pub fn vector_or(lhs: &[u64], rhs: &[u64]) -> Vec<u64> {
+        assert_eq!(lhs.len(), rhs.len());
+        let n = lhs.len();
+        let mut r = Vec::<u64>::with_capacity(n);
+        for i in 0..n {
+            unsafe {
+                r.as_mut_ptr().add(i).write(lhs[i] | rhs[i]);
+            }
         }
+        unsafe {
+            r.set_len(n);
+        }
+        r
     }
-    unsafe {
-        r.set_len(n);
+}
+
+#[inline(always)]
+pub fn vector_xor(lhs: &[u64], rhs: &[u64]) -> Vec<u64> {
+    vector_xor::vector_xor(lhs, rhs)
+}
+
+mod vector_xor {
+    #[crate::simd::multiversion("v4", "v3", "v2", "v8.3a:sve", "v8.3a")]
+    pub fn vector_xor(lhs: &[u64], rhs: &[u64]) -> Vec<u64> {
+        assert_eq!(lhs.len(), rhs.len());
+        let n = lhs.len();
+        let mut r = Vec::<u64>::with_capacity(n);
+        for i in 0..n {
+            unsafe {
+                r.as_mut_ptr().add(i).write(lhs[i] ^ rhs[i]);
+            }
+        }
+        unsafe {
+            r.set_len(n);
+        }
+        r
     }
-    r
 }
