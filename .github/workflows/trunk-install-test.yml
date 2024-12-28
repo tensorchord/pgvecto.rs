@@ -15,9 +15,9 @@ jobs:
       - ubuntu-latest
     strategy:
       matrix:
-        version: [14, 15, 16, 17]
+        version: [14, 15, 16]
         schema: ["vectors", "extensions", "public"]
-        platform: ["amd64", "arm64"]
+        platform: ["amd64"]
     container:
       image: modelzai/pgvecto-rs:${{ matrix.version }}-v${{ github.event.inputs.version }}-${{ matrix.schema }}
       options: --user root
@@ -28,6 +28,7 @@ jobs:
       PGUSER: "postgres"
       PGPASSWORD: "postgres"
       POSTGRES_PASSWORD: "password"
+      PGDATA: "/var/lib/postgresql/data2"
 
     steps:
       - name: Install all extensions in registry

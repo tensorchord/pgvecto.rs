@@ -10,8 +10,10 @@ ARG TRUNK_VER=0.12.25
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL sparse 
 RUN cargo install --version $TRUNK_VER pg-trunk
 
-FROM modelzai/pg-slim:${PG_MAJOR}
+FROM modelzai/pg-slim:${PG_MAJOR}-${TARGETARCH}
 ARG PG_MAJOR
+ARG LIB_DIR
+ARG ALTDIR=/var/lib/postgresql/data/tensorchord
 
 USER root
 
@@ -40,8 +42,8 @@ RUN set -xe; \
   apt-get clean; \
 	rm -rf /var/lib/apt/lists/*;
 
-RUN chown -R postgres:postgres /usr/lib/postgresql/${PG_MAJOR} && \
-    chmod -R 0700 /usr/lib/postgresql/${PG_MAJOR}
+RUN chown -R postgres:postgres ${ALTDIR}/${PG_MAJOR} && \
+    chmod -R 0700 ${ALTDIR}/${PG_MAJOR}
 RUN chown postgres /usr/share/postgresql/${PG_MAJOR}/extension
 
 RUN apt-get update && apt-get install -y \
@@ -91,12 +93,12 @@ RUN apt-get update && apt-get install -y \
     libbson-dev \
     libgsl-dev \
     && rm -rf /var/lib/apt/lists/*
-RUN ln -s /usr/lib/jvm/java-11-openjdk-amd64/lib/server/libjvm.so /usr/lib/x86_64-linux-gnu/libjvm.so
+RUN ln -s /usr/lib/jvm/java-11-openjdk-amd64/lib/server/libjvm.so ${LIB_DIR}/libjvm.so
 RUN wget https://download.oracle.com/otn_software/linux/instantclient/1920000/instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip && \
     unzip instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip && \
-    cp instantclient_19_20/libclntsh.so.19.1 /usr/lib/x86_64-linux-gnu/ && \
-    cp instantclient_19_20/libnnz19.so /usr/lib/x86_64-linux-gnu/ && \
-    cp instantclient_19_20/libclntshcore.so.19.1 /usr/lib/x86_64-linux-gnu/ && \
+    cp instantclient_19_20/libclntsh.so.19.1 ${LIB_DIR}/ && \
+    cp instantclient_19_20/libnnz19.so ${LIB_DIR}/ && \
+    cp instantclient_19_20/libclntshcore.so.19.1 ${LIB_DIR}/ && \
     rm -rf instantclient_19_20 && \
     rm instantclient-basiclite-linux.x64-19.20.0.0.0dbru.zip
 
@@ -108,12 +110,12 @@ RUN  wget http://www.xunsearch.com/scws/down/scws-1.2.3.tar.bz2 && \
      make install && \
      cd .. && \
      rm -rf scws-1.2.3.tar.bz2 scws-1.2.3 && \
-     ln -s /usr/local/lib/libscws.so /usr/lib/x86_64-linux-gnu/libscws.so
+     ln -s /usr/local/lib/libscws.so ${LIB_DIR}/libscws.so
 
 # Install duckdb libs
 RUN wget https://github.com/duckdb/duckdb/releases/download/v0.8.1/libduckdb-linux-amd64.zip && \
     unzip libduckdb-linux-amd64.zip && \
-    cp libduckdb.so /usr/lib/x86_64-linux-gnu/ && \
+    cp libduckdb.so ${LIB_DIR}/ && \
     rm -rf libduckdb-linux-amd64.zip libduckdb.so
 
 # Install pg_stat_statements
@@ -124,13 +126,6 @@ RUN trunk install auto_explain
 
 # Install plpython3u
 RUN trunk install plpython3u
-
-# cache pg_stat_statements and auto_explain and pg_stat_kcache to temp directory
-RUN set -eux; \
-	  mkdir /tmp/pg_pkglibdir; \
-	  mkdir /tmp/pg_sharedir; \
-      cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
-      cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
 
 # Clone and build AWS SDK for C++
 RUN git clone https://github.com/aws/aws-sdk-cpp.git && \
@@ -175,7 +170,16 @@ COPY trunk-install.sh /usr/local/bin/
 
 # Change the uid of postgres to 26
 RUN usermod -u 26 postgres
-RUN chown -R postgres:postgres /usr/lib/postgresql/${PG_MAJOR}
-RUN cp /usr/share/postgresql/${PG_MAJOR}/extension/* /usr/lib/postgresql/${PG_MAJOR}/share/extension/
+RUN chown -R postgres:postgres ${ALTDIR}
+RUN cp /usr/share/postgresql/${PG_MAJOR}/extension/* ${ALTDIR}/extension/
+RUN cp /usr/lib/postgresql/${PG_MAJOR}/lib/* ${ALTDIR}/${PG_MAJOR}/lib/
+
+RUN set -eux; \
+    mkdir /tmp/pg_pkglibdir; \
+    mkdir /tmp/pg_sharedir; \
+    cp -r $(pg_config --pkglibdir)/* /tmp/pg_pkglibdir; \
+    cp -r $(pg_config --sharedir)/* /tmp/pg_sharedir
+
+RUN chown -R postgres:postgres /tmp
 USER 26
 ENV PATH $PATH:/usr/lib/postgresql/${PG_MAJOR}/bin

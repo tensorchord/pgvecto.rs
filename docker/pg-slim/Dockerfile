@@ -5,9 +5,9 @@ ARG PG_MAJOR
 # 15.8-1.pgdg120+1 16.4-1.pgdg120+2 17.0-1.pgdg120+1
 # ARG PG_VERSION 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG ALTDIR=/var/lib/postgresql/data/tensorchord
 ENV TZ=Etc/UTC
 ENV PGDATA /var/lib/postgresql/data
-ENV PATH $PATH:/usr/lib/postgresql/$PG_MAJOR/bin
 
 # Get latest package updates
 RUN set -eux; \
@@ -79,7 +79,8 @@ WORKDIR postgres
 ENV CFLAGS "-g -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-omit-frame-pointer"
 ENV LDFLAGS "-Wl,-z,relro -Wl,-z,now"
 RUN ./configure --prefix=/usr/lib/postgresql/${PG_MAJOR} \
-        --libdir=/usr/lib/postgresql/$PG_MAJOR/lib \
+        --datarootdir=${ALTDIR} \
+        --libdir=${ALTDIR}/${PG_MAJOR}/lib \
         --with-perl \
         --with-python \
         --with-tcl \
@@ -116,9 +117,9 @@ COPY --from=tianon/gosu /gosu /usr/local/bin/
 
 # make the sample config easier to munge (and "correct by default")
 RUN set -eux; \
-    echo "unix_socket_directories = '/var/run/postgresql'" >> /usr/lib/postgresql/${PG_MAJOR}/share/postgresql.conf.sample; \
-	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" /usr/lib/postgresql/${PG_MAJOR}/share/postgresql.conf.sample; \
-	grep -F "listen_addresses = '*'" /usr/lib/postgresql/${PG_MAJOR}/share/postgresql.conf.sample
+    echo "unix_socket_directories = '/var/run/postgresql'" >> ${ALTDIR}/postgresql.conf.sample; \
+	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" ${ALTDIR}/postgresql.conf.sample; \
+	grep -F "listen_addresses = '*'" ${ALTDIR}/postgresql.conf.sample
 
 RUN install --verbose --directory --owner postgres --group postgres --mode 3777 /var/run/postgresql
 

@@ -41,8 +41,8 @@ jobs:
   binary:
     strategy:
       matrix:
-        version: [14, 15, 16, 17]
-        arch: ["x86_64", "aarch64"]
+        version: [14, 15, 16]
+        arch: ["x86_64"]
         schema: ["vectors", "extensions", "public"]
     runs-on: ubuntu-22.04
     env:
@@ -61,7 +61,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential crossbuild-essential-arm64
           sudo apt-get install -y qemu-user-static
-          echo 'target.aarch64-unknown-linux-gnu.linker = "aarch64-linux-gnu-gcc"' | tee ~/.cargo/config.toml
+          touch ~/.cargo/config.toml
+          echo 'target.aarch64-unknown-linux-gnu.linker = "aarch64-linux-gnu-gcc"' >> ~/.cargo/config.toml
+          echo 'target.aarch64-unknown-linux-gnu.runner = ["qemu-aarch64-static", "-L", "/usr/aarch64-linux-gnu"]' >> ~/.cargo/config.toml
+          rustup target add x86_64-unknown-linux-gnu
+          rustup target add aarch64-unknown-linux-gnu
       - name: Set up Sccache
         uses: mozilla-actions/sccache-action@v0.0.4
       - name: Set up Cache
@@ -110,8 +114,8 @@ jobs:
     needs: ["binary", "semver"]
     strategy:
       matrix:
-        version: [14, 15, 16, 17]
-        platform: ["amd64", "arm64"]
+        version: [14, 15, 16]
+        platform: ["amd64"]
         schema: ["vectors", "extensions", "public"]
     runs-on: ubuntu-latest
     steps:
@@ -144,9 +148,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: [14, 15, 16, 17]
+        version: [14, 15, 16] # https://github.com/tembo-io/trunk/issues/797, 17 not support yet
         schema: ["vectors", "extensions", "public"]
-        platform: ["amd64", "arm64"]
+        platform: ["amd64"] # Only support x86-64 architecture, aarch64 not support yet
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -155,7 +159,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            core.setOutput('tags', "modelzai/pgvecto-rs:${{ matrix.version }}-v${{ github.event.inputs.version }}-${{ matrix.schema }}");
+            core.setOutput('tags', "modelzai/pgvecto-rs:${{ matrix.version }}-v${{ github.event.inputs.version }}-${{ matrix.schema }}-exts");
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -165,6 +169,15 @@ jobs:
         with:
           username: ${{ secrets.DOCKERIO_MODELZ_USERNAME }}
           password: ${{ secrets.DOCKERIO_MODELZ_TOKEN }}
+      - name: Set Lib Dir
+        run: |
+          if [ "${{ matrix.platform }}" == "amd64" ]; then
+            echo "LIB_DIR=/usr/lib/x86_64-linux-gnu" >> $GITHUB_ENV
+          elif [ "${{ matrix.platform }}" == "arm64" ]; then
+            echo "LIB_DIR=/usr/lib/aarch64-linux-gnu" >> $GITHUB_ENV
+          else
+            echo "LIB_DIR=/usr/lib/unknown" >> $GITHUB_ENV
+          fi
       - name: Push postgres with pgvecto.rs enterprise to Docker Registry
         uses: docker/build-push-action@v4
         with:
@@ -177,4 +190,5 @@ jobs:
             FROM_TAG=pg${{ matrix.version }}-v${{ github.event.inputs.version }}
             SCHEMA=${{ matrix.schema }}
             TARGETARCH=${{ matrix.platform }}
+            LIB_DIR=${{ env.LIB_DIR }}
           tags: ${{ steps.variables.outputs.tags }}
