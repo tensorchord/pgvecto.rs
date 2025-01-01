@@ -13,7 +13,7 @@ pgvecto.rs is a Postgres extension that provides vector similarity search functi
 
 ## Comparison with pgvector
 
-Checkout [pgvecto.rs vs pgvector](https://docs.pgvecto.rs/faqs/comparison-pgvector.html) for more details.
+Checkout [pgvecto.rs vs pgvector](https://docs.vectorchord.ai/faqs/comparison-pgvector.html) for more details.
 
 | Feature | pgvecto.rs | pgvector |
 | --- | --- | --- |
@@ -24,19 +24,19 @@ Checkout [pgvecto.rs vs pgvector](https://docs.pgvecto.rs/faqs/comparison-pgvect
 | Indexing | Handles the storage and memory of indexes separately from PostgreSQL | Relies on the native storage engine of PostgreSQL |
 | WAL Support | Provides Write-Ahead Logging (WAL) support for data, index support is working in progress. | Provides Write-Ahead Logging (WAL) support for index and data. |                         |
 
-## [Documentation](https://docs.pgvecto.rs/getting-started/overview.html)
+## [Documentation](https://docs.vectorchord.ai/getting-started/overview.html)
 
 - Getting Started
-  - [Overview](https://docs.pgvecto.rs/getting-started/overview.html)
-  - [Installation](https://docs.pgvecto.rs/getting-started/installation.html)
+  - [Overview](https://docs.vectorchord.ai/getting-started/overview.html)
+  - [Installation](https://docs.vectorchord.ai/getting-started/installation.html)
 - Usage
-  - [Indexing](https://docs.pgvecto.rs/usage/indexing.html)
-  - [Search](https://docs.pgvecto.rs/usage/search.html)
+  - [Indexing](https://docs.vectorchord.ai/usage/indexing.html)
+  - [Search](https://docs.vectorchord.ai/usage/search.html)
 - Administration
-  - [Configuration](https://docs.pgvecto.rs/admin/configuration.html)
-  - [Upgrading from older versions](https://docs.pgvecto.rs/admin/upgrading.html)
+  - [Configuration](https://docs.vectorchord.ai/admin/configuration.html)
+  - [Upgrading from older versions](https://docs.vectorchord.ai/admin/upgrading.html)
 - Developers
-  - [Development Tutorial](https://docs.pgvecto.rs/developers/development.html)
+  - [Development Tutorial](https://docs.vectorchord.ai/developers/development.html)
 
 ## Quick start
 
@@ -119,7 +119,7 @@ SELECT * FROM items ORDER BY embedding <-> '[3,2,1]' LIMIT 5;
 
 ### A simple Question-Answering application
 
-Please check out the [Question-Answering application](https://docs.pgvecto.rs/use-case/question-answering.html) tutorial.
+Please check out the [Question-Answering application](https://docs.vectorchord.ai/use-case/question-answering.html) tutorial.
 
 ### Half-precision floating-point
 
@@ -127,7 +127,7 @@ Please check out the [Question-Answering application](https://docs.pgvecto.rs/us
 
 ## Roadmap 🗂️
 
-Please check out [ROADMAP](https://docs.pgvecto.rs/community/roadmap.html). Want to jump in? Welcome discussions and contributions!
+Please check out [ROADMAP](https://docs.vectorchord.ai/community/roadmap.html). Want to jump in? Welcome discussions and contributions!
 
 - Chat with us on [💬 Discord](https://discord.gg/KqswhpVgdU)
 - Have a look at [`good first issue 💖`](https://github.com/tensorchord/pgvecto.rs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue+%E2%9D%A4%EF%B8%8F%22) issues!
@@ -137,7 +137,7 @@ Please check out [ROADMAP](https://docs.pgvecto.rs/community/roadmap.html). Want
 We welcome all kinds of contributions from the open-source community, individuals, and partners.
 
 - Join our [discord community](https://discord.gg/KqswhpVgdU)!
-- To build from the source, please read our [contributing documentation](https://docs.pgvecto.rs/community/contributing.html) and [development tutorial](https://docs.pgvecto.rs/developers/development.html).
+- To build from the source, please read our [contributing documentation](https://docs.vectorchord.ai/community/contributing.html) and [development tutorial](https://docs.vectorchord.ai/developers/development.html).
 
 ## Contributors ✨
 
