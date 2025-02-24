@@ -50,7 +50,7 @@ jobs:
       matrix:
         version: [14, 15, 16, 17]
         arch: ["x86_64"]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       SEMVER: "0.0.0"
       VERSION: ${{ matrix.version }}
