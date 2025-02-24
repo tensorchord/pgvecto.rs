@@ -153,7 +153,7 @@ jobs:
             # Disable latest tag
             latest=false
           images: |
-            name=ghcr.io/${{ github.repository }}
+            name=ghcr.io/tensorchord/pgvecto-rs
             name=tensorchord/pgvecto-rs
           tags: |
             type=raw,value=pg${{ matrix.version }}-v${{ github.event.inputs.version }}-rootless,enable=${{ matrix.rootless }}
