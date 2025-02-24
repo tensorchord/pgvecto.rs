@@ -174,7 +174,6 @@ jobs:
           username: ${{ secrets.DOCKERIO_USERNAME }}
           password: ${{ secrets.DOCKERIO_TOKEN }}
       - name: Push postgres with pgvecto.rs to Docker Registry
-        if: matrix.rootless == false
         uses: docker/build-push-action@v4
         with:
           context: .
