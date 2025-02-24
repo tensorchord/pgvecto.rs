@@ -11,6 +11,9 @@
 
 pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx).
 
+> [!NOTE]
+> We have a new implementation [VectorChord](https://github.com/tensorchord/VectorChord/) with better stability and performance. Users are encouraged to migrate to VectorChord. Check out the [migration guide](https://docs.vectorchord.ai/vectorchord/admin/migration.html).
+
 ## Comparison with pgvector
 
 Checkout [pgvecto.rs vs pgvector](https://docs.vectorchord.ai/faqs/comparison-pgvector.html) for more details.
