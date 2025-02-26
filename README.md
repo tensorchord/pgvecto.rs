@@ -9,7 +9,7 @@
 <a href="https://github.com/tensorchord/pgvecto.rs#contributors-"><img alt="all-contributors" src="https://img.shields.io/github/all-contributors/tensorchord/pgvecto.rs/main"></a>
 </p>
 
-pgvecto.rs is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/tcdi/pgrx).
+`pgvecto.rs` is a Postgres extension that provides vector similarity search functions. It is written in Rust and based on [pgrx](https://github.com/pgcentralfoundation/pgrx).
 
 > [!NOTE]
 > We have a new implementation [VectorChord](https://github.com/tensorchord/VectorChord/) with better stability and performance. Users are encouraged to migrate to VectorChord. Check out the [migration guide](https://docs.vectorchord.ai/vectorchord/admin/migration.html).
@@ -43,14 +43,14 @@ Checkout [pgvecto.rs vs pgvector](https://docs.vectorchord.ai/faqs/comparison-pg
 
 ## Quick start
 
-For new users, we recommend using the [Docker image](https://hub.docker.com/r/tensorchord/pgvecto-rs) to get started quickly.
+For new users, we recommend using the [Docker image](https://github.com/tensorchord/pgvecto.rs/pkgs/container/pgvecto-rs) to get started quickly.
 
 ```sh
 docker run \
   --name pgvecto-rs-demo \
   -e POSTGRES_PASSWORD=mysecretpassword \
   -p 5432:5432 \
-  -d tensorchord/pgvecto-rs:pg16-v0.2.1
+  -d ghcr.io/tensorchord/pgvecto-rs:pg17-v0.4.0
 ```
 
 Then you can connect to the database using the `psql` command line tool. The default username is `postgres`, and the default password is `mysecretpassword`.
